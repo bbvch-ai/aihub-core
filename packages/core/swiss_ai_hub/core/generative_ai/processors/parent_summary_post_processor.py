@@ -2,9 +2,10 @@ from typing import Annotated
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeRelationship, NodeWithScore, QueryBundle, RelatedNodeInfo
+from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
-from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_TYPE_SUMMARY, TYPE
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE, NODE_TYPE_SUMMARY, TYPE
 
 
 class ParentSummaryPostProcessor(BaseNodePostprocessor):
@@ -43,6 +44,13 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
         current_node = content_node
         level = 0
 
+        # Carry the source node's namespace through to parent fetches so partition-aware
+        # stores can scope the lookup to the correct partition.
+        namespace = content_node.node.metadata.get(NAMESPACE)
+        filters: MetadataFilters | None = (
+            MetadataFilters(filters=[MetadataFilter(key=NAMESPACE, value=namespace)]) if namespace else None
+        )
+
         while level < self.max_levels and NodeRelationship.PARENT in current_node.node.relationships:
             parent_info = current_node.node.relationships[NodeRelationship.PARENT]
             if not isinstance(parent_info, RelatedNodeInfo):
@@ -53,7 +61,7 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
                 break
 
             visited_ids.add(parent_id)
-            parent_nodes = self.vectorstore.get_nodes([parent_id])
+            parent_nodes = self.vectorstore.get_nodes([parent_id], filters=filters)
             if not parent_nodes:
                 break
 

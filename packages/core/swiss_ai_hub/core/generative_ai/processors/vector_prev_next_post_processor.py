@@ -3,10 +3,11 @@ from typing import Annotated
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from pydantic import Field, field_validator
 
-from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import INDEX
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import INDEX, NAMESPACE
 
 
 class ModeOptions(StrEnum):
@@ -28,6 +29,14 @@ def traverse_nodes(
     nodes = {node_with_score.node.node_id: node_with_score}
     current_node = node_with_score.node
 
+    # Carry the source node's namespace through to neighbour fetches so partition-aware
+    # stores can scope the lookup to the correct partition instead of loading the whole
+    # collection.
+    namespace = current_node.metadata.get(NAMESPACE)
+    filters: MetadataFilters | None = (
+        MetadataFilters(filters=[MetadataFilter(key=NAMESPACE, value=namespace)]) if namespace else None
+    )
+
     for _ in range(num_nodes):
         relation = current_node.next_node if direction == ModeOptions.NEXT else current_node.prev_node
         if not relation:
@@ -35,7 +44,7 @@ def traverse_nodes(
         # For backward direction, check the INDEX metadata value
         if direction == ModeOptions.PREVIOUS and relation.metadata.get(INDEX) == 0:
             break
-        current_node = vectorstore.get_nodes([relation.node_id])[0]
+        current_node = vectorstore.get_nodes([relation.node_id], filters=filters)[0]
         nodes[current_node.node_id] = NodeWithScore(node=current_node)
     return nodes
 
