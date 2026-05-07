@@ -408,7 +408,7 @@ class ExpertRAGAgent(Agent):
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         return await do_context_sufficient_guard(
             user_query_event.condensed_chat_message.content,
-            event.context_message.content,
+            event.context_message,
             guard_config.check_context_sufficiency,
             guard_config.max_hops,
             run_context,

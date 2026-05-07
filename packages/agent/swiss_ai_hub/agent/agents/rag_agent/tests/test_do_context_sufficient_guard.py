@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole, TextBlock
 from swiss_ai_hub.core.events.agent import ContextInsufficientRejectEvent
 from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
@@ -100,7 +100,7 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
 
     await do_context_sufficient_guard(
         user_query="What is our vacation policy?",
-        context="Employee handbook chapter 3.",
+        context_message=ChatMessage(role=MessageRole.USER, blocks=[TextBlock(text="Employee handbook chapter 3.")]),
         check_context_sufficiency=True,
         max_hops=3,
         run_context=run_context,
@@ -110,10 +110,9 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
         chat_history=chat_history_with_memory,
     )
 
-    rendered_chat_history = mock_llm.astructured_predict.call_args.kwargs["chat_history"]
-    assert memory_text in rendered_chat_history
-    assert "user:" in rendered_chat_history
-    assert "What is our vacation policy?" in rendered_chat_history
+    forwarded_history = mock_llm.astructured_predict.call_args.kwargs["chat_history"]
+    assert forwarded_history == chat_history_with_memory
+    assert any(memory_text in (m.content or "") for m in forwarded_history)
 
 
 @pytest.mark.asyncio
@@ -130,7 +129,7 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
 
     await do_context_sufficient_guard(
         user_query="Follow-up",
-        context="Some context.",
+        context_message=ChatMessage(role=MessageRole.USER, blocks=[TextBlock(text="Some context.")]),
         check_context_sufficiency=True,
         max_hops=3,
         run_context=run_context,
@@ -140,11 +139,8 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
         chat_history=chat_history,
     )
 
-    rendered = mock_llm.astructured_predict.call_args.kwargs["chat_history"]
-    assert "Memory: 25 vacation days." in rendered
-    assert "First question" in rendered
-    assert "Earlier answer" in rendered
-    assert "Follow-up" in rendered
+    forwarded = mock_llm.astructured_predict.call_args.kwargs["chat_history"]
+    assert forwarded == chat_history
 
 
 @pytest.mark.asyncio
@@ -153,7 +149,7 @@ async def test_guard_with_empty_chat_history_still_renders_empty_placeholder(
 ):
     await do_context_sufficient_guard(
         user_query="What is the capital of France?",
-        context="Paris is the capital of France.",
+        context_message=ChatMessage(role=MessageRole.USER, blocks=[TextBlock(text="Paris is the capital of France.")]),
         check_context_sufficiency=True,
         max_hops=3,
         run_context=run_context,
@@ -163,7 +159,39 @@ async def test_guard_with_empty_chat_history_still_renders_empty_placeholder(
         chat_history=[],
     )
 
-    assert mock_llm.astructured_predict.call_args.kwargs["chat_history"] == ""
+    assert mock_llm.astructured_predict.call_args.kwargs["chat_history"] == []
+
+
+@pytest.mark.asyncio
+async def test_guard_forwards_context_message_with_image_blocks_intact(
+    mock_llm, llm_config, displayer, run_context, locale_handler
+):
+    """Regression: when retrieved context contains figures, the guard must receive the rich
+    ChatMessage so its LLM call can render the images — not a flattened text-only string."""
+    image_url = "https://example.com/figure.png"
+    context_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="<REFERENCE_DOCUMENT source='doc.pdf'>\n"),
+            ImageBlock(url=image_url),
+            TextBlock(text="</REFERENCE_DOCUMENT>\n"),
+        ],
+    )
+
+    await do_context_sufficient_guard(
+        user_query="What is shown in the figure?",
+        context_message=context_message,
+        check_context_sufficiency=True,
+        max_hops=3,
+        run_context=run_context,
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+        chat_history=[],
+    )
+
+    forwarded_blocks = mock_llm.astructured_predict.call_args.kwargs["context_blocks"]
+    assert any(isinstance(block, ImageBlock) for block in forwarded_blocks)
 
 
 @pytest.mark.asyncio
@@ -178,7 +206,7 @@ async def test_guard_emits_reject_event_when_no_more_hops(mock_llm, llm_config, 
 
     result = await do_context_sufficient_guard(
         user_query="What is the meaning of life?",
-        context="Unrelated document.",
+        context_message=ChatMessage(role=MessageRole.USER, blocks=[TextBlock(text="Unrelated document.")]),
         check_context_sufficiency=True,
         max_hops=1,
         run_context=run_context,
