@@ -6,10 +6,12 @@ import {
   type RepeaterConfig,
   buildFormKitSchema,
   categorizeFormElements,
+  coerceNullableToggles,
   extractGroupConfigs,
   extractRepeaterConfigs,
   getFormkitType,
   getNestedValue,
+  seedNullableToggles,
   setNestedValue,
 } from './useFormKitTransform'
 
@@ -206,7 +208,8 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
   function applyInitialData(data: Record<string, unknown>) {
     const base = initializeGroupData(configForm.value as FormElement[], {})
     const sanitized = stripNullsForGroups(data, configForm.value as FormElement[])
-    formData.value = merge(base, sanitized)
+    const merged = merge(base, sanitized)
+    formData.value = seedNullableToggles(merged, configForm.value as FormElement[])
   }
 
   function resetForm() {
@@ -232,6 +235,7 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
     setRepeaterData,
     initializeGroupData,
     cleanFormData,
+    coerceNullableToggles,
     applyInitialData,
     resetForm,
   }

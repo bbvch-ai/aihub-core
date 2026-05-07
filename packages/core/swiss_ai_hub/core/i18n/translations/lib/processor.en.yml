@@ -1,9 +1,5 @@
 ---
 retrieve_prev_next:
-  enabled:
-    label: Retrieve previous/next nodes
-    help: Fetch the chunks immediately before and after each retrieved chunk for additional
-      context.
   num_nodes:
     label: Number of nodes
     help: Number of previous and next nodes to retrieve for additional context.
@@ -11,10 +7,6 @@ retrieve_prev_next:
     label: Retrieval mode
     help: Whether to retrieve previous nodes, next nodes, or both.
 retrieve_summaries:
-  enabled:
-    label: Retrieve parent summaries
-    help: Walk up the document tree and include parent summary nodes alongside the
-      retrieved chunks.
   max_parent_levels:
     label: Max parent levels
     help: Maximum number of parent levels to traverse when retrieving summary nodes.

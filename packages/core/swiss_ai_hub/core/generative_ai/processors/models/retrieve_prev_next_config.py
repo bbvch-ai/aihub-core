@@ -2,7 +2,6 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
-from swiss_ai_hub.core.form.elements.checkbox import Checkbox
 from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.form import Form
@@ -17,10 +16,6 @@ class RetrievePrevNextConfig(Form):
     Supports duality pattern for form rendering and data validation.
     """
 
-    enabled: Annotated[
-        bool | Checkbox,
-        Field(description="Run the previous/next post-processor on retrieved nodes."),
-    ] = True
     num_nodes: Annotated[
         int | InputNumber,
         Field(description="The number of previous and next nodes to retrieve."),
@@ -34,17 +29,11 @@ class RetrievePrevNextConfig(Form):
     def as_form(cls) -> Self:
         """Factory method to create a form-mode RetrievePrevNextConfig."""
         return cls(
-            enabled=Checkbox(
-                label=LocaleString.from_i18n_path("lib.processor.retrieve_prev_next.enabled.label"),
-                help=LocaleString.from_i18n_path("lib.processor.retrieve_prev_next.enabled.help"),
-                ref="retrieve_prev_next_enabled",
-            ),
             num_nodes=InputNumber(
                 label=LocaleString.from_i18n_path("lib.processor.retrieve_prev_next.num_nodes.label"),
                 help=LocaleString.from_i18n_path("lib.processor.retrieve_prev_next.num_nodes.help"),
                 min=1,
                 step=1,
-                condition_if="$get(retrieve_prev_next_enabled).value",
             ),
             mode=Select(
                 label=LocaleString.from_i18n_path("lib.processor.retrieve_prev_next.mode.label"),
@@ -56,6 +45,5 @@ class RetrievePrevNextConfig(Form):
                 ],
                 option_label="label",
                 option_value="value",
-                condition_if="$get(retrieve_prev_next_enabled).value",
             ),
         )

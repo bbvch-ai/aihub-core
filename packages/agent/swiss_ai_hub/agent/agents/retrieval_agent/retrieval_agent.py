@@ -58,7 +58,7 @@ class RetrievalAgent(Agent):
             node_types=retriever.node_types,
             vector_store=vector_store,
         )
-        if retriever.retrieve_prev_next and retriever.retrieve_prev_next.enabled:
+        if retriever.retrieve_prev_next:
             nodes = retrieve_prev_next_nodes(
                 vector_store=vector_store,
                 nodes=nodes,

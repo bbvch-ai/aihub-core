@@ -38,9 +38,11 @@
 <script setup lang="ts">
 import {
   buildFormKitSchema,
+  coerceNullableToggles,
   extractRepeaterConfigs,
   getNestedValue,
   normalizeFormLocaleStrings,
+  seedNullableToggles,
   setNestedValue,
   type FormElement,
   type RepeaterConfig,
@@ -57,11 +59,14 @@ const props = defineProps<{
   initialData?: Record<string, unknown>
 }>()
 
-const data = ref<Record<string, unknown>>(props.initialData || {})
+const data = ref<Record<string, unknown>>(
+  seedNullableToggles(props.initialData || {}, props.form as FormElement[]),
+)
 
 watch(() => props.initialData, (newData) => {
   if (newData && Object.keys(newData).length > 0) {
-    data.value = merge({}, data.value, newData)
+    const merged = merge({}, data.value, newData)
+    data.value = seedNullableToggles(merged, props.form as FormElement[])
   }
 }, { deep: true })
 
@@ -102,7 +107,8 @@ function setRepeaterData(path: string, value: Record<string, unknown>[]): void {
 }
 
 async function submitHandler() {
-  const normalizedData = normalizeFormLocaleStrings(data.value)
+  const coerced = coerceNullableToggles(data.value, props.form as FormElement[])
+  const normalizedData = normalizeFormLocaleStrings(coerced)
   emit('submit', normalizedData)
 }
 </script>

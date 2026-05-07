@@ -255,6 +255,34 @@ function buildNodeProperties(
 }
 
 /**
+ * Builds the toggle name used to gate a nullable form element.
+ */
+export function nullableToggleName(fieldName: string): string {
+  return `__${fieldName}__enabled`
+}
+
+/**
+ * Combines a synthetic toggle condition with any existing condition_if.
+ */
+function combineConditions(toggleCondition: string, existing: string | undefined): string {
+  if (!existing) return toggleCondition
+  if (existing.startsWith('$:')) {
+    return `$: ${toggleCondition.slice(1)} && (${existing.slice(2).trim()})`
+  }
+  return `$: ${toggleCondition.slice(1)} && (${existing.slice(1)})`
+}
+
+function buildNullableToggleNode(element: FormElement, label: string | undefined): Record<string, unknown> {
+  const fieldName = element.name as string
+  return {
+    $formkit: 'primeCheckbox',
+    name: nullableToggleName(fieldName),
+    label: label ? `Enable ${label}` : 'Enable',
+    binary: true,
+  }
+}
+
+/**
  * Transforms a form element to a FormKit schema node.
  * Handles groups specially by wrapping them in fieldsets when they have labels.
  * Skips repeater elements (they are handled separately).
@@ -279,12 +307,29 @@ export function transformElementToSchema(
     label = labelTransform(label)
   }
 
+  const isNullable = element.nullable === true
+  const toggleCondition = isNullable ? `$${nullableToggleName(element.name as string)}` : undefined
+
   if (formkitType === 'group') {
-    return createGroupNode(element, children, label)
+    const gatedElement = isNullable
+      ? { ...element, if: combineConditions(toggleCondition!, element.if as string | undefined) }
+      : element
+    const groupNode = createGroupNode(gatedElement, children, label)
+    if (isNullable) {
+      const toggle = buildNullableToggleNode(element, label)
+      const groupArray = Array.isArray(groupNode) ? groupNode : [groupNode]
+      return [toggle as FormKitSchemaNode, ...groupArray]
+    }
+    return groupNode
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
   if (children.length > 0) cleanNode.children = children
+  if (isNullable) {
+    cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
+    const toggle = buildNullableToggleNode(element, label)
+    return [toggle as FormKitSchemaNode, cleanNode as FormKitSchemaNode]
+  }
 
   return cleanNode as FormKitSchemaNode
 }
@@ -458,6 +503,88 @@ export function normalizeFormLocaleStrings<T>(data: T): T {
   }
 
   return data
+}
+
+/**
+ * Walks the form schema; for every nullable element whose synthetic toggle is off,
+ * replaces the actual field value with `null`. Always strips synthetic toggle keys.
+ */
+export function coerceNullableToggles(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...data }
+
+  for (const element of elements) {
+    const name = element.name as string
+    if (element.nullable === true) {
+      const toggleKey = nullableToggleName(name)
+      const enabled = result[toggleKey]
+      delete result[toggleKey]
+      if (enabled === false) {
+        result[name] = null
+        continue
+      }
+    }
+
+    const formkitType = getFormkitType(element)
+    const children = (element.children as FormElement[] | undefined) ?? []
+    const value = result[name]
+
+    if (formkitType === 'group' && value && typeof value === 'object' && !Array.isArray(value)) {
+      result[name] = coerceNullableToggles(value as Record<string, unknown>, children)
+    }
+    else if (formkitType === 'repeater' && Array.isArray(value)) {
+      result[name] = value.map(item =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? coerceNullableToggles(item as Record<string, unknown>, children)
+          : item,
+      )
+    }
+  }
+
+  for (const key of Object.keys(result)) {
+    if (key.startsWith('__') && key.endsWith('__enabled')) {
+      delete result[key]
+    }
+  }
+
+  return result
+}
+
+/**
+ * Recursively seeds synthetic toggle values from initial data: toggle is on iff the
+ * matching field was non-null/undefined in the source data.
+ */
+export function seedNullableToggles(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...data }
+
+  for (const element of elements) {
+    const name = element.name as string
+    if (element.nullable === true) {
+      result[nullableToggleName(name)] = result[name] !== null && result[name] !== undefined
+    }
+
+    const formkitType = getFormkitType(element)
+    const children = (element.children as FormElement[] | undefined) ?? []
+    const value = result[name]
+
+    if (formkitType === 'group' && value && typeof value === 'object' && !Array.isArray(value)) {
+      result[name] = seedNullableToggles(value as Record<string, unknown>, children)
+    }
+    else if (formkitType === 'repeater' && Array.isArray(value)) {
+      result[name] = value.map(item =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? seedNullableToggles(item as Record<string, unknown>, children)
+          : item,
+      )
+    }
+  }
+
+  return result
 }
 
 /**

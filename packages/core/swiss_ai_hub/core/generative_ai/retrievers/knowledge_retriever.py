@@ -41,7 +41,7 @@ class KnowledgeRetriever(BaseRetriever):
         if not nodes:
             return []
 
-        if self.config.retrieve_prev_next and self.config.retrieve_prev_next.enabled:
+        if self.config.retrieve_prev_next:
             nodes = retrieve_prev_next_nodes(
                 nodes=nodes,
                 vector_store=vector_store,
@@ -49,7 +49,7 @@ class KnowledgeRetriever(BaseRetriever):
                 prev_next_mode=self.config.retrieve_prev_next.mode,
             )
 
-        if self.config.retrieve_summaries and self.config.retrieve_summaries.enabled:
+        if self.config.retrieve_summaries:
             nodes = retrieve_parent_summary_nodes(
                 nodes=nodes,
                 vector_store=vector_store,
