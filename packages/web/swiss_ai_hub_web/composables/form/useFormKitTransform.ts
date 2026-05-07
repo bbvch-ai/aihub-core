@@ -547,9 +547,9 @@ export function coerceNullableToggles(
     const name = element.name as string
     if (element.nullable === true) {
       const toggleKey = nullableToggleName(name)
-      const enabled = result[toggleKey]
+      const enabled = result[toggleKey] === true
       Reflect.deleteProperty(result, toggleKey)
-      if (enabled === false) {
+      if (!enabled) {
         result[name] = null
         continue
       }
