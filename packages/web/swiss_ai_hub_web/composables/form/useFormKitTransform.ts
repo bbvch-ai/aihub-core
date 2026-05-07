@@ -349,9 +349,20 @@ export function transformElementForRepeater(
   ) as FormKitSchemaNode[]
 
   const label = getLocalizedString(element.label, locale)
+  const isNullable = element.nullable === true
+  const toggleCondition = isNullable ? `$${nullableToggleName(element.name as string)}` : undefined
 
   if (formkitType === 'group') {
-    return createGroupNode(element, children, label)
+    const gatedElement = isNullable
+      ? { ...element, if: combineConditions(toggleCondition!, element.if as string | undefined) }
+      : element
+    const groupNode = createGroupNode(gatedElement, children, label)
+    if (isNullable) {
+      const toggle = buildNullableToggleNode(element, label)
+      const groupArray = Array.isArray(groupNode) ? groupNode : [groupNode]
+      return [toggle as FormKitSchemaNode, ...groupArray]
+    }
+    return groupNode
   }
 
   // Handle localeInput specially
@@ -376,6 +387,12 @@ export function transformElementForRepeater(
 
   // Handle children separately (already transformed)
   if (children.length > 0) cleanNode.children = children
+
+  if (isNullable) {
+    cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
+    const toggle = buildNullableToggleNode(element, label)
+    return [toggle as FormKitSchemaNode, cleanNode as FormKitSchemaNode]
+  }
 
   return cleanNode as FormKitSchemaNode
 }
