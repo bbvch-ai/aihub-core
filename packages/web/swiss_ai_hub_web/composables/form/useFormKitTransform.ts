@@ -262,6 +262,17 @@ export function nullableToggleName(fieldName: string): string {
 }
 
 /**
+ * Builds a unique FormKit input id for the synthetic toggle that gates a nullable element.
+ * Uses the element's existing id (backend ref) when available so the id is unique across
+ * the whole form schema; falls back to the field name. Dots are replaced because FormKit
+ * `$get()` lookups expect slug-style ids.
+ */
+function nullableToggleId(element: FormElement): string {
+  const base = (element.id as string | undefined) ?? (element.name as string)
+  return `${base.replace(/\./g, '__')}__enabled_toggle`
+}
+
+/**
  * Combines a synthetic toggle condition with any existing condition_if.
  */
 function combineConditions(toggleCondition: string, existing: string | undefined): string {
@@ -277,6 +288,7 @@ function buildNullableToggleNode(element: FormElement, label: string | undefined
   return {
     $formkit: 'primeCheckbox',
     name: nullableToggleName(fieldName),
+    id: nullableToggleId(element),
     label: label ? `Enable ${label}` : 'Enable',
     binary: true,
   }
@@ -321,7 +333,7 @@ export function transformElementToSchema(
   }
 
   const isNullable = element.nullable === true
-  const toggleCondition = isNullable ? `$${nullableToggleName(element.name as string)}` : undefined
+  const toggleCondition = isNullable ? `$get(${nullableToggleId(element)}).value` : undefined
 
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
@@ -379,7 +391,7 @@ export function transformElementForRepeater(
 
   const label = getLocalizedString(element.label, locale)
   const isNullable = element.nullable === true
-  const toggleCondition = isNullable ? `$${nullableToggleName(element.name as string)}` : undefined
+  const toggleCondition = isNullable ? `$get(${nullableToggleId(element)}).value` : undefined
 
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
