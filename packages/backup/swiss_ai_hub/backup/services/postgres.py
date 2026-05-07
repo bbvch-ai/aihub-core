@@ -13,7 +13,6 @@ from swiss_ai_hub.backup.settings import BackupSettings
 
 logger = logging.getLogger(__name__)
 
-_SUBPROCESS_TIMEOUT = 300
 _SAFE_DBNAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
 # pg_dump skips data for extension-owned tables, expecting CREATE EXTENSION to repopulate them.
@@ -36,6 +35,10 @@ class PostgresHandler(BackupHandler):
     def __init__(self, settings: BackupSettings, s3: S3Manager) -> None:
         self._settings = settings
         self._s3 = s3
+
+    @property
+    def _subprocess_timeout(self) -> int:
+        return self._settings.POSTGRES_SUBPROCESS_TIMEOUT_SECONDS
 
     @property
     @override
@@ -131,7 +134,7 @@ class PostgresHandler(BackupHandler):
                 text=True,
                 env=env,
                 check=False,
-                timeout=_SUBPROCESS_TIMEOUT,
+                timeout=self._subprocess_timeout,
             )
             if result.returncode != 0:
                 raise RuntimeError(f"COPY {table} TO STDOUT failed: {result.stderr.strip()}")
@@ -160,7 +163,7 @@ class PostgresHandler(BackupHandler):
                 text=True,
                 env=env,
                 check=False,
-                timeout=_SUBPROCESS_TIMEOUT,
+                timeout=self._subprocess_timeout,
             )
             if result.returncode != 0:
                 raise RuntimeError(f"Failed to read sequence {seq}: {result.stderr.strip()}")
@@ -207,7 +210,7 @@ class PostgresHandler(BackupHandler):
             text=True,
             env=env,
             check=False,
-            timeout=_SUBPROCESS_TIMEOUT,
+            timeout=self._subprocess_timeout,
         )
         if result.returncode != 0:
             raise RuntimeError(f"DocumentDB catalog restore failed on {label}: {result.stderr.strip()}")
@@ -223,7 +226,7 @@ class PostgresHandler(BackupHandler):
             capture_output=True,
             env=env,
             check=False,
-            timeout=_SUBPROCESS_TIMEOUT,
+            timeout=self._subprocess_timeout,
         )
         if result.returncode != 0:
             raise subprocess.CalledProcessError(result.returncode, "pg_dumpall", stderr=result.stderr.decode())
@@ -244,7 +247,7 @@ class PostgresHandler(BackupHandler):
                 stderr=subprocess.PIPE,
                 env=env,
                 check=False,
-                timeout=_SUBPROCESS_TIMEOUT,
+                timeout=self._subprocess_timeout,
             )
         if result.returncode != 0:
             raise subprocess.CalledProcessError(result.returncode, "pg_dump", stderr=result.stderr.decode())
@@ -327,7 +330,7 @@ class PostgresHandler(BackupHandler):
                 text=True,
                 env=env,
                 check=False,
-                timeout=_SUBPROCESS_TIMEOUT,
+                timeout=self._subprocess_timeout,
             )
             if result.returncode != 0:
                 raise RuntimeError(f"Failed to drop database {db} on {label}: {result.stderr.strip()}")
@@ -343,7 +346,7 @@ class PostgresHandler(BackupHandler):
             text=True,
             env=env,
             check=False,
-            timeout=_SUBPROCESS_TIMEOUT,
+            timeout=self._subprocess_timeout,
         )
         if result.stderr:
             logger.info("[%s] Globals stderr: %s", label, result.stderr.strip()[:500])
@@ -376,7 +379,7 @@ class PostgresHandler(BackupHandler):
             text=True,
             env=env,
             check=False,
-            timeout=_SUBPROCESS_TIMEOUT,
+            timeout=self._subprocess_timeout,
         )
         if result.returncode != 0:
             raise RuntimeError(f"Failed to recreate postgres database on {label}: {result.stderr.strip()}")
@@ -410,7 +413,7 @@ class PostgresHandler(BackupHandler):
                 capture_output=True,
                 env=env,
                 check=False,
-                timeout=_SUBPROCESS_TIMEOUT,
+                timeout=self._subprocess_timeout,
             )
             if result.returncode != 0:
                 stderr_text = result.stderr.decode()
@@ -436,8 +439,7 @@ class PostgresHandler(BackupHandler):
                 return True
         return False
 
-    @staticmethod
-    def _list_all_databases(host: str, user: str, env: dict[str, str]) -> list[str]:
+    def _list_all_databases(self, host: str, user: str, env: dict[str, str]) -> list[str]:
         result = subprocess.run(
             [
                 "psql",
@@ -457,21 +459,20 @@ class PostgresHandler(BackupHandler):
             text=True,
             env=env,
             check=False,
-            timeout=_SUBPROCESS_TIMEOUT,
+            timeout=self._subprocess_timeout,
         )
         if result.returncode != 0:
             raise RuntimeError(f"Failed to list databases on {host}: {result.stderr.strip()}")
         return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
-    @staticmethod
-    def _run_sql(host: str, user: str, env: dict[str, str], sql: str) -> None:
+    def _run_sql(self, host: str, user: str, env: dict[str, str], sql: str) -> None:
         subprocess.run(
             ["psql", "-h", host, "-U", user, "-d", "postgres", "-X", "--tuples-only", "--no-align", "-c", sql],
             env=env,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=False,
-            timeout=_SUBPROCESS_TIMEOUT,
+            timeout=self._subprocess_timeout,
         )
 
     @staticmethod

@@ -21,6 +21,11 @@ class BackupSettings(BaseSettings):
     MONGO_USERNAME: str = "admin"
     MONGO_PASSWORD: SecretStr
 
+    # Subprocess timeout (seconds) for pg_dump / pg_restore / psql. Default 6h
+    # accommodates large dagster DBs (>100GB) where the previous 5min cap was
+    # impossible to meet. Operators with smaller deployments can lower this.
+    POSTGRES_SUBPROCESS_TIMEOUT_SECONDS: Annotated[int, Field(gt=0)] = 21_600
+
     MILVUS_HOST: str = "milvus-standalone"
     MILVUS_PORT: Annotated[int, Field(gt=0)] = 19530
     MILVUS_ROOT_PASSWORD: SecretStr
