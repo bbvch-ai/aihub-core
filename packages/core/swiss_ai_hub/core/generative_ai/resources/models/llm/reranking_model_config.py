@@ -35,7 +35,6 @@ class RerankingModelConfig(LiteLLMBase[CohereRerank]):
                 label=LocaleString.from_i18n_path("lib.reranking.config.model.label"),
                 help=LocaleString.from_i18n_path("lib.reranking.config.model.help"),
                 mode="rerank",
-                condition_if="$get(reranking_config_enabled).value",
             ),
             top_n=InputNumber(
                 label=LocaleString.from_i18n_path("lib.reranking.config.top_n.label"),
@@ -43,7 +42,6 @@ class RerankingModelConfig(LiteLLMBase[CohereRerank]):
                 min=1,
                 max=100,
                 step=1,
-                condition_if="$get(reranking_config_enabled).value",
             ),
         )
 
