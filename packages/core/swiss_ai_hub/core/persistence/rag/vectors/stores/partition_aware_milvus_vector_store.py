@@ -290,23 +290,15 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         self,
         node_ids: list[str] | None = None,
         filters: MetadataFilters | None = None,
+        namespaces: list[str] | None = None,
         **kwargs: Any,
     ) -> list[BaseNode]:
-        partition_names: list[str] | None = None
-        if filters is not None:
-            namespaces = self._extract_namespaces_from_metadata_filters(filters)
-            if namespaces:
-                partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
-        self._ensure_collection_loaded(partition_names)
-        # MilvusVectorStore.get_nodes rejects passing both node_ids and filters. When
-        # callers pass both (e.g. post-processors scoping by namespace), forward
-        # node_ids and pass partition scoping via milvus_partition_names so the
-        # underlying client.query is constrained to the right partition.
-        if partition_names is not None:
+        partition_names: list[str] | None = kwargs.get("milvus_partition_names")
+        if partition_names is None and namespaces:
+            partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
             kwargs.setdefault("milvus_partition_names", partition_names)
-        if node_ids is not None:
-            return super().get_nodes(node_ids=node_ids, **kwargs)
-        return super().get_nodes(filters=filters, **kwargs)
+        self._ensure_collection_loaded(partition_names)
+        return super().get_nodes(node_ids=node_ids, filters=filters, **kwargs)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
