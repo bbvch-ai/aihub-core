@@ -49,6 +49,10 @@ config:
     label: Abilita memoria organizzativa
     help: Se recuperare le memorie organizzative (conoscenze esperte condivise tra
       utenti) per il contesto.
+  rerank_organization_memory:
+    label: Riordina memoria organizzativa
+    help: Riordina i risultati della ricerca della memoria organizzativa con il reranker
+      configurato per una maggiore pertinenza. Aumenta la latenza e il costo.
   tenant_namespace:
     label: Namespace del tenant
     help: Namespace per l'isolamento della memoria a livello dipartimentale. Lasciare
@@ -56,6 +60,10 @@ config:
   enable_user_memory_retrieval:
     label: Abilita recupero memoria utente
     help: Se recuperare le memorie specifiche dell'utente per un contesto personalizzato.
+  rerank_user_memory:
+    label: Riordina memoria utente
+    help: Riordina i risultati della ricerca della memoria utente con il reranker
+      configurato per una maggiore pertinenza. Aumenta la latenza e il costo.
   enable_user_memory_storage:
     label: Abilita archiviazione memoria utente
     help: Se archiviare nuove memorie dalle conversazioni per il recupero futuro.
