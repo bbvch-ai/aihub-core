@@ -282,6 +282,19 @@ function buildNullableToggleNode(element: FormElement, label: string | undefined
   }
 }
 
+function applyNullableToggle(
+  element: FormElement,
+  baseNode: FormKitSchemaNode | FormKitSchemaNode[],
+  label: string | undefined,
+): FormKitSchemaNode[] {
+  const nodeArray = Array.isArray(baseNode) ? baseNode : [baseNode]
+  return [buildNullableToggleNode(element, label) as FormKitSchemaNode, ...nodeArray]
+}
+
+function gateElement(element: FormElement, toggleCondition: string): FormElement {
+  return { ...element, if: combineConditions(toggleCondition, element.if as string | undefined) }
+}
+
 /**
  * Transforms a form element to a FormKit schema node.
  * Handles groups specially by wrapping them in fieldsets when they have labels.
@@ -311,27 +324,43 @@ export function transformElementToSchema(
   const toggleCondition = isNullable ? `$${nullableToggleName(element.name as string)}` : undefined
 
   if (formkitType === 'group') {
-    const gatedElement = isNullable
-      ? { ...element, if: combineConditions(toggleCondition!, element.if as string | undefined) }
-      : element
+    const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    if (isNullable) {
-      const toggle = buildNullableToggleNode(element, label)
-      const groupArray = Array.isArray(groupNode) ? groupNode : [groupNode]
-      return [toggle as FormKitSchemaNode, ...groupArray]
-    }
-    return groupNode
+    return isNullable ? applyNullableToggle(element, groupNode, label) : groupNode
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
   if (children.length > 0) cleanNode.children = children
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    const toggle = buildNullableToggleNode(element, label)
-    return [toggle as FormKitSchemaNode, cleanNode as FormKitSchemaNode]
+    return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
   }
 
   return cleanNode as FormKitSchemaNode
+}
+
+function buildLeafNodeForRepeater(
+  element: FormElement,
+  formkitType: unknown,
+  label: string | undefined,
+  locale: string,
+  children: FormKitSchemaNode[],
+): Record<string, unknown> {
+  if (formkitType === 'localeInput') {
+    return buildLocaleInputProperties(element, label, locale)
+  }
+
+  const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+  for (const [key, value] of Object.entries(element)) {
+    if (EXCLUDED_FIELDS.has(key)) continue
+    if (value === undefined || value === null) continue
+    cleanNode[key] = value
+  }
+  if (label) cleanNode.label = label
+  const help = getLocalizedString(element.help, locale)
+  if (help) cleanNode.help = help
+  if (children.length > 0) cleanNode.children = children
+  return cleanNode
 }
 
 /**
@@ -353,45 +382,15 @@ export function transformElementForRepeater(
   const toggleCondition = isNullable ? `$${nullableToggleName(element.name as string)}` : undefined
 
   if (formkitType === 'group') {
-    const gatedElement = isNullable
-      ? { ...element, if: combineConditions(toggleCondition!, element.if as string | undefined) }
-      : element
+    const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    if (isNullable) {
-      const toggle = buildNullableToggleNode(element, label)
-      const groupArray = Array.isArray(groupNode) ? groupNode : [groupNode]
-      return [toggle as FormKitSchemaNode, ...groupArray]
-    }
-    return groupNode
+    return isNullable ? applyNullableToggle(element, groupNode, label) : groupNode
   }
 
-  // Handle localeInput specially
-  if (formkitType === 'localeInput') {
-    return buildLocaleInputProperties(element, label, locale) as FormKitSchemaNode
-  }
-
-  const cleanNode: Record<string, unknown> = { $formkit: formkitType }
-
-  // Pass through all properties except excluded ones
-  for (const [key, value] of Object.entries(element)) {
-    if (EXCLUDED_FIELDS.has(key)) continue
-    if (value === undefined || value === null) continue
-    cleanNode[key] = value
-  }
-
-  // Apply transformations for localized fields
-  if (label) cleanNode.label = label
-
-  const help = getLocalizedString(element.help, locale)
-  if (help) cleanNode.help = help
-
-  // Handle children separately (already transformed)
-  if (children.length > 0) cleanNode.children = children
-
+  const cleanNode = buildLeafNodeForRepeater(element, formkitType, label, locale, children)
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    const toggle = buildNullableToggleNode(element, label)
-    return [toggle as FormKitSchemaNode, cleanNode as FormKitSchemaNode]
+    return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
   }
 
   return cleanNode as FormKitSchemaNode
@@ -537,7 +536,7 @@ export function coerceNullableToggles(
     if (element.nullable === true) {
       const toggleKey = nullableToggleName(name)
       const enabled = result[toggleKey]
-      delete result[toggleKey]
+      Reflect.deleteProperty(result, toggleKey)
       if (enabled === false) {
         result[name] = null
         continue
@@ -562,7 +561,7 @@ export function coerceNullableToggles(
 
   for (const key of Object.keys(result)) {
     if (key.startsWith('__') && key.endsWith('__enabled')) {
-      delete result[key]
+      Reflect.deleteProperty(result, key)
     }
   }
 
