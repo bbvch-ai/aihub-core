@@ -61,7 +61,9 @@ packages/backup/swiss_ai_hub/backup/
 - **Asset graph**: session → 6 per-service assets → finalize (same structure for backup and restore)
 - **PostgreSQL**: `PostgresHandler` backs up both `postgres` and `postgres-ferretdb` in a single asset
 - **Container lifecycle**: All managed containers stopped before backup, restarted after. Excluded prefixes: `backup-`,
-  `seaweedfs-`, `etcd`, `traefik`
+  `seaweedfs-`, `etcd`, `traefik`, `oauth2proxy` (Traefik + all oauth2proxy sidecars stay up so the backup Dagster UI
+  remains reachable through OAuth during a backup run; note Keycloak still goes down with `postgres`, so existing
+  sessions work but token refresh will fail mid-run)
 - **Parallel ops**: `ThreadPoolExecutor` for container stop/start
 - **Failure safety**: `restart_on_failure` hook restarts all containers if backup crashes mid-run
 - **Sync by design**: All handlers are synchronous. Dagster ops execute in a sync context, and all I/O is process-local
