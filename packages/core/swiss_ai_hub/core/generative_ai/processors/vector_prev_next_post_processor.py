@@ -31,7 +31,7 @@ def traverse_nodes(
 
     # Carry the source node's namespace through to neighbour fetches so partition-aware
     # stores can scope the lookup to the correct partition instead of loading the whole
-    # collection.
+    # collection. Empty-string namespace (DEFAULT_METADATA) is treated as unscoped — no filter.
     namespace = current_node.metadata.get(NAMESPACE)
     filters: MetadataFilters | None = (
         MetadataFilters(filters=[MetadataFilter(key=NAMESPACE, value=namespace)]) if namespace else None

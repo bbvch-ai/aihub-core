@@ -48,6 +48,19 @@ class TestParentSummaryPostProcessorNamespaceFilter:
         _, kwargs = store.get_nodes.call_args
         assert kwargs["filters"] is None
 
+    def test_empty_string_namespace_is_treated_as_unscoped(self) -> None:
+        parent = TextNode(id_="parent", text="parent", metadata={TYPE: NODE_TYPE_SUMMARY, NAMESPACE: ""})
+        child = TextNode(id_="child", text="child", metadata={NAMESPACE: ""})
+        child.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id="parent")
+
+        store = _make_vector_store([parent])
+        processor = ParentSummaryPostProcessor.model_construct(vectorstore=store, max_levels=1)
+
+        processor.postprocess_nodes(nodes=[NodeWithScore(node=child, score=1.0)])
+
+        _, kwargs = store.get_nodes.call_args
+        assert kwargs["filters"] is None
+
 
 class TestVectorPrevNextNamespaceFilter:
     def test_forwards_namespace_as_metadata_filter(self) -> None:
@@ -76,3 +89,31 @@ class TestVectorPrevNextNamespaceFilter:
 
         _, kwargs = store.get_nodes.call_args
         assert kwargs["filters"] is None
+
+    def test_empty_string_namespace_is_treated_as_unscoped(self) -> None:
+        seed = TextNode(id_="n1", text="seed", metadata={NAMESPACE: ""})
+        neighbour = TextNode(id_="n2", text="next", metadata={NAMESPACE: ""})
+        seed.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id="n2")
+
+        store = _make_vector_store([neighbour])
+
+        traverse_nodes(NodeWithScore(node=seed, score=1.0), num_nodes=1, vectorstore=store, direction=ModeOptions.NEXT)
+
+        _, kwargs = store.get_nodes.call_args
+        assert kwargs["filters"] is None
+
+    def test_forwards_namespace_for_previous_direction(self) -> None:
+        seed = TextNode(id_="n2", text="seed", metadata={NAMESPACE: "tenant-c"})
+        neighbour = TextNode(id_="n1", text="prev", metadata={NAMESPACE: "tenant-c"})
+        seed.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id="n1", metadata={"index": 1})
+
+        store = _make_vector_store([neighbour])
+
+        traverse_nodes(
+            NodeWithScore(node=seed, score=1.0), num_nodes=1, vectorstore=store, direction=ModeOptions.PREVIOUS
+        )
+
+        _, kwargs = store.get_nodes.call_args
+        filters = kwargs["filters"]
+        assert isinstance(filters, MetadataFilters)
+        assert filters.filters == [MetadataFilter(key=NAMESPACE, value="tenant-c")]

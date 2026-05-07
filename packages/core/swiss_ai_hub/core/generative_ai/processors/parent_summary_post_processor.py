@@ -45,7 +45,8 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
         level = 0
 
         # Carry the source node's namespace through to parent fetches so partition-aware
-        # stores can scope the lookup to the correct partition.
+        # stores can scope the lookup to the correct partition. Empty-string namespace
+        # (DEFAULT_METADATA in node_metadata.py) is treated as unscoped — no filter.
         namespace = content_node.node.metadata.get(NAMESPACE)
         filters: MetadataFilters | None = (
             MetadataFilters(filters=[MetadataFilter(key=NAMESPACE, value=namespace)]) if namespace else None
