@@ -226,6 +226,8 @@ async def initialize_superuser_token() -> None:
     )
     logger.info(f"Superuser bearer token seeded for Keycloak user '{settings.USERNAME}' (id={keycloak_user.id})")
 
+    await KeycloakAdminService.ensure_active_tenant(keycloak_user.id)
+
 
 @no_trace
 async def initialize_knowledge_buckets() -> None:
