@@ -2611,7 +2611,8 @@ services:
       # Oauth2 config
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+      OAUTH_AUTHORITY_URL: {{ 'http://localhost:8180/realms/aihub' if stage == 'dev' else 'https://auth.${DOMAIN}/realms/aihub' }}
+
 
       # Azure Oauth2 config
       AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
@@ -2636,6 +2637,12 @@ services:
       AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
       AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
       AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+
+      # Startup tenant — must match the Keycloak realm's AIHUB_STARTUP_TENANT_ID
+      AIHUB_STARTUP_TENANT_ID: ${AIHUB_STARTUP_TENANT_ID}
+      AIHUB_STARTUP_TENANT_NAME: ${AIHUB_STARTUP_TENANT_NAME}
+      AIHUB_STARTUP_TENANT_DESCRIPTION: ${AIHUB_STARTUP_TENANT_DESCRIPTION}
+      AIHUB_STARTUP_TENANT_ACCESS_RULES: ${AIHUB_STARTUP_TENANT_ACCESS_RULES}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2761,7 +2768,7 @@ services:
     {%- endif %}
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+      OAUTH_AUTHORITY_URL: {{ 'http://localhost:8180/realms/aihub' if stage == 'dev' else 'https://auth.${DOMAIN}/realms/aihub' }}
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
     healthcheck:
