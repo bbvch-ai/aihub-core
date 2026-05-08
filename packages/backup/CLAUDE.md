@@ -61,11 +61,20 @@ packages/backup/swiss_ai_hub/backup/
 - **Asset graph**: session → 6 per-service assets → finalize (same structure for backup and restore)
 - **PostgreSQL**: `PostgresHandler` backs up both `postgres` and `postgres-ferretdb` in a single asset
 - **Container lifecycle**: All managed containers stopped before backup, restarted after. Excluded prefixes: `backup-`,
-  `seaweedfs-`, `etcd`, `traefik`
+  `seaweedfs-`, `etcd`, `traefik`, `oauth2proxy` (Traefik + all oauth2proxy sidecars stay up so the backup Dagster UI
+  remains reachable through OAuth during a backup run; note Keycloak still goes down with `postgres`, so existing
+  sessions work but token refresh will fail mid-run)
 - **Parallel ops**: `ThreadPoolExecutor` for container stop/start
 - **Failure safety**: `restart_on_failure` hook restarts all containers if backup crashes mid-run
 - **Sync by design**: All handlers are synchronous. Dagster ops execute in a sync context, and all I/O is process-local
   (Docker SDK, subprocess, boto3). Do not convert to async — this overrides the root-level "async consistently" rule
+- **Postgres subprocess timeout**: `BACKUP_POSTGRES_SUBPROCESS_TIMEOUT_SECONDS` (default 6h) caps every `pg_dump` /
+  `pg_restore` / `psql` invocation. Sized for >100GB dagster DBs; lower for small deployments. Wired through
+  `infra/deployment/templates/docker-compose.yml.j2` and `.env.{dev,prod}` so operators can override it without
+  rebuilding the container
+- **NATS readiness**: `NatsHandler._wait_for_ready` probes `stream list` (not `rtt`) so it actually checks JetStream,
+  and `_run_nats_subprocess` retries up to 3× on transient connect errors ("no servers available", "connection
+  refused/reset") with a re-probe between attempts. Non-transient errors (e.g. stream-not-found) surface immediately
 - **Adding a new handler**: Implement `BackupHandler` ABC in `services/`. If the handler needs Docker access, type-hint
   a `DockerManager` parameter in `__init__` — `create_handler()` introspects the signature to decide whether to inject
   it. Register the handler in `HANDLER_FACTORIES` in `handler_factory.py`
@@ -97,19 +106,20 @@ storage layer" plane. Three jobs share one `maintenance_session` asset:
    construction branch in `create_maintenance_handler()`.
 3. The Dagster asset wiring is automatic — `backup_definitions()` iterates `*_HANDLER_NAMES` to build assets.
 
-**Configuration** (env vars on the `BackupSettings` class):
+**Configuration** (env vars on the `BackupSettings` class — all carry the `BACKUP_` prefix at the OS level via
+`env_prefix="BACKUP_"`; field names below already include that prefix as operators would set them):
 
-| Setting                                        | Default   | Purpose                                                             |
-| ---------------------------------------------- | --------- | ------------------------------------------------------------------- |
-| `MAINTENANCE_DEBUG_LOG_RETENTION_DAYS`         | 7         | Keep DEBUG logs (level=10) for N days                               |
-| `MAINTENANCE_INFO_LOG_RETENTION_DAYS`          | 60        | Keep INFO logs (level=20) for N days                                |
-| `MAINTENANCE_WARNING_LOG_RETENTION_DAYS`       | 60        | Keep WARNING logs (level=30) for N days                             |
-| `MAINTENANCE_UNIMPORTANT_EVENT_RETENTION_DAYS` | 30        | Keep transient framework events for N days                          |
-| `MAINTENANCE_BATCH_LIMIT`                      | 1_000_000 | Cap rows per DELETE — protects against WAL spikes on backlogged DBs |
-| `MAINTENANCE_DISABLED`                         | false     | Kill switch — schedule becomes a no-op                              |
-| `MAINTENANCE_POSTGRES_HOST`                    | postgres  | Connect directly (not pgbouncer) for stable session-mode            |
-| `MAINTENANCE_POSTGRES_PORT`                    | 5432      |                                                                     |
-| `MAINTENANCE_DAGSTER_DB`                       | dagster   | DB name to maintain                                                 |
+| Setting                                               | Default   | Purpose                                                             |
+| ----------------------------------------------------- | --------- | ------------------------------------------------------------------- |
+| `BACKUP_DAGSTER_DEBUG_LOG_RETENTION_DAYS`             | 7         | Keep DEBUG logs (level=10) for N days                               |
+| `BACKUP_DAGSTER_INFO_LOG_RETENTION_DAYS`              | 60        | Keep INFO logs (level=20) for N days                                |
+| `BACKUP_DAGSTER_WARNING_LOG_RETENTION_DAYS`           | 60        | Keep WARNING logs (level=30) for N days                             |
+| `BACKUP_DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS`     | 30        | Keep transient framework events for N days                          |
+| `BACKUP_DAGSTER_CLEANUP_BATCH_LIMIT`                  | 1_000_000 | Cap rows per DELETE — protects against WAL spikes on backlogged DBs |
+| `BACKUP_MAINTENANCE_DISABLED`                         | false     | Kill switch — schedule becomes a no-op                              |
+| `BACKUP_POSTGRES_HOST`                                | postgres  | Connect directly (not pgbouncer) for stable session-mode            |
+| `BACKUP_POSTGRES_PORT`                                | 5432      |                                                                     |
+| `BACKUP_DAGSTER_DB`                                   | dagster   | DB name to maintain                                                 |
 
 **Failure isolation**: Each handler returns a `MaintenanceResult` rather than raising. The finalize asset aggregates and
 only fails the run if ANY handler reported `succeeded=False`. One failed cleanup never blocks the others.
