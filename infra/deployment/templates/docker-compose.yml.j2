@@ -2613,7 +2613,6 @@ services:
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH_AUTHORITY_URL: {{ 'http://localhost:8180/realms/aihub' if stage == 'dev' else 'https://auth.${DOMAIN}/realms/aihub' }}
 
-
       # Azure Oauth2 config
       AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
       AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
