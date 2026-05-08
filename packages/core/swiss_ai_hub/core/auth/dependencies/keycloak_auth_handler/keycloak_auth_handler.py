@@ -110,7 +110,7 @@ class KeycloakAuthHandler(AuthHandler):
             # Sync tenant memberships from JWT tenants claim
             tenants_claim = decoded_token.get("tenants", [])
             self._sync_tenant_memberships(sub, tenants_claim)
-            await self._ensure_active_tenant(sub)
+            await KeycloakAdminService.ensure_active_tenant(sub)
 
             return await self.build_identity(
                 user_id=sub,
@@ -210,8 +210,3 @@ class KeycloakAuthHandler(AuthHandler):
 
         for tenant_id in tenant_ids:
             KeycloakAuthHandler._ensure_membership_for_tenant(user_id, tenant_id)
-
-    @staticmethod
-    async def _ensure_active_tenant(user_id: str) -> None:
-        """Delegates to ``KeycloakAdminService.ensure_active_tenant``."""
-        await KeycloakAdminService.ensure_active_tenant(user_id)
