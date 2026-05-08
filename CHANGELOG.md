@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.286.7] - 2026-05-08 - Streamlined OAuth Configuration and Enhanced Tenant Setup
+
+### Added
+
+- ⚙️ **Introduced Startup Tenant Configuration:** New environment variables (`AIHUB_STARTUP_TENANT_ID`,
+  `AIHUB_STARTUP_TENANT_NAME`, `AIHUB_STARTUP_TENANT_DESCRIPTION`, `AIHUB_STARTUP_TENANT_ACCESS_RULES`) have been added
+  to support initial setup and management of a default "startup tenant", providing more granular control over Keycloak
+  realm integration.
+
+### Changed
+
+- 🔄 **Standardized OAuth Authority URL Configuration:** The `OAUTH_AUTHORITY_URL` is now dynamically configured based on
+  the deployment stage. It automatically points to `http://localhost:8180/realms/aihub` for development environments and
+  `https://auth.${DOMAIN}/realms/aihub` for all other stages, simplifying setup and reducing manual configuration.
+
+______________________________________________________________________
+
 ## [v0.286.6] - 2026-05-08 - Enhanced Backup Robustness and Configurability
 
 ### Added
