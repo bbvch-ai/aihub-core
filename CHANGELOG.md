@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.287.2] - 2026-05-11 - RAG Agents: Richer Context with Image Support
+
+### Changed
+
+- 🖼️ **Enhanced Context Sufficiency Guard**: RAG agents now pass the full `ChatMessage` objects, including images and
+  other rich content, to the context sufficiency guard, allowing Large Language Models (LLMs) to process multimodal
+  information more effectively.
+- 💬 **Improved Chat History Forwarding**: The chat history sent to the context sufficiency guard now retains its full
+  `ChatMessage` structure, enabling more accurate and rich conversational context for LLMs.
+
+### Refactor
+
+- 🧹 **Updated Guard Prompting Mechanism**: Switched the internal context sufficiency guard from `PromptTemplate` to
+  `RichPromptTemplate` to support dynamic rendering of multimodal `ChatMessage` objects within LLM prompts.
+- ⚙️ **Standardized Context Parameter**: Refactored the `do_context_sufficient_guard` function across RAG agents to
+  consistently accept a `ChatMessage` object for context, rather than a flattened string.
+
+______________________________________________________________________
+
 ## [v0.287.1] - 2026-05-11 - Optimized Vector Store Queries with Namespace Scoping
 
 ### Changed
