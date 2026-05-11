@@ -1,11 +1,11 @@
 # License Report
 
-Generated on: 05.05.2026
+Generated on: 08.05.2026
 
 This document contains license information for all dependencies across the monorepo:
 
 - Python packages (uv): **403 packages**
-- Node.js packages (pnpm): **1002 packages**
+- Node.js packages (pnpm): **1004 packages**
 - External Docker images: **33 images**
 
 ### License Compatibility
@@ -434,6 +434,7 @@ This document contains license information for all dependencies across the monor
 | ------ | -------------------------------------------------- | ------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | ✅     | @alloc/quick-lru                                   | 5.2.0         | MIT                                           |                                                                                                             |
 | ✅     | @antfu/install-pkg                                 | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | @antfu/utils                                       | 8.1.1         | MIT                                           |                                                                                                             |
 | ✅     | @babel/code-frame                                  | 7.28.6        | MIT                                           |                                                                                                             |
 | ✅     | @babel/compat-data                                 | 7.28.6        | MIT                                           |                                                                                                             |
 | ✅     | @babel/core                                        | 7.28.6        | MIT                                           |                                                                                                             |
@@ -511,7 +512,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | @humanwhocodes/retry                               | 0.4.3         | Apache-2.0                                    |                                                                                                             |
 | ✅     | @iconify/collections                               | 1.0.644       | MIT                                           |                                                                                                             |
 | ✅     | @iconify/types                                     | 2.0.0         | MIT                                           |                                                                                                             |
-| ✅     | @iconify/utils                                     | 3.1.1         | MIT                                           |                                                                                                             |
+| ✅     | @iconify/utils                                     | 2.3.0         | MIT                                           |                                                                                                             |
 | ✅     | @iconify/vue                                       | 5.0.0         | MIT                                           |                                                                                                             |
 | ✅     | @internationalized/date                            | 3.10.1        | Apache-2.0                                    |                                                                                                             |
 | ✅     | @internationalized/number                          | 3.6.5         | Apache-2.0                                    |                                                                                                             |
@@ -549,10 +550,10 @@ This document contains license information for all dependencies across the monor
 | ✅     | @nuxt/cli                                          | 3.32.0        | MIT                                           |                                                                                                             |
 | ✅     | @nuxt/devalue                                      | 2.0.2         | MIT                                           |                                                                                                             |
 | ✅     | @nuxt/devtools                                     | 3.1.1         | MIT                                           |                                                                                                             |
-| ✅     | @nuxt/devtools-kit                                 | 3.1.1         | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/devtools-kit                                 | 2.7.0         | MIT                                           |                                                                                                             |
 | ✅     | @nuxt/devtools-wizard                              | 3.1.1         | MIT                                           |                                                                                                             |
 | ✅     | @nuxt/fonts                                        | 0.14.0        | MIT                                           |                                                                                                             |
-| ✅     | @nuxt/icon                                         | 2.2.1         | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/icon                                         | 1.15.0        | MIT                                           |                                                                                                             |
 | ✅     | @nuxt/kit                                          | 3.15.4        | MIT                                           |                                                                                                             |
 | ✅     | @nuxt/nitro-server                                 | 3.21.0        | MIT                                           |                                                                                                             |
 | ✅     | @nuxt/schema                                       | 3.21.0        | MIT                                           |                                                                                                             |
@@ -1021,6 +1022,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | koa-convert                                        | 2.0.0         | MIT                                           |                                                                                                             |
 | ✅     | koa-send                                           | 5.0.1         | MIT                                           |                                                                                                             |
 | ✅     | koa-static                                         | 5.0.0         | MIT                                           |                                                                                                             |
+| ✅     | kolorist                                           | 1.8.0         | MIT                                           |                                                                                                             |
 | ✅     | launch-editor                                      | 2.12.0        | MIT                                           |                                                                                                             |
 | ✅     | lazystream                                         | 1.0.1         | MIT                                           |                                                                                                             |
 | ✅     | levn                                               | 0.4.1         | MIT                                           |                                                                                                             |
