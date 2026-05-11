@@ -2,6 +2,11 @@
 tenant_id:
   label: Mandanten-ID
   help: Mandantenkennung zur Eingrenzung von Organisationsspeicher-Lese- und Schreibvorgängen.
+allowed_tenant_namespaces:
+  entry:
+    label: Erlaubter Namespace
+    help: Ein Namespace, der für Lese-/Schreibvorgänge im Organisationsspeicher zulässig
+      ist. Liste leer lassen, um alle Namespaces zuzulassen.
 rerank_organization_memory:
   label: Organisationsspeicher neu ordnen
   help: Suchergebnisse des Organisationsspeichers mit dem konfigurierten Reranker

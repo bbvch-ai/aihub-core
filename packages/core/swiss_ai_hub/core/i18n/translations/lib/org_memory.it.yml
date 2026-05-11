@@ -3,6 +3,11 @@ tenant_id:
   label: ID tenant
   help: Identificatore del tenant utilizzato per limitare le letture e le scritture
     della memoria organizzativa.
+allowed_tenant_namespaces:
+  entry:
+    label: Namespace consentito
+    help: Un namespace consentito per letture/scritture nella memoria organizzativa.
+      Lasciare la lista vuota per consentire qualsiasi namespace.
 rerank_organization_memory:
   label: Riordina memoria organizzativa
   help: Riordina i risultati della ricerca della memoria organizzativa con il reranker

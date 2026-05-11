@@ -4,6 +4,7 @@ from pydantic import Field
 
 from swiss_ai_hub.core.form import Checkbox, InputText
 from swiss_ai_hub.core.generative_ai.memory.org_memory_write_config import OrgMemoryWriteConfig
+from swiss_ai_hub.core.generative_ai.memory.tenant_namespace_entry import TenantNamespaceEntry
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
@@ -27,6 +28,7 @@ class OrgMemoryReadConfig(OrgMemoryWriteConfig):
                 label=LocaleString.from_i18n_path("lib.org_memory.default_tenant_namespace.label"),
                 help=LocaleString.from_i18n_path("lib.org_memory.default_tenant_namespace.help"),
             ),
+            allowed_tenant_namespaces=[TenantNamespaceEntry.as_form()],
             rerank_organization_memory=Checkbox(
                 label=LocaleString.from_i18n_path("lib.org_memory.rerank_organization_memory.label"),
                 help=LocaleString.from_i18n_path("lib.org_memory.rerank_organization_memory.help"),
