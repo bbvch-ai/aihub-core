@@ -226,26 +226,28 @@ export function createMemoryComposables(context: MemoryContext) {
    */
   const useUpdateMemory = defineMutation(() => {
     const queryCache = useQueryCache()
+    const { tenantId } = useTenant()
 
     const { mutate: updateMemoryMutation } = useMutation({
-      mutation: async ({ memoryId, data, tenantId }: { memoryId: string, data: string, tenantId: string }) => {
+      mutation: async ({ memoryId, data }: { memoryId: string, data: string }) => {
+        const tenant = tenantId.value!
         if (type === 'user') {
           await updateUserMemory({
             composable: '$fetch',
-            path: { tenant_id: tenantId, memory_id: memoryId },
+            path: { tenant_id: tenant, memory_id: memoryId },
             body: { data },
           })
         }
         else {
           await updateOrganizationMemory({
             composable: '$fetch',
-            path: { tenant_id: tenantId, memory_id: memoryId },
+            path: { tenant_id: tenant, memory_id: memoryId },
             body: { data },
           })
         }
 
         // Invalidate cache to trigger refetch
-        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant }) })
       },
     })
 
@@ -257,45 +259,48 @@ export function createMemoryComposables(context: MemoryContext) {
    */
   const useDeleteMemory = defineMutation(() => {
     const queryCache = useQueryCache()
+    const { tenantId } = useTenant()
 
     const { mutate: deleteMemoryMutation } = useMutation({
-      mutation: async ({ memoryId, tenantId }: { memoryId: string, tenantId: string }) => {
+      mutation: async ({ memoryId }: { memoryId: string }) => {
+        const tenant = tenantId.value!
         if (type === 'user') {
           await deleteUserMemory({
             composable: '$fetch',
-            path: { tenant_id: tenantId, memory_id: memoryId },
+            path: { tenant_id: tenant, memory_id: memoryId },
           })
         }
         else {
           await deleteOrganizationMemory({
             composable: '$fetch',
-            path: { tenant_id: tenantId, memory_id: memoryId },
+            path: { tenant_id: tenant, memory_id: memoryId },
           })
         }
 
         // Invalidate cache to trigger refetch
-        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant }) })
       },
     })
 
     const { mutate: deleteAllMemoriesMutation } = useMutation({
-      mutation: async ({ tenantId }: { tenantId: string }) => {
+      mutation: async () => {
+        const tenant = tenantId.value!
         if (type === 'user') {
           await deleteAllUserMemories({
             composable: '$fetch',
-            path: { tenant_id: tenantId },
+            path: { tenant_id: tenant },
           })
         }
         else {
           await deleteAllOrganizationMemories({
             composable: '$fetch',
-            path: { tenant_id: tenantId },
+            path: { tenant_id: tenant },
           })
         }
 
         // Invalidate both list and search cache
-        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
-        queryCache.invalidateQueries({ key: getCacheKey('search', { tenant: tenantId }) })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant }) })
+        queryCache.invalidateQueries({ key: getCacheKey('search', { tenant }) })
       },
     })
 
