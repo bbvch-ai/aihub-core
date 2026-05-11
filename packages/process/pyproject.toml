@@ -2,7 +2,7 @@
 name = "swiss-ai-hub-process"
 version = "0.288.0"
 description = "agentic process automation"
-requires-python = ">=3.13, <3.15"
+requires-python = ">=3.13, <3.14"
 authors = [
     { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
     { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },

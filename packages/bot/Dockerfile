@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.14-slim AS builder
+FROM python:3.13-slim AS builder
 ARG VERSION
 
 COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /bin/
@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 # Runtime stage
-FROM python:3.14-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 ARG VERSION
 
