@@ -290,13 +290,13 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         self,
         node_ids: list[str] | None = None,
         filters: MetadataFilters | None = None,
+        namespaces: list[str] | None = None,
         **kwargs: Any,
     ) -> list[BaseNode]:
-        partition_names: list[str] | None = None
-        if filters is not None:
-            namespaces = self._extract_namespaces_from_metadata_filters(filters)
-            if namespaces:
-                partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
+        partition_names: list[str] | None = kwargs.get("milvus_partition_names")
+        if partition_names is None and namespaces:
+            partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
+            kwargs.setdefault("milvus_partition_names", partition_names)
         self._ensure_collection_loaded(partition_names)
         return super().get_nodes(node_ids=node_ids, filters=filters, **kwargs)
 
