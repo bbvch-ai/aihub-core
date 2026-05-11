@@ -204,7 +204,7 @@ class RAGAgent(Agent):
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         query = event.user_query
-        requested = event.org_memory_namespace if isinstance(event, RAGStartEvent) else None
+        requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
         tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
             requested=requested,
             configured=agent_config.memory.tenant_namespaces,

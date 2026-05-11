@@ -22,9 +22,9 @@ class AskExpertEvent(ControlEvent):
         str | None,
         Field(
             description=(
-                "Optional namespace for organization-memory writes. Must be in the agent profile's "
-                "`tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Required "
-                "when the agent profile lists more than one namespace (otherwise the write is ambiguous)."
+                "Optional namespace for organization-memory writes (writes are singular). Must be in the "
+                "agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. "
+                "Required when the agent profile lists more than one namespace (otherwise the write is ambiguous)."
             ),
         ),
     ] = None
