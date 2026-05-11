@@ -5,6 +5,111 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.288.0] - 2026-05-11 - Streamlined Optional Form Fields and Configuration Management
+
+### Refactor
+
+- 🔄 **Revised Form Optionality Handling:** Overhauled how optional form fields are managed, replacing explicit
+  `enabled: bool` flags with Pydantic's `T | None` annotations for improved data model clarity and consistency. This
+  architectural change is documented in `2026_05_07_nullable_form_fields_over_enabled_toggle.md`.
+- 🦾 **Unified UI Toggle Management:** Integrated UI toggle logic directly into the form framework, automatically
+  generating enable/disable checkboxes for nullable fields and groups. This standardizes the user experience and
+  significantly reduces boilerplate for optional settings.
+
+### Changed
+
+- ⚡️ **Simplified Agent Reranking Configuration:** Updated RAG and Expert RAG agents to leverage the new nullable field
+  system, removing the dedicated `enabled` field from `RerankingConfig` and simplifying internal logic to check for
+  `is not None`.
+- 🧹 **Cleaned Agent Configuration Data:** Agent configurations now store `null` for disabled optional sub-forms, leading
+  to smaller, more readable persisted data by eliminating stale default values.
+- 🚀 **Enhanced Frontend Form Data Processing:** Introduced new `seedNullableToggles` and `coerceNullableToggles`
+  functions to intelligently initialize and submit form data, correctly managing the state of auto-generated nullable
+  field toggles in the UI.
+
+### Removed
+
+- 🗑️ **Eliminated Redundant `enabled` Fields:** The dedicated `enabled` boolean fields in `RerankingConfig` and other
+  optional sub-configurations have been removed, as their functionality is now implicitly handled by the form framework
+  based on `T | None` annotations.
+- 📄 **Deprecated Reranking UI Conditions and Translations:** Removed `condition_if` properties that previously linked to
+  the `reranking_config_enabled` field, along with their associated internationalization strings, simplifying the UI
+  schema.
+
+______________________________________________________________________
+
+## [v0.287.3] - 2026-05-11 - Improved Memory Management API
+
+### Refactor
+
+- 🧹 **Streamlined Memory Operations:** Refactored memory update and delete functions to automatically derive the
+  **tenantId** from the application context, simplifying API calls and improving consistency for developers.
+
+______________________________________________________________________
+
+## [v0.287.2] - 2026-05-11 - RAG Agents: Richer Context with Image Support
+
+### Changed
+
+- 🖼️ **Enhanced Context Sufficiency Guard**: RAG agents now pass the full `ChatMessage` objects, including images and
+  other rich content, to the context sufficiency guard, allowing Large Language Models (LLMs) to process multimodal
+  information more effectively.
+- 💬 **Improved Chat History Forwarding**: The chat history sent to the context sufficiency guard now retains its full
+  `ChatMessage` structure, enabling more accurate and rich conversational context for LLMs.
+
+### Refactor
+
+- 🧹 **Updated Guard Prompting Mechanism**: Switched the internal context sufficiency guard from `PromptTemplate` to
+  `RichPromptTemplate` to support dynamic rendering of multimodal `ChatMessage` objects within LLM prompts.
+- ⚙️ **Standardized Context Parameter**: Refactored the `do_context_sufficient_guard` function across RAG agents to
+  consistently accept a `ChatMessage` object for context, rather than a flattened string.
+
+______________________________________________________________________
+
+## [v0.287.1] - 2026-05-11 - Optimized Vector Store Queries with Namespace Scoping
+
+### Changed
+
+- ⚡️ **Optimized Vector Store Node Retrieval:** Enhanced the efficiency of node retrieval across the platform by
+  propagating **namespace** information down to the vector store. This change, applied in the **Knowledge Service**,
+  **Parent Summary Post-Processor**, and **Vector Previous/Next Post-Processor**, ensures that queries are scoped to
+  specific data partitions, significantly improving performance and data isolation in multi-tenant environments.
+- 🔄 **Updated `PartitionAwareMilvusVectorStore`:** The `get_nodes` method in the `PartitionAwareMilvusVectorStore` now
+  explicitly accepts a `namespaces` argument, allowing for more precise and efficient querying within designated data
+  partitions.
+
+### Added
+
+- ✅ **Introduced Namespace Filter Propagation Tests:** Added new unit tests to verify the correct forwarding and
+  application of namespace filters within vector store post-processors, ensuring the reliability of partition-aware data
+  retrieval.
+
+______________________________________________________________________
+
+## [v0.287.0] - 2026-05-11 - Enhanced Memory Configuration for RAG Agents
+
+### Added
+
+- ✨ **Granular Memory Reranking Control**: Introduced new configuration options to enable or disable reranking
+  specifically for both **organization memory** and **user memory** searches. This provides greater control over
+  retrieval relevance and performance, allowing users to optimize for latency or accuracy as needed.
+
+### Refactor
+
+- 🧹 **Consolidated RAG Agent Memory Configuration**: Centralized all memory-related settings (including organization
+  memory enablement, user memory retrieval/storage, tenant ID, and namespace) into a new, dedicated **`MemoryConfig`
+  object**. This significantly streamlines agent configuration, improves readability, and simplifies future
+  enhancements.
+- 🔄 **Updated Agent Memory Access**: RAG agents and their preconditions now access all memory-related settings through
+  the consolidated `MemoryConfig` object, ensuring consistent and organized handling of memory configurations across the
+  system.
+
+______________________________________________________________________
+
+## [v0.286.8] - 2026-05-08 - Internal Maintenance
+
+______________________________________________________________________
+
 ## [v0.286.7] - 2026-05-08 - Streamlined OAuth Configuration and Enhanced Tenant Setup
 
 ### Added

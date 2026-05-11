@@ -2,7 +2,7 @@
   "name": "@swiss-ai-hub/web",
   "license": "Apache-2.0",
   "type": "module",
-  "version": "0.286.7",
+  "version": "0.288.0",
   "description": "Swiss AI Hub - Admin & Management UI (Nuxt 3 layer)",
   "main": "./nuxt.config.ts",
   "repository": {
@@ -45,7 +45,7 @@
     "@formkit/nuxt": "^2.0.0",
     "@hey-api/nuxt": "^0.2.1",
     "@nuxt/fonts": "^0.14.0",
-    "@nuxt/icon": "^2.2.1",
+    "@nuxt/icon": "^1.15.0",
     "@nuxtjs/i18n": "10.3.0",
     "@nuxtjs/mdc": "^0.21.1",
     "@nuxtjs/robots": "^6.0.8",

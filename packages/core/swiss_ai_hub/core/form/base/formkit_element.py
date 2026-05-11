@@ -25,6 +25,10 @@ class FormkitElement(BaseModel, abc.ABC):
         str | None, Field(description="Conditional expression to show this element", alias="if", pattern=r"^\$.+")
     ] = None
     ref: Annotated[str | None, Field(description="Unique identifier for this element", alias="id")] = None
+    nullable: Annotated[
+        bool,
+        Field(description="Render with a sibling toggle that sets this field to null when off"),
+    ] = False
 
     @abc.abstractmethod
     def in_locale(self, t: LocaleHandler) -> Self: ...

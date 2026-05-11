@@ -2,10 +2,11 @@ from typing import Annotated, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.form import Checkbox, InputNumber, InputText, LocaleInput
-from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig, LLMConfig, MemorySettings
+from swiss_ai_hub.core.form import InputNumber, LocaleInput
+from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 
+from swiss_ai_hub.agent.agents.rag_agent.configs.memory_config import MemoryConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
@@ -68,30 +69,10 @@ class RAGAgentConfig(AgentConfig):
             title="Few-Shot Guard Examples",
         ),
     ] = []
-
-    # Organization memory configuration
-    enable_organization_memory: Annotated[
-        bool | Checkbox,
-        Field(description="Whether to retrieve organization memories (expert knowledge) for context."),
-    ] = True
-    tenant_id: Annotated[
-        str,
-        Field(description="Tenant ID for organization memory scoping."),
-    ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID)
-    tenant_namespace: Annotated[
-        str | InputText | None,
-        Field(description="Tenant namespace for department-level memory isolation. Uses default if None."),
-    ] = None
-
-    # User memory configuration
-    enable_user_memory_retrieval: Annotated[
-        bool | Checkbox,
-        Field(description="Whether to retrieve user-specific memories for personalized context."),
-    ] = True
-    enable_user_memory_storage: Annotated[
-        bool | Checkbox,
-        Field(description="Whether to store new memories from conversations for future retrieval."),
-    ] = True
+    memory: Annotated[
+        MemoryConfig,
+        Field(description="Configuration for user and organization memory.", title="Memory"),
+    ] = MemoryConfig()
 
     @classmethod
     def as_form(cls) -> Self:
@@ -125,22 +106,5 @@ class RAGAgentConfig(AgentConfig):
                 help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_prompt.help"),
                 input_type="textarea",
             ),
-            enable_organization_memory=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_organization_memory.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_organization_memory.help"),
-                ref="check_organization_memory_enabled",
-            ),
-            tenant_namespace=InputText(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.tenant_namespace.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.tenant_namespace.help"),
-                condition_if="$get(check_organization_memory_enabled).value",
-            ),
-            enable_user_memory_retrieval=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_retrieval.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_retrieval.help"),
-            ),
-            enable_user_memory_storage=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_storage.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_storage.help"),
-            ),
+            memory=MemoryConfig.as_form(),
         )
