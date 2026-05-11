@@ -5513,7 +5513,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub-agent"
-version = "0.286.4"
+version = "0.288.0"
 source = { editable = "packages/agent" }
 dependencies = [
     { name = "fastmcp" },
@@ -5546,7 +5546,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-api"
-version = "0.286.4"
+version = "0.288.0"
 source = { editable = "packages/api" }
 dependencies = [
     { name = "audioop-lts" },
@@ -5591,7 +5591,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "stringcase", specifier = ">=1.2.0" },
     { name = "swiss-ai-hub-core", editable = "packages/core" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.46.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -5599,7 +5599,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-backup"
-version = "0.286.4"
+version = "0.288.0"
 source = { editable = "packages/backup" }
 dependencies = [
     { name = "boto3" },
@@ -5634,7 +5634,7 @@ requires-dist = [
     { name = "dagster", specifier = ">=1.11.2" },
     { name = "dagster-webserver", specifier = ">=1.11.2" },
     { name = "docker", specifier = ">=7.0" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pydantic", specifier = ">=2.10.3" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
     { name = "pymilvus", specifier = ">=2.6.9" },
@@ -5656,7 +5656,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-bot"
-version = "0.286.4"
+version = "0.288.0"
 source = { editable = "packages/bot" }
 dependencies = [
     { name = "azure-identity" },
@@ -5701,7 +5701,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-core"
-version = "0.286.4"
+version = "0.288.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "adlfs" },
@@ -5796,7 +5796,7 @@ requires-dist = [
     { name = "llama-index-storage-docstore-mongodb", specifier = ">=0.4.1" },
     { name = "llama-index-vector-stores-milvus", specifier = ">=0.9.4" },
     { name = "lxml", specifier = ">=5.4.0" },
-    { name = "markitdown", extras = ["docx", "outlook", "pptx", "xlsx"], specifier = ">=0.1.5" },
+    { name = "markitdown", extras = ["docx", "outlook", "pptx", "xlsx"], specifier = ">=0.1.4" },
     { name = "mem0ai", extras = ["graph"], specifier = ">=1.0.2,<2" },
     { name = "mongoengine", specifier = ">=0.29.1" },
     { name = "nats-py", specifier = ">=2.9.0" },
@@ -5844,7 +5844,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-pipeline"
-version = "0.286.4"
+version = "0.288.0"
 source = { editable = "packages/pipeline" }
 dependencies = [
     { name = "apprise" },
@@ -5874,7 +5874,7 @@ dev = []
 
 [[package]]
 name = "swiss-ai-hub-process"
-version = "0.286.4"
+version = "0.288.0"
 source = { editable = "packages/process" }
 dependencies = [
     { name = "httpx" },
@@ -5892,7 +5892,7 @@ dev = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "swiss-ai-hub-core", editable = "packages/core" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.46.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -5903,7 +5903,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-workspace"
-version = "0.286.4"
+version = "0.288.0"
 source = { virtual = "." }
 dependencies = [
     { name = "jinja2" },
@@ -5944,7 +5944,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
-    { name = "huggingface-hub", extras = ["cli"], specifier = ">=0.34.4" },
+    { name = "huggingface-hub", specifier = ">=0.36.2" },
     { name = "mdformat", specifier = ">=0.7.21" },
     { name = "mdformat-gfm", specifier = ">=0.4.1" },
     { name = "mdformat-myst", specifier = ">=0.2.1" },

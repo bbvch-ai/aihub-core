@@ -30,7 +30,7 @@ dev = [
     "mdformat-pyproject>=0.0.2",
     "mdformat-vuepress>=0.1.0",
     "mdformat-myst>=0.2.1",
-    "huggingface-hub[cli]>=0.36.2",
+    "huggingface-hub>=0.36.2",
     "tomlkit>=0.13.3",
     "yamlfix>=1.19.1",
 ]
