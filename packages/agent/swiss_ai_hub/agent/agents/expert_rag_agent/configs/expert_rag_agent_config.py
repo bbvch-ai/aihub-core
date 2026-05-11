@@ -1,6 +1,7 @@
 from typing import Annotated, Self
 
 from pydantic import Field
+from swiss_ai_hub.core.generative_ai import MemorySettings
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import ExpertEscalationConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
@@ -21,15 +22,15 @@ class ExpertRAGAgentConfig(RAGAgentConfig):
         ExpertEscalationConfig,
         Field(description="Expert escalation config. Required for ExpertRAGAgent.", title="Expert Escalation"),
     ]
-    org_memory_write_namespace: Annotated[
+    tenant_namespace: Annotated[
         str | None,
         Field(
             description=(
-                "Namespace to pass to the downstream ExpertAsking agent for storing expert-conversation memories. "
-                "None defers to ExpertAsking's own `org_memory_write_namespace`."
+                "Namespace passed to the downstream ExpertAsking agent for storing expert-conversation memories. "
+                "None defers to ExpertAsking's own `tenant_namespace`."
             ),
         ),
-    ] = None
+    ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_NAMESPACE)
 
     @classmethod
     def as_form(cls) -> Self:

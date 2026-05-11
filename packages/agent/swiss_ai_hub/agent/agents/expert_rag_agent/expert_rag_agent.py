@@ -519,7 +519,7 @@ class ExpertRAGAgent(Agent):
                 question_to_expert=user_message_event.user_query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
-                org_memory_namespace=agent_config.org_memory_write_namespace,
+                org_memory_namespace=agent_config.tenant_namespace,
             ),
         )
 

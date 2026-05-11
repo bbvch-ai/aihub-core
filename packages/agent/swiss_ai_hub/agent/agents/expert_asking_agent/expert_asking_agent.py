@@ -153,7 +153,7 @@ class ExpertAskingAgent(Agent):
 
             # Store expert conversation as organization memory
             memory_text = f"Question: {initial_question_event.question_to_expert}\n\nExpert Answer: {event.response}"
-            tenant_namespace = initial_question_event.org_memory_namespace or agent_config.org_memory_write_namespace
+            tenant_namespace = initial_question_event.org_memory_namespace or agent_config.tenant_namespace
             memory_added = await memory.add_organization_memory(
                 memory=memory_text,
                 user_id=initial_question_event.user.id,
