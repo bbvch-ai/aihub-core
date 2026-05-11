@@ -172,42 +172,33 @@ def test_maintenance_handlers_depend_on_session() -> None:
         assert "maintenance/session" in parent_strings, f"{key_str} should depend on maintenance/session"
 
 
-def test_cleanup_delete_handlers_depend_on_postgres_indexes() -> None:
-    """The four DELETE handlers must run AFTER postgres_indexes so the cleanup
-    queries use the partial indexes instead of seq-scanning event_logs.
-    Regression guard for the missing-deps bug originally raised on PR #1040."""
+def test_cleanup_handlers_depend_on_postgres_indexes() -> None:
+    """All other cleanup handlers must run AFTER postgres_indexes.
+
+    - The four DELETE handlers need the partial indexes in place to avoid
+      seq-scanning event_logs (originally raised on PR #1040).
+    - postgres_autovacuum_tune's ALTER TABLE takes the same
+      ShareUpdateExclusiveLock on event_logs as CREATE INDEX CONCURRENTLY;
+      running them in parallel deadlocks. ShareUpdateExclusive is compatible
+      with RowExclusive (DELETE), so once indexes is done, autovacuum_tune
+      can run in parallel with the DELETE handlers.
+    """
     defs = backup_definitions()
     asset_graph = defs.resolve_asset_graph()
 
-    delete_handlers = [
+    handlers_depending_on_indexes = [
         "maintenance/dagster_debug_logs",
         "maintenance/dagster_info_logs",
         "maintenance/dagster_warning_logs",
         "maintenance/dagster_unimportant_events",
+        "maintenance/postgres_autovacuum_tune",
     ]
-    for key_str in delete_handlers:
+    for key_str in handlers_depending_on_indexes:
         matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == key_str]
         parent_strings = {p.to_user_string() for p in asset_graph.get(matching[0]).parent_keys}
         assert "maintenance/postgres_indexes" in parent_strings, (
             f"{key_str} must depend on maintenance/postgres_indexes (got parents: {parent_strings})"
         )
-
-
-def test_postgres_indexes_depends_on_autovacuum_tune() -> None:
-    """postgres_indexes must run AFTER postgres_autovacuum_tune.
-
-    Both take ShareUpdateExclusiveLock on event_logs (CREATE INDEX CONCURRENTLY
-    and ALTER TABLE SET respectively) — running them in parallel deadlocks
-    because CREATE INDEX CONCURRENTLY's phase-2 vxid wait closes the cycle.
-    autovacuum_tune is cheap, so it goes first."""
-    defs = backup_definitions()
-    asset_graph = defs.resolve_asset_graph()
-    matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == "maintenance/postgres_indexes"]
-    parent_strings = {p.to_user_string() for p in asset_graph.get(matching[0]).parent_keys}
-    assert "maintenance/postgres_autovacuum_tune" in parent_strings, (
-        f"maintenance/postgres_indexes must depend on maintenance/postgres_autovacuum_tune "
-        f"(got parents: {parent_strings})"
-    )
 
 
 def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
