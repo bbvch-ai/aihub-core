@@ -73,23 +73,38 @@ def backup_definitions() -> Definitions:
     repack_finalize_key = AssetKey(["maintenance", "repack_finalize"])
 
     maintenance_session_asset = maintenance_session_factory(maintenance_session_key)
-    # The four DELETE handlers must run AFTER postgres_indexes so the first run
-    # on a backlogged DB uses the partial indexes instead of seq-scanning. The
-    # autovacuum tune is independent (idempotent ALTER TABLE, milliseconds).
+    # Ordering: postgres_autovacuum_tune → postgres_indexes → DELETE handlers.
+    #
+    # - postgres_autovacuum_tune's ALTER TABLE event_logs SET (...) takes
+    #   ShareUpdateExclusiveLock on event_logs — the same lock CREATE INDEX
+    #   CONCURRENTLY holds. Running them in parallel deadlocks: CREATE INDEX
+    #   CONCURRENTLY's phase-2 wait on the ALTER TABLE vxid closes the cycle.
+    #   It's cheap (ms), so it runs first.
+    # - The DELETE handlers depend on postgres_indexes so the first run on a
+    #   backlogged DB uses the partial indexes instead of seq-scanning.
     indexes_key = cleanup_service_keys["postgres_indexes"]
+    autovacuum_key = cleanup_service_keys["postgres_autovacuum_tune"]
     deps_on_indexes = {
         "dagster_debug_logs",
         "dagster_info_logs",
         "dagster_warning_logs",
         "dagster_unimportant_events",
     }
+
+    def _extra_deps(name: str) -> list[AssetKey] | None:
+        if name == "postgres_indexes":
+            return [autovacuum_key]
+        if name in deps_on_indexes:
+            return [indexes_key]
+        return None
+
     cleanup_service_assets = [
         maintenance_service_factory(
             key,
             maintenance_session_key,
             name,
             f"Maintenance: {name}",
-            extra_deps=[indexes_key] if name in deps_on_indexes else None,
+            extra_deps=_extra_deps(name),
         )
         for name, key in cleanup_service_keys.items()
     ]

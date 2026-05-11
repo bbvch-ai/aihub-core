@@ -193,6 +193,23 @@ def test_cleanup_delete_handlers_depend_on_postgres_indexes() -> None:
         )
 
 
+def test_postgres_indexes_depends_on_autovacuum_tune() -> None:
+    """postgres_indexes must run AFTER postgres_autovacuum_tune.
+
+    Both take ShareUpdateExclusiveLock on event_logs (CREATE INDEX CONCURRENTLY
+    and ALTER TABLE SET respectively) — running them in parallel deadlocks
+    because CREATE INDEX CONCURRENTLY's phase-2 vxid wait closes the cycle.
+    autovacuum_tune is cheap, so it goes first."""
+    defs = backup_definitions()
+    asset_graph = defs.resolve_asset_graph()
+    matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == "maintenance/postgres_indexes"]
+    parent_strings = {p.to_user_string() for p in asset_graph.get(matching[0]).parent_keys}
+    assert "maintenance/postgres_autovacuum_tune" in parent_strings, (
+        f"maintenance/postgres_indexes must depend on maintenance/postgres_autovacuum_tune "
+        f"(got parents: {parent_strings})"
+    )
+
+
 def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
     """All jobs that touch Postgres must carry ``postgres-mutex=true`` so the
     QueuedRunCoordinator serializes them. Without the tag, a cleanup tick could
@@ -205,10 +222,3 @@ def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
         )
 
 
-def test_postgres_indexes_does_not_depend_on_other_handlers() -> None:
-    """postgres_indexes must run FIRST — it should depend only on session."""
-    defs = backup_definitions()
-    asset_graph = defs.resolve_asset_graph()
-    matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == "maintenance/postgres_indexes"]
-    parent_strings = {p.to_user_string() for p in asset_graph.get(matching[0]).parent_keys}
-    assert parent_strings == {"maintenance/session"}
