@@ -212,6 +212,36 @@ jobs:
         with:
           name: licenses
           path: LICENSE_REPORT.md
+  env-docs:
+    name: Generate Environment Variables Reference
+    needs: [compute-and-initial-tag]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Use Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install Dependencies
+        run: uv sync --all-packages --dev --frozen
+      - name: Generate compose files
+        run: make generate-compose
+      - name: Generate environment-variables reference page
+        run: make generate-env-docs
+      - name: Upload env-docs artifact
+        if: ${{ hashFiles('docs/docs/2_platform/3_deployment_guide/9_environment_variables/index.en.md') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: env-docs
+          path: docs/docs/2_platform/3_deployment_guide/9_environment_variables/index.en.md
   sync-docs:
     name: Sync Documentation Translations
     needs: [compute-and-initial-tag]
@@ -261,6 +291,7 @@ jobs:
       - compute-and-initial-tag
       - changelog
       - license-report
+      - env-docs
       - sync-docs
     runs-on: ubuntu-latest
     steps:
@@ -286,6 +317,12 @@ jobs:
         with:
           name: licenses
           path: .
+        continue-on-error: true
+      - name: Download env-docs (if any)
+        uses: actions/download-artifact@v8
+        with:
+          name: env-docs
+          path: docs/docs/2_platform/3_deployment_guide/9_environment_variables/
         continue-on-error: true
       - name: Download docs (if any)
         uses: actions/download-artifact@v8

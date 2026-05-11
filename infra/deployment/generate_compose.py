@@ -13,6 +13,12 @@ from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
+# Note: env_check / env_docs / env_inventory are imported lazily inside the
+# CLI branches that need them. They depend on pydantic_settings, which is only
+# installed when `uv sync --all-packages` has run. CI workflows that only do
+# `make generate-compose` (e.g. test-backup-e2e.yml) skip the all-packages sync,
+# so these imports must not fire at module load time.
+
 # Paths
 REPO_ROOT = Path(__file__).parent.parent.parent.resolve()
 ROOT_DIR = Path(__file__).parent.parent.resolve()
@@ -192,12 +198,12 @@ def _release_compose_header(project, version, gpu_enabled):
     variant = "GPU-enabled" if gpu_enabled else "CPU-only"
     return (
         f"# {project} {version} - Docker Compose Configuration ({variant})\n"
-        f"#\n"
+        "#\n"
         f"# This is the {'GPU-enabled' if gpu_enabled else 'CPU-only (no GPU)'} deployment configuration.\n"
         + (
-            f"# It includes GPU-accelerated services such as vLLM and Speaches.\n"
+            "# It includes GPU-accelerated services such as vLLM and Speaches.\n"
             if gpu_enabled
-            else f"# GPU-accelerated services are excluded from this configuration.\n"
+            else "# GPU-accelerated services are excluded from this configuration.\n"
         )
         + f"# For the {'CPU-only' if gpu_enabled else 'GPU-enabled'} variant, "
         f"see the {project}-{version}{'' if gpu_enabled else '-gpu'} bundle.\n\n"
@@ -255,6 +261,13 @@ def generate_release(env, config_data, version, output_dir, project):
     clean filenames without stage/hardware suffixes.
 
     Output folders: <project>-<version> (CPU) and <project>-<version>-gpu (GPU).
+
+    Note: env/compose consistency is verified separately via `make check-env`,
+    which diffs `.env.prod` against the same `latest`-stage compose files this
+    function would produce. There is no point re-running the same check here
+    after the bundle is already on disk — it can't undo the writes, and the
+    strict-mode caller path is always coupled to the dedicated `--check-env`
+    invocation.
     """
     _pin_image_tags_to_version(config_data, version)
     stats = {}
@@ -353,6 +366,21 @@ def parse_args():
         metavar="PATH",
         help="Output directory for release artifacts (default: project root)",
     )
+    parser.add_argument(
+        "--strict-env-check",
+        action="store_true",
+        help="Fail if .env.template defines unused vars or compose references undefined vars",
+    )
+    parser.add_argument(
+        "--check-env",
+        action="store_true",
+        help="Run env/compose consistency check against .env.prod and rendered latest compose files (no generation)",
+    )
+    parser.add_argument(
+        "--write-env-docs",
+        action="store_true",
+        help="Generate the environment-variables reference page in docs/",
+    )
     return parser.parse_args()
 
 
@@ -361,6 +389,43 @@ def main():
 
     config_data = load_config()
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
+
+    if args.check_env:
+        from env_check import check_env_vs_compose
+        from env_inventory import build_consumers
+
+        env_file = REPO_ROOT / ".env.prod"
+        compose_cpu = ROOT_DIR / "docker-compose.latest.yml"
+        compose_gpu = ROOT_DIR / "docker-compose.latest.gpu.yml"
+        if not compose_cpu.exists() or not compose_gpu.exists():
+            print("ERROR: Run `make generate-compose` first to produce latest compose files", file=sys.stderr)
+            sys.exit(1)
+        consumers = build_consumers()
+        # Run both variants non-strict so the report covers CPU AND GPU even
+        # when one fails. Apply the strict-exit decision in aggregate:
+        #   strict=True  → exit 1 if any variant has errors
+        #   strict=False → always exit 0 (report-only, useful for local runs)
+        ok_cpu = check_env_vs_compose(env_file, compose_cpu, consumers, "latest CPU", strict=False)
+        ok_gpu = check_env_vs_compose(env_file, compose_gpu, consumers, "latest GPU", strict=False)
+        all_ok = ok_cpu and ok_gpu
+        sys.exit(1 if args.strict_env_check and not all_ok else 0)
+
+    if args.write_env_docs:
+        from env_docs import write_env_var_docs
+        from env_inventory import build_consumers
+
+        consumers = build_consumers()
+        compose_variants = {
+            "CPU": ROOT_DIR / "docker-compose.latest.yml",
+            "GPU": ROOT_DIR / "docker-compose.latest.gpu.yml",
+        }
+        if not all(p.exists() for p in compose_variants.values()):
+            print("ERROR: Run `make generate-compose` first to produce latest compose files", file=sys.stderr)
+            sys.exit(1)
+        docs_path = REPO_ROOT / "docs/docs/2_platform/3_deployment_guide/9_environment_variables/index.en.md"
+        write_env_var_docs(docs_path, consumers, compose_variants)
+        print(f"Wrote env-var docs to {docs_path.relative_to(REPO_ROOT)}")
+        return
 
     if args.release:
         version = args.tag

@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.288.1] - 2026-05-11 - Streamlined Environment Configuration and Validation
+
+### Added
+
+- 📄 **Introduced a comprehensive, auto-generated environment variables reference page** in the documentation, providing
+  a single source of truth for all configurable settings.
+- 🚀 **Implemented automated consistency checks** for environment variables against Docker Compose configurations and
+  Pydantic settings during PR analysis and release workflows, enhancing deployment reliability.
+- 🔑 **Integrated Keycloak OAuth2 Proxy client for the Backup Dagster UI**, enabling secure, centrally managed access to
+  backup management interfaces.
+- 💾 **Added explicit support for Azure Data Lake Storage, Azure Document Intelligence, and SharePoint** by introducing
+  dedicated environment variables for their configurations, facilitating data ingestion from these sources.
+- 🔐 **Introduced new internal environment variables for NATS and Redis/Valkey tokens**, improving security and granular
+  configuration control for these messaging and caching services.
+- 👷‍♀️ **New `check-env` and `generate-env-docs` Makefile targets** for manual execution of environment validation and
+  documentation generation.
+
+### Changed
+
+- 📝 **Reorganized the `.env.dev` file structure**, moving host-side development overrides to a dedicated section for
+  improved clarity and maintainability.
+- 🔄 **Standardized OAuth2 Proxy provider display names to "Keycloak"** across various services in Docker Compose
+  templates, ensuring a consistent user experience.
+- ⚙️ **Made Mem0 model names fully configurable** via environment variables (`MEM0_LLM_NAME`,
+  `MEM0_EMBEDDING_MODEL_NAME`, `MEM0_RERANKING_MODEL_NAME`) in Docker Compose, offering greater flexibility for AI model
+  selection.
+- 🔄 **Updated the default `AIHUB_STARTUP_TENANT_ID`** from `'swiss_ai_hub'` to `'default'` for a more generic initial
+  platform setup.
+- 🔒 **Hardcoded the Langfuse `NEXTAUTH_URL`** directly within Docker Compose templates based on the deployment stage
+  (dev/prod), simplifying configuration by removing reliance on an `.env` variable for this specific setting.
+- 📈 **Fixed pgbouncer pool size values** to constant values within Docker Compose, removing optional environment
+  variable overrides for these specific parameters.
+- 📚 **Improved documentation comments** within `.env.dev` to more clearly explain sections and variable usage.
+- 🧹 **Added root-level Ruff configuration** to `pyproject.toml` for consistent code formatting across repository-level
+  scripts.
+
+### Removed
+
+- 🗑️ **Removed the redundant `WEBUI_SECRET_KEY` environment variable**, as its functionality is now consolidated under
+  `OPENWEBUI_SECRET_KEY`.
+- ❌ **Eliminated deprecated fake authentication variables** (`DANGEROUS_DEV_ONLY_AUTH_FAKE_*`) previously used for
+  development-only testing.
+- 🗑️ **Removed the explicit `AIHUB_CREATE_DEFAULT_ROLES` environment variable**, as role creation now defaults to `True`
+  within the application code.
+- 🗑️ **Removed `OAUTH_AUTHORITY_URL`** from `.env.prod`.
+
+### Refactor
+
+- 🧹 **Centralized environment variable management logic** into new Python modules (`env_check.py`, `env_docs.py`,
+  `env_inventory.py`) to streamline validation, documentation generation, and overall configuration handling.
+
+______________________________________________________________________
+
 ## [v0.288.0] - 2026-05-11 - Streamlined Optional Form Fields and Configuration Management
 
 ### Refactor

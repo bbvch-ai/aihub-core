@@ -541,7 +541,7 @@ services:
     ports: [6006:3000]
     environment:
       HOSTNAME: 0.0.0.0
-      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL}
+      NEXTAUTH_URL: http://localhost:6006
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
       SALT: ${LANGFUSE_SALT}
@@ -1251,7 +1251,7 @@ services:
       ENABLE_OAUTH_ROLE_MANAGEMENT: true
       OAUTH_ROLES_CLAIM: roles
       OAUTH_ADMIN_ROLES: ${OAUTH_ADMIN_ROLES_OPENWEBUI}
-      OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH_PROVIDER_NAME: Keycloak
       OAUTH_CLIENT_ID: openwebui
       OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
       OPENID_PROVIDER_URL: http://localhost:8180/realms/aihub/.well-known/openid-configuration
