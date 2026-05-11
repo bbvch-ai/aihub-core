@@ -6,7 +6,7 @@ from swiss_ai_hub.core.events.agent import SlackConfig, TeamsConfig
 from swiss_ai_hub.core.form import InputNumber, Select
 from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.form.form import Form
-from swiss_ai_hub.core.generative_ai import LLMConfig, OrgMemoryConfig
+from swiss_ai_hub.core.generative_ai import LLMConfig, OrgMemoryWriteConfig
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -83,7 +83,7 @@ class ExpertAskingAgentConfig(AgentConfig):
         Gt(0),
     ] = 3
     org_memory: Annotated[
-        OrgMemoryConfig | None,
+        OrgMemoryWriteConfig | None,
         Field(
             description=(
                 "Configuration for organization-memory scoping. Set to null to disable writing "
@@ -91,7 +91,7 @@ class ExpertAskingAgentConfig(AgentConfig):
             ),
             title="Organization Memory",
         ),
-    ] = Field(default_factory=OrgMemoryConfig)
+    ] = Field(default_factory=OrgMemoryWriteConfig)
 
     channel_config: Annotated[
         ChannelConfig,
@@ -116,7 +116,7 @@ class ExpertAskingAgentConfig(AgentConfig):
                 step=1,
             ),
             channel_config=ChannelConfig.as_form(),
-            org_memory=OrgMemoryConfig.as_form(),
+            org_memory=OrgMemoryWriteConfig.as_form(),
         )
 
     def get_active_channel_config(self) -> TeamsConfig | SlackConfig | None:

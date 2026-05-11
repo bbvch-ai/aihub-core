@@ -3,7 +3,12 @@ from typing import Annotated, Self
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput
-from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig, LLMConfig, OrgMemoryConfig
+from swiss_ai_hub.core.generative_ai import (
+    FewShotGuardExample,
+    KnowledgeRetrieverConfig,
+    LLMConfig,
+    OrgMemoryReadConfig,
+)
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
@@ -74,12 +79,12 @@ class RAGAgentConfig(AgentConfig):
         Field(description="Configuration for user-scoped memory.", title="User Memory"),
     ] = UserMemoryConfig()
     org_memory: Annotated[
-        OrgMemoryConfig | None,
+        OrgMemoryReadConfig | None,
         Field(
             description=("Configuration for organization-memory scoping. Set to null to disable organization memory."),
             title="Organization Memory",
         ),
-    ] = Field(default_factory=OrgMemoryConfig)
+    ] = Field(default_factory=OrgMemoryReadConfig)
 
     @classmethod
     def as_form(cls) -> Self:
@@ -114,5 +119,5 @@ class RAGAgentConfig(AgentConfig):
                 input_type="textarea",
             ),
             user_memory=UserMemoryConfig.as_form(),
-            org_memory=OrgMemoryConfig.as_form(),
+            org_memory=OrgMemoryReadConfig.as_form(),
         )

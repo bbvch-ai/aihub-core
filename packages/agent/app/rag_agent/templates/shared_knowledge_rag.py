@@ -3,7 +3,7 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeRetrieverConfig,
     LLMConfig,
     LLMParameter,
-    OrgMemoryConfig,
+    OrgMemoryReadConfig,
 )
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import AIHubSettings
@@ -80,5 +80,5 @@ def build() -> RAGAgentConfig:
             enable_user_memory_retrieval=True,
             enable_user_memory_storage=True,
         ),
-        org_memory=OrgMemoryConfig(),
+        org_memory=OrgMemoryReadConfig(),
     )

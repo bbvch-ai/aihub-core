@@ -1,4 +1,8 @@
 ---
+tenant_id:
+  label: ID du locataire
+  help: Identifiant de locataire utilisé pour restreindre les lectures et écritures
+    de la mémoire organisationnelle.
 rerank_organization_memory:
   label: Reclasser la mémoire organisationnelle
   help: Reclasser les résultats de recherche de mémoire organisationnelle avec le

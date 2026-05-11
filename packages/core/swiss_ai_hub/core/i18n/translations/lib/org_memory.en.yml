@@ -1,4 +1,7 @@
 ---
+tenant_id:
+  label: Tenant ID
+  help: Tenant identifier used to scope organization-memory reads and writes.
 rerank_organization_memory:
   label: Rerank organization memory
   help: Rerank organization-memory search results using the configured reranker for

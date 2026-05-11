@@ -31,7 +31,7 @@ from swiss_ai_hub.core.generative_ai import (
     FewShotGuardExample,
     LLMConfig,
     ModeOptions,
-    OrgMemoryConfig,
+    OrgMemoryReadConfig,
     RerankingModelConfig,
     RetrievePrevNextConfig,
 )
@@ -167,7 +167,7 @@ def build_rag_agent_config_with_memory(
         number_of_input_tokens=8192,
         context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
-        org_memory=OrgMemoryConfig(
+        org_memory=OrgMemoryReadConfig(
             tenant_id=tenant_id,
             default_tenant_namespace=tenant_namespace,
         ),

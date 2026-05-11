@@ -1,4 +1,8 @@
 ---
+tenant_id:
+  label: ID tenant
+  help: Identificatore del tenant utilizzato per limitare le letture e le scritture
+    della memoria organizzativa.
 rerank_organization_memory:
   label: Riordina memoria organizzativa
   help: Riordina i risultati della ricerca della memoria organizzativa con il reranker

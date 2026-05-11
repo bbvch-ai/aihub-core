@@ -1,4 +1,7 @@
 ---
+tenant_id:
+  label: Mandanten-ID
+  help: Mandantenkennung zur Eingrenzung von Organisationsspeicher-Lese- und Schreibvorgängen.
 rerank_organization_memory:
   label: Organisationsspeicher neu ordnen
   help: Suchergebnisse des Organisationsspeichers mit dem konfigurierten Reranker
