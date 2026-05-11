@@ -51,6 +51,15 @@ class RAGStartEvent(StartEvent):
             )
         ),
     ] = None
+    org_memory_namespace: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Optional namespace (department-level sub-scope) for organization-memory search. "
+                "When set, overrides the agent profile's configured tenant_namespace for this run."
+            ),
+        ),
+    ] = None
 
     @property
     def user_query(self) -> str:

@@ -153,6 +153,11 @@ class ExpertAskingAgent(Agent):
 
             # Store expert conversation as organization memory
             memory_text = f"Question: {initial_question_event.question_to_expert}\n\nExpert Answer: {event.response}"
+            tenant_namespace = (
+                initial_question_event.org_memory_namespace
+                if initial_question_event.org_memory_namespace is not None
+                else agent_config.tenant_namespace
+            )
             memory_added = await memory.add_organization_memory(
                 memory=memory_text,
                 user_id=initial_question_event.user.id,
@@ -160,7 +165,7 @@ class ExpertAskingAgent(Agent):
                 display_id=topic.display_id,
                 run_id=topic.run_id,
                 tenant_id=agent_config.tenant_id,
-                tenant_namespace=agent_config.tenant_namespace,
+                tenant_namespace=tenant_namespace,
             )
 
             # Emit event for observability

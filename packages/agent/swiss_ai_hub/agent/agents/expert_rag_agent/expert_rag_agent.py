@@ -231,10 +231,15 @@ class ExpertRAGAgent(Agent):
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         query = event.user_query
+        tenant_namespace = (
+            event.org_memory_namespace
+            if isinstance(event, RAGStartEvent) and event.org_memory_namespace is not None
+            else agent_config.memory.tenant_namespace
+        )
         memory_result = await memory.search_organization_memory(
             query=query,
             tenant_id=agent_config.memory.tenant_id,
-            tenant_namespace=agent_config.memory.tenant_namespace,
+            tenant_namespace=tenant_namespace,
             user_id=None,
             limit=10,
             threshold=0.5,
@@ -513,6 +518,9 @@ class ExpertRAGAgent(Agent):
                 question_to_expert=user_message_event.user_query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
+                org_memory_namespace=(
+                    user_message_event.org_memory_namespace if isinstance(user_message_event, RAGStartEvent) else None
+                ),
             ),
         )
 

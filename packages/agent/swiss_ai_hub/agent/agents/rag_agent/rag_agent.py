@@ -203,10 +203,15 @@ class RAGAgent(Agent):
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         query = event.user_query
+        tenant_namespace = (
+            event.org_memory_namespace
+            if isinstance(event, RAGStartEvent) and event.org_memory_namespace is not None
+            else agent_config.memory.tenant_namespace
+        )
         memory_result = await memory.search_organization_memory(
             query=query,
             tenant_id=agent_config.memory.tenant_id,
-            tenant_namespace=agent_config.memory.tenant_namespace,
+            tenant_namespace=tenant_namespace,
             user_id=None,
             limit=10,
             threshold=0.5,
