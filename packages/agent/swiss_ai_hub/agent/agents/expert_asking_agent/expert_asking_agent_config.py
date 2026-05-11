@@ -6,7 +6,7 @@ from swiss_ai_hub.core.events.agent import SlackConfig, TeamsConfig
 from swiss_ai_hub.core.form import InputNumber, Select
 from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.form.form import Form
-from swiss_ai_hub.core.generative_ai import LLMConfig, MemorySettings
+from swiss_ai_hub.core.generative_ai import LLMConfig, OrgMemoryConfig
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -82,22 +82,16 @@ class ExpertAskingAgentConfig(AgentConfig):
         Field(description="Maximum number of loops to ask experts."),
         Gt(0),
     ] = 3
-    tenant_namespace: Annotated[
-        str | None,
-        Field(description="Default namespace for storing expert-conversation memories."),
-    ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_NAMESPACE)
-    tenant_namespaces: Annotated[
-        list[str],
+    org_memory: Annotated[
+        OrgMemoryConfig | None,
         Field(
             description=(
-                "Allow-list of namespaces that may be used for writes (event override OR the default). "
-                "Empty = unrestricted; non-empty = the effective write namespace must be in this list."
+                "Configuration for organization-memory scoping. Set to null to disable writing "
+                "expert conversations to organization memory."
             ),
+            title="Organization Memory",
         ),
-    ] = []
-    tenant_id: Annotated[str, Field(description="Tenant ID for organization memory scoping.")] = Field(
-        default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID
-    )
+    ] = Field(default_factory=OrgMemoryConfig)
 
     channel_config: Annotated[
         ChannelConfig,
@@ -122,6 +116,7 @@ class ExpertAskingAgentConfig(AgentConfig):
                 step=1,
             ),
             channel_config=ChannelConfig.as_form(),
+            org_memory=OrgMemoryConfig.as_form(),
         )
 
     def get_active_channel_config(self) -> TeamsConfig | SlackConfig | None:

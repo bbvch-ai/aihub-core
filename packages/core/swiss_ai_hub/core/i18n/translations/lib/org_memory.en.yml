@@ -1,0 +1,9 @@
+---
+rerank_organization_memory:
+  label: Rerank organization memory
+  help: Rerank organization-memory search results using the configured reranker for
+    higher relevance. Adds latency and cost.
+default_tenant_namespace:
+  label: Default org-memory namespace
+  help: Namespace used for organization-memory writes (and reads when no event override
+    is provided). Leave empty to fall back to the platform-wide default.

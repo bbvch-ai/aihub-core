@@ -1,0 +1,10 @@
+---
+rerank_organization_memory:
+  label: Reclasser la mémoire organisationnelle
+  help: Reclasser les résultats de recherche de mémoire organisationnelle avec le
+    reranker configuré pour une meilleure pertinence. Augmente la latence et le coût.
+default_tenant_namespace:
+  label: Espace de noms de mémoire organisationnelle par défaut
+  help: Espace de noms utilisé pour les écritures dans la mémoire organisationnelle
+    (et pour les lectures lorsque l'événement ne fournit pas de remplacement). Laisser
+    vide pour utiliser la valeur par défaut de la plateforme.

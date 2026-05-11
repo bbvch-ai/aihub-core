@@ -3,11 +3,11 @@ from typing import Annotated, Self
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput
-from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig, LLMConfig
+from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig, LLMConfig, OrgMemoryConfig
 from swiss_ai_hub.core.i18n import LocaleString
 
-from swiss_ai_hub.agent.agents.rag_agent.configs.memory_config import MemoryConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
+from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
@@ -69,10 +69,17 @@ class RAGAgentConfig(AgentConfig):
             title="Few-Shot Guard Examples",
         ),
     ] = []
-    memory: Annotated[
-        MemoryConfig,
-        Field(description="Configuration for user and organization memory.", title="Memory"),
-    ] = MemoryConfig()
+    user_memory: Annotated[
+        UserMemoryConfig,
+        Field(description="Configuration for user-scoped memory.", title="User Memory"),
+    ] = UserMemoryConfig()
+    org_memory: Annotated[
+        OrgMemoryConfig | None,
+        Field(
+            description=("Configuration for organization-memory scoping. Set to null to disable organization memory."),
+            title="Organization Memory",
+        ),
+    ] = Field(default_factory=OrgMemoryConfig)
 
     @classmethod
     def as_form(cls) -> Self:
@@ -106,5 +113,6 @@ class RAGAgentConfig(AgentConfig):
                 help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_prompt.help"),
                 input_type="textarea",
             ),
-            memory=MemoryConfig.as_form(),
+            user_memory=UserMemoryConfig.as_form(),
+            org_memory=OrgMemoryConfig.as_form(),
         )

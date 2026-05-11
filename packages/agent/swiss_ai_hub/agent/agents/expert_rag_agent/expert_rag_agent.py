@@ -213,7 +213,7 @@ class ExpertRAGAgent(Agent):
             user_id=event.user.id,
             limit=10,
             threshold=0.5,
-            rerank=agent_config.memory.rerank_user_memory,
+            rerank=agent_config.user_memory.rerank_user_memory,
         )
 
         return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
@@ -231,20 +231,22 @@ class ExpertRAGAgent(Agent):
         memory: AgentMemory,
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
+        assert agent_config.org_memory is not None  # precondition enforces this
+        org_memory = agent_config.org_memory
         query = event.user_query
         requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
         tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
             requested=requested,
-            configured=agent_config.memory.tenant_namespaces,
+            configured=org_memory.allowed_tenant_namespaces,
         )
         memory_result = await memory.search_organization_memory(
             query=query,
-            tenant_id=agent_config.memory.tenant_id,
+            tenant_id=org_memory.tenant_id,
             tenant_namespaces=tenant_namespaces,
             user_id=None,
             limit=10,
             threshold=0.5,
-            rerank=agent_config.memory.rerank_organization_memory,
+            rerank=org_memory.rerank_organization_memory,
         )
 
         return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
@@ -267,7 +269,7 @@ class ExpertRAGAgent(Agent):
         chat_history = user_message_event.messages
 
         # Add user memory first (more personal context)
-        if agent_config.memory.enable_user_memory_retrieval and user_memory_event is not None:
+        if agent_config.user_memory.enable_user_memory_retrieval and user_memory_event is not None:
             chat_history = extend_chat_history_with_user_memory(
                 chat_history=chat_history,
                 memories=user_memory_event.memories,
@@ -277,7 +279,7 @@ class ExpertRAGAgent(Agent):
             )
 
         # Add organization memory second (broader context)
-        if agent_config.memory.enable_organization_memory and org_memory_event is not None:
+        if agent_config.org_memory is not None and org_memory_event is not None:
             chat_history = extend_chat_history_with_organization_memory(
                 chat_history=chat_history,
                 memories=org_memory_event.memories,
@@ -519,7 +521,9 @@ class ExpertRAGAgent(Agent):
                 question_to_expert=user_message_event.user_query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
-                org_memory_namespace=agent_config.tenant_namespace,
+                org_memory_namespace=(
+                    agent_config.org_memory.default_tenant_namespace if agent_config.org_memory else None
+                ),
             ),
         )
 

@@ -31,6 +31,7 @@ from swiss_ai_hub.core.generative_ai import (
     FewShotGuardExample,
     LLMConfig,
     ModeOptions,
+    OrgMemoryConfig,
     RerankingModelConfig,
     RetrievePrevNextConfig,
 )
@@ -41,7 +42,6 @@ from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, fill_collection
 
-from swiss_ai_hub.agent.agents.rag_agent.configs.memory_config import MemoryConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
@@ -167,10 +167,9 @@ def build_rag_agent_config_with_memory(
         number_of_input_tokens=8192,
         context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
-        memory=MemoryConfig(
-            enable_organization_memory=True,
+        org_memory=OrgMemoryConfig(
             tenant_id=tenant_id,
-            tenant_namespace=tenant_namespace,
+            default_tenant_namespace=tenant_namespace,
         ),
     )
 

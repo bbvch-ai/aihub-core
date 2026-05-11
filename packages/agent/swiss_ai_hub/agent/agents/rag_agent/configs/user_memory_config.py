@@ -3,39 +3,16 @@ from typing import Annotated, Self
 from pydantic import Field
 from swiss_ai_hub.core.form import Checkbox
 from swiss_ai_hub.core.form.form import Form
-from swiss_ai_hub.core.generative_ai import MemorySettings
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
-class MemoryConfig(Form):
+class UserMemoryConfig(Form):
     """
-    Configuration for user and organization memory in RAG workflows.
+    Configuration for user-scoped memory in RAG workflows.
 
     Supports duality pattern for form rendering and data validation.
     """
-
-    enable_organization_memory: Annotated[
-        bool | Checkbox,
-        Field(description="Whether to retrieve organization memories (expert knowledge) for context."),
-    ] = True
-    rerank_organization_memory: Annotated[
-        bool | Checkbox,
-        Field(description="Whether to rerank organization memory search results via the configured reranker."),
-    ] = True
-    tenant_id: Annotated[
-        str,
-        Field(description="Tenant ID for organization memory scoping."),
-    ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID)
-    tenant_namespaces: Annotated[
-        list[str],
-        Field(
-            description=(
-                "Allowed organization-memory namespaces. Empty = unrestricted. Non-empty = whitelist; "
-                "the full set is searched when the start event omits `org_memory_namespace`."
-            ),
-        ),
-    ] = []
 
     enable_user_memory_retrieval: Annotated[
         bool | Checkbox,
@@ -52,18 +29,8 @@ class MemoryConfig(Form):
 
     @classmethod
     def as_form(cls) -> Self:
-        """Factory method to create a form-mode MemoryConfig."""
+        """Factory method to create a form-mode UserMemoryConfig."""
         return cls(
-            enable_organization_memory=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_organization_memory.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_organization_memory.help"),
-                ref="check_organization_memory_enabled",
-            ),
-            rerank_organization_memory=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.rerank_organization_memory.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.rerank_organization_memory.help"),
-                condition_if="$get(check_organization_memory_enabled).value",
-            ),
             enable_user_memory_retrieval=Checkbox(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_retrieval.label"),
                 help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_retrieval.help"),
