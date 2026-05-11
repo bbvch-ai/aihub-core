@@ -5,6 +5,81 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.287.0] - 2026-05-11 - Enhanced Memory Configuration for RAG Agents
+
+### Added
+
+- ✨ **Granular Memory Reranking Control**: Introduced new configuration options to enable or disable reranking
+  specifically for both **organization memory** and **user memory** searches. This provides greater control over
+  retrieval relevance and performance, allowing users to optimize for latency or accuracy as needed.
+
+### Refactor
+
+- 🧹 **Consolidated RAG Agent Memory Configuration**: Centralized all memory-related settings (including organization
+  memory enablement, user memory retrieval/storage, tenant ID, and namespace) into a new, dedicated **`MemoryConfig`
+  object**. This significantly streamlines agent configuration, improves readability, and simplifies future
+  enhancements.
+- 🔄 **Updated Agent Memory Access**: RAG agents and their preconditions now access all memory-related settings through
+  the consolidated `MemoryConfig` object, ensuring consistent and organized handling of memory configurations across the
+  system.
+
+______________________________________________________________________
+
+## [v0.286.8] - 2026-05-08 - Internal Maintenance
+
+______________________________________________________________________
+
+## [v0.286.7] - 2026-05-08 - Streamlined OAuth Configuration and Enhanced Tenant Setup
+
+### Added
+
+- ⚙️ **Introduced Startup Tenant Configuration:** New environment variables (`AIHUB_STARTUP_TENANT_ID`,
+  `AIHUB_STARTUP_TENANT_NAME`, `AIHUB_STARTUP_TENANT_DESCRIPTION`, `AIHUB_STARTUP_TENANT_ACCESS_RULES`) have been added
+  to support initial setup and management of a default "startup tenant", providing more granular control over Keycloak
+  realm integration.
+
+### Changed
+
+- 🔄 **Standardized OAuth Authority URL Configuration:** The `OAUTH_AUTHORITY_URL` is now dynamically configured based on
+  the deployment stage. It automatically points to `http://localhost:8180/realms/aihub` for development environments and
+  `https://auth.${DOMAIN}/realms/aihub` for all other stages, simplifying setup and reducing manual configuration.
+
+______________________________________________________________________
+
+## [v0.286.6] - 2026-05-08 - Enhanced Backup Robustness and Configurability
+
+### Added
+
+- ✨ **Configurable PostgreSQL Backup Timeout**: Introduced `BACKUP_POSTGRES_SUBPROCESS_TIMEOUT_SECONDS` (defaulting to 6
+  hours) to allow operators to adjust the timeout for PostgreSQL dump and restore operations, preventing failures on
+  large databases.
+- ⚡️ **NATS Subprocess Retry Mechanism**: Implemented retry logic for NATS CLI commands within the backup process,
+  enhancing resilience against transient connection issues or server restarts.
+
+### Changed
+
+- 🔄 **Standardized Backup Service Environment Variables**: All environment variables specific to the backup service are
+  now explicitly prefixed with `BACKUP_` in Docker Compose configurations for clearer separation and identification.
+- 🦾 **Improved NATS Readiness Probing**: The NATS readiness check now probes JetStream's `stream list` command instead
+  of a basic RTT, providing a more accurate assessment of NATS service availability before proceeding with backups.
+- 📄 **Updated Backup Container Exclusion List**: Added `oauth2proxy` services to the list of containers that remain
+  running during a backup, ensuring the backup Dagster UI remains accessible through OAuth.
+
+### Fixed
+
+- 🐛 **Resolved PostgreSQL Backup Timeout Issues**: Addressed scenarios where PostgreSQL backups of large databases could
+  time out due to a previously fixed 5-minute subprocess limit, which is now configurable via the new
+  `BACKUP_POSTGRES_SUBPROCESS_TIMEOUT_SECONDS` environment variable.
+- 🐛 **Mitigated Transient NATS Connection Failures**: Enhanced NATS operations with retry logic, reducing backup
+  failures caused by temporary NATS server unavailability during runs.
+
+### Refactor
+
+- 🧹 **Streamlined Internal Backup Settings Handling**: The internal `BackupSettings` class now automatically handles the
+  `BACKUP_` prefix for environment variables, improving consistency and reducing boilerplate in the configuration.
+
+______________________________________________________________________
+
 ## [v0.286.5] - 2026-05-06 - Enhanced Dependency Update Management
 
 ### Changed
