@@ -6,10 +6,12 @@ import {
   type RepeaterConfig,
   buildFormKitSchema,
   categorizeFormElements,
+  coerceNullableToggles,
   extractGroupConfigs,
   extractRepeaterConfigs,
   getFormkitType,
   getNestedValue,
+  seedNullableToggles,
   setNestedValue,
 } from './useFormKitTransform'
 
@@ -191,6 +193,8 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
 
     for (const [key, value] of Object.entries(data)) {
       if (formkitArtifacts.has(key)) continue
+      // Strip the internal repeater validation mirror written by FormKit/Repeater.vue.
+      if (key.startsWith('__validate__')) continue
 
       if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
         result[key] = cleanFormData(value as Record<string, unknown>)
@@ -206,7 +210,8 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
   function applyInitialData(data: Record<string, unknown>) {
     const base = initializeGroupData(configForm.value as FormElement[], {})
     const sanitized = stripNullsForGroups(data, configForm.value as FormElement[])
-    formData.value = merge(base, sanitized)
+    const merged = merge(base, sanitized)
+    formData.value = seedNullableToggles(merged, configForm.value as FormElement[])
   }
 
   function resetForm() {
@@ -232,6 +237,7 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
     setRepeaterData,
     initializeGroupData,
     cleanFormData,
+    coerceNullableToggles,
     applyInitialData,
     resetForm,
   }

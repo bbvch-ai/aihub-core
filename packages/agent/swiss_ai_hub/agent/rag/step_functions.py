@@ -169,7 +169,7 @@ async def do_rerank_nodes(
         top_n=reranking_config.reranking_model.top_n,
         input_nodes=nodes,
         output_nodes=reranked_nodes,
-        reranked=reranking_config.enabled,
+        reranked=reranking_config.reranking_model is not None,
     )
 
 
@@ -192,7 +192,7 @@ async def do_order_nodes_by_documents(
 
 async def do_context_sufficient_guard(
     user_query: str | None,
-    context: str | None,
+    context_message: ChatMessage | None,
     check_context_sufficiency: bool | None,
     max_hops: int,
     run_context: RunContext,
@@ -213,7 +213,7 @@ async def do_context_sufficient_guard(
             llm=llm,
             t=t,
             user_query=user_query,
-            context=context,
+            context_message=context_message,
             prev_queries=prev_queries,
             more_hops_available=more_hops_available,
             chat_history=chat_history,

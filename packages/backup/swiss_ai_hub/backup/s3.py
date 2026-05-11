@@ -23,7 +23,7 @@ _S3_DELETE_BATCH_SIZE = 1000
 
 class S3Manager:
     def __init__(self, settings: BackupSettings) -> None:
-        self._bucket = settings.BACKUP_S3_BUCKET
+        self._bucket = settings.S3_BUCKET
         self._client = boto3.client(
             "s3",
             endpoint_url=settings.AWS_ENDPOINT_URL,

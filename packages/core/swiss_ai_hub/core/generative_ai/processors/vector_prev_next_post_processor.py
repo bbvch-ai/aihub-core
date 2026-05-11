@@ -1,12 +1,12 @@
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from pydantic import Field, field_validator
 
-from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import INDEX
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import INDEX, NAMESPACE
 
 
 class ModeOptions(StrEnum):
@@ -28,6 +28,12 @@ def traverse_nodes(
     nodes = {node_with_score.node.node_id: node_with_score}
     current_node = node_with_score.node
 
+    # Scope neighbour fetches to the source node's namespace so partition-aware stores
+    # avoid loading the whole collection. Empty-string namespace (DEFAULT_METADATA) is
+    # treated as unscoped.
+    namespace: str | None = current_node.metadata.get(NAMESPACE)
+    scope_kwargs: dict[str, Any] = {"namespaces": [namespace]} if namespace else {}
+
     for _ in range(num_nodes):
         relation = current_node.next_node if direction == ModeOptions.NEXT else current_node.prev_node
         if not relation:
@@ -35,7 +41,7 @@ def traverse_nodes(
         # For backward direction, check the INDEX metadata value
         if direction == ModeOptions.PREVIOUS and relation.metadata.get(INDEX) == 0:
             break
-        current_node = vectorstore.get_nodes([relation.node_id])[0]
+        current_node = vectorstore.get_nodes([relation.node_id], **scope_kwargs)[0]
         nodes[current_node.node_id] = NodeWithScore(node=current_node)
     return nodes
 

@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, TextBlock
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import ContextGuardResult, context_sufficient_guard
@@ -28,9 +28,9 @@ def _(query):
     return query
 
 
-@given(parsers.parse('the following context "{context}"'), target_fixture="context")
+@given(parsers.parse('the following context "{context}"'), target_fixture="context_message")
 def _(context):
-    return context
+    return ChatMessage(role="user", blocks=[TextBlock(text=context)])
 
 
 @given("the following previous queries:", target_fixture="prev_queries")
@@ -82,12 +82,12 @@ def _(datatable):
 
 @when("the context sufficient guard is executed", target_fixture="guard_result")
 @async_test
-async def _(llm, locale_handler, user_query, context, prev_queries, more_hops_available):
+async def _(llm, locale_handler, user_query, context_message, prev_queries, more_hops_available):
     result = await context_sufficient_guard(
         llm=llm,
         t=locale_handler,
         user_query=user_query,
-        context=context,
+        context_message=context_message,
         prev_queries=prev_queries,
         more_hops_available=more_hops_available,
         chat_history=[],
@@ -97,12 +97,12 @@ async def _(llm, locale_handler, user_query, context, prev_queries, more_hops_av
 
 @when("the context sufficient guard is executed with chat history", target_fixture="guard_result")
 @async_test
-async def _(llm, locale_handler, user_query, context, prev_queries, more_hops_available, chat_history):
+async def _(llm, locale_handler, user_query, context_message, prev_queries, more_hops_available, chat_history):
     result = await context_sufficient_guard(
         llm=llm,
         t=locale_handler,
         user_query=user_query,
-        context=context,
+        context_message=context_message,
         prev_queries=prev_queries,
         more_hops_available=more_hops_available,
         chat_history=chat_history,
@@ -112,16 +112,13 @@ async def _(llm, locale_handler, user_query, context, prev_queries, more_hops_av
 
 @then("the LLM prompt should include the chat history")
 def _(llm, chat_history):
-    call_kwargs = llm.astructured_predict.call_args.kwargs
-    rendered = call_kwargs["chat_history"]
-    for message in chat_history:
-        assert message.role.value in rendered
-        assert message.content in rendered
+    rendered = llm.astructured_predict.call_args.kwargs["chat_history"]
+    assert rendered == chat_history
 
 
 @then("the LLM prompt should render chat history as an empty string")
 def _(llm):
-    assert llm.astructured_predict.call_args.kwargs["chat_history"] == ""
+    assert llm.astructured_predict.call_args.kwargs["chat_history"] == []
 
 
 @then("the guard should accept the request")

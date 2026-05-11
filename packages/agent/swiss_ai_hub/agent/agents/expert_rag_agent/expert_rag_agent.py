@@ -85,13 +85,13 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 @precondition()
 async def reranking_enabled(event: RetrieverEvent, config: ExpertRAGAgentConfig) -> bool:
     """Precondition to check if reranking is enabled or not."""
-    return check_reranking_enabled(event, config.reranking_config.enabled)
+    return check_reranking_enabled(event, config.reranking_config.reranking_model is not None)
 
 
 @precondition()
 async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, config: ExpertRAGAgentConfig) -> bool:
     """Precondition to ensure we only order nodes after reranking is complete (or if reranking is disabled)."""
-    return check_reranking_complete_or_disabled(event, config.reranking_config.enabled)
+    return check_reranking_complete_or_disabled(event, config.reranking_config.reranking_model is not None)
 
 
 @precondition()
@@ -202,6 +202,7 @@ class ExpertRAGAgent(Agent):
     async def retrieve_user_memory_step(
         self,
         event: UserMessageEvent | RAGStartEvent,
+        agent_config: ExpertRAGAgentConfig,
         memory: AgentMemory,
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context."""
@@ -211,7 +212,7 @@ class ExpertRAGAgent(Agent):
             user_id=event.user.id,
             limit=10,
             threshold=0.5,
-            rerank=True,
+            rerank=agent_config.memory.rerank_user_memory,
         )
 
         return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
@@ -232,12 +233,12 @@ class ExpertRAGAgent(Agent):
         query = event.user_query
         memory_result = await memory.search_organization_memory(
             query=query,
-            tenant_id=agent_config.tenant_id,
-            tenant_namespace=agent_config.tenant_namespace,
+            tenant_id=agent_config.memory.tenant_id,
+            tenant_namespace=agent_config.memory.tenant_namespace,
             user_id=None,
             limit=10,
             threshold=0.5,
-            rerank=True,
+            rerank=agent_config.memory.rerank_organization_memory,
         )
 
         return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
@@ -260,7 +261,7 @@ class ExpertRAGAgent(Agent):
         chat_history = user_message_event.messages
 
         # Add user memory first (more personal context)
-        if agent_config.enable_user_memory_retrieval and user_memory_event is not None:
+        if agent_config.memory.enable_user_memory_retrieval and user_memory_event is not None:
             chat_history = extend_chat_history_with_user_memory(
                 chat_history=chat_history,
                 memories=user_memory_event.memories,
@@ -270,7 +271,7 @@ class ExpertRAGAgent(Agent):
             )
 
         # Add organization memory second (broader context)
-        if agent_config.enable_organization_memory and org_memory_event is not None:
+        if agent_config.memory.enable_organization_memory and org_memory_event is not None:
             chat_history = extend_chat_history_with_organization_memory(
                 chat_history=chat_history,
                 memories=org_memory_event.memories,
@@ -408,7 +409,7 @@ class ExpertRAGAgent(Agent):
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         return await do_context_sufficient_guard(
             user_query_event.condensed_chat_message.content,
-            event.context_message.content,
+            event.context_message,
             guard_config.check_context_sufficiency,
             guard_config.max_hops,
             run_context,
