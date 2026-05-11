@@ -32,28 +32,3 @@ class TestResolveForSearch:
     def test_whitelist_request_partial_outside_raises(self):
         with pytest.raises(ValueError, match="allow-list"):
             OrgMemoryNamespaceResolver.resolve_for_search(requested=["a", "c"], configured=["a", "b"])
-
-
-class TestResolveForWrite:
-    def test_unrestricted_no_request(self):
-        assert OrgMemoryNamespaceResolver.resolve_for_write(requested=None, configured=[]) is None
-
-    def test_unrestricted_with_request(self):
-        assert OrgMemoryNamespaceResolver.resolve_for_write(requested="x", configured=[]) == "x"
-
-    def test_single_entry_no_request_uses_that(self):
-        assert OrgMemoryNamespaceResolver.resolve_for_write(requested=None, configured=["a"]) == "a"
-
-    def test_single_entry_with_matching_request(self):
-        assert OrgMemoryNamespaceResolver.resolve_for_write(requested="a", configured=["a"]) == "a"
-
-    def test_multi_entry_no_request_is_ambiguous(self):
-        with pytest.raises(ValueError, match="Ambiguous write"):
-            OrgMemoryNamespaceResolver.resolve_for_write(requested=None, configured=["a", "b"])
-
-    def test_multi_entry_request_inside(self):
-        assert OrgMemoryNamespaceResolver.resolve_for_write(requested="b", configured=["a", "b"]) == "b"
-
-    def test_multi_entry_request_outside_raises(self):
-        with pytest.raises(ValueError, match="allow-list"):
-            OrgMemoryNamespaceResolver.resolve_for_write(requested="c", configured=["a", "b"])

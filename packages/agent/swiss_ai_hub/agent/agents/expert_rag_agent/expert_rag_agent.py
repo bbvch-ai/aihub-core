@@ -512,14 +512,6 @@ class ExpertRAGAgent(Agent):
             t("agent.expert_rag_agent.messages.expert_answer_coming_soon"),
             model_name=ExpertRAGAgent.__name__,
         )
-        incoming_namespaces = (
-            user_message_event.org_memory_namespaces if isinstance(user_message_event, RAGStartEvent) else []
-        )
-        if len(incoming_namespaces) > 1:
-            raise ValueError(
-                "Cannot delegate to expert: writes are singular but RAGStartEvent requested "
-                f"multiple org_memory_namespaces: {sorted(incoming_namespaces)}"
-            )
         return AgentInTheLoop.invoke(
             agent_class=agent_config.expert_escalation.agent.agent_class,
             agent_id=agent_config.expert_escalation.agent.agent_id,
@@ -527,7 +519,7 @@ class ExpertRAGAgent(Agent):
                 question_to_expert=user_message_event.user_query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
-                org_memory_namespace=incoming_namespaces[0] if incoming_namespaces else None,
+                org_memory_namespace=agent_config.org_memory_write_namespace,
             ),
         )
 

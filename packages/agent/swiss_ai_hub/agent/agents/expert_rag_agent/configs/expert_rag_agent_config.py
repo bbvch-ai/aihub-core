@@ -21,6 +21,15 @@ class ExpertRAGAgentConfig(RAGAgentConfig):
         ExpertEscalationConfig,
         Field(description="Expert escalation config. Required for ExpertRAGAgent.", title="Expert Escalation"),
     ]
+    org_memory_write_namespace: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Namespace to pass to the downstream ExpertAsking agent for storing expert-conversation memories. "
+                "None defers to ExpertAsking's own `org_memory_write_namespace`."
+            ),
+        ),
+    ] = None
 
     @classmethod
     def as_form(cls) -> Self:

@@ -82,16 +82,15 @@ class ExpertAskingAgentConfig(AgentConfig):
         Field(description="Maximum number of loops to ask experts."),
         Gt(0),
     ] = 3
-    tenant_namespaces: Annotated[
-        list[str],
+    org_memory_write_namespace: Annotated[
+        str | None,
         Field(
             description=(
-                "Allowed organization-memory namespaces for storing expert-conversation memories. "
-                "Empty = unrestricted. Single entry = always used. Multiple entries require the start "
-                "event to specify `org_memory_namespace`."
+                "Default namespace for storing expert-conversation memories. The start event's "
+                "`org_memory_namespace` (when set) overrides this. None = write unscoped."
             ),
         ),
-    ] = []
+    ] = None
     tenant_id: Annotated[str, Field(description="Tenant ID for organization memory scoping.")] = Field(
         default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID
     )
