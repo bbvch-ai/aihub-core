@@ -8,7 +8,7 @@ from docker.models.containers import Container
 
 logger = logging.getLogger(__name__)
 
-_EXCLUDE_PREFIXES = ("backup-", "seaweedfs-", "etcd", "traefik")
+_EXCLUDE_PREFIXES = ("backup-", "seaweedfs-", "etcd", "traefik", "oauth2proxy-")
 
 
 class ContainerDiscovery:

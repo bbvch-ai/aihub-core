@@ -145,7 +145,7 @@ class MilvusHandler(BackupHandler):
             "${AWS_SECRET_ACCESS_KEY}", self._yaml_escape(self._settings.S3_STORAGE_SECRET_KEY.get_secret_value())
         )
         config_text = config_text.replace("${BACKUP_ROOT_PATH}", self._yaml_escape(backup_root_path))
-        config_text = config_text.replace("${BACKUP_S3_BUCKET}", self._yaml_escape(self._settings.BACKUP_S3_BUCKET))
+        config_text = config_text.replace("${BACKUP_S3_BUCKET}", self._yaml_escape(self._settings.S3_BUCKET))
 
         config_file = config_dir / "backup.yaml"
         config_file.write_text(config_text)

@@ -146,5 +146,9 @@ def test_is_excluded() -> None:
     assert ContainerDiscovery._is_excluded("seaweedfs-master") is True
     assert ContainerDiscovery._is_excluded("etcd") is True
     assert ContainerDiscovery._is_excluded("traefik") is True
+    assert ContainerDiscovery._is_excluded("oauth2proxy-backup") is True
+    assert ContainerDiscovery._is_excluded("oauth2proxy-dagster") is True
+    assert ContainerDiscovery._is_excluded("oauth2proxy-seaweed") is True
+    assert ContainerDiscovery._is_excluded("oauth2proxy-attu") is True
     assert ContainerDiscovery._is_excluded("api") is False
     assert ContainerDiscovery._is_excluded("postgres") is False
