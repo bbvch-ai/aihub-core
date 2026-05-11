@@ -6,6 +6,7 @@ from swiss_ai_hub.core.form.base.html_element import HtmlElement
 from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
 from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
 from swiss_ai_hub.core.form.elements.checkbox import Checkbox
+from swiss_ai_hub.core.form.elements.chips_input import ChipsInput
 from swiss_ai_hub.core.form.elements.color_picker import ColorPicker
 from swiss_ai_hub.core.form.elements.date_picker import DatePicker
 from swiss_ai_hub.core.form.elements.group import Group
@@ -34,6 +35,7 @@ from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput
 
 _FORMKIT_TYPE_MAP: dict[str, str] = {
     "agentSelector": "AgentSelector",
+    "chipsInput": "ChipsInput",
     "group": "Group",
     "iconSelector": "IconSelector",
     "knowledgeDatabaseSelector": "KnowledgeDatabaseSelector",
@@ -83,6 +85,7 @@ _FormElementUnion = (
     | Annotated[AgentSelector, Tag("AgentSelector")]
     | Annotated[CascadeSelect, Tag("CascadeSelect")]
     | Annotated[Checkbox, Tag("Checkbox")]
+    | Annotated[ChipsInput, Tag("ChipsInput")]
     | Annotated[ColorPicker, Tag("ColorPicker")]
     | Annotated[DatePicker, Tag("DatePicker")]
     | Annotated[Group, Tag("Group")]

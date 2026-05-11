@@ -209,7 +209,7 @@ class RAGAgent(Agent):
         requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
         tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
             requested=requested,
-            configured=org_memory.allowed_tenant_namespace_values,
+            configured=org_memory.allowed_tenant_namespaces,
         )
         memory_result = await memory.search_organization_memory(
             query=query,

@@ -161,7 +161,7 @@ class ExpertAskingAgent(Agent):
                 tenant_namespace = OrgMemoryNamespaceResolver.resolve_for_write(
                     event_override=initial_question_event.org_memory_namespace,
                     default=org_memory.default_tenant_namespace,
-                    allowed=org_memory.allowed_tenant_namespace_values,
+                    allowed=org_memory.allowed_tenant_namespaces,
                 )
                 memory_added = await memory.add_organization_memory(
                     memory=memory_text,

@@ -4,10 +4,10 @@ tenant_id:
   help: Identifiant de locataire utilisé pour restreindre les lectures et écritures
     de la mémoire organisationnelle.
 allowed_tenant_namespaces:
-  entry:
-    label: Espace de noms autorisé
-    help: Un espace de noms autorisé pour les lectures/écritures de la mémoire organisationnelle.
-      Laisser la liste vide pour autoriser tous les espaces de noms.
+  label: Espaces de noms autorisés
+  help: Liste des espaces de noms autorisés pour les lectures/écritures de la mémoire
+    organisationnelle. Laisser vide pour autoriser tous les espaces de noms.
+  placeholder: Saisir un espace de noms et appuyer sur Entrée pour ajouter
 rerank_organization_memory:
   label: Reclasser la mémoire organisationnelle
   help: Reclasser les résultats de recherche de mémoire organisationnelle avec le

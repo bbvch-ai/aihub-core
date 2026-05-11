@@ -1,4 +1,5 @@
 import AgentSelector from '@core/components/FormKit/AgentSelector.vue'
+import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
 import IconSelector from '@core/components/FormKit/IconSelector.vue'
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
@@ -15,6 +16,9 @@ const config: DefaultConfigOptions = {
     ...primeInputs,
     agentSelector: createInput(AgentSelector, {
       props: ['startEvent', 'classPlaceholder', 'idPlaceholder', 'filter'],
+    }),
+    chipsInput: createInput(ChipsInput, {
+      props: ['placeholder'],
     }),
     knowledgeDatabaseSelector: createInput(KnowledgeDatabaseSelector, {
       props: ['placeholder', 'filter'],

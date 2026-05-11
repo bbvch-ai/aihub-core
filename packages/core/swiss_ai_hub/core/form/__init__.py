@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
     from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
     from swiss_ai_hub.core.form.elements.checkbox import Checkbox
+    from swiss_ai_hub.core.form.elements.chips_input import ChipsInput
     from swiss_ai_hub.core.form.elements.date_picker import DatePicker
     from swiss_ai_hub.core.form.elements.group import Group
     from swiss_ai_hub.core.form.elements.input_number import InputNumber
@@ -32,6 +33,7 @@ __all__ = [
     "AgentSelector",
     "CascadeSelect",
     "Checkbox",
+    "ChipsInput",
     "ConfigAuthorizationViolation",
     "DatePicker",
     "Form",
@@ -58,6 +60,7 @@ _LAZY_IMPORTS = {
     "AgentSelector": "swiss_ai_hub.core.form.elements.agent_selector",
     "CascadeSelect": "swiss_ai_hub.core.form.elements.cascade_select",
     "Checkbox": "swiss_ai_hub.core.form.elements.checkbox",
+    "ChipsInput": "swiss_ai_hub.core.form.elements.chips_input",
     "ConfigAuthorizationViolation": "swiss_ai_hub.core.form.base.config_authorization_violation",
     "DatePicker": "swiss_ai_hub.core.form.elements.date_picker",
     "Form": "swiss_ai_hub.core.form.form",

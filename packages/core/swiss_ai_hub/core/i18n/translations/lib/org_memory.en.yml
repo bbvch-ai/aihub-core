@@ -3,10 +3,10 @@ tenant_id:
   label: Tenant ID
   help: Tenant identifier used to scope organization-memory reads and writes.
 allowed_tenant_namespaces:
-  entry:
-    label: Allowed namespace
-    help: A namespace permitted for organization-memory reads/writes. Leave the list
-      empty to allow any namespace.
+  label: Allowed namespaces
+  help: Allow-list of namespaces permitted for organization-memory reads/writes. Leave
+    empty to allow any namespace.
+  placeholder: Type a namespace and press Enter to add
 rerank_organization_memory:
   label: Rerank organization memory
   help: Rerank organization-memory search results using the configured reranker for
