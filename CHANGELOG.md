@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.287.1] - 2026-05-11 - Optimized Vector Store Queries with Namespace Scoping
+
+### Changed
+
+- ⚡️ **Optimized Vector Store Node Retrieval:** Enhanced the efficiency of node retrieval across the platform by
+  propagating **namespace** information down to the vector store. This change, applied in the **Knowledge Service**,
+  **Parent Summary Post-Processor**, and **Vector Previous/Next Post-Processor**, ensures that queries are scoped to
+  specific data partitions, significantly improving performance and data isolation in multi-tenant environments.
+- 🔄 **Updated `PartitionAwareMilvusVectorStore`:** The `get_nodes` method in the `PartitionAwareMilvusVectorStore` now
+  explicitly accepts a `namespaces` argument, allowing for more precise and efficient querying within designated data
+  partitions.
+
+### Added
+
+- ✅ **Introduced Namespace Filter Propagation Tests:** Added new unit tests to verify the correct forwarding and
+  application of namespace filters within vector store post-processors, ensuring the reliability of partition-aware data
+  retrieval.
+
+______________________________________________________________________
+
+## [v0.287.0] - 2026-05-11 - Enhanced Memory Configuration for RAG Agents
+
+### Added
+
+- ✨ **Granular Memory Reranking Control**: Introduced new configuration options to enable or disable reranking
+  specifically for both **organization memory** and **user memory** searches. This provides greater control over
+  retrieval relevance and performance, allowing users to optimize for latency or accuracy as needed.
+
+### Refactor
+
+- 🧹 **Consolidated RAG Agent Memory Configuration**: Centralized all memory-related settings (including organization
+  memory enablement, user memory retrieval/storage, tenant ID, and namespace) into a new, dedicated **`MemoryConfig`
+  object**. This significantly streamlines agent configuration, improves readability, and simplifies future
+  enhancements.
+- 🔄 **Updated Agent Memory Access**: RAG agents and their preconditions now access all memory-related settings through
+  the consolidated `MemoryConfig` object, ensuring consistent and organized handling of memory configurations across the
+  system.
+
+______________________________________________________________________
+
 ## [v0.286.8] - 2026-05-08 - Internal Maintenance
 
 ______________________________________________________________________

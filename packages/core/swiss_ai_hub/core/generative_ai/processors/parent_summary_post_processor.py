@@ -1,10 +1,10 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeRelationship, NodeWithScore, QueryBundle, RelatedNodeInfo
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
-from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_TYPE_SUMMARY, TYPE
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE, NODE_TYPE_SUMMARY, TYPE
 
 
 class ParentSummaryPostProcessor(BaseNodePostprocessor):
@@ -43,6 +43,12 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
         current_node = content_node
         level = 0
 
+        # Scope parent fetches to the source node's namespace so partition-aware stores
+        # avoid loading the whole collection. Empty-string namespace (DEFAULT_METADATA
+        # in node_metadata.py) is treated as unscoped.
+        namespace: str | None = content_node.node.metadata.get(NAMESPACE)
+        scope_kwargs: dict[str, Any] = {"namespaces": [namespace]} if namespace else {}
+
         while level < self.max_levels and NodeRelationship.PARENT in current_node.node.relationships:
             parent_info = current_node.node.relationships[NodeRelationship.PARENT]
             if not isinstance(parent_info, RelatedNodeInfo):
@@ -53,7 +59,7 @@ class ParentSummaryPostProcessor(BaseNodePostprocessor):
                 break
 
             visited_ids.add(parent_id)
-            parent_nodes = self.vectorstore.get_nodes([parent_id])
+            parent_nodes = self.vectorstore.get_nodes([parent_id], **scope_kwargs)
             if not parent_nodes:
                 break
 
