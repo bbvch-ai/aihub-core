@@ -401,3 +401,20 @@ def test_restore_rejects_unsafe_database_name(mock_run: MagicMock, postgres_hand
 
     with pytest.raises(ValueError, match="Unsafe database name rejected"):
         postgres_handler.restore("2026-02-19_02-00-00")
+
+
+@patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
+def test_subprocess_timeout_propagates_from_settings(
+    mock_run: MagicMock, settings: BackupSettings
+) -> None:
+    """Operator-supplied POSTGRES_SUBPROCESS_TIMEOUT_SECONDS must reach every subprocess.run call."""
+    custom_timeout = 12345
+    overridden = settings.model_copy(update={"POSTGRES_SUBPROCESS_TIMEOUT_SECONDS": custom_timeout})
+    handler = PostgresHandler(overridden, MagicMock())
+    mock_run.side_effect = _make_run_for_backup(["mydb"])
+
+    handler.backup("2026-02-19_02-00-00", "2026-02-19_02-00-00")
+
+    timeouts = [call.kwargs.get("timeout") for call in mock_run.call_args_list]
+    assert timeouts, "expected at least one subprocess.run call"
+    assert all(t == custom_timeout for t in timeouts), f"timeouts seen: {set(timeouts)}"

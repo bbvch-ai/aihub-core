@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-process"
-version = "0.286.5"
+version = "0.286.8"
 description = "agentic process automation"
 requires-python = ">=3.13, <3.14"
 authors = [

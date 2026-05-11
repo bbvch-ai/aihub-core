@@ -34,7 +34,7 @@ def backup_finalize_factory(
         container_discovery.start_all(session.previously_running)
 
         try:
-            RetentionService.run(s3_manager, backup_settings.BACKUP_RETENTION_DAYS, backup_settings.BACKUP_MINIMUM_KEEP)
+            RetentionService.run(s3_manager, backup_settings.RETENTION_DAYS, backup_settings.MINIMUM_KEEP)
         except Exception as e:
             context.log.warning("Retention cleanup failed: %s", e)
 
