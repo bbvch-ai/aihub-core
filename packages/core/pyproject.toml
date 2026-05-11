@@ -2,7 +2,7 @@
 name = "swiss-ai-hub-core"
 version = "0.288.0"
 description = ""
-requires-python = ">=3.13, <3.14"
+requires-python = ">=3.13, <3.15"
 authors = [
     { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
     { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
@@ -14,7 +14,7 @@ license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
     "mongoengine>=0.29.1",
-    "llama-index-core==0.14.12",
+    "llama-index-core>=0.14.12,<0.15",
     "azure-ai-documentintelligence>=1.0.2",
     "pydantic-settings>=2.7.0",
     "python-i18n>=0.3.9",
