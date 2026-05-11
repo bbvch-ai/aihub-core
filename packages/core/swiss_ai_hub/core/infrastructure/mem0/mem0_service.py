@@ -111,12 +111,12 @@ class Mem0Service:
         user_id: str | None = None,
         agent_id: str | None = None,
         tenant_id: str | None = None,
-        tenant_namespace: str | None = None,
+        tenant_namespaces: list[str] | None = None,
         limit: int = 100,
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
-        filters = {
+        scalar_filters = {
             "_type": memory_type.value,
             "_user_id": user_id,
             "_agent_id": agent_id,
@@ -124,10 +124,12 @@ class Mem0Service:
             "_display_id": display_id,
             "_run_id": run_id,
             "_tenant_id": tenant_id,
-            "_tenant_namespace": tenant_namespace,
         }
-        # Filter out None values and empty strings
-        filters = {k: str(v) for k, v in filters.items() if v is not None and v != ""}
+        filters: dict = {k: str(v) for k, v in scalar_filters.items() if v is not None and v != ""}
+        if tenant_namespaces:
+            filters["_tenant_namespace"] = (
+                tenant_namespaces[0] if len(tenant_namespaces) == 1 else {"in": list(tenant_namespaces)}
+            )
         memories = await self._memory.search(
             query=query,
             user_id=owner_id,

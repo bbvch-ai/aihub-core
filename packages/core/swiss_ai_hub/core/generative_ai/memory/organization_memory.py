@@ -19,7 +19,6 @@ class OrganizationMemory:
         """Initialize tenant memory manager using default tenant from settings."""
         self._config = Mem0Settings().get_config()
         self._tenant_id = MemorySettings().DEFAULT_TENANT_ID
-        self._tenant_namespace = MemorySettings().DEFAULT_TENANT_NAMESPACE
         self._t = t
         self.mem0service = Mem0Service(
             self._config,
@@ -55,13 +54,14 @@ class OrganizationMemory:
         thread_id: str | None = None,
         display_id: str | None = None,
         run_id: str | None = None,
+        tenant_namespaces: list[str] | None = None,
         limit: int = 100,
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
         """
-        Searches tenant memories semantically.
-        Tenant ID and namespace are from settings (not user-controllable).
+        Searches tenant memories semantically. Pass `tenant_namespaces` to restrict to one or more
+        namespaces; pass None or empty for unscoped retrieval.
         """
         return await self.mem0service.search(
             query=query,
@@ -72,7 +72,7 @@ class OrganizationMemory:
             memory_type=MemoryType.ORGANIZATION_MEMORY,
             user_id=user_id,
             agent_id=agent_id,
-            tenant_namespace=self._tenant_namespace,
+            tenant_namespaces=tenant_namespaces,
             tenant_id=self._tenant_id,
             limit=limit,
             threshold=threshold,

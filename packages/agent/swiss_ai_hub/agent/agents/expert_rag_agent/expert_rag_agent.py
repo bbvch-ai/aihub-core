@@ -33,6 +33,7 @@ from swiss_ai_hub.core.generative_ai import (
     format_expert_conversation,
     narrow_retrievers,
 )
+from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -231,15 +232,15 @@ class ExpertRAGAgent(Agent):
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         query = event.user_query
-        tenant_namespace = (
-            event.org_memory_namespace
-            if isinstance(event, RAGStartEvent) and event.org_memory_namespace is not None
-            else agent_config.memory.tenant_namespace
+        requested = event.org_memory_namespace if isinstance(event, RAGStartEvent) else None
+        tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
+            requested=requested,
+            configured=agent_config.memory.tenant_namespaces,
         )
         memory_result = await memory.search_organization_memory(
             query=query,
             tenant_id=agent_config.memory.tenant_id,
-            tenant_namespace=tenant_namespace,
+            tenant_namespaces=tenant_namespaces,
             user_id=None,
             limit=10,
             threshold=0.5,

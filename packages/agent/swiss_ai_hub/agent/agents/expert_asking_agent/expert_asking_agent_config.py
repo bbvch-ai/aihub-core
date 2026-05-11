@@ -3,7 +3,7 @@ from typing import Annotated, Literal, Self
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import SlackConfig, TeamsConfig
-from swiss_ai_hub.core.form import InputNumber, InputText, Select
+from swiss_ai_hub.core.form import InputNumber, Select
 from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import LLMConfig, MemorySettings
@@ -82,10 +82,16 @@ class ExpertAskingAgentConfig(AgentConfig):
         Field(description="Maximum number of loops to ask experts."),
         Gt(0),
     ] = 3
-    tenant_namespace: Annotated[
-        str | InputText,
-        Field(description="Tenant namespace for storing organization memories from expert conversations."),
-    ] = "default"
+    tenant_namespaces: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Allowed organization-memory namespaces for storing expert-conversation memories. "
+                "Empty = unrestricted. Single entry = always used. Multiple entries require the start "
+                "event to specify `org_memory_namespace`."
+            ),
+        ),
+    ] = []
     tenant_id: Annotated[str, Field(description="Tenant ID for organization memory scoping.")] = Field(
         default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID
     )
@@ -111,9 +117,6 @@ class ExpertAskingAgentConfig(AgentConfig):
                 min=1,
                 max=10,
                 step=1,
-            ),
-            tenant_namespace=InputText(
-                label=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.config.tenant_namespace.label"),
             ),
             channel_config=ChannelConfig.as_form(),
         )

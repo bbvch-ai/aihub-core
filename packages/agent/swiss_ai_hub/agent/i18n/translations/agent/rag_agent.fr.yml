@@ -51,10 +51,6 @@ config:
     help: Reclasser les résultats de recherche de mémoire organisationnelle avec le
       reranker configuré pour une meilleure pertinence. Augmente la latence et le
       coût.
-  tenant_namespace:
-    label: Espace de noms du locataire
-    help: Espace de noms pour l'isolation de la mémoire au niveau départemental. Laisser
-      vide pour la portée organisationnelle par défaut.
   enable_user_memory_retrieval:
     label: Activer la récupération de mémoire utilisateur
     help: Récupérer les mémoires spécifiques à l'utilisateur pour un contexte personnalisé.

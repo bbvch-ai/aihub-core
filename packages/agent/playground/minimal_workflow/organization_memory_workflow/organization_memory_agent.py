@@ -71,7 +71,7 @@ class OrganizationMemoryAgent(Agent):
         memory_search_result = await memory.search_organization_memory(
             query=event.user_query,
             tenant_id=agent_config.tenant_id,
-            tenant_namespace=agent_config.tenant_namespace,
+            tenant_namespaces=[agent_config.tenant_namespace] if agent_config.tenant_namespace else None,
             user_id=event.user.id,
         )
         return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_search_result=memory_search_result)

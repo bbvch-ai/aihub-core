@@ -56,7 +56,8 @@ class RAGStartEvent(StartEvent):
         Field(
             description=(
                 "Optional namespace (department-level sub-scope) for organization-memory search. "
-                "When set, overrides the agent profile's configured tenant_namespace for this run."
+                "Must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; "
+                "raises otherwise. When omitted, the full configured list is searched."
             ),
         ),
     ] = None

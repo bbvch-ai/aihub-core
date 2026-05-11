@@ -1,7 +1,7 @@
 from typing import Annotated, Self
 
 from pydantic import Field
-from swiss_ai_hub.core.form import Checkbox, InputText
+from swiss_ai_hub.core.form import Checkbox
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import MemorySettings
 
@@ -27,10 +27,15 @@ class MemoryConfig(Form):
         str,
         Field(description="Tenant ID for organization memory scoping."),
     ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID)
-    tenant_namespace: Annotated[
-        str | InputText | None,
-        Field(description="Tenant namespace for department-level memory isolation. Uses default if None."),
-    ] = None
+    tenant_namespaces: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Allowed organization-memory namespaces. Empty = unrestricted. Non-empty = whitelist; "
+                "the full set is searched when the start event omits `org_memory_namespace`."
+            ),
+        ),
+    ] = []
 
     enable_user_memory_retrieval: Annotated[
         bool | Checkbox,
@@ -57,11 +62,6 @@ class MemoryConfig(Form):
             rerank_organization_memory=Checkbox(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.rerank_organization_memory.label"),
                 help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.rerank_organization_memory.help"),
-                condition_if="$get(check_organization_memory_enabled).value",
-            ),
-            tenant_namespace=InputText(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.tenant_namespace.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.tenant_namespace.help"),
                 condition_if="$get(check_organization_memory_enabled).value",
             ),
             enable_user_memory_retrieval=Checkbox(
