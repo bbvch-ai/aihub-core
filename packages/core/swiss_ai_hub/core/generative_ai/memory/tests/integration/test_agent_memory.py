@@ -226,7 +226,7 @@ class TestAgentMemory:
         result = await agent_memory.search_organization_memory(
             query="What containerization technology does ACME use?",
             tenant_id="ACME Corp",
-            tenant_namespace="acme_corp",
+            tenant_namespaces=["acme_corp"],
         )
 
         assert len(result.results) > 0

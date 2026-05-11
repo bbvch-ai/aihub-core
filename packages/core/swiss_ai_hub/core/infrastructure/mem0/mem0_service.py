@@ -125,7 +125,9 @@ class Mem0Service:
             "_run_id": run_id,
             "_tenant_id": tenant_id,
         }
-        filters: dict = {k: str(v) for k, v in scalar_filters.items() if v is not None and v != ""}
+        filters: dict[str, str | dict[str, list[str]]] = {
+            k: str(v) for k, v in scalar_filters.items() if v is not None and v != ""
+        }
         if tenant_namespaces:
             filters["_tenant_namespace"] = (
                 tenant_namespaces[0] if len(tenant_namespaces) == 1 else {"in": list(tenant_namespaces)}

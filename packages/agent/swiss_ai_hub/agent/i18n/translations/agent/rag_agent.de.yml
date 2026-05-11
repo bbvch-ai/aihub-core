@@ -41,10 +41,6 @@ config:
       </context_documents>\n\nAnweisung: Erstellen Sie anhand der Informationen aus\
       \ den bereitgestellten Dokumenten eine detaillierte und gut strukturierte Antwort\n\
       auf die Frage des Benutzers.\n{% endchat %}\n"
-  reranking_enabled:
-    label: Reranking aktivieren
-    help: Verwenden Sie ein Reranking-Modell, um die Relevanz der abgerufenen Dokumente
-      zu verbessern, bevor sie an das LLM übergeben werden.
   enable_user_memory_retrieval:
     label: Benutzergedächtnis-Abruf aktivieren
     help: Ob benutzerspezifische Erinnerungen für personalisierten Kontext abgerufen

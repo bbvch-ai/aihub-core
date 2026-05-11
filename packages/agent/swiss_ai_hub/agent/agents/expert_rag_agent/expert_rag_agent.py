@@ -27,13 +27,14 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
+    OrgMemoryNamespaceResolver,
+    OrgMemoryReadConfig,
     RetrievalRuntimeConfig,
     extend_chat_history_with_organization_memory,
     extend_chat_history_with_user_memory,
     format_expert_conversation,
     narrow_retrievers,
 )
-from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -488,6 +489,21 @@ class ExpertRAGAgent(Agent):
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.waiting_for_instructions"))
         return ExpertRejectEvent(reason="User declined expert escalation")
 
+    @staticmethod
+    def _resolve_expert_write_namespace(
+        event: UserMessageEvent | RAGStartEvent,
+        org_memory: OrgMemoryReadConfig | None,
+    ) -> str | None:
+        """Pick the namespace the expert should write under. Single-entry event override
+        propagates; multiple or empty fall back to the profile default (writes are singular)."""
+        default = org_memory.default_tenant_namespace if org_memory else None
+        if not isinstance(event, RAGStartEvent):
+            return default
+        requested = event.org_memory_namespaces
+        if len(requested) == 1:
+            return requested[0]
+        return default
+
     @step(
         name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.invoke_expert_agent.name"),
         description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.invoke_expert_agent.description"),
@@ -521,8 +537,8 @@ class ExpertRAGAgent(Agent):
                 question_to_expert=user_message_event.user_query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
-                org_memory_namespace=(
-                    agent_config.org_memory.default_tenant_namespace if agent_config.org_memory else None
+                org_memory_namespace=ExpertRAGAgent._resolve_expert_write_namespace(
+                    user_message_event, agent_config.org_memory
                 ),
             ),
         )

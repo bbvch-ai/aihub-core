@@ -4,8 +4,7 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from llama_index.core.prompts import RichPromptTemplate
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import BotInTheLoop, RouteOptions, RouterEvent, StoreOrganizationMemoryEvent
-from swiss_ai_hub.core.generative_ai import AgentMemory, route_to_event_using_llm
-from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
+from swiss_ai_hub.core.generative_ai import AgentMemory, OrgMemoryNamespaceResolver, route_to_event_using_llm
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent

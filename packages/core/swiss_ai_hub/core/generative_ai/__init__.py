@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
     from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
     from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
+    from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
     from swiss_ai_hub.core.generative_ai.memory.org_memory_read_config import OrgMemoryReadConfig
     from swiss_ai_hub.core.generative_ai.memory.org_memory_write_config import OrgMemoryWriteConfig
     from swiss_ai_hub.core.generative_ai.memory.organization_memory import OrganizationMemory
@@ -96,6 +97,7 @@ __all__ = [
     "RetrievalRuntimeConfig",
     "MineruLoader",
     "ModeOptions",
+    "OrgMemoryNamespaceResolver",
     "OrgMemoryReadConfig",
     "OrgMemoryWriteConfig",
     "OrganizationMemory",
@@ -154,6 +156,7 @@ _LAZY_IMPORTS = {
     "RetrievalRuntimeConfig": "swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config",
     "MineruLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader",
     "ModeOptions": "swiss_ai_hub.core.generative_ai.processors.vector_prev_next_post_processor",
+    "OrgMemoryNamespaceResolver": "swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver",
     "OrgMemoryReadConfig": "swiss_ai_hub.core.generative_ai.memory.org_memory_read_config",
     "OrgMemoryWriteConfig": "swiss_ai_hub.core.generative_ai.memory.org_memory_write_config",
     "OrganizationMemory": "swiss_ai_hub.core.generative_ai.memory.organization_memory",

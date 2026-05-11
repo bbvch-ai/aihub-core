@@ -22,12 +22,12 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
+    OrgMemoryNamespaceResolver,
     RetrievalRuntimeConfig,
     extend_chat_history_with_organization_memory,
     extend_chat_history_with_user_memory,
     narrow_retrievers,
 )
-from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
