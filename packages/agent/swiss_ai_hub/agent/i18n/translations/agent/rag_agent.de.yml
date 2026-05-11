@@ -45,6 +45,10 @@ config:
     label: Organisationsgedächtnis aktivieren
     help: Ob Organisationserinnerungen (Expertenwissen, das zwischen Benutzern geteilt
       wird) für den Kontext abgerufen werden sollen.
+  rerank_organization_memory:
+    label: Organisationsgedächtnis neu ordnen
+    help: Ergebnisse der Organisationsgedächtnis-Suche mit dem konfigurierten Reranker
+      neu ordnen, um die Relevanz zu erhöhen. Erhöht Latenz und Kosten.
   tenant_namespace:
     label: Mandanten-Namespace
     help: Namespace für die abteilungsspezifische Speicherisolierung. Leer lassen
@@ -53,6 +57,10 @@ config:
     label: Benutzergedächtnis-Abruf aktivieren
     help: Ob benutzerspezifische Erinnerungen für personalisierten Kontext abgerufen
       werden sollen.
+  rerank_user_memory:
+    label: Benutzergedächtnis neu ordnen
+    help: Ergebnisse der Benutzergedächtnis-Suche mit dem konfigurierten Reranker
+      neu ordnen, um die Relevanz zu erhöhen. Erhöht Latenz und Kosten.
   enable_user_memory_storage:
     label: Benutzergedächtnis-Speicherung aktivieren
     help: Ob neue Erinnerungen aus Gesprächen für zukünftigen Abruf gespeichert werden

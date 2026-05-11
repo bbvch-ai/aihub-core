@@ -43,6 +43,10 @@ config:
     label: Enable organization memory
     help: Whether to retrieve organization memories (expert knowledge shared across
       users) for context.
+  rerank_organization_memory:
+    label: Rerank organization memory
+    help: Rerank organization memory search results using the configured reranker
+      for higher relevance. Adds latency and cost.
   tenant_namespace:
     label: Tenant namespace
     help: Namespace for department-level memory isolation. Leave empty for default
@@ -50,6 +54,10 @@ config:
   enable_user_memory_retrieval:
     label: Enable user memory retrieval
     help: Whether to retrieve user-specific memories for personalized context.
+  rerank_user_memory:
+    label: Rerank user memory
+    help: Rerank user memory search results using the configured reranker for higher
+      relevance. Adds latency and cost.
   enable_user_memory_storage:
     label: Enable user memory storage
     help: Whether to store new memories from conversations for future retrieval.

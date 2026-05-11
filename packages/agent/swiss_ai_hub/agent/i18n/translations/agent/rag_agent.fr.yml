@@ -46,6 +46,11 @@ config:
     label: Activer la mémoire organisationnelle
     help: Récupérer les mémoires organisationnelles (connaissances d'experts partagées
       entre utilisateurs) pour le contexte.
+  rerank_organization_memory:
+    label: Reclasser la mémoire organisationnelle
+    help: Reclasser les résultats de recherche de mémoire organisationnelle avec le
+      reranker configuré pour une meilleure pertinence. Augmente la latence et le
+      coût.
   tenant_namespace:
     label: Espace de noms du locataire
     help: Espace de noms pour l'isolation de la mémoire au niveau départemental. Laisser
@@ -53,6 +58,10 @@ config:
   enable_user_memory_retrieval:
     label: Activer la récupération de mémoire utilisateur
     help: Récupérer les mémoires spécifiques à l'utilisateur pour un contexte personnalisé.
+  rerank_user_memory:
+    label: Reclasser la mémoire utilisateur
+    help: Reclasser les résultats de recherche de mémoire utilisateur avec le reranker
+      configuré pour une meilleure pertinence. Augmente la latence et le coût.
   enable_user_memory_storage:
     label: Activer le stockage de mémoire utilisateur
     help: Stocker les nouvelles mémoires des conversations pour une récupération future.
