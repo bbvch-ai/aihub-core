@@ -42,10 +42,6 @@ config:
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction : En utilisant\
       \ les informations des documents fournis, générez une réponse détaillée et bien\
       \ structurée\nà la question de l'utilisateur.\n{% endchat %}\n"
-  reranking_enabled:
-    label: Activer le reclassement
-    help: Utilisez un modèle de reclassement pour améliorer la pertinence des documents
-      récupérés avant de les transmettre au LLM.
   enable_organization_memory:
     label: Activer la mémoire organisationnelle
     help: Récupérer les mémoires organisationnelles (connaissances d'experts partagées

@@ -169,7 +169,7 @@ async def do_rerank_nodes(
         top_n=reranking_config.reranking_model.top_n,
         input_nodes=nodes,
         output_nodes=reranked_nodes,
-        reranked=reranking_config.enabled,
+        reranked=reranking_config.reranking_model is not None,
     )
 
 

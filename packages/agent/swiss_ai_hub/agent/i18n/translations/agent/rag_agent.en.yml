@@ -39,10 +39,6 @@ config:
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction: Using the information\
       \ from the provided documents, generate a detailed and well-structured response\n\
       to the user's question.\n{% endchat %}\n"
-  reranking_enabled:
-    label: Enable reranking
-    help: Use a reranking model to improve the relevance of retrieved documents before
-      passing them to the LLM.
   enable_organization_memory:
     label: Enable organization memory
     help: Whether to retrieve organization memories (expert knowledge shared across

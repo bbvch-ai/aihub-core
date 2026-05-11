@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.288.0] - 2026-05-11 - Streamlined Optional Form Fields and Configuration Management
+
+### Refactor
+
+- 🔄 **Revised Form Optionality Handling:** Overhauled how optional form fields are managed, replacing explicit
+  `enabled: bool` flags with Pydantic's `T | None` annotations for improved data model clarity and consistency. This
+  architectural change is documented in `2026_05_07_nullable_form_fields_over_enabled_toggle.md`.
+- 🦾 **Unified UI Toggle Management:** Integrated UI toggle logic directly into the form framework, automatically
+  generating enable/disable checkboxes for nullable fields and groups. This standardizes the user experience and
+  significantly reduces boilerplate for optional settings.
+
+### Changed
+
+- ⚡️ **Simplified Agent Reranking Configuration:** Updated RAG and Expert RAG agents to leverage the new nullable field
+  system, removing the dedicated `enabled` field from `RerankingConfig` and simplifying internal logic to check for
+  `is not None`.
+- 🧹 **Cleaned Agent Configuration Data:** Agent configurations now store `null` for disabled optional sub-forms, leading
+  to smaller, more readable persisted data by eliminating stale default values.
+- 🚀 **Enhanced Frontend Form Data Processing:** Introduced new `seedNullableToggles` and `coerceNullableToggles`
+  functions to intelligently initialize and submit form data, correctly managing the state of auto-generated nullable
+  field toggles in the UI.
+
+### Removed
+
+- 🗑️ **Eliminated Redundant `enabled` Fields:** The dedicated `enabled` boolean fields in `RerankingConfig` and other
+  optional sub-configurations have been removed, as their functionality is now implicitly handled by the form framework
+  based on `T | None` annotations.
+- 📄 **Deprecated Reranking UI Conditions and Translations:** Removed `condition_if` properties that previously linked to
+  the `reranking_config_enabled` field, along with their associated internationalization strings, simplifying the UI
+  schema.
+
+______________________________________________________________________
+
 ## [v0.287.3] - 2026-05-11 - Improved Memory Management API
 
 ### Refactor

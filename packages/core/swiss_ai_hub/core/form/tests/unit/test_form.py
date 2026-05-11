@@ -834,3 +834,92 @@ class TestTemplateData:
         assert restored.name.en == "Test"
         assert restored.icon == "mage:robot"
         assert restored.model_dump() == raw_dict
+
+
+# =============================================================================
+# Tests for Nullable Sub-Forms and Nullable Fields
+# =============================================================================
+
+
+class NullableInnerForm(Form):
+    """Inner form used for nullable sub-form tests."""
+
+    @classmethod
+    def as_form(cls) -> "NullableInnerForm":
+        return cls(value=InputNumber(label=LocaleString(en="Value")))
+
+    value: Annotated[int | InputNumber, Field(description="Value")]
+
+
+class FormWithNullableSubForm(Form):
+    """Outer form with an optional nested form."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[
+        NullableInnerForm | None,
+        Field(description="Inner form", title="Inner"),
+    ] = None
+
+
+class FormWithNullableLeaf(Form):
+    """Form with an optional scalar leaf."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    count: Annotated[int | InputNumber | None, Field(description="Count")] = None
+
+
+class TestNullableFlag:
+    """Tests for the nullable flag on sub-forms and leaf elements."""
+
+    def test_nullable_subform_value_present(self) -> None:
+        form = FormWithNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        )
+        elements = form.to_formkit_form()
+        inner = next(e for e in elements if e.name == "inner")
+        assert isinstance(inner, Group)
+        assert inner.nullable is True
+
+    def test_nullable_subform_value_none_emits_placeholder_group(self) -> None:
+        form = FormWithNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=None,
+        )
+        elements = form.to_formkit_form()
+        inner = next((e for e in elements if e.name == "inner"), None)
+        assert inner is not None
+        assert isinstance(inner, Group)
+        assert inner.nullable is True
+        assert len(inner.children) >= 1
+
+    def test_nullable_leaf_sets_flag(self) -> None:
+        form = FormWithNullableLeaf(
+            name=InputText(label=LocaleString(en="Name")),
+            count=InputNumber(label=LocaleString(en="Count")),
+        )
+        elements = form.to_formkit_form()
+        count_elem = next(e for e in elements if e.name == "count")
+        assert count_elem.nullable is True
+        # Required must still be False since the field is optional
+        assert count_elem.required is False
+
+    def test_non_nullable_field_not_marked(self) -> None:
+        form = SimpleForm(
+            name=InputText(label=LocaleString(en="Name")),
+            age=InputNumber(label=LocaleString(en="Age")),
+            active=Checkbox(label=LocaleString(en="Active")),
+        )
+        for element in form.to_formkit_form():
+            assert element.nullable is False
+
+    def test_nullable_subform_submission_accepts_null(self) -> None:
+        Model = FormWithNullableSubForm.to_form_submission_model()
+        instance = Model(name="John", inner=None)
+        assert instance.inner is None
+
+    def test_deep_merge_overwrites_with_null(self) -> None:
+        base = {"name": "John", "inner": {"value": 5}}
+        override = {"inner": None}
+        merged = Form.deep_merge(base, override)
+        assert merged["inner"] is None
