@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.287.0] - 2026-05-11 - Enhanced Memory Configuration for RAG Agents
+
+### Added
+
+- ✨ **Granular Memory Reranking Control**: Introduced new configuration options to enable or disable reranking
+  specifically for both **organization memory** and **user memory** searches. This provides greater control over
+  retrieval relevance and performance, allowing users to optimize for latency or accuracy as needed.
+
+### Refactor
+
+- 🧹 **Consolidated RAG Agent Memory Configuration**: Centralized all memory-related settings (including organization
+  memory enablement, user memory retrieval/storage, tenant ID, and namespace) into a new, dedicated **`MemoryConfig`
+  object**. This significantly streamlines agent configuration, improves readability, and simplifies future
+  enhancements.
+- 🔄 **Updated Agent Memory Access**: RAG agents and their preconditions now access all memory-related settings through
+  the consolidated `MemoryConfig` object, ensuring consistent and organized handling of memory configurations across the
+  system.
+
+______________________________________________________________________
+
 ## [v0.286.8] - 2026-05-08 - Internal Maintenance
 
 ______________________________________________________________________

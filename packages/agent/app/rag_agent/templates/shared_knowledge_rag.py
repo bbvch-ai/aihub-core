@@ -9,6 +9,7 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
 
 from swiss_ai_hub.agent.agents.rag_agent import RAGAgentConfig
+from swiss_ai_hub.agent.agents.rag_agent.configs.memory_config import MemoryConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
@@ -74,7 +75,9 @@ def build() -> RAGAgentConfig:
             ),
         ],
         reranking_config=RerankingConfig(enabled=False),
-        enable_organization_memory=True,
-        enable_user_memory_retrieval=True,
-        enable_user_memory_storage=True,
+        memory=MemoryConfig(
+            enable_organization_memory=True,
+            enable_user_memory_retrieval=True,
+            enable_user_memory_storage=True,
+        ),
     )
