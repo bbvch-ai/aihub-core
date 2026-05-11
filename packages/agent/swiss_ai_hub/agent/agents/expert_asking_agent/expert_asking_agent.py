@@ -5,6 +5,7 @@ from llama_index.core.prompts import RichPromptTemplate
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import BotInTheLoop, RouteOptions, RouterEvent, StoreOrganizationMemoryEvent
 from swiss_ai_hub.core.generative_ai import AgentMemory, route_to_event_using_llm
+from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -153,7 +154,11 @@ class ExpertAskingAgent(Agent):
 
             # Store expert conversation as organization memory
             memory_text = f"Question: {initial_question_event.question_to_expert}\n\nExpert Answer: {event.response}"
-            tenant_namespace = initial_question_event.org_memory_namespace or agent_config.tenant_namespace
+            tenant_namespace = OrgMemoryNamespaceResolver.resolve_for_write(
+                event_override=initial_question_event.org_memory_namespace,
+                default=agent_config.tenant_namespace,
+                allowed=agent_config.tenant_namespaces,
+            )
             memory_added = await memory.add_organization_memory(
                 memory=memory_text,
                 user_id=initial_question_event.user.id,

@@ -86,6 +86,15 @@ class ExpertAskingAgentConfig(AgentConfig):
         str | None,
         Field(description="Default namespace for storing expert-conversation memories."),
     ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_NAMESPACE)
+    tenant_namespaces: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Allow-list of namespaces that may be used for writes (event override OR the default). "
+                "Empty = unrestricted; non-empty = the effective write namespace must be in this list."
+            ),
+        ),
+    ] = []
     tenant_id: Annotated[str, Field(description="Tenant ID for organization memory scoping.")] = Field(
         default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID
     )
