@@ -58,17 +58,17 @@ def check_context_ready_for_history_limit_with_expert(
 
 def check_organization_memory_enabled(config: RAGAgentConfig) -> bool:
     """Check if organization memory retrieval is enabled in the agent configuration."""
-    return config.enable_organization_memory
+    return config.memory.enable_organization_memory
 
 
 def check_user_memory_retrieval_enabled(config: RAGAgentConfig) -> bool:
     """Check if user memory retrieval is enabled in the agent configuration."""
-    return config.enable_user_memory_retrieval
+    return config.memory.enable_user_memory_retrieval
 
 
 def check_user_memory_storage_enabled(config: RAGAgentConfig) -> bool:
     """Check if user memory storage is enabled in the agent configuration."""
-    return config.enable_user_memory_storage
+    return config.memory.enable_user_memory_storage
 
 
 def check_memory_ready_for_chat_history(
@@ -84,12 +84,12 @@ def check_memory_ready_for_chat_history(
     - If org memory is enabled, wait for org memory event
     - Only execute once when all required events are present
     """
-    if config.enable_user_memory_retrieval and user_memory_event is None:
+    if config.memory.enable_user_memory_retrieval and user_memory_event is None:
         return False
-    if config.enable_organization_memory and org_memory_event is None:
+    if config.memory.enable_organization_memory and org_memory_event is None:
         return False
     # If neither is enabled, return False - step shouldn't run at all
-    return config.enable_user_memory_retrieval or config.enable_organization_memory
+    return config.memory.enable_user_memory_retrieval or config.memory.enable_organization_memory
 
 
 def check_memory_added_to_chat_history(
@@ -103,7 +103,7 @@ def check_memory_added_to_chat_history(
     - If any memory is enabled, wait for memory history event
     - If no memory is enabled, proceed immediately (no wait)
     """
-    if config.enable_user_memory_retrieval or config.enable_organization_memory:
+    if config.memory.enable_user_memory_retrieval or config.memory.enable_organization_memory:
         return memory_history_event is not None
     return True
 
@@ -118,6 +118,6 @@ def check_ready_for_stop(
     Ensures that if memory storage is enabled, we wait for storage to complete
     before emitting the stop event.
     """
-    if config.enable_user_memory_storage:
+    if config.memory.enable_user_memory_storage:
         return store_memory_event is not None
     return True
