@@ -208,10 +208,14 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
   }
 
   function applyInitialData(data: Record<string, unknown>) {
+    // Seed toggles from the raw data so that `field: null` in a template becomes
+    // `__field__enabled: false`. If we seeded after stripping nulls and merging
+    // against the `{}` placeholder from initializeGroupData, every nullable group
+    // would look truthy and the toggle would come up enabled.
+    const seeded = seedNullableToggles(data, configForm.value as FormElement[])
     const base = initializeGroupData(configForm.value as FormElement[], {})
-    const sanitized = stripNullsForGroups(data, configForm.value as FormElement[])
-    const merged = merge(base, sanitized)
-    formData.value = seedNullableToggles(merged, configForm.value as FormElement[])
+    const sanitized = stripNullsForGroups(seeded, configForm.value as FormElement[])
+    formData.value = merge(base, sanitized)
   }
 
   function resetForm() {

@@ -65,8 +65,8 @@ const data = ref<Record<string, unknown>>(
 
 watch(() => props.initialData, (newData) => {
   if (newData && Object.keys(newData).length > 0) {
-    const merged = merge({}, data.value, newData)
-    data.value = seedNullableToggles(merged, props.form as FormElement[])
+    const seeded = seedNullableToggles(newData, props.form as FormElement[])
+    data.value = merge({}, data.value, seeded)
   }
 }, { deep: true })
 
