@@ -50,12 +50,20 @@ class InputNumber(PrimeVueElement):
         validation_rules.append("number")
 
         if self.min is not None:
-            validation_rules.append(f"min:{self.min:g}")
+            validation_rules.append(f"min:{self._format_bound(self.min)}")
 
         if self.max is not None:
-            validation_rules.append(f"max:{self.max:g}")
+            validation_rules.append(f"max:{self._format_bound(self.max)}")
 
         return "|".join(validation_rules)
+
+    @staticmethod
+    def _format_bound(value: float) -> str:
+        # Render integer-valued floats as "5" not "5.0", but avoid `:g`'s scientific
+        # notation for large magnitudes — FormKit's min/max rules can't parse "1e+06".
+        if value.is_integer():
+            return str(int(value))
+        return format(value, "f").rstrip("0").rstrip(".")
 
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
