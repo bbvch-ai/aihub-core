@@ -84,7 +84,7 @@ class RAGAgentConfig(AgentConfig):
             description=("Configuration for organization-memory scoping. Set to null to disable organization memory."),
             title="Organization Memory",
         ),
-    ] = Field(default_factory=OrgMemoryReadConfig)
+    ] = OrgMemoryReadConfig()
 
     @classmethod
     def as_form(cls) -> Self:

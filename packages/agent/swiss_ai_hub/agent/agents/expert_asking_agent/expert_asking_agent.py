@@ -4,8 +4,12 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from llama_index.core.prompts import RichPromptTemplate
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import BotInTheLoop, RouteOptions, RouterEvent, StoreOrganizationMemoryEvent
-from swiss_ai_hub.core.generative_ai import AgentMemory, OrgMemoryNamespaceResolver, route_to_event_using_llm, \
-    OrgMemoryWriteConfig
+from swiss_ai_hub.core.generative_ai import (
+    AgentMemory,
+    OrgMemoryNamespaceResolver,
+    OrgMemoryWriteConfig,
+    route_to_event_using_llm,
+)
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -153,7 +157,13 @@ class ExpertAskingAgent(Agent):
             chat_history = [ChatMessage(**message) for message in chat_history]
 
             org_memory: OrgMemoryWriteConfig = agent_config.org_memory
-            memory_text = f"Question: {initial_question_event.question_to_expert}\n\nExpert Answer: {event.response}"
+            memory_template = agent_config.org_memory_format.in_locale(
+                initial_question_event.locale
+            ) or agent_config.org_memory_format.in_locale("en")
+            memory_text = memory_template.format(
+                question=initial_question_event.question_to_expert,
+                answer=event.response,
+            )
             tenant_namespace = OrgMemoryNamespaceResolver.resolve_for_write(
                 event_override=initial_question_event.org_memory_namespace,
                 default=org_memory.default_tenant_namespace,

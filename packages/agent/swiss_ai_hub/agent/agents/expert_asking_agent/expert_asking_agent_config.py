@@ -3,10 +3,11 @@ from typing import Annotated, Literal, Self
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import SlackConfig, TeamsConfig
-from swiss_ai_hub.core.form import InputNumber, Select
+from swiss_ai_hub.core.form import InputNumber, LocaleInput, Select
 from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import LLMConfig, OrgMemoryWriteConfig
+from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -88,7 +89,17 @@ class ExpertAskingAgentConfig(AgentConfig):
             description="Configuration for organization-memory scoping.",
             title="Organization Memory",
         ),
-    ] = Field(default_factory=OrgMemoryWriteConfig)
+    ] = OrgMemoryWriteConfig()
+    org_memory_format: Annotated[
+        LocaleString | LocaleInput,
+        Field(
+            description=(
+                "Template for the Q&A snippet stored in organization memory."
+                " Supports {question} and {answer} as placeholders."
+            ),
+            title="Organization Memory Format",
+        ),
+    ] = AgentLocaleString.from_i18n_path("agent.expert_asking_agent.config.org_memory_format.default")
 
     channel_config: Annotated[
         ChannelConfig,
@@ -114,6 +125,11 @@ class ExpertAskingAgentConfig(AgentConfig):
             ),
             channel_config=ChannelConfig.as_form(),
             org_memory=OrgMemoryWriteConfig.as_form(),
+            org_memory_format=LocaleString.as_form(
+                label=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.config.org_memory_format.label"),
+                help_text=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.config.org_memory_format.help"),
+                input_type="textarea",
+            ),
         )
 
     def get_active_channel_config(self) -> TeamsConfig | SlackConfig | None:
