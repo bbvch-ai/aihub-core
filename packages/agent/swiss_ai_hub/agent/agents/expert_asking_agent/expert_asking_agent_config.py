@@ -83,12 +83,9 @@ class ExpertAskingAgentConfig(AgentConfig):
         Gt(0),
     ] = 3
     org_memory: Annotated[
-        OrgMemoryWriteConfig | None,
+        OrgMemoryWriteConfig,
         Field(
-            description=(
-                "Configuration for organization-memory scoping. Set to null to disable writing "
-                "expert conversations to organization memory."
-            ),
+            description="Configuration for organization-memory scoping.",
             title="Organization Memory",
         ),
     ] = Field(default_factory=OrgMemoryWriteConfig)
