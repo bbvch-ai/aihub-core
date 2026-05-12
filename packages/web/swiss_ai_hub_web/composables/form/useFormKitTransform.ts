@@ -186,6 +186,10 @@ function buildLocaleInputProperties(
   // Preserve id for $get() references in conditionals
   if (element.id) cleanNode.id = element.id
 
+  // Stable key prevents Vue from reusing this DOM node across sibling schema entries
+  // (critical when conditional `if:` siblings mount/unmount around it).
+  cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
+
   // Preserve conditional visibility (FormKit uses 'if' for schema conditionals)
   if (element.if) cleanNode.if = element.if
 
@@ -201,7 +205,6 @@ function buildLocaleInputProperties(
   if (element.rows !== undefined) cleanNode.rows = element.rows
 
   if (element.validation) cleanNode.validation = element.validation
-  if (element.value !== undefined) cleanNode.value = element.value
 
   return cleanNode
 }
@@ -216,6 +219,10 @@ const EXCLUDED_FIELDS = new Set([
   'placeholder', // Transformed via getLocalizedString
   'children', // Handled separately for recursion
   'nullable', // Wrapper-level signal for the transform; never a FormKit/PrimeVue prop
+  // Backend serialises the Pydantic default into element.value (form duality). FormKit pushes
+  // schema `value` up to the parent v-model on input registration, which would clobber the
+  // loaded data with the backend default. Defaults belong in data, seeded via seedFormDefaults.
+  'value',
 ])
 
 function buildNodeProperties(
@@ -252,6 +259,10 @@ function buildNodeProperties(
   const options = resolveElementOptions(element, optionsResolver)
   if (options) cleanNode.options = options
 
+  // Stable key prevents Vue from reusing this DOM node across sibling schema entries
+  // (critical when conditional `if:` siblings mount/unmount around it).
+  cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
+
   return cleanNode
 }
 
@@ -286,10 +297,12 @@ function combineConditions(toggleCondition: string, existing: string | undefined
 
 function buildNullableToggleNode(element: FormElement, label: string | undefined): Record<string, unknown> {
   const fieldName = element.name as string
+  const toggleId = nullableToggleId(element)
   return {
     $formkit: 'primeCheckbox',
     name: nullableToggleName(fieldName),
-    id: nullableToggleId(element),
+    id: toggleId,
+    key: toggleId,
     label: label ? `Enable ${label}` : 'Enable',
     binary: true,
   }
@@ -373,6 +386,7 @@ function buildLeafNodeForRepeater(
   const help = getLocalizedString(element.help, locale)
   if (help) cleanNode.help = help
   if (children.length > 0) cleanNode.children = children
+  cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
   return cleanNode
 }
 
@@ -575,6 +589,46 @@ export function coerceNullableToggles(
   for (const key of Object.keys(result)) {
     if (key.startsWith('__') && key.endsWith('__enabled')) {
       Reflect.deleteProperty(result, key)
+    }
+  }
+
+  return result
+}
+
+/**
+ * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
+ * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
+ * the v-model on registration), so defaults must be merged into the form data instead.
+ * Existing values — including falsy ones like `false` or `""` — are preserved.
+ */
+export function seedFormDefaults(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...data }
+
+  for (const element of elements) {
+    const name = element.name as string
+    const formkitType = getFormkitType(element)
+    const children = (element.children as FormElement[] | undefined) ?? []
+    const value = result[name]
+
+    if (formkitType === 'group') {
+      if (value === null) continue // nullable group disabled — leave as null
+      const groupValue = (value && typeof value === 'object' && !Array.isArray(value))
+        ? value as Record<string, unknown>
+        : {}
+      result[name] = seedFormDefaults(groupValue, children)
+    }
+    else if (formkitType === 'repeater' && Array.isArray(value)) {
+      result[name] = value.map(item =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? seedFormDefaults(item as Record<string, unknown>, children)
+          : item,
+      )
+    }
+    else if (!(name in result) && element.value !== undefined) {
+      result[name] = element.value
     }
   }
 
