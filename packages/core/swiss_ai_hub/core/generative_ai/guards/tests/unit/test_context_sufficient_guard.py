@@ -12,10 +12,10 @@ from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 scenarios("./features/context_sufficient_guard.feature")
 
 _TEST_GUARD_PROMPT = LocaleString(
-    en="{% chat role=\"user\" %}TEST{% endchat %}",
-    de="{% chat role=\"user\" %}TEST{% endchat %}",
-    fr="{% chat role=\"user\" %}TEST{% endchat %}",
-    it="{% chat role=\"user\" %}TEST{% endchat %}",
+    en='{% chat role="user" %}TEST{% endchat %}',
+    de='{% chat role="user" %}TEST{% endchat %}',
+    fr='{% chat role="user" %}TEST{% endchat %}',
+    it='{% chat role="user" %}TEST{% endchat %}',
 )
 
 

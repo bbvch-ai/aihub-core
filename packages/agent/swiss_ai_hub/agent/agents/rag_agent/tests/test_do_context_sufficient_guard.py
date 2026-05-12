@@ -17,10 +17,10 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 from swiss_ai_hub.agent.rag.step_functions import do_context_sufficient_guard
 
 _GUARD_PROMPT = LocaleString(
-    en="{% chat role=\"user\" %}TEST {{ user_query }}{% endchat %}",
-    de="{% chat role=\"user\" %}TEST {{ user_query }}{% endchat %}",
-    fr="{% chat role=\"user\" %}TEST {{ user_query }}{% endchat %}",
-    it="{% chat role=\"user\" %}TEST {{ user_query }}{% endchat %}",
+    en='{% chat role="user" %}TEST {{ user_query }}{% endchat %}',
+    de='{% chat role="user" %}TEST {{ user_query }}{% endchat %}',
+    fr='{% chat role="user" %}TEST {{ user_query }}{% endchat %}',
+    it='{% chat role="user" %}TEST {{ user_query }}{% endchat %}',
 )
 
 
