@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.1] - 2026-05-12 - Dependency Management & Stability Enhancements
+
+### Changed
+
+- 📄 Streamlined **Dependabot configuration** by excluding Python base images from automatic major version bumps,
+  allowing for more deliberate and controlled updates of core environments.
+- 🔄 Relaxed the **Llama-index-core dependency constraint** in the core package to permit compatible minor version
+  updates, providing greater flexibility for patch releases.
+- ⬆️ Updated the **Hugging Face Hub dependency** for development tools, streamlining its integration and removing an
+  unnecessary `[cli]` extra.
+
+### Fixed
+
+- 🐛 Introduced a **pnpm override for @ungap/structured-clone** across documentation and web packages to ensure specific,
+  stable versions of transitive dependencies are utilized, enhancing overall stability.
+
+______________________________________________________________________
+
 ## [v0.289.0] - 2026-05-12 - Next-Gen Memory Scoping and Agent Templates for Expert Agents
 
 ### Added
