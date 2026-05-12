@@ -204,7 +204,7 @@ Run from the workspace root:
 - Scope is **mandatory**.
 - Allowed types: `fix`, `feat`, `doc`, `test`, `chore`
 - Allowed scopes: `swiss-ai-hub`, `iac`, `ci-cd`, `bots`, `dagster`, `deploy`, `ui`, `guards`, `rag`, `tracing`,
-  `workflows`
+  `workflows`, `backup`
 
 **PR labels** (CI-enforced): Every PR must have exactly one version label: `major`, `minor`, or `patch`. Controls
 automatic semver bumps on merge.
