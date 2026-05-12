@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from pydantic import Field, model_validator
 
-from swiss_ai_hub.core.form import ChipsInput, InputText
+from swiss_ai_hub.core.form import ChipsInput, InputText, OrgMemoryTenantInput
 from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
@@ -13,7 +13,7 @@ class OrgMemoryWriteConfig(Form):
     """Tenant + namespace scoping for organization-memory writes (and base for read-side scoping)."""
 
     tenant_id: Annotated[
-        str | InputText,
+        str | OrgMemoryTenantInput,
         Field(description="Tenant ID for organization-memory scoping."),
     ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID)
     default_tenant_namespace: Annotated[
@@ -54,7 +54,7 @@ class OrgMemoryWriteConfig(Form):
     def as_form(cls) -> Self:
         """Factory method to create a form-mode OrgMemoryWriteConfig."""
         return cls(
-            tenant_id=InputText(
+            tenant_id=OrgMemoryTenantInput(
                 label=LocaleString.from_i18n_path("lib.org_memory.tenant_id.label"),
                 help=LocaleString.from_i18n_path("lib.org_memory.tenant_id.help"),
             ),

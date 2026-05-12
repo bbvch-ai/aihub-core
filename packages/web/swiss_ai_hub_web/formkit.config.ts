@@ -14,6 +14,7 @@ import type { DefaultConfigOptions } from '@formkit/vue'
 const config: DefaultConfigOptions = {
   inputs: {
     ...primeInputs,
+    orgMemoryTenantInput: primeInputs.primeInputText,
     agentSelector: createInput(AgentSelector, {
       props: ['startEvent', 'classPlaceholder', 'idPlaceholder', 'filter'],
     }),

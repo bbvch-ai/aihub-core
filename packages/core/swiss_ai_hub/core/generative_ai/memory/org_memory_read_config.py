@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
-from swiss_ai_hub.core.form import Checkbox, ChipsInput, InputText
+from swiss_ai_hub.core.form import Checkbox, ChipsInput, InputText, OrgMemoryTenantInput
 from swiss_ai_hub.core.generative_ai.memory.org_memory_write_config import OrgMemoryWriteConfig
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
@@ -19,7 +19,7 @@ class OrgMemoryReadConfig(OrgMemoryWriteConfig):
     def as_form(cls) -> Self:
         """Factory method to create a form-mode OrgMemoryReadConfig."""
         return cls(
-            tenant_id=InputText(
+            tenant_id=OrgMemoryTenantInput(
                 label=LocaleString.from_i18n_path("lib.org_memory.tenant_id.label"),
                 help=LocaleString.from_i18n_path("lib.org_memory.tenant_id.help"),
             ),

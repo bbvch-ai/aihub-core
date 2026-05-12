@@ -21,6 +21,7 @@ from swiss_ai_hub.core.form.elements.listbox import Listbox
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
+from swiss_ai_hub.core.form.elements.org_memory_tenant_input import OrgMemoryTenantInput
 from swiss_ai_hub.core.form.elements.password import Password
 from swiss_ai_hub.core.form.elements.radio_button import RadioButton
 from swiss_ai_hub.core.form.elements.rating import Rating
@@ -41,6 +42,7 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "knowledgeDatabaseSelector": "KnowledgeDatabaseSelector",
     "localeInput": "LocaleInput",
     "modelSelect": "ModelSelect",
+    "orgMemoryTenantInput": "OrgMemoryTenantInput",
     "primeCascadeSelect": "CascadeSelect",
     "primeCheckbox": "Checkbox",
     "primeColorPicker": "ColorPicker",
@@ -100,6 +102,7 @@ _FormElementUnion = (
     | Annotated[LocaleInput, Tag("LocaleInput")]
     | Annotated[ModelSelect, Tag("ModelSelect")]
     | Annotated[MultiSelect, Tag("MultiSelect")]
+    | Annotated[OrgMemoryTenantInput, Tag("OrgMemoryTenantInput")]
     | Annotated[Password, Tag("Password")]
     | Annotated[RadioButton, Tag("RadioButton")]
     | Annotated[Rating, Tag("Rating")]
