@@ -64,9 +64,9 @@ class RAGAgentConfig(AgentConfig):
         Field(description="List of knowledge retriever configurations.", title="Retrievers"),
     ]
     reranking_config: Annotated[
-        RerankingConfig,
+        RerankingConfig | None,
         Field(description="Configuration for reranking retrieved documents to improve relevance.", title="Reranking"),
-    ] = RerankingConfig()
+    ] = None
     few_shot_guard_examples: Annotated[
         list[FewShotGuardExample],
         Field(

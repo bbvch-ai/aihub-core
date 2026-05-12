@@ -130,7 +130,6 @@ def build_rag_agent_config(
         ],
         number_of_input_tokens=8192,
         context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
-        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
     )
 
 
@@ -166,7 +165,6 @@ def build_rag_agent_config_with_memory(
         ],
         number_of_input_tokens=8192,
         context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
-        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
         org_memory=OrgMemoryReadConfig(
             tenant_id=tenant_id,
             default_tenant_namespace=tenant_namespace,
@@ -454,16 +452,14 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 @given(parsers.parse('with reranking enabled and top_n of "{top_n:d}"'))
 def _(agent_runner: AgentTestRunner, top_n: int):
     agent_runner.agent_config.reranking_config = RerankingConfig(
-        enabled=True, reranking_model=RerankingModelConfig(model_name="reranker/bge", top_n=top_n)
+        reranking_model=RerankingModelConfig(model_name="reranker/bge", top_n=top_n)
     )
     return agent_runner
 
 
 @given("with reranking disabled")
 def _(agent_runner: AgentTestRunner):
-    agent_runner.agent_config.reranking_config = RerankingConfig(
-        enabled=False,
-    )
+    agent_runner.agent_config.reranking_config = None
     return agent_runner
 
 

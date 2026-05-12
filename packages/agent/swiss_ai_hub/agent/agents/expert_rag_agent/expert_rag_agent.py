@@ -87,13 +87,13 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 @precondition()
 async def reranking_enabled(event: RetrieverEvent, config: ExpertRAGAgentConfig) -> bool:
     """Precondition to check if reranking is enabled or not."""
-    return check_reranking_enabled(event, config.reranking_config.reranking_model is not None)
+    return check_reranking_enabled(event, config.reranking_config is not None)
 
 
 @precondition()
 async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, config: ExpertRAGAgentConfig) -> bool:
     """Precondition to ensure we only order nodes after reranking is complete (or if reranking is disabled)."""
-    return check_reranking_complete_or_disabled(event, config.reranking_config.reranking_model is not None)
+    return check_reranking_complete_or_disabled(event, config.reranking_config is not None)
 
 
 @precondition()

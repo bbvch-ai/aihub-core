@@ -45,7 +45,6 @@ from swiss_ai_hub.agent.agents.expert_asking_agent.events.answer_stop_event impo
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
 from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
 from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import ExpertEscalationConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
@@ -158,7 +157,6 @@ def expert_rag_agent_config(test_collection):
                 agent_id="test_expert_agent",
             ),
         ),
-        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
     )
 
 

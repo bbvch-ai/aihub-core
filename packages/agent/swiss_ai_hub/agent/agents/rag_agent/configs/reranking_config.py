@@ -1,6 +1,6 @@
-from typing import Annotated, Any, Self
+from typing import Annotated, Self
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import RerankingModelConfig
 
@@ -13,27 +13,9 @@ class RerankingConfig(Form):
     """
 
     reranking_model: Annotated[
-        RerankingModelConfig | None,
+        RerankingModelConfig,
         Field(description="Configuration for the reranking model"),
-    ] = None
-
-    @field_validator("reranking_model", mode="before")
-    @classmethod
-    def incomplete_dict_to_none(cls, v: Any) -> Any:
-        """Convert empty or incomplete dict from FormKit to None.
-
-        When reranking is disabled, the form may still send partial data
-        (e.g., {top_n: 5} without model_name). We convert such incomplete
-        configs to None to allow validation to pass.
-        """
-        if v is None:
-            return None
-        if isinstance(v, dict):
-            if not v:
-                return None
-            if "model_name" not in v or not v.get("model_name"):
-                return None
-        return v
+    ]
 
     @classmethod
     def as_form(cls) -> Self:
