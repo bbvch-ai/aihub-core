@@ -50,10 +50,10 @@ class InputNumber(PrimeVueElement):
         validation_rules.append("number")
 
         if self.min is not None:
-            validation_rules.append(f"min:{self.min}")
+            validation_rules.append(f"min:{self.min:g}")
 
         if self.max is not None:
-            validation_rules.append(f"max:{self.max}")
+            validation_rules.append(f"max:{self.max:g}")
 
         return "|".join(validation_rules)
 

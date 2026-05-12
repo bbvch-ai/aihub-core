@@ -215,6 +215,7 @@ const EXCLUDED_FIELDS = new Set([
   'help', // Transformed via getLocalizedString
   'placeholder', // Transformed via getLocalizedString
   'children', // Handled separately for recursion
+  'nullable', // Wrapper-level signal for the transform; never a FormKit/PrimeVue prop
 ])
 
 function buildNodeProperties(
