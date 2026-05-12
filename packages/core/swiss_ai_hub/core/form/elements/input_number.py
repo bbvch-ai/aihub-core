@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Annotated, Literal, Self
 
 from pydantic import Field, computed_field
@@ -50,12 +51,20 @@ class InputNumber(PrimeVueElement):
         validation_rules.append("number")
 
         if self.min is not None:
-            validation_rules.append(f"min:{self.min}")
+            validation_rules.append(f"min:{self._format_bound(self.min)}")
 
         if self.max is not None:
-            validation_rules.append(f"max:{self.max}")
+            validation_rules.append(f"max:{self._format_bound(self.max)}")
 
         return "|".join(validation_rules)
+
+    @staticmethod
+    def _format_bound(value: float) -> str:
+        # FormKit's min/max rules can't parse scientific notation like "1e-07" or "1e+06".
+        # `repr(float)` is the shortest exact-roundtrip string (no precision artefacts), and
+        # `Decimal` formatted with `f` expands any scientific form into plain decimals at
+        # any magnitude. Trailing zeros and a dangling `.` are stripped so 5.0 → "5".
+        return format(Decimal(repr(value)), "f").rstrip("0").rstrip(".")
 
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)

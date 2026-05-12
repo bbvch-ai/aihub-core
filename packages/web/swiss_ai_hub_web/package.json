@@ -2,7 +2,7 @@
   "name": "@swiss-ai-hub/web",
   "license": "Apache-2.0",
   "type": "module",
-  "version": "0.289.2",
+  "version": "0.289.3",
   "description": "Swiss AI Hub - Admin & Management UI (Nuxt 3 layer)",
   "main": "./nuxt.config.ts",
   "repository": {
@@ -101,7 +101,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-sonarjs": "^4.0.3",
     "eslint-plugin-tailwindcss": "^3.18.3",
-    "nuxt": "^3.21.5",
+    "nuxt": "3.21.0",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.2"
