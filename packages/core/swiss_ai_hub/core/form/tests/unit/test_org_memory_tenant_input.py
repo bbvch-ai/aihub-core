@@ -44,7 +44,5 @@ class TestOrgMemoryTenantInputValidation:
 
     def test_access_denied_message_localized(self):
         element = OrgMemoryTenantInput(label="Tenant", name="tenant_id")
-        violations = element.validate_authorization(
-            "tenant_id", "AIHub", _checker(False), LocaleHandler(locale="de")
-        )
+        violations = element.validate_authorization("tenant_id", "AIHub", _checker(False), LocaleHandler(locale="de"))
         assert "Organisationsspeicher" in violations[0].message

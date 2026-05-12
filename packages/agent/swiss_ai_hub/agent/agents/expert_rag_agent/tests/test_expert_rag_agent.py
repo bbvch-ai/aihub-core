@@ -31,7 +31,6 @@ from swiss_ai_hub.core.generative_ai import (
     EmbeddingModelConfig,
     LLMConfig,
     ModeOptions,
-    RerankingModelConfig,
     RetrievePrevNextConfig,
 )
 from swiss_ai_hub.core.i18n import LocaleString
@@ -123,7 +122,6 @@ def mongo_connection(event_loop):
 def expert_rag_agent_config(test_collection):
     """Return an ExpertRAGAgentConfig with expert escalation enabled."""
     llm_config = LLMConfig(model_name="text-generation/gpt-oss-120b")
-    reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         collection_name="development",
