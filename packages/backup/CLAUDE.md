@@ -109,17 +109,17 @@ storage layer" plane. Three jobs share one `maintenance_session` asset:
 **Configuration** (env vars on the `BackupSettings` class — all carry the `BACKUP_` prefix at the OS level via
 `env_prefix="BACKUP_"`; field names below already include that prefix as operators would set them):
 
-| Setting                                               | Default   | Purpose                                                             |
-| ----------------------------------------------------- | --------- | ------------------------------------------------------------------- |
-| `BACKUP_DAGSTER_DEBUG_LOG_RETENTION_DAYS`             | 7         | Keep DEBUG logs (level=10) for N days                               |
-| `BACKUP_DAGSTER_INFO_LOG_RETENTION_DAYS`              | 60        | Keep INFO logs (level=20) for N days                                |
-| `BACKUP_DAGSTER_WARNING_LOG_RETENTION_DAYS`           | 60        | Keep WARNING logs (level=30) for N days                             |
-| `BACKUP_DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS`     | 30        | Keep transient framework events for N days                          |
-| `BACKUP_DAGSTER_CLEANUP_BATCH_LIMIT`                  | 1_000_000 | Cap rows per DELETE — protects against WAL spikes on backlogged DBs |
-| `BACKUP_MAINTENANCE_DISABLED`                         | false     | Kill switch — schedule becomes a no-op                              |
-| `BACKUP_POSTGRES_HOST`                                | postgres  | Connect directly (not pgbouncer) for stable session-mode            |
-| `BACKUP_POSTGRES_PORT`                                | 5432      |                                                                     |
-| `BACKUP_DAGSTER_DB`                                   | dagster   | DB name to maintain                                                 |
+| Setting                                           | Default   | Purpose                                                             |
+| ------------------------------------------------- | --------- | ------------------------------------------------------------------- |
+| `BACKUP_DAGSTER_DEBUG_LOG_RETENTION_DAYS`         | 7         | Keep DEBUG logs (level=10) for N days                               |
+| `BACKUP_DAGSTER_INFO_LOG_RETENTION_DAYS`          | 60        | Keep INFO logs (level=20) for N days                                |
+| `BACKUP_DAGSTER_WARNING_LOG_RETENTION_DAYS`       | 60        | Keep WARNING logs (level=30) for N days                             |
+| `BACKUP_DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` | 30        | Keep transient framework events for N days                          |
+| `BACKUP_DAGSTER_CLEANUP_BATCH_LIMIT`              | 1_000_000 | Cap rows per DELETE — protects against WAL spikes on backlogged DBs |
+| `BACKUP_MAINTENANCE_DISABLED`                     | false     | Kill switch — schedule becomes a no-op                              |
+| `BACKUP_POSTGRES_HOST`                            | postgres  | Connect directly (not pgbouncer) for stable session-mode            |
+| `BACKUP_POSTGRES_PORT`                            | 5432      |                                                                     |
+| `BACKUP_DAGSTER_DB`                               | dagster   | DB name to maintain                                                 |
 
 **Failure isolation**: Each handler returns a `MaintenanceResult` rather than raising. The finalize asset aggregates and
 only fails the run if ANY handler reported `succeeded=False`. One failed cleanup never blocks the others.

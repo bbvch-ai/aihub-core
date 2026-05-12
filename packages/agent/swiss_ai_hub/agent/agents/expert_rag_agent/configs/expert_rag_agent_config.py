@@ -40,6 +40,7 @@ class ExpertRAGAgentConfig(RAGAgentConfig):
             few_shot_guard_examples=base_form.few_shot_guard_examples,
             system_prompt=base_form.system_prompt,
             context_prompt=base_form.context_prompt,
-            memory=base_form.memory,
+            user_memory=base_form.user_memory,
+            org_memory=base_form.org_memory,
             expert_escalation=ExpertEscalationConfig.as_form(),
         )

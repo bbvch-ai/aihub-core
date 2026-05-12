@@ -41,18 +41,6 @@ config:
       </context_documents>\n\nAnweisung: Erstellen Sie anhand der Informationen aus\
       \ den bereitgestellten Dokumenten eine detaillierte und gut strukturierte Antwort\n\
       auf die Frage des Benutzers.\n{% endchat %}\n"
-  enable_organization_memory:
-    label: Organisationsgedächtnis aktivieren
-    help: Ob Organisationserinnerungen (Expertenwissen, das zwischen Benutzern geteilt
-      wird) für den Kontext abgerufen werden sollen.
-  rerank_organization_memory:
-    label: Organisationsgedächtnis neu ordnen
-    help: Ergebnisse der Organisationsgedächtnis-Suche mit dem konfigurierten Reranker
-      neu ordnen, um die Relevanz zu erhöhen. Erhöht Latenz und Kosten.
-  tenant_namespace:
-    label: Mandanten-Namespace
-    help: Namespace für die abteilungsspezifische Speicherisolierung. Leer lassen
-      für den Standard-Organisationsbereich.
   enable_user_memory_retrieval:
     label: Benutzergedächtnis-Abruf aktivieren
     help: Ob benutzerspezifische Erinnerungen für personalisierten Kontext abgerufen

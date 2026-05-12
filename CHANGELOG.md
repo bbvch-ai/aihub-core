@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.0] - 2026-05-12 - Next-Gen Memory Scoping and Agent Templates for Expert Agents
+
+### Added
+
+- ✨ **Agent Templates**: Introduced a new templating system for `ExpertAskingAgent` and `ExpertRAGAgent`, making it
+  easier to deploy and configure specialized agents for various use cases.
+- 🦾 **Engineering Expert Agent Templates**: Shipped default `Engineering Expert` and `Engineering Expert RAG` agent
+  templates, providing ready-to-use configurations for escalating and answering technical questions.
+- ⚙️ **Granular Organization Memory Scoping**: Added new configuration objects (`OrgMemoryReadConfig`,
+  `OrgMemoryWriteConfig`) allowing agents to define `default_tenant_namespace` and `allowed_tenant_namespaces` for
+  precise control over knowledge access.
+- 📝 **Configurable Organization Memory Format**: `ExpertAskingAgent` now supports a configurable `org_memory_format`
+  template, enabling custom Q&A snippets to be stored in organization memory.
+- 🎛️ **New Form Components**: Introduced `ChipsInput` for intuitive list input (e.g., allowed namespaces) and
+  `OrgMemoryTenantInput` which integrates built-in authorization checks for organization memory fields directly into the
+  UI.
+- 🔑 **Authorization for Organization Memory**: Implemented client-side configuration authorization checks for
+  organization memory settings, ensuring users only configure resources they have access to.
+- 📄 **Detailed Environment Variable Descriptions**: Added comprehensive descriptions and default values for many backup,
+  Milvus, NATS, Redis, and S3 storage-related environment variables in the deployment guide, improving clarity.
+
+### Changed
+
+- 🔄 **Refined Organization Memory APIs**: Updated internal organization memory APIs and event structures to support
+  granular namespace lists, moving from a single `tenant_namespace` string to a list of `tenant_namespaces` for search
+  and a specified singular namespace for writes.
+- 🧹 **Streamlined Reranking Configuration**: Simplified the configuration for document reranking in RAG agents, making
+  it more straightforward to enable or disable the feature.
+- 📋 **Environment Variable Renaming for Consistency**: Renamed several backup-related environment variables (e.g.,
+  `DAGSTER_DB` to `BACKUP_DAGSTER_DB`) to ensure consistent naming conventions across the platform and documentation.
+- 🖼️ **Vector Store UI Improvement**: Refactored the "Allowed metadata filter fields" input in the vector store
+  configuration to utilize the new `ChipsInput` component for a more user-friendly experience.
+
+### Refactor
+
+- 🗑️ **Consolidated Memory Configuration**: The `MemoryConfig` class has been removed and its functionality split into
+  `UserMemoryConfig` and `OrgMemoryReadConfig`/`OrgMemoryWriteConfig` for clearer separation and management of
+  user-scoped and organization-scoped memory settings.
+- ⚙️ **Internal `.gitignore` Enhancements**: Added `.claude/*.lock` to `.gitignore` to prevent unnecessary lock files
+  from being tracked.
+
+______________________________________________________________________
+
 ## [v0.288.1] - 2026-05-11 - Streamlined Environment Configuration and Validation
 
 ### Added

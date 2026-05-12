@@ -7,6 +7,7 @@ import asyncio
 
 from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
+from app.expert_rag_agent.templates import get_all_templates
 from swiss_ai_hub.agent.agents.expert_rag_agent import ExpertRAGAgent, ExpertRAGAgentConfig
 from swiss_ai_hub.agent.runners import AgentRunner
 
@@ -17,6 +18,7 @@ async def main():
     runner = AgentRunner(
         agent_type=ExpertRAGAgent,
         agent_config=ExpertRAGAgentConfig.as_form(),
+        templates=get_all_templates(),
     )
 
     await runner.run_forever()
