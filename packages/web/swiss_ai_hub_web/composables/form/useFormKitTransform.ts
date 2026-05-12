@@ -193,7 +193,9 @@ function buildLocaleInputProperties(
   if (element.id) cleanNode.id = element.id
 
   // Stable key prevents Vue from reusing this DOM node across sibling schema entries
-  // (critical when conditional `if:` siblings mount/unmount around it).
+  // (critical when conditional `if:` siblings mount/unmount around it). `element.id`
+  // is auto-assigned per FormkitElement and `element.name` is FormKit-unique within
+  // a group by construction, so collisions cannot occur via this fallback chain.
   cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
 
   // Preserve conditional visibility (FormKit uses 'if' for schema conditionals)
@@ -268,7 +270,9 @@ function buildNodeProperties(
   if (options) cleanNode.options = options
 
   // Stable key prevents Vue from reusing this DOM node across sibling schema entries
-  // (critical when conditional `if:` siblings mount/unmount around it).
+  // (critical when conditional `if:` siblings mount/unmount around it). `element.id`
+  // is auto-assigned per FormkitElement and `element.name` is FormKit-unique within
+  // a group by construction, so collisions cannot occur via this fallback chain.
   cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
 
   return cleanNode
@@ -608,6 +612,12 @@ export function coerceNullableToggles(
  * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
  * the v-model on registration), so defaults must be merged into the form data instead.
  * Existing values — including falsy ones like `false` or `""` — are preserved.
+ *
+ * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
+ * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
+ * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
+ * `element.value` looks like; behaviour here is exercised end-to-end on agent and
+ * process edit forms.
  */
 export function seedFormDefaults(
   data: Record<string, unknown>,
@@ -623,6 +633,10 @@ export function seedFormDefaults(
 
     if (formkitType === 'group') {
       if (value === null) continue // nullable group disabled — leave as null
+      // value === undefined (or a non-object): materialise group defaults so children
+      // render with backend defaults. For nullable groups whose toggle is off,
+      // coerceNullableToggles re-nullifies the whole subtree at submit time, so seeding
+      // here is safe even when the toggle will end up disabled.
       const groupValue = (value && typeof value === 'object' && !Array.isArray(value))
         ? value as Record<string, unknown>
         : {}

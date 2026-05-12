@@ -26,3 +26,14 @@ class TestInputNumberValidation:
         assert "max:0.0001" in element.validation
         assert "1e-" not in element.validation
         assert "1E-" not in element.validation
+
+    def test_sub_micro_bounds_keep_full_precision(self) -> None:
+        # Regression: format(1e-7, "f").rstrip("0").rstrip(".") returned "0",
+        # silently widening the bound. Verify sub-1e-6 values keep their decimals.
+        element = InputNumber(label=LocaleString(en="Sub-micro"), min=1e-7, max=1e-6)
+        assert "min:0.0000001" in element.validation
+        assert "max:0.000001" in element.validation
+        assert "min:0|" not in element.validation + "|"
+        assert "max:0|" not in element.validation + "|"
+        assert "e-" not in element.validation
+        assert "E-" not in element.validation
