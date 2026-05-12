@@ -141,6 +141,10 @@ function createGroupNode(
     $formkit: 'group',
     name: element.name as string,
     children,
+    // Keep the group's data in the form context if its `if:` condition (or its
+    // wrapping fieldset's) flips false — without preserve, an unmounted group
+    // drops every nested value.
+    preserve: true,
   }
 
   // Preserve id for $get() references in conditionals
@@ -178,7 +182,9 @@ function buildLocaleInputProperties(
   label: string | undefined,
   locale: string,
 ): Record<string, unknown> {
-  const cleanNode: Record<string, unknown> = { $formkit: 'localeInput' }
+  // `preserve: true` keeps the input's value in the form context when an `if:`
+  // condition (nullable toggle or backend-supplied `condition_if`) unmounts it.
+  const cleanNode: Record<string, unknown> = { $formkit: 'localeInput', preserve: true }
 
   if (element.name) cleanNode.name = element.name
   if (label) cleanNode.label = label
@@ -237,7 +243,9 @@ function buildNodeProperties(
     return buildLocaleInputProperties(element, label, locale)
   }
 
-  const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+  // `preserve: true` keeps the input's value in the form context when an `if:`
+  // condition (nullable toggle or backend-supplied `condition_if`) unmounts it.
+  const cleanNode: Record<string, unknown> = { $formkit: formkitType, preserve: true }
 
   // Pass through all properties except excluded ones
   for (const [key, value] of Object.entries(element)) {
@@ -322,20 +330,6 @@ function gateElement(element: FormElement, toggleCondition: string): FormElement
 }
 
 /**
- * `preserve: true` keeps the gated node's value in the FormKit form context when its
- * `if:` condition flips false (toggle off). Without it, FormKit destroys the node and
- * drops the value, so toggling back on resurrects an empty input.
- */
-function markPreserved(
-  node: FormKitSchemaNode | FormKitSchemaNode[],
-): FormKitSchemaNode | FormKitSchemaNode[] {
-  if (Array.isArray(node)) {
-    return node.map(n => ({ ...(n as Record<string, unknown>), preserve: true })) as FormKitSchemaNode[]
-  }
-  return { ...(node as Record<string, unknown>), preserve: true } as FormKitSchemaNode
-}
-
-/**
  * Transforms a form element to a FormKit schema node.
  * Handles groups specially by wrapping them in fieldsets when they have labels.
  * Skips repeater elements (they are handled separately).
@@ -366,14 +360,13 @@ export function transformElementToSchema(
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    return isNullable ? applyNullableToggle(element, markPreserved(groupNode), label) : groupNode
+    return isNullable ? applyNullableToggle(element, groupNode, label) : groupNode
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
   if (children.length > 0) cleanNode.children = children
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    cleanNode.preserve = true
     return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
   }
 
@@ -391,7 +384,7 @@ function buildLeafNodeForRepeater(
     return buildLocaleInputProperties(element, label, locale)
   }
 
-  const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+  const cleanNode: Record<string, unknown> = { $formkit: formkitType, preserve: true }
   for (const [key, value] of Object.entries(element)) {
     if (EXCLUDED_FIELDS.has(key)) continue
     if (value === undefined || value === null) continue
@@ -426,13 +419,12 @@ export function transformElementForRepeater(
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    return isNullable ? applyNullableToggle(element, markPreserved(groupNode), label) : groupNode
+    return isNullable ? applyNullableToggle(element, groupNode, label) : groupNode
   }
 
   const cleanNode = buildLeafNodeForRepeater(element, formkitType, label, locale, children)
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    cleanNode.preserve = true
     return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
   }
 
