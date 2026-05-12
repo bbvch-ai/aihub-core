@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.2] - 2026-05-12 - Refined Backup Orchestration and CI Scopes
+
+### Fixed
+
+- 🐛 **Dagster Backup Asset Dependencies:** Corrected the execution order of Dagster backup maintenance assets to ensure
+  the `postgres_autovacuum_tune` process runs after `postgres_indexes`, preventing potential deadlocks and enhancing the
+  reliability of backup workflows.
+
+### Changed
+
+- ⚙️ **CI/CD Semantic Commit Scope:** Added `backup` as an allowed scope for semantic commit messages within CI/CD
+  workflows, enabling clearer categorization and validation of changes related to the backup system.
+- 📄 **Developer Documentation:** Updated the `CLAUDE.md` documentation to reflect the newly introduced `backup` scope
+  for semantic commit messages, guiding developers on proper commit conventions.
+- 🧪 **Backup Maintenance Tests:** Updated unit tests to accurately validate the corrected dependency ordering of backup
+  maintenance handlers, including the new dependency of `postgres_autovacuum_tune` on `postgres_indexes`.
+
+______________________________________________________________________
+
 ## [v0.289.1] - 2026-05-12 - Dependency Management & Stability Enhancements
 
 ### Changed
