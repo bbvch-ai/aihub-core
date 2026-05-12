@@ -15,3 +15,63 @@ config:
       Guide la façon dont l'agent communique ses limitations.
     default: "Informez l'utilisateur que vous ne pouvez pas répondre à la question\
       \ pour la raison suivante :"
+  guard_prompt:
+    label: Prompt du garde
+    help: Modèle de prompt utilisé par le garde de suffisance du contexte. Modifiez-le
+      pour adapter la formulation à votre LLM ; réinitialisez-le à la valeur par défaut
+      pour rétablir la version intégrée.
+    default: |-
+      {% chat role="user" %}
+      VOUS DEVEZ RÉPONDRE EN INVOQUANT L'OUTIL DE SORTIE STRUCTURÉE FOURNI EXACTEMENT UNE FOIS.
+      Ne répondez PAS en texte brut. N'ajoutez AUCUN texte, markdown, bloc de code, explication ou commentaire en dehors de l'appel d'outil. Un seul appel.
+      Champs requis dans l'appel d'outil :
+      - success (boolean) : true si la Question peut être répondue à partir de l'Historique et/ou du Contexte, sinon false.
+      - reasoning (string) : brève justification de la décision, en référence à des parties précises de l'Historique ou du Contexte.
+      - new_query (string) : UNIQUEMENT si success=false et qu'il reste des sauts de récupération disponibles. Sinon, omettre ou laisser vide.
+      ---
+      Historique de la conversation (inclut toute mémoire utilisateur ou organisationnelle insérée comme messages système — traitez-les comme un contexte supplémentaire qui peut déjà répondre à la Question):
+      <Chat_History>
+      {% for message in chat_history %}
+      <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% if block.block_type == 'image' %}
+      {{ block.url.__str__() | image }}
+      {% endif %}
+      {% endfor %}
+      </message>
+      {% endfor %}
+      </Chat_History>
+      Question :
+      <Question>
+      {{ user_query }}
+      </Question>
+      Requêtes précédentes (déjà essayées — ne PAS répéter ni reformuler trivialement) :
+      <Previous_Queries>
+      {{ prev_queries }}
+      </Previous_Queries>
+      Contexte (documents récupérés) :
+      <Context>
+      {% for block in context_blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% if block.block_type == 'image' %}
+      {{ block.url.__str__() | image }}
+      {% endif %}
+      {% endfor %}
+      </Context>
+      ---
+      RÈGLES DE DÉCISION :
+      1. Si l'Historique et/ou le Contexte contiennent ensemble assez d'informations pour répondre à la Question → success=true. NE générez PAS de new_query dans ce cas.
+      2. Sinon → success=false. Si une new_query est nécessaire, suivez les recommandations ci-dessous.
+      RECOMMANDATIONS POUR NEW_QUERY (uniquement si success=false) :
+      a. DONNEZ LA PRIORITÉ AUX CONCEPTS DE HAUT NIVEAU : remontez la hiérarchie conceptuelle vers des domaines plus larges (p. ex. « réseaux neuronaux » → « méthodes d'apprentissage automatique »).
+      b. Évitez les répétitions ou variations mineures des Requêtes précédentes.
+      c. Si les concepts de haut niveau ont déjà été explorés, essayez des domaines connexes, des concepts fondamentaux, des catégories parentes, des principes plus larges ou des liens interdisciplinaires.
+      d. new_query DOIT être clairement distincte de chaque Requête précédente.
+      e. Chaque requête successive doit représenter un saut conceptuel plus grand que la précédente.
+      RAPPEL : répondez avec exactement un appel d'outil. Aucun texte autour.
+      {% endchat %}

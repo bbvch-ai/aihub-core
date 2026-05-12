@@ -14,3 +14,63 @@ config:
       findet. Leitet, wie der Agent Einschränkungen kommuniziert.
     default: 'Informiere den Benutzer, dass du die Frage nicht beantworten kannst,
       aufgrund des folgenden Grundes:'
+  guard_prompt:
+    label: Guard-Prompt
+    help: Prompt-Template der Kontext-Suffizienz-Guard. Anpassen, um die Formulierung
+      für dein LLM zu ändern; zurücksetzen auf den Standard, um die eingebaute Version
+      wiederherzustellen.
+    default: |-
+      {% chat role="user" %}
+      DU MUSST GENAU EINMAL DAS BEREITGESTELLTE STRUKTURIERTE-AUSGABE-TOOL AUFRUFEN.
+      Antworte NICHT in Klartext. Füge KEINEN Prosa-Text, Markdown, Codeblöcke, Erklärungen oder Kommentare ausserhalb des Tool-Aufrufs hinzu. Genau ein Tool-Aufruf.
+      Pflichtfelder im Tool-Aufruf:
+      - success (boolean): true, wenn die Frage aus Gesprächsverlauf und/oder Kontext beantwortbar ist, sonst false.
+      - reasoning (string): kurze Begründung der Entscheidung. Beziehe dich auf konkrete Teile des Gesprächsverlaufs oder Kontexts.
+      - new_query (string): NUR wenn success=false und noch weitere Retrieval-Sprünge verfügbar sind. Sonst weglassen oder leer lassen.
+      ---
+      Gesprächsverlauf (enthält alle als Systemnachrichten eingefügten Benutzer- oder Organisationsspeicher — behandle sie als zusätzlichen Kontext, der die Frage bereits beantworten kann):
+      <Chat_History>
+      {% for message in chat_history %}
+      <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% if block.block_type == 'image' %}
+      {{ block.url.__str__() | image }}
+      {% endif %}
+      {% endfor %}
+      </message>
+      {% endfor %}
+      </Chat_History>
+      Frage:
+      <Question>
+      {{ user_query }}
+      </Question>
+      Vorherige Abfragen (bereits versucht — NICHT wiederholen oder trivial umformulieren):
+      <Previous_Queries>
+      {{ prev_queries }}
+      </Previous_Queries>
+      Kontext (abgerufene Dokumente):
+      <Context>
+      {% for block in context_blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% if block.block_type == 'image' %}
+      {{ block.url.__str__() | image }}
+      {% endif %}
+      {% endfor %}
+      </Context>
+      ---
+      ENTSCHEIDUNGSREGELN:
+      1. Wenn Gesprächsverlauf und/oder Kontext zusammen ausreichen, um die Frage zu beantworten → success=true. In diesem Fall KEINE new_query erzeugen.
+      2. Sonst → success=false. Falls eine new_query nötig ist, folge dem Leitfaden unten.
+      LEITFADEN FÜR NEW_QUERY (nur bei success=false):
+      a. PRIORISIERE ÜBERGEORDNETE KONZEPTE: Gehe in der Begriffshierarchie nach oben zu breiteren Domänen (z. B. „neuronale Netze“ → „Methoden des maschinellen Lernens“).
+      b. Vermeide Wiederholungen oder geringfügige Variationen einer vorherigen Abfrage.
+      c. Wurden übergeordnete Konzepte bereits erforscht, versuche verwandte Felder, grundlegende Konzepte, übergeordnete Kategorien, breitere Prinzipien oder interdisziplinäre Verbindungen.
+      d. new_query MUSS sich klar von jeder vorherigen Abfrage unterscheiden.
+      e. Jede nachfolgende Abfrage sollte einen grösseren konzeptionellen Sprung darstellen als die vorherige.
+      ERINNERUNG: Antworte mit genau einem Tool-Aufruf. Kein umliegender Text.
+      {% endchat %}

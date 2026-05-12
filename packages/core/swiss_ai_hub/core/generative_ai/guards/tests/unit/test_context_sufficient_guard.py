@@ -6,9 +6,17 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import ContextGuardResult, context_sufficient_guard
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 scenarios("./features/context_sufficient_guard.feature")
+
+_TEST_GUARD_PROMPT = LocaleString(
+    en="{% chat role=\"user\" %}TEST{% endchat %}",
+    de="{% chat role=\"user\" %}TEST{% endchat %}",
+    fr="{% chat role=\"user\" %}TEST{% endchat %}",
+    it="{% chat role=\"user\" %}TEST{% endchat %}",
+)
 
 
 @pytest.fixture
@@ -91,6 +99,7 @@ async def _(llm, locale_handler, user_query, context_message, prev_queries, more
         prev_queries=prev_queries,
         more_hops_available=more_hops_available,
         chat_history=[],
+        prompt=_TEST_GUARD_PROMPT,
     )
     return result
 
@@ -106,6 +115,7 @@ async def _(llm, locale_handler, user_query, context_message, prev_queries, more
         prev_queries=prev_queries,
         more_hops_available=more_hops_available,
         chat_history=chat_history,
+        prompt=_TEST_GUARD_PROMPT,
     )
     return result
 

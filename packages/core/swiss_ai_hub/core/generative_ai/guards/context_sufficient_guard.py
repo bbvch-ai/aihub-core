@@ -1,13 +1,18 @@
+import json
+import logging
 from typing import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import RichPromptTemplate
 from openai import NOT_GIVEN
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from swiss_ai_hub.core.generative_ai.guards.guard_result import GuardResult
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+
+logger = logging.getLogger(__name__)
 
 
 class ContextGuardResult(GuardResult):
@@ -52,8 +57,11 @@ async def context_sufficient_guard(
     prev_queries: list[str],
     more_hops_available: bool,
     chat_history: list[ChatMessage],
+    prompt: LocaleString,
+    max_attempts: int = 3,
 ) -> ContextGuardResult:
-    sufficiency_prompt = RichPromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
+    prompt_text = t.extract(prompt)
+    sufficiency_prompt = RichPromptTemplate(prompt_text)
     prev_queries_str = "\n".join(prev_queries)
     context_blocks = context_message.blocks if context_message is not None else []
     llm_kwargs: dict = {}
@@ -62,16 +70,29 @@ async def context_sufficient_guard(
     else:
         llm_kwargs["tool_choice"] = NOT_GIVEN
 
-    result = await llm.astructured_predict(
-        context_guard_result_factory(t=t, more_hops_available=more_hops_available),
-        sufficiency_prompt,
-        llm_kwargs=llm_kwargs,
-        user_query=user_query,
-        context_blocks=context_blocks,
-        prev_queries=prev_queries_str,
-        chat_history=chat_history,
-    )
+    result_type = context_guard_result_factory(t=t, more_hops_available=more_hops_available)
 
-    guard_result = ContextGuardResult.model_validate(result)
+    last_error: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            result = await llm.astructured_predict(
+                result_type,
+                sufficiency_prompt,
+                llm_kwargs=llm_kwargs,
+                user_query=user_query,
+                context_blocks=context_blocks,
+                prev_queries=prev_queries_str,
+                chat_history=chat_history,
+            )
+            return ContextGuardResult.model_validate(result)
+        except (ValidationError, ValueError, json.JSONDecodeError) as exc:
+            last_error = exc
+            logger.warning(
+                "context_sufficient_guard attempt %d/%d failed to produce structured output: %s",
+                attempt,
+                max_attempts,
+                exc,
+            )
 
-    return guard_result
+    assert last_error is not None
+    raise last_error

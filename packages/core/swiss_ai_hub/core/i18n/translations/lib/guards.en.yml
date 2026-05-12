@@ -70,54 +70,6 @@ context_sufficient_guard:
   new_query: |
     A revised query to get better search results if the context was insufficient, make sure to differentiate it enough 
     from the existing queries.
-  prompt: |
-    {% chat role="user" %}
-    Chat History (includes any retrieved user or organization memory injected as system messages — treat these as additional context that may already answer the question):
-    <Chat_History>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-    {% for block in message.blocks %}
-    {% if block.block_type == 'text' %}
-    {{ block.text }}
-    {% endif %}
-    {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image }}
-    {% endif %}
-    {% endfor %}
-    </message>
-    {% endfor %}
-    </Chat_History>
-    Question:
-    <Question>
-    {{ user_query }}
-    </Question>
-    Previous Queries:
-    <Previous_Queries>
-    {{ prev_queries }}
-    </Previous_Queries>
-    Context:
-    <Context>
-    {% for block in context_blocks %}
-    {% if block.block_type == 'text' %}
-    {{ block.text }}
-    {% endif %}
-    {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image }}
-    {% endif %}
-    {% endfor %}
-    </Context>
-    ---
-    INSTRUCTIONS:
-    Decide whether the Question can be answered from the Chat History and/or Context above.
-    - If yes → success=True.
-    - If no → success=False, and generate a new_query to gather more information. Guidance for new_query:
-      1. PRIORITIZE HIGHER-LEVEL CONCEPTS: move up the conceptual hierarchy to broader domains that naturally include the original topic (e.g. "neural networks" → "machine learning methods").
-      2. Avoid repetition or minor variations of any Previous Query.
-      3. If higher-level concepts have already been explored, try related fields, foundational concepts, parent categories, broader principles, or interdisciplinary connections.
-      4. new_query MUST be clearly distinct from every Previous Query.
-      5. Each successive query should represent a larger conceptual shift than the last.
-    IMPORTANT: You MUST respond by invoking the provided structured-output tool. Do NOT answer in plain text. Emit exactly one tool call containing your decision.
-    {% endchat %}
   reason_no_hops: |
     Reasoning explaining why the context is or is not sufficient (no additional hops available).
   success_no_hops: |

@@ -72,54 +72,6 @@ context_sufficient_guard:
   new_query: |
     Une requête révisée pour obtenir de meilleurs résultats de recherche si le contexte était insuffisant, assurez-vous de la différencier suffisamment des requêtes existantes. 
     des requêtes existantes.
-  prompt: |
-    {% chat role="user" %}
-    Historique de la conversation (inclut toute mémoire utilisateur ou organisationnelle insérée comme messages système — traitez-les comme un contexte supplémentaire qui peut déjà répondre à la question):
-    <Chat_History>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-    {% for block in message.blocks %}
-    {% if block.block_type == 'text' %}
-    {{ block.text }}
-    {% endif %}
-    {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image }}
-    {% endif %}
-    {% endfor %}
-    </message>
-    {% endfor %}
-    </Chat_History>
-    Question:
-    <Question>
-    {{ user_query }}
-    </Question>
-    Requêtes précédentes:
-    <Previous_Queries>
-    {{ prev_queries }}
-    </Previous_Queries>
-    Contexte:
-    <Context>
-    {% for block in context_blocks %}
-    {% if block.block_type == 'text' %}
-    {{ block.text }}
-    {% endif %}
-    {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image }}
-    {% endif %}
-    {% endfor %}
-    </Context>
-    ---
-    INSTRUCTIONS :
-    Décidez si la Question peut être répondue à partir de l'Historique de la conversation et/ou du Contexte.
-    - Si oui → success=True.
-    - Si non → success=False et générez une new_query pour recueillir plus d'informations. Recommandations pour new_query :
-      1. DONNEZ LA PRIORITÉ AUX CONCEPTS DE HAUT NIVEAU : remontez la hiérarchie conceptuelle vers des domaines plus larges (p. ex. « réseaux neuronaux » → « méthodes d'apprentissage automatique »).
-      2. Évitez les répétitions ou variations mineures des Requêtes précédentes.
-      3. Si les concepts de haut niveau ont déjà été explorés, essayez des domaines connexes, des concepts fondamentaux, des catégories parentes, des principes plus larges ou des liens interdisciplinaires.
-      4. new_query DOIT être clairement distincte de chaque Requête précédente.
-      5. Chaque requête successive doit représenter un saut conceptuel plus grand que la précédente.
-    IMPORTANT : Vous DEVEZ répondre en invoquant l'outil de sortie structurée fourni. Ne répondez PAS en texte brut. Émettez exactement un appel d'outil contenant votre décision.
-    {% endchat %}
   reason_no_hops: |
     Raisonnement expliquant pourquoi le contexte est ou n'est pas suffisant (aucun saut supplémentaire disponible).
   success_no_hops: |

@@ -73,54 +73,6 @@ context_sufficient_guard:
   new_query: |
     Una query rielaborata per ottenere risultati di ricerca migliori se il contesto era insufficiente, assicurarsi di differenziarla abbastanza 
     dalle query esistenti.
-  prompt: |
-    {% chat role="user" %}
-    Cronologia della conversazione (include eventuali memorie utente o organizzative inserite come messaggi di sistema — trattala come contesto aggiuntivo che potrebbe già rispondere alla domanda):
-    <Chat_History>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-    {% for block in message.blocks %}
-    {% if block.block_type == 'text' %}
-    {{ block.text }}
-    {% endif %}
-    {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image }}
-    {% endif %}
-    {% endfor %}
-    </message>
-    {% endfor %}
-    </Chat_History>
-    Domanda:
-    <Domanda>
-    {{ user_query }}
-    </Domanda>
-    Quesiti precedenti:
-    <Questioni_precedenti>
-    {{ prev_queries }}
-    </Questioni_precedenti>
-    Contesto:
-    <Contesto>
-    {% for block in context_blocks %}
-    {% if block.block_type == 'text' %}
-    {{ block.text }}
-    {% endif %}
-    {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image }}
-    {% endif %}
-    {% endfor %}
-    </Contesto>
-    ---
-    ISTRUZIONI:
-    Decidi se la Domanda può essere risposta usando la Cronologia della conversazione e/o il Contesto.
-    - Se sì → success=True.
-    - Se no → success=False e genera una new_query per raccogliere altre informazioni. Linee guida per new_query:
-      1. DAI PRIORITÀ AI CONCETTI DI LIVELLO SUPERIORE: sali nella gerarchia concettuale verso domini più ampi (es. "reti neurali" → "metodi di apprendimento automatico").
-      2. Evita ripetizioni o lievi variazioni di qualsiasi Quesito precedente.
-      3. Se i concetti di livello superiore sono già stati esplorati, prova campi correlati, concetti fondamentali, categorie superiori, principi più ampi o connessioni interdisciplinari.
-      4. new_query DEVE essere chiaramente distinta da ogni Quesito precedente.
-      5. Ogni query successiva deve rappresentare un salto concettuale maggiore della precedente.
-    IMPORTANTE: DEVI rispondere invocando lo strumento di output strutturato fornito. NON rispondere in testo semplice. Emetti esattamente una chiamata allo strumento contenente la tua decisione.
-    {% endchat %}
   reason_no_hops: |
     Motivo che spiega perché il contesto è o non è sufficiente (nessun salto aggiuntivo disponibile).
   success_no_hops: |

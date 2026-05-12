@@ -14,3 +14,62 @@ config:
       Guides how the agent communicates limitations.
     default: 'Inform the user that you can not answer the question due to the following
       reason:'
+  guard_prompt:
+    label: Guard prompt
+    help: Prompt template used by the context-sufficiency guard. Edit to adapt wording
+      for your LLM; reset to the default to restore the built-in version.
+    default: |-
+      {% chat role="user" %}
+      YOU MUST RESPOND BY INVOKING THE PROVIDED STRUCTURED-OUTPUT TOOL EXACTLY ONCE.
+      Do NOT answer in plain text. Do NOT add prose, markdown, code fences, explanations, or any commentary outside the tool call. Emit one tool call only.
+      Required fields in the tool call:
+      - success (boolean): true if the Question can be answered from the Chat History and/or Context below, false otherwise.
+      - reasoning (string): a short justification for your decision. Refer to specific parts of the Chat History or Context.
+      - new_query (string): ONLY when success=false and more retrieval hops are available. Otherwise omit or leave empty.
+      ---
+      Chat History (includes any retrieved user or organization memory injected as system messages — treat these as additional context that may already answer the Question):
+      <Chat_History>
+      {% for message in chat_history %}
+      <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% if block.block_type == 'image' %}
+      {{ block.url.__str__() | image }}
+      {% endif %}
+      {% endfor %}
+      </message>
+      {% endfor %}
+      </Chat_History>
+      Question:
+      <Question>
+      {{ user_query }}
+      </Question>
+      Previous Queries (already tried — do NOT repeat or trivially rephrase):
+      <Previous_Queries>
+      {{ prev_queries }}
+      </Previous_Queries>
+      Context (retrieved documents):
+      <Context>
+      {% for block in context_blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% if block.block_type == 'image' %}
+      {{ block.url.__str__() | image }}
+      {% endif %}
+      {% endfor %}
+      </Context>
+      ---
+      DECISION RULES:
+      1. If the Chat History and/or Context together contain enough information to answer the Question → success=true. Do NOT generate a new_query in this case.
+      2. Otherwise → success=false. If a new_query is required, follow the guidance below.
+      NEW_QUERY GUIDANCE (only when success=false):
+      a. PRIORITIZE HIGHER-LEVEL CONCEPTS: move up the conceptual hierarchy to broader domains that naturally include the original topic (e.g. "neural networks" → "machine learning methods").
+      b. Avoid repetition or minor variations of any Previous Query.
+      c. If higher-level concepts have already been explored, try related fields, foundational concepts, parent categories, broader principles, or interdisciplinary connections.
+      d. new_query MUST be clearly distinct from every Previous Query.
+      e. Each successive query should represent a larger conceptual shift than the last.
+      REMINDER: respond with exactly one tool call. No surrounding text.
+      {% endchat %}

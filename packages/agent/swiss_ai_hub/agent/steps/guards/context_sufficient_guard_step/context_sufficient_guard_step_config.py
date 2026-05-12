@@ -40,6 +40,15 @@ class ContextSufficientGuardStepConfig(StepConfig):
     ] = AgentLocaleString.from_i18n_path(
         "agent.context_sufficient_guard_step.config.context_insufficient_prompt.default"
     )
+    guard_prompt: Annotated[
+        LocaleString | LocaleInput,
+        Field(
+            description=(
+                "Prompt template used by the context-sufficiency guard LLM. "
+                "Edit to adapt wording for your model."
+            ),
+        ),
+    ] = AgentLocaleString.from_i18n_path("agent.context_sufficient_guard_step.config.guard_prompt.default")
 
     @classmethod
     def as_form(cls) -> Self:
@@ -67,6 +76,16 @@ class ContextSufficientGuardStepConfig(StepConfig):
                 ),
                 help_text=AgentLocaleString.from_i18n_path(
                     "agent.context_sufficient_guard_step.config.context_insufficient_prompt.help"
+                ),
+                input_type="textarea",
+                condition_if="$get(check_context_sufficiency_enabled).value",
+            ),
+            guard_prompt=LocaleString.as_form(
+                label=AgentLocaleString.from_i18n_path(
+                    "agent.context_sufficient_guard_step.config.guard_prompt.label"
+                ),
+                help_text=AgentLocaleString.from_i18n_path(
+                    "agent.context_sufficient_guard_step.config.guard_prompt.help"
                 ),
                 input_type="textarea",
                 condition_if="$get(check_context_sufficiency_enabled).value",

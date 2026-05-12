@@ -14,3 +14,63 @@ config:
       come l'agente comunica le limitazioni.
     default: "Informa l'utente che non puoi rispondere alla domanda per il seguente\
       \ motivo:"
+  guard_prompt:
+    label: Prompt del guard
+    help: Template di prompt usato dal guard di sufficienza del contesto. Modificalo
+      per adattare la formulazione al tuo LLM; ripristina il valore predefinito per
+      tornare alla versione integrata.
+    default: |-
+      {% chat role="user" %}
+      DEVI RISPONDERE INVOCANDO LO STRUMENTO DI OUTPUT STRUTTURATO FORNITO ESATTAMENTE UNA VOLTA.
+      NON rispondere in testo semplice. NON aggiungere prosa, markdown, blocchi di codice, spiegazioni o commenti al di fuori della chiamata allo strumento. Una sola chiamata.
+      Campi obbligatori nella chiamata allo strumento:
+      - success (boolean): true se la Domanda può essere risposta dalla Cronologia e/o dal Contesto, altrimenti false.
+      - reasoning (string): breve giustificazione della decisione, riferendosi a parti specifiche della Cronologia o del Contesto.
+      - new_query (string): SOLO se success=false e ci sono ancora salti di recupero disponibili. Altrimenti omettere o lasciare vuoto.
+      ---
+      Cronologia della conversazione (include eventuali memorie utente o organizzative inserite come messaggi di sistema — trattala come contesto aggiuntivo che potrebbe già rispondere alla Domanda):
+      <Chat_History>
+      {% for message in chat_history %}
+      <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% if block.block_type == 'image' %}
+      {{ block.url.__str__() | image }}
+      {% endif %}
+      {% endfor %}
+      </message>
+      {% endfor %}
+      </Chat_History>
+      Domanda:
+      <Domanda>
+      {{ user_query }}
+      </Domanda>
+      Quesiti precedenti (già provati — NON ripetere né riformulare banalmente):
+      <Questioni_precedenti>
+      {{ prev_queries }}
+      </Questioni_precedenti>
+      Contesto (documenti recuperati):
+      <Contesto>
+      {% for block in context_blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% if block.block_type == 'image' %}
+      {{ block.url.__str__() | image }}
+      {% endif %}
+      {% endfor %}
+      </Contesto>
+      ---
+      REGOLE DI DECISIONE:
+      1. Se Cronologia e/o Contesto insieme contengono informazioni sufficienti per rispondere alla Domanda → success=true. In questo caso NON generare new_query.
+      2. Altrimenti → success=false. Se è necessaria una new_query, segui le linee guida sotto.
+      LINEE GUIDA PER NEW_QUERY (solo quando success=false):
+      a. DAI PRIORITÀ AI CONCETTI DI LIVELLO SUPERIORE: sali nella gerarchia concettuale verso domini più ampi (es. "reti neurali" → "metodi di apprendimento automatico").
+      b. Evita ripetizioni o lievi variazioni di qualsiasi Quesito precedente.
+      c. Se i concetti di livello superiore sono già stati esplorati, prova campi correlati, concetti fondamentali, categorie superiori, principi più ampi o connessioni interdisciplinari.
+      d. new_query DEVE essere chiaramente distinta da ogni Quesito precedente.
+      e. Ogni query successiva deve rappresentare un salto concettuale maggiore della precedente.
+      PROMEMORIA: rispondi con esattamente una chiamata allo strumento. Nessun testo circostante.
+      {% endchat %}

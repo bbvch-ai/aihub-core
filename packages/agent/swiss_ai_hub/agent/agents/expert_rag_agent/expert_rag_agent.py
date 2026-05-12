@@ -426,6 +426,7 @@ class ExpertRAGAgent(Agent):
             displayer,
             t,
             chat_history=chat_history_event.limited_history,
+            guard_prompt=guard_config.guard_prompt,
         )
 
     @step(
