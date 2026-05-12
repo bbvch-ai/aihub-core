@@ -11,7 +11,6 @@ import {
   extractRepeaterConfigs,
   getFormkitType,
   getNestedValue,
-  seedFormDefaults,
   seedNullableToggles,
   setNestedValue,
 } from './useFormKitTransform'
@@ -145,8 +144,7 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
 
   watch(selectedClassData, (newClass) => {
     if (newClass?.form && newClass.form.length > 0) {
-      const base = initializeGroupData(configForm.value as FormElement[], {})
-      formData.value = seedFormDefaults(base, configForm.value as FormElement[])
+      formData.value = initializeGroupData(configForm.value as FormElement[], {})
     }
     else {
       formData.value = {}
@@ -216,9 +214,8 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
     // would look truthy and the toggle would come up enabled.
     const seeded = seedNullableToggles(data, configForm.value as FormElement[])
     const base = initializeGroupData(configForm.value as FormElement[], {})
-    const withDefaults = seedFormDefaults(base, configForm.value as FormElement[])
     const sanitized = stripNullsForGroups(seeded, configForm.value as FormElement[])
-    formData.value = merge(withDefaults, sanitized)
+    formData.value = merge(base, sanitized)
   }
 
   function resetForm() {

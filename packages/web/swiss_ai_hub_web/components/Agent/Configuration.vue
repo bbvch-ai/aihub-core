@@ -42,7 +42,6 @@ import {
   extractRepeaterConfigs,
   getNestedValue,
   normalizeFormLocaleStrings,
-  seedFormDefaults,
   seedNullableToggles,
   setNestedValue,
   type FormElement,
@@ -60,16 +59,14 @@ const props = defineProps<{
   initialData?: Record<string, unknown>
 }>()
 
-function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
-  const seeded = seedNullableToggles(raw, props.form as FormElement[])
-  return seedFormDefaults(seeded, props.form as FormElement[])
-}
-
-const data = ref<Record<string, unknown>>(hydrate(props.initialData || {}))
+const data = ref<Record<string, unknown>>(
+  seedNullableToggles(props.initialData || {}, props.form as FormElement[]),
+)
 
 watch(() => props.initialData, (newData) => {
   if (newData && Object.keys(newData).length > 0) {
-    data.value = merge({}, data.value, hydrate(newData))
+    const seeded = seedNullableToggles(newData, props.form as FormElement[])
+    data.value = merge({}, data.value, seeded)
   }
 }, { deep: true })
 
