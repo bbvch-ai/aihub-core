@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Annotated, Literal, Self
 
 from pydantic import Field, computed_field
@@ -59,19 +60,11 @@ class InputNumber(PrimeVueElement):
 
     @staticmethod
     def _format_bound(value: float) -> str:
-        # FormKit's min/max rules can't parse scientific notation like "1e-07" or "1e+06",
-        # so emit a plain decimal in every case.
-        if value.is_integer():
-            return str(int(value))
-        # `repr(float)` returns the shortest exact-roundtrip representation (e.g.
-        # repr(1234567.89) == '1234567.89' with no precision artefacts), but switches
-        # to scientific notation for magnitudes below ~1e-4. When that happens, fall
-        # back to a fixed-point format with enough precision to roundtrip any IEEE-754
-        # double (17 significant digits).
-        formatted = repr(value)
-        if "e" in formatted or "E" in formatted:
-            formatted = format(value, ".17f")
-        return formatted.rstrip("0").rstrip(".")
+        # FormKit's min/max rules can't parse scientific notation like "1e-07" or "1e+06".
+        # `repr(float)` is the shortest exact-roundtrip string (no precision artefacts), and
+        # `Decimal` formatted with `f` expands any scientific form into plain decimals at
+        # any magnitude. Trailing zeros and a dangling `.` are stripped so 5.0 → "5".
+        return format(Decimal(repr(value)), "f").rstrip("0").rstrip(".")
 
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
