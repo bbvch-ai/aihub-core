@@ -246,14 +246,15 @@ class Form(BaseModel):
                 # Note: 'ref' is the attribute, 'id' is its JSON alias
                 element_copy.ref = f"{id_prefix}{field_name}"
 
-            # Determine if field is required based on type annotation
-            # Boolean elements (checkbox, toggle switch) are never required - unchecked = false is valid
-            boolean_formkit_types = {"primeCheckbox", "primeToggleSwitch"}
-            is_boolean_element = getattr(element_copy, "formkit", None) in boolean_formkit_types
+            # Determine if field is required based on type annotation.
+            # Boolean elements (unchecked = false) and list-collecting elements (empty list = no selection)
+            # have a valid "unset" state and are never auto-required.
+            non_required_formkit_types = {"primeCheckbox", "primeToggleSwitch", "chipsInput"}
+            is_skip_required = getattr(element_copy, "formkit", None) in non_required_formkit_types
             allows_none = self._annotation_allows_none(field_info.annotation)
-            is_required = not is_boolean_element and not allows_none
+            is_required = not is_skip_required and not allows_none
             element_copy.required = is_required
-            if allows_none and not is_boolean_element:
+            if allows_none and not is_skip_required:
                 element_copy.nullable = True
 
             # If element has no explicit value, use Pydantic field default

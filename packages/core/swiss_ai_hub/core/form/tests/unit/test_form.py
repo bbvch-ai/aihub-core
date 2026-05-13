@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from swiss_ai_hub.core.agents.agent_config import AgentConfig
 from swiss_ai_hub.core.form.elements.checkbox import Checkbox
+from swiss_ai_hub.core.form.elements.chips_input import ChipsInput
 from swiss_ai_hub.core.form.elements.group import Group
 from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.input_text import InputText
@@ -145,6 +146,18 @@ class TestFlatFormDuality:
         assert instance.name == "John"
         assert instance.age == 30
         assert instance.active is True
+
+    def test_chips_input_field_is_never_auto_required(self) -> None:
+        """list-collecting elements have a valid empty-list 'unset' state and must not be auto-required."""
+
+        class FormWithChips(Form):
+            tags: Annotated[list[str] | ChipsInput, Field(description="Tags")] = []
+
+        form = FormWithChips(tags=ChipsInput(label=LocaleString(en="Tags")))
+        elements = form.to_formkit_form()
+        tags_elem = next(e for e in elements if e.name == "tags")
+        assert tags_elem.required is False
+        assert "required" not in tags_elem.validation
 
     def test_optional_field_required_detection(self) -> None:
         """Test that required/optional is correctly detected from type annotations."""

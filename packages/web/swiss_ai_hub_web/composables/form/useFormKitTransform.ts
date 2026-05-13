@@ -141,6 +141,10 @@ function createGroupNode(
     $formkit: 'group',
     name: element.name as string,
     children,
+    // Keep the group's data in the form context if its `if:` condition (or its
+    // wrapping fieldset's) flips false — without preserve, an unmounted group
+    // drops every nested value.
+    preserve: true,
   }
 
   // Preserve id for $get() references in conditionals
@@ -178,13 +182,21 @@ function buildLocaleInputProperties(
   label: string | undefined,
   locale: string,
 ): Record<string, unknown> {
-  const cleanNode: Record<string, unknown> = { $formkit: 'localeInput' }
+  // `preserve: true` keeps the input's value in the form context when an `if:`
+  // condition (nullable toggle or backend-supplied `condition_if`) unmounts it.
+  const cleanNode: Record<string, unknown> = { $formkit: 'localeInput', preserve: true }
 
   if (element.name) cleanNode.name = element.name
   if (label) cleanNode.label = label
 
   // Preserve id for $get() references in conditionals
   if (element.id) cleanNode.id = element.id
+
+  // Stable key prevents Vue from reusing this DOM node across sibling schema entries
+  // (critical when conditional `if:` siblings mount/unmount around it). `element.id`
+  // is auto-assigned per FormkitElement and `element.name` is FormKit-unique within
+  // a group by construction, so collisions cannot occur via this fallback chain.
+  cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
 
   // Preserve conditional visibility (FormKit uses 'if' for schema conditionals)
   if (element.if) cleanNode.if = element.if
@@ -201,7 +213,6 @@ function buildLocaleInputProperties(
   if (element.rows !== undefined) cleanNode.rows = element.rows
 
   if (element.validation) cleanNode.validation = element.validation
-  if (element.value !== undefined) cleanNode.value = element.value
 
   return cleanNode
 }
@@ -215,6 +226,11 @@ const EXCLUDED_FIELDS = new Set([
   'help', // Transformed via getLocalizedString
   'placeholder', // Transformed via getLocalizedString
   'children', // Handled separately for recursion
+  'nullable', // Wrapper-level signal for the transform; never a FormKit/PrimeVue prop
+  // Backend serialises the Pydantic default into element.value (form duality). FormKit pushes
+  // schema `value` up to the parent v-model on input registration, which would clobber the
+  // loaded data with the backend default. Defaults belong in data, seeded via seedFormDefaults.
+  'value',
 ])
 
 function buildNodeProperties(
@@ -229,7 +245,9 @@ function buildNodeProperties(
     return buildLocaleInputProperties(element, label, locale)
   }
 
-  const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+  // `preserve: true` keeps the input's value in the form context when an `if:`
+  // condition (nullable toggle or backend-supplied `condition_if`) unmounts it.
+  const cleanNode: Record<string, unknown> = { $formkit: formkitType, preserve: true }
 
   // Pass through all properties except excluded ones
   for (const [key, value] of Object.entries(element)) {
@@ -250,6 +268,12 @@ function buildNodeProperties(
   // Resolve options if resolver provided
   const options = resolveElementOptions(element, optionsResolver)
   if (options) cleanNode.options = options
+
+  // Stable key prevents Vue from reusing this DOM node across sibling schema entries
+  // (critical when conditional `if:` siblings mount/unmount around it). `element.id`
+  // is auto-assigned per FormkitElement and `element.name` is FormKit-unique within
+  // a group by construction, so collisions cannot occur via this fallback chain.
+  cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
 
   return cleanNode
 }
@@ -285,10 +309,12 @@ function combineConditions(toggleCondition: string, existing: string | undefined
 
 function buildNullableToggleNode(element: FormElement, label: string | undefined): Record<string, unknown> {
   const fieldName = element.name as string
+  const toggleId = nullableToggleId(element)
   return {
     $formkit: 'primeCheckbox',
     name: nullableToggleName(fieldName),
-    id: nullableToggleId(element),
+    id: toggleId,
+    key: toggleId,
     label: label ? `Enable ${label}` : 'Enable',
     binary: true,
   }
@@ -362,7 +388,7 @@ function buildLeafNodeForRepeater(
     return buildLocaleInputProperties(element, label, locale)
   }
 
-  const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+  const cleanNode: Record<string, unknown> = { $formkit: formkitType, preserve: true }
   for (const [key, value] of Object.entries(element)) {
     if (EXCLUDED_FIELDS.has(key)) continue
     if (value === undefined || value === null) continue
@@ -372,6 +398,7 @@ function buildLeafNodeForRepeater(
   const help = getLocalizedString(element.help, locale)
   if (help) cleanNode.help = help
   if (children.length > 0) cleanNode.children = children
+  cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
   return cleanNode
 }
 
@@ -574,6 +601,56 @@ export function coerceNullableToggles(
   for (const key of Object.keys(result)) {
     if (key.startsWith('__') && key.endsWith('__enabled')) {
       Reflect.deleteProperty(result, key)
+    }
+  }
+
+  return result
+}
+
+/**
+ * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
+ * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
+ * the v-model on registration), so defaults must be merged into the form data instead.
+ * Existing values — including falsy ones like `false` or `""` — are preserved.
+ *
+ * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
+ * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
+ * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
+ * `element.value` looks like; behaviour here is exercised end-to-end on agent and
+ * process edit forms.
+ */
+export function seedFormDefaults(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...data }
+
+  for (const element of elements) {
+    const name = element.name as string
+    const formkitType = getFormkitType(element)
+    const children = (element.children as FormElement[] | undefined) ?? []
+    const value = result[name]
+
+    if (formkitType === 'group') {
+      if (value === null) continue // nullable group disabled — leave as null
+      // value === undefined (or a non-object): materialise group defaults so children
+      // render with backend defaults. For nullable groups whose toggle is off,
+      // coerceNullableToggles re-nullifies the whole subtree at submit time, so seeding
+      // here is safe even when the toggle will end up disabled.
+      const groupValue = (value && typeof value === 'object' && !Array.isArray(value))
+        ? value as Record<string, unknown>
+        : {}
+      result[name] = seedFormDefaults(groupValue, children)
+    }
+    else if (formkitType === 'repeater' && Array.isArray(value)) {
+      result[name] = value.map(item =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? seedFormDefaults(item as Record<string, unknown>, children)
+          : item,
+      )
+    }
+    else if (!(name in result) && element.value !== undefined) {
+      result[name] = element.value
     }
   }
 

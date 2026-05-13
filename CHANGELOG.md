@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.3] - 2026-05-12 - Dynamic Forms and Stability Enhancements
+
+### Fixed
+
+- 🐛 **Fixed Number Input Validation:** Ensured FormKit validation for **`InputNumber`** elements correctly handles large
+  and small decimal bounds by preventing scientific notation in validation rules.
+- 🐛 **Corrected `ChipsInput` Required Logic:** Prevented **`ChipsInput`** elements from being automatically marked as
+  required, acknowledging that an empty list is a valid "unset" state for list-collecting inputs.
+- 🚫 **Hard-Pinned Nuxt.js to 3.21.0:** Temporarily reverted Nuxt.js to version **3.21.0** to mitigate a `vite-node` IPC
+  regression that caused hangs and module resolution errors in development mode.
+
+### Added
+
+- ✨ **Introduced `FormKitDynamicConfiguration` Component:** Added a new, reusable Vue component to centralize dynamic
+  form rendering logic, including repeater handling and locale string support, for consistent UI across agent and
+  process configurations.
+- 🦾 **New `seedFormDefaults` Helper:** Implemented a new composable function to recursively apply backend Pydantic
+  default values to form data, ensuring fields are correctly pre-filled upon initialization.
+- 🧪 **Expanded Form Validation Tests:** Added comprehensive unit tests for **`InputNumber`** validation bounds
+  (integers, floats, large, and small decimals) and verified **`ChipsInput`** requirement logic, improving form
+  reliability.
+- 📄 **Documented Nuxt Hard-Pin Decision:** Added an Architecture Decision Record (ADR) explaining the rationale,
+  consequences, and exit criteria for hard-pinning Nuxt.js to version 3.21.0.
+
+### Refactor
+
+- 🔄 **Streamlined Agent and Process Configurations:** Replaced internal form handling logic in `Agent/Configuration.vue`
+  and `Process/Configuration.vue` with the new reusable **`FormKitDynamicConfiguration`** component, reducing code
+  duplication.
+- ⚡️ **Enhanced Dynamic Form Stability:** Implemented `preserve: true` and unique `key` attributes across FormKit groups
+  and inputs to prevent data loss and improve rendering stability during conditional display or re-rendering.
+- 🧹 **Optimized Form Instance Data Initialization:** Refined the data hydration and default seeding logic when creating
+  new agent or process instances, ensuring consistent and correct form state.
+
+______________________________________________________________________
+
 ## [v0.289.2] - 2026-05-12 - Refined Backup Orchestration and CI Scopes
 
 ### Fixed
