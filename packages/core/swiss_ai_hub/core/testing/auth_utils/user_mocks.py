@@ -172,6 +172,7 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
         "profile_image": None,
         "roles": list(TEST_USER_ROLES),
         "is_sys_admin": False,
+        "preferred_locale": None,
     }
 
     if include_dashboard:

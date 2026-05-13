@@ -31,6 +31,10 @@ class Access(BaseModel):
 
 class UserWithAccessDTO(UserDTO):
     access: Annotated[Access, Field(description="User access levels")]
+    preferred_locale: Annotated[
+        str | None,
+        Field(description="The user's persisted UI language, or null if not yet set."),
+    ] = None
 
     @classmethod
     async def from_user_identity(
@@ -89,4 +93,5 @@ class UserWithAccessDTO(UserDTO):
             roles=valid_roles,
             is_sys_admin=user.is_sys_admin,
             access=access,
+            preferred_locale=user.preferred_locale,
         )

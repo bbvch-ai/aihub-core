@@ -250,22 +250,21 @@ class AuthenticationService:
         self,
         user_name: Annotated[str, "User's name"],
         user_email: Annotated[str, "User's email address"],
-        accept_language: Annotated[str | None, "Accept-Language header value"] = None,
     ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
-        """Prepare authenticated request headers"""
+        """Prepare authenticated request headers.
+
+        Locale is not forwarded — the API resolves it from the user's persisted preferred_locale.
+        """
         clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
         signature = self.sign_user_headers(clean_username, user_email)
 
-        headers = {
+        return {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
             "X-OpenWebUI-User-Name": clean_username,
             "X-OpenWebUI-User-Email": user_email,
             "X-OpenWebUI-Signature": signature,
         }
-        if accept_language:
-            headers["Accept-Language"] = accept_language
-        return headers
 
 
 # ============================================================================
@@ -1711,9 +1710,7 @@ class Pipe:
                 logger.debug(f"Processing request for {agent_class}.{agent_id}")
                 logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
 
-                # Prepare authentication (forward Accept-Language for localized error messages)
-                accept_language = __request__.headers.get("Accept-Language") if __request__ else None
-                headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"], accept_language)
+                headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
                 inject(headers)
 
                 # Convert messages

@@ -10,6 +10,7 @@ from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
+from swiss_ai_hub.api.routes.my_account.dto.my_locale_dto import MyLocaleDTO
 from swiss_ai_hub.api.routes.my_account.my_account_service import MyAccountService
 from swiss_ai_hub.api.routes.user.dto.dashboard.dashboard_dto import DashboardDTO
 from swiss_ai_hub.api.routes.user.dto.user_with_access_dto import UserWithAccessDTO
@@ -57,6 +58,18 @@ class MyAccountController(TenantScopedController):
         ) -> None:
             """Updates the user's dashboard settings."""
             await MyAccountService.update_user_dashboard(user, dashboard_dto)
+            return None
+
+        return self
+
+    def update_my_locale(self, route: str = "/locale") -> Self:
+        @self.router.put(route, tags=self.tags, status_code=204)
+        async def update_my_locale(
+            locale_dto: Annotated[MyLocaleDTO, Body()],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+        ) -> None:
+            """Persists the user's preferred UI language."""
+            await MyAccountService.update_user_locale(user, locale_dto.locale)
             return None
 
         return self

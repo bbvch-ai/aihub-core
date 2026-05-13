@@ -12,11 +12,32 @@ import 'gridstack/dist/gridstack.min.css'
 import { client } from './sdk/client/client.gen'
 
 const { getToken } = useAuth()
-const { t, locale } = useI18n()
+const { t, locale, setLocale } = useI18n()
 const localePath = useLocalePath()
+const switchLocalePath = useSwitchLocalePath()
+const router = useRouter()
 const route = useRoute()
 const toast = useToast()
 useNotificationPoller()
+
+const { myUser } = useMyUser()
+const { updateMyLocale } = useUpdateMyLocale()
+const localeBootstrapped = ref(false)
+watch(myUser, (user) => {
+  if (!user || localeBootstrapped.value) return
+  localeBootstrapped.value = true
+  const persisted = (user as { preferred_locale?: string | null }).preferred_locale
+  if (persisted && persisted !== locale.value) {
+    setLocale(persisted as never)
+    const target = switchLocalePath(persisted)
+    if (target) router.replace(target)
+  }
+  else if (!persisted) {
+    updateMyLocale({ locale: locale.value }).catch((err) => {
+      console.error('Failed to bootstrap user locale', err)
+    })
+  }
+}, { immediate: true })
 client.setConfig({
   baseURL: '/api/v1',
   auth: async () => {

@@ -41,6 +41,7 @@ const { t, locale, locales } = useI18n()
 const queryCache = useQueryCache()
 const switchLocalePath = useSwitchLocalePath()
 const router = useRouter()
+const { updateMyLocale } = useUpdateMyLocale()
 
 const op = ref()
 const toggle = (event: Event) => {
@@ -66,6 +67,9 @@ const selectedLocale = computed({
     if (newValue?.code && newValue.code !== locale.value) {
       op.value.hide()
       changeLocale(newValue.code)
+      updateMyLocale({ locale: newValue.code }).catch((err) => {
+        console.error('Failed to persist user locale', err)
+      })
       router.push(switchLocalePath(newValue.code))
         .then(() => {
           queryCache.invalidateQueries()

@@ -18,3 +18,7 @@ class UserIdentity(BaseModel):
     is_sys_admin: Annotated[
         bool, Field(description="Whether the user has the AIHubSysAdmin realm role (from the JWT).")
     ] = False
+    preferred_locale: Annotated[
+        str | None,
+        Field(description="The user's persisted UI language from Keycloak attributes, or None if unset."),
+    ] = None

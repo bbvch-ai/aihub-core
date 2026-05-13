@@ -324,6 +324,30 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_preferred_locale(user_id: str) -> str | None:
+        """Reads the preferred_locale custom attribute from the Keycloak user."""
+        admin = _create_admin()
+        data = await admin.a_get_user(user_id)
+        user = KeycloakUser.model_validate(data)
+        preferred = user.attributes.get("preferred_locale", [])
+        return preferred[0] if preferred else None
+
+    @staticmethod
+    @trace_fn
+    async def set_preferred_locale(user_id: str, locale: str) -> None:
+        """Writes the preferred_locale custom attribute on the Keycloak user.
+
+        Caller is responsible for validating the locale against ``LocaleHandler.LOCALE_WHITE_LIST``.
+        """
+        admin = _create_admin()
+        user = await admin.a_get_user(user_id)
+        attributes = user.get("attributes", {})
+        attributes["preferred_locale"] = [locale]
+        user["attributes"] = attributes
+        await admin.a_update_user(user_id, user)
+
+    @staticmethod
+    @trace_fn
     async def clear_active_tenant(user_id: str) -> None:
         """Removes the active_tenant_id custom attribute from the Keycloak user.
 

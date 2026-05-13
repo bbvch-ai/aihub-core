@@ -171,11 +171,16 @@ class AuthHandler(ABC):
         else:
             tenant = await self.get_active_tenant_for_user(user_id)
         roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
-        return UserIdentity(
+        preferred_locale = await KeycloakAdminService.get_preferred_locale(user_id)
+        identity = UserIdentity(
             id=user_id,
             name=name,
             email=email,
             roles=roles,
             acting_within_tenant=tenant,
             is_sys_admin=is_sys_admin,
+            preferred_locale=preferred_locale,
         )
+        if request is not None:
+            request.state.user = identity
+        return identity
