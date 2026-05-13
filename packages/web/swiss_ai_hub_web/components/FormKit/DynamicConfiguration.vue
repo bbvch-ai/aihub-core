@@ -15,7 +15,7 @@
     >
       <FormKitSchema
         :schema="schema"
-        :data="{ ...data }"
+        :data="data"
       />
 
       <!-- Render repeaters separately (not supported by FormKit standard) -->
@@ -48,7 +48,7 @@ import {
   type FormElement,
   type RepeaterConfig,
 } from '@core/composables/form/useFormKitTransform'
-import { merge } from 'lodash-es'
+import { isEqual, merge } from 'lodash-es'
 
 import type { FormkitElement } from '@core/sdk/client'
 import type { FormKitSchemaDefinition } from '@formkit/core'
@@ -68,9 +68,15 @@ function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
 const data = ref<Record<string, unknown>>(hydrate(props.initialData || {}))
 
 watch(() => props.initialData, (newData) => {
-  if (newData && Object.keys(newData).length > 0) {
-    data.value = merge({}, data.value, hydrate(newData))
-  }
+  if (!newData || Object.keys(newData).length === 0) return
+  const hydrated = hydrate(newData)
+  // Skip when the incoming data already matches our local state. After a save,
+  // the mutation invalidates the query and the refetch returns what we just
+  // sent — reassigning `data` would replace nested group object identities
+  // with structurally-equal but new refs, which FormKit's group reactivity
+  // treats as changes and re-emits through v-model, causing a render loop.
+  if (isEqual(data.value, hydrated)) return
+  data.value = merge({}, data.value, hydrated)
 }, { deep: true })
 
 const emit = defineEmits<{
