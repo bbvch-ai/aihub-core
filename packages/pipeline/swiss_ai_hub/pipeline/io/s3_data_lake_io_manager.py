@@ -147,7 +147,14 @@ class S3DataLakeIOManager(ConfigurableIOManager):
                 data_lake_files = []
                 for partition_key in all_partition_keys:
                     uri = decode_partition_key(partition_key) if self.encode_partition_keys else partition_key
-                    data_lake_file = self._load_data_lake_file_from_uri(context, uri)
+                    try:
+                        data_lake_file = self._load_data_lake_file_from_uri(context, uri)
+                    except FileNotFoundError:
+                        # Object was removed from the data lake but still has a registered partition.
+                        # Downstream cleanup steps need the current set of present files, so skipping
+                        # is correct here — they'll detect the missing partition as "to be removed".
+                        context.log.warning(f"Skipping partition; object missing from data lake: {uri}")
+                        continue
                     data_lake_files.append(data_lake_file)
                 return data_lake_files
             else:
