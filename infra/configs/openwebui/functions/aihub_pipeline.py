@@ -45,6 +45,111 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
+# Locale helpers
+# ============================================================================
+
+SUPPORTED_LOCALES: tuple[str, ...] = ("de", "en", "fr", "it")
+DEFAULT_LOCALE: str = "en"
+
+
+def pick_locale(value: Any, locale: str, default: str) -> str:
+    """Pick a localized string from a LocaleString-shaped dict ({"de": "...", "en": "..."}).
+
+    Falls back to English, then to the first non-empty value, then to `default`.
+    Accepts non-dict input (plain string) and returns it unchanged.
+    """
+    if isinstance(value, str):
+        return value or default
+    if not isinstance(value, dict):
+        return default
+    candidate = value.get(locale) or value.get(DEFAULT_LOCALE)
+    if candidate:
+        return candidate
+    for v in value.values():
+        if v:
+            return v
+    return default
+
+
+LOCALIZED_STATUS: dict[str, dict[str, str]] = {
+    "connecting": {
+        "de": "Verbinde mit Agent {agent_class}.{agent_id}...",
+        "en": "Connecting to agent {agent_class}.{agent_id}...",
+        "fr": "Connexion à l'agent {agent_class}.{agent_id}...",
+        "it": "Connessione all'agente {agent_class}.{agent_id}...",
+    },
+    "response_completed": {
+        "de": "Antwort abgeschlossen",
+        "en": "Response completed",
+        "fr": "Réponse terminée",
+        "it": "Risposta completata",
+    },
+    "found_documents": {
+        "de": "{count} relevante Dokumente gefunden",
+        "en": "Found {count} relevant documents",
+        "fr": "{count} documents pertinents trouvés",
+        "it": "Trovati {count} documenti pertinenti",
+    },
+    "retrieved_user_memories": {
+        "de": "{count} Benutzererinnerungen abgerufen",
+        "en": "Retrieved {count} user memories",
+        "fr": "{count} mémoires utilisateur récupérées",
+        "it": "Recuperate {count} memorie utente",
+    },
+    "retrieved_org_memories": {
+        "de": "{count} Organisations­erinnerungen abgerufen",
+        "en": "Retrieved {count} organization memories",
+        "fr": "{count} mémoires d'organisation récupérées",
+        "it": "Recuperate {count} memorie dell'organizzazione",
+    },
+    "processing": {
+        "de": "Verarbeite...",
+        "en": "Processing...",
+        "fr": "Traitement...",
+        "it": "Elaborazione...",
+    },
+}
+
+
+def localized_status(key: str, locale: str, **format_kwargs: Any) -> str:
+    """Resolve a status string from `LOCALIZED_STATUS` by key and locale."""
+    template = LOCALIZED_STATUS[key].get(locale) or LOCALIZED_STATUS[key][DEFAULT_LOCALE]
+    return template.format(**format_kwargs)
+
+
+def resolve_user_locale(user: dict[str, Any] | None, metadata: dict[str, Any] | None, request: Any) -> str:
+    """Resolve the user's preferred locale from OpenWebUI context.
+
+    Order: user settings (`settings.ui.lang|language|languageCode`) → metadata.lang →
+    request Accept-Language header → DEFAULT_LOCALE. The returned value is always one
+    of `SUPPORTED_LOCALES`.
+    """
+    candidates: list[str | None] = []
+    if user:
+        settings = user.get("settings") or {}
+        ui = settings.get("ui") if isinstance(settings, dict) else None
+        if isinstance(ui, dict):
+            candidates.extend([ui.get("lang"), ui.get("language"), ui.get("languageCode")])
+        candidates.append(settings.get("language") if isinstance(settings, dict) else None)
+    if metadata:
+        candidates.append(metadata.get("lang"))
+        candidates.append(metadata.get("locale"))
+    if request is not None:
+        try:
+            candidates.append(request.headers.get("Accept-Language"))
+        except Exception:
+            pass
+
+    for raw in candidates:
+        if not raw:
+            continue
+        code = raw.strip().split(",")[0].strip().split("-")[0].lower()
+        if code in SUPPORTED_LOCALES:
+            return code
+    return DEFAULT_LOCALE
+
+
+# ============================================================================
 # Domain Models with Inheritance
 # ============================================================================
 
@@ -251,6 +356,7 @@ class AuthenticationService:
         user_name: Annotated[str, "User's name"],
         user_email: Annotated[str, "User's email address"],
         accept_language: Annotated[str | None, "Accept-Language header value"] = None,
+        locale: Annotated[str | None, "Resolved user locale forwarded as `lang` header"] = None,
     ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
         """Prepare authenticated request headers"""
         clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
@@ -263,6 +369,8 @@ class AuthenticationService:
             "X-OpenWebUI-User-Email": user_email,
             "X-OpenWebUI-Signature": signature,
         }
+        if locale:
+            headers["lang"] = locale
         if accept_language:
             headers["Accept-Language"] = accept_language
         return headers
@@ -464,6 +572,7 @@ class EventContext:
         agent_id: Annotated[str, "Agent instance identifier"],
         thread_id: Annotated[str, "Thread identifier"],
         stream_service: Annotated[Any, "Streaming service instance"],
+        locale: Annotated[str, "User locale (de|en|fr|it)"] = DEFAULT_LOCALE,
     ):
         self.state_manager = state_manager
         self.emitter = emitter
@@ -473,6 +582,7 @@ class EventContext:
         self.agent_id = agent_id
         self.thread_id = thread_id
         self.stream_service = stream_service
+        self.locale = locale
 
 
 class EventHandler(ABC):
@@ -784,7 +894,11 @@ class RetrieverEventHandler(EventHandler):
                 source_data = self._build_source_data(node)
                 await context.emitter({"type": "source", "data": source_data})
 
-            description = event.get("display_description", {}).get("en", f"Found {len(nodes)} relevant documents")
+            description = pick_locale(
+                event.get("display_description"),
+                context.locale,
+                localized_status("found_documents", context.locale, count=len(nodes)),
+            )
 
             await context.emitter(
                 {
@@ -858,7 +972,11 @@ class RetrieveUserMemoryEventHandler(EventHandler):
                 source_data = self._build_memory_source_data(memory, memory_type="user")
                 await context.emitter({"type": "source", "data": source_data})
 
-            description = event.get("display_description", {}).get("en", f"Retrieved {len(memories)} user memories")
+            description = pick_locale(
+                event.get("display_description"),
+                context.locale,
+                localized_status("retrieved_user_memories", context.locale, count=len(memories)),
+            )
 
             await context.emitter(
                 {
@@ -929,8 +1047,10 @@ class RetrieveOrganizationMemoryEventHandler(EventHandler):
                 source_data = self._build_memory_source_data(memory, memory_type="organization")
                 await context.emitter({"type": "source", "data": source_data})
 
-            description = event.get("display_description", {}).get(
-                "en", f"Retrieved {len(memories)} organization memories"
+            description = pick_locale(
+                event.get("display_description"),
+                context.locale,
+                localized_status("retrieved_org_memories", context.locale, count=len(memories)),
             )
 
             await context.emitter(
@@ -997,8 +1117,11 @@ class DefaultEventHandler(EventHandler):
         event: Annotated[dict[str, Any], "Display event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
-        display_description = event.get("display_description", {})
-        event_description = display_description.get("en", "Processing...")
+        event_description = pick_locale(
+            event.get("display_description"),
+            context.locale,
+            localized_status("processing", context.locale),
+        )
 
         logger.debug(f"Processing DisplayEvent: {event.get('_event_name', 'unknown')}")
 
@@ -1089,6 +1212,7 @@ class StreamingService:
         event_caller: Annotated[EventCaller, "Event caller function"],
         state_manager: Annotated[StreamingStateManager, "State manager"],
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
+        locale: Annotated[str, "User locale (de|en|fr|it)"] = DEFAULT_LOCALE,
     ) -> None:
         """Stream an event and process responses"""
         endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
@@ -1105,6 +1229,7 @@ class StreamingService:
             agent_id=agent_id,
             thread_id=thread_id,
             stream_service=self,
+            locale=locale,
         )
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
@@ -1307,6 +1432,7 @@ class StreamingService:
             context.emitter,
             context.caller,
             context.state_manager,
+            locale=context.locale,
         )
 
 
@@ -1711,9 +1837,13 @@ class Pipe:
                 logger.debug(f"Processing request for {agent_class}.{agent_id}")
                 logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
 
-                # Prepare authentication (forward Accept-Language for localized error messages)
+                # Resolve user's OpenWebUI UI language; forward as `lang` header so the
+                # API's I18nMiddleware picks it up. Accept-Language stays as secondary fallback.
+                locale = resolve_user_locale(__user__, __metadata__, __request__)
                 accept_language = __request__.headers.get("Accept-Language") if __request__ else None
-                headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"], accept_language)
+                headers = self._auth_service.prepare_headers(
+                    __user__["name"], __user__["email"], accept_language, locale=locale
+                )
                 inject(headers)
 
                 # Convert messages
@@ -1759,7 +1889,9 @@ class Pipe:
                         "type": "status",
                         "data": {
                             "action": None,
-                            "description": f"Connecting to agent {agent_class}.{agent_id}...",
+                            "description": localized_status(
+                                "connecting", locale, agent_class=agent_class, agent_id=agent_id
+                            ),
                             "done": False,
                         },
                     }
@@ -1783,6 +1915,7 @@ class Pipe:
                     __event_call__,
                     state_manager,
                     stream_start_callback,
+                    locale=locale,
                 )
 
                 # Emit completion status
@@ -1791,7 +1924,7 @@ class Pipe:
                         "type": "status",
                         "data": {
                             "action": None,
-                            "description": "Response completed",
+                            "description": localized_status("response_completed", locale),
                             "done": True,
                         },
                     }
