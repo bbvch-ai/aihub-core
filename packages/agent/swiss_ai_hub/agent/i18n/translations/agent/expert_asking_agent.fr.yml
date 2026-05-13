@@ -13,6 +13,11 @@ config:
     label: Boucles max
   insight_namespace:
     label: Namespace d'insights
+  org_memory_format:
+    label: Format de mémoire d'organisation
+    help: Modèle pour l'extrait Q/R stocké dans la mémoire d'organisation. Utilisez
+      {question} et {answer} comme paramètres.
+    default: "Question : {question}\n\nRéponse de l'expert : {answer}"
 routes:
   answer_sufficient: L'expert a répondu à la question. Choisissez ceci si l'expert
     a fourni UNE réponse directe.

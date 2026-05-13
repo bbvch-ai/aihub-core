@@ -3,5 +3,6 @@ test: This is an english test
 authorization:
   no_access_knowledge_database: You do not have access to knowledge database '%{name}'.
   no_access_agent: You do not have access to agent '%{agent}'.
+  no_access_organization_memory: You do not have access to organization memory.
   config_unauthorized: Configuration references resources you are not authorized to
     access.

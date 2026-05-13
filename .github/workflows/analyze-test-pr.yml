@@ -69,6 +69,27 @@ jobs:
           swiss_llm_cloud_ocr_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_OCR_API_BASE_URL }}
           swiss_llm_cloud_ocr_api_key: ${{ secrets.SWISS_LLM_CLOUD_OCR_API_KEY }}
           regenerate_compose: 'true'
+  env-check:
+    name: Env / Compose Consistency
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --all-packages --dev --frozen
+      - name: Generate compose files
+        run: make generate-compose
+      - name: Check env consistency (strict)
+        run: make check-env
   pytest-coverage-comment:
     name: Pytest Coverage Comment
     needs: test-modules

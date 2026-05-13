@@ -73,15 +73,25 @@ def backup_definitions() -> Definitions:
     repack_finalize_key = AssetKey(["maintenance", "repack_finalize"])
 
     maintenance_session_asset = maintenance_session_factory(maintenance_session_key)
-    # The four DELETE handlers must run AFTER postgres_indexes so the first run
-    # on a backlogged DB uses the partial indexes instead of seq-scanning. The
-    # autovacuum tune is independent (idempotent ALTER TABLE, milliseconds).
+    # Ordering: postgres_indexes → {postgres_autovacuum_tune, 4 DELETE handlers}
+    # (5-way parallel after indexes).
+    #
+    # - The DELETE handlers need the partial indexes in place to avoid
+    #   seq-scanning event_logs (originally raised on PR #1040).
+    # - postgres_autovacuum_tune's ALTER TABLE event_logs SET (...) takes
+    #   ShareUpdateExclusiveLock on event_logs, which conflicts with CREATE
+    #   INDEX CONCURRENTLY (also ShareUpdateExclusive) — running them in
+    #   parallel deadlocks because CREATE INDEX CONCURRENTLY's phase-2 wait on
+    #   the ALTER TABLE vxid closes the cycle. ShareUpdateExclusive is
+    #   compatible with RowExclusive (DELETE), so autovacuum_tune can safely
+    #   run alongside the DELETE handlers once indexes is done.
     indexes_key = cleanup_service_keys["postgres_indexes"]
     deps_on_indexes = {
         "dagster_debug_logs",
         "dagster_info_logs",
         "dagster_warning_logs",
         "dagster_unimportant_events",
+        "postgres_autovacuum_tune",
     }
     cleanup_service_assets = [
         maintenance_service_factory(

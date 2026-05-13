@@ -134,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { normalizeFormLocaleStrings } from '@core/composables/form/useFormKitTransform'
+import { type FormElement, normalizeFormLocaleStrings } from '@core/composables/form/useFormKitTransform'
 import { getNode } from '@formkit/core'
 
 const props = defineProps<{
@@ -167,6 +167,7 @@ const {
   getRepeaterData,
   setRepeaterData,
   cleanFormData,
+  coerceNullableToggles,
   applyInitialData,
   resetForm,
 } = useCreateInstanceForm({
@@ -212,7 +213,8 @@ function triggerFormSubmit() {
 async function handleFormSubmit() {
   try {
     const cleanedData = cleanFormData(formData.value)
-    const normalizedConfig = normalizeFormLocaleStrings(cleanedData)
+    const coerced = coerceNullableToggles(cleanedData, configForm.value as FormElement[])
+    const normalizedConfig = normalizeFormLocaleStrings(coerced)
     const processId = normalizedConfig.process_id as string
     await createProcessInstance({
       processClass: selectedClass.value,

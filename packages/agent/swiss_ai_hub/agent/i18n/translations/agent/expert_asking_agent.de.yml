@@ -13,6 +13,11 @@ config:
     label: Max. Schleifen
   insight_namespace:
     label: Insight-Namespace
+  org_memory_format:
+    label: Format für Organisationsspeicher
+    help: Vorlage für den Q&A-Eintrag im Organisationsspeicher. Verwenden Sie {question}
+      und {answer} als Platzhalter.
+    default: "Frage: {question}\n\nAntwort des Experten: {answer}"
 routes:
   answer_sufficient: Der Experte hat die Frage beantwortet. Wählen Sie dies, wenn
     der Experte IRGENDEINE direkte Antwort gegeben hat.

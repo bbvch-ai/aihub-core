@@ -5,6 +5,236 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.3] - 2026-05-12 - Dynamic Forms and Stability Enhancements
+
+### Fixed
+
+- 🐛 **Fixed Number Input Validation:** Ensured FormKit validation for **`InputNumber`** elements correctly handles large
+  and small decimal bounds by preventing scientific notation in validation rules.
+- 🐛 **Corrected `ChipsInput` Required Logic:** Prevented **`ChipsInput`** elements from being automatically marked as
+  required, acknowledging that an empty list is a valid "unset" state for list-collecting inputs.
+- 🚫 **Hard-Pinned Nuxt.js to 3.21.0:** Temporarily reverted Nuxt.js to version **3.21.0** to mitigate a `vite-node` IPC
+  regression that caused hangs and module resolution errors in development mode.
+
+### Added
+
+- ✨ **Introduced `FormKitDynamicConfiguration` Component:** Added a new, reusable Vue component to centralize dynamic
+  form rendering logic, including repeater handling and locale string support, for consistent UI across agent and
+  process configurations.
+- 🦾 **New `seedFormDefaults` Helper:** Implemented a new composable function to recursively apply backend Pydantic
+  default values to form data, ensuring fields are correctly pre-filled upon initialization.
+- 🧪 **Expanded Form Validation Tests:** Added comprehensive unit tests for **`InputNumber`** validation bounds
+  (integers, floats, large, and small decimals) and verified **`ChipsInput`** requirement logic, improving form
+  reliability.
+- 📄 **Documented Nuxt Hard-Pin Decision:** Added an Architecture Decision Record (ADR) explaining the rationale,
+  consequences, and exit criteria for hard-pinning Nuxt.js to version 3.21.0.
+
+### Refactor
+
+- 🔄 **Streamlined Agent and Process Configurations:** Replaced internal form handling logic in `Agent/Configuration.vue`
+  and `Process/Configuration.vue` with the new reusable **`FormKitDynamicConfiguration`** component, reducing code
+  duplication.
+- ⚡️ **Enhanced Dynamic Form Stability:** Implemented `preserve: true` and unique `key` attributes across FormKit groups
+  and inputs to prevent data loss and improve rendering stability during conditional display or re-rendering.
+- 🧹 **Optimized Form Instance Data Initialization:** Refined the data hydration and default seeding logic when creating
+  new agent or process instances, ensuring consistent and correct form state.
+
+______________________________________________________________________
+
+## [v0.289.2] - 2026-05-12 - Refined Backup Orchestration and CI Scopes
+
+### Fixed
+
+- 🐛 **Dagster Backup Asset Dependencies:** Corrected the execution order of Dagster backup maintenance assets to ensure
+  the `postgres_autovacuum_tune` process runs after `postgres_indexes`, preventing potential deadlocks and enhancing the
+  reliability of backup workflows.
+
+### Changed
+
+- ⚙️ **CI/CD Semantic Commit Scope:** Added `backup` as an allowed scope for semantic commit messages within CI/CD
+  workflows, enabling clearer categorization and validation of changes related to the backup system.
+- 📄 **Developer Documentation:** Updated the `CLAUDE.md` documentation to reflect the newly introduced `backup` scope
+  for semantic commit messages, guiding developers on proper commit conventions.
+- 🧪 **Backup Maintenance Tests:** Updated unit tests to accurately validate the corrected dependency ordering of backup
+  maintenance handlers, including the new dependency of `postgres_autovacuum_tune` on `postgres_indexes`.
+
+______________________________________________________________________
+
+## [v0.289.1] - 2026-05-12 - Dependency Management & Stability Enhancements
+
+### Changed
+
+- 📄 Streamlined **Dependabot configuration** by excluding Python base images from automatic major version bumps,
+  allowing for more deliberate and controlled updates of core environments.
+- 🔄 Relaxed the **Llama-index-core dependency constraint** in the core package to permit compatible minor version
+  updates, providing greater flexibility for patch releases.
+- ⬆️ Updated the **Hugging Face Hub dependency** for development tools, streamlining its integration and removing an
+  unnecessary `[cli]` extra.
+
+### Fixed
+
+- 🐛 Introduced a **pnpm override for @ungap/structured-clone** across documentation and web packages to ensure specific,
+  stable versions of transitive dependencies are utilized, enhancing overall stability.
+
+______________________________________________________________________
+
+## [v0.289.0] - 2026-05-12 - Next-Gen Memory Scoping and Agent Templates for Expert Agents
+
+### Added
+
+- ✨ **Agent Templates**: Introduced a new templating system for `ExpertAskingAgent` and `ExpertRAGAgent`, making it
+  easier to deploy and configure specialized agents for various use cases.
+- 🦾 **Engineering Expert Agent Templates**: Shipped default `Engineering Expert` and `Engineering Expert RAG` agent
+  templates, providing ready-to-use configurations for escalating and answering technical questions.
+- ⚙️ **Granular Organization Memory Scoping**: Added new configuration objects (`OrgMemoryReadConfig`,
+  `OrgMemoryWriteConfig`) allowing agents to define `default_tenant_namespace` and `allowed_tenant_namespaces` for
+  precise control over knowledge access.
+- 📝 **Configurable Organization Memory Format**: `ExpertAskingAgent` now supports a configurable `org_memory_format`
+  template, enabling custom Q&A snippets to be stored in organization memory.
+- 🎛️ **New Form Components**: Introduced `ChipsInput` for intuitive list input (e.g., allowed namespaces) and
+  `OrgMemoryTenantInput` which integrates built-in authorization checks for organization memory fields directly into the
+  UI.
+- 🔑 **Authorization for Organization Memory**: Implemented client-side configuration authorization checks for
+  organization memory settings, ensuring users only configure resources they have access to.
+- 📄 **Detailed Environment Variable Descriptions**: Added comprehensive descriptions and default values for many backup,
+  Milvus, NATS, Redis, and S3 storage-related environment variables in the deployment guide, improving clarity.
+
+### Changed
+
+- 🔄 **Refined Organization Memory APIs**: Updated internal organization memory APIs and event structures to support
+  granular namespace lists, moving from a single `tenant_namespace` string to a list of `tenant_namespaces` for search
+  and a specified singular namespace for writes.
+- 🧹 **Streamlined Reranking Configuration**: Simplified the configuration for document reranking in RAG agents, making
+  it more straightforward to enable or disable the feature.
+- 📋 **Environment Variable Renaming for Consistency**: Renamed several backup-related environment variables (e.g.,
+  `DAGSTER_DB` to `BACKUP_DAGSTER_DB`) to ensure consistent naming conventions across the platform and documentation.
+- 🖼️ **Vector Store UI Improvement**: Refactored the "Allowed metadata filter fields" input in the vector store
+  configuration to utilize the new `ChipsInput` component for a more user-friendly experience.
+
+### Refactor
+
+- 🗑️ **Consolidated Memory Configuration**: The `MemoryConfig` class has been removed and its functionality split into
+  `UserMemoryConfig` and `OrgMemoryReadConfig`/`OrgMemoryWriteConfig` for clearer separation and management of
+  user-scoped and organization-scoped memory settings.
+- ⚙️ **Internal `.gitignore` Enhancements**: Added `.claude/*.lock` to `.gitignore` to prevent unnecessary lock files
+  from being tracked.
+
+______________________________________________________________________
+
+## [v0.288.1] - 2026-05-11 - Streamlined Environment Configuration and Validation
+
+### Added
+
+- 📄 **Introduced a comprehensive, auto-generated environment variables reference page** in the documentation, providing
+  a single source of truth for all configurable settings.
+- 🚀 **Implemented automated consistency checks** for environment variables against Docker Compose configurations and
+  Pydantic settings during PR analysis and release workflows, enhancing deployment reliability.
+- 🔑 **Integrated Keycloak OAuth2 Proxy client for the Backup Dagster UI**, enabling secure, centrally managed access to
+  backup management interfaces.
+- 💾 **Added explicit support for Azure Data Lake Storage, Azure Document Intelligence, and SharePoint** by introducing
+  dedicated environment variables for their configurations, facilitating data ingestion from these sources.
+- 🔐 **Introduced new internal environment variables for NATS and Redis/Valkey tokens**, improving security and granular
+  configuration control for these messaging and caching services.
+- 👷‍♀️ **New `check-env` and `generate-env-docs` Makefile targets** for manual execution of environment validation and
+  documentation generation.
+
+### Changed
+
+- 📝 **Reorganized the `.env.dev` file structure**, moving host-side development overrides to a dedicated section for
+  improved clarity and maintainability.
+- 🔄 **Standardized OAuth2 Proxy provider display names to "Keycloak"** across various services in Docker Compose
+  templates, ensuring a consistent user experience.
+- ⚙️ **Made Mem0 model names fully configurable** via environment variables (`MEM0_LLM_NAME`,
+  `MEM0_EMBEDDING_MODEL_NAME`, `MEM0_RERANKING_MODEL_NAME`) in Docker Compose, offering greater flexibility for AI model
+  selection.
+- 🔄 **Updated the default `AIHUB_STARTUP_TENANT_ID`** from `'swiss_ai_hub'` to `'default'` for a more generic initial
+  platform setup.
+- 🔒 **Hardcoded the Langfuse `NEXTAUTH_URL`** directly within Docker Compose templates based on the deployment stage
+  (dev/prod), simplifying configuration by removing reliance on an `.env` variable for this specific setting.
+- 📈 **Fixed pgbouncer pool size values** to constant values within Docker Compose, removing optional environment
+  variable overrides for these specific parameters.
+- 📚 **Improved documentation comments** within `.env.dev` to more clearly explain sections and variable usage.
+- 🧹 **Added root-level Ruff configuration** to `pyproject.toml` for consistent code formatting across repository-level
+  scripts.
+
+### Removed
+
+- 🗑️ **Removed the redundant `WEBUI_SECRET_KEY` environment variable**, as its functionality is now consolidated under
+  `OPENWEBUI_SECRET_KEY`.
+- ❌ **Eliminated deprecated fake authentication variables** (`DANGEROUS_DEV_ONLY_AUTH_FAKE_*`) previously used for
+  development-only testing.
+- 🗑️ **Removed the explicit `AIHUB_CREATE_DEFAULT_ROLES` environment variable**, as role creation now defaults to `True`
+  within the application code.
+- 🗑️ **Removed `OAUTH_AUTHORITY_URL`** from `.env.prod`.
+
+### Refactor
+
+- 🧹 **Centralized environment variable management logic** into new Python modules (`env_check.py`, `env_docs.py`,
+  `env_inventory.py`) to streamline validation, documentation generation, and overall configuration handling.
+
+______________________________________________________________________
+
+## [v0.288.0] - 2026-05-11 - Streamlined Optional Form Fields and Configuration Management
+
+### Refactor
+
+- 🔄 **Revised Form Optionality Handling:** Overhauled how optional form fields are managed, replacing explicit
+  `enabled: bool` flags with Pydantic's `T | None` annotations for improved data model clarity and consistency. This
+  architectural change is documented in `2026_05_07_nullable_form_fields_over_enabled_toggle.md`.
+- 🦾 **Unified UI Toggle Management:** Integrated UI toggle logic directly into the form framework, automatically
+  generating enable/disable checkboxes for nullable fields and groups. This standardizes the user experience and
+  significantly reduces boilerplate for optional settings.
+
+### Changed
+
+- ⚡️ **Simplified Agent Reranking Configuration:** Updated RAG and Expert RAG agents to leverage the new nullable field
+  system, removing the dedicated `enabled` field from `RerankingConfig` and simplifying internal logic to check for
+  `is not None`.
+- 🧹 **Cleaned Agent Configuration Data:** Agent configurations now store `null` for disabled optional sub-forms, leading
+  to smaller, more readable persisted data by eliminating stale default values.
+- 🚀 **Enhanced Frontend Form Data Processing:** Introduced new `seedNullableToggles` and `coerceNullableToggles`
+  functions to intelligently initialize and submit form data, correctly managing the state of auto-generated nullable
+  field toggles in the UI.
+
+### Removed
+
+- 🗑️ **Eliminated Redundant `enabled` Fields:** The dedicated `enabled` boolean fields in `RerankingConfig` and other
+  optional sub-configurations have been removed, as their functionality is now implicitly handled by the form framework
+  based on `T | None` annotations.
+- 📄 **Deprecated Reranking UI Conditions and Translations:** Removed `condition_if` properties that previously linked to
+  the `reranking_config_enabled` field, along with their associated internationalization strings, simplifying the UI
+  schema.
+
+______________________________________________________________________
+
+## [v0.287.3] - 2026-05-11 - Improved Memory Management API
+
+### Refactor
+
+- 🧹 **Streamlined Memory Operations:** Refactored memory update and delete functions to automatically derive the
+  **tenantId** from the application context, simplifying API calls and improving consistency for developers.
+
+______________________________________________________________________
+
+## [v0.287.2] - 2026-05-11 - RAG Agents: Richer Context with Image Support
+
+### Changed
+
+- 🖼️ **Enhanced Context Sufficiency Guard**: RAG agents now pass the full `ChatMessage` objects, including images and
+  other rich content, to the context sufficiency guard, allowing Large Language Models (LLMs) to process multimodal
+  information more effectively.
+- 💬 **Improved Chat History Forwarding**: The chat history sent to the context sufficiency guard now retains its full
+  `ChatMessage` structure, enabling more accurate and rich conversational context for LLMs.
+
+### Refactor
+
+- 🧹 **Updated Guard Prompting Mechanism**: Switched the internal context sufficiency guard from `PromptTemplate` to
+  `RichPromptTemplate` to support dynamic rendering of multimodal `ChatMessage` objects within LLM prompts.
+- ⚙️ **Standardized Context Parameter**: Refactored the `do_context_sufficient_guard` function across RAG agents to
+  consistently accept a `ChatMessage` object for context, rather than a flattened string.
+
+______________________________________________________________________
+
 ## [v0.287.1] - 2026-05-11 - Optimized Vector Store Queries with Namespace Scoping
 
 ### Changed

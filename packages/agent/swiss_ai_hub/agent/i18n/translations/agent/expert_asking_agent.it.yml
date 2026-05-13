@@ -13,6 +13,11 @@ config:
     label: Loop massimi
   insight_namespace:
     label: Namespace insights
+  org_memory_format:
+    label: Formato memoria dell'organizzazione
+    help: Modello per il frammento di domanda/risposta archiviato nella memoria dell'organizzazione.
+      Usa {question} e {answer} come segnaposto.
+    default: "Domanda: {question}\n\nRisposta dell'esperto: {answer}"
 routes:
   answer_sufficient: L'esperto ha risposto alla domanda. Scegli questo se l'esperto
     ha fornito QUALSIASI risposta diretta.

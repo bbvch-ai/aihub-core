@@ -73,21 +73,40 @@ context_sufficient_guard:
     Eine überarbeitete Abfrage, um bessere Suchergebnisse zu erhalten, wenn der Kontext unzureichend war, wobei darauf zu achten ist, dass sich die Abfrage ausreichend 
     von den bestehenden Abfragen unterscheiden.
   prompt: |
+    {% chat role="user" %}
     Gesprächsverlauf (enthält alle als Systemnachrichten eingefügten Benutzer- oder Organisationsspeicher — behandle sie als zusätzlichen Kontext, der die Frage bereits beantworten kann):
     <Chat_History>
-    {chat_history}
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+    {% for block in message.blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url.__str__() | image }}
+    {% endif %}
+    {% endfor %}
+    </message>
+    {% endfor %}
     </Chat_History>
     Frage:
     <Question>
-    {user_query}
+    {{ user_query }}
     </Question>
     Vorherige Abfragen:
     <Previous_Queries>
-    {prev_queries}
-    <\Previous_Queries>
+    {{ prev_queries }}
+    </Previous_Queries>
     Kontext:
     <Context>
-    {context}
+    {% for block in context_blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url.__str__() | image }}
+    {% endif %}
+    {% endfor %}
     </Context>
     ---
     ANWEISUNGEN:
@@ -100,6 +119,7 @@ context_sufficient_guard:
       4. new_query MUSS sich klar von jeder vorherigen Abfrage unterscheiden.
       5. Jede nachfolgende Abfrage sollte einen grösseren konzeptionellen Sprung darstellen als die vorherige.
     WICHTIG: Du MUSST über den bereitgestellten strukturierten Ausgabe-Tool antworten. Antworte NICHT in Klartext. Gib genau einen Tool-Aufruf mit deiner Entscheidung zurück.
+    {% endchat %}
   reason_no_hops: |
     Begründung, warum der Kontext ausreichend ist oder nicht (keine zusätzlichen Sprünge verfügbar).
   success_no_hops: |

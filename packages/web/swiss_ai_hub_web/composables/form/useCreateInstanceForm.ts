@@ -6,10 +6,13 @@ import {
   type RepeaterConfig,
   buildFormKitSchema,
   categorizeFormElements,
+  coerceNullableToggles,
   extractGroupConfigs,
   extractRepeaterConfigs,
   getFormkitType,
   getNestedValue,
+  seedFormDefaults,
+  seedNullableToggles,
   setNestedValue,
 } from './useFormKitTransform'
 
@@ -142,7 +145,8 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
 
   watch(selectedClassData, (newClass) => {
     if (newClass?.form && newClass.form.length > 0) {
-      formData.value = initializeGroupData(configForm.value as FormElement[], {})
+      const base = initializeGroupData(configForm.value as FormElement[], {})
+      formData.value = seedFormDefaults(base, configForm.value as FormElement[])
     }
     else {
       formData.value = {}
@@ -191,6 +195,8 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
 
     for (const [key, value] of Object.entries(data)) {
       if (formkitArtifacts.has(key)) continue
+      // Strip the internal repeater validation mirror written by FormKit/Repeater.vue.
+      if (key.startsWith('__validate__')) continue
 
       if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
         result[key] = cleanFormData(value as Record<string, unknown>)
@@ -204,9 +210,15 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
   }
 
   function applyInitialData(data: Record<string, unknown>) {
+    // Seed toggles from the raw data so that `field: null` in a template becomes
+    // `__field__enabled: false`. If we seeded after stripping nulls and merging
+    // against the `{}` placeholder from initializeGroupData, every nullable group
+    // would look truthy and the toggle would come up enabled.
+    const seeded = seedNullableToggles(data, configForm.value as FormElement[])
     const base = initializeGroupData(configForm.value as FormElement[], {})
-    const sanitized = stripNullsForGroups(data, configForm.value as FormElement[])
-    formData.value = merge(base, sanitized)
+    const withDefaults = seedFormDefaults(base, configForm.value as FormElement[])
+    const sanitized = stripNullsForGroups(seeded, configForm.value as FormElement[])
+    formData.value = merge(withDefaults, sanitized)
   }
 
   function resetForm() {
@@ -232,6 +244,7 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
     setRepeaterData,
     initializeGroupData,
     cleanFormData,
+    coerceNullableToggles,
     applyInitialData,
     resetForm,
   }

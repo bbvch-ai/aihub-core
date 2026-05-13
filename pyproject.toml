@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-workspace"
-version = "0.287.1"
+version = "0.289.3"
 requires-python = ">=3.13, <3.14"
 description = "Swiss AI Hub Monorepo Workspace"
 dependencies = [
@@ -30,7 +30,7 @@ dev = [
     "mdformat-pyproject>=0.0.2",
     "mdformat-vuepress>=0.1.0",
     "mdformat-myst>=0.2.1",
-    "huggingface-hub[cli]>=0.34.4",
+    "huggingface-hub>=0.36.2",
     "tomlkit>=0.13.3",
     "yamlfix>=1.19.1",
 ]
@@ -60,6 +60,15 @@ swiss-ai-hub-api = { workspace = true }
 swiss-ai-hub-bot = { workspace = true }
 swiss-ai-hub-pipeline = { workspace = true }
 swiss-ai-hub-process = { workspace = true }
+
+# Ruff config for files outside the per-package scopes (root-level scripts and
+# `infra/`). Each `packages/*/pyproject.toml` defines its own `[tool.ruff]` and
+# wins for files inside that scope. Without this section, root-level invocations
+# of `ruff format` fall back to the 88-char default and over-wrap files like
+# `infra/deployment/*.py` that the rest of the codebase keeps at 120.
+[tool.ruff]
+line-length = 120
+target-version = "py313"
 
 [tool.black]
 line-length = 120

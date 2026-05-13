@@ -42,23 +42,6 @@ config:
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction : En utilisant\
       \ les informations des documents fournis, générez une réponse détaillée et bien\
       \ structurée\nà la question de l'utilisateur.\n{% endchat %}\n"
-  reranking_enabled:
-    label: Activer le reclassement
-    help: Utilisez un modèle de reclassement pour améliorer la pertinence des documents
-      récupérés avant de les transmettre au LLM.
-  enable_organization_memory:
-    label: Activer la mémoire organisationnelle
-    help: Récupérer les mémoires organisationnelles (connaissances d'experts partagées
-      entre utilisateurs) pour le contexte.
-  rerank_organization_memory:
-    label: Reclasser la mémoire organisationnelle
-    help: Reclasser les résultats de recherche de mémoire organisationnelle avec le
-      reranker configuré pour une meilleure pertinence. Augmente la latence et le
-      coût.
-  tenant_namespace:
-    label: Espace de noms du locataire
-    help: Espace de noms pour l'isolation de la mémoire au niveau départemental. Laisser
-      vide pour la portée organisationnelle par défaut.
   enable_user_memory_retrieval:
     label: Activer la récupération de mémoire utilisateur
     help: Récupérer les mémoires spécifiques à l'utilisateur pour un contexte personnalisé.

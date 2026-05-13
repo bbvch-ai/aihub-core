@@ -51,6 +51,16 @@ class RAGStartEvent(StartEvent):
             )
         ),
     ] = None
+    org_memory_namespaces: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Namespaces to scope organization-memory search to (department-level sub-scopes). "
+                "Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list "
+                "is non-empty; raises otherwise. Empty list (default) falls back to the full configured set."
+            ),
+        ),
+    ] = []
 
     @property
     def user_query(self) -> str:

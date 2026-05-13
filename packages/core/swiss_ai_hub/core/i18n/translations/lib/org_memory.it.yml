@@ -1,0 +1,19 @@
+---
+tenant_id:
+  label: ID tenant
+  help: Identificatore del tenant utilizzato per limitare le letture e le scritture
+    della memoria organizzativa.
+allowed_tenant_namespaces:
+  label: Namespace consentiti
+  help: Elenco dei namespace consentiti per letture/scritture nella memoria organizzativa.
+    Lasciare vuoto per consentire qualsiasi namespace.
+  placeholder: Digitare un namespace e premere Invio per aggiungere
+rerank_organization_memory:
+  label: Riordina memoria organizzativa
+  help: Riordina i risultati della ricerca della memoria organizzativa con il reranker
+    configurato per una maggiore pertinenza. Aumenta la latenza e il costo.
+default_tenant_namespace:
+  label: Namespace predefinito della memoria organizzativa
+  help: Namespace utilizzato per le scritture nella memoria organizzativa (e per le
+    letture quando l'evento non fornisce una sostituzione). Lasciare vuoto per utilizzare
+    il valore predefinito della piattaforma.

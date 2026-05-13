@@ -1,12 +1,11 @@
 from typing import Annotated
 
-from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms import LLM
+from llama_index.core.prompts import RichPromptTemplate
 from openai import NOT_GIVEN
 from pydantic import Field
 
-from swiss_ai_hub.core.generative_ai.chat_history.format_chat_history import format_chat_history
 from swiss_ai_hub.core.generative_ai.guards.guard_result import GuardResult
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
@@ -49,13 +48,14 @@ async def context_sufficient_guard(
     llm: LLM,
     t: LocaleHandler,
     user_query: str,
-    context: str,
+    context_message: ChatMessage | None,
     prev_queries: list[str],
     more_hops_available: bool,
     chat_history: list[ChatMessage],
 ) -> ContextGuardResult:
-    sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
+    sufficiency_prompt = RichPromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
     prev_queries_str = "\n".join(prev_queries)
+    context_blocks = context_message.blocks if context_message is not None else []
     llm_kwargs: dict = {}
     if llm.metadata.is_function_calling_model:
         llm_kwargs["tool_choice"] = "required"
@@ -67,9 +67,9 @@ async def context_sufficient_guard(
         sufficiency_prompt,
         llm_kwargs=llm_kwargs,
         user_query=user_query,
-        context=context,
+        context_blocks=context_blocks,
         prev_queries=prev_queries_str,
-        chat_history=format_chat_history(chat_history),
+        chat_history=chat_history,
     )
 
     guard_result = ContextGuardResult.model_validate(result)
