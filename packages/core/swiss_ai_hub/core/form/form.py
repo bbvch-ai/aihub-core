@@ -153,9 +153,30 @@ class Form(BaseModel):
 
         for field_name, field_info in self.__class__.model_fields.items():
             field_value = getattr(self, field_name)
+            allows_none = self._annotation_allows_none(field_info.annotation)
 
-            # Skip None values (optional fields not included in this form)
+            # None value: emit placeholder Group for nullable nested Form annotations so the
+            # frontend can render a toggle that re-enables the sub-form. Skip otherwise.
             if field_value is None:
+                if allows_none:
+                    nested_form_type = self._extract_form_type(field_info.annotation)
+                    if nested_form_type is not None:
+                        nested_prefix = f"{_id_prefix}{field_name}."
+                        template_form = nested_form_type.as_form() if hasattr(nested_form_type, "as_form") else None
+                        nested_elements = (
+                            template_form.to_formkit_form(_id_prefix=nested_prefix) if template_form else []
+                        )
+                        label = self._extract_label_from_field(field_info)
+                        group_ref = f"{_id_prefix}{field_name}" if _id_prefix else field_name
+                        formkit_elements.append(
+                            Group(
+                                name=field_name,
+                                label=label,
+                                children=nested_elements,
+                                ref=group_ref,
+                                nullable=True,
+                            )
+                        )
                 continue
 
             # Case 1: Direct FormkitElement value
@@ -177,6 +198,7 @@ class Form(BaseModel):
                     children=nested_elements,
                     condition_if=group_condition,
                     ref=group_ref,
+                    nullable=allows_none,
                 )
                 formkit_elements.append(group)
 
@@ -224,12 +246,16 @@ class Form(BaseModel):
                 # Note: 'ref' is the attribute, 'id' is its JSON alias
                 element_copy.ref = f"{id_prefix}{field_name}"
 
-            # Determine if field is required based on type annotation
-            # Boolean elements (checkbox, toggle switch) are never required - unchecked = false is valid
-            boolean_formkit_types = {"primeCheckbox", "primeToggleSwitch"}
-            is_boolean_element = getattr(element_copy, "formkit", None) in boolean_formkit_types
-            is_required = not is_boolean_element and not self._annotation_allows_none(field_info.annotation)
+            # Determine if field is required based on type annotation.
+            # Boolean elements (unchecked = false) and list-collecting elements (empty list = no selection)
+            # have a valid "unset" state and are never auto-required.
+            non_required_formkit_types = {"primeCheckbox", "primeToggleSwitch", "chipsInput"}
+            is_skip_required = getattr(element_copy, "formkit", None) in non_required_formkit_types
+            allows_none = self._annotation_allows_none(field_info.annotation)
+            is_required = not is_skip_required and not allows_none
             element_copy.required = is_required
+            if allows_none and not is_skip_required:
+                element_copy.nullable = True
 
             # If element has no explicit value, use Pydantic field default
             if element_copy.value is None and field_info.default is not PydanticUndefined:
@@ -256,6 +282,26 @@ class Form(BaseModel):
             return type(None) in union_args
 
         return False
+
+    @staticmethod
+    def _extract_form_type(annotation: Any) -> type[Form] | None:
+        """Find the first Form subclass referenced by an annotation (peeling Annotated/Union)."""
+        origin = get_origin(annotation)
+
+        if origin is Annotated:
+            return Form._extract_form_type(get_args(annotation)[0])
+
+        if origin in (Union, UnionType):
+            for arg in get_args(annotation):
+                found = Form._extract_form_type(arg)
+                if found is not None:
+                    return found
+            return None
+
+        if isinstance(annotation, type) and issubclass(annotation, Form) and annotation is not Form:
+            return annotation
+
+        return None
 
     @staticmethod
     def _extract_label_from_field(field_info: FieldInfo) -> LocaleString | str | None:

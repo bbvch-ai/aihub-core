@@ -4,7 +4,12 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from llama_index.core.prompts import RichPromptTemplate
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import BotInTheLoop, RouteOptions, RouterEvent, StoreOrganizationMemoryEvent
-from swiss_ai_hub.core.generative_ai import AgentMemory, route_to_event_using_llm
+from swiss_ai_hub.core.generative_ai import (
+    AgentMemory,
+    OrgMemoryNamespaceResolver,
+    OrgMemoryWriteConfig,
+    route_to_event_using_llm,
+)
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -151,19 +156,28 @@ class ExpertAskingAgent(Agent):
             chat_history = await run_context.get("chat_history", [])
             chat_history = [ChatMessage(**message) for message in chat_history]
 
-            # Store expert conversation as organization memory
-            memory_text = f"Question: {initial_question_event.question_to_expert}\n\nExpert Answer: {event.response}"
+            org_memory: OrgMemoryWriteConfig = agent_config.org_memory
+            memory_template = agent_config.org_memory_format.in_locale(
+                initial_question_event.locale
+            ) or agent_config.org_memory_format.in_locale("en")
+            memory_text = memory_template.format(
+                question=initial_question_event.question_to_expert,
+                answer=event.response,
+            )
+            tenant_namespace = OrgMemoryNamespaceResolver.resolve_for_write(
+                event_override=initial_question_event.org_memory_namespace,
+                default=org_memory.default_tenant_namespace,
+                allowed=org_memory.allowed_tenant_namespaces,
+            )
             memory_added = await memory.add_organization_memory(
                 memory=memory_text,
                 user_id=initial_question_event.user.id,
                 thread_id=topic.thread_id,
                 display_id=topic.display_id,
                 run_id=topic.run_id,
-                tenant_id=agent_config.tenant_id,
-                tenant_namespace=agent_config.tenant_namespace,
+                tenant_id=org_memory.tenant_id,
+                tenant_namespace=tenant_namespace,
             )
-
-            # Emit event for observability
             await displayer.display_event(
                 StoreOrganizationMemoryEvent.from_memory_added_object(memory_added=memory_added)
             )

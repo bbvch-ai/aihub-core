@@ -404,9 +404,7 @@ def test_restore_rejects_unsafe_database_name(mock_run: MagicMock, postgres_hand
 
 
 @patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
-def test_subprocess_timeout_propagates_from_settings(
-    mock_run: MagicMock, settings: BackupSettings
-) -> None:
+def test_subprocess_timeout_propagates_from_settings(mock_run: MagicMock, settings: BackupSettings) -> None:
     """Operator-supplied POSTGRES_SUBPROCESS_TIMEOUT_SECONDS must reach every subprocess.run call."""
     custom_timeout = 12345
     overridden = settings.model_copy(update={"POSTGRES_SUBPROCESS_TIMEOUT_SECONDS": custom_timeout})

@@ -8,6 +8,7 @@ from swiss_ai_hub.core.form import (
     InputText,
     KnowledgeDatabaseSelector,
     ModelSelect,
+    OrgMemoryTenantInput,
     Repeater,
 )
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
@@ -18,6 +19,7 @@ from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizati
 def _make_access_checker(
     knowledge_dbs: set[str] | None = None,
     agents: set[str] | None = None,
+    org_memory: bool = False,
 ) -> Mock:
     """Create a mock AccessChecker that grants access to specified resources."""
     allowed_knowledge_dbs = knowledge_dbs or set()
@@ -29,6 +31,8 @@ def _make_access_checker(
         for db_name in allowed_knowledge_dbs:
             if f"aihub.user.knowledge.{db_name}" in permission_template:
                 return True
+        if org_memory and permission_template.startswith("aihub.user.memory.organization"):
+            return True
         return False
 
     def has_access_to_agent(agent_class: str, agent_id: str) -> bool:
@@ -222,6 +226,75 @@ class TestNestedForms:
 
         violations = exc_info.value.detail["violations"]
         assert violations[0]["field"] == "outer.inner.delegate"
+
+
+class TestOrgMemoryValidation:
+    def test_access_granted(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                Group(
+                    name="org_memory",
+                    label="Org Memory",
+                    children=[OrgMemoryTenantInput(label="Tenant", name="tenant_id")],
+                )
+            ]
+        )
+        config = {"org_memory": {"tenant_id": "AIHub"}}
+        checker = _make_access_checker(org_memory=True)
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+    def test_access_denied(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                Group(
+                    name="org_memory",
+                    label="Org Memory",
+                    children=[OrgMemoryTenantInput(label="Tenant", name="tenant_id")],
+                )
+            ]
+        )
+        config = {"org_memory": {"tenant_id": "AIHub"}}
+        checker = _make_access_checker()
+
+        with pytest.raises(Exception) as exc_info:
+            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+        assert exc_info.value.status_code == 403
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 1
+        assert violations[0]["resource_type"] == "organization_memory"
+        assert violations[0]["field"] == "org_memory.tenant_id"
+
+    def test_org_memory_null_skipped(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                Group(
+                    name="org_memory",
+                    label="Org Memory",
+                    children=[OrgMemoryTenantInput(label="Tenant", name="tenant_id")],
+                )
+            ]
+        )
+        config = {"org_memory": None}
+        checker = _make_access_checker()
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+    def test_org_memory_missing_skipped(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                Group(
+                    name="org_memory",
+                    label="Org Memory",
+                    children=[OrgMemoryTenantInput(label="Tenant", name="tenant_id")],
+                )
+            ]
+        )
+        config: dict = {}
+        checker = _make_access_checker()
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
 
 
 class TestMixedForms:

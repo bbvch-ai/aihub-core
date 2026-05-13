@@ -27,6 +27,14 @@ test:
 	@(cd packages/api && make test)
 	@(cd packages/bot && make test)
 	@(cd packages/backup && make test)
+	@$(MAKE) check-env
+
+# Verify .env.prod is consistent with the rendered docker-compose files and
+# every Pydantic settings class. Fails on orphans, missing compose-required
+# vars, and missing app-required vars not supplied by compose.
+check-env:
+	@echo "Checking env consistency (.env.prod vs rendered compose)..."
+	@uv run python infra/deployment/generate_compose.py --check-env --strict-env-check
 
 lint:
 	@echo "Running linter..."
@@ -83,11 +91,13 @@ pr-ready:
 	@(cd packages/backup &&  make pr-ready)
 	@(cd packages/web && make pr-ready)
 	@$(MAKE) generate-compose
+	@$(MAKE) check-env
+	@$(MAKE) generate-env-docs
 	@$(MAKE) license-check
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.287.1
+TAG ?= v0.289.3
 
 changelog:
 	@echo "Generating changelog"
@@ -125,6 +135,11 @@ OUTPUT_DIR ?= dist/release
 generate-release:
 	@echo "Generating release bundles for $(TAG)..."
 	@uv run python infra/deployment/generate_compose.py --release --tag "$(TAG)" --output-dir "$(OUTPUT_DIR)"
+
+# Generate the environment-variables reference page in docs/
+generate-env-docs:
+	@echo "Generating environment-variables reference page..."
+	@uv run python infra/deployment/generate_compose.py --write-env-docs
 
 local-cert:
 	@echo "Generating mkcert certificates for localhost and nip.io..."

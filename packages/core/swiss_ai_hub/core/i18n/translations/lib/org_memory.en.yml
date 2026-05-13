@@ -1,0 +1,17 @@
+---
+tenant_id:
+  label: Tenant ID
+  help: Tenant identifier used to scope organization-memory reads and writes.
+allowed_tenant_namespaces:
+  label: Allowed namespaces
+  help: Allow-list of namespaces permitted for organization-memory reads/writes. Leave
+    empty to allow any namespace.
+  placeholder: Type a namespace and press Enter to add
+rerank_organization_memory:
+  label: Rerank organization memory
+  help: Rerank organization-memory search results using the configured reranker for
+    higher relevance. Adds latency and cost.
+default_tenant_namespace:
+  label: Default org-memory namespace
+  help: Namespace used for organization-memory writes (and reads when no event override
+    is provided). Leave empty to fall back to the platform-wide default.

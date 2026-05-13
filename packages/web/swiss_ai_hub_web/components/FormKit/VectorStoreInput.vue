@@ -74,29 +74,7 @@
       <label class="mb-1 block text-sm font-medium">
         {{ t('lib.vectorStore.allowedFilterFields.label') }}
       </label>
-      <div class="flex flex-col gap-2">
-        <InputText
-          v-model="filterFieldDraft"
-          :placeholder="allowedFilterFieldsPlaceholder ?? t('lib.vectorStore.allowedFilterFields.placeholder')"
-          class="w-full"
-          @keydown.enter.stop.prevent="commitFilterFieldDraft"
-          @keyup.enter.stop.prevent
-          @keypress.enter.stop.prevent
-          @blur="commitFilterFieldDraft"
-        />
-        <div
-          v-if="allowedFilterFields.length > 0"
-          class="flex flex-wrap gap-2"
-        >
-          <Chip
-            v-for="key in allowedFilterFields"
-            :key="key"
-            :label="key"
-            removable
-            @remove="removeFilterField(key)"
-          />
-        </div>
-      </div>
+      <ChipsInput :context="chipsInputContext" />
       <small class="mt-1 text-surface-500">
         {{ t('lib.vectorStore.allowedFilterFields.help') }}
       </small>
@@ -105,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
 import { getDatabases } from '@core/sdk/client'
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
 
@@ -181,31 +160,20 @@ const selectedNamespaces = computed({
   },
 })
 
-// Allowed metadata filter fields (explicit InputText + Chip list)
-const filterFieldDraft = ref('')
+// Allowed metadata filter fields (delegated to ChipsInput child component)
+const allowedFilterFields = computed(() => currentValue.value?.allowed_metadata_filter_fields ?? [])
 
-const allowedFilterFields = computed({
-  get: () => currentValue.value?.allowed_metadata_filter_fields ?? [],
-  set: (value: string[]) => {
-    if (selectedDatabase.value) {
-      emitValue(selectedDatabase.value, selectedNamespaces.value, value)
-    }
+const chipsInputContext = computed(() => ({
+  node: {
+    input: (value: string[]) => {
+      if (selectedDatabase.value) {
+        emitValue(selectedDatabase.value, selectedNamespaces.value, value)
+      }
+    },
   },
-})
-
-function commitFilterFieldDraft() {
-  const trimmed = filterFieldDraft.value.trim()
-  filterFieldDraft.value = ''
-  if (!trimmed)
-    return
-  if (allowedFilterFields.value.includes(trimmed))
-    return
-  allowedFilterFields.value = [...allowedFilterFields.value, trimmed]
-}
-
-function removeFilterField(key: string) {
-  allowedFilterFields.value = allowedFilterFields.value.filter(k => k !== key)
-}
+  value: allowedFilterFields.value,
+  placeholder: allowedFilterFieldsPlaceholder.value ?? t('lib.vectorStore.allowedFilterFields.placeholder'),
+}))
 
 // Emit complete value object
 function emitValue(collectionName: string, namespaces: string[], allowedFilterFieldKeys: string[]) {

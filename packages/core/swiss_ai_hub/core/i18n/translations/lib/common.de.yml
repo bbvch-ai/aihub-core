@@ -4,5 +4,6 @@ authorization:
   no_access_knowledge_database: Sie haben keinen Zugriff auf die Wissensdatenbank
     '%{name}'.
   no_access_agent: Sie haben keinen Zugriff auf den Agenten '%{agent}'.
+  no_access_organization_memory: Sie haben keinen Zugriff auf den Organisationsspeicher.
   config_unauthorized: Die Konfiguration referenziert Ressourcen, auf die Sie keinen
     Zugriff haben.

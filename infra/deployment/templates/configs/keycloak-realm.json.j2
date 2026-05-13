@@ -349,6 +349,57 @@
       ]
     },
     {
+      "clientId": "oauth2-proxy-backup",
+      "name": "Backup Dagster UI",
+      "description": "OAuth2 proxy client for the backup Dagster admin UI",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      {%- if stage == 'dev' %}
+      "rootUrl": "http://localhost:3004",
+      "redirectUris": [
+        "http://localhost:3004/*"
+      ],
+      {%- else %}
+      "rootUrl": "https://backup.${DOMAIN}",
+      "redirectUris": [
+        "https://backup.${DOMAIN}/*"
+      ],
+      {%- endif %}
+      "webOrigins": ["+"],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
       "clientId": "langfuse",
       "name": "Langfuse (LLM Observability)",
       "description": "OIDC client for Langfuse native Keycloak SSO",

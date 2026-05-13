@@ -1,0 +1,17 @@
+---
+tenant_id:
+  label: Mandanten-ID
+  help: Mandantenkennung zur Eingrenzung von Organisationsspeicher-Lese- und Schreibvorgängen.
+allowed_tenant_namespaces:
+  label: Erlaubte Namespaces
+  help: Liste der für Lese-/Schreibvorgänge im Organisationsspeicher zulässigen Namespaces.
+    Leer lassen, um alle Namespaces zuzulassen.
+  placeholder: Namespace eingeben und mit Enter hinzufügen
+rerank_organization_memory:
+  label: Organisationsspeicher neu ordnen
+  help: Suchergebnisse des Organisationsspeichers mit dem konfigurierten Reranker
+    neu ordnen für höhere Relevanz. Erhöht Latenz und Kosten.
+default_tenant_namespace:
+  label: Standard-Organisationsspeicher-Namespace
+  help: Namespace für Schreiboperationen im Organisationsspeicher (und für Leseoperationen,
+    wenn kein Event-Override angegeben ist). Leer lassen für den plattformweiten Standard.

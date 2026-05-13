@@ -31,6 +31,7 @@ from swiss_ai_hub.core.generative_ai import (
     FewShotGuardExample,
     LLMConfig,
     ModeOptions,
+    OrgMemoryReadConfig,
     RerankingModelConfig,
     RetrievePrevNextConfig,
 )
@@ -41,7 +42,6 @@ from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, fill_collection
 
-from swiss_ai_hub.agent.agents.rag_agent.configs.memory_config import MemoryConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
@@ -130,7 +130,6 @@ def build_rag_agent_config(
         ],
         number_of_input_tokens=8192,
         context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
-        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
     )
 
 
@@ -166,11 +165,9 @@ def build_rag_agent_config_with_memory(
         ],
         number_of_input_tokens=8192,
         context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
-        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
-        memory=MemoryConfig(
-            enable_organization_memory=True,
+        org_memory=OrgMemoryReadConfig(
             tenant_id=tenant_id,
-            tenant_namespace=tenant_namespace,
+            default_tenant_namespace=tenant_namespace,
         ),
     )
 
@@ -455,16 +452,14 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 @given(parsers.parse('with reranking enabled and top_n of "{top_n:d}"'))
 def _(agent_runner: AgentTestRunner, top_n: int):
     agent_runner.agent_config.reranking_config = RerankingConfig(
-        enabled=True, reranking_model=RerankingModelConfig(model_name="reranker/bge", top_n=top_n)
+        reranking_model=RerankingModelConfig(model_name="reranker/bge", top_n=top_n)
     )
     return agent_runner
 
 
 @given("with reranking disabled")
 def _(agent_runner: AgentTestRunner):
-    agent_runner.agent_config.reranking_config = RerankingConfig(
-        enabled=False,
-    )
+    agent_runner.agent_config.reranking_config = None
     return agent_runner
 
 

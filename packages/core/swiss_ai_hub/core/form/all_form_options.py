@@ -6,6 +6,7 @@ from swiss_ai_hub.core.form.base.html_element import HtmlElement
 from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
 from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
 from swiss_ai_hub.core.form.elements.checkbox import Checkbox
+from swiss_ai_hub.core.form.elements.chips_input import ChipsInput
 from swiss_ai_hub.core.form.elements.color_picker import ColorPicker
 from swiss_ai_hub.core.form.elements.date_picker import DatePicker
 from swiss_ai_hub.core.form.elements.group import Group
@@ -20,6 +21,7 @@ from swiss_ai_hub.core.form.elements.listbox import Listbox
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
+from swiss_ai_hub.core.form.elements.org_memory_tenant_input import OrgMemoryTenantInput
 from swiss_ai_hub.core.form.elements.password import Password
 from swiss_ai_hub.core.form.elements.radio_button import RadioButton
 from swiss_ai_hub.core.form.elements.rating import Rating
@@ -34,11 +36,13 @@ from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput
 
 _FORMKIT_TYPE_MAP: dict[str, str] = {
     "agentSelector": "AgentSelector",
+    "chipsInput": "ChipsInput",
     "group": "Group",
     "iconSelector": "IconSelector",
     "knowledgeDatabaseSelector": "KnowledgeDatabaseSelector",
     "localeInput": "LocaleInput",
     "modelSelect": "ModelSelect",
+    "orgMemoryTenantInput": "OrgMemoryTenantInput",
     "primeCascadeSelect": "CascadeSelect",
     "primeCheckbox": "Checkbox",
     "primeColorPicker": "ColorPicker",
@@ -83,6 +87,7 @@ _FormElementUnion = (
     | Annotated[AgentSelector, Tag("AgentSelector")]
     | Annotated[CascadeSelect, Tag("CascadeSelect")]
     | Annotated[Checkbox, Tag("Checkbox")]
+    | Annotated[ChipsInput, Tag("ChipsInput")]
     | Annotated[ColorPicker, Tag("ColorPicker")]
     | Annotated[DatePicker, Tag("DatePicker")]
     | Annotated[Group, Tag("Group")]
@@ -97,6 +102,7 @@ _FormElementUnion = (
     | Annotated[LocaleInput, Tag("LocaleInput")]
     | Annotated[ModelSelect, Tag("ModelSelect")]
     | Annotated[MultiSelect, Tag("MultiSelect")]
+    | Annotated[OrgMemoryTenantInput, Tag("OrgMemoryTenantInput")]
     | Annotated[Password, Tag("Password")]
     | Annotated[RadioButton, Tag("RadioButton")]
     | Annotated[Rating, Tag("Rating")]
