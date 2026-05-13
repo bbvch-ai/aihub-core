@@ -2,7 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal, Self
 
-from fastapi import Body, Depends, File, Form, Security, UploadFile
+from fastapi import Body, Depends, File, Form, Request, Security, UploadFile
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
@@ -16,6 +16,7 @@ from swiss_ai_hub.core.dependencies import use_nats
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import TenantScopedController
+from swiss_ai_hub.core.tracing.nats_message_headers import NATSMessageHeaders
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -210,6 +211,7 @@ class OpenaiController(TenantScopedController):
         )
         async def chat_completion_with_assistants(
             completion_request: Annotated[ChatCompletionRequest, Body],
+            request: Request,
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             external_agent_event_distributor: Annotated[
@@ -226,6 +228,8 @@ class OpenaiController(TenantScopedController):
                 if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
                     raise ValueError(f"User {user.id} does not have permission to access model {model_name}")
 
+            aihub_headers = NATSMessageHeaders.extract_aihub_headers(dict(request.headers))
+
             return await OpenaiService.chat_completion_with_assistants(
                 model_name=model_name,
                 chat_completion_request=completion_request,
@@ -234,6 +238,7 @@ class OpenaiController(TenantScopedController):
                 usage_limits=usage_limits,
                 external_agent_event_distributor=external_agent_event_distributor,
                 t=t,
+                aihub_headers=aihub_headers,
             )
 
         return self

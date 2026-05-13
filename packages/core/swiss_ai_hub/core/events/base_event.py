@@ -62,6 +62,11 @@ class BaseEvent(BaseModel):
 
     _jetstream_sequence: int | None = PrivateAttr(None)
 
+    # Transient X-AIHub-* headers carried by the NATS message that delivered this event.
+    # Not serialized: lives only on the in-memory event during processing so the dispatcher can
+    # lift them into RunContext. Tokens here must never be persisted or logged.
+    _aihub_headers: dict[str, str] | None = PrivateAttr(None)
+
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     def __str__(self):

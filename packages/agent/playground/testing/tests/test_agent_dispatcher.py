@@ -759,3 +759,47 @@ class TestTransformFormkitArrays:
         assert transform_formkit_arrays(123) == 123
         assert transform_formkit_arrays(True) is True
         assert transform_formkit_arrays(None) is None
+
+
+class TestAgentDispatcherAihubHeaders:
+    """RunContext is the authorized place where steps can pick up X-AIHub-* identity headers."""
+
+    @pytest.mark.asyncio
+    async def test_handle_event_stores_aihub_headers_from_message_into_run_context(self, agent_dispatcher, agent_topic):
+        start_event = StartEvent()
+        start_event._aihub_headers = {"X-AIHub-User-Token": "tok-from-api"}
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
+
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(start_event, agent_topic)
+
+            run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
+            stored = await run_context.get("aihub_headers")
+            assert stored == {"X-AIHub-User-Token": "tok-from-api"}
+
+    @pytest.mark.asyncio
+    async def test_handle_event_does_not_persist_aihub_headers_when_message_has_none(
+        self, agent_dispatcher, agent_topic
+    ):
+        # No headers attached to the event — the key must remain unset so steps don't read stale
+        # tokens from a previous run that may still be in RunContext during early development.
+        start_event = StartEvent()
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
+
+        mock_tracer = Mock(spec=AgentRunTracer)
+        mock_tracer.trace_run_start = AsyncMock(return_value=None)
+        agent_dispatcher.agent_run_tracer = mock_tracer
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(start_event, agent_topic)
+
+            run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
+            assert await run_context.get("aihub_headers") is None

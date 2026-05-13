@@ -55,6 +55,7 @@ class AgentDispatcher(BaseDispatcher):
     """
 
     _AGENT_CONFIG_KEY = "_agent_config"
+    _AIHUB_HEADERS_KEY = "aihub_headers"
 
     def __init__(
         self,
@@ -106,6 +107,12 @@ class AgentDispatcher(BaseDispatcher):
         run_context = RunContext.for_topic(self.redis, topic)
         thread_context = ThreadContext.for_topic(self.redis, topic)
         agent_config_dict: dict[str, Any] | None = None
+
+        # Propagate transient X-AIHub-* request headers (e.g. user identity / on-behalf-of tokens)
+        # from the NATS message into RunContext so downstream steps (notably MCP calls) can act on
+        # behalf of the user. These are cleared with the rest of RunContext on Stop/Exception.
+        if event._aihub_headers:
+            await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
 
         if event.is_start_event:
             event = cast(StartEvent, event)
