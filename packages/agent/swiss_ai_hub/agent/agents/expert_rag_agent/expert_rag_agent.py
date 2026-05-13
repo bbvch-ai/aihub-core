@@ -427,6 +427,7 @@ class ExpertRAGAgent(Agent):
             t,
             chat_history=chat_history_event.limited_history,
             guard_prompt=guard_config.guard_prompt,
+            guard_max_attempts=guard_config.guard_max_attempts,
         )
 
     @step(

@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Annotated
 
@@ -60,6 +59,9 @@ async def context_sufficient_guard(
     prompt: LocaleString,
     max_attempts: int = 3,
 ) -> ContextGuardResult:
+    if max_attempts <= 0:
+        raise ValueError(f"max_attempts must be >= 1, got {max_attempts}")
+
     prompt_text = t.extract(prompt)
     sufficiency_prompt = RichPromptTemplate(prompt_text)
     prev_queries_str = "\n".join(prev_queries)
@@ -85,7 +87,7 @@ async def context_sufficient_guard(
                 chat_history=chat_history,
             )
             return ContextGuardResult.model_validate(result)
-        except (ValidationError, ValueError, json.JSONDecodeError) as exc:
+        except (ValidationError, ValueError) as exc:
             last_error = exc
             logger.warning(
                 "context_sufficient_guard attempt %d/%d failed to produce structured output: %s",
@@ -94,5 +96,6 @@ async def context_sufficient_guard(
                 exc,
             )
 
-    assert last_error is not None
+    if last_error is None:
+        raise RuntimeError("context_sufficient_guard loop exited without producing a result or capturing an error")
     raise last_error

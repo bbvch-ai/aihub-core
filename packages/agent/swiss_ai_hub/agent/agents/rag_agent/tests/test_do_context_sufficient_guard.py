@@ -117,6 +117,7 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
         t=locale_handler,
         chat_history=chat_history_with_memory,
         guard_prompt=_GUARD_PROMPT,
+        guard_max_attempts=3,
     )
 
     forwarded_history = mock_llm.astructured_predict.call_args.kwargs["chat_history"]
@@ -147,6 +148,7 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
         t=locale_handler,
         chat_history=chat_history,
         guard_prompt=_GUARD_PROMPT,
+        guard_max_attempts=3,
     )
 
     forwarded = mock_llm.astructured_predict.call_args.kwargs["chat_history"]
@@ -168,6 +170,7 @@ async def test_guard_with_empty_chat_history_still_renders_empty_placeholder(
         t=locale_handler,
         chat_history=[],
         guard_prompt=_GUARD_PROMPT,
+        guard_max_attempts=3,
     )
 
     assert mock_llm.astructured_predict.call_args.kwargs["chat_history"] == []
@@ -200,6 +203,7 @@ async def test_guard_forwards_context_message_with_image_blocks_intact(
         t=locale_handler,
         chat_history=[],
         guard_prompt=_GUARD_PROMPT,
+        guard_max_attempts=3,
     )
 
     forwarded_blocks = mock_llm.astructured_predict.call_args.kwargs["context_blocks"]
@@ -227,6 +231,7 @@ async def test_guard_emits_reject_event_when_no_more_hops(mock_llm, llm_config, 
         t=locale_handler,
         chat_history=[],
         guard_prompt=_GUARD_PROMPT,
+        guard_max_attempts=3,
     )
 
     assert isinstance(result, ContextInsufficientRejectEvent)
@@ -261,6 +266,7 @@ async def test_guard_retries_when_structured_predict_fails_then_succeeds(
         t=locale_handler,
         chat_history=[],
         guard_prompt=_GUARD_PROMPT,
+        guard_max_attempts=3,
     )
 
     assert isinstance(result, ContextSufficientAcceptEvent)
@@ -286,6 +292,7 @@ async def test_guard_raises_after_max_attempts_of_malformed_output(
             t=locale_handler,
             chat_history=[],
             guard_prompt=_GUARD_PROMPT,
+            guard_max_attempts=3,
         )
 
     assert mock_llm.astructured_predict.await_count == 3
@@ -308,10 +315,8 @@ async def test_guard_uses_supplied_prompt(mock_llm, llm_config, displayer, run_c
         t=locale_handler,
         chat_history=[],
         guard_prompt=custom_prompt,
+        guard_max_attempts=3,
     )
 
     forwarded_template = mock_llm.astructured_predict.call_args.args[1]
-    template_source = getattr(forwarded_template, "template_str", None) or getattr(
-        forwarded_template, "template", str(forwarded_template)
-    )
-    assert "CUSTOM-GUARD-PROMPT-MARKER" in str(template_source)
+    assert "CUSTOM-GUARD-PROMPT-MARKER" in forwarded_template.template_str

@@ -48,6 +48,16 @@ class ContextSufficientGuardStepConfig(StepConfig):
             ),
         ),
     ] = AgentLocaleString.from_i18n_path("agent.context_sufficient_guard_step.config.guard_prompt.default")
+    guard_max_attempts: Annotated[
+        int | InputNumber,
+        Field(
+            description=(
+                "Maximum number of attempts the guard LLM gets to produce valid structured output before the "
+                "last error propagates. Higher values trade latency for resilience against malformed responses."
+            ),
+        ),
+        Ge(1),
+    ] = 3
 
     @classmethod
     def as_form(cls) -> Self:
@@ -85,6 +95,18 @@ class ContextSufficientGuardStepConfig(StepConfig):
                     "agent.context_sufficient_guard_step.config.guard_prompt.help"
                 ),
                 input_type="textarea",
+                condition_if="$get(check_context_sufficiency_enabled).value",
+            ),
+            guard_max_attempts=InputNumber(
+                label=AgentLocaleString.from_i18n_path(
+                    "agent.context_sufficient_guard_step.config.guard_max_attempts.label"
+                ),
+                help=AgentLocaleString.from_i18n_path(
+                    "agent.context_sufficient_guard_step.config.guard_max_attempts.help"
+                ),
+                min=1,
+                max=10,
+                step=1,
                 condition_if="$get(check_context_sufficiency_enabled).value",
             ),
         )

@@ -201,6 +201,7 @@ async def do_context_sufficient_guard(
     t: LocaleHandler,
     chat_history: list[ChatMessage],
     guard_prompt: LocaleString,
+    guard_max_attempts: int,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
@@ -219,6 +220,7 @@ async def do_context_sufficient_guard(
             more_hops_available=more_hops_available,
             chat_history=chat_history,
             prompt=guard_prompt,
+            max_attempts=guard_max_attempts,
         )
 
     if guard_result.success:

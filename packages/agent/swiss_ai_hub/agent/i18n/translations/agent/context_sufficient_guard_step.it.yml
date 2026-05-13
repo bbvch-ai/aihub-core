@@ -44,15 +44,15 @@ config:
       {% endfor %}
       </Chat_History>
       Domanda:
-      <Domanda>
+      <Question>
       {{ user_query }}
-      </Domanda>
+      </Question>
       Quesiti precedenti (già provati — NON ripetere né riformulare banalmente):
-      <Questioni_precedenti>
+      <Previous_Queries>
       {{ prev_queries }}
-      </Questioni_precedenti>
+      </Previous_Queries>
       Contesto (documenti recuperati):
-      <Contesto>
+      <Context>
       {% for block in context_blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
@@ -61,7 +61,7 @@ config:
       {{ block.url.__str__() | image }}
       {% endif %}
       {% endfor %}
-      </Contesto>
+      </Context>
       ---
       REGOLE DI DECISIONE:
       1. Se Cronologia e/o Contesto insieme contengono informazioni sufficienti per rispondere alla Domanda → success=true. In questo caso NON generare new_query.
@@ -74,3 +74,8 @@ config:
       e. Ogni query successiva deve rappresentare un salto concettuale maggiore della precedente.
       PROMEMORIA: rispondi con esattamente una chiamata allo strumento. Nessun testo circostante.
       {% endchat %}
+  guard_max_attempts:
+    label: Numero massimo di tentativi del guard
+    help: Numero massimo di tentativi a disposizione dell'LLM del guard per produrre
+      un output strutturato valido prima che l'ultimo errore venga propagato. Valori
+      più alti aumentano la resilienza alle risposte malformate al costo della latenza.

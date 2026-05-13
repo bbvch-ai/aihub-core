@@ -73,3 +73,8 @@ config:
       e. Each successive query should represent a larger conceptual shift than the last.
       REMINDER: respond with exactly one tool call. No surrounding text.
       {% endchat %}
+  guard_max_attempts:
+    label: Guard max attempts
+    help: Maximum number of attempts the guard LLM gets to produce valid structured
+      output before the last error propagates. Higher values trade latency for resilience
+      against malformed responses.

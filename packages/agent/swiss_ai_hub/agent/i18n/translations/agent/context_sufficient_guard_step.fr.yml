@@ -75,3 +75,9 @@ config:
       e. Chaque requête successive doit représenter un saut conceptuel plus grand que la précédente.
       RAPPEL : répondez avec exactement un appel d'outil. Aucun texte autour.
       {% endchat %}
+  guard_max_attempts:
+    label: Tentatives maximales du guard
+    help: Nombre maximal de tentatives accordées au LLM du guard pour produire une
+      sortie structurée valide avant que la dernière erreur ne se propage. Des valeurs
+      plus élevées augmentent la résilience aux réponses malformées au prix de la
+      latence.

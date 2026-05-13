@@ -85,3 +85,26 @@ Feature: Context Sufficient Guard Logic
       | de     |
       | fr     |
       | it     |
+
+  Scenario: Guard retries when structured output fails then succeeds
+    Given a locale handler with locale "en"
+    And a user query "What is the capital of France?"
+    And the following context "Paris is the capital of France."
+    And no previous queries
+    And more hops are available
+    And the LLM raises ValueError on the first call then returns success=True with reasoning="Recovered on retry"
+    When the context sufficient guard is executed with max attempts 3
+    Then the guard should accept the request
+    And the reasoning should be "Recovered on retry"
+    And the LLM should have been called 2 times
+
+  Scenario: Guard raises after exhausting max attempts of malformed output
+    Given a locale handler with locale "en"
+    And a user query "What is the capital of France?"
+    And the following context "Paris is the capital of France."
+    And no previous queries
+    And more hops are available
+    And the LLM always raises ValueError "still bad output"
+    When the context sufficient guard is executed with max attempts 3 expecting ValueError
+    Then the LLM should have been called 3 times
+    And the raised error message should contain "still bad output"

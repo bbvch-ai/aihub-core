@@ -74,3 +74,8 @@ config:
       e. Jede nachfolgende Abfrage sollte einen grösseren konzeptionellen Sprung darstellen als die vorherige.
       ERINNERUNG: Antworte mit genau einem Tool-Aufruf. Kein umliegender Text.
       {% endchat %}
+  guard_max_attempts:
+    label: Maximale Guard-Versuche
+    help: Maximale Anzahl von Versuchen, mit denen das Guard-LLM gültige strukturierte
+      Ausgaben produzieren kann, bevor der letzte Fehler weitergereicht wird. Höhere
+      Werte erhöhen die Robustheit gegen fehlerhafte Antworten, kosten aber mehr Latenz.

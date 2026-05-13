@@ -158,3 +158,77 @@ def _(guard_result, expected_query):
     assert guard_result.new_query == expected_query, (
         f"Expected new query: {expected_query}, got: {guard_result.new_query}"
     )
+
+
+@given(
+    parsers.parse(
+        'the LLM raises ValueError on the first call then returns success={success:w} with reasoning="{reasoning}"'
+    )
+)
+def _(llm, success, reasoning):
+    success_bool = success == "True"
+    success_result = ContextGuardResult(reasoning=reasoning, success=success_bool, new_query=None)
+    llm.astructured_predict = AsyncMock(
+        side_effect=[ValueError("first attempt malformed output"), success_result],
+    )
+
+
+@given(parsers.parse('the LLM always raises ValueError "{message}"'))
+def _(llm, message):
+    llm.astructured_predict = AsyncMock(side_effect=ValueError(message))
+
+
+@when(
+    parsers.parse("the context sufficient guard is executed with max attempts {max_attempts:d}"),
+    target_fixture="guard_result",
+)
+@async_test
+async def _(llm, locale_handler, user_query, context_message, prev_queries, more_hops_available, max_attempts):
+    return await context_sufficient_guard(
+        llm=llm,
+        t=locale_handler,
+        user_query=user_query,
+        context_message=context_message,
+        prev_queries=prev_queries,
+        more_hops_available=more_hops_available,
+        chat_history=[],
+        prompt=_TEST_GUARD_PROMPT,
+        max_attempts=max_attempts,
+    )
+
+
+@when(
+    parsers.parse("the context sufficient guard is executed with max attempts {max_attempts:d} expecting ValueError"),
+    target_fixture="raised_error",
+)
+@async_test
+async def _(llm, locale_handler, user_query, context_message, prev_queries, more_hops_available, max_attempts):
+    try:
+        await context_sufficient_guard(
+            llm=llm,
+            t=locale_handler,
+            user_query=user_query,
+            context_message=context_message,
+            prev_queries=prev_queries,
+            more_hops_available=more_hops_available,
+            chat_history=[],
+            prompt=_TEST_GUARD_PROMPT,
+            max_attempts=max_attempts,
+        )
+    except ValueError as exc:
+        return exc
+    raise AssertionError("Expected ValueError but no exception was raised")
+
+
+@then(parsers.parse("the LLM should have been called {expected_count:d} times"))
+def _(llm, expected_count):
+    assert llm.astructured_predict.await_count == expected_count, (
+        f"Expected {expected_count} LLM calls, got {llm.astructured_predict.await_count}"
+    )
+
+
+@then(parsers.parse('the raised error message should contain "{expected_text}"'))
+def _(raised_error, expected_text):
+    assert expected_text in str(raised_error), (
+        f"Expected error message to contain {expected_text!r}, got {raised_error!s}"
+    )
