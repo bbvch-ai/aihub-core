@@ -6,6 +6,13 @@ config:
   url:
     label: Server URL
     help: The HTTP URL of the MCP server endpoint (e.g. https://mcp.example.com/mcp).
+  auth_mode:
+    label: Authentication Mode
+    help: |
+      How agents authenticate to this MCP server. "Static API key" uses a shared key configured here;
+      "User token" forwards the requesting user's identity so external actions are attributed to them.
+    static_api_key_label: Static API key
+    user_token_label: User token
   api_key:
     label: API Key
     help: Optional API key for authenticated MCP servers.

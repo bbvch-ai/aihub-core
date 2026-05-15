@@ -1,0 +1,76 @@
+from unittest.mock import patch
+
+import pytest
+from fastmcp.client.auth import BearerAuth
+from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
+
+from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
+
+
+class TestResolveAuth:
+    """Pure-function tests of the auth resolution rules — no FastMCP client construction."""
+
+    def test_static_api_key_uses_config_api_key(self):
+        config = McpClientConfig(name="srv", url="https://mcp.example.com/mcp", api_key="static-key-123")
+        auth = McpClientFactory._resolve_auth(config, user_token=None)
+        assert isinstance(auth, BearerAuth)
+        assert auth.token.get_secret_value() == "static-key-123"
+
+    def test_static_api_key_without_key_returns_no_auth(self):
+        config = McpClientConfig(name="srv", url="https://mcp.example.com/mcp")
+        assert McpClientFactory._resolve_auth(config, user_token=None) is None
+
+    def test_static_api_key_ignores_user_token(self):
+        """Static mode must not silently pick up a user token — that would be a confusing surprise."""
+        config = McpClientConfig(name="srv", url="https://mcp.example.com/mcp", api_key="static-key-123")
+        auth = McpClientFactory._resolve_auth(config, user_token="user-token-abc")
+        assert isinstance(auth, BearerAuth)
+        assert auth.token.get_secret_value() == "static-key-123"
+
+    def test_user_token_mode_uses_user_token(self):
+        config = McpClientConfig(
+            name="srv",
+            url="https://mcp.example.com/mcp",
+            auth_mode="user_token",
+            api_key="should-be-ignored",
+        )
+        auth = McpClientFactory._resolve_auth(config, user_token="user-token-abc")
+        assert isinstance(auth, BearerAuth)
+        assert auth.token.get_secret_value() == "user-token-abc"
+
+    def test_user_token_mode_without_token_raises(self):
+        """Misconfiguration — refuse to fall back to the static key, which would mask the actor."""
+        config = McpClientConfig(
+            name="jira",
+            url="https://mcp.example.com/mcp",
+            auth_mode="user_token",
+            api_key="static-fallback",
+        )
+        with pytest.raises(ValueError, match="'jira'.*user_token"):
+            McpClientFactory._resolve_auth(config, user_token=None)
+
+    def test_user_token_mode_empty_string_raises(self):
+        """An empty token is just as broken as a missing token — don't ship an Authorization: Bearer line."""
+        config = McpClientConfig(name="srv", url="https://mcp.example.com/mcp", auth_mode="user_token")
+        with pytest.raises(ValueError, match="user_token"):
+            McpClientFactory._resolve_auth(config, user_token="")
+
+
+class TestCreateBackwardsCompatibility:
+    """The factory's public surface must keep working for existing callers that pass only a config."""
+
+    @pytest.mark.asyncio
+    async def test_existing_call_signature_still_works(self):
+        config = McpClientConfig(name="srv", url="https://mcp.example.com/mcp", api_key="key")
+
+        with patch("swiss_ai_hub.agent.mcp.mcp_client_factory.Client") as mock_client_cls:
+            mock_client = mock_client_cls.return_value
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+
+            async with McpClientFactory.create(config) as client:
+                assert client is mock_client
+
+            kwargs = mock_client_cls.call_args.kwargs
+            assert isinstance(kwargs["auth"], BearerAuth)
+            assert kwargs["auth"].token.get_secret_value() == "key"

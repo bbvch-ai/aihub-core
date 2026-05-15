@@ -12,9 +12,14 @@ class McpClientFactory:
 
     @staticmethod
     @asynccontextmanager
-    async def create(config: McpClientConfig) -> AsyncIterator[Client]:
-        """Create and connect a FastMCP Client, yielding it for use within an async with block."""
-        auth = BearerAuth(config.api_key) if config.api_key else None
+    async def create(config: McpClientConfig, user_token: str | None = None) -> AsyncIterator[Client]:
+        """Create and connect a FastMCP Client, yielding it for use within an async with block.
+
+        When ``config.auth_mode == "user_token"``, the bearer is taken from ``user_token`` (forwarded
+        per-request from the requesting user, per #948) so external actions are attributed to the actual
+        user. The default ``static_api_key`` mode uses ``config.api_key`` and preserves existing behavior.
+        """
+        auth = McpClientFactory._resolve_auth(config, user_token)
 
         if config.headers:
             transport = StreamableHttpTransport(url=config.url, headers=dict(config.headers), auth=auth)
@@ -24,3 +29,15 @@ class McpClientFactory:
 
         async with client:
             yield client
+
+    @staticmethod
+    def _resolve_auth(config: McpClientConfig, user_token: str | None) -> BearerAuth | None:
+        if config.auth_mode == "user_token":
+            if not user_token:
+                msg = (
+                    f"MCP connection {config.name!r} is configured with auth_mode='user_token' "
+                    "but no user token was provided to McpClientFactory.create()."
+                )
+                raise ValueError(msg)
+            return BearerAuth(user_token)
+        return BearerAuth(config.api_key) if config.api_key else None

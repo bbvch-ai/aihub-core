@@ -6,6 +6,14 @@ config:
   url:
     label: URL del server
     help: L'URL HTTP dell'endpoint del server MCP (es. https://mcp.example.com/mcp).
+  auth_mode:
+    label: Modalità di autenticazione
+    help: |
+      Come gli agenti si autenticano al server MCP. "Chiave API statica" usa una chiave condivisa
+      configurata qui; "Token utente" inoltra il token dell'utente richiedente in modo che le azioni
+      esterne gli vengano attribuite.
+    static_api_key_label: Chiave API statica
+    user_token_label: Token utente
   api_key:
     label: Chiave API
     help: Chiave API opzionale per server MCP autenticati.

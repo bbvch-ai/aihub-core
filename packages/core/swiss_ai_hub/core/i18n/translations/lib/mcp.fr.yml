@@ -6,6 +6,14 @@ config:
   url:
     label: URL du serveur
     help: L'URL HTTP du point de terminaison du serveur MCP (ex. https://mcp.example.com/mcp).
+  auth_mode:
+    label: Mode d'authentification
+    help: |
+      Comment les agents s'authentifient auprès du serveur MCP. "Clé API statique" utilise une clé
+      partagée configurée ici ; "Jeton utilisateur" transmet le jeton de l'utilisateur appelant afin
+      que les actions externes lui soient attribuées.
+    static_api_key_label: Clé API statique
+    user_token_label: Jeton utilisateur
   api_key:
     label: Clé API
     help: Clé API optionnelle pour les serveurs MCP authentifiés.
