@@ -766,8 +766,11 @@ class TestAgentDispatcherAihubHeaders:
 
     @pytest.mark.asyncio
     async def test_handle_event_stores_aihub_headers_from_message_into_run_context(self, agent_dispatcher, agent_topic):
+        # Keys are lowercased on the way in by NATSMessageHeaders.extract_aihub_headers
+        # (HTTP header normalization). Mirror the production shape here so this test does not
+        # describe a fiction where the dispatcher receives mixed-case keys it never sees in practice.
         start_event = StartEvent()
-        start_event._aihub_headers = {"X-AIHub-User-Token": "tok-from-api"}
+        start_event._aihub_headers = {"x-aihub-user-token": "tok-from-api"}
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
 
         mock_tracer = Mock(spec=AgentRunTracer)
@@ -781,7 +784,7 @@ class TestAgentDispatcherAihubHeaders:
 
             run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
             stored = await run_context.get("aihub_headers")
-            assert stored == {"X-AIHub-User-Token": "tok-from-api"}
+            assert stored == {"x-aihub-user-token": "tok-from-api"}
 
     @pytest.mark.asyncio
     async def test_handle_event_does_not_persist_aihub_headers_when_message_has_none(

@@ -42,10 +42,12 @@ class NATSMessageHeaders:
     @classmethod
     def extract_aihub_headers(cls, headers: dict[str, str] | None) -> dict[str, str]:
         """
-        Pick out the X-AIHub-* entries from a NATS headers dict, preserving their original case.
-        Empty/None input yields an empty dict so callers can unconditionally pass it forward.
+        Pick out the X-AIHub-* entries from a headers dict. Keys are returned lowercased to
+        match HTTP header normalization (FastAPI/Starlette already lowercases inbound headers);
+        downstream consumers must read by lowercased key. Empty/None input yields an empty dict
+        so callers can unconditionally pass it forward.
         """
         if not headers:
             return {}
         prefix_lower = cls.AIHUB_HEADER_PREFIX.lower()
-        return {key: value for key, value in headers.items() if key.lower().startswith(prefix_lower)}
+        return {key.lower(): value for key, value in headers.items() if key.lower().startswith(prefix_lower)}
