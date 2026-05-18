@@ -113,12 +113,6 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
         try:
             head_response = self._client.head_object(Bucket=self.container_name, Key=key)
-        except ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code")
-            status_code = e.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-            if error_code in {"404", "NoSuchKey", "NotFound"} or status_code == 404:
-                raise FileNotFoundError(f"Object not found in data lake: {document_uri}") from e
-            raise ValueError(f"Failed to get object metadata for {document_uri}: {e}")
         except Exception as e:
             raise ValueError(f"Failed to get object metadata for {document_uri}: {e}")
 
