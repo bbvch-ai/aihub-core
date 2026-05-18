@@ -62,9 +62,12 @@ class BaseEvent(BaseModel):
 
     _jetstream_sequence: int | None = PrivateAttr(None)
 
-    # Transient X-AIHub-* headers carried by the NATS message that delivered this event.
-    # Not serialized: lives only on the in-memory event during processing so the dispatcher can
-    # lift them into RunContext. Tokens here must never be persisted or logged.
+    # Transient X-AIHub-* headers carried by the NATS message that delivered this event. Keys are
+    # lowercased (see NATSMessageHeaders.extract_aihub_headers). Not serialized: lives only on the
+    # in-memory event for the current delivery — on JetStream replay this is empty, since headers
+    # ride on the message envelope, not the payload. The dispatcher lifts them into RunContext,
+    # which is the durable, authoritative source for downstream steps. Tokens here must never be
+    # persisted or logged.
     _aihub_headers: dict[str, str] | None = PrivateAttr(None)
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")

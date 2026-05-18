@@ -16,7 +16,7 @@ from swiss_ai_hub.core.dependencies import use_nats
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import TenantScopedController
-from swiss_ai_hub.core.tracing.nats_message_headers import NATSMessageHeaders
+from swiss_ai_hub.core.tracing import NATSMessageHeaders
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale

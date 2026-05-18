@@ -28,6 +28,12 @@ class NATSMessageHeaders:
         """
         Merge X-AIHub-* request headers into the outgoing NATS headers so they propagate to the
         agent. Tokens and identity carried this way must never be written to persistent stores.
+
+        Trust model: the caller is responsible for ensuring this dict only contains headers from
+        a trusted boundary (controller after auth, internal service). The forwarding is wildcard
+        on the X-AIHub-* prefix — any header in the dict rides through unchanged. Downstream
+        consumers that grant privileges based on these values rely on that filtering happening
+        upstream.
         """
         if not aihub_headers:
             return self
