@@ -20,6 +20,11 @@ class TestCreateFiguresFolderName:
         with pytest.raises(ValueError, match="Invalid filename"):
             create_figures_folder_name("s3://bucket/dir/.")
 
+    @pytest.mark.parametrize("file_name", ["a\\b.pdf", "..\\etc\\passwd"])
+    def test_rejects_backslash_separator(self, file_name: str) -> None:
+        with pytest.raises(ValueError, match="Invalid filename"):
+            create_figures_folder_name(f"s3://bucket/dir/{file_name}")
+
     def test_rejects_uri_without_slash(self) -> None:
         with pytest.raises(ValueError, match="Invalid URI"):
             create_figures_folder_name("nofileonly")
