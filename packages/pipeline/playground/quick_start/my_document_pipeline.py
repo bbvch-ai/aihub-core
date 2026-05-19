@@ -39,7 +39,7 @@ NODES_KEY = AssetKey(["playground", "nodes"])
 CONTAINER_NAME = AIHubSettings().DEFAULT_BUCKET_NAME
 
 # LLM configuration for document parsing and node processing
-llm_config = LLMConfig(model_name="text-generation/gpt-oss-120b")
+llm_config = LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct")
 
 # Dynamic partitions for scalable document processing
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")

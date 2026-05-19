@@ -206,7 +206,7 @@ def memory_enabled_agent_config(test_collection):
     This configuration enables the agent to retrieve organization memories
     in addition to knowledge base documents.
     """
-    llm_config = LLMConfig(model_name="text-generation/gpt-oss-120b")
+    llm_config = LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct")
     reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
@@ -231,7 +231,7 @@ def self_hosted_agent_config(test_collection):
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
-    llm_config = LLMConfig(model_name="text-generation/gpt-oss-120b")
+    llm_config = LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct")
     reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(

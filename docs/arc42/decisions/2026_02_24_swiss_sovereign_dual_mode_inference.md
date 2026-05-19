@@ -49,11 +49,14 @@ infrastructure.
 
 Multiple text generation models are registered in LiteLLM with per-token pricing for cost tracking through Langfuse:
 
-- `text-generation/gpt-oss-120b` — default for most interactions
+- `text-generation/Qwen3-VL-235B-A22B-Instruct` — large multimodal model, default for most interactions
 - `text-generation/Mistral-Small-3.2-24B-Instruct-2506` — lightweight/cheap option
-- `text-generation/Qwen3-VL-235B-A22B-Instruct` — large multimodal model
 - `text-generation/Kimi-K2.5` — large context window (131K in / 65K out)
 - `text-generation/Apertus-70B-Instruct-2509` — Swiss-AI foundation model
+
+> **Update 2026-05-19:** `text-generation/gpt-oss-120b` was retired (no longer available on Swiss LLM Cloud). The
+> default for most interactions, the LiteLLM fallback, and the prompt-injection detection model are now
+> `text-generation/Qwen3-VL-235B-A22B-Instruct`.
 
 Swiss LLM Cloud does not yet have a unified proxy, so each service type requires a separate endpoint:
 

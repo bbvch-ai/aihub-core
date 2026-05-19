@@ -28,7 +28,7 @@ BITL PATH: /api/v1/bot_in_the_loop/response
 OPENAI PATH: /api/v1/openai/chat/completions/json?model_name=<model>
 OPENAI STREAMING PATH: /api/v1/openai/chat/completions/stream?model_name=<model>
 """
-MODEL = "text-generation/gpt-oss-120b"
+MODEL = "text-generation/Qwen3-VL-235B-A22B-Instruct"
 PATH = f"/api/v1/openai/chat/completions/json?model_name={MODEL}"
 
 

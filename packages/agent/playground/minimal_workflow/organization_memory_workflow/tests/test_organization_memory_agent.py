@@ -47,7 +47,7 @@ def agent_config():
             en="Test agent for organization memory integration",
             de="Testagent für Organisationsspeicherintegration",
         ),
-        llm=LLMConfig(model_name="text-generation/gpt-oss-120b"),
+        llm=LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct"),
         tenant_id="default_tenant",
         tenant_namespace="default_namespace",
     )

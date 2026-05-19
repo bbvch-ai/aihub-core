@@ -1563,8 +1563,8 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: text-generation/gpt-oss-120b
-      TASK_MODEL_EXTERNAL: text-generation/gpt-oss-120b
+      TASK_MODEL: text-generation/Qwen3-VL-235B-A22B-Instruct
+      TASK_MODEL_EXTERNAL: text-generation/Qwen3-VL-235B-A22B-Instruct
       ENABLE_OLLAMA_API: false
       ENABLE_OPENAI_API: true
 

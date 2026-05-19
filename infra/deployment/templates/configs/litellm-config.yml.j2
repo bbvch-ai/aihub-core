@@ -15,7 +15,7 @@
 {% set hardware = 'gpu' if gpu_enabled else 'cpu' -%}
 {%- set has_local_models = gpu_enabled -%}
 {%- set has_mineru_vlm = gpu_enabled -%}
-{%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if has_local_models else 'text-generation/gpt-oss-120b' %}
+{%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if has_local_models else 'text-generation/Qwen3-VL-235B-A22B-Instruct' %}
 
 model_list:
 {%- if has_local_models %}
@@ -72,20 +72,6 @@ model_list:
       supports_function_calling: true
       input_cost_per_token: 0.0000006
       output_cost_per_token: 0.000003
-
-  - model_name: text-generation/gpt-oss-120b
-    litellm_params:
-      model: openai/openai/gpt-oss-120b
-      api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
-      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
-      drop_params: true
-    model_info:
-      mode: chat
-      max_input_tokens: 131072
-      max_output_tokens: 16384
-      supports_function_calling: true
-      input_cost_per_token: 0.00000003
-      output_cost_per_token: 0.0000003
 
   - model_name: text-generation/Apertus-70B-Instruct-2509
     litellm_params:

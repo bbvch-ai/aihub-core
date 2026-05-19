@@ -150,7 +150,7 @@ class TestRegisterModelDefinitions:
     async def test_registers_models_with_pricing(self, provisioner: LangfuseProvisioner) -> None:
         litellm_models = [
             {
-                "model_name": "text-generation/gpt-oss-120b",
+                "model_name": "text-generation/Qwen3-VL-235B-A22B-Instruct",
                 "model_info": {"input_cost_per_token": 0.001, "output_cost_per_token": 0.002},
             },
             {
@@ -168,7 +168,7 @@ class TestRegisterModelDefinitions:
     @pytest.mark.asyncio
     async def test_skips_models_without_pricing(self, provisioner: LangfuseProvisioner) -> None:
         litellm_models = [
-            {"model_name": "text-generation/gpt-oss-120b", "model_info": {}},
+            {"model_name": "text-generation/Qwen3-VL-235B-A22B-Instruct", "model_info": {}},
             {"model_name": "reranker/bge", "model_info": {"mode": "rerank"}},
         ]
         mock_client = AsyncMock(spec=httpx.AsyncClient)

@@ -68,7 +68,7 @@ def expert_asking_agent_config(mongo_connection):
         agent_class=ExpertAskingAgent.__name__,
         name=LocaleString(en="Test Expert Asking Agent"),
         description=LocaleString(en="Expert asking agent for tests"),
-        llm=LLMConfig(model_name="text-generation/gpt-oss-120b"),
+        llm=LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct"),
         loop_max=2,
         channel_config=ChannelConfig(
             channel_type="teams",
