@@ -1,0 +1,26 @@
+# Node / pnpm
+node_modules
+package-lock.json
+*.log
+pnpm-debug.log*
+
+# Nuxt build artifacts
+.nuxt
+nuxt.d.ts
+.output
+.data
+.app/.output
+.app/dist
+
+# Build outputs
+dist
+*.tgz
+
+# Env files
+.env
+
+# Editors / OS
+.vscode/*
+.idea
+.history
+.DS_Store

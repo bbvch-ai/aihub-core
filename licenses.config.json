@@ -8,7 +8,7 @@
     "packages/pipeline",
     "packages/backup"
   ],
-  "web_project": "packages/web/swiss_ai_hub_web",
+  "web_project": "packages/web",
   "output_file": "LICENSE_REPORT.md",
   "own_images": [
     "api",

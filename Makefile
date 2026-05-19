@@ -14,7 +14,7 @@ setup:
 
 setup-frontend:
 	@echo "Installing frontend dependencies..."
-	cd packages/web/swiss_ai_hub_web && pnpm install
+	pnpm install --filter @swiss-ai-hub/web...
 
 setup-all: setup setup-frontend
 
@@ -184,7 +184,7 @@ version-bump:
 	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml packages/backup/pyproject.toml; do \
 		sed -i '/^\[project\]/,/^version =/ s/version = "[^"]*"/version = "$(VERSION)"/' $$f; \
 	done
-	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/web/swiss_ai_hub_web/package.json
+	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/web/package.json
 	@sed -i 's/^TAG ?= .*/TAG ?= v$(VERSION)/' Makefile
 	@uv lock
 	@echo "Version bumped to $(VERSION)"

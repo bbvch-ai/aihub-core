@@ -2229,7 +2229,11 @@ services:
 
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # CORS allow-list. sysadmin-web (sysadmin.${DOMAIN}) makes a cross-origin
+      # credentialed call to /api/v1/my-tenants here for its is_sys_admin gate,
+      # so the sysadmin subdomain must be an allowed origin (the main web app is
+      # same-origin with this API and would not need it).
+      AIHUB_FRONTEND_ORIGIN: https://${DOMAIN},https://sysadmin.${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: true
       AIHUB_CREATE_DEFAULT_BUCKETS: true
       AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
@@ -2404,6 +2408,159 @@ services:
       # --- Service & Middleware ---
       - traefik.http.services.web.loadbalancer.server.port=80
       - traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file
+  # ===================================================================
+  # Sysadmin API (BSL)
+  # ===================================================================
+  # FastAPI service for system-administrator-only operations (multi-tenant
+  # management). Routed at sysadmin.${DOMAIN}/api/v1/*. Independent of the
+  # main `api` service — uses its own lightweight lifespan that only wires
+  # MongoDB and Keycloak (no NATS / Milvus / Redis / S3 / WebSocket).
+  # ===================================================================
+  sysadmin-api:
+    container_name: sysadmin-api
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/sysadmin-api:nightly
+    depends_on:
+      traefik:
+        condition: service_started
+      ferretdb:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    environment:
+      # Log Level
+      LOG_LEVEL: ${LOG_LEVEL}
+      ENV: ${ENV}
+      NUM_WORKERS: 1
+
+      # General Auth settings
+      AUTH_ENABLE_API_ACCESS: true
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+
+      # Keycloak OIDC config
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
+      KEYCLOAK_REALM: aihub
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_SHOW_KEYCLOAK_LOGIN: ${KEYCLOAK_SHOW_KEYCLOAK_LOGIN}
+
+      # Oauth2 config
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
+
+      # Azure Oauth2 config
+      AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
+      AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+
+      # Superuser — assign_superuser_to_tenant() is called when a sysadmin
+      # configures a previously-unconfigured tenant, which requires resolving
+      # the superuser's Keycloak id via SUPERUSER_EMAIL.
+      SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_ROLES_JSON: ${SUPERUSER_ROLES_JSON}
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: https://sysadmin.${DOMAIN}
+      AIHUB_CREATE_DEFAULT_ROLES: true
+
+      # Mongo DB — the only persistence sysadmin-api touches at runtime
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: sysadmin-api
+      OTEL_RESOURCE_SERVICE_VERSION: nightly
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/api/v1/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.sysadmin-api.rule=Host(`sysadmin.${DOMAIN}`) && PathPrefix(`/api/v1`)
+      - traefik.http.routers.sysadmin-api.priority=6000
+      - traefik.http.routers.sysadmin-api.entrypoints=websecure
+      - traefik.http.routers.sysadmin-api.middlewares=security-headers@file
+      - traefik.http.services.sysadmin-api.loadbalancer.server.port=8000
+      - traefik.http.routers.sysadmin-api.tls.certresolver=letsencrypt
+    networks:
+      - proxy
+      - backend
+      - data
+  # ===================================================================
+  # Sysadmin Web UI (BSL)
+  # ===================================================================
+  # Nuxt 3 SPA dedicated to system administration. Routed at
+  # sysadmin.${DOMAIN}/* (path /api/v1 goes to sysadmin-api by priority).
+  # ===================================================================
+  sysadmin-web:
+    container_name: sysadmin-web
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/sysadmin-web:nightly
+    environment:
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
+      # Cross-origin URL the sysadmin middleware uses to verify is_sys_admin
+      # against the main API. Browser-facing — must be the external URL.
+      MAIN_API_URL: https://${DOMAIN}
+    healthcheck:
+      test: [CMD, curl, -f, http://127.0.0.1/]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks: [proxy]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      # --- Routers — mirror web's pattern, scoped to sysadmin subdomain ---
+      - traefik.http.routers.sysadmin-web-static.rule=Host(`sysadmin.${DOMAIN}`) &&
+        PathPrefix(`/_nuxt`)
+      - traefik.http.routers.sysadmin-web-static.priority=2000
+      - traefik.http.routers.sysadmin-web-static.entrypoints=websecure
+      - traefik.http.routers.sysadmin-web-static.middlewares=sysadmin-web-standard-middleware
+      - traefik.http.routers.sysadmin-web-auth.rule=Host(`sysadmin.${DOMAIN}`) &&
+        (PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`)
+        || PathPrefix(`/it/auth`))
+      - traefik.http.routers.sysadmin-web-auth.priority=750
+      - traefik.http.routers.sysadmin-web-auth.entrypoints=websecure
+      - traefik.http.routers.sysadmin-web-auth.middlewares=sysadmin-web-standard-middleware
+      - traefik.http.routers.sysadmin-web-index.rule=Host(`sysadmin.${DOMAIN}`) &&
+        (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))
+      - traefik.http.routers.sysadmin-web-index.priority=400
+      - traefik.http.routers.sysadmin-web-index.entrypoints=websecure
+      - traefik.http.routers.sysadmin-web-index.middlewares=sysadmin-web-standard-middleware
+      - traefik.http.routers.sysadmin-web-default.rule=Host(`sysadmin.${DOMAIN}`)
+      - traefik.http.routers.sysadmin-web-default.priority=100
+      - traefik.http.routers.sysadmin-web-default.entrypoints=websecure
+      - traefik.http.routers.sysadmin-web-default.middlewares=sysadmin-web-standard-middleware
+      # --- TLS Resolver Logic ---
+      - traefik.http.routers.sysadmin-web-static.tls.certresolver=letsencrypt
+      - traefik.http.routers.sysadmin-web-auth.tls.certresolver=letsencrypt
+      - traefik.http.routers.sysadmin-web-index.tls.certresolver=letsencrypt
+      - traefik.http.routers.sysadmin-web-default.tls.certresolver=letsencrypt
+      # --- Service & Middleware ---
+      - traefik.http.services.sysadmin-web.loadbalancer.server.port=80
+      - traefik.http.middlewares.sysadmin-web-standard-middleware.chain.middlewares=security-headers@file
 
   # ===================================================================
   # Common Agents & Pipelines

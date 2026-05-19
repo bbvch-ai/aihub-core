@@ -55,7 +55,7 @@ jobs:
           image_name: web
           github_repository_owner: ${{ github.repository_owner }}
           github_event_repository_name: ${{ github.event.repository.name }}
-          context: ./packages/web/swiss_ai_hub_web
-          file: ./packages/web/swiss_ai_hub_web/Dockerfile
+          context: .
+          file: ./packages/web/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
           secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}

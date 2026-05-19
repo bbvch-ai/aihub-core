@@ -5,6 +5,7 @@ __pycache__/
 /packages/agent/playground/agent/RAGAgent/.env
 .env
 .docker-volumes
+/node_modules/
 docs/node_modules
 docs/.vitepress/cache
 docs/.vitepress/dist

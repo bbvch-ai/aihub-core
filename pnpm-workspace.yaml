@@ -1,0 +1,8 @@
+---
+# Explicit workspace member list. `packages/*` as a glob would also "match"
+# the Python sub-packages under packages/, but pnpm only treats dirs with a
+# package.json as workspace members so it works either way. We list each
+# member by name so adding a new JS package is a deliberate edit, and so
+# a stray package.json in a Python dir never silently becomes a workspace
+# member.
+packages: [packages/web, packages/sysadmin-web]

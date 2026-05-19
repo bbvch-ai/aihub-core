@@ -26,7 +26,6 @@ from swiss_ai_hub.api.routes import (
     ProcessController,
     RoleController,
     SuiteController,
-    TenantAdminController,
     ThreadController,
     TokenController,
     TranslationController,
@@ -90,13 +89,6 @@ runner.mount(
     .send_process_open_form(),
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
-    TenantAdminController(auth=auth)
-    .list_tenants()
-    .list_unconfigured_tenants()
-    .get_tenant()
-    .create_tenant_metadata()
-    .update_tenant_metadata()
-    .delete_tenant_metadata(),
     OpenaiController(auth=auth)
     .get_models()
     .get_model_with_assistants()

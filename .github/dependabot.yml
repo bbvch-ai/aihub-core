@@ -41,10 +41,10 @@ updates:
         update-types: [patch, minor]
 
   # ============================================================================
-  # Frontend (pnpm) — admin/process UI
+  # Frontend (pnpm workspace) — admin/process UI + future sysadmin-web
   # ============================================================================
   - package-ecosystem: npm
-    directory: /packages/web/swiss_ai_hub_web
+    directory: /
     schedule:
       interval: weekly
       day: monday
@@ -117,7 +117,7 @@ updates:
       - /packages/bot
       - /packages/backup
       - /packages/pipeline
-      - /packages/web/swiss_ai_hub_web
+      - /packages/web
       - /infra/configs/playwright
     schedule:
       interval: weekly
