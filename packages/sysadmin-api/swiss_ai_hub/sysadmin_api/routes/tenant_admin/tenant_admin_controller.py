@@ -7,8 +7,7 @@ from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import Controller
 
-from swiss_ai_hub.api import ApiLocaleString
-
+from swiss_ai_hub.sysadmin_api.i18n import SysadminApiLocaleString
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.create_tenant_metadata_request import CreateTenantMetadataRequest
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.tenant_response import TenantResponse
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.update_tenant_metadata_request import UpdateTenantMetadataRequest
@@ -25,8 +24,8 @@ class TenantAdminController(Controller):
     existing Keycloak tenant groups. See `TenantAdminService` for the ownership split.
     """
 
-    name = ApiLocaleString.from_i18n_path("api.controllers.tenant_admin.name")
-    description = ApiLocaleString.from_i18n_path("api.controllers.tenant_admin.description")
+    name = SysadminApiLocaleString.from_i18n_path("sysadmin.controllers.tenant_admin.name")
+    description = SysadminApiLocaleString.from_i18n_path("sysadmin.controllers.tenant_admin.description")
     icon = "mage:building-tree"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/admin/tenants"):

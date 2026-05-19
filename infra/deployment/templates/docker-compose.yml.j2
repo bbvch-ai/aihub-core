@@ -2780,6 +2780,9 @@ services:
       OAUTH_AUTHORITY_URL: {{ 'http://localhost:8180/realms/aihub' if stage == 'dev' else 'https://auth.${DOMAIN}/realms/aihub' }}
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
+      # Cross-origin URL the "manage tenants" affordance jumps to (the sysadmin
+      # plane is a separately-licensed app on its own subdomain).
+      SYSADMIN_URL: https://sysadmin.${DOMAIN}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
       interval: 30s
@@ -2805,7 +2808,7 @@ services:
       - "traefik.http.routers.web-auth.priority=750"
       - "traefik.http.routers.web-auth.entrypoints=websecure"
       - "traefik.http.routers.web-auth.middlewares=web-standard-middleware"
-      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))"
+      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.js`))"
       - "traefik.http.routers.web-index.priority=400"
       - "traefik.http.routers.web-index.entrypoints=websecure"
       - "traefik.http.routers.web-index.middlewares=web-standard-middleware"
@@ -2830,7 +2833,7 @@ services:
       - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
   {%- endif %}
 
-  {%- if image_tags.sysadmin_api[stage] %}
+  {%- if image_tags['sysadmin-api'][stage] %}
   # ===================================================================
   # Sysadmin API (BSL)
   # ===================================================================
@@ -2842,12 +2845,12 @@ services:
   sysadmin-api:
     container_name: sysadmin-api
     restart: always
-    {%- if image_tags.sysadmin_api[stage] == 'localbuild' %}
+    {%- if image_tags['sysadmin-api'][stage] == 'localbuild' %}
     build:
       context: ..
       dockerfile: ./packages/sysadmin-api/Dockerfile
     {%- else %}
-    image: {{ global.registry_prefix }}{{ image_tags.sysadmin_api[stage] }}
+    image: {{ global.registry_prefix }}{{ image_tags['sysadmin-api'][stage] }}
     {%- endif %}
     depends_on:
       traefik:
@@ -2904,7 +2907,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: sysadmin-api
-      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('sysadmin_api') }}
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('sysadmin-api') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
@@ -2936,7 +2939,7 @@ services:
       - data
   {%- endif %}
 
-  {%- if image_tags.sysadmin_web[stage] %}
+  {%- if image_tags['sysadmin-web'][stage] %}
   # ===================================================================
   # Sysadmin Web UI (BSL)
   # ===================================================================
@@ -2946,12 +2949,12 @@ services:
   sysadmin-web:
     container_name: sysadmin-web
     restart: always
-    {%- if image_tags.sysadmin_web[stage] == 'localbuild' %}
+    {%- if image_tags['sysadmin-web'][stage] == 'localbuild' %}
     build:
       context: ..
       dockerfile: ./packages/sysadmin-web/Dockerfile
     {%- else %}
-    image: {{ global.registry_prefix }}{{ image_tags.sysadmin_web[stage] }}
+    image: {{ global.registry_prefix }}{{ image_tags['sysadmin-web'][stage] }}
     {%- endif %}
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
@@ -2959,6 +2962,10 @@ services:
       # Cross-origin URL the sysadmin middleware uses to verify is_sys_admin
       # against the main API. Browser-facing — must be the external URL.
       MAIN_API_URL: https://${DOMAIN}
+      # The main app's UI origin for cross-origin browser redirects
+      # (Exit/bounce → /{locale}/select-tenant). In prod UI and API share
+      # ${DOMAIN}; kept distinct so dev (UI :3333 vs API :8000) works.
+      MAIN_APP_URL: https://${DOMAIN}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
       interval: 30s
@@ -2984,7 +2991,7 @@ services:
       - "traefik.http.routers.sysadmin-web-auth.priority=750"
       - "traefik.http.routers.sysadmin-web-auth.entrypoints=websecure"
       - "traefik.http.routers.sysadmin-web-auth.middlewares=sysadmin-web-standard-middleware"
-      - "traefik.http.routers.sysadmin-web-index.rule=Host(`sysadmin.${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))"
+      - "traefik.http.routers.sysadmin-web-index.rule=Host(`sysadmin.${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.js`))"
       - "traefik.http.routers.sysadmin-web-index.priority=400"
       - "traefik.http.routers.sysadmin-web-index.entrypoints=websecure"
       - "traefik.http.routers.sysadmin-web-index.middlewares=sysadmin-web-standard-middleware"

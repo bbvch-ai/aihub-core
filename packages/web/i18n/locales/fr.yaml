@@ -800,3 +800,5 @@ tenant:
   mismatch_description: Votre locataire actif a été changé en {tenant} dans une autre
     session. L'interface de chat utilise le locataire actif pour toutes les requêtes.
   mismatch_switch_action: Changer de locataire
+  administration_title: Administration des tenants
+  administration_description: Gérer les tenants sur l'ensemble de la plateforme

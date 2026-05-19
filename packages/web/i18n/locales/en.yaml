@@ -792,3 +792,5 @@ tenant:
   mismatch_description: Your active tenant was changed to {tenant} in another session.
     The chat interface uses the active tenant for all requests.
   mismatch_switch_action: Switch Tenant
+  administration_title: Tenant Administration
+  administration_description: Manage tenants across the platform

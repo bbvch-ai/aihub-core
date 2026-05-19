@@ -10,9 +10,8 @@ during refactors.
 
 import pytest
 from fastapi.testclient import TestClient
-from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
-
 from swiss_ai_hub.api import ApiTestRunner
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_controller import TenantAdminController
 

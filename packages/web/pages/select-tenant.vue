@@ -43,12 +43,12 @@
           <template #title>
             <div class="flex items-center gap-2">
               <i class="pi pi-cog text-primary" />
-              {{ t('tenant_admin.title') }}
+              {{ t('tenant.administration_title') }}
             </div>
           </template>
           <template #content>
             <p class="text-sm text-muted-color">
-              {{ t('tenant_admin.select_description') }}
+              {{ t('tenant.administration_description') }}
             </p>
           </template>
         </Card>
@@ -67,13 +67,10 @@ definePageMeta({ layout: 'anonymous' })
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { tenants, tenantsAreLoading, isSysAdmin } = useTenantMemberships()
+const { enterSysadmin: enterSysAdmin } = useSysadminNavigation()
 
 async function selectTenant(tenant: TenantMembershipDto) {
   await setMyActiveTenant({ composable: '$fetch', body: { tenant_id: tenant.id } })
   await navigateTo(localePath(`/${tenant.id}/service/openai`), { replace: true })
-}
-
-function enterSysAdmin() {
-  navigateTo(localePath('/sysadmin/tenants'), { replace: true })
 }
 </script>

@@ -23,6 +23,7 @@ jobs:
           - packages/pipeline
           - packages/bot
           - packages/process
+          - packages/sysadmin-api
     steps:
       - name: Lint backend
         uses: bbvch-ai/aihub-core/.github/actions/lint_backend@main
@@ -30,14 +31,19 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.folder }}
   lint-frontend:
-    name: Lint Web
+    name: Lint Frontend
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: [packages/web, packages/sysadmin-web]
     steps:
       - name: Lint frontend
         uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          working_directory: packages/web
+          working_directory: ${{ matrix.folder }}
           lockfile: pnpm-lock.yaml
   license-check:
     name: License Check

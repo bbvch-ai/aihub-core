@@ -31,6 +31,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const config = useRuntimeConfig()
   const mainApiUrl = config.public.mainApi.url
   const { getToken } = useAuth()
+  // Capture before the await below so exitToMainApp() (called after it) does
+  // not re-enter Nuxt composables outside the instance context.
+  const { exitToMainApp } = useMainAppNavigation()
 
   let isSysAdmin = false
   try {
@@ -47,10 +50,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (!isSysAdmin) {
     // Not a sysadmin — bounce cross-origin to the main app's tenant selector.
-    if (import.meta.client && mainApiUrl) {
-      window.location.replace(`${mainApiUrl}/${locale}/select-tenant`)
-      return
-    }
+    if (exitToMainApp()) return
     return abortNavigation()
   }
 

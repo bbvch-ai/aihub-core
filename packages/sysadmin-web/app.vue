@@ -32,7 +32,9 @@ client.setConfig({
     // on the main app (cross-origin) so they land somewhere they can act on.
     if (response.status === 403) {
       const config = useRuntimeConfig()
-      const mainUrl = config.public.mainApi.url
+      // Browser redirect → the main app's UI origin (NOT the API origin;
+      // they differ in dev). See .app/nuxt.config.ts mainApp vs mainApi.
+      const mainUrl = config.public.mainApp.url
       if (mainUrl && import.meta.client) {
         window.location.href = `${mainUrl}${localePath('/select-tenant')}`
         return

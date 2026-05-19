@@ -48,8 +48,9 @@ and are imported here, not duplicated.
 1. Create the controller and service under `swiss_ai_hub/sysadmin_api/routes/<domain>/` (one file per class). Use
    `Security(self.sys_admin_user())` from the `Controller` base class — every endpoint in this package must be
    sysadmin-gated.
-2. Add an i18n entry for `name`/`description` under `packages/api/swiss_ai_hub/api/i18n/translations/api/controllers.*`
-   if you reuse `ApiLocaleString` (or extend with a sysadmin-specific scope later).
+2. Add an i18n entry for `name`/`description` under `swiss_ai_hub/sysadmin_api/i18n/translations/sysadmin/controllers.*`
+   using `SysadminApiLocaleString` (the BSL counterpart of `ApiLocaleString` — keeps proprietary strings out of the
+   Apache-2.0 `packages/api`).
 3. Register on `runner.mount(...)` in `swiss_ai_hub/sysadmin_api/asgi.py` using the fluent builder pattern.
 4. Add unit + sysadmin-gate tests in `tests/<domain>/`.
 

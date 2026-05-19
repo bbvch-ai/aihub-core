@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
-const localePath = useLocalePath()
+const { exitToMainApp } = useMainAppNavigation()
 
 const isDark = useDarkMode()
 
@@ -42,7 +42,11 @@ function toggleDarkMode() {
   isDark.value = !isDark.value
 }
 
+// "Exit" leaves the sysadmin plane entirely — cross-origin back to the main
+// app's tenant selector. A local navigateTo() would be bounced back here by
+// the confinement middleware (sysadmin-web has no /select-tenant of its own
+// that the middleware permits).
 function exitSysAdmin() {
-  navigateTo(localePath('/select-tenant'), { replace: true })
+  exitToMainApp()
 }
 </script>

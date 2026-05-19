@@ -20,9 +20,8 @@ its own license — the per-package `LICENSE` file is authoritative for everythi
 | `packages/sysadmin-api`\* | Business Source License  | `LicenseRef-BUSL-1.1`\* | Multi-tenant administration API. Production use requires a commercial license until the Change Date (then converts to Apache-2.0). |
 | `packages/sysadmin-web`\* | Business Source License  | `LicenseRef-BUSL-1.1`\* | Multi-tenant administration UI. Production use requires a commercial license until the Change Date (then converts to Apache-2.0).  |
 
-\* `sysadmin-api` and `sysadmin-web` are added in later phases of the open-source restructure; the per-package `LICENSE`
-files at `packages/sysadmin-api/LICENSE` and `packages/sysadmin-web/LICENSE` are the authoritative source once those
-packages land.
+\* The per-package BSL `LICENSE` files at `packages/sysadmin-api/LICENSE` and `packages/sysadmin-web/LICENSE` are the
+authoritative source for terms, including the Change Date (2030-05-13) on which they convert to Apache-2.0.
 
 ## BSL parameters (sysadmin-\* packages)
 

@@ -796,3 +796,5 @@ tenant:
   mismatch_description: Il tuo tenant attivo è stato cambiato in {tenant} in un'altra
     sessione. L'interfaccia di chat utilizza il tenant attivo per tutte le richieste.
   mismatch_switch_action: Cambia tenant
+  administration_title: Amministrazione tenant
+  administration_description: Gestisci i tenant nell'intera piattaforma

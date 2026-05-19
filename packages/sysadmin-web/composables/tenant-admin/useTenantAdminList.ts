@@ -1,5 +1,6 @@
-import { listTenants, type TenantResponse } from '~/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
+
+import { listTenants, type TenantResponse } from '~/sdk/client'
 
 export const useTenantAdminList = defineQuery(() => {
   const { data: tenants, isPending: tenantsAreLoading, error } = useQuery<TenantResponse[]>({

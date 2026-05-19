@@ -803,3 +803,5 @@ tenant:
   mismatch_description: Ihr aktiver Mandant wurde in einer anderen Sitzung auf {tenant}
     geändert. Die Chat-Oberfläche verwendet den aktiven Mandanten für alle Anfragen.
   mismatch_switch_action: Mandant wechseln
+  administration_title: Tenant-Verwaltung
+  administration_description: Tenants plattformweit verwalten

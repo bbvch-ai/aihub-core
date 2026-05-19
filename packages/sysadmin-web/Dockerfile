@@ -46,8 +46,8 @@ RUN apk add --no-cache gettext
 
 COPY --from=builder /app/packages/sysadmin-web/.app/.output/public /usr/share/nginx/html
 COPY packages/sysadmin-web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY packages/sysadmin-web/config.template.json /usr/share/nginx/html/config.template.json
+COPY packages/sysadmin-web/config.template.js /usr/share/nginx/html/config.template.js
 
 EXPOSE 80
 
-CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.json > /usr/share/nginx/html/config.json && nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.js > /usr/share/nginx/html/config.js && nginx -g 'daemon off;'"]

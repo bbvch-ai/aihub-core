@@ -118,6 +118,8 @@ updates:
       - /packages/backup
       - /packages/pipeline
       - /packages/web
+      - /packages/sysadmin-api
+      - /packages/sysadmin-web
       - /infra/configs/playwright
     schedule:
       interval: weekly

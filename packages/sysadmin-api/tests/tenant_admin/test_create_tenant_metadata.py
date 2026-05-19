@@ -11,7 +11,9 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.create_tenant_metadata_request import CreateTenantMetadataRequest
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_service import TenantAdminService
 
-INIT_ROLES_PATH = "swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_service.initialize_default_roles_for_tenant"
+INIT_ROLES_PATH = (
+    "swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_service.initialize_default_roles_for_tenant"
+)
 
 
 def _stub_metadata_lookups(monkeypatch: pytest.MonkeyPatch, by_id=None, by_name=None) -> None:

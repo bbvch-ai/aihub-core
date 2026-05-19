@@ -1,5 +1,6 @@
-import { listUnconfiguredTenants } from '~/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
+
+import { listUnconfiguredTenants } from '~/sdk/client'
 
 export const useUnconfiguredTenantIds = defineQuery(() => {
   const { data: unconfiguredTenantIds, isPending: unconfiguredTenantIdsAreLoading } = useQuery<string[]>({

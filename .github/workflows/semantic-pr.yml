@@ -39,6 +39,7 @@ jobs:
             tracing
             workflows
             backup
+            sysadmin
           types: |
             fix
             feat

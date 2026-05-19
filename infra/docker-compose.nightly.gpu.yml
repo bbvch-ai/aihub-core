@@ -2365,6 +2365,9 @@ services:
       OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
+      # Cross-origin URL the "manage tenants" affordance jumps to (the sysadmin
+      # plane is a separately-licensed app on its own subdomain).
+      SYSADMIN_URL: https://sysadmin.${DOMAIN}
     healthcheck:
       test: [CMD, curl, -f, http://127.0.0.1/]
       interval: 30s
@@ -2392,7 +2395,7 @@ services:
       - traefik.http.routers.web-auth.entrypoints=websecure
       - traefik.http.routers.web-auth.middlewares=web-standard-middleware
       - traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`)
-        || Path(`/config.json`))
+        || Path(`/config.js`))
       - traefik.http.routers.web-index.priority=400
       - traefik.http.routers.web-index.entrypoints=websecure
       - traefik.http.routers.web-index.middlewares=web-standard-middleware
@@ -2517,6 +2520,10 @@ services:
       # Cross-origin URL the sysadmin middleware uses to verify is_sys_admin
       # against the main API. Browser-facing — must be the external URL.
       MAIN_API_URL: https://${DOMAIN}
+      # The main app's UI origin for cross-origin browser redirects
+      # (Exit/bounce → /{locale}/select-tenant). In prod UI and API share
+      # ${DOMAIN}; kept distinct so dev (UI :3333 vs API :8000) works.
+      MAIN_APP_URL: https://${DOMAIN}
     healthcheck:
       test: [CMD, curl, -f, http://127.0.0.1/]
       interval: 30s
@@ -2545,7 +2552,7 @@ services:
       - traefik.http.routers.sysadmin-web-auth.entrypoints=websecure
       - traefik.http.routers.sysadmin-web-auth.middlewares=sysadmin-web-standard-middleware
       - traefik.http.routers.sysadmin-web-index.rule=Host(`sysadmin.${DOMAIN}`) &&
-        (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))
+        (Path(`/`) || Path(`/index.html`) || Path(`/config.js`))
       - traefik.http.routers.sysadmin-web-index.priority=400
       - traefik.http.routers.sysadmin-web-index.entrypoints=websecure
       - traefik.http.routers.sysadmin-web-index.middlewares=sysadmin-web-standard-middleware

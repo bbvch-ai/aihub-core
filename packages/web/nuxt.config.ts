@@ -54,6 +54,21 @@ export default defineNuxtConfig({
     ],
   },
 
+  app: {
+    head: {
+      // Runtime config for the static SPA. nginx envsubst's config.template.js
+      // into /config.js at container start; this classic <script> in <head>
+      // runs synchronously before Nuxt's deferred module entry, so
+      // window.__AIHUB_CONFIG__ exists before any plugin (see
+      // plugins/0.runtime-config.client.ts). Inherited by layer extenders.
+      // Build-time gated: dev has no nginx and no /config.js, so omit the tag
+      // (avoids a dev 404). Container images are always built with ENV != dev.
+      script: process.env.ENV === 'dev'
+        ? []
+        : [{ src: '/config.js', tagPosition: 'head' as const }],
+    },
+  },
+
   css: [
     fileURLToPath(new URL('./assets/css/main.css', import.meta.url)),
   ],

@@ -1,0 +1,4 @@
+---
+tenant_admin:
+  name: Administration des tenants
+  description: Créer, modifier et supprimer des tenants (administrateurs système uniquement)

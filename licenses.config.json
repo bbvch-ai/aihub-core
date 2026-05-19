@@ -6,13 +6,16 @@
     "packages/agent",
     "packages/process",
     "packages/pipeline",
-    "packages/backup"
+    "packages/backup",
+    "packages/sysadmin-api"
   ],
   "web_project": "packages/web",
   "output_file": "LICENSE_REPORT.md",
   "own_images": [
     "api",
     "web",
+    "sysadmin-api",
+    "sysadmin-web",
     "bot",
     "agent",
     "process",

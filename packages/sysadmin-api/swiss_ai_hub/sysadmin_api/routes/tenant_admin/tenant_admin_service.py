@@ -1,10 +1,9 @@
 from fastapi import HTTPException
 from keycloak import KeycloakGetError
+from swiss_ai_hub.api.runners.lifetime.initialize_db import initialize_default_roles_for_tenant
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
-
-from swiss_ai_hub.api.runners.lifetime.initialize_db import initialize_default_roles_for_tenant
 
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.create_tenant_metadata_request import CreateTenantMetadataRequest
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.tenant_response import TenantResponse

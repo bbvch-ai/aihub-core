@@ -49,7 +49,7 @@
           >
             <i class="pi pi-cog text-xs text-primary" />
             <p class="text-sm">
-              {{ t('tenant_admin.title') }}
+              {{ t('tenant.administration_title') }}
             </p>
           </div>
         </div>
@@ -75,9 +75,9 @@ import Popover from 'primevue/popover'
 import type { TenantMembershipDto } from '@core/sdk/client'
 
 const { t } = useI18n()
-const localePath = useLocalePath()
 const { tenantId, setTenant } = useTenant()
 const { tenants, tenantsAreLoading, isSysAdmin } = useTenantMemberships()
+const { enterSysadmin } = useSysadminNavigation()
 
 const hasMultipleTenants = computed(() => (tenants.value?.length ?? 0) > 1)
 const currentTenantDisplayName = computed(() => {
@@ -97,6 +97,6 @@ async function onSelect(tenant: TenantMembershipDto) {
 
 function enterSysAdmin() {
   popoverRef.value?.hide()
-  navigateTo(localePath('/sysadmin/tenants'), { replace: true })
+  enterSysadmin()
 }
 </script>
