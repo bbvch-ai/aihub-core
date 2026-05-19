@@ -3537,7 +3537,7 @@ wheels = [
 
 [[package]]
 name = "openinference-instrumentation"
-version = "0.1.49"
+version = "0.1.50"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "openinference-semantic-conventions" },
@@ -3545,9 +3545,9 @@ dependencies = [
     { name = "opentelemetry-sdk" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a7/ca/fe39c30aaee9872c4277118735c1275e68c13abffe9b8ede31195ca868f0/openinference_instrumentation-0.1.49.tar.gz", hash = "sha256:cdc6334b1595f7b94cbcbf8f1834fadc888364d357281243caadfcd1d6aa9fac", size = 24718, upload-time = "2026-05-07T16:58:57.438Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/bc/9126db2e991304d05e777c3cd107580cc1e721f2db91586dda09db7600f2/openinference_instrumentation-0.1.50.tar.gz", hash = "sha256:3ce2e19bc832cbfc5e141a1a78d6f5f9547b98ddfaecf8128edd2b5e6ed5c6e6", size = 24788, upload-time = "2026-05-11T22:04:18.14Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/1c/0dd34394519f2ac9227311604a9681392fdb1f4565995d6a90cd396bbc9b/openinference_instrumentation-0.1.49-py3-none-any.whl", hash = "sha256:7960afc1904d9d40b9e7643a902c9d3bd3ba0d1bbc9c57d8f99d29947a23cebb", size = 30924, upload-time = "2026-05-07T16:58:56.255Z" },
+    { url = "https://files.pythonhosted.org/packages/02/0f/1eba26ef9599a69e08c60df0d9826a7530fa019ad4da66a9d6d9f1841ff1/openinference_instrumentation-0.1.50-py3-none-any.whl", hash = "sha256:e757e308df590f393d02b1cfcbd934d728cf876fca2f4432b2e7052ae9b64622", size = 31002, upload-time = "2026-05-11T22:04:17.12Z" },
 ]
 
 [[package]]
@@ -5781,7 +5781,7 @@ requires-dist = [
     { name = "mongoengine", specifier = ">=0.29.1" },
     { name = "nats-py", specifier = ">=2.9.0" },
     { name = "openai", specifier = ">=1.76.2" },
-    { name = "openinference-instrumentation", specifier = ">=0.1.38" },
+    { name = "openinference-instrumentation", specifier = ">=0.1.50" },
     { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.1" },
     { name = "openinference-semantic-conventions", specifier = ">=0.1.21" },
     { name = "opentelemetry-api", specifier = ">=1.39.1" },
