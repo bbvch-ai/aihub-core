@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-bot"
-version = "0.289.3"
+version = "0.289.4"
 description = "bots core"
 requires-python = ">=3.13, <3.14"
 authors = [

@@ -93,6 +93,9 @@ Here is the short version:
 3. Write your code, following our conventions (like Conventional Commits).
 4. When your PR is ready, mark it as "Ready for Review".
 
+> **Note:** PRs touching `.github/`, `infra/`, or `packages/core/` require a review from
+> `@bbvch-ai/aihub-core-maintainers` before they can be merged (enforced via `CODEOWNERS`).
+
 ## 🎨 Other Ways to Contribute
 
 ### Documentation
