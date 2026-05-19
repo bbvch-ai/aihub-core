@@ -10,10 +10,17 @@
 #      (this is what flooded the repo and burned the Actions budget).
 #
 #   2. NOT bleeding edge. A `cooldown` window holds back freshly published
-#      releases so we never pull a version on its release day. This is a
-#      supply-chain safety measure: most malicious-package incidents are
-#      caught and yanked within days of publication. We trade a short lag
-#      for not being the canary.
+#      releases so we never pull a version on its release day — supply-chain
+#      safety, since most malicious-package incidents are caught and yanked
+#      within days. uv/docker/github-actions use Dependabot `cooldown`. The
+#      WEB npm entry does NOT: Dependabot cooldown is broken with pnpm — it
+#      desyncs package.json from pnpm-lock.yaml, so every grouped PR fails CI
+#      with ERR_PNPM_OUTDATED_LOCKFILE (dependabot-core issues 13165 / 14339).
+#      web uses pnpm-native `minimumReleaseAge` instead
+#      (packages/web/swiss_ai_hub_web/pnpm-workspace.yaml), applied during
+#      both resolution and lockfile generation so it cannot drift. docs/e2e
+#      are also pnpm and still on `cooldown` (same bug) — migrating them is a
+#      tracked follow-up.
 #
 #   3. Low, predictable cadence. `interval: monthly` → one batched PR per
 #      ecosystem per month instead of a weekly stream. CI runs full
@@ -76,10 +83,13 @@ updates:
     directory: /packages/web/swiss_ai_hub_web
     schedule:
       interval: monthly
-    cooldown:
-      default-days: 7
-      semver-minor-days: 14
-      semver-patch-days: 7
+    # NO Dependabot cooldown for npm — it is fundamentally broken with pnpm:
+    # cooldown makes Dependabot pin an older version in package.json while the
+    # regenerated pnpm-lock.yaml resolves the newer one, so every grouped PR
+    # fails CI with ERR_PNPM_OUTDATED_LOCKFILE (dependabot-core  # 13165/#14339).
+    # The supply-chain lag is instead enforced NATIVELY by pnpm via
+    # `minimumReleaseAge` in each project's pnpm-workspace.yaml — pnpm applies
+    # it during BOTH resolution and lockfile generation, so no drift.
     open-pull-requests-limit: 5
     labels: [dependencies, frontend]
     commit-message:
@@ -104,6 +114,9 @@ updates:
     directory: /docs
     schedule:
       interval: monthly
+    # TODO: docs is also pnpm — same Dependabot-cooldown-vs-pnpm bug applies.
+    # Out of scope for the web pnpm-10 upgrade; migrate docs to pnpm
+    # `minimumReleaseAge` in a follow-up. Kept here until then.
     cooldown:
       default-days: 7
       semver-minor-days: 14
@@ -132,6 +145,9 @@ updates:
     directory: /e2e
     schedule:
       interval: monthly
+    # TODO: e2e is also pnpm — same Dependabot-cooldown-vs-pnpm bug applies.
+    # Out of scope for the web pnpm-10 upgrade; migrate e2e to pnpm
+    # `minimumReleaseAge` in a follow-up. Kept here until then.
     cooldown:
       default-days: 7
       semver-minor-days: 14

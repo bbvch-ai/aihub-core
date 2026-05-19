@@ -19,13 +19,21 @@ runs:
       uses: actions/setup-node@v6
       with:
         node-version: 25.x
-    - name: Install pnpm
+    - name: Install pnpm via corepack
       shell: bash
-      run: npm install -g pnpm
+      # Node 25 no longer bundles corepack; pin it (matches the web
+      # Dockerfile) so CI uses the exact pnpm from package.json's
+      # "packageManager" field — single source of truth, no version drift.
+      run: |
+        npm install -g --ignore-scripts corepack@0.34.7
+        corepack enable
+        corepack install
+      working-directory: ${{ inputs.working_directory }}
     - name: Get pnpm store path
       id: pnpm-store-dir-path
       shell: bash
       run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+      working-directory: ${{ inputs.working_directory }}
     - name: Cache Node Modules
       uses: actions/cache@v4
       id: pnpm-cache
