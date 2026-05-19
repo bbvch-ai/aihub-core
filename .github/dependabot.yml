@@ -1,22 +1,42 @@
 ---
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# Dependabot enforces uniqueness on (package-ecosystem, directory, target-branch).
-# Each entry below defines a single catch-all group (`patterns: ['*']`) that
-# bundles every patch and minor bump for that (ecosystem, directory) tuple
-# into ONE PR per run. Some ecosystems span multiple entries (npm covers
-# /packages/web, /docs, /e2e separately; docker uses `directories:` to fan
-# out across each Dockerfile) — each entry produces its own grouped PR.
+# DESIGN GOALS (see also: chore/dependabot-tuning rationale)
 #
-# We deliberately ignore major version bumps (`version-update:semver-major`)
-# everywhere. Majors usually require code migration (e.g. nuxt 3→4, vue 2→3,
-# tailwind 3→4) and should be done as a deliberate, isolated upgrade on a
-# feature branch — not as a casual auto-PR riding on a weekly bundle.
+#   1. ONE PR per ecosystem per run, not dozens. Every entry defines a
+#      catch-all `*` group. Crucially, each entry ALSO defines a second group
+#      with `applies-to: security-updates` — without it, Dependabot security
+#      fixes bypass grouping entirely and open one ungrouped PR per CVE
+#      (this is what flooded the repo and burned the Actions budget).
 #
-# We deliberately do NOT apply major/minor/patch labels. The release workflow
-# (.github/workflows/add-tag.yml) defaults to a patch bump when no version
-# label is present, and `check-version-label` is bypassed for `dependabot[bot]`
-# PRs. Reviewers can add `minor` manually if a bump warrants it.
+#   2. NOT bleeding edge. A `cooldown` window holds back freshly published
+#      releases so we never pull a version on its release day. This is a
+#      supply-chain safety measure: most malicious-package incidents are
+#      caught and yanked within days of publication. We trade a short lag
+#      for not being the canary.
+#
+#   3. Low, predictable cadence. `interval: monthly` → one batched PR per
+#      ecosystem per month instead of a weekly stream. CI runs full
+#      test+analyze on Dependabot PRs (no actor gating), so PR volume IS
+#      the budget lever — keep it minimal.
+#
+#   4. Majors are excluded from VERSION updates (`version-update:semver-major`)
+#      — nuxt 3→4, vue 2→3, tailwind 3→4 etc. need deliberate migration on a
+#      feature branch. NOTE: this ignore uses the `version-update:` prefix and
+#      therefore does NOT block SECURITY updates — a CVE that requires a major
+#      bump (e.g. minimatch 3→10) will still be proposed via the security group.
+#
+#   5. No major/minor/patch labels are applied. The release workflow
+#      (.github/workflows/add-tag.yml) defaults to a patch bump when no
+#      version label is present, and `check-version-label` is bypassed for
+#      `dependabot[bot]` PRs. Reviewers add `minor` manually if warranted.
+#
+# Dependabot enforces uniqueness on (package-ecosystem, directory,
+# target-branch). npm spans three real pnpm projects (the web app lives at
+# /packages/web/swiss_ai_hub_web — there is NO npm project at repo root;
+# only uv.lock is at root). docker uses `directories:` to fan out per
+# Dockerfile within a single entry. Cooldown/schedule are inlined per entry
+# because Dependabot's schema rejects unknown top-level keys (no YAML anchors).
 version: 2
 updates:
   # ============================================================================
@@ -25,9 +45,12 @@ updates:
   - package-ecosystem: uv
     directory: /
     schedule:
-      interval: weekly
-      day: monday
-    open-pull-requests-limit: 10
+      interval: monthly
+    cooldown:
+      default-days: 7
+      semver-minor-days: 14
+      semver-patch-days: 7
+    open-pull-requests-limit: 5
     labels: [dependencies, python]
     commit-message:
       prefix: chore
@@ -37,18 +60,27 @@ updates:
         update-types: [version-update:semver-major]
     groups:
       python:
+        applies-to: version-updates
         patterns: ['*']
         update-types: [patch, minor]
+      python-security:
+        applies-to: security-updates
+        patterns: ['*']
 
   # ============================================================================
-  # Frontend (pnpm) — admin/process UI
+  # Frontend admin/process UI (pnpm) — /packages/web/swiss_ai_hub_web
+  # (NOT repo root — that path has no package.json/pnpm-lock.yaml, which is
+  # why grouped version updates for the web app never matched before)
   # ============================================================================
   - package-ecosystem: npm
     directory: /packages/web/swiss_ai_hub_web
     schedule:
-      interval: weekly
-      day: monday
-    open-pull-requests-limit: 10
+      interval: monthly
+    cooldown:
+      default-days: 7
+      semver-minor-days: 14
+      semver-patch-days: 7
+    open-pull-requests-limit: 5
     labels: [dependencies, frontend]
     commit-message:
       prefix: chore
@@ -58,8 +90,12 @@ updates:
         update-types: [version-update:semver-major]
     groups:
       web:
+        applies-to: version-updates
         patterns: ['*']
         update-types: [patch, minor]
+      web-security:
+        applies-to: security-updates
+        patterns: ['*']
 
   # ============================================================================
   # Docs site (VitePress, pnpm)
@@ -67,8 +103,11 @@ updates:
   - package-ecosystem: npm
     directory: /docs
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    cooldown:
+      default-days: 7
+      semver-minor-days: 14
+      semver-patch-days: 7
     open-pull-requests-limit: 5
     labels: [dependencies, docs]
     commit-message:
@@ -79,8 +118,12 @@ updates:
         update-types: [version-update:semver-major]
     groups:
       docs:
+        applies-to: version-updates
         patterns: ['*']
         update-types: [patch, minor]
+      docs-security:
+        applies-to: security-updates
+        patterns: ['*']
 
   # ============================================================================
   # E2E tests (Playwright, pnpm)
@@ -88,8 +131,11 @@ updates:
   - package-ecosystem: npm
     directory: /e2e
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    cooldown:
+      default-days: 7
+      semver-minor-days: 14
+      semver-patch-days: 7
     open-pull-requests-limit: 5
     labels: [dependencies, tests]
     commit-message:
@@ -100,28 +146,35 @@ updates:
         update-types: [version-update:semver-major]
     groups:
       e2e:
+        applies-to: version-updates
         patterns: ['*']
         update-types: [patch, minor]
+      e2e-security:
+        applies-to: security-updates
+        patterns: ['*']
 
   # ============================================================================
   # Docker base images — one entry per Dockerfile
   # ============================================================================
-  # NOTE: `python` is excluded from auto-bumps because Python releases (e.g.
-  # 3.13 → 3.14) are classified as semver-minor by Docker tags but really are
-  # feature releases. They depend on transitive wheels (e.g. onnxruntime via
-  # markitdown→magika) catching up before they can land. Bump Python
-  # deliberately in a separate branch once the dep tree supports the target.
+  # NOTE: `python` is excluded because Python releases (e.g. 3.13 → 3.14) are
+  # classified as semver-minor by Docker tags but really are feature releases.
+  # They depend on transitive wheels (e.g. onnxruntime via markitdown→magika)
+  # catching up before they can land. Bump Python deliberately in a separate
+  # branch once the dep tree supports the target.
   - package-ecosystem: docker
     directories:
       - /packages/api
       - /packages/bot
       - /packages/backup
       - /packages/pipeline
-      - /packages/web/swiss_ai_hub_web
+      - /packages/web
       - /infra/configs/playwright
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    cooldown:
+      default-days: 7
+      semver-minor-days: 14
+      semver-patch-days: 7
     open-pull-requests-limit: 5
     labels: [dependencies, docker]
     commit-message:
@@ -133,8 +186,12 @@ updates:
       - dependency-name: python
     groups:
       docker:
+        applies-to: version-updates
         patterns: ['*']
         update-types: [patch, minor]
+      docker-security:
+        applies-to: security-updates
+        patterns: ['*']
 
   # ============================================================================
   # GitHub Actions — pinned action versions in workflows + reusable actions
@@ -142,8 +199,11 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    cooldown:
+      default-days: 7
+      semver-minor-days: 14
+      semver-patch-days: 7
     open-pull-requests-limit: 5
     labels: [dependencies, ci-cd]
     commit-message:
@@ -154,5 +214,9 @@ updates:
         update-types: [version-update:semver-major]
     groups:
       github-actions:
+        applies-to: version-updates
         patterns: ['*']
         update-types: [patch, minor]
+      github-actions-security:
+        applies-to: security-updates
+        patterns: ['*']
