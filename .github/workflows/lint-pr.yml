@@ -65,8 +65,6 @@ jobs:
         with:
           node-version: 25.x
       - name: Install pnpm via corepack
-        # Pin pnpm to package.json's "packageManager" (matches web Dockerfile
-        # + lint_frontend action) so license-check never drifts pnpm version.
         run: |
           npm install -g --ignore-scripts corepack@0.34.7
           corepack enable pnpm
