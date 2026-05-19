@@ -194,12 +194,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
+      - name: Setup Node.js
+        # Pin Node 25.x to match the web Dockerfile + lint actions so corepack
+        # bootstraps under the same Node everywhere (true env parity).
+        uses: actions/setup-node@v6
+        with:
+          node-version: 25.x
       - name: Install pnpm via corepack
         # Pin pnpm to package.json's "packageManager" (matches web Dockerfile
         # + lint actions) so the release license-check never drifts pnpm.
         run: |
           npm install -g --ignore-scripts corepack@0.34.7
-          corepack enable
+          corepack enable pnpm
           corepack install
         working-directory: packages/web/swiss_ai_hub_web
       - name: Install uv

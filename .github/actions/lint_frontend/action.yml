@@ -6,7 +6,9 @@ inputs:
     description: GitHub token for authentication
     required: true
   working_directory:
-    description: Working directory for the linter
+    description: Working directory for the linter. Required because corepack resolves
+      the pinned pnpm from this directory's package.json.
+    required: true
   lockfile:
     description: Path to the lockfile
     required: true
@@ -26,7 +28,7 @@ runs:
       # "packageManager" field — single source of truth, no version drift.
       run: |
         npm install -g --ignore-scripts corepack@0.34.7
-        corepack enable
+        corepack enable pnpm
         corepack install
       working-directory: ${{ inputs.working_directory }}
     - name: Get pnpm store path

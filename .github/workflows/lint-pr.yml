@@ -69,7 +69,7 @@ jobs:
         # + lint_frontend action) so license-check never drifts pnpm version.
         run: |
           npm install -g --ignore-scripts corepack@0.34.7
-          corepack enable
+          corepack enable pnpm
           corepack install
         working-directory: packages/web/swiss_ai_hub_web
       - name: Make license check script executable

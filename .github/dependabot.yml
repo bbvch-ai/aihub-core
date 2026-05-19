@@ -86,7 +86,7 @@ updates:
     # NO Dependabot cooldown for npm — it is fundamentally broken with pnpm:
     # cooldown makes Dependabot pin an older version in package.json while the
     # regenerated pnpm-lock.yaml resolves the newer one, so every grouped PR
-    # fails CI with ERR_PNPM_OUTDATED_LOCKFILE (dependabot-core  # 13165/#14339).
+    # fails CI with ERR_PNPM_OUTDATED_LOCKFILE (dependabot-core issues 13165/14339).
     # The supply-chain lag is instead enforced NATIVELY by pnpm via
     # `minimumReleaseAge` in each project's pnpm-workspace.yaml — pnpm applies
     # it during BOTH resolution and lockfile generation, so no drift.

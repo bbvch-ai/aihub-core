@@ -4,7 +4,7 @@
 # minimumReleaseAge: supply-chain hardening. pnpm refuses to install any
 # package version published less than this many MINUTES ago (10080 = 7 days).
 # This replaces the Dependabot `cooldown` for npm, which is fundamentally
-# broken with pnpm (dependabot-core #13165 /  # 14339: cooldown desyncs
+# broken with pnpm (dependabot-core issues 13165/14339: cooldown desyncs
 # package.json from pnpm-lock.yaml → ERR_PNPM_OUTDATED_LOCKFILE on every
 # grouped PR). pnpm enforces this natively during BOTH resolution and
 # lockfile generation, so manifest and lockfile can never drift. The window
