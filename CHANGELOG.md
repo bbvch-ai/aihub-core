@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.5] - 2026-05-19 - Refined Dependabot Cooldowns
+
+### Changed
+
+- 🔄 **Streamlined Dependabot Cooldowns:** Corrected Dependabot configurations for **Docker** and **GitHub Actions**
+  ecosystems by removing unsupported `semver-minor-days` and `semver-patch-days` cooldown settings. These ecosystems
+  exclusively support `default-days`, as their tags are not semver-decomposable, ensuring more accurate and effective
+  dependency update management.
+
+______________________________________________________________________
+
 ## [v0.289.4] - 2026-05-19 - Fortified Repository with Codeowners and Tuned Dependabot
 
 ### Security
