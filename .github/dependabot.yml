@@ -167,8 +167,8 @@ updates:
       - /packages/bot
       - /packages/backup
       - /packages/pipeline
-      - /packages/web
-      - /infra/configs/playwright
+      - /packages/web/swiss_ai_hub_web
+      - /infra/deployment/docker/playwright
     schedule:
       interval: monthly
     cooldown:
