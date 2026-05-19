@@ -9,6 +9,7 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
 from swiss_ai_hub.agent.mcp.mcp_resource_schemas import fetch_static_resources, resource_read_tool_schema
 from swiss_ai_hub.agent.mcp.mcp_tool_schemas import execute_single_tool_call, to_openai_tool_schemas, to_tool_events
@@ -60,7 +61,9 @@ class McpReactAgent(Agent):
     ) -> McpReasoningEvent:
         """List MCP tools and resources, seed conversation, trigger first reasoning iteration."""
         print(f"[init_step] Discovering tools and resources on {mcp_config.url}")
-        async with McpClientFactory.create(mcp_config) as mcp_client:
+        user_token = await McpAuthResolver.resolve_user_token(run_context)
+        print(f"[init_step] User token present: {user_token is not None}")
+        async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             tools = await mcp_client.list_tools()
             print(f"[init_step] Tools: {[t.name for t in tools]}")
 
@@ -159,7 +162,8 @@ class McpReactAgent(Agent):
         new_tool_events = tool_events[-new_count:]
 
         tool_messages: list[Message] = []
-        async with McpClientFactory.create(mcp_config) as mcp_client:
+        user_token = await McpAuthResolver.resolve_user_token(run_context)
+        async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             for tool_event in new_tool_events:
                 print(f"[tool_execution_step] {tool_event.name}({tool_event.parameters})")
                 message = await execute_single_tool_call(

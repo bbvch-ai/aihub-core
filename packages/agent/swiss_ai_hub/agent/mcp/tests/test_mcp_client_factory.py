@@ -56,11 +56,11 @@ class TestResolveAuth:
             McpClientFactory._resolve_auth(config, user_token="")
 
 
-class TestCreateBackwardsCompatibility:
-    """The factory's public surface must keep working for existing callers that pass only a config."""
+class TestCreate:
+    """End-to-end behavior of the public create() context manager."""
 
     @pytest.mark.asyncio
-    async def test_existing_call_signature_still_works(self):
+    async def test_static_api_key_path_passes_bearer_to_client(self):
         config = McpClientConfig(name="srv", url="https://mcp.example.com/mcp", api_key="key")
 
         with patch("swiss_ai_hub.agent.mcp.mcp_client_factory.Client") as mock_client_cls:
@@ -74,3 +74,23 @@ class TestCreateBackwardsCompatibility:
             kwargs = mock_client_cls.call_args.kwargs
             assert isinstance(kwargs["auth"], BearerAuth)
             assert kwargs["auth"].token.get_secret_value() == "key"
+
+    @pytest.mark.asyncio
+    async def test_user_token_path_passes_resolved_token_to_client(self):
+        config = McpClientConfig(
+            name="srv",
+            url="https://mcp.example.com/mcp",
+            auth_mode="user_token",
+        )
+
+        with patch("swiss_ai_hub.agent.mcp.mcp_client_factory.Client") as mock_client_cls:
+            mock_client = mock_client_cls.return_value
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+
+            async with McpClientFactory.create(config, user_token="tok-from-caller"):
+                pass
+
+            kwargs = mock_client_cls.call_args.kwargs
+            assert isinstance(kwargs["auth"], BearerAuth)
+            assert kwargs["auth"].token.get_secret_value() == "tok-from-caller"

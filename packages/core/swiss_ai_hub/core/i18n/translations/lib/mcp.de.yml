@@ -10,8 +10,11 @@ config:
     label: Authentifizierungsmodus
     help: |
       Wie sich Agenten beim MCP-Server authentifizieren. "Statischer API-Schlüssel" verwendet einen
-      hier hinterlegten gemeinsamen Schlüssel; "Benutzer-Token" leitet das Token der anfragenden Person
-      weiter, sodass externe Aktionen ihr zugeordnet werden.
+      hier hinterlegten gemeinsamen Schlüssel. "Benutzer-Token" leitet das Bearer-Token der anfragenden
+      Person weiter, sodass externe Aktionen ihr zugeordnet werden — funktioniert nur bei
+      benutzerinitiierten Chat-Completion-Läufen, die einen X-AIHub-User-Token-Header weiterleiten.
+      Geplante, prozessinitiierte, Bot-Kanal- oder Agent-zu-Agent-Läufe leiten kein Benutzer-Token
+      weiter und schlagen in diesem Modus fehl — verwenden Sie dafür den statischen API-Schlüssel.
     static_api_key_label: Statischer API-Schlüssel
     user_token_label: Benutzer-Token
   api_key:

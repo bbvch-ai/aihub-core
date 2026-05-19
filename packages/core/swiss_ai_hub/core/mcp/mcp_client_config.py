@@ -25,7 +25,10 @@ class McpClientConfig(StepConfig):
     ]
     api_key: Annotated[
         str | Password | None,
-        Field(default=None, description="API key for authenticated MCP servers — used only when auth_mode is static_api_key."),
+        Field(
+            default=None,
+            description="API key for authenticated MCP servers — used only when auth_mode is static_api_key.",
+        ),
     ]
     headers: Annotated[
         dict[str, str] | None,

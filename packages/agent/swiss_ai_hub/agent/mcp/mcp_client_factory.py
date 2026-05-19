@@ -15,9 +15,9 @@ class McpClientFactory:
     async def create(config: McpClientConfig, user_token: str | None = None) -> AsyncIterator[Client]:
         """Create and connect a FastMCP Client, yielding it for use within an async with block.
 
-        When ``config.auth_mode == "user_token"``, the bearer is taken from ``user_token`` (forwarded
-        per-request from the requesting user, per #948) so external actions are attributed to the actual
-        user. The default ``static_api_key`` mode uses ``config.api_key`` and preserves existing behavior.
+        When ``config.auth_mode == "user_token"``, the bearer is taken from ``user_token`` (resolved
+        by the caller from RunContext via ``McpAuthResolver``) so external actions are attributed to
+        the requesting user. The default ``static_api_key`` mode uses ``config.api_key``.
         """
         auth = McpClientFactory._resolve_auth(config, user_token)
 

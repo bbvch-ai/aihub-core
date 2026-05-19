@@ -10,8 +10,12 @@ config:
     label: Mode d'authentification
     help: |
       Comment les agents s'authentifient auprès du serveur MCP. "Clé API statique" utilise une clé
-      partagée configurée ici ; "Jeton utilisateur" transmet le jeton de l'utilisateur appelant afin
-      que les actions externes lui soient attribuées.
+      partagée configurée ici. "Jeton utilisateur" transmet le jeton bearer de l'utilisateur appelant
+      afin que les actions externes lui soient attribuées — ne fonctionne que pour les exécutions de
+      type chat-completion initiées par un utilisateur qui transmettent un en-tête X-AIHub-User-Token.
+      Les exécutions planifiées, initiées par un processus, par un canal bot ou d'agent à agent ne
+      transmettent pas de jeton utilisateur et échoueront dans ce mode — utilisez la clé API statique
+      dans ces cas.
     static_api_key_label: Clé API statique
     user_token_label: Jeton utilisateur
   api_key:

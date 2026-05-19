@@ -77,7 +77,10 @@ async def _(agent_runner: AgentTestRunner):
     mock_mcp_client.initialize_result = None
 
     @asynccontextmanager
-    async def fake_mcp_create(_config: McpClientConfig) -> AsyncIterator[AsyncMock]:
+    async def fake_mcp_create(
+        _config: McpClientConfig,
+        user_token: str | None = None,  # noqa: ARG001
+    ) -> AsyncIterator[AsyncMock]:
         yield mock_mcp_client
 
     mock_llm = _make_mock_llm()
