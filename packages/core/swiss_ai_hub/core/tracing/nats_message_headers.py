@@ -26,19 +26,20 @@ class NATSMessageHeaders:
 
     def with_aihub_headers(self, aihub_headers: dict[str, str] | None) -> Self:
         """
-        Merge X-AIHub-* request headers into the outgoing NATS headers so they propagate to the
-        agent. Tokens and identity carried this way must never be written to persistent stores.
+        Merge ``X-AIHub-*`` request headers into the outgoing NATS headers so they propagate to
+        the agent.
 
-        Trust model: the caller is responsible for ensuring this dict only contains headers from
-        a trusted boundary (controller after auth, internal service). The forwarding is wildcard
-        on the X-AIHub-* prefix — any header in the dict rides through unchanged. Downstream
-        consumers that grant privileges based on these values rely on that filtering happening
-        upstream.
+        Defensively filters by ``AIHUB_HEADER_PREFIX`` (case-insensitive): any non-matching key
+        in the dict is dropped. This enforces the trust boundary inside the method instead of
+        relying on caller discipline — a caller who accidentally passes an arbitrary headers
+        dict cannot leak ``Authorization``, ``Cookie``, etc. onto the NATS envelope.
         """
         if not aihub_headers:
             return self
+        prefix_lower = self.AIHUB_HEADER_PREFIX.lower()
         for key, value in aihub_headers.items():
-            self.headers[key] = value
+            if key.lower().startswith(prefix_lower):
+                self.headers[key] = value
         return self
 
     def to_dict(self) -> dict[str, str]:

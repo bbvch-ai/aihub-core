@@ -46,8 +46,10 @@ class ExternalAgentEventDistributor:
         Validates user's membership in the thread, identifies the event type, and delegates
         to specialized handlers.
 
-        `aihub_headers` carries X-AIHub-* request headers (e.g. user-identity tokens) that must
-        ride along on the NATS message but never enter the event payload or persistence layer.
+        `aihub_headers` carries X-AIHub-* request headers (e.g. user-identity tokens) on the
+        NATS message envelope, not in the event payload. ``NATSMessageHeaders.with_aihub_headers``
+        filters to the ``X-AIHub-*`` prefix before publishing, so any non-prefixed header in the
+        dict is dropped on its way out.
         """
         thread = ThreadEntity.get_thread_by_id(external_event.thread_id)
 
