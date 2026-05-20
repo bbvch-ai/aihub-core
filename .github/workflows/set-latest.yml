@@ -86,10 +86,16 @@ jobs:
     permissions:
       contents: write
     steps:
+      # The default GITHUB_TOKEN cannot push refs that change .github/workflows
+      # content (it lacks the `workflow` scope, and that scope cannot be granted
+      # to GITHUB_TOKEN). Moving `latest` between release commits typically
+      # changes workflow files, so we authenticate via the SSH deploy key used
+      # by add-tag.yml — deploy keys bypass that restriction.
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
       - name: Move latest git tag
         env:
           SOURCE_TAG: ${{ inputs.source_tag }}
