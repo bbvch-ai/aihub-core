@@ -15,6 +15,7 @@ jobs:
   create-release:
     name: Create GitHub Release with Deployment Bundles
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Extract version
         id: version

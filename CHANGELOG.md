@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.7] - 2026-05-20 - Improved Workflow Resilience with Configured Timeouts
+
+### Changed
+
+- ⚡️ **Enhanced CI/CD Job Stability:** Introduced explicit `timeout-minutes` configurations across numerous GitHub
+  Actions workflows, ensuring that jobs terminate gracefully and preventing prolonged or stuck executions.
+
+______________________________________________________________________
+
 ## [v0.289.6] - 2026-05-20 - Enhanced LLM Ecosystem and Robust Dependency Management
 
 ### Added
