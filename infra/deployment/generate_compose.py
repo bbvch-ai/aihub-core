@@ -7,6 +7,7 @@ version-pinned image tags and clean filenames (no stage/hardware suffixes).
 """
 
 import argparse
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -87,6 +88,94 @@ def load_config():
     config_path = DEPLOYMENT_DIR / "compose-config.yml"
     with config_path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+# Licenses for the images we publish ourselves. The repo's open-source split lives in
+# LICENSES.md — this dict mirrors the per-package license assignment so the rendered
+# compose files can carry an inline `# License:` comment per service. Keys are the
+# compose service-name prefix (= the published image name). Generic placeholders in
+# `licenses.config.json#own_images` (e.g. "agent", "process", "pipeline") that have no
+# corresponding compose service are omitted.
+OWN_IMAGE_LICENSES = {
+    "api": "Apache-2.0",
+    "bot": "Apache-2.0",
+    "web": "AGPL-3.0-or-later",
+    "backup": "AGPL-3.0-or-later",
+    "sysadmin-api": "LicenseRef-Proprietary",
+    "sysadmin-web": "LicenseRef-Proprietary",
+    "llm_wrapping_agent": "Apache-2.0",
+    "few_shot_agent": "Apache-2.0",
+    "rag_agent": "Apache-2.0",
+    "expert_rag_agent": "Apache-2.0",
+    "expert_asking_agent": "Apache-2.0",
+    "namespace_selection_agent": "Apache-2.0",
+    "retrieval_agent": "Apache-2.0",
+    "default_rag_pipeline": "Apache-2.0",
+    "shared_rag_pipeline": "Apache-2.0",
+    # Backup plane variants (dagster webserver/daemon are wired below; the
+    # `backup-code` gRPC server runs our packages/backup code directly).
+    "backup-code": "AGPL-3.0-or-later",
+    # MinerU upstream is AGPL-3.0; we ship thin wrapper images, so the resulting
+    # artifact inherits the upstream license.
+    "mineru-api": "AGPL-3.0-or-later",
+    "mineru-vlm": "AGPL-3.0-or-later",
+}
+
+# Aliases that map a compose service-name to the canonical entry name in
+# `licenses.config.json#docker_licenses`. Needed because compose uses verbose service
+# names like `seaweedfs-master` / `oauth2proxy-attu` while the license matrix groups
+# them under `seaweedfs` / `oauth2-proxy`.
+DOCKER_LICENSE_ALIASES = {
+    "vllm": "vllm-openai",
+    "vllm-bge-m3": "vllm-openai",
+    "vllm-bge-reranker": "vllm-openai",
+    "oauth2proxy-seaweed": "oauth2-proxy",
+    "oauth2proxy-attu": "oauth2-proxy",
+    "oauth2proxy-backup": "oauth2-proxy",
+    "oauth2proxy-dagster": "oauth2-proxy",
+    "backup-webserver": "dagster",
+    "backup-daemon": "dagster",
+    "otel-collector": "opentelemetry-collector-contrib",
+    "openwebui-init": "open-webui",
+}
+
+
+def _load_license_config():
+    """Read licenses.config.json from the repo root (single source of truth for the
+    image-license matrix consumed by both generate-license.sh and this script)."""
+    path = REPO_ROOT / "licenses.config.json"
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _make_service_license_fn(license_config):
+    """Return a Jinja-callable that emits a one-line YAML comment describing the
+    license of the named compose service. Three lookup tiers:
+      1. OWN_IMAGE_LICENSES (with hyphen/underscore variants)
+      2. docker_licenses entry — exact, alias, or prefix match
+      3. UNKNOWN — surfaces in the generated compose so missing entries are visible
+    """
+    external = {entry["service"]: entry for entry in license_config.get("docker_licenses", [])}
+
+    def _comment(text: str) -> str:
+        # No leading whitespace — the template's `  {{ service_license(...) }}`
+        # call already provides the 2-space indent that aligns with the service
+        # block below.
+        return f"# License: {text}"
+
+    def get(service_name: str) -> str:
+        for candidate in (service_name, service_name.replace("-", "_"), service_name.replace("_", "-")):
+            if candidate in OWN_IMAGE_LICENSES:
+                return _comment(f"{OWN_IMAGE_LICENSES[candidate]} — own image (see LICENSES.md)")
+        canonical = DOCKER_LICENSE_ALIASES.get(service_name, service_name)
+        if canonical in external:
+            return _comment(f"{external[canonical]['license']} — third-party (see LICENSE_REPORT.md)")
+        for ext_name in external:
+            if service_name.startswith(ext_name + "-") or service_name == ext_name + "-init":
+                return _comment(f"{external[ext_name]['license']} — third-party (see LICENSE_REPORT.md)")
+        return _comment(f"UNKNOWN — add '{service_name}' to licenses.config.json")
+
+    return get
 
 
 def load_template(env, template_path):
@@ -389,6 +478,7 @@ def main():
 
     config_data = load_config()
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
+    env.globals["service_license"] = _make_service_license_fn(_load_license_config())
 
     if args.check_env:
         from env_check import check_env_vs_compose
