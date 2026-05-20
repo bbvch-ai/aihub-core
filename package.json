@@ -10,5 +10,8 @@
     "overrides": {
       "vue": "3.5.17"
     }
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3"
   }
 }

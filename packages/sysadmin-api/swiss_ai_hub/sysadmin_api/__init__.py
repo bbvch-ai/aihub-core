@@ -4,16 +4,19 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_controller import TenantAdminController
+    from swiss_ai_hub.sysadmin_api.routes.whoami.whoami_controller import WhoamiController
     from swiss_ai_hub.sysadmin_api.sysadmin_runner import SysadminApiRunner
 
 __all__ = [
     "SysadminApiRunner",
     "TenantAdminController",
+    "WhoamiController",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
     "SysadminApiRunner": "swiss_ai_hub.sysadmin_api.sysadmin_runner",
     "TenantAdminController": "swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_controller",
+    "WhoamiController": "swiss_ai_hub.sysadmin_api.routes.whoami.whoami_controller",
 }
 
 

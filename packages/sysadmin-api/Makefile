@@ -32,7 +32,7 @@ pr-ready: format lint
 
 run-dev:
 	@echo "Starting development server with hot reload (port 8001 to avoid clashing with main api)..."
-	uv run uvicorn swiss_ai_hub.sysadmin_api.asgi:app --reload --host 0.0.0.0 --port 8001
+	uv run uvicorn swiss_ai_hub.sysadmin_api.main:app --reload --host 0.0.0.0 --port 8001
 
 run-prod:
 	@echo "Starting server with Gunicorn using ${NUM_WORKERS} workers..."
@@ -41,4 +41,4 @@ run-prod:
 		--timeout=300 \
 		-b 0.0.0.0:8000 \
 		--forwarded-allow-ips=* \
-		swiss_ai_hub.sysadmin_api.asgi:app
+		swiss_ai_hub.sysadmin_api.main:app

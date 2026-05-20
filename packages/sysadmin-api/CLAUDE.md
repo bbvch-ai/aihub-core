@@ -30,7 +30,7 @@ packages/sysadmin-api/
 ├── Dockerfile                    # Multi-stage uv-based build
 ├── swiss_ai_hub/sysadmin_api/
 │   ├── __init__.py
-│   ├── asgi.py                   # Production ASGI entry (swiss_ai_hub.sysadmin_api.asgi:app)
+│   ├── main.py                   # Production ASGI entry (swiss_ai_hub.sysadmin_api.main:app)
 │   ├── sysadmin_runner.py        # Standalone runner (does NOT inherit ApiRunner)
 │   └── routes/
 │       ├── __init__.py           # Lazy public-interface exports
@@ -73,7 +73,7 @@ change** — sysadmin-api never depended on the API's lifespan in the first plac
 
 ## Entry point
 
-`swiss_ai_hub.sysadmin_api.asgi:app` (gunicorn target). Deliberately a fully-qualified module path, **not** `app.main` —
+`swiss_ai_hub.sysadmin_api.main:app` (gunicorn target). Deliberately a fully-qualified module path, **not** `app.main` —
 `packages/api` ships its own `app/main.py`, and this image bundles `swiss-ai-hub-api`, so a bare `app.main` target is a
 module-name collision footgun.
 
@@ -112,7 +112,7 @@ resulting artifact remains proprietary. Proprietary code may NOT be embedded bac
 
 ## Essential files
 
-- Production entry: `swiss_ai_hub/sysadmin_api/asgi.py` (`swiss_ai_hub.sysadmin_api.asgi:app`)
+- Production entry: `swiss_ai_hub/sysadmin_api/main.py` (`swiss_ai_hub.sysadmin_api.main:app`)
 - Standalone runner: `swiss_ai_hub/sysadmin_api/sysadmin_runner.py`
 - Controller(s): `swiss_ai_hub/sysadmin_api/routes/tenant_admin/`
 - Tests: `tests/tenant_admin/`

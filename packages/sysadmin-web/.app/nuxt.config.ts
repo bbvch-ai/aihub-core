@@ -19,19 +19,10 @@ export default defineNuxtConfig({
         clientId: process.env.ENV == 'dev' ? process.env.OAUTH_CLIENT_ID : '',
         authorityUrl: process.env.ENV == 'dev' ? process.env.OAUTH_AUTHORITY_URL : '',
       },
-      // Sysadmin web makes one cross-origin call to the main *API* to check
-      // the user's sysadmin status. Other calls go to the local sysadmin-api
-      // via the SDK (baseURL '/api/v1' relative to sysadmin.${DOMAIN}).
-      // Populated in prod by the inherited plugins/0.runtime-config.client.ts,
-      // which maps MAIN_API_URL from window.__AIHUB_CONFIG__ (/config.js).
-      mainApi: {
-        url: process.env.ENV == 'dev' ? (process.env.MAIN_API_URL ?? 'http://localhost:8000') : '',
-      },
-      // The main app's *UI* origin, for cross-origin browser redirects
-      // (Exit button, non-sysadmin bounce, 403 handler → /{locale}/select-tenant).
-      // In prod the UI and API share ${DOMAIN}, so MAIN_APP_URL == MAIN_API_URL;
-      // in dev they are split (web UI :3333 vs API :8000) — redirecting the
-      // browser to the API origin yields a FastAPI 404. Keep these distinct.
+      // The main app's UI origin, for cross-origin browser redirects when a
+      // non-sysadmin lands here (`useMainAppNavigation.exitToMainApp()`).
+      // Populated in prod by the inherited 0.runtime-config plugin from
+      // MAIN_APP_URL on window.__AIHUB_CONFIG__ (/config.js).
       mainApp: {
         url: process.env.ENV == 'dev' ? (process.env.MAIN_APP_URL ?? 'http://localhost:3333') : '',
       },

@@ -66,4 +66,4 @@ WORKDIR /app
 
 # Fully-qualified module target (not `app.main`) so there is no collision with
 # packages/api's own app/main.py, which is also present in this image.
-ENTRYPOINT ["gunicorn", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--timeout=300", "-b", "0.0.0.0:8000", "--forwarded-allow-ips=*", "swiss_ai_hub.sysadmin_api.asgi:app"]
+ENTRYPOINT ["gunicorn", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--timeout=300", "-b", "0.0.0.0:8000", "--forwarded-allow-ips=*", "swiss_ai_hub.sysadmin_api.main:app"]

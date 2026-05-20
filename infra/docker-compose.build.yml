@@ -2059,11 +2059,7 @@ services:
 
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
-      # CORS allow-list. sysadmin-web (sysadmin.${DOMAIN}) makes a cross-origin
-      # credentialed call to /api/v1/my-tenants here for its is_sys_admin gate,
-      # so the sysadmin subdomain must be an allowed origin (the main web app is
-      # same-origin with this API and would not need it).
-      AIHUB_FRONTEND_ORIGIN: https://${DOMAIN},https://sysadmin.${DOMAIN}
+      AIHUB_FRONTEND_ORIGIN: https://${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: true
       AIHUB_CREATE_DEFAULT_BUCKETS: true
       AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
@@ -2353,12 +2349,8 @@ services:
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
-      # Cross-origin URL the sysadmin middleware uses to verify is_sys_admin
-      # against the main API. Browser-facing — must be the external URL.
-      MAIN_API_URL: https://${DOMAIN}
-      # The main app's UI origin for cross-origin browser redirects
-      # (Exit/bounce → /{locale}/select-tenant). In prod UI and API share
-      # ${DOMAIN}; kept distinct so dev (UI :3333 vs API :8000) works.
+      # The main app's UI origin for the cross-origin browser redirect when a
+      # non-sysadmin lands on sysadmin-web (`useMainAppNavigation.exitToMainApp`).
       MAIN_APP_URL: https://${DOMAIN}
     healthcheck:
       test: [CMD, curl, -f, http://127.0.0.1/]

@@ -12,7 +12,6 @@ import { client } from './sdk/client/client.gen'
 
 const { getToken } = useAuth()
 const { t, locale } = useI18n()
-const localePath = useLocalePath()
 const toast = useToast()
 
 // The sysadmin-web SDK talks to sysadmin-api at /api/v1 (same origin —
@@ -28,19 +27,10 @@ client.setConfig({
   onResponseError: async ({ response }) => {
     console.error('Sysadmin API error', response.status, response._data?.detail)
 
-    // Non-sysadmin trying to reach an endpoint → bounce to tenant selection
-    // on the main app (cross-origin) so they land somewhere they can act on.
-    if (response.status === 403) {
-      const config = useRuntimeConfig()
-      // Browser redirect → the main app's UI origin (NOT the API origin;
-      // they differ in dev). See .app/nuxt.config.ts mainApp vs mainApi.
-      const mainUrl = config.public.mainApp.url
-      if (mainUrl && import.meta.client) {
-        window.location.href = `${mainUrl}${localePath('/select-tenant')}`
-        return
-      }
-    }
-
+    // The sysadmin.global middleware is authoritative for role gating, so a
+    // 403 here only fires in narrow defence-in-depth cases (role revoked
+    // mid-session). Surface it as a toast and let the user navigate; no
+    // implicit cross-origin redirect.
     const rawDetail = response._data?.detail
     const message = typeof rawDetail === 'object' && rawDetail?.message
       ? rawDetail.message

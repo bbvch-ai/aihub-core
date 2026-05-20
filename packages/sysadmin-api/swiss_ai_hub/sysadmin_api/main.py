@@ -1,8 +1,7 @@
 # ruff: noqa: E402
-# Fully-qualified ASGI entrypoint: `swiss_ai_hub.sysadmin_api.asgi:app`.
-# Deliberately NOT `app.main` — packages/api also ships an `app/main.py`, and a
-# bare `app.main` target is a module-name collision footgun once both packages
-# are present in the same image (sysadmin-api bundles swiss-ai-hub-api).
+# ASGI entrypoint: `swiss_ai_hub.sysadmin_api.main:app`. The fully-qualified
+# module path avoids the `app.main:app` collision with packages/api (also
+# installed into this image), which has its own top-level `app/` package.
 from swiss_ai_hub.core.infrastructure import AihubInstrumentor
 
 AihubInstrumentor().instrument()
@@ -11,7 +10,7 @@ from swiss_ai_hub.core.auth import TokenAndOauth2Handler
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.routes import HealthController
 
-from swiss_ai_hub.sysadmin_api import SysadminApiRunner, TenantAdminController
+from swiss_ai_hub.sysadmin_api import SysadminApiRunner, TenantAdminController, WhoamiController
 
 enable_logging()
 
@@ -24,6 +23,7 @@ auth = TokenAndOauth2Handler.from_auth_settings()
 
 runner.mount(
     HealthController(auth=auth).get_health(),
+    WhoamiController(auth=auth).get_whoami(),
     TenantAdminController(auth=auth)
     .list_tenants()
     .list_unconfigured_tenants()

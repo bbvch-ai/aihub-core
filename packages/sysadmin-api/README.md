@@ -52,7 +52,7 @@ and are imported here, not duplicated.
 2. Add an i18n entry for `name`/`description` under `swiss_ai_hub/sysadmin_api/i18n/translations/sysadmin/controllers.*`
    using `SysadminApiLocaleString` (the proprietary counterpart of `ApiLocaleString` — keeps proprietary strings out of
    the Apache-2.0 `packages/api`).
-3. Register on `runner.mount(...)` in `swiss_ai_hub/sysadmin_api/asgi.py` using the fluent builder pattern.
+3. Register on `runner.mount(...)` in `swiss_ai_hub/sysadmin_api/main.py` using the fluent builder pattern.
 4. Add unit + sysadmin-gate tests in `tests/<domain>/`.
 
 ## See also

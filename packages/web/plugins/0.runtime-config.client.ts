@@ -48,7 +48,6 @@ export default defineNuxtPlugin(() => {
   assign(group('webui'), 'url', injected.WEBUI_URL)
   assign(group('ws'), 'endpoint', injected.WS_ENDPOINT)
   assign(group('sysadmin'), 'url', injected.SYSADMIN_URL)
-  assign(group('mainApi'), 'url', injected.MAIN_API_URL)
   assign(group('mainApp'), 'url', injected.MAIN_APP_URL)
   if (injected.API_BASE_URL) publicConfig.apiBaseUrl = injected.API_BASE_URL
 
