@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.8] - 2026-05-20 - Optimized CI/CD Workflows for Enhanced Performance
+
+### Refactor
+
+- 🚀 **Upgraded CI/CD Runners:** Migrated a wide range of GitHub Actions workflows from generic `ubuntu-latest` to more
+  specialized and performant runners like `ubuntu-slim` and `ubuntu-24.04-arm`. This optimization targets improved
+  execution speed, resource efficiency, and broader compatibility across various build and test environments.
+- ⚙️ **Enhanced Test Module Flexibility:** Introduced support for matrix-based runner selection in the `Test Modules`
+  workflow, enabling dynamic allocation of testing environments for different modules. This change also transitions
+  testing for these modules from a dedicated `ubuntu-latest-8-cores` instance to a more standard `ubuntu-latest` (via
+  matrix configuration), paving the way for future environment customizations.
+- ⚡️ **Accelerated Build and Release Processes:** Key workflows such as release creation, changelog generation, license
+  reporting, environment documentation, and documentation deployment are now running on `ubuntu-24.04-arm`, resulting in
+  faster completion times.
+- 🧹 **Streamlined Development Feedback Loops:** Linting, branch/PR semantic checks, and AI-assisted code review
+  workflows have been moved to `ubuntu-slim` runners, providing quicker feedback on code quality and PR readiness.
+
+______________________________________________________________________
+
+## [v0.289.7] - 2026-05-20 - Improved Workflow Resilience with Configured Timeouts
+
+### Changed
+
+- ⚡️ **Enhanced CI/CD Job Stability:** Introduced explicit `timeout-minutes` configurations across numerous GitHub
+  Actions workflows, ensuring that jobs terminate gracefully and preventing prolonged or stuck executions.
+
+______________________________________________________________________
+
 ## [v0.289.6] - 2026-05-20 - Enhanced LLM Ecosystem and Robust Dependency Management
 
 ### Added

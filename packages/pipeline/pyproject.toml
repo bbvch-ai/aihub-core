@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-pipeline"
-version = "0.289.6"
+version = "0.289.8"
 description = "pipeline core"
 requires-python = ">=3.13, <3.14"
 authors = [

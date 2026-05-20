@@ -11,7 +11,8 @@ jobs:
   compute-and-initial-tag:
     name: Compute Version & Initial Tag
     if: github.event.pull_request.merged == true || github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     outputs:
       version: ${{ steps.create-tag.outputs.version }}
     steps:
@@ -140,7 +141,8 @@ jobs:
   changelog:
     name: Generate Changelog
     needs: [compute-and-initial-tag]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
     continue-on-error: true
     steps:
       - name: Checkout the repository
@@ -179,7 +181,8 @@ jobs:
   license-report:
     name: Generate License Report
     needs: [compute-and-initial-tag]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
     continue-on-error: true
     steps:
       - name: Checkout the repository
@@ -224,7 +227,8 @@ jobs:
   env-docs:
     name: Generate Environment Variables Reference
     needs: [compute-and-initial-tag]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - name: Checkout the repository
@@ -254,7 +258,8 @@ jobs:
   sync-docs:
     name: Sync Documentation Translations
     needs: [compute-and-initial-tag]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
     continue-on-error: true
     steps:
       - name: Checkout the repository
@@ -302,7 +307,8 @@ jobs:
       - license-report
       - env-docs
       - sync-docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     steps:
       # Authenticate via a deploy key (not the default GITHUB_TOKEN) because this
       # job amends the merge commit and force-pushes it to `main`. The `main`
@@ -396,7 +402,8 @@ jobs:
   notify-release:
     name: Notify Release Dispatch
     needs: [finalize-release, compute-and-initial-tag]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
     steps:
       - name: Dispatch release-ready
         env:
