@@ -122,7 +122,7 @@ class ThinkingBlock(ContentBlock):
                 f"{self.content.strip()}\n"
                 f"</details>\n"
             )
-        return f'\n<details type="reasoning" done="false">\n' f"{self.content.strip()}" f"</details>\n"
+        return f'\n<details type="reasoning" done="false">\n{self.content.strip()}</details>\n'
 
     def is_complete(self) -> Annotated[bool, "Whether block has content"]:
         """Thinking blocks are complete when they have content"""
@@ -674,9 +674,7 @@ class HumanInTheLoopHandler(EventHandler):
                 }
             )
             # Extract value from input result
-            result = (
-                result.get("value", "") if isinstance(result, dict) else str(result)
-            )
+            result = result.get("value", "") if isinstance(result, dict) else str(result)
 
         if result is not None and result != "":
             response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
@@ -1455,9 +1453,7 @@ class FileProcessingService:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             # Step 1: Initiate upload — get presigned URL + file_id
-            initiate_url = (
-                f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
-            )
+            initiate_url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
             initiate_resp = await client.post(
                 initiate_url,
                 headers=headers,
@@ -1478,9 +1474,7 @@ class FileProcessingService:
             put_resp.raise_for_status()
 
             # Step 3: Validate upload
-            validate_url = (
-                f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
-            )
+            validate_url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
             validate_resp = await client.post(
                 validate_url,
                 headers=headers,
@@ -1720,9 +1714,7 @@ class Pipe:
                 messages = self._message_converter.convert_to_event_format(body["messages"])
 
                 # Process files — upload to agent's dedicated bucket
-                files = await self._file_service.prepare_files_for_event(
-                    __files__, agent_class, agent_id, headers
-                )
+                files = await self._file_service.prepare_files_for_event(__files__, agent_class, agent_id, headers)
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)

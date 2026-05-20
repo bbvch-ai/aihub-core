@@ -23,7 +23,7 @@ jobs:
   # Discover which agents to build by parsing compose-config.yml
   # ---------------------------------------------------------------------------
   discover-agents:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -95,7 +95,7 @@ jobs:
   # Aggregate matrix results: fail the workflow if any agent build failed
   # ---------------------------------------------------------------------------
   build-summary:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: build
     timeout-minutes: 5
     if: always() && needs.build.result != 'skipped'
