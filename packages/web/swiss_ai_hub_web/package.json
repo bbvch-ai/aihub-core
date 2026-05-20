@@ -104,7 +104,7 @@
     "nuxt": "3.21.0",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.2"
+    "typescript-eslint": "^8.59.3"
   },
   "peerDependencies": {
     "primevue": "4.5.5",
