@@ -1,0 +1,10 @@
+---
+# pnpm settings for the docs (VitePress) project.
+# minimumReleaseAge: replaces Dependabot `cooldown` (broken with pnpm).
+# 10080 = 7 days. See packages/web/swiss_ai_hub_web/pnpm-workspace.yaml for
+# the rationale and the dependabot-core issue references.
+minimumReleaseAge: 10080
+
+# pnpm 10 blocks dependency build scripts by default; esbuild needs its
+# native postinstall for the Vitepress build (asset processing).
+onlyBuiltDependencies: [esbuild]
