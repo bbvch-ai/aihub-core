@@ -452,7 +452,9 @@ def run_source_discovery(
     fail_count = 0
 
     for idx, chapter_name in enumerate(chapters, start=1):
-        if process_single_chapter(chapter_name, idx, len(chapters), config, doc_manifest, valid_paths, usage_tracker, dry_run):
+        if process_single_chapter(
+            chapter_name, idx, len(chapters), config, doc_manifest, valid_paths, usage_tracker, dry_run
+        ):
             success_count += 1
         else:
             fail_count += 1

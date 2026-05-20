@@ -14,8 +14,9 @@ on:
 jobs:
   lint-pr-title:
     name: Lint PR Title
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
+    timeout-minutes: 5
     permissions:
       checks: write
       contents: read
@@ -53,8 +54,9 @@ jobs:
             starts with an uppercase character.
   lint-branch-name:
     name: Lint Branch Name
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 5
     permissions:
       checks: write
       contents: read
@@ -71,8 +73,9 @@ jobs:
             /^dependabot\/[a-z0-9_-]+\/.+$/
   check-version-label:
     name: Check Version Label
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
+    timeout-minutes: 5
     permissions:
       checks: write
       contents: read

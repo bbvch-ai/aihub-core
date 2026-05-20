@@ -5,6 +5,108 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.9] - 2026-05-20 - Infrastructure Maintenance
+
+### Changed
+
+- ⚙️ **Updated Playwright Docker image to v1.60.0:** Upgraded the underlying browser automation engine to leverage the
+  latest features, bug fixes, and performance improvements for services utilizing Playwright.
+
+______________________________________________________________________
+
+## [v0.289.8] - 2026-05-20 - Optimized CI/CD Workflows for Enhanced Performance
+
+### Refactor
+
+- 🚀 **Upgraded CI/CD Runners:** Migrated a wide range of GitHub Actions workflows from generic `ubuntu-latest` to more
+  specialized and performant runners like `ubuntu-slim` and `ubuntu-24.04-arm`. This optimization targets improved
+  execution speed, resource efficiency, and broader compatibility across various build and test environments.
+- ⚙️ **Enhanced Test Module Flexibility:** Introduced support for matrix-based runner selection in the `Test Modules`
+  workflow, enabling dynamic allocation of testing environments for different modules. This change also transitions
+  testing for these modules from a dedicated `ubuntu-latest-8-cores` instance to a more standard `ubuntu-latest` (via
+  matrix configuration), paving the way for future environment customizations.
+- ⚡️ **Accelerated Build and Release Processes:** Key workflows such as release creation, changelog generation, license
+  reporting, environment documentation, and documentation deployment are now running on `ubuntu-24.04-arm`, resulting in
+  faster completion times.
+- 🧹 **Streamlined Development Feedback Loops:** Linting, branch/PR semantic checks, and AI-assisted code review
+  workflows have been moved to `ubuntu-slim` runners, providing quicker feedback on code quality and PR readiness.
+
+______________________________________________________________________
+
+## [v0.289.7] - 2026-05-20 - Improved Workflow Resilience with Configured Timeouts
+
+### Changed
+
+- ⚡️ **Enhanced CI/CD Job Stability:** Introduced explicit `timeout-minutes` configurations across numerous GitHub
+  Actions workflows, ensuring that jobs terminate gracefully and preventing prolonged or stuck executions.
+
+______________________________________________________________________
+
+## [v0.289.6] - 2026-05-20 - Enhanced LLM Ecosystem and Robust Dependency Management
+
+### Added
+
+- 📦 **Introduced `pnpm-workspace.yaml` configurations** across frontend and documentation projects, leveraging `pnpm`'s
+  native `minimumReleaseAge` for enhanced supply-chain security and consistent dependency management.
+- ⚙️ Added **`onlyBuiltDependencies` configurations** for selected frontend packages to ensure compatibility with
+  `pnpm 10`'s stricter default behavior regarding dependency build scripts.
+- 🧪 Implemented a new **integration test suite** for LiteLLM text generation models, dynamically verifying the
+  functionality and responsiveness of all advertised models on the Swiss LLM Cloud proxy.
+
+### Changed
+
+- 🧠 Updated the **default text generation LLM** for agents and pipelines to `text-generation/gemma-4-31B-it`, replacing
+  the retired `gpt-oss-120b` for improved performance and access to the latest models.
+- 🚀 Expanded the **Swiss LLM Cloud model catalog** in LiteLLM, incorporating new models such as `Kimi-K2.6`,
+  `Ministral-3-14B-Instruct-2512`, and `Qwen3.5-122B-A10B-FP8`, and updating cost metrics for `gemma-4-31B-it`.
+- 🔄 Enhanced **CI/CD frontend linting workflows** to utilize `corepack` for `pnpm` installation, ensuring a more
+  consistent and robust dependency setup across development and automated testing environments.
+- ⬆️ Upgraded the pinned **`pnpm` package manager version** to 10.20.0, contributing to improved build process stability
+  and security.
+
+### Fixed
+
+- 🐛 Resolved **Dependabot CI failures** stemming from `pnpm` incompatibilities with Dependabot's `cooldown` mechanism by
+  transitioning to `pnpm`'s native `minimumReleaseAge` feature.
+- 📄 Corrected and updated **documentation** across `README.md` and `arc42` decisions to accurately reflect the latest
+  available LLM models on the Swiss LLM Cloud and their usage in the platform.
+
+______________________________________________________________________
+
+## [v0.289.5] - 2026-05-19 - Refined Dependabot Cooldowns
+
+### Changed
+
+- 🔄 **Streamlined Dependabot Cooldowns:** Corrected Dependabot configurations for **Docker** and **GitHub Actions**
+  ecosystems by removing unsupported `semver-minor-days` and `semver-patch-days` cooldown settings. These ecosystems
+  exclusively support `default-days`, as their tags are not semver-decomposable, ensuring more accurate and effective
+  dependency update management.
+
+______________________________________________________________________
+
+## [v0.289.4] - 2026-05-19 - Fortified Repository with Codeowners and Tuned Dependabot
+
+### Security
+
+- 🔑 **Implemented `CODEOWNERS` for Critical Paths:** Enforced mandatory reviews from core maintainers for changes to
+  critical areas like CI/CD, deployment infrastructure, shared core packages, and security policies, significantly
+  enhancing repository security and integrity.
+
+### Changed
+
+- ⚙️ **Refined Dependabot Update Strategy:** Overhauled Dependabot configuration to improve stability and reduce PR
+  noise by switching to monthly update intervals, introducing cooldown periods for new releases, and intelligently
+  grouping version and security updates.
+- 📄 **Updated Contribution Guidelines:** Added clear guidance to `CONTRIBUTING.md` outlining the new `CODEOWNERS` review
+  requirements for sensitive parts of the codebase.
+
+### Refactor
+
+- 🧹 **Adjusted Dockerfile Path in Dependabot:** Corrected the directory reference for the Playwright Docker deployment
+  within the Dependabot configuration.
+
+______________________________________________________________________
+
 ## [v0.289.3] - 2026-05-12 - Dynamic Forms and Stability Enhancements
 
 ### Fixed
