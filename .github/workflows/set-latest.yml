@@ -52,7 +52,7 @@ jobs:
   # Discover which images to retag by parsing compose-config.yml
   # ---------------------------------------------------------------------------
   discover-images:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       matrix: ${{ steps.parse.outputs.matrix }}
     steps:
@@ -85,7 +85,7 @@ jobs:
   # Move the "latest" git tag to point to the source tag's commit
   # ---------------------------------------------------------------------------
   retag-git:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: write
     steps:
@@ -116,7 +116,7 @@ jobs:
   # so git tags, container :latest, and the GitHub Release stay consistent.
   # ---------------------------------------------------------------------------
   promote-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: [retag-git, retag-docker]
     permissions:
       contents: write

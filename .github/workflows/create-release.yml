@@ -14,7 +14,7 @@ permissions:
 jobs:
   create-release:
     name: Create GitHub Release with Deployment Bundles
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Extract version
         id: version

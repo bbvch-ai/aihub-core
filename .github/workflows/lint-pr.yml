@@ -11,7 +11,7 @@ permissions:
 jobs:
   lint-backend:
     name: Lint Backend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
@@ -31,7 +31,7 @@ jobs:
           working_directory: ${{ matrix.folder }}
   lint-frontend:
     name: Lint Web
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Lint frontend
         uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
@@ -41,7 +41,7 @@ jobs:
           lockfile: packages/web/swiss_ai_hub_web/pnpm-lock.yaml
   license-check:
     name: License Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Checkout code

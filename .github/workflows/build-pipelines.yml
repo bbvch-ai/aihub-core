@@ -23,7 +23,7 @@ jobs:
   # Discover which pipelines to build by parsing compose-config.yml
   # ---------------------------------------------------------------------------
   discover-pipelines:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'repository_dispatch'
