@@ -24,6 +24,7 @@ jobs:
   # ---------------------------------------------------------------------------
   discover-agents:
     runs-on: ubuntu-slim
+    timeout-minutes: 5
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'repository_dispatch'
@@ -48,6 +49,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: discover-agents
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.discover-agents.outputs.matrix) }}
@@ -92,6 +94,7 @@ jobs:
   build-summary:
     runs-on: ubuntu-slim
     needs: build
+    timeout-minutes: 5
     if: always() && needs.build.result != 'skipped'
     steps:
       - name: Check matrix results

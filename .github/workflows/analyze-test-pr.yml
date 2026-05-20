@@ -15,6 +15,7 @@ jobs:
     name: Test Modules
     runs-on: ${{ matrix.runner }}
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 30
     permissions:
       id-token: write
       contents: write
@@ -79,6 +80,7 @@ jobs:
     name: Env / Compose Consistency
     runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -101,6 +103,7 @@ jobs:
     needs: test-modules
     runs-on: ubuntu-slim
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    timeout-minutes: 10
     permissions:
       contents: read
       issues: read
@@ -126,6 +129,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     needs: test-modules
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write

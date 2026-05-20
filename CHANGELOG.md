@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.7] - 2026-05-20 - Improved Workflow Resilience with Configured Timeouts
+
+### Changed
+
+- ⚡️ **Enhanced CI/CD Job Stability:** Introduced explicit `timeout-minutes` configurations across numerous GitHub
+  Actions workflows, ensuring that jobs terminate gracefully and preventing prolonged or stuck executions.
+
+______________________________________________________________________
+
+## [v0.289.6] - 2026-05-20 - Enhanced LLM Ecosystem and Robust Dependency Management
+
+### Added
+
+- 📦 **Introduced `pnpm-workspace.yaml` configurations** across frontend and documentation projects, leveraging `pnpm`'s
+  native `minimumReleaseAge` for enhanced supply-chain security and consistent dependency management.
+- ⚙️ Added **`onlyBuiltDependencies` configurations** for selected frontend packages to ensure compatibility with
+  `pnpm 10`'s stricter default behavior regarding dependency build scripts.
+- 🧪 Implemented a new **integration test suite** for LiteLLM text generation models, dynamically verifying the
+  functionality and responsiveness of all advertised models on the Swiss LLM Cloud proxy.
+
+### Changed
+
+- 🧠 Updated the **default text generation LLM** for agents and pipelines to `text-generation/gemma-4-31B-it`, replacing
+  the retired `gpt-oss-120b` for improved performance and access to the latest models.
+- 🚀 Expanded the **Swiss LLM Cloud model catalog** in LiteLLM, incorporating new models such as `Kimi-K2.6`,
+  `Ministral-3-14B-Instruct-2512`, and `Qwen3.5-122B-A10B-FP8`, and updating cost metrics for `gemma-4-31B-it`.
+- 🔄 Enhanced **CI/CD frontend linting workflows** to utilize `corepack` for `pnpm` installation, ensuring a more
+  consistent and robust dependency setup across development and automated testing environments.
+- ⬆️ Upgraded the pinned **`pnpm` package manager version** to 10.20.0, contributing to improved build process stability
+  and security.
+
+### Fixed
+
+- 🐛 Resolved **Dependabot CI failures** stemming from `pnpm` incompatibilities with Dependabot's `cooldown` mechanism by
+  transitioning to `pnpm`'s native `minimumReleaseAge` feature.
+- 📄 Corrected and updated **documentation** across `README.md` and `arc42` decisions to accurately reflect the latest
+  available LLM models on the Swiss LLM Cloud and their usage in the platform.
+
+______________________________________________________________________
+
 ## [v0.289.5] - 2026-05-19 - Refined Dependabot Cooldowns
 
 ### Changed

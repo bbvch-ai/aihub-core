@@ -24,6 +24,7 @@ jobs:
   # ---------------------------------------------------------------------------
   discover-pipelines:
     runs-on: ubuntu-slim
+    timeout-minutes: 5
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'repository_dispatch'
@@ -48,6 +49,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: discover-pipelines
+    timeout-minutes: 45
     strategy:
       matrix: ${{ fromJson(needs.discover-pipelines.outputs.matrix) }}
     continue-on-error: true

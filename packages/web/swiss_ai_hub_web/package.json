@@ -2,7 +2,7 @@
   "name": "@swiss-ai-hub/web",
   "license": "Apache-2.0",
   "type": "module",
-  "version": "0.289.5",
+  "version": "0.289.7",
   "description": "Swiss AI Hub - Admin & Management UI (Nuxt 3 layer)",
   "main": "./nuxt.config.ts",
   "repository": {
@@ -39,7 +39,7 @@
     "lint": "(test -f .app/.nuxt/eslint.config.mjs || nuxi prepare .app) && eslint . --fix",
     "generate-sdk": "openapi-ts"
   },
-  "packageManager": "pnpm@9.14.2+sha512.6e2baf77d06b9362294152c851c4f278ede37ab1eba3a55fda317a4a17b209f4dbb973fb250a77abc463a341fcb1f17f17cfa24091c4eb319cda0d9b84278387",
+  "packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd",
   "dependencies": {
     "@formkit/i18n": "^1.7.2",
     "@formkit/nuxt": "^2.0.0",

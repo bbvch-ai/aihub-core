@@ -16,6 +16,7 @@ jobs:
     name: Lint PR Title
     runs-on: ubuntu-slim
     if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
+    timeout-minutes: 5
     permissions:
       checks: write
       contents: read
@@ -55,6 +56,7 @@ jobs:
     name: Lint Branch Name
     runs-on: ubuntu-slim
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 5
     permissions:
       checks: write
       contents: read
@@ -73,6 +75,7 @@ jobs:
     name: Check Version Label
     runs-on: ubuntu-slim
     if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
+    timeout-minutes: 5
     permissions:
       checks: write
       contents: read

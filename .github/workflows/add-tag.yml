@@ -12,6 +12,7 @@ jobs:
     name: Compute Version & Initial Tag
     if: github.event.pull_request.merged == true || github.event_name == 'push'
     runs-on: ubuntu-slim
+    timeout-minutes: 10
     outputs:
       version: ${{ steps.create-tag.outputs.version }}
     steps:
@@ -141,6 +142,7 @@ jobs:
     name: Generate Changelog
     needs: [compute-and-initial-tag]
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
     continue-on-error: true
     steps:
       - name: Checkout the repository
@@ -180,6 +182,7 @@ jobs:
     name: Generate License Report
     needs: [compute-and-initial-tag]
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
     continue-on-error: true
     steps:
       - name: Checkout the repository
@@ -194,7 +197,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
-          npm install -g pnpm
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 25.x
+      - name: Install pnpm via corepack
+        run: |
+          npm install -g --ignore-scripts corepack@0.34.7
+          corepack enable pnpm
+          corepack install
+        working-directory: packages/web/swiss_ai_hub_web
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -216,6 +228,7 @@ jobs:
     name: Generate Environment Variables Reference
     needs: [compute-and-initial-tag]
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - name: Checkout the repository
@@ -246,6 +259,7 @@ jobs:
     name: Sync Documentation Translations
     needs: [compute-and-initial-tag]
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
     continue-on-error: true
     steps:
       - name: Checkout the repository
@@ -255,7 +269,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.13.1
+          package_json_file: docs/package.json
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -294,6 +308,7 @@ jobs:
       - env-docs
       - sync-docs
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     steps:
       # Authenticate via a deploy key (not the default GITHUB_TOKEN) because this
       # job amends the merge commit and force-pushes it to `main`. The `main`
@@ -388,6 +403,7 @@ jobs:
     name: Notify Release Dispatch
     needs: [finalize-release, compute-and-initial-tag]
     runs-on: ubuntu-slim
+    timeout-minutes: 5
     steps:
       - name: Dispatch release-ready
         env:

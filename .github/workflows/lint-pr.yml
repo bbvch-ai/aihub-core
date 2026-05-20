@@ -13,6 +13,7 @@ jobs:
     name: Lint Backend
     runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -32,6 +33,7 @@ jobs:
   lint-frontend:
     name: Lint Web
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
     steps:
       - name: Lint frontend
         uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
@@ -43,6 +45,7 @@ jobs:
     name: License Check
     runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -64,8 +67,12 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 25.x
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Install pnpm via corepack
+        run: |
+          npm install -g --ignore-scripts corepack@0.34.7
+          corepack enable pnpm
+          corepack install
+        working-directory: packages/web/swiss_ai_hub_web
       - name: Make license check script executable
         run: chmod +x ./generate-license.sh
       - name: Run license check
