@@ -12,15 +12,13 @@
 #   2. NOT bleeding edge. A `cooldown` window holds back freshly published
 #      releases so we never pull a version on its release day — supply-chain
 #      safety, since most malicious-package incidents are caught and yanked
-#      within days. uv/docker/github-actions use Dependabot `cooldown`. The
-#      WEB npm entry does NOT: Dependabot cooldown is broken with pnpm — it
-#      desyncs package.json from pnpm-lock.yaml, so every grouped PR fails CI
-#      with ERR_PNPM_OUTDATED_LOCKFILE (dependabot-core issues 13165 / 14339).
-#      web uses pnpm-native `minimumReleaseAge` instead
-#      (packages/web/swiss_ai_hub_web/pnpm-workspace.yaml), applied during
-#      both resolution and lockfile generation so it cannot drift. docs/e2e
-#      are also pnpm and still on `cooldown` (same bug) — migrating them is a
-#      tracked follow-up.
+#      within days. uv/docker/github-actions use Dependabot `cooldown`. ALL
+#      THREE npm entries (web/docs/e2e) do NOT: Dependabot cooldown is broken
+#      with pnpm — it desyncs package.json from pnpm-lock.yaml, so every
+#      grouped PR fails CI with ERR_PNPM_OUTDATED_LOCKFILE (dependabot-core
+#      issues 13165 / 14339). npm uses pnpm-native `minimumReleaseAge` (in
+#      each project's pnpm-workspace.yaml), applied during both resolution
+#      and lockfile generation so it cannot drift.
 #
 #   3. Low, predictable cadence. `interval: monthly` → one batched PR per
 #      ecosystem per month instead of a weekly stream. CI runs full
@@ -114,13 +112,8 @@ updates:
     directory: /docs
     schedule:
       interval: monthly
-    # TODO: docs is also pnpm — same Dependabot-cooldown-vs-pnpm bug applies.
-    # Out of scope for the web pnpm-10 upgrade; migrate docs to pnpm
-    # `minimumReleaseAge` in a follow-up. Kept here until then.
-    cooldown:
-      default-days: 7
-      semver-minor-days: 14
-      semver-patch-days: 7
+    # No npm cooldown — pnpm `minimumReleaseAge` in docs/pnpm-workspace.yaml
+    # enforces the supply-chain lag instead (see web entry above for why).
     open-pull-requests-limit: 5
     labels: [dependencies, docs]
     commit-message:
@@ -145,13 +138,8 @@ updates:
     directory: /e2e
     schedule:
       interval: monthly
-    # TODO: e2e is also pnpm — same Dependabot-cooldown-vs-pnpm bug applies.
-    # Out of scope for the web pnpm-10 upgrade; migrate e2e to pnpm
-    # `minimumReleaseAge` in a follow-up. Kept here until then.
-    cooldown:
-      default-days: 7
-      semver-minor-days: 14
-      semver-patch-days: 7
+    # No npm cooldown — pnpm `minimumReleaseAge` in e2e/pnpm-workspace.yaml
+    # enforces the supply-chain lag instead (see web entry above for why).
     open-pull-requests-limit: 5
     labels: [dependencies, tests]
     commit-message:
