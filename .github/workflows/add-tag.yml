@@ -11,7 +11,7 @@ jobs:
   compute-and-initial-tag:
     name: Compute Version & Initial Tag
     if: github.event.pull_request.merged == true || github.event_name == 'push'
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-slim
     outputs:
       version: ${{ steps.create-tag.outputs.version }}
     steps:
