@@ -3537,7 +3537,7 @@ wheels = [
 
 [[package]]
 name = "openinference-instrumentation"
-version = "0.1.49"
+version = "0.1.50"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "openinference-semantic-conventions" },
@@ -3545,9 +3545,9 @@ dependencies = [
     { name = "opentelemetry-sdk" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a7/ca/fe39c30aaee9872c4277118735c1275e68c13abffe9b8ede31195ca868f0/openinference_instrumentation-0.1.49.tar.gz", hash = "sha256:cdc6334b1595f7b94cbcbf8f1834fadc888364d357281243caadfcd1d6aa9fac", size = 24718, upload-time = "2026-05-07T16:58:57.438Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/bc/9126db2e991304d05e777c3cd107580cc1e721f2db91586dda09db7600f2/openinference_instrumentation-0.1.50.tar.gz", hash = "sha256:3ce2e19bc832cbfc5e141a1a78d6f5f9547b98ddfaecf8128edd2b5e6ed5c6e6", size = 24788, upload-time = "2026-05-11T22:04:18.14Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/1c/0dd34394519f2ac9227311604a9681392fdb1f4565995d6a90cd396bbc9b/openinference_instrumentation-0.1.49-py3-none-any.whl", hash = "sha256:7960afc1904d9d40b9e7643a902c9d3bd3ba0d1bbc9c57d8f99d29947a23cebb", size = 30924, upload-time = "2026-05-07T16:58:56.255Z" },
+    { url = "https://files.pythonhosted.org/packages/02/0f/1eba26ef9599a69e08c60df0d9826a7530fa019ad4da66a9d6d9f1841ff1/openinference_instrumentation-0.1.50-py3-none-any.whl", hash = "sha256:e757e308df590f393d02b1cfcbd934d728cf876fca2f4432b2e7052ae9b64622", size = 31002, upload-time = "2026-05-11T22:04:17.12Z" },
 ]
 
 [[package]]
@@ -5812,7 +5812,7 @@ requires-dist = [
     { name = "s3fs", specifier = ">=2024.10.0,<2025.0.0" },
     { name = "scim2-client", specifier = ">=0.7.5" },
     { name = "tabulate", specifier = ">=0.9.0" },
-    { name = "transformers", specifier = ">=4.57.3" },
+    { name = "transformers", specifier = ">=5.8.1" },
 ]
 
 [package.metadata.requires-dev]
@@ -6124,7 +6124,7 @@ wheels = [
 
 [[package]]
 name = "transformers"
-version = "5.8.0"
+version = "5.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
@@ -6137,9 +6137,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f2/36/390075693b76d4fb4a2bea360fb6080347763bd1f1147c49ed0ed938778c/transformers-5.8.0.tar.gz", hash = "sha256:6cc9a1f0291d16b1c1b735bad775e78ebefff7722701d4e28f98aaaa2bd6fb91", size = 8528141, upload-time = "2026-05-05T16:50:04.778Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e7/e6/4134ea2fbea322cddc7ffc94a0d8ee47fe32ce8e876b320cd37d88edfc4d/transformers-5.8.1.tar.gz", hash = "sha256:4dd5b6de4105725104d84fd6abd74b305f4debfc251b38c648ee5dd087cf543b", size = 8532019, upload-time = "2026-05-13T03:21:57.234Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/7b/5621d08b34ac35deb9fa14b58d27d124d21ef125ee1c64bc724ca47dfb63/transformers-5.8.0-py3-none-any.whl", hash = "sha256:e9d2cae6d195a7e1e05164c5ebf26142a7044e4dc4267274f4809204f92827e4", size = 10630279, upload-time = "2026-05-05T16:50:01.026Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/b1/8be7e7ef0b5200491312201918b6125ef9c9df9dd0f0240ccef9ac824e6b/transformers-5.8.1-py3-none-any.whl", hash = "sha256:5340fb95962162cdfdae5cc91d7f8fedd92ed75216c1154c5e1f590fcf56dd0e", size = 10632882, upload-time = "2026-05-13T03:21:52.876Z" },
 ]
 
 [[package]]
