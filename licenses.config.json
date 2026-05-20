@@ -190,10 +190,9 @@
     },
     {
       "service": "postgres-documentdb",
-      "license": "Apache-2.0",
+      "license": "MIT",
       "status": "✅",
-      "notes": "Permissive licenses"
-
+      "notes": "FerretDB's DocumentDB fork (MIT); upstream microsoft/documentdb is also MIT"
     },
     {
       "service": "etcd",
@@ -210,8 +209,8 @@
     {
       "service": "attu",
       "license": "Apache-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
+      "status": "⚠️",
+      "notes": "Apache-2.0 up to v2.5.x. From v2.6.0 the upstream went proprietary — we pin to ≤v2.5.x to stay on the open-source line. Verify before bumping."
     },
     {
       "service": "nats",
@@ -229,13 +228,13 @@
       "service": "langfuse-web",
       "license": "MIT",
       "status": "✅",
-      "notes": "Open-source LLM observability and evaluation platform"
+      "notes": "Core MIT. The repo's ee/ subtree is proprietary (Langfuse EE) — we deploy only the OSS edition."
     },
     {
       "service": "langfuse-worker",
       "license": "MIT",
       "status": "✅",
-      "notes": "Langfuse background worker"
+      "notes": "Core MIT. The repo's ee/ subtree is proprietary (Langfuse EE) — we deploy only the OSS edition."
     },
     {
       "service": "clickhouse",
@@ -253,13 +252,13 @@
       "service": "litellm",
       "license": "MIT",
       "status": "✅",
-      "notes": "Permissive license"
+      "notes": "Core MIT. The repo's enterprise/ subtree is proprietary — we deploy only the OSS edition."
     },
     {
       "service": "open-webui",
-      "license": "BSD-3-Clause",
+      "license": "Open WebUI License (modified BSD-3-Clause)",
       "status": "⚠️",
-      "notes": "Permissive with required branding retention"
+      "notes": "Custom license: BSD-3-Clause base + clause prohibiting removal/alteration of the 'Open WebUI' branding, except for deployments serving ≤50 end-users in any rolling 30-day window. Larger deployments require a commercial license. Not an OSI-approved license."
     },
     {
       "service": "playwright",
@@ -281,9 +280,9 @@
     },
     {
       "service": "traefik",
-      "license": "Apache-2.0",
+      "license": "MIT",
       "status": "✅",
-      "notes": "Permissive license"
+      "notes": "Permissive license (verified against traefik/traefik LICENSE on GitHub)"
     },
     {
       "service": "oauth2-proxy",
@@ -347,9 +346,9 @@
     },
     {
       "service": "neo4j",
-      "license": "GPL",
-      "status": "✅",
-      "notes": "Permissive license"
+      "license": "GPL-3.0",
+      "status": "⚠️",
+      "notes": "Neo4j Community Edition is GPL-3.0. GPL has no network-copyleft (unlike AGPL), so running it as a network service does not propagate to our code. The Enterprise edition uses a different commercial license — do not switch."
     },
     {
       "service": "rclone",

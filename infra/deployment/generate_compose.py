@@ -115,10 +115,11 @@ OWN_IMAGE_LICENSES = {
     # Backup plane variants (dagster webserver/daemon are wired below; the
     # `backup-code` gRPC server runs our packages/backup code directly).
     "backup-code": "AGPL-3.0-or-later",
-    # MinerU upstream is AGPL-3.0; we ship thin wrapper images, so the resulting
-    # artifact inherits the upstream license.
-    "mineru-api": "AGPL-3.0-or-later",
-    "mineru-vlm": "AGPL-3.0-or-later",
+    # MinerU upstream is Apache-2.0 with an additional commercial-use threshold
+    # clause (see LICENSES.md). We ship thin wrapper images that inherit the
+    # upstream terms — the SPDX-identifiable base is Apache-2.0.
+    "mineru-api": "Apache-2.0",
+    "mineru-vlm": "Apache-2.0",
 }
 
 # Aliases that map a compose service-name to the canonical entry name in

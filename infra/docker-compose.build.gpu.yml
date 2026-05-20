@@ -654,7 +654,7 @@ services:
   # data modeling and querying.
   # ===================================================================
 
-  # License: GPL — third-party (see LICENSE_REPORT.md)
+  # License: GPL-3.0 — third-party (see LICENSE_REPORT.md)
   neo4j:
     container_name: neo4j
     image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
@@ -1683,7 +1683,7 @@ services:
   # through LiteLLM for unified model routing.
   # ===================================================================
 
-  # License: AGPL-3.0-or-later — own image (see LICENSES.md)
+  # License: Apache-2.0 — own image (see LICENSES.md)
   mineru-api:
     container_name: mineru-api
     image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
@@ -1721,7 +1721,7 @@ services:
           memory: 4G
     networks:
       - backend
-  # License: AGPL-3.0-or-later — own image (see LICENSES.md)
+  # License: Apache-2.0 — own image (see LICENSES.md)
   mineru-vlm:
     container_name: mineru-vlm
     platform: linux/amd64
@@ -1803,7 +1803,7 @@ services:
   # environment variables for connecting to other services.
   # ===================================================================
 
-  # License: BSD-3-Clause — third-party (see LICENSE_REPORT.md)
+  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.8.10
@@ -2086,7 +2086,7 @@ services:
       - data
       - storage
 
-  # License: BSD-3-Clause — third-party (see LICENSE_REPORT.md)
+  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   openwebui-init:
     container_name: openwebui-init
     image: ghcr.io/bbvch-ai/aihub-core/postgres:17
@@ -2296,7 +2296,7 @@ services:
   # Traefik manages incoming traffic, TLS, and routing to services.
   # It is only enabled in non-dev stages.
   # ===================================================================
-  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   traefik:
     container_name: traefik
     image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2

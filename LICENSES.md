@@ -63,6 +63,27 @@ Policy:
   Apache-2.0).
 - Proprietary → Apache / AGPL: **never.** Proprietary symbols must not leak into the open-source packages.
 
+## Third-party services with special terms
+
+Several Docker images the stack orchestrates carry non-standard or conditional licenses. The base SPDX identifier in
+`licenses.config.json#docker_licenses` is the closest standard match, but the conditions below apply in addition:
+
+- **MinerU** (`mineru-api`, `mineru-vlm`) — base Apache-2.0 **plus** a commercial-use threshold clause: above the
+  upstream's stated revenue/usage threshold, a separate commercial license is required. We ship thin wrapper images that
+  inherit these terms. See <https://github.com/opendatalab/MinerU/blob/master/LICENSE.md>.
+- **Open WebUI** (`open-webui`) — "Open WebUI License" — modified BSD-3-Clause with a branding-preservation clause. The
+  "Open WebUI" name/logo may not be altered or removed, except in deployments serving ≤50 end-users in any rolling
+  30-day window. Larger deployments need a commercial license. Not OSI-approved. See
+  <https://github.com/open-webui/open-webui/blob/main/LICENSE>.
+- **Attu** (`attu`) — Apache-2.0 up to v2.5.x; the upstream re-licensed to a proprietary terms from **v2.6.0** onward.
+  We pin to `≤v2.5.x` to stay on the open-source line. Re-evaluate before bumping past 2.5.
+- **Neo4j Community Edition** (`neo4j`) — GPL-3.0. Run as a separate network service; GPL has no network-copyleft
+  (unlike AGPL), so it does not propagate to our code. The Neo4j Enterprise edition uses a different commercial license
+  — do **not** switch images.
+- **Langfuse** (`langfuse-web`, `langfuse-worker`) and **LiteLLM** (`litellm`) — core MIT, but each repo has an `ee/` or
+  `enterprise/` subtree under a separate commercial license. We deploy only the OSS edition; the proprietary features
+  are not built into the images we use.
+
 ## Reference
 
 - Root `LICENSE` — Apache License 2.0 (canonical text).
