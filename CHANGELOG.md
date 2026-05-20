@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.9] - 2026-05-20 - Infrastructure Maintenance
+
+### Changed
+
+- ⚙️ **Updated Playwright Docker image to v1.60.0:** Upgraded the underlying browser automation engine to leverage the
+  latest features, bug fixes, and performance improvements for services utilizing Playwright.
+
+______________________________________________________________________
+
 ## [v0.289.8] - 2026-05-20 - Optimized CI/CD Workflows for Enhanced Performance
 
 ### Refactor
