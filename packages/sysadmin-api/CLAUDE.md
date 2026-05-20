@@ -1,10 +1,10 @@
-# packages/sysadmin-api - System Administration API (BSL)
+# packages/sysadmin-api - System Administration API (Proprietary)
 
 **Purpose**: FastAPI service for system-administrator-only operations. Multi-tenant management lives here. Runs as a
 separate Docker image on `sysadmin.${DOMAIN}/api/v1/*`.
 
-**License**: Business Source License 1.1 (BUSL-1.1). Non-production use only. The package's `LICENSE` is the
-authoritative source for terms.
+**License**: Proprietary — All Rights Reserved (`LicenseRef-Proprietary`). No use granted; commercial license required
+for any use. The package's `LICENSE` is the authoritative source for terms.
 
 ## Scope responsibility
 
@@ -24,7 +24,7 @@ NOT here:
 ```
 packages/sysadmin-api/
 ├── pyproject.toml
-├── LICENSE                       # BUSL-1.1 (full text + project parameters)
+├── LICENSE                       # Proprietary — All Rights Reserved
 ├── README.md
 ├── Makefile                      # lint, format, test, run-dev, run-prod
 ├── Dockerfile                    # Multi-stage uv-based build
@@ -97,8 +97,9 @@ This package depends on:
 Both dependencies are workspace deps. Cross-package imports go through the public `swiss_ai_hub.api` /
 `swiss_ai_hub.core` interfaces (NOT deep paths) — same convention as every other cross-package import in this repo.
 
-**Apache-2.0 → BUSL-1.1 is one-way compatible**: Apache code can be embedded in BSL packages. BSL code may NOT be
-embedded back into Apache packages. Do not let `sysadmin_api` symbols leak into `core` or `api`.
+**Apache-2.0 → proprietary is one-way compatible**: Apache code can be embedded in this proprietary package, but the
+resulting artifact remains proprietary. Proprietary code may NOT be embedded back into Apache packages. Do not let
+`sysadmin_api` symbols leak into `core` or `api`.
 
 ## Commands
 
@@ -115,5 +116,5 @@ embedded back into Apache packages. Do not let `sysadmin_api` symbols leak into 
 - Standalone runner: `swiss_ai_hub/sysadmin_api/sysadmin_runner.py`
 - Controller(s): `swiss_ai_hub/sysadmin_api/routes/tenant_admin/`
 - Tests: `tests/tenant_admin/`
-- BSL terms: `LICENSE`
+- Proprietary terms: `LICENSE`
 - Repo-wide license matrix: `LICENSES.md` (root)

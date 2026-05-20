@@ -10,7 +10,7 @@ authors = [
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
     { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
-license = "LicenseRef-BUSL-1.1"
+license = "LicenseRef-Proprietary"
 license-files = ["LICENSE"]
 readme = "README.md"
 dependencies = [

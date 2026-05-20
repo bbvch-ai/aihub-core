@@ -10,7 +10,7 @@ Connect, orchestrate, and monitor best-in-class open-source tools to deliver\
 what cloud AI platforms promise, but where you own every layer.
 
 [![GitHub Release](https://img.shields.io/github/v/release/bbvch-ai/aihub-core?style=flat-square)](https://github.com/bbvch-ai/aihub-core/releases)
-[![License](https://img.shields.io/badge/license-Apache%202.0%20%2F%20AGPL%20%2F%20BUSL-blue?style=flat-square)](LICENSES.md)
+[![License](https://img.shields.io/badge/license-Apache%202.0%20%2F%20AGPL%20%2F%20Proprietary-blue?style=flat-square)](LICENSES.md)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/swiss-ai-hub-core?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/swiss-ai-hub-core/)
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
@@ -457,8 +457,10 @@ Swiss AI Hub uses a **mixed-license model** — each published artifact carries 
 - **Apache-2.0** — the platform runtime and shared code (`packages/core`, `agent`, `api`, `bot`, `pipeline`, `process`,
   and the repository root). See [LICENSE](LICENSE).
 - **AGPL-3.0-or-later** — the frontend (`packages/web`) and backup service (`packages/backup`).
-- **BUSL-1.1** — multi-tenant administration (`packages/sysadmin-api`, `packages/sysadmin-web`): non-production use only
-  until the Change Date, after which it converts to Apache-2.0.
+- **Proprietary — All Rights Reserved** — multi-tenant administration (`packages/sysadmin-api`,
+  `packages/sysadmin-web`): no use granted. Public visibility in this repository does not grant any right to use, copy,
+  modify, run, or distribute these packages. A commercial license is required for any use; contact bbv Software Services
+  AG.
 
 See [LICENSES.md](LICENSES.md) for the full per-package matrix and rationale.
 

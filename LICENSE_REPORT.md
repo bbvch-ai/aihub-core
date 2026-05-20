@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 19.05.2026
+Generated on: 20.05.2026
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -268,8 +268,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | opentelemetry-instrumentation-aiohttp-client     | 0.62b1                | Apache-2.0                                                   |                                                                      |
 | ✅     | opentelemetry-instrumentation-asgi               | 0.62b1                | Apache-2.0                                                   |                                                                      |
 | ✅     | opentelemetry-instrumentation-asyncio            | 0.62b1                | Apache-2.0                                                   |                                                                      |
-| ✅     | opentelemetry-instrumentation-botocore           | 0.62b1                | Apache-2.0                                                   |                                                                      |
-| ✅     | opentelemetry-instrumentation-dbapi              | 0.62b1                | Apache-2.0                                                   |                                                                      |
 | ✅     | opentelemetry-instrumentation-django             | 0.62b1                | Apache-2.0                                                   |                                                                      |
 | ✅     | opentelemetry-instrumentation-fastapi            | 0.62b1                | Apache-2.0                                                   |                                                                      |
 | ✅     | opentelemetry-instrumentation-flask              | 0.62b1                | Apache-2.0                                                   |                                                                      |
