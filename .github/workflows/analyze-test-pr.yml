@@ -28,12 +28,12 @@ jobs:
       matrix:
         include:
           - module: packages/core
-            runner: ubuntu-latest-8-cores
+            runner: ubuntu-latest
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone neo4j keycloak
           - module: packages/api
-            runner: ubuntu-latest-4-cores
+            runner: ubuntu-latest
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone neo4j
@@ -41,7 +41,7 @@ jobs:
             runner: ubuntu-latest
             docker_compose_services: ''
           - module: packages/agent
-            runner: ubuntu-latest-8-cores
+            runner: ubuntu-latest
             docker_compose_services: postgres clickhouse langfuse-worker langfuse-web
               otel-collector nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master
               seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init
@@ -50,7 +50,7 @@ jobs:
             runner: ubuntu-latest
             docker_compose_services: nats valkey postgres-ferretdb ferretdb
           - module: packages/process
-            runner: ubuntu-latest-4-cores
+            runner: ubuntu-latest
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone
