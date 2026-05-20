@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { deleteTenantMetadata as deleteTenantMetadataApi } from '~/sdk/client'
 
 export const useDeleteTenantMetadata = defineMutation(() => {

@@ -64,12 +64,6 @@ image_tags:
     local: web:latest
     nightly: web:nightly
     latest: web:latest
-  # Hyphenated keys (not sysadmin_api) so key == image name == package dir ==
-  # build-sysadmin.yml matrix entry. set-latest.yml auto-discovery requires
-  # image_tags[k].latest == f"{k}:latest" and retags ghcr.io/.../{k}; a
-  # mismatched key would silently skip latest-promotion and/or retag the wrong
-  # image. Template uses bracket access image_tags['sysadmin-api'] since the
-  # hyphen is not a valid Jinja attribute identifier.
   sysadmin-api:
     build: localbuild
     local: sysadmin-api:latest

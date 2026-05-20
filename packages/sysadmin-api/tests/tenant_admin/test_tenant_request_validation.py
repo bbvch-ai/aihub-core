@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Proprietary
 """Pydantic-layer validation of tenant-admin request DTOs.
 
 Locks down the surface that ``tenant_id``, ``name`` and ``description`` accept

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Proprietary
 from fastapi import HTTPException
 from keycloak import KeycloakGetError
 from swiss_ai_hub.api.runners.lifetime.initialize_db import initialize_default_roles_for_tenant

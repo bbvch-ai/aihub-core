@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { getWhoami } from '~/sdk/client'
 
 // Global guard for sysadmin-web with two responsibilities:

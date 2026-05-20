@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <div class="flex flex-col gap-2">
     <SelectButton

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { globalIgnores } from 'eslint/config'
 import sonarPlugin from 'eslint-plugin-sonarjs'
 

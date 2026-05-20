@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <div class="flex min-h-screen w-full flex-col bg-white dark:bg-surface-900">
     <div class="fixed z-50 flex h-[50px] w-full items-center justify-between border-b border-surface-200 bg-surface-50 px-4 dark:border-surface-700 dark:bg-surface-950">

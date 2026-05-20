@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <StructuralColumn
     :title="t('user.title')"

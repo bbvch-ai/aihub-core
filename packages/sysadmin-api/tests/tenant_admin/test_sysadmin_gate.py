@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Proprietary
 """Verifies the ``sys_admin_user()`` gate on ``TenantAdminController`` denies non-sysadmins
 end-to-end, not just at the auth dependency layer.
 

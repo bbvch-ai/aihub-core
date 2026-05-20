@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Proprietary
 from typing import Annotated, Self
 
 from fastapi import Security

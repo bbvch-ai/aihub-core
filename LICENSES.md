@@ -37,16 +37,21 @@ The `sysadmin-api` and `sysadmin-web` packages are licensed **"All Rights Reserv
 
 ## SPDX & per-file headers
 
-Source files should carry an SPDX identifier comment at the top:
+Package-level `license` metadata (`pyproject.toml`, `package.json`) is the **authoritative answer** for SPDX tooling
+(`pip-licenses`, `pnpm licenses list`, [REUSE](https://reuse.software/)) and for everyone who consumes a package as a
+whole artifact. The per-package `LICENSE` file backs it up.
 
-- Apache-2.0 files: `# SPDX-License-Identifier: Apache-2.0` (Python) / `// SPDX-License-Identifier: Apache-2.0`
-  (TS/Vue/JS).
-- AGPL files: `SPDX-License-Identifier: AGPL-3.0-or-later`.
-- Proprietary files: `SPDX-License-Identifier: LicenseRef-Proprietary`.
+Per-file SPDX headers add defence-in-depth for snippet-level copying out of context — meaningful where IP risk is
+concentrated, marginal where the license is well-known.
 
-The SPDX-aware tooling ([REUSE](https://reuse.software/), `pip-licenses`, `pnpm licenses list`) reads the package-level
-`license` metadata as the authoritative answer. The SPDX header on each source file is a defence in depth — it makes the
-license unambiguous when a single file is copied out of the package.
+Policy:
+
+- **Proprietary files MUST carry an SPDX header.** Every `.py` / `.ts` / `.vue` / `.js` / `.mjs` source file under
+  `packages/sysadmin-api/` and `packages/sysadmin-web/` (excluding generated `sdk/client/**`) carries
+  `SPDX-License-Identifier: LicenseRef-Proprietary` (`#` for Python, `//` for TS/JS, `<!--  -->` for Vue SFCs).
+- **Apache-2.0 and AGPL files MAY carry an SPDX header but are not required to.** Adoption matches what comparable
+  ecosystem projects do (FastAPI, Pydantic, Nuxt, Vue, etc. ship without per-file SPDX). The root `LICENSE` and the
+  package-level `license` field are sufficient for these.
 
 ## Compatibility notes
 

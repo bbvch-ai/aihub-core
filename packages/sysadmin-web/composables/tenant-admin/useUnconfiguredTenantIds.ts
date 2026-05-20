@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { minutesToMilliseconds } from 'date-fns'
 
 import { listUnconfiguredTenants } from '~/sdk/client'

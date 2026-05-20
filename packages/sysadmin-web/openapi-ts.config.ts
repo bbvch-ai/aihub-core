@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { defineConfig } from '@hey-api/openapi-ts'
 
 export default defineConfig({

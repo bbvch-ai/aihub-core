@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Proprietary
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -69,11 +70,6 @@ class SysadminApiRunner:
             redirect_slashes=True,
         )
 
-        # The browser only ever calls sysadmin-api same-origin
-        # (sysadmin.${DOMAIN}/api/v1 — and via the Nitro dev proxy in dev), so
-        # CORS exists purely for explicitly-configured frontends. Derive it
-        # from FRONTEND_ORIGIN (prod: https://sysadmin.${DOMAIN}); no hardcoded
-        # localhost fallback — there is no browser origin that needs one.
         cors_origins = list(origins or [])
         if AIHubSettings().FRONTEND_ORIGIN:
             cors_origins += [item.strip() for item in AIHubSettings().FRONTEND_ORIGIN.split(",")]

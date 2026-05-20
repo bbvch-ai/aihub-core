@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Proprietary
 # ruff: noqa: E402
 # ASGI entrypoint: `swiss_ai_hub.sysadmin_api.main:app`. The fully-qualified
 # module path avoids the `app.main:app` collision with packages/api (also

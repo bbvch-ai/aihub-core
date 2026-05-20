@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({

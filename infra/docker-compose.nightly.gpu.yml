@@ -2361,8 +2361,6 @@ services:
       OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
-      # Cross-origin URL the "manage tenants" affordance jumps to (the sysadmin
-      # plane is a separately-licensed app on its own subdomain).
       SYSADMIN_URL: https://sysadmin.${DOMAIN}
     healthcheck:
       test: [CMD, curl, -f, http://127.0.0.1/]

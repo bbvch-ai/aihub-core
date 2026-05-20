@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { createTenantMetadata as createTenantMetadataApi, type CreateTenantMetadataRequest } from '~/sdk/client'
 
 export const useCreateTenantMetadata = defineMutation(() => {

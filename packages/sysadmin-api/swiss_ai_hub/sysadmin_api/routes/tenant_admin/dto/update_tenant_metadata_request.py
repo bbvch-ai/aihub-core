@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Proprietary
 from typing import Annotated
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 // Runtime configuration for the sysadmin-web static SPA. See the sibling
 // comment in @swiss-ai-hub/web's config.template.js for the mechanism — the
 // nginx entrypoint envsubst's this into /config.js, loaded synchronously in
