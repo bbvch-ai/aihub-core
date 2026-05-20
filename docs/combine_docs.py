@@ -268,9 +268,7 @@ def process_directory(root_path, current_path, output_dir, depth=0):
             sections.append(f"{heading_level} {folder_title}\n\n")
 
             # Process contents of subdirectory
-            subdir_content = process_directory(
-                root_path, item_path, output_dir, depth + 1
-            )
+            subdir_content = process_directory(root_path, item_path, output_dir, depth + 1)
             sections.append(subdir_content)
 
     return "".join(sections)
@@ -332,9 +330,7 @@ def merge_documentation(source_dir, output_name="combined"):
 
     # Combine all markdown files
     # Pass output_dir instead of source_path for relative path calculation
-    combined_content = process_directory(
-        str(source_path), str(source_path), str(output_dir), depth=0
-    )
+    combined_content = process_directory(str(source_path), str(source_path), str(output_dir), depth=0)
 
     if not combined_content.strip():
         print("✗ No markdown content found")

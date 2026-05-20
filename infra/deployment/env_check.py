@@ -118,7 +118,9 @@ def _print_summary(
     print(f"    {len(defined)} variables defined in the env file")
     print(f"    {len(compose.interp_required)} variables docker-compose interpolates from .env (must be set)")
     print(f"    {len(compose.interp_with_default)} variables docker-compose interpolates with a fallback (optional)")
-    print(f"    {len(compose.supplied_to_services)} variables docker-compose injects into containers via environment blocks")
+    print(
+        f"    {len(compose.supplied_to_services)} variables docker-compose injects into containers via environment blocks"
+    )
     print(f"    {len(consumers)} variables Pydantic settings classes read at runtime")
 
 
