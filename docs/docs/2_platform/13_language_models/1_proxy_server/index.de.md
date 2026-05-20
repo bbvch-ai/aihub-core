@@ -18,17 +18,17 @@ API-Endpunkt, die Authentifizierung und die Fähigkeiten.
 ```yaml
 model_list:
   # Cloud model (Swiss LLM Cloud)
-  - model_name: text-generation/gpt-oss-120b
+  - model_name: text-generation/gemma-4-31B-it
     litellm_params:
-      model: openai/openai/gpt-oss-120b
+      model: openai/google/gemma-4-31B-it
       api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
     model_info:
       mode: chat
       supports_function_calling: true
-      input_cost_per_token: 0.00000003
-      output_cost_per_token: 0.0000003
+      input_cost_per_token: 0.0000002
+      output_cost_per_token: 0.0000008
 
   # Local GPU model (vLLM)
   - model_name: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
