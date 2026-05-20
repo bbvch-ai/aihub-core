@@ -13,6 +13,7 @@ jobs:
     name: Lint Backend
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -32,6 +33,7 @@ jobs:
   lint-frontend:
     name: Lint Web
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Lint frontend
         uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
@@ -43,6 +45,7 @@ jobs:
     name: License Check
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
