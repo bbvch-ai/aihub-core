@@ -40,7 +40,7 @@ def build() -> NamespaceSelectionAgentConfig:
         ),
         icon="mage:book",
         llm=LLMConfig(
-            model_name="text-generation/gpt-oss-120b",
+            model_name="text-generation/gemma-4-31B-it",
             default_parameter=LLMParameter(temperature=0.0, timeout=60.0),
         ),
         bucket_names=[

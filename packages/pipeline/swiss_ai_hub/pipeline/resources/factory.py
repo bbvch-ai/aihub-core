@@ -144,7 +144,7 @@ def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
         embedding_config=EmbeddingModelConfig(model_name="embedding/bge-m3")
     )
-    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/gpt-oss-120b"))
+    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"))
     return {
         "embedding_model": embedding_model_resource,
         "language_model": language_model,
