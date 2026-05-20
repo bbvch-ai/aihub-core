@@ -6,9 +6,8 @@ from swiss_ai_hub.core.tracing.nats_trace_context_propagator import NATSTraceCon
 class NATSMessageHeaders:
     """Helper class for working with NATS message headers in a type-safe way."""
 
-    # Prefix used to mark headers that originate from the external request boundary (API, bot, etc.)
-    # and must be forwarded along the agent pipeline so downstream MCP tools can act on behalf of
-    # the originating user. Matching is case-insensitive; canonical form is the value below.
+    # Headers with this prefix are forwarded along the agent pipeline so downstream tools can act
+    # on behalf of the originating user. Matching is case-insensitive.
     AIHUB_HEADER_PREFIX: ClassVar[str] = "X-AIHub-"
 
     def __init__(self, headers: dict[str, str] | None = None):
@@ -26,13 +25,8 @@ class NATSMessageHeaders:
 
     def with_aihub_headers(self, aihub_headers: dict[str, str] | None) -> Self:
         """
-        Merge ``X-AIHub-*`` request headers into the outgoing NATS headers so they propagate to
-        the agent.
-
-        Defensively filters by ``AIHUB_HEADER_PREFIX`` (case-insensitive): any non-matching key
-        in the dict is dropped. This enforces the trust boundary inside the method instead of
-        relying on caller discipline — a caller who accidentally passes an arbitrary headers
-        dict cannot leak ``Authorization``, ``Cookie``, etc. onto the NATS envelope.
+        Merge ``X-AIHub-*`` headers into the outgoing NATS headers, dropping any non-prefixed key
+        so a caller cannot leak ``Authorization``/``Cookie`` onto the envelope.
         """
         if not aihub_headers:
             return self
@@ -49,10 +43,8 @@ class NATSMessageHeaders:
     @classmethod
     def extract_aihub_headers(cls, headers: dict[str, str] | None) -> dict[str, str]:
         """
-        Pick out the X-AIHub-* entries from a headers dict. Keys are returned lowercased to
-        match HTTP header normalization (FastAPI/Starlette already lowercases inbound headers);
-        downstream consumers must read by lowercased key. Empty/None input yields an empty dict
-        so callers can unconditionally pass it forward.
+        Pick out the ``X-AIHub-*`` entries from a headers dict, lowercasing keys so downstream
+        consumers read by a single canonical key.
         """
         if not headers:
             return {}

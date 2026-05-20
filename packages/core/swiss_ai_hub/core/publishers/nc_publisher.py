@@ -47,10 +47,7 @@ class NCPublisher(AbstractPublisher[TEvent]):
         Logs details, warns if there's a mismatch between event type and subject pattern,
         and then sends the message through the NATS client.
 
-        `extra_headers` is forwarded as NATS message headers — used for request-scoped metadata
-        (e.g. X-AIHub-* user-identity headers) that rides on the envelope, not in the event payload.
-        ``NATSMessageHeaders.with_aihub_headers`` filters to the ``X-AIHub-*`` prefix, so values
-        outside that prefix are dropped before they reach the broker.
+        `extra_headers` is forwarded as NATS message headers, filtered to the ``X-AIHub-*`` prefix.
         """
         tracer = get_tracer(__name__)
 

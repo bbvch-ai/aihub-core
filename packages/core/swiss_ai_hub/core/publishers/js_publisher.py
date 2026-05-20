@@ -59,10 +59,7 @@ class JSPublisher(AbstractPublisher[TEvent]):
         This ensures developers can catch configuration issues early and maintain consistent
         event routing conventions.
 
-        `extra_headers` is forwarded as NATS message headers — used for request-scoped metadata
-        (e.g. X-AIHub-* user-identity headers) that rides on the envelope, not in the event payload.
-        ``NATSMessageHeaders.with_aihub_headers`` filters to the ``X-AIHub-*`` prefix, so values
-        outside that prefix are dropped before they reach JetStream.
+        `extra_headers` is forwarded as NATS message headers, filtered to the ``X-AIHub-*`` prefix.
         """
         tracer = get_tracer(__name__)
         with tracer.start_as_current_span(

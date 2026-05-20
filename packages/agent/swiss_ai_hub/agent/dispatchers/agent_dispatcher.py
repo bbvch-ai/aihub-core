@@ -108,16 +108,9 @@ class AgentDispatcher(BaseDispatcher):
         thread_context = ThreadContext.for_topic(self.redis, topic)
         agent_config_dict: dict[str, Any] | None = None
 
-        # Propagate X-AIHub-* request headers (e.g. user identity / on-behalf-of tokens) from the
-        # NATS message into RunContext so downstream steps (notably MCP calls) can act on behalf
-        # of the user. Written on every externally-originated event that carries headers — not
-        # only StartEvent — so HITL/BITL responses re-entering via the API refresh the stored
-        # token rather than reusing a stale one from the run's start. Agent-internal events
-        # (ToolEvent, ChunkEvent, etc.) have no aihub headers on their NATS msg, so the truthy
-        # check skips them and the value already in RunContext is preserved.
-        # Cleared with the rest of RunContext on Stop/Exception below; orphaned runs fall back
-        # to the RunContext TTL (currently 30 days), the same safety net used for the rest of
-        # the run's state.
+        # Propagate X-AIHub-* request headers into RunContext so downstream steps can act on behalf
+        # of the user. Written on every header-carrying event, not only StartEvent, so HITL/BITL
+        # responses refresh the stored token instead of reusing a stale one.
         if event._aihub_headers:
             await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
 

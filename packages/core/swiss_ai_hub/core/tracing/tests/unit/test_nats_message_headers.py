@@ -2,10 +2,7 @@ from swiss_ai_hub.core.tracing import NATSMessageHeaders
 
 
 class TestExtractAihubHeaders:
-    """`extract_aihub_headers` is the single ingress where `X-AIHub-*` headers enter the agent
-    pipeline (called from the API controller for HTTP and from both subscribers for NATS). It
-    must filter to the prefix and normalize key casing so downstream consumers can read by a
-    single canonical (lowercase) key regardless of how the originating client cased them."""
+    """`extract_aihub_headers` filters to the X-AIHub-* prefix and lowercases keys."""
 
     def test_canonical_case_input_is_returned_lowercased(self):
         result = NATSMessageHeaders.extract_aihub_headers({"X-AIHub-User-Token": "tok"})
@@ -50,16 +47,13 @@ class TestExtractAihubHeaders:
         assert NATSMessageHeaders.extract_aihub_headers(None) == {}
 
     def test_prefix_match_is_case_insensitive_but_value_is_preserved_verbatim(self):
-        # Values must never be transformed — only keys are normalized. Tokens with mixed case or
-        # special characters must round-trip exactly.
+        # Values must never be transformed — only keys are normalized.
         result = NATSMessageHeaders.extract_aihub_headers({"x-aihub-user-token": "AbCd-1234_xyz"})
         assert result == {"x-aihub-user-token": "AbCd-1234_xyz"}
 
 
 class TestWithAihubHeaders:
-    """``with_aihub_headers`` is the egress where headers are placed onto the NATS envelope. It
-    defensively filters by the ``X-AIHub-*`` prefix so a caller who accidentally passes a wider
-    dict (e.g. raw request.headers) cannot leak ``Authorization``/``Cookie``/etc. to NATS."""
+    """``with_aihub_headers`` places X-AIHub-* headers on the NATS envelope, dropping non-prefixed keys."""
 
     def test_aihub_headers_are_merged_into_outgoing_headers(self):
         result = NATSMessageHeaders().with_aihub_headers({"X-AIHub-User-Token": "tok"}).to_dict()

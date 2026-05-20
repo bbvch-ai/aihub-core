@@ -62,12 +62,8 @@ class BaseEvent(BaseModel):
 
     _jetstream_sequence: int | None = PrivateAttr(None)
 
-    # X-AIHub-* headers carried by the NATS message that delivered this event. Populated by the
-    # subscribers (see NATSMessageHeaders.extract_aihub_headers, which lowercases keys). Lives on
-    # the in-memory event for the current delivery only — not part of the Pydantic schema, not
-    # serialized into the JetStream payload, not durable across JetStream replay. The dispatcher
-    # lifts the values into RunContext (Valkey, scoped to the run, cleared on Stop/Exception),
-    # which is the source downstream steps read. Values may include bearer tokens; never log them.
+    # X-AIHub-* headers from the NATS message that delivered this event. Set by the subscribers
+    # per delivery — not serialized, not durable across JetStream replay. May include tokens.
     _aihub_headers: dict[str, str] | None = PrivateAttr(None)
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
