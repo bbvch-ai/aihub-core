@@ -1,0 +1,9 @@
+---
+# pnpm settings for the e2e (Playwright) test project.
+# minimumReleaseAge: replaces Dependabot `cooldown` (broken with pnpm).
+# 10080 = 7 days. See packages/web/pnpm-workspace.yaml for
+# the rationale and the dependabot-core issue references.
+# No onlyBuiltDependencies — pnpm 10 install reports zero blocked scripts
+# for the current dep set (@playwright/test only); browser binaries are
+# fetched separately via `npx playwright install`, not via install scripts.
+minimumReleaseAge: 10080

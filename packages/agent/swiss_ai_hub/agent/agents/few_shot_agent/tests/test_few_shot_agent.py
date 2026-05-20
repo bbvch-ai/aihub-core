@@ -42,7 +42,7 @@ def self_hosted_llm_config():
     """
     Return an LLM config for testing with LiteLLM.
     """
-    return LLMConfig(model_name="text-generation/gpt-oss-120b")
+    return LLMConfig(model_name="text-generation/gemma-4-31B-it")
 
 
 @given("I have an empty agent config")

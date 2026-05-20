@@ -6,11 +6,11 @@ from swiss_ai_hub.sysadmin_api.i18n.sysadmin_locale_handler import SysadminApiLo
 
 
 class SysadminApiLocaleString(LocaleString):
-    """LocaleString that resolves the BSL ``sysadmin.*`` translation scope.
+    """LocaleString that resolves the proprietary ``sysadmin.*`` translation scope.
 
     Use this for i18n paths owned by the sysadmin plane (``sysadmin.*.*``).
     Mirrors ``ApiLocaleString`` but loads from this package's own translations
-    so no BSL string ever resides in the Apache-2.0 ``packages/api``.
+    so no proprietary string ever resides in the Apache-2.0 ``packages/api``.
     """
 
     @classmethod

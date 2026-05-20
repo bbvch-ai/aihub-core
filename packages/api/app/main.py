@@ -100,7 +100,7 @@ runner.mount(
     DatasetController(auth=auth).create_dataset().get_datasets().get_dataset().update_dataset(),
     KnowledgeController(
         auth=auth,
-        translation_llm_config=LLMConfig(model_name="text-generation/gpt-oss-120b"),
+        translation_llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
     )
     .create_namespace()
     .update_namespace()

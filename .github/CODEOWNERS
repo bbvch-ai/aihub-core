@@ -1,0 +1,20 @@
+# Paths that require review from core maintainers before merge.
+# Protects CI/CD pipelines, deployment infrastructure, and the shared core
+# package from unreviewed changes — especially important once the repo is public.
+
+# CI/CD and GitHub Actions
+.github/                    @bbvch-ai/aihub-core-maintainers
+.github/workflows/          @bbvch-ai/aihub-core-maintainers
+.github/actions/            @bbvch-ai/aihub-core-maintainers
+.github/CODEOWNERS          @bbvch-ai/aihub-core-maintainers
+
+# Deployment infrastructure
+infra/                      @bbvch-ai/aihub-core-maintainers
+Dockerfile*                 @bbvch-ai/aihub-core-maintainers
+
+# Shared core package — changes ripple across all other packages
+packages/core/              @bbvch-ai/aihub-core-maintainers
+
+# Security policy and licensing
+SECURITY.md                 @bbvch-ai/aihub-core-maintainers
+LICENSE                     @bbvch-ai/aihub-core-maintainers

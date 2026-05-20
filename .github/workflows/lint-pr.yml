@@ -70,8 +70,12 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 25.x
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Install pnpm via corepack
+        run: |
+          npm install -g --ignore-scripts corepack@0.34.7
+          corepack enable pnpm
+          corepack install
+        working-directory: packages/web
       - name: Make license check script executable
         run: chmod +x ./generate-license.sh
       - name: Run license check
