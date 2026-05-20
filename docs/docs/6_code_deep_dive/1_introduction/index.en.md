@@ -385,7 +385,7 @@ stage_1 = default_rclone_to_datalake_definitions(
 stage_2 = default_definitions(
     datalake_container_name="acme-knowledge-base",
     embedding_model_name="embedding/bge-m3",
-    llm_model_name="text-generation/Qwen3-VL-235B-A22B-Instruct",
+    llm_model_name="text-generation/gemma-4-31B-it",
     with_summary_nodes=True,                         # hierarchical summaries for multi-level RAG
     with_table_refinement=True,                      # LLM-powered table detection and splitting
     with_figure_descriptions=True,                   # vision LLM describes images in documents
@@ -425,13 +425,13 @@ configuration.
 
 ### Swiss LLM Cloud models (cloud deployment)
 
-| Task                   | Model                                                                                                                                                                                                                                                                                                                          | Served by       |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
-| Chat & text generation | GPT-OSS 120B, [Qwen3-VL-235B-A22B](https://huggingface.co/Qwen/Qwen3-VL-235B-A22B-Instruct), [Apertus 70B](https://huggingface.co/swiss-ai/Apertus-70B-Instruct-2509), [Kimi K2.5](https://huggingface.co/moonshotai/Kimi-K2.5), [Mistral Small 3.2 24B](https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506) | Swiss LLM Cloud |
-| Text embeddings        | [BGE-M3](https://huggingface.co/BAAI/bge-m3)                                                                                                                                                                                                                                                                                   | Swiss LLM Cloud |
-| Reranking              | [BGE-Reranker-v2-M3](https://huggingface.co/BAAI/bge-reranker-v2-m3)                                                                                                                                                                                                                                                           | Swiss LLM Cloud |
-| Document parsing (OCR) | [MinerU 2.5 1.2B](https://huggingface.co/opendatalab/MinerU2.5-2509-1.2B)                                                                                                                                                                                                                                                      | Swiss LLM Cloud |
-| Speech-to-text         | [Whisper Large v3](https://huggingface.co/openai/whisper-large-v3)                                                                                                                                                                                                                                                             | Swiss LLM Cloud |
+| Task                   | Model                                                                                                                           | Served by       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| Chat & text generation | [Apertus 70B](https://huggingface.co/swiss-ai/Apertus-70B-Instruct-2509), Gemma 4 31B, Kimi K2.6, Ministral 3 14B, Qwen3.5 122B | Swiss LLM Cloud |
+| Text embeddings        | [BGE-M3](https://huggingface.co/BAAI/bge-m3)                                                                                    | Swiss LLM Cloud |
+| Reranking              | [BGE-Reranker-v2-M3](https://huggingface.co/BAAI/bge-reranker-v2-m3)                                                            | Swiss LLM Cloud |
+| Document parsing (OCR) | [MinerU 2.5 1.2B](https://huggingface.co/opendatalab/MinerU2.5-2509-1.2B)                                                       | Swiss LLM Cloud |
+| Speech-to-text         | [Whisper Large v3](https://huggingface.co/openai/whisper-large-v3)                                                              | Swiss LLM Cloud |
 
 All models on [Swiss LLM Cloud](https://swissllmcloud.ch/) run in Swiss data centers under Swiss jurisdiction. Stateless
 request processing: no prompts stored, no data used for training, no content leaves Switzerland.

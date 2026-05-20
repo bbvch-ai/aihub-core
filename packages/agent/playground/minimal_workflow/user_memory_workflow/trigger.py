@@ -26,7 +26,7 @@ async def main():
             name=LocaleString(en="User Memory Agent"),
             description=LocaleString(en="This is the Memory Agent config"),
             llm=LLMConfig(
-                model_name="text-generation/Qwen3-VL-235B-A22B-Instruct",
+                model_name="text-generation/gemma-4-31B-it",
                 default_parameter=LLMParameter(temperature=1.0),
             ),
         ),

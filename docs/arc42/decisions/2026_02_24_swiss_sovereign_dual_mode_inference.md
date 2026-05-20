@@ -49,14 +49,19 @@ infrastructure.
 
 Multiple text generation models are registered in LiteLLM with per-token pricing for cost tracking through Langfuse:
 
-- `text-generation/Qwen3-VL-235B-A22B-Instruct` — large multimodal model, default for most interactions
-- `text-generation/Mistral-Small-3.2-24B-Instruct-2506` — lightweight/cheap option
-- `text-generation/Kimi-K2.5` — large context window (131K in / 65K out)
+- `text-generation/gemma-4-31B-it` — default for most interactions, LiteLLM fallback, prompt-injection LLM
 - `text-generation/Apertus-70B-Instruct-2509` — Swiss-AI foundation model
+- `text-generation/Kimi-K2.6` — large context window (131K in / 65K out)
+- `text-generation/Ministral-3-14B-Instruct-2512` — lightweight/cheap option
+- `text-generation/Qwen3.5-122B-A10B-FP8` — largest model on the cloud catalog (122B MoE FP8)
 
-> **Update 2026-05-19:** `text-generation/gpt-oss-120b` was retired (no longer available on Swiss LLM Cloud). The
-> default for most interactions, the LiteLLM fallback, and the prompt-injection detection model are now
-> `text-generation/Qwen3-VL-235B-A22B-Instruct`.
+> **Update 2026-05-19:** `text-generation/gpt-oss-120b` was retired (no longer available on Swiss LLM Cloud). An interim
+> swap to `text-generation/Qwen3-VL-235B-A22B-Instruct` was published but later reverted because Swiss LLM Cloud
+> (Infomaniak) does not actually serve that model — calls failed silently. The cloud `model_list` has now been
+> reconciled to Infomaniak's actual `/v1/models` catalog, and the default / fallback / prompt-injection LLM is
+> `text-generation/gemma-4-31B-it`. The other stale entries (`Kimi-K2.5`, `Mistral-Small-3.2-24B-Instruct-2506`) were
+> also removed since Infomaniak no longer serves them; they are replaced by `Kimi-K2.6` and
+> `Ministral-3-14B-Instruct-2512`. `Qwen3.5-122B-A10B-FP8` was added (also in the catalog).
 
 Swiss LLM Cloud does not yet have a unified proxy, so each service type requires a separate endpoint:
 
@@ -113,9 +118,9 @@ the introduction of agent configuration (where admins choose models per agent pr
 became a hindrance: admins need to see which actual model they're selecting, and the platform may offer many models that
 don't fit into a simple small/medium/large hierarchy.
 
-LiteLLM `model_name` now uses the real canonical model name prefixed by role — e.g.,
-`text-generation/Mistral-Small-3.2-24B-Instruct-2506`, `embedding/bge-m3`, `reranker/bge`. The abstract tiers (`nano`,
-`mini`, `large`, `small`) are removed entirely. See `litellm-config.yml.j2` for the current model list.
+LiteLLM `model_name` now uses the real canonical model name prefixed by role — e.g., `text-generation/gemma-4-31B-it`,
+`embedding/bge-m3`, `reranker/bge`. The abstract tiers (`nano`, `mini`, `large`, `small`) are removed entirely. See
+`litellm-config.yml.j2` for the current model list.
 
 ### Capabilities Dropped
 

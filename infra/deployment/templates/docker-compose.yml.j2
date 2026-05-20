@@ -12,7 +12,7 @@
 {%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
 {%- set config_variant_suffix = config_file_suffix if config_file_suffix is defined else "." + stage_postfix %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
-{%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/Qwen3-VL-235B-A22B-Instruct' %}
+{%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/gemma-4-31B-it' %}
 
 {#- ===================================================================
     Internal Service Endpoints (Identical Across All Stages)

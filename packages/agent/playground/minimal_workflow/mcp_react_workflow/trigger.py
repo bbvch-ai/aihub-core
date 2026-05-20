@@ -23,7 +23,7 @@ async def main():
             name=LocaleString(en="MCP React Agent"),
             description=LocaleString(en="Agent that calls external MCP tools"),
             mcp=McpClientConfig(name="test-tools", url="http://127.0.0.1:9090/mcp"),
-            llm=LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct"),
+            llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
         ),
     )
 

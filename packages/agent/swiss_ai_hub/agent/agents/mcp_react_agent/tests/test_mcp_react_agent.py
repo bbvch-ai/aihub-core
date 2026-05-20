@@ -72,7 +72,7 @@ def _():
             name=LocaleString(en="MCP React Agent"),
             description=LocaleString(en="Test agent"),
             mcp=McpClientConfig(name="mock", url="http://mock-server/mcp"),
-            llm=LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct"),
+            llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
         ),
     )
 

@@ -40,7 +40,7 @@ def agent_config():
         agent_class=UserMemoryAgent.__name__,
         name=LocaleString(en="Memory Test Agent", de="Speicher Test Agent"),
         description=LocaleString(en="Test agent for memory integration", de="Testagent für Speicherintegration"),
-        llm=LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct"),
+        llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
     )
 
 

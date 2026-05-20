@@ -9,7 +9,7 @@ from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/active/openai/models"
-CHAT_MODEL = "text-generation/Qwen3-VL-235B-A22B-Instruct"
+CHAT_MODEL = "text-generation/gemma-4-31B-it"
 EMBEDDING_MODEL = "embedding/bge-m3"
 
 

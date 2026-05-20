@@ -68,7 +68,7 @@ def expert_asking_agent_config(mongo_connection):
         agent_class=ExpertAskingAgent.__name__,
         name=LocaleString(en="Test Expert Asking Agent"),
         description=LocaleString(en="Expert asking agent for tests"),
-        llm=LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct"),
+        llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
         loop_max=2,
         channel_config=ChannelConfig(
             channel_type="teams",
@@ -105,7 +105,7 @@ def _(expert_asking_agent_config):
 @async_test
 async def _(agent_runner: AgentTestRunner):
     """Send a question and simulate expert providing a sufficient answer."""
-    async with agent_runner.test_run(delay_before_stop=300) as topic:
+    async with agent_runner.test_run(delay_before_stop=120) as topic:
         user = fake_user()
 
         # Send the initial question to the expert
@@ -119,7 +119,7 @@ async def _(agent_runner: AgentTestRunner):
         )
 
         # Wait for the BotInTheLoopRequestEvent
-        bitl_request = await agent_runner.wait_for_event(BotInTheLoopRequestEvent, timeout=300)
+        bitl_request = await agent_runner.wait_for_event(BotInTheLoopRequestEvent, timeout=120)
 
         # Simulate expert providing a clear, complete answer
         await agent_runner.send_event_from_topic(
@@ -139,7 +139,7 @@ async def _(agent_runner: AgentTestRunner):
 @async_test
 async def _(agent_runner: AgentTestRunner):
     """Send a question where expert first gives vague answer, then a sufficient one."""
-    async with agent_runner.test_run(delay_before_stop=300) as topic:
+    async with agent_runner.test_run(delay_before_stop=120) as topic:
         user = fake_user()
 
         # Send the initial question
@@ -153,7 +153,7 @@ async def _(agent_runner: AgentTestRunner):
         )
 
         # Wait for first BotInTheLoopRequestEvent
-        bitl_request_1 = await agent_runner.wait_for_event(BotInTheLoopRequestEvent, timeout=300)
+        bitl_request_1 = await agent_runner.wait_for_event(BotInTheLoopRequestEvent, timeout=120)
 
         # Simulate expert providing an incomplete/vague first answer
         await agent_runner.send_event_from_topic(
@@ -199,7 +199,7 @@ async def _(agent_runner: AgentTestRunner):
 @async_test
 async def _(agent_runner: AgentTestRunner):
     """Send a question where expert consistently gives insufficient answers until max loops."""
-    async with agent_runner.test_run(delay_before_stop=300) as topic:
+    async with agent_runner.test_run(delay_before_stop=120) as topic:
         user = fake_user()
 
         # Send the initial question
@@ -217,7 +217,7 @@ async def _(agent_runner: AgentTestRunner):
             bitl_requests = agent_runner.get_events_of_class(BotInTheLoopRequestEvent)
             while len(bitl_requests) <= i:
                 await asyncio.sleep(1)  # Yield control to allow agent to process events
-                await agent_runner.wait_for_event(BotInTheLoopRequestEvent, timeout=300)
+                await agent_runner.wait_for_event(BotInTheLoopRequestEvent, timeout=120)
                 bitl_requests = agent_runner.get_events_of_class(BotInTheLoopRequestEvent)
 
             bitl_request = bitl_requests[i]
