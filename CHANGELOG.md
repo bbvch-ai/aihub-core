@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.10] - 2026-05-21 - Workflow Optimization and Release Tagging Enhancements
+
+### Fixed
+
+- 🔑 **Resolved Release Tagging Permissions:** Addressed an issue in the `set-latest` workflow that prevented `latest`
+  git tags from being moved when workflow files were modified, by leveraging an SSH deploy key for proper
+  authentication.
+
+### Refactor
+
+- 🧹 **Streamlined CI/CD YAML Parsing:** Replaced Python-based YAML parsing with `yq` and `jq` in the `build-agents`,
+  `build-pipelines`, and `set-latest` workflows. This change utilizes pre-installed tools on the `ubuntu-slim` runner,
+  enhancing workflow reliability and reducing external dependencies.
+
+______________________________________________________________________
+
 ## [v0.289.9] - 2026-05-20 - Infrastructure Maintenance
 
 ### Changed
