@@ -59,11 +59,6 @@ class McpReactAgent(Agent):
         run_context: RunContext,
     ) -> McpReasoningEvent:
         """List MCP tools and resources, seed conversation, trigger first reasoning iteration."""
-        # Demo probe (issue #948): the X-AIHub-* headers the API forwarded along the pipeline land
-        # in RunContext under "_aihub_headers" — this is the user identity a real MCP call would attach.
-        aihub_headers = await run_context.get("_aihub_headers")
-        print(f"[init_step] X-AIHub-* identity headers forwarded for MCP calls: {aihub_headers}")
-
         print(f"[init_step] Discovering tools and resources on {mcp_config.url}")
         async with McpClientFactory.create(mcp_config) as mcp_client:
             tools = await mcp_client.list_tools()
