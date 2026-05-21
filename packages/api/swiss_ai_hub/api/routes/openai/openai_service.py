@@ -22,6 +22,9 @@ from starlette.responses import StreamingResponse
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
+from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import HumanInTheLoopRequestEvent
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
@@ -378,55 +381,8 @@ class OpenaiService:
             locale=locale,
         )
 
-        async def sse_event_generator():
-            while True:
-                if resources.stop_signal.is_set() and resources.chunk_queue.empty():
-                    logger.debug("Stop streaming due to stop_event and empty queue")
-                    break
-                try:
-                    chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
-                    chat_completion_chunk = ChatCompletionChunk(
-                        id=str(uuid.uuid4()),
-                        object="chat.completion.chunk",
-                        created=int(datetime.now(UTC).timestamp()),
-                        model=chunk_event.model_name,
-                        choices=[
-                            Choice(
-                                index=0,
-                                delta=ChoiceDelta(
-                                    content=chunk_event.content,
-                                    role="assistant",
-                                ),
-                            ),
-                        ],
-                        usage=None,
-                    )
-                    yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"
-                    resources.chunk_queue.task_done()
-                except TimeoutError:
-                    # No new chunk yet; keep waiting
-                    continue
-                except asyncio.CancelledError:
-                    break
-
-            if resources.stop_event.is_hitl_request_event:
-                content = resources.stop_event.question
-            elif resources.stop_event.is_exception_event:
-                content = f"\n\n>[!CAUTION]\n>**Error:** {resources.stop_event.message}\n"
-            else:
-                content = ""
-            chat_completion_chunk = ChatCompletionChunk(
-                id=str(uuid.uuid4()),
-                object="chat.completion.chunk",
-                created=int(datetime.now(UTC).timestamp()),
-                model="",
-                choices=[Choice(index=0, delta=ChoiceDelta(content=content, role="assistant"), finish_reason="stop")],
-                usage=None,
-            )
-            yield f"data: {chat_completion_chunk.model_dump_json()}\n\n"
-
         return StreamingResponse(
-            sse_event_generator(),
+            OpenaiService._sse_event_generator(resources),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
@@ -435,6 +391,53 @@ class OpenaiService:
                 "Content-Encoding": "identity",
             },
         )
+
+    @staticmethod
+    async def _sse_event_generator(resources: StreamingResources) -> AsyncGenerator[str]:
+        while True:
+            if resources.stop_signal.is_set() and resources.chunk_queue.empty():
+                logger.debug("Stop streaming due to stop_event and empty queue")
+                break
+            try:
+                chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
+                yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
+                resources.chunk_queue.task_done()
+            except TimeoutError:
+                continue
+            except asyncio.CancelledError:
+                break
+
+        yield OpenaiService._build_chunk_sse(
+            content=OpenaiService._resolve_final_content(resources.stop_event),
+            model="",
+            finish_reason="stop",
+        )
+
+    @staticmethod
+    def _resolve_final_content(stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None) -> str:
+        if stop_event.is_hitl_request_event:
+            return stop_event.question
+        if stop_event.is_exception_event:
+            return f"\n\n>[!CAUTION]\n>**Error:** {stop_event.message}\n"
+        return ""
+
+    @staticmethod
+    def _build_chunk_sse(*, content: str, model: str, finish_reason: str | None = None) -> str:
+        chunk = ChatCompletionChunk(
+            id=str(uuid.uuid4()),
+            object="chat.completion.chunk",
+            created=int(datetime.now(UTC).timestamp()),
+            model=model,
+            choices=[
+                Choice(
+                    index=0,
+                    delta=ChoiceDelta(content=content, role="assistant"),
+                    finish_reason=finish_reason,
+                ),
+            ],
+            usage=None,
+        )
+        return f"data: {chunk.model_dump_json()}\n\n"
 
     @staticmethod
     @trace_fn

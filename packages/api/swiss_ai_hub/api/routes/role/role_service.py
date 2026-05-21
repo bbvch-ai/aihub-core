@@ -6,6 +6,8 @@ from swiss_ai_hub.api.routes.role.dto.create_role_request import CreateRoleReque
 from swiss_ai_hub.api.routes.role.dto.role_response import RoleResponse
 from swiss_ai_hub.api.routes.role.dto.update_role_request import UpdateRoleRequest
 
+_ROLE_NOT_FOUND = "Role not found."
+
 
 class RoleService:
     @staticmethod
@@ -37,7 +39,7 @@ class RoleService:
         """Retrieves a single role by its ID. Must belong to the given tenant or be a system role."""
         role = RoleEntity.objects.get(id=role_id)
         if role.tenant_id is not None and role.tenant_id != tenant_id:
-            raise HTTPException(status_code=404, detail="Role not found.")
+            raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
         return RoleResponse.from_role_entity(role)
 
     @staticmethod
@@ -48,7 +50,7 @@ class RoleService:
         if role.tenant_id is None:
             raise HTTPException(status_code=403, detail="Cannot modify system roles.")
         if role.tenant_id != tenant_id:
-            raise HTTPException(status_code=404, detail="Role not found.")
+            raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
 
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
@@ -71,5 +73,5 @@ class RoleService:
         if role.tenant_id is None:
             raise HTTPException(status_code=403, detail="Cannot delete system roles.")
         if role.tenant_id != tenant_id:
-            raise HTTPException(status_code=404, detail="Role not found.")
+            raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
         role.delete()

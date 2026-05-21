@@ -151,7 +151,7 @@ async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
             )
             logger.info(f"Successfully created role '{role_def.name}' for tenant '{tenant_id}'")
         except Exception as e:
-            logger.error(f"Failed to create role '{role_def.name}' for tenant '{tenant_id}': {e}")
+            logger.exception(f"Failed to create role '{role_def.name}' for tenant '{tenant_id}': {e}")
             raise
 
 
@@ -265,7 +265,7 @@ async def _ensure_bucket_exists(bucket_name: str) -> BucketEntity:
             logger.info(f"Successfully created bucket '{bucket_name}'")
             return bucket
         except Exception as e:
-            logger.error(f"Failed to create bucket '{bucket_name}': {e}")
+            logger.exception(f"Failed to create bucket '{bucket_name}': {e}")
             raise
 
 
@@ -286,5 +286,5 @@ async def _ensure_namespace_exists(bucket: BucketEntity, namespace_name: str) ->
             logger.info(f"Successfully created namespace '{namespace_name}' in bucket '{bucket.bucket_name}'")
             return namespace
         except Exception as e:
-            logger.error(f"Failed to create namespace '{namespace_name}' in bucket '{bucket.bucket_name}': {e}")
+            logger.exception(f"Failed to create namespace '{namespace_name}' in bucket '{bucket.bucket_name}': {e}")
             raise
