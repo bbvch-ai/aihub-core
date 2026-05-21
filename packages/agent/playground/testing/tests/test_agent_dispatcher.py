@@ -781,7 +781,7 @@ class TestAgentDispatcherAihubHeaders:
             await agent_dispatcher.handle_event(start_event, agent_topic)
 
             run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
-            stored = await run_context.get("aihub_headers")
+            stored = await run_context.get(agent_dispatcher._AIHUB_HEADERS_KEY)
             assert stored == {"x-aihub-user-token": "tok-from-api"}
 
     @pytest.mark.asyncio
@@ -802,4 +802,4 @@ class TestAgentDispatcherAihubHeaders:
             await agent_dispatcher.handle_event(start_event, agent_topic)
 
             run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
-            assert await run_context.get("aihub_headers") is None
+            assert await run_context.get(agent_dispatcher._AIHUB_HEADERS_KEY) is None

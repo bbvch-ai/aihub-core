@@ -46,7 +46,9 @@ class ExternalAgentEventDistributor:
         Validates user's membership in the thread, identifies the event type, and delegates
         to specialized handlers.
 
-        `aihub_headers` carries X-AIHub-* request headers on the NATS envelope, forwarded to the agent.
+        `aihub_headers` carries X-AIHub-* request headers onto the control-path NATS envelopes
+        (StartEvent, HITL/BITL responses) so the agent can act on behalf of the user. They are
+        deliberately not forwarded onto display events — see `_handle_display_message`.
         """
         thread = ThreadEntity.get_thread_by_id(external_event.thread_id)
 
@@ -76,7 +78,7 @@ class ExternalAgentEventDistributor:
 
         # Display the message back to the user who sent it - if it was user-sent
         if external_event.event.is_display_event and user:
-            await self._handle_display_message(external_event, run_id, user, aihub_headers)
+            await self._handle_display_message(external_event, run_id, user)
 
         if external_event.event.is_start_event:
             await self._handle_start_event(thread, external_event, run_id, aihub_headers)
@@ -121,7 +123,6 @@ class ExternalAgentEventDistributor:
         external_event: ExternalAgentEvent,
         run_id: str,
         user: UserIdentity,
-        aihub_headers: dict[str, str] | None = None,
     ):
         """
         Handle a DisplayEvent from the user.
@@ -141,7 +142,10 @@ class ExternalAgentEventDistributor:
             event_name=external_event.event.event_name,
             event_id=external_event.event.event_id,
         )
-        await self.nc_publisher.publish_event(external_event.event, subject, extra_headers=aihub_headers)
+        # X-AIHub-* headers are intentionally not forwarded here: display events are
+        # observability-only and never drive agent tool calls, so the credential has no use on
+        # this path and must not be spread to display-event subscribers.
+        await self.nc_publisher.publish_event(external_event.event, subject)
 
     async def _handle_human_in_the_loop_response(
         self,
