@@ -13,7 +13,7 @@ packages/bot/                              # SDK framework
 │   ├── bots/
 │   │   ├── chat/
 │   │   │   ├── base_chat_bot.py              # Core base: conversation lifecycle, routing, error handling
-│   │   │   ├── completion_handler.py        # Strategy base + shared static utilities (channel handling, streaming, CRUD)
+│   │   │   ├── completion_handler.py        # Strategy base + shared static utilities (channel handling, streaming, CRUD, user identity resolution)
 │   │   │   ├── content_extractor.py         # Multi-channel file/text extraction (Slack, Teams, generic)
 │   │   │   ├── agent/
 │   │   │   │   ├── agent_chat_bot.py         # NATS-based agent chat (non-streaming)

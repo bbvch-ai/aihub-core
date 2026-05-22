@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.15] - 2026-05-22 - Enhanced User Identity Resolution and Teams Bot Fixes
+
+### Fixed
+
+- 🐛 **Teams Bot User Lookup:** Resolved a critical issue (#1314) where the Teams bot failed to authenticate users whose
+  display name in Teams did not directly match their Keycloak email, by correctly resolving the user's true email via
+  the Teams connector.
+
+### Added
+
+- ✨ **Centralized User Identity Resolution:** Introduced new `resolve_user_email` and `resolve_user_identity` methods in
+  the base `CompletionHandler`. This provides a robust and consistent mechanism to determine a user's email from various
+  chat platforms (e.g., Teams) and resolve their Keycloak-backed identity across all bot types.
+- 🧪 **Comprehensive User Identity Tests:** Added extensive unit tests for user email and identity resolution, covering
+  various scenarios and edge cases to ensure the reliability and correctness of user authentication flows.
+
+### Refactor
+
+- 🧹 **Unified User Identity Logic:** Consolidated the user identity resolution logic into the shared
+  `CompletionHandler`, moving it from the `AgentCompletionHandler` and `OpenaiCompletionHandler`. This improves code
+  reusability, maintainability, and ensures consistent user authentication across all bot implementations.
+
+______________________________________________________________________
+
+## [v0.289.14] - 2026-05-22 - Enhanced AI Workflow Security
+
+### Security
+
+- 🔒 **Strengthened Claude Code Review Workflow Security:** The automated Claude AI code review workflow is now
+  restricted to run exclusively for pull requests from within the same repository and initiated by trusted contributors
+  (Owners, Members, or Collaborators).
+- 🔑 **Improved Claude Bot Interaction Control:** Access to trigger the Claude AI bot via comments or issues (using
+  `@claude`) has been limited to repository Owners, Members, and Collaborators, enhancing control and preventing
+  unauthorized invocations.
+
+______________________________________________________________________
+
 ## [v0.289.13] - 2026-05-22 - Securely Propagate User Identity to Agents
 
 ### Added
