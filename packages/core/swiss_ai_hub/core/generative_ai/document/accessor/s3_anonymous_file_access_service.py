@@ -8,6 +8,9 @@ from swiss_ai_hub.core.infrastructure.s3.s3_storage_settings import S3StorageSet
 
 logger = logging.getLogger(__name__)
 
+_CONTAINER_NAME_EMPTY_ERROR = "Container name cannot be empty"
+_FILE_PATH_EMPTY_ERROR = "File path cannot be empty"
+
 
 class S3AnonymousFileAccessService:
     """
@@ -56,9 +59,9 @@ class S3AnonymousFileAccessService:
         The maximum lifetime for presigned URLs is 7 days (168 hours).
         """
         if not container or not container.strip():
-            raise ValueError("Container name cannot be empty")
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
         if not file_path or not file_path.strip():
-            raise ValueError("File path cannot be empty")
+            raise ValueError(_FILE_PATH_EMPTY_ERROR)
         if lifetime_hours <= 0 or lifetime_hours > 168:  # 7 days max
             raise ValueError("Lifetime must be between 1 and 168 hours")
 
@@ -96,9 +99,9 @@ class S3AnonymousFileAccessService:
         by browsers (e.g., via Traefik-routed domain instead of internal Docker DNS).
         """
         if not container or not container.strip():
-            raise ValueError("Container name cannot be empty")
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
         if not file_path or not file_path.strip():
-            raise ValueError("File path cannot be empty")
+            raise ValueError(_FILE_PATH_EMPTY_ERROR)
         if not content_type or not content_type.strip():
             raise ValueError("Content type cannot be empty")
         if lifetime_hours <= 0 or lifetime_hours > 24:  # 24 hours max for uploads
@@ -120,9 +123,9 @@ class S3AnonymousFileAccessService:
     def download_file(self, container: str, file_path: str) -> bytes:
         """Raw byte download for in-memory processing (e.g. zip extraction, parsing)."""
         if not container or not container.strip():
-            raise ValueError("Container name cannot be empty")
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
         if not file_path or not file_path.strip():
-            raise ValueError("File path cannot be empty")
+            raise ValueError(_FILE_PATH_EMPTY_ERROR)
 
         response = self._s3_client.get_object(Bucket=container, Key=file_path)
         body = response["Body"]
@@ -140,9 +143,9 @@ class S3AnonymousFileAccessService:
         the entire file just to verify existence.
         """
         if not container or not container.strip():
-            raise ValueError("Container name cannot be empty")
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
         if not file_path or not file_path.strip():
-            raise ValueError("File path cannot be empty")
+            raise ValueError(_FILE_PATH_EMPTY_ERROR)
 
         try:
             # Use head_object to check existence without downloading the file
@@ -172,7 +175,7 @@ class S3AnonymousFileAccessService:
         in S3/MinIO storage.
         """
         if not container or not container.strip():
-            raise ValueError("Container name cannot be empty")
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
 
         try:
             files = []

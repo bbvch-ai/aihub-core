@@ -38,20 +38,24 @@ __all__ = [
     "TenantScopedController",
 ]
 
+_HEALTH_CHECKS_MODULE = "swiss_ai_hub.core.routes.health.health_checks"
+_CHAT_SERVICE_MODULE = "swiss_ai_hub.core.routes.chat.chat_service"
+_HEALTH_RESPONSE_MODULE = "swiss_ai_hub.core.routes.health.dto.health_response"
+
 _LAZY_IMPORTS = {
-    "check_s3": "swiss_ai_hub.core.routes.health.health_checks",
-    "check_redis_sync": "swiss_ai_hub.core.routes.health.health_checks",
-    "check_redis": "swiss_ai_hub.core.routes.health.health_checks",
-    "check_nats_sync": "swiss_ai_hub.core.routes.health.health_checks",
-    "check_nats": "swiss_ai_hub.core.routes.health.health_checks",
-    "check_mongodb": "swiss_ai_hub.core.routes.health.health_checks",
-    "check_milvus": "swiss_ai_hub.core.routes.health.health_checks",
-    "StreamingResources": "swiss_ai_hub.core.routes.chat.chat_service",
-    "ProcessHealthChecks": "swiss_ai_hub.core.routes.health.dto.health_response",
-    "JsonResources": "swiss_ai_hub.core.routes.chat.chat_service",
-    "HealthResponse": "swiss_ai_hub.core.routes.health.dto.health_response",
-    "ApiHealthChecks": "swiss_ai_hub.core.routes.health.dto.health_response",
-    "ChatService": "swiss_ai_hub.core.routes.chat.chat_service",
+    "check_s3": _HEALTH_CHECKS_MODULE,
+    "check_redis_sync": _HEALTH_CHECKS_MODULE,
+    "check_redis": _HEALTH_CHECKS_MODULE,
+    "check_nats_sync": _HEALTH_CHECKS_MODULE,
+    "check_nats": _HEALTH_CHECKS_MODULE,
+    "check_mongodb": _HEALTH_CHECKS_MODULE,
+    "check_milvus": _HEALTH_CHECKS_MODULE,
+    "StreamingResources": _CHAT_SERVICE_MODULE,
+    "ProcessHealthChecks": _HEALTH_RESPONSE_MODULE,
+    "JsonResources": _CHAT_SERVICE_MODULE,
+    "HealthResponse": _HEALTH_RESPONSE_MODULE,
+    "ApiHealthChecks": _HEALTH_RESPONSE_MODULE,
+    "ChatService": _CHAT_SERVICE_MODULE,
     "Controller": "swiss_ai_hub.core.routes.controller",
     "HealthCheckProvider": "swiss_ai_hub.core.routes.health.health_server",
     "HealthController": "swiss_ai_hub.core.routes.health.health_controller",
