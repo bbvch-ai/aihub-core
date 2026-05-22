@@ -39,7 +39,6 @@ def check_is_no_answer_response(event: AgentInTheLoop.response) -> bool:
 
 
 def check_context_ready_for_history_limit(
-    context_event: InOrderNodeCombinerEvent,
     context_sufficient_event: ContextSufficientAcceptEvent | None,
 ) -> bool:
     """Check if context is ready for history limiting (RAGAgent version)."""
