@@ -17,18 +17,18 @@ class McpClientConfig(StepConfig):
     name: Annotated[str | InputText, Field(description="Logical name for this connection.")]
     url: Annotated[str | InputText, Field(description="MCP server URL — FastMCP auto-infers the transport.")]
     auth_mode: Annotated[
-        Literal["static_api_key", "user_token"] | SelectButton,
+        Literal["none", "api_key", "user_token"] | SelectButton,
         Field(
-            default="static_api_key",
-            description="How to authenticate to the MCP server: with a static API key or with the requesting user's token.",
+            default="api_key",
+            description=(
+                "How to authenticate to the MCP server: no credentials, a static API key, "
+                "or the requesting user's forwarded token."
+            ),
         ),
     ]
     api_key: Annotated[
-        str | Password | None,
-        Field(
-            default=None,
-            description="API key for authenticated MCP servers — used only when auth_mode is static_api_key.",
-        ),
+        str | Password,
+        Field(default="", description="Static API key — used only when auth_mode is 'api_key'."),
     ]
     headers: Annotated[
         dict[str, str] | None,
@@ -56,8 +56,12 @@ class McpClientConfig(StepConfig):
                 help=LocaleString.from_i18n_path("lib.mcp.config.auth_mode.help"),
                 options=[
                     {
-                        "label": LocaleString.from_i18n_path("lib.mcp.config.auth_mode.static_api_key_label"),
-                        "value": "static_api_key",
+                        "label": LocaleString.from_i18n_path("lib.mcp.config.auth_mode.none_label"),
+                        "value": "none",
+                    },
+                    {
+                        "label": LocaleString.from_i18n_path("lib.mcp.config.auth_mode.api_key_label"),
+                        "value": "api_key",
                     },
                     {
                         "label": LocaleString.from_i18n_path("lib.mcp.config.auth_mode.user_token_label"),
@@ -71,7 +75,7 @@ class McpClientConfig(StepConfig):
             api_key=Password(
                 label=LocaleString.from_i18n_path("lib.mcp.config.api_key.label"),
                 help=LocaleString.from_i18n_path("lib.mcp.config.api_key.help"),
-                condition_if="$get(mcp_auth_mode).value === 'static_api_key'",
+                condition_if="$get(mcp_auth_mode).value === 'api_key'",
             ),
             timeout=InputNumber(
                 label=LocaleString.from_i18n_path("lib.mcp.config.timeout.label"),

@@ -9,16 +9,18 @@ config:
   auth_mode:
     label: Authentication Mode
     help: |
-      How agents authenticate to this MCP server. "Static API key" uses a shared key configured here.
-      "User token" forwards the requesting user's bearer token so external actions are attributed to them —
-      this only works for user-initiated chat-completion runs that forward an X-AIHub-User-Token header.
-      Scheduled, process-initiated, bot-channel, or agent-to-agent runs do not forward a user token and
-      will fail in this mode — use static API key for those.
-    static_api_key_label: Static API key
+      How agents authenticate to this MCP server. "None" sends no credentials. "API key" uses a
+      shared key configured below. "User token" forwards the requesting user's bearer token so
+      external actions are attributed to them — this only works for user-initiated chat-completion
+      runs that forward an X-AIHub-User-Token header. Scheduled, process-initiated, bot-channel, or
+      agent-to-agent runs do not forward a user token and will fail in this mode.
+    none_label: None
+    api_key_label: API key
     user_token_label: User token
   api_key:
     label: API Key
-    help: Optional API key for authenticated MCP servers.
+    help: Static API key for the MCP server — used only when the authentication mode
+      is "API key".
   timeout:
     label: Timeout (seconds)
     help: Maximum time to wait for a response from the MCP server.

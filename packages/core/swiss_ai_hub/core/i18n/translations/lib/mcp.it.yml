@@ -9,17 +9,19 @@ config:
   auth_mode:
     label: Modalità di autenticazione
     help: |
-      Come gli agenti si autenticano al server MCP. "Chiave API statica" usa una chiave condivisa
-      configurata qui. "Token utente" inoltra il token bearer dell'utente richiedente in modo che le
-      azioni esterne gli vengano attribuite — funziona solo per esecuzioni di chat-completion avviate
-      dall'utente che inoltrano un header X-AIHub-User-Token. Le esecuzioni pianificate, avviate da
-      un processo, da un canale bot o da agente ad agente non inoltrano un token utente e falliranno
-      in questa modalità — usate la chiave API statica per questi casi.
-    static_api_key_label: Chiave API statica
+      Come gli agenti si autenticano al server MCP. "Nessuna" non invia credenziali. "Chiave API"
+      usa una chiave condivisa configurata di seguito. "Token utente" inoltra il token bearer
+      dell'utente richiedente in modo che le azioni esterne gli vengano attribuite — funziona solo
+      per esecuzioni di chat-completion avviate dall'utente che inoltrano un header
+      X-AIHub-User-Token. Le esecuzioni pianificate, avviate da un processo, da un canale bot o da
+      agente ad agente non inoltrano un token utente e falliranno in questa modalità.
+    none_label: Nessuna
+    api_key_label: Chiave API
     user_token_label: Token utente
   api_key:
     label: Chiave API
-    help: Chiave API opzionale per server MCP autenticati.
+    help: Chiave API statica per il server MCP — usata solo quando la modalità di
+      autenticazione è "Chiave API".
   timeout:
     label: Timeout (secondi)
     help: Tempo massimo di attesa per una risposta dal server MCP.
