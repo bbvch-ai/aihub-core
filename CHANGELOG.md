@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.13] - 2026-05-22 - Securely Propagate User Identity to Agents
+
+### Added
+
+- 🔑 **Introduced `X-AIHub-*` Header Propagation:** Implemented a new mechanism to securely propagate `X-AIHub-*`
+  identity headers from incoming API requests through the NATS event bus to agent `RunContext`. This allows agents to
+  perform actions on behalf of the originating user, supporting use cases like delegated authentication.
+- 🔐 **`_aihub_headers` Attribute to Base Events:** Added a private attribute `_aihub_headers` to the `BaseEvent` class,
+  enabling temporary storage of untrusted `X-AIHub-*` headers received from NATS messages for subsequent processing and
+  validation by agent steps.
+- ⚡️ **New `NATSMessageHeaders` Utilities:** Introduced `with_aihub_headers` for filtering and merging `X-AIHub-*`
+  headers onto outgoing NATS messages, and `extract_aihub_headers` for safely extracting and standardizing these headers
+  from incoming messages.
+- 🧪 **Comprehensive Unit Tests for Header Handling:** Added new unit tests to ensure the robust and secure handling of
+  `X-AIHub-*` headers across publishers and the `NATSMessageHeaders` utility.
+
+### Changed
+
+- 🔄 **API Request Header Extraction:** Modified the OpenAI API controller to extract `X-AIHub-*` headers from incoming
+  HTTP requests, ensuring they are captured early in the request lifecycle.
+- 🚀 **Event Distributor Header Forwarding:** Updated the event distributor to forward `X-AIHub-*` headers onto NATS
+  control-path events (`StartEvent`, HITL/BITL responses) while intentionally excluding them from observability-only
+  display events to prevent credential over-sharing.
+- 📦 **Agent `RunContext` Identity Storage:** Enhanced the `AgentDispatcher` to persist extracted `X-AIHub-*` headers
+  into the agent's `RunContext`, making them accessible to agent steps that require user identity for delegated
+  operations.
+- 📡 **NATS Publisher and Subscriber Integration:** Integrated `X-AIHub-*` header processing into both NATS Core and
+  JetStream publishers and subscribers, enabling seamless propagation and extraction of these headers across the event
+  bus.
+
+______________________________________________________________________
+
 ## [v0.289.12] - 2026-05-22 - Timestamp Precision and Code Refinements
 
 ### Changed
