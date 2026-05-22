@@ -244,7 +244,7 @@ class KeycloakAuthHandler(AuthHandler):
             if earliest:
                 selected_id = earliest.id
             else:
-                selected_id = sorted(existing_tenant_ids)[0]
+                selected_id = min(existing_tenant_ids)
 
         await KeycloakAdminService.set_active_tenant(user_id, selected_id)
         logger.info("Auto-selected active tenant %s for user %s", selected_id, user_id)
