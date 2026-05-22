@@ -12,6 +12,7 @@ from opentelemetry import context, trace
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
 from swiss_ai_hub.core.subscribers.abstract_subscriber import AbstractSubscriber, TEvent
 from swiss_ai_hub.core.topics import Topic
+from swiss_ai_hub.core.tracing.nats_message_headers import NATSMessageHeaders
 from swiss_ai_hub.core.tracing.nats_trace_context_propagator import NATSTraceContextPropagator
 
 logger = logging.getLogger(__name__)
@@ -93,6 +94,7 @@ class NCSubscriber(AbstractSubscriber[TEvent]):
                 topic = Topic.from_subject(msg.subject)
                 event_data = msg.data
                 event = self.event_cls.deserialize_event(event_data)
+                event._aihub_headers = NATSMessageHeaders.extract_aihub_headers(headers)
 
                 span.update_name(f"{self.name}.receive {event.__class__.__name__}")
                 span.set_attribute("event.type", event.event_name)

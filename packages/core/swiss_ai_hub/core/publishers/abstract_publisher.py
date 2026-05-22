@@ -43,5 +43,11 @@ class AbstractPublisher[TEvent: BaseEvent](abc.ABC):
             )
 
     @abc.abstractmethod
-    async def publish_event(self, event: TEvent, subject: str, **kwargs):
+    async def publish_event(
+        self,
+        event: TEvent,
+        subject: str,
+        extra_headers: dict[str, str] | None = None,
+        **kwargs,
+    ):
         pass
