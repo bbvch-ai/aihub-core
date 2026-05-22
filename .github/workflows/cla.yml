@@ -32,8 +32,7 @@ jobs:
           allowlist: dependabot[bot],github-actions[bot]
           remote-organization-name: bbvch-ai
           remote-repository-name: cla-signatures
-          custom-pr-sign-comment: I have read the CONTRIBUTOR_AGREEMENT and I hereby
-            sign the CLA
+          custom-pr-sign-comment: "I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA"
           custom-notsigned-prcomment: |
             Thank you for your contribution! Before we can merge, please read our
             [Contributor License Agreement](https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTOR_AGREEMENT.md)

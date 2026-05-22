@@ -1,6 +1,7 @@
-> ⚠️ **DRAFT — pending legal review.** This document has not yet been reviewed for legal compliance.
+> [!WARNING]
+> **DRAFT — pending legal review.** This document has not yet been reviewed for legal compliance.
 > Do not rely on this text as a binding agreement until that review is complete and this banner is removed.
-> Follow-up issue: remove this banner after Adrian confirms the text is legally valid for BBV Software Services AG.
+> Follow-up: remove this banner after Adrian confirms the text is legally valid for BBV Software Services AG.
 
 ---
 
@@ -84,7 +85,7 @@ rights to intellectual property that You create that includes Your Contributions
 have received permission from Your employer to make Contributions on behalf of that employer, or that
 Your employer has waived such rights for Your Contributions to the Company.
 
-4.2 You represent that each of Your Contributions is Your original creation (see Section 7 for
+4.2 You represent that each of Your Contributions is Your original creation (see Section 6 for
 submissions on behalf of others).
 
 4.3 You represent that Your Contribution submissions include complete details of any third-party licenses
