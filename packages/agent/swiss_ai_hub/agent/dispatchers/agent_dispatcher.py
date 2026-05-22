@@ -275,7 +275,6 @@ class AgentDispatcher(BaseDispatcher):
             topic.execution_context_id, step_method.__name__, events_and_kwargs.events
         )
 
-        # Instantiate the agent and run the step
         agent_instance = self.agent()
 
         async with self.agent_run_tracer.trace_step_start(topic, step_method, events_and_kwargs.kwargs) as step_span:
@@ -292,48 +291,45 @@ class AgentDispatcher(BaseDispatcher):
 
             # Always finalize the span so Langfuse receives trace metadata (name, session,
             # user) even for steps that return None (e.g. side-effect-only steps).
-            result_events = None
-            if result:
-                if not isinstance(result, list):
-                    result = [result]
-                result_events = result
-
+            result_events = self._normalize_step_result(result)
             await self.agent_run_tracer.trace_step_stop(step_span, result_events, topic)
 
-            # If the step returns events, publish them
             if result_events:
                 for event in result_events:
-                    if event.is_hitl_request_event:
-                        logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event.event_name}")
-                        # Complete the event's topic info
-                        event.topic = AgentInstanceTopic.from_partial_topic(
-                            partial_topic=event.topic,
-                            agent_class=topic.agent_class,
-                            agent_id=topic.agent_id,
-                            run_id=topic.run_id,
-                            thread_id=topic.thread_id,
-                            display_id=topic.display_id,
-                            event_id=event.event_id,
-                        )
+                    await self._handle_step_result_event(event, topic)
 
-                    if event.is_bitl_request_event:
-                        logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event.event_name}")
-                        # Complete the event's topic info
-                        event.topic = AgentInstanceTopic.from_partial_topic(
-                            partial_topic=event.topic,
-                            agent_class=topic.agent_class,
-                            agent_id=topic.agent_id,
-                            run_id=topic.run_id,
-                            thread_id=topic.thread_id,
-                            display_id=topic.display_id,
-                            event_id=event.event_id,
-                        )
+    @staticmethod
+    def _normalize_step_result(result: Any) -> list[BaseEvent] | None:
+        if not result:
+            return None
+        if not isinstance(result, list):
+            return [result]
+        return result
 
-                    if event.is_aitl_request_event:
-                        logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event.event_name}")
-                        await self.trigger_agent_in_the_loop(event, topic)
+    @staticmethod
+    def _complete_request_event_topic(event: BaseEvent, topic: AgentInstanceTopic) -> None:
+        if event.is_hitl_request_event:
+            logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event.event_name}")
+        elif event.is_bitl_request_event:
+            logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event.event_name}")
+        else:
+            return
+        event.topic = AgentInstanceTopic.from_partial_topic(
+            partial_topic=event.topic,
+            agent_class=topic.agent_class,
+            agent_id=topic.agent_id,
+            run_id=topic.run_id,
+            thread_id=topic.thread_id,
+            display_id=topic.display_id,
+            event_id=event.event_id,
+        )
 
-                    await self.publish_event(event, topic)
+    async def _handle_step_result_event(self, event: BaseEvent, topic: AgentInstanceTopic) -> None:
+        self._complete_request_event_topic(event, topic)
+        if event.is_aitl_request_event:
+            logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event.event_name}")
+            await self.trigger_agent_in_the_loop(cast(AgentInTheLoopRequestEvent, event), topic)
+        await self.publish_event(event, topic)
 
     @override
     async def publish_event(
