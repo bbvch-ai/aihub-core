@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.12] - 2026-05-22 - Timestamp Precision and Code Refinements
+
+### Changed
+
+- ⚙️ Enhanced **conversation timestamp accuracy** by switching to timezone-aware UTC datetime objects for
+  `last_activity` records, ensuring more consistent timekeeping.
+
+### Refactor
+
+- 🧹 Streamlined **content type checks** within the content extractor, consolidating multiple `startswith` conditions for
+  improved code readability.
+- ⚡️ Optimized **Slack ID retrieval** by making the `_get_slack_ids` method synchronous, simplifying its execution flow.
+
+______________________________________________________________________
+
 ## [v0.289.11] - 2026-05-22 - Core Agent Refinements and Dispatcher Improvements
 
 ### Refactor
