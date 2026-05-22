@@ -14,8 +14,9 @@ jobs:
   cla:
     name: CLA Signature Check
     runs-on: ubuntu-24.04-arm
-    if: >
-      (github.event.comment.body == 'I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA') ||
+    if: >-
+      (github.event.comment.body == 'I have read the CONTRIBUTOR_AGREEMENT and I hereby
+      sign the CLA') ||
       github.event_name == 'pull_request'
     timeout-minutes: 5
     steps:
@@ -26,24 +27,19 @@ jobs:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_ASSISTANT_PAT }}
         with:
           path-to-signatures: signatures/v1/cla.json
-          path-to-document: >
-            https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTOR_AGREEMENT.md
+          path-to-document: https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTOR_AGREEMENT.md
           branch: main
           allowlist: dependabot[bot],github-actions[bot]
           remote-organization-name: bbvch-ai
           remote-repository-name: cla-signatures
-          custom-pr-sign-comment: >
-            I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA
-          custom-notsigned-prcomment: >
+          custom-pr-sign-comment: I have read the CONTRIBUTOR_AGREEMENT and I hereby
+            sign the CLA
+          custom-notsigned-prcomment: |
             Thank you for your contribution! Before we can merge, please read our
             [Contributor License Agreement](https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTOR_AGREEMENT.md)
-            and sign by posting the following comment on this PR:
-
-            ```
-            I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA
-            ```
-
-            > **Note:** If your PR was opened from a fork, this comment may not have appeared
-            > automatically. Please post the phrase above to proceed.
+            and sign by posting the following exact phrase as a comment on this PR:
+            `I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA`
+            > **Note for fork contributors:** If this prompt did not appear automatically,
+            > please post the phrase above manually — GitHub restricts bot comments on fork PRs.
           custom-allsigned-prcomment: All contributors have signed the CLA ✅
           lock-pullrequest-aftermerge: false
