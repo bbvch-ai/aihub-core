@@ -81,7 +81,7 @@ const openOriginalDocument = async () => {
   if (!document.value?.source) return
 
   try {
-    const url = await getDocumentSourceUrl(props.db, props.namespace, props.documentId)
+    const url = await getDocumentSourceUrl(tenantId.value!, props.db, props.namespace, props.documentId)
     window.open(url, '_blank')
   }
   catch (e) {
