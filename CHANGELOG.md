@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.17] - 2026-05-22 - OpenWebUI Upgrade and Backend Reliability Enhancements
+
+### Changed
+
+- ⬆️ **Upgraded OpenWebUI:** Updated the integrated OpenWebUI platform to version `v0.9.5`, incorporating its latest
+  features and stability improvements across all deployment configurations.
+
+### Fixed
+
+- ⚡️ **Improved UI Context Synchronization:** Enhanced the reliability of UI context updates by switching from two-way
+  `event_caller` to one-way `event_emitter` for JavaScript execution. This change prevents potential deadlocks that
+  could occur in distributed OpenWebUI environments with Redis-coordinated session pools, ensuring smoother and more
+  stable user experience.
+
+### Removed
+
+- 🗑️ **Cleaned Up Development Certificates:** Removed legacy `dev-cert.pem` and `dev-key.pem` files from the Traefik
+  configuration, streamlining the development environment setup.
+
+______________________________________________________________________
+
 ## [v0.289.16] - 2026-05-22 - Improved Pipeline Scheduling and Path Safety
 
 ### Added
