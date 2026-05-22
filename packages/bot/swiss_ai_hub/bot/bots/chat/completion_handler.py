@@ -76,10 +76,10 @@ class CompletionHandler:
         must be fetched from the Teams connector. The display name is only a usable fallback when
         it already is an email (emulator / dev channels).
         """
-        user_id = turn_context.activity.from_property.id or "UNKNOWN"
+        user_id = turn_context.activity.from_property.id
 
         connector_client = turn_context.turn_state.get("ConnectorClient")
-        if isinstance(connector_client, TeamsConnectorClient):
+        if user_id and isinstance(connector_client, TeamsConnectorClient):
             teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
                 turn_context.activity.conversation.id, user_id
             )

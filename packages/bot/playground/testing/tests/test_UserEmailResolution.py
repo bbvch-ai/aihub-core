@@ -30,13 +30,16 @@ CONVERSATION_ID = "conversation-1"
 def _make_turn_context(
     *,
     from_name: str,
-    from_id: str = USER_AAD_ID,
+    from_id: str | None = USER_AAD_ID,
     connector_client: object | None = None,
 ) -> TurnContext:
     """Builds a minimal ``TurnContext`` for a single inbound message activity."""
+    from_fields: dict = {"name": from_name}
+    if from_id is not None:
+        from_fields["id"] = from_id
     activity = Activity(
         type="message",
-        from_property=ChannelAccount(id=from_id, name=from_name),
+        from_property=ChannelAccount(**from_fields),
         conversation=ConversationAccount(id=CONVERSATION_ID),
         recipient=ChannelAccount(id="bot-1", name="Assistant"),
     )
@@ -106,6 +109,44 @@ async def test_resolve_email_ignores_non_teams_connector():
     email = await CompletionHandler.resolve_user_email(turn_context)
 
     assert email == RESOLVED_EMAIL
+
+
+@pytest.mark.asyncio
+async def test_resolve_email_skips_connector_when_user_id_missing():
+    """A missing ``from_property.id`` must not trigger a doomed connector lookup."""
+    connector = _teams_connector(RESOLVED_EMAIL)
+    turn_context = _make_turn_context(from_name=RESOLVED_EMAIL, from_id=None, connector_client=connector)
+
+    email = await CompletionHandler.resolve_user_email(turn_context)
+
+    assert email == RESOLVED_EMAIL
+    connector.get_conversation_member.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_resolve_user_identity_builds_identity_from_keycloak(monkeypatch):
+    """``resolve_user_identity`` turns a resolved email into a Keycloak-backed identity."""
+    register_fake_keycloak_user(user_id="agent-user-oid", name=DISPLAY_NAME, email=RESOLVED_EMAIL)
+    monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", AsyncMock(return_value=fake_tenant_identity()))
+    monkeypatch.setattr(UserTenantRoleEntity, "get_roles_for_user_in_tenant", MagicMock(return_value=["admin"]))
+
+    turn_context = _make_turn_context(from_name=DISPLAY_NAME, connector_client=_teams_connector(RESOLVED_EMAIL))
+
+    identity = await CompletionHandler.resolve_user_identity(turn_context)
+
+    assert identity.id == "agent-user-oid"
+    assert identity.email == RESOLVED_EMAIL
+    assert identity.roles == ["admin"]
+    assert identity.is_sys_admin is False
+
+
+@pytest.mark.asyncio
+async def test_resolve_user_identity_raises_when_user_not_in_keycloak():
+    """A resolved email with no matching Keycloak account fails with a clear error."""
+    turn_context = _make_turn_context(from_name="ghost@example.com")
+
+    with pytest.raises(ValueError, match="not found in Keycloak"):
+        await CompletionHandler.resolve_user_identity(turn_context)
 
 
 @pytest.mark.asyncio
