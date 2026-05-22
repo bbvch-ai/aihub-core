@@ -1,0 +1,49 @@
+---
+name: CLA Assistant
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, closed, synchronize]
+permissions:
+  actions: write
+  contents: read
+  pull-requests: write
+  statuses: write
+jobs:
+  cla:
+    name: CLA Signature Check
+    runs-on: ubuntu-24.04-arm
+    if: >
+      (github.event.comment.body == 'I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA') ||
+      github.event_name == 'pull_request'
+    timeout-minutes: 5
+    steps:
+      - name: CLA Assistant
+        uses: contributor-assistant/github-action@v2.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_ASSISTANT_PAT }}
+        with:
+          path-to-signatures: signatures/v1/cla.json
+          path-to-document: >
+            https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTOR_AGREEMENT.md
+          branch: main
+          allowlist: dependabot[bot],github-actions[bot]
+          remote-organization-name: bbvch-ai
+          remote-repository-name: cla-signatures
+          custom-pr-sign-comment: >
+            I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA
+          custom-notsigned-prcomment: >
+            Thank you for your contribution! Before we can merge, please read our
+            [Contributor License Agreement](https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTOR_AGREEMENT.md)
+            and sign by posting the following comment on this PR:
+
+            ```
+            I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA
+            ```
+
+            > **Note:** If your PR was opened from a fork, this comment may not have appeared
+            > automatically. Please post the phrase above to proceed.
+          custom-allsigned-prcomment: All contributors have signed the CLA ✅
+          lock-pullrequest-aftermerge: false
