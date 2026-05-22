@@ -23,7 +23,7 @@ def build() -> FewShotAgentConfig:
         icon="mage:box-3d",
         number_of_input_tokens=100000,
         llm=LLMConfig(
-            model_name="text-generation/gpt-oss-120b",
+            model_name="text-generation/gemma-4-31B-it",
             default_parameter=LLMParameter(temperature=0.0, timeout=60.0),
         ),
         few_shot=FewShotStepConfig(

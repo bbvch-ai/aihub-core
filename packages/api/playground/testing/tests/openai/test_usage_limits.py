@@ -90,7 +90,7 @@ class TestUsageLimitEnforcement:
         async with LifespanManager(app) as lifespan:
             async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
                 payload = {
-                    "model": "text-generation/Apertus-70B-Instruct-2509",
+                    "model": "text-generation/gemma-4-31B-it",
                     "messages": [{"role": "user", "content": "Hello"}],
                     "stream": False,
                 }
