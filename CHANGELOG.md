@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.18] - 2026-05-22 - Enhanced Tenant Management and Robust Initialization
+
+### Added
+
+- 🚀 **Superuser Active Tenant Initialization:** The active tenant for the superuser is now automatically ensured during
+  the database initialization process, making the initial setup more robust and consistent.
+
+### Changed
+
+- ⚡️ **Improved Error Logging:** Critical database initialization steps, such as role, bucket, and namespace creation,
+  now utilize `logger.exception` to automatically include detailed stack trace information when errors occur,
+  significantly improving diagnostic capabilities.
+- 🔄 **Refined Default Tenant Selection Fallback:** The fallback logic for automatically selecting an active tenant has
+  been updated to reliably choose an available tenant ID, ensuring a consistent active tenant assignment even under
+  specific edge cases.
+
+### Refactor
+
+- 🧹 **Centralized Active Tenant Management Logic:** The core logic responsible for automatically selecting and ensuring
+  a user's active tenant has been moved from `KeycloakAuthHandler` to the `KeycloakAdminService`, enhancing modularity
+  and centralizing Keycloak-related administrative functions.
+
+______________________________________________________________________
+
 ## [v0.289.17] - 2026-05-22 - OpenWebUI Upgrade and Backend Reliability Enhancements
 
 ### Changed
