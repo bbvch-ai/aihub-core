@@ -36,14 +36,14 @@ jobs:
       - name: Parse agent images from compose-config.yml
         id: parse
         run: |
-          # Extract image names where build == "localbuild" and name ends with "_agent"
-          images=$(python3 -c "
-          import yaml, json
-          with open('infra/deployment/compose-config.yml') as f:
-              config = yaml.safe_load(f)
-          images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild' and k.endswith('_agent')]
-          print(json.dumps(images))
-          ")
+          # Extract image names where build == "localbuild" and name ends with "_agent".
+          # yq + jq are both preinstalled on ubuntu-slim; PyYAML is not.
+          images=$(yq -o=json '.' infra/deployment/compose-config.yml \
+            | jq -c '[.image_tags | to_entries[]
+                | select((.value | type) == "object"
+                  and .value.build == "localbuild"
+                  and (.key | endswith("_agent")))
+                | .key]')
           echo "Discovered agents: $images"
           echo "matrix={\"image\":$images}" >> $GITHUB_OUTPUT
   build:

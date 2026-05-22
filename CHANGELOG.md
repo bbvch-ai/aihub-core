@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.11] - 2026-05-22 - Core Agent Refinements and Dispatcher Improvements
+
+### Refactor
+
+- 🧹 **Streamlined Agent Dispatching Logic:** Extracted event normalization and handling into dedicated helper methods
+  within the `AgentDispatcher` for improved modularity, readability, and maintainability of event processing.
+- ⚙️ **Enhanced Multiprocess Runner Stability:** Centralized and improved the graceful shutdown mechanism for
+  `MultiprocessAgentRunner` to ensure more robust and consistent stopping of agent processes.
+- 🔄 **Simplified RAG Agent Preconditions:** Refined the `context_ready_for_history_limit` precondition in the RAG agent
+  by removing an unnecessary parameter, leading to cleaner code.
+- 📄 **Improved Module Import Clarity:** Introduced module constants for lazy imports in the MCP module, enhancing code
+  readability and reducing string literal duplication.
+
+### Changed
+
+- 📝 **Clarified Event Tracing Behavior:** Added a comment to explain that `EventDisplayer` arguments are intentionally
+  excluded from tracing, improving code documentation.
+
+______________________________________________________________________
+
+## [v0.289.10] - 2026-05-21 - Workflow Optimization and Release Tagging Enhancements
+
+### Fixed
+
+- 🔑 **Resolved Release Tagging Permissions:** Addressed an issue in the `set-latest` workflow that prevented `latest`
+  git tags from being moved when workflow files were modified, by leveraging an SSH deploy key for proper
+  authentication.
+
+### Refactor
+
+- 🧹 **Streamlined CI/CD YAML Parsing:** Replaced Python-based YAML parsing with `yq` and `jq` in the `build-agents`,
+  `build-pipelines`, and `set-latest` workflows. This change utilizes pre-installed tools on the `ubuntu-slim` runner,
+  enhancing workflow reliability and reducing external dependencies.
+
+______________________________________________________________________
+
 ## [v0.289.9] - 2026-05-20 - Infrastructure Maintenance
 
 ### Changed
