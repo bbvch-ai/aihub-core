@@ -4,9 +4,9 @@ from swiss_ai_hub.agent.context.run.run_context import RunContext
 class McpAuthResolver:
     """Read the user's bearer token out of the X-AIHub-* headers stashed in RunContext.
 
-    Per #948 the API extracts ``X-AIHub-*`` request headers, forwards them on the NATS message
-    envelope, and ``AgentDispatcher`` (PR #1258) lifts them into RunContext under
-    ``_aihub_headers`` (lowercased keys). This resolver is the MCP-side reader of that contract.
+    The API extracts ``X-AIHub-*`` request headers, forwards them on the NATS message envelope,
+    and ``AgentDispatcher`` lifts them into RunContext under ``_aihub_headers`` (lowercased
+    keys). This resolver is the MCP-side reader of that contract.
 
     Keep ``AIHUB_HEADERS_KEY`` and ``USER_TOKEN_HEADER`` in lockstep with the dispatcher writer
     (``AgentDispatcher._AIHUB_HEADERS_KEY``) and ``NATSMessageHeaders.extract_aihub_headers`` —

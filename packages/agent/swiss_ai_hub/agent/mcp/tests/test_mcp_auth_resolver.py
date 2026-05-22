@@ -8,9 +8,9 @@ from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 
 
 class TestResolveUserToken:
-    """The resolver is the MCP-side read of the X-AIHub-* headers contract from #948.
+    """The resolver is the MCP-side read of the X-AIHub-* headers contract.
 
-    Writer side lives in AgentDispatcher (PR #1258). The two constants on the resolver
+    Writer side lives in AgentDispatcher. The two constants on the resolver
     (AIHUB_HEADERS_KEY, USER_TOKEN_HEADER) must stay in lockstep with the dispatcher writer
     and NATSMessageHeaders.extract_aihub_headers — drift will make user_token MCP auth
     silently break.
@@ -55,8 +55,7 @@ class TestHeaderContractLockstep:
 
     The resolver duplicates the key as its own constant (kept light — it is a leaf utility and
     must not pull in the dispatcher import graph). This test is what makes that duplication safe:
-    it fails the moment the writer and reader drift apart, which is exactly the bug that broke
-    user_token MCP auth before PR #1258 landed.
+    it fails the moment the writer and reader drift apart.
     """
 
     def test_aihub_headers_key_matches_dispatcher_writer(self):
