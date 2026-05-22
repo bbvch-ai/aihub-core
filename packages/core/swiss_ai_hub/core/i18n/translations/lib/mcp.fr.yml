@@ -8,14 +8,9 @@ config:
     help: L'URL HTTP du point de terminaison du serveur MCP (ex. https://mcp.example.com/mcp).
   auth_mode:
     label: Mode d'authentification
-    help: |
-      Comment les agents s'authentifient auprès du serveur MCP. "Aucune" n'envoie aucune information
-      d'identification. "Clé API" utilise une clé partagée configurée ci-dessous. "Jeton utilisateur"
-      transmet le jeton bearer de l'utilisateur appelant afin que les actions externes lui soient
-      attribuées — ne fonctionne que pour les exécutions de type chat-completion initiées par un
-      utilisateur qui transmettent un en-tête X-AIHub-User-Token. Les exécutions planifiées, initiées
-      par un processus, par un canal bot ou d'agent à agent ne transmettent pas de jeton utilisateur
-      et échoueront dans ce mode.
+    help: Comment les agents s'authentifient auprès du serveur MCP. « Jeton utilisateur
+      » transmet le jeton de l'utilisateur appelant et ne fonctionne que pour les
+      exécutions de chat initiées par un utilisateur.
     none_label: Aucune
     api_key_label: Clé API
     user_token_label: Jeton utilisateur

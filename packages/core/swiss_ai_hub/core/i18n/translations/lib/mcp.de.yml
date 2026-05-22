@@ -8,13 +8,9 @@ config:
     help: Die HTTP-URL des MCP-Server-Endpunkts (z.B. https://mcp.example.com/mcp).
   auth_mode:
     label: Authentifizierungsmodus
-    help: |
-      Wie sich Agenten beim MCP-Server authentifizieren. "Keine" sendet keine Anmeldedaten.
-      "API-Schlüssel" verwendet einen unten hinterlegten gemeinsamen Schlüssel. "Benutzer-Token"
-      leitet das Bearer-Token der anfragenden Person weiter, sodass externe Aktionen ihr zugeordnet
-      werden — funktioniert nur bei benutzerinitiierten Chat-Completion-Läufen, die einen
-      X-AIHub-User-Token-Header weiterleiten. Geplante, prozessinitiierte, Bot-Kanal- oder
-      Agent-zu-Agent-Läufe leiten kein Benutzer-Token weiter und schlagen in diesem Modus fehl.
+    help: Wie sich Agenten beim MCP-Server authentifizieren. "Benutzer-Token" leitet
+      das Token der anfragenden Person weiter und funktioniert nur bei benutzerinitiierten
+      Chat-Läufen.
     none_label: Keine
     api_key_label: API-Schlüssel
     user_token_label: Benutzer-Token
