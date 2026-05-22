@@ -35,7 +35,7 @@ async def main():
                 en="Agent for storing and retrieving explicit organizational facts shared across all users"
             ),
             llm=LLMConfig(
-                model_name="text-generation/gpt-oss-120b",
+                model_name="text-generation/gemma-4-31B-it",
                 default_parameter=LLMParameter(temperature=1.0),
             ),
             tenant_id="default_tenant",

@@ -62,6 +62,12 @@ class BaseEvent(BaseModel):
 
     _jetstream_sequence: int | None = PrivateAttr(None)
 
+    # X-AIHub-* headers from the NATS message that delivered this event. Set by the subscribers
+    # per delivery — not serialized, not durable across JetStream replay. May include tokens.
+    # Untrusted client input: a consumer must validate a value before acting on it (e.g. as an
+    # identity claim) — see NATSMessageHeaders.AIHUB_HEADER_PREFIX.
+    _aihub_headers: dict[str, str] | None = PrivateAttr(None)
+
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     def __str__(self):

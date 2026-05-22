@@ -23,14 +23,17 @@ __all__ = [
     "to_tool_events",
 ]
 
+_MCP_RESOURCE_SCHEMAS_MODULE = "swiss_ai_hub.agent.mcp.mcp_resource_schemas"
+_MCP_TOOL_SCHEMAS_MODULE = "swiss_ai_hub.agent.mcp.mcp_tool_schemas"
+
 _LAZY_IMPORTS = {
     "McpClientFactory": "swiss_ai_hub.agent.mcp.mcp_client_factory",
-    "execute_resource_read": "swiss_ai_hub.agent.mcp.mcp_resource_schemas",
-    "fetch_static_resources": "swiss_ai_hub.agent.mcp.mcp_resource_schemas",
-    "resource_read_tool_schema": "swiss_ai_hub.agent.mcp.mcp_resource_schemas",
-    "execute_single_tool_call": "swiss_ai_hub.agent.mcp.mcp_tool_schemas",
-    "to_openai_tool_schemas": "swiss_ai_hub.agent.mcp.mcp_tool_schemas",
-    "to_tool_events": "swiss_ai_hub.agent.mcp.mcp_tool_schemas",
+    "execute_resource_read": _MCP_RESOURCE_SCHEMAS_MODULE,
+    "fetch_static_resources": _MCP_RESOURCE_SCHEMAS_MODULE,
+    "resource_read_tool_schema": _MCP_RESOURCE_SCHEMAS_MODULE,
+    "execute_single_tool_call": _MCP_TOOL_SCHEMAS_MODULE,
+    "to_openai_tool_schemas": _MCP_TOOL_SCHEMAS_MODULE,
+    "to_tool_events": _MCP_TOOL_SCHEMAS_MODULE,
 }
 
 
