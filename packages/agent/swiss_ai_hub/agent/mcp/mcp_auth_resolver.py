@@ -6,13 +6,14 @@ class McpAuthResolver:
 
     Per #948 the API extracts ``X-AIHub-*`` request headers, forwards them on the NATS message
     envelope, and ``AgentDispatcher`` (PR #1258) lifts them into RunContext under
-    ``aihub_headers`` (lowercased keys). This resolver is the MCP-side reader of that contract.
+    ``_aihub_headers`` (lowercased keys). This resolver is the MCP-side reader of that contract.
 
     Keep ``AIHUB_HEADERS_KEY`` and ``USER_TOKEN_HEADER`` in lockstep with the dispatcher writer
-    (``AgentDispatcher._AIHUB_HEADERS_KEY``) and ``NATSMessageHeaders.extract_aihub_headers``.
+    (``AgentDispatcher._AIHUB_HEADERS_KEY``) and ``NATSMessageHeaders.extract_aihub_headers`` —
+    ``test_mcp_auth_resolver.py`` asserts the RunContext key structurally to catch drift.
     """
 
-    AIHUB_HEADERS_KEY = "aihub_headers"
+    AIHUB_HEADERS_KEY = "_aihub_headers"
     USER_TOKEN_HEADER = "x-aihub-user-token"
 
     @staticmethod

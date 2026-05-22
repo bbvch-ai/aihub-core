@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from swiss_ai_hub.agent.context.run.run_context import RunContext
+from swiss_ai_hub.agent.dispatchers.agent_dispatcher import AgentDispatcher
 from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 
 
@@ -47,3 +48,16 @@ class TestResolveUserToken:
         run_context.get = AsyncMock(return_value={"x-aihub-tenant-id": "acme"})
 
         assert await McpAuthResolver.resolve_user_token(run_context) is None
+
+
+class TestHeaderContractLockstep:
+    """Structural guard: the resolver must read the exact RunContext key the dispatcher writes.
+
+    The resolver duplicates the key as its own constant (kept light — it is a leaf utility and
+    must not pull in the dispatcher import graph). This test is what makes that duplication safe:
+    it fails the moment the writer and reader drift apart, which is exactly the bug that broke
+    user_token MCP auth before PR #1258 landed.
+    """
+
+    def test_aihub_headers_key_matches_dispatcher_writer(self):
+        assert McpAuthResolver.AIHUB_HEADERS_KEY == AgentDispatcher._AIHUB_HEADERS_KEY
