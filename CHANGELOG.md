@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.12] - 2026-05-22 - Timestamp Precision and Code Refinements
+
+### Changed
+
+- ⚙️ Enhanced **conversation timestamp accuracy** by switching to timezone-aware UTC datetime objects for
+  `last_activity` records, ensuring more consistent timekeeping.
+
+### Refactor
+
+- 🧹 Streamlined **content type checks** within the content extractor, consolidating multiple `startswith` conditions for
+  improved code readability.
+- ⚡️ Optimized **Slack ID retrieval** by making the `_get_slack_ids` method synchronous, simplifying its execution flow.
+
+______________________________________________________________________
+
+## [v0.289.11] - 2026-05-22 - Core Agent Refinements and Dispatcher Improvements
+
+### Refactor
+
+- 🧹 **Streamlined Agent Dispatching Logic:** Extracted event normalization and handling into dedicated helper methods
+  within the `AgentDispatcher` for improved modularity, readability, and maintainability of event processing.
+- ⚙️ **Enhanced Multiprocess Runner Stability:** Centralized and improved the graceful shutdown mechanism for
+  `MultiprocessAgentRunner` to ensure more robust and consistent stopping of agent processes.
+- 🔄 **Simplified RAG Agent Preconditions:** Refined the `context_ready_for_history_limit` precondition in the RAG agent
+  by removing an unnecessary parameter, leading to cleaner code.
+- 📄 **Improved Module Import Clarity:** Introduced module constants for lazy imports in the MCP module, enhancing code
+  readability and reducing string literal duplication.
+
+### Changed
+
+- 📝 **Clarified Event Tracing Behavior:** Added a comment to explain that `EventDisplayer` arguments are intentionally
+  excluded from tracing, improving code documentation.
+
+______________________________________________________________________
+
 ## [v0.289.10] - 2026-05-21 - Workflow Optimization and Release Tagging Enhancements
 
 ### Fixed

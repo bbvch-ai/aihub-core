@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-workspace"
-version = "0.289.10"
+version = "0.289.12"
 requires-python = ">=3.13, <3.14"
 description = "Swiss AI Hub Monorepo Workspace"
 dependencies = [
