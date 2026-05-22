@@ -45,13 +45,21 @@ class JSPublisher(AbstractPublisher[TEvent]):
             await stream_manager.ensure_stream_exists()
             self._ensured_streams.add(stream_name)
 
-    async def publish_event(self, event: TEvent, subject: str, retries=10):
+    async def publish_event(
+        self,
+        event: TEvent,
+        subject: str,
+        extra_headers: dict[str, str] | None = None,
+        retries: int = 10,
+    ):
         """
         Publishes the given event to the specified JetStream subject, encoding it as JSON.
 
         Logs event details and warns if event type does not match the subject pattern.
         This ensures developers can catch configuration issues early and maintain consistent
         event routing conventions.
+
+        `extra_headers` is forwarded as NATS message headers, filtered to the ``X-AIHub-*`` prefix.
         """
         tracer = get_tracer(__name__)
         with tracer.start_as_current_span(
@@ -74,7 +82,13 @@ class JSPublisher(AbstractPublisher[TEvent]):
                 logger.debug(f"{self.name} serialized event: {event.event_name}")
 
                 message_id = str(uuid.uuid4())
-                headers = NATSMessageHeaders().with_trace_context().with_header("Nats-Msg-Id", message_id).to_dict()
+                headers = (
+                    NATSMessageHeaders()
+                    .with_trace_context()
+                    .with_header("Nats-Msg-Id", message_id)
+                    .with_aihub_headers(extra_headers)
+                    .to_dict()
+                )
 
                 for attempt in range(retries):
                     try:
