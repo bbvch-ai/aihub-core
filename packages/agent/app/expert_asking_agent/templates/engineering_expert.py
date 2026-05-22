@@ -23,7 +23,7 @@ def build() -> ExpertAskingAgentConfig:
         ),
         icon="mage:hard-hat",
         llm=LLMConfig(
-            model_name="text-generation/gpt-oss-120b",
+            model_name="text-generation/gemma-4-31B-it",
             default_parameter=LLMParameter(temperature=0.2, timeout=60.0),
         ),
         loop_max=3,

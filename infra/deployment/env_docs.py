@@ -57,11 +57,7 @@ def write_env_var_docs(
     _render_role_sections(lines, by_role, consumers, compose, names_filter=base_vars)
 
     for ext_label in extension_labels:
-        ext_vars = {
-            name
-            for name, where in origins.items()
-            if ext_label in where and base_label not in where
-        }
+        ext_vars = {name for name, where in origins.items() if ext_label in where and base_label not in where}
         ext_section: list[str] = []
         _render_role_sections(ext_section, by_role, consumers, compose, names_filter=ext_vars)
 

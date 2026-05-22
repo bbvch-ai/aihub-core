@@ -92,7 +92,7 @@ class AgentRunTracer:
             elif isinstance(arg, ListOfSize):
                 input_values[name] = [ev.model_dump() for ev in arg]
             elif isinstance(arg, EventDisplayer):
-                pass
+                pass  # EventDisplayer args are intentionally excluded from tracing
             elif isinstance(arg, BaseModel):
                 input_values[name] = arg.model_dump()
             else:

@@ -211,5 +211,3 @@ def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
         assert job.tags.get("postgres-mutex") == "true", (
             f"{job_name} is missing the postgres-mutex tag (got tags: {job.tags})"
         )
-
-
