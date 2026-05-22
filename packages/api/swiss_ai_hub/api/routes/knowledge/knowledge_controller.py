@@ -42,7 +42,7 @@ class KnowledgeController(TenantScopedController):
     description = ApiLocaleString.from_i18n_path("api.controllers.knowledge.description")
     icon = "mage:book"
 
-    NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL = "Not authorized to view this database"
+    _NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL = "Not authorized to view this database"
 
     def __init__(
         self,
@@ -118,7 +118,7 @@ class KnowledgeController(TenantScopedController):
             Supports sorting by document_title, created_at, or updated_at.
             """
             if database in ["admin", "local", "config"]:
-                raise HTTPException(status_code=403, detail=self.NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             total, documents = KnowledgeService.get_paginated_documents(
                 db=database,
                 namespace=namespace,
@@ -153,7 +153,7 @@ class KnowledgeController(TenantScopedController):
             Returns a single document by its ID.
             """
             if database in ["admin", "local", "config"]:
-                raise HTTPException(status_code=403, detail=self.NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_document_by_id(db=database, document_id=document_id)
 
         return self
@@ -176,7 +176,7 @@ class KnowledgeController(TenantScopedController):
             Returns nodes for a given document.
             """
             if database in ["admin", "local", "config"]:
-                raise HTTPException(status_code=403, detail=self.NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_nodes(
                 db=database,
                 namespace=namespace,
@@ -205,7 +205,7 @@ class KnowledgeController(TenantScopedController):
             Returns nodes for a given document.
             """
             if database in ["admin", "local", "config"]:
-                raise HTTPException(status_code=403, detail=self.NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_summary_nodes(
                 db=database,
                 namespace=namespace,
@@ -315,7 +315,7 @@ class KnowledgeController(TenantScopedController):
         ) -> SignedUrlDto:
             """Generates a presigned URL for downloading a document's source file."""
             if database in ["admin", "local", "config"]:
-                raise HTTPException(status_code=403, detail=self.NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             url = KnowledgeService.get_document_url(
                 db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
             )

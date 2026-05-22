@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, Self
 
 from fastapi import HTTPException, Security, status
-from mongoengine.errors import DoesNotExist, NotUniqueError
+from mongoengine.errors import NotUniqueError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import TenantScopedController
@@ -23,8 +23,7 @@ class RoleController(TenantScopedController):
     description = ApiLocaleString.from_i18n_path("api.controllers.role.description")
     icon = "mage:security-shield"
 
-    ROLE_ID_ROUTE = "/{role_id}"
-    ROLE_NOT_FOUND_DETAIL = "Role not found."
+    _ROLE_ID_ROUTE = "/{role_id}"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/roles", additionally_required_permission: str | None = None
@@ -77,7 +76,7 @@ class RoleController(TenantScopedController):
 
         return self
 
-    def get_role(self, route: str = ROLE_ID_ROUTE) -> Self:
+    def get_role(self, route: str = _ROLE_ID_ROUTE) -> Self:
         @self.router.get(
             route,
             summary="Get Role",
@@ -90,14 +89,11 @@ class RoleController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],
         ) -> RoleResponse:
-            try:
-                return RoleService.get_role_by_id(role_id, user.acting_within_tenant.id)
-            except DoesNotExist:
-                raise HTTPException(status_code=404, detail=self.ROLE_NOT_FOUND_DETAIL)
+            return RoleService.get_role_by_id(role_id, user.acting_within_tenant.id)
 
         return self
 
-    def update_role(self, route: str = ROLE_ID_ROUTE) -> Self:
+    def update_role(self, route: str = _ROLE_ID_ROUTE) -> Self:
         @self.router.patch(
             route,
             summary="Update Role",
@@ -113,8 +109,6 @@ class RoleController(TenantScopedController):
         ) -> RoleResponse:
             try:
                 return RoleService.update_role(role_id, role_data, user.acting_within_tenant.id)
-            except DoesNotExist:
-                raise HTTPException(status_code=404, detail=self.ROLE_NOT_FOUND_DETAIL)
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
             except HTTPException:
@@ -125,7 +119,7 @@ class RoleController(TenantScopedController):
 
         return self
 
-    def delete_role(self, route: str = ROLE_ID_ROUTE) -> Self:
+    def delete_role(self, route: str = _ROLE_ID_ROUTE) -> Self:
         @self.router.delete(
             route,
             summary="Delete Role",
@@ -138,10 +132,7 @@ class RoleController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],
         ) -> DeleteRoleResponse:
-            try:
-                RoleService.delete_role(role_id, user.acting_within_tenant.id)
-                return DeleteRoleResponse()
-            except DoesNotExist:
-                raise HTTPException(status_code=404, detail=self.ROLE_NOT_FOUND_DETAIL)
+            RoleService.delete_role(role_id, user.acting_within_tenant.id)
+            return DeleteRoleResponse()
 
         return self

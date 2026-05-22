@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from mongoengine.errors import DoesNotExist
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity, UsageLimit
 
@@ -37,7 +38,10 @@ class RoleService:
     @trace_fn
     def get_role_by_id(role_id: str, tenant_id: str) -> RoleResponse:
         """Retrieves a single role by its ID. Must belong to the given tenant or be a system role."""
-        role = RoleEntity.objects.get(id=role_id)
+        try:
+            role = RoleEntity.objects.get(id=role_id)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
         if role.tenant_id is not None and role.tenant_id != tenant_id:
             raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
         return RoleResponse.from_role_entity(role)
@@ -46,7 +50,10 @@ class RoleService:
     @trace_fn
     def update_role(role_id: str, data: UpdateRoleRequest, tenant_id: str) -> RoleResponse:
         """Updates an existing tenant-scoped role's fields."""
-        role = RoleEntity.objects.get(id=role_id)
+        try:
+            role = RoleEntity.objects.get(id=role_id)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
         if role.tenant_id is None:
             raise HTTPException(status_code=403, detail="Cannot modify system roles.")
         if role.tenant_id != tenant_id:
@@ -69,7 +76,10 @@ class RoleService:
     @trace_fn
     def delete_role(role_id: str, tenant_id: str) -> None:
         """Deletes a tenant-scoped role by its ID. System roles cannot be deleted."""
-        role = RoleEntity.objects.get(id=role_id)
+        try:
+            role = RoleEntity.objects.get(id=role_id)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
         if role.tenant_id is None:
             raise HTTPException(status_code=403, detail="Cannot delete system roles.")
         if role.tenant_id != tenant_id:
