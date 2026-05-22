@@ -192,7 +192,7 @@ class ConversationEntity(Document):
     ) -> Self:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
         conversation = cls(
-            conversation_id=conversation_id, bot_id=bot_id, messages=messages, last_activity=datetime.utcnow()
+            conversation_id=conversation_id, bot_id=bot_id, messages=messages, last_activity=datetime.now(UTC)
         )
         return conversation.save()
 
@@ -217,7 +217,7 @@ class ConversationEntity(Document):
         if conversation is None:
             conversation = cls.create_conversation(conversation_id, bot_id, [])
         conversation.messages.extend(messages)
-        conversation.last_activity = datetime.utcnow()
+        conversation.last_activity = datetime.now(UTC)
         return conversation.save()
 
     @classmethod
