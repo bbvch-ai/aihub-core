@@ -48,6 +48,18 @@ section contains provider-specific connection details. The `model_info` section 
 pricing for cost tracking through Langfuse.
 :::
 
+::: warning Applying configuration changes
+LiteLLM reads `model_list` only at startup and does not watch the configuration file. Platform services (`api`, `agent`)
+additionally cache model metadata for their process lifetime. To apply a model configuration change, restart LiteLLM
+**and** every dependent service, in this order:
+
+1. Restart `litellm` and wait until it is healthy.
+2. Restart `api`, `agent`, and any other service that uses models.
+
+Restarting only LiteLLM leaves the other services with a stale model list, which surfaces as
+`Model <name> not found in LiteLLM Proxy` errors.
+:::
+
 ## Core functions
 
 Unified interface: LiteLLM provides an OpenAI-compatible API that works with Swiss LLM Cloud, locally hosted vLLM
