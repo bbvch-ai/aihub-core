@@ -55,8 +55,6 @@ defs = default_definitions(
     auto_sync=False,                              # True if auto-synced via local FS
     observe_job_hour=2,                           # Daily observation at 2 AM
     observe_job_minute=0,
-    remove_job_hour=3,                            # Daily cleanup at 3 AM
-    remove_job_minute=0,
     vector_store_dimensions=None,                 # None = use MilvusSettings default
     max_partitions=1000,                          # Max partitions per operation
     document_parser_loader_type=LoaderType.MINERU,    # MinerU (default) or Azure Doc Intelligence
@@ -74,7 +72,6 @@ defs = default_sharepoint_to_datalake_definitions(
     exclude_folders=["/Shared Documents/Archive"],
     supported_filetypes=[".pdf", ".docx", ".pptx"],
     observe_job_hour=0,
-    remove_job_hour=1,
 )
 ```
 
@@ -89,7 +86,6 @@ defs = default_local_filesystem_to_datalake_definitions(
     include_patterns=[r".*\.(pdf|docx|md)$"],    # Regex patterns
     exclude_patterns=[r".*/archive/.*"],
     observe_job_hour=0,
-    remove_job_hour=1,
 )
 ```
 
@@ -104,7 +100,6 @@ defs = default_rclone_to_datalake_definitions(
     include_patterns=["*.pdf", "*.docx"],         # Rclone glob syntax
     exclude_patterns=["**/archive/**"],
     observe_job_hour=0,
-    remove_job_hour=1,
 )
 ```
 

@@ -42,6 +42,7 @@ packages/pipeline/                        # SDK framework
 │   │   └── factory.py                     # Resource factory functions (assembles resource dicts)
 │   ├── sensors/
 │   │   ├── factory.py                     # default_automation_sensor (auto-materialization)
+│   │   ├── run_after_success_sensor.py    # Chain a job after another job's successful run
 │   │   └── nats/nats_document_uploaded_sensor.py  # NATS event-driven triggers
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
@@ -249,7 +250,7 @@ partitions added/deleted per tick.
 
 ## Automation & Triggering
 
-Three triggering mechanisms work together:
+Four triggering mechanisms work together:
 
 - **Eager automation**: `AutomationCondition.eager()` on downstream assets — materialize immediately when upstream
   changes. Enabled by `default_automation_sensor(assets, minimum_interval_seconds=60)`.
@@ -257,12 +258,16 @@ Three triggering mechanisms work together:
   `PipelineInstanceTopicManager`. Triggers observe job when documents are uploaded externally (e.g., via API).
 - **Daily schedules**: `daily_schedule_at(job, hour, minute)` — cron-based observation for sources that don't push
   events.
+- **Run-status chaining**: `run_after_success_sensor(monitored_job=..., triggered_job=...)` — fires `triggered_job`
+  after `monitored_job` succeeds. Used to order observe → remove jobs, since Dagster forbids mixing observable source
+  assets with regular assets in a single `define_asset_job` selection. All `default_*_definitions()` builders wire this
+  automatically; the remove job no longer has its own schedule.
 
 ## Run-Failure Notifications
 
-A fourth sensor fires on every **failed run** in the code location and dispatches via Apprise to any configured channel
-(80+ services: Slack, Teams, Discord, Telegram, PagerDuty, mailto, webhook, …). One sensor covers both job-based runs
-(observe/materialize/remove) and the runs spawned by the auto-materialize sensor — so asset-centric pipelines get
+A separate sensor fires on every **failed run** in the code location and dispatches via Apprise to any configured
+channel (80+ services: Slack, Teams, Discord, Telegram, PagerDuty, mailto, webhook, …). One sensor covers both job-based
+runs (observe/materialize/remove) and the runs spawned by the auto-materialize sensor — so asset-centric pipelines get
 failure alerts without per-asset wiring.
 
 - **Factory**: `run_failure_notification_sensor(urls=..., dagster_ui_base_url=..., monitored_jobs=..., ...)` in
