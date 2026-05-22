@@ -63,6 +63,7 @@ from swiss_ai_hub.pipeline.resources.share_point.share_point_resource import Sha
 from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
+from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import (
     run_failure_notification_sensors_from_settings,
 )
@@ -80,8 +81,6 @@ def default_definitions(
     auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,
     observe_job_hour: Annotated[int, "Hour to run daily data lake observation job"] = 2,
     observe_job_minute: Annotated[int, "Minute to run daily data lake observation job"] = 0,
-    remove_job_hour: Annotated[int, "Hour to run daily removed documents cleanup job"] = 3,
-    remove_job_minute: Annotated[int, "Minute to run daily removed documents cleanup job"] = 0,
     vector_store_dimensions: Annotated[int | None, "Embedding vector dimensions must match model"] = None,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
     document_parser_loader_type: Annotated[LoaderType, "Document parser loader type"] = LoaderType.MINERU,
@@ -185,14 +184,12 @@ def default_definitions(
                     target_id=store_name,
                 ),
             ),
+            run_after_success_sensor(monitored_job=job, triggered_job=remove_job),
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
         jobs=[job, remove_job],
-        schedules=[
-            daily_schedule_at(job, hour=observe_job_hour, minute=observe_job_minute),
-            daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
-        ],
+        schedules=[daily_schedule_at(job, hour=observe_job_hour, minute=observe_job_minute)],
     )
 
 
@@ -205,8 +202,6 @@ def default_sharepoint_to_datalake_definitions(
     supported_filetypes: Annotated[list[str] | None, "List of file extensions to sync"] = None,
     observe_job_hour: Annotated[int, "Hour to run daily SharePoint observation job"] = 0,
     observe_job_minute: Annotated[int, "Minute to run daily SharePoint observation job"] = 0,
-    remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
-    remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
 ) -> Definitions:
     """
@@ -276,13 +271,14 @@ def default_sharepoint_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets), *run_failure_notification_sensors_from_settings()],
+        sensors=[
+            default_automation_sensor(assets),
+            run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job),
+            *run_failure_notification_sensors_from_settings(),
+        ],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
-        schedules=[
-            daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute),
-            daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
-        ],
+        schedules=[daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute)],
     )
 
 
@@ -295,8 +291,6 @@ def default_local_filesystem_to_datalake_definitions(
     exclude_patterns: Annotated[list[str] | None, "List of patterns to exclude"] = None,
     observe_job_hour: Annotated[int, "Hour to run daily filesystem observation job"] = 0,
     observe_job_minute: Annotated[int, "Minute to run daily filesystem observation job"] = 0,
-    remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
-    remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
     encode_partition_keys: Annotated[
         bool | None,
@@ -386,13 +380,14 @@ def default_local_filesystem_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets), *run_failure_notification_sensors_from_settings()],
+        sensors=[
+            default_automation_sensor(assets),
+            run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job),
+            *run_failure_notification_sensors_from_settings(),
+        ],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
-        schedules=[
-            daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute),
-            daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
-        ],
+        schedules=[daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute)],
     )
 
 
@@ -412,8 +407,6 @@ def default_rclone_to_datalake_definitions(
     ] = None,
     observe_job_hour: Annotated[int, "Hour to run daily rclone observation job"] = 0,
     observe_job_minute: Annotated[int, "Minute to run daily rclone observation job"] = 0,
-    remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
-    remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
     encode_partition_keys: Annotated[
         bool | None,
@@ -532,13 +525,14 @@ def default_rclone_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets), *run_failure_notification_sensors_from_settings()],
+        sensors=[
+            default_automation_sensor(assets),
+            run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job),
+            *run_failure_notification_sensors_from_settings(),
+        ],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
-        schedules=[
-            daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute),
-            daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
-        ],
+        schedules=[daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute)],
     )
 
 

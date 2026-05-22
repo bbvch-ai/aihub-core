@@ -1640,9 +1640,18 @@ class Pipe:
         self,
         thread_id: Annotated[str, "Thread ID"],
         display_id: Annotated[str, "Display ID"],
-        event_caller: Annotated[EventCaller, "Event caller function"],
+        event_emitter: Annotated[EventEmitter, "Event emitter function (one-way; do NOT use event_caller)"],
     ) -> None:
-        """Emit JavaScript to show trace viewer"""
+        """Post a `set-context` message to the parent window so its tracing/sources/memories side
+        panel auto-syncs to the current thread/display.
+
+        Uses ``event_emitter`` (one-way Socket.IO emit) rather than ``event_caller`` (emit + wait
+        for ack). With OpenWebUI running multiple uvicorn workers behind a Redis-coordinated
+        session pool, an emit-with-ack here can deadlock the SSE read loop: the ack has to round-
+        trip via Redis to the worker holding the user's Socket.IO session, and that path is
+        unreliable when the session-pool cleanup lock is lost ("Unable to renew session cleanup
+        lock. Exiting."). One-way emit doesn't depend on the ack path.
+        """
         code = f"""
         window.parent.postMessage({{
             type: 'set-context',
@@ -1651,7 +1660,7 @@ class Pipe:
         }}, '{self.valves.AIHUB_FRONTEND_URL}');
         """
 
-        await event_caller({"type": "execute", "data": {"code": code}})
+        await event_emitter({"type": "execute", "data": {"code": code}})
 
     async def _check_open_chat_hitl(
         self,
@@ -1760,7 +1769,7 @@ class Pipe:
                 state_manager = StreamingStateManager()
 
                 async def stream_start_callback():
-                    await self._set_ui_context(thread_id, hitl_display_id, __event_call__)
+                    await self._set_ui_context(thread_id, hitl_display_id, __event_emitter__)
 
                 # Stream the conversation
                 await self._streaming_service.stream_response(

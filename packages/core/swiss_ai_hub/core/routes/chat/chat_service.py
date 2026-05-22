@@ -192,6 +192,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         locale: str | None = None,
+        aihub_headers: dict[str, str] | None = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
@@ -250,7 +251,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await external_agent_event_distributor.distribute_event(external_event, user)
+        await external_agent_event_distributor.distribute_event(external_event, user, aihub_headers=aihub_headers)
 
         return resources
 
@@ -267,6 +268,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         locale: str | None = None,
+        aihub_headers: dict[str, str] | None = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
@@ -283,7 +285,14 @@ class ChatService:
             locale=locale,
         )
         return await ChatService.start_json_event_interaction(
-            user, agent_class, agent_id, external_event, topic_manager, nc, external_agent_event_distributor
+            user,
+            agent_class,
+            agent_id,
+            external_event,
+            topic_manager,
+            nc,
+            external_agent_event_distributor,
+            aihub_headers=aihub_headers,
         )
 
     @staticmethod
@@ -296,6 +305,7 @@ class ChatService:
         topic_manager: AgentThreadTopicManager,
         nc: NATS,
         external_agent_event_distributor: ExternalAgentEventDistributor,
+        aihub_headers: dict[str, str] | None = None,
     ):
         stop_signal = asyncio.Event()
         chunk_events: list[ChunkEvent | ThoughtEvent] = []
@@ -346,7 +356,7 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await external_agent_event_distributor.distribute_event(external_event, user)
+        await external_agent_event_distributor.distribute_event(external_event, user, aihub_headers=aihub_headers)
 
         return resources
 

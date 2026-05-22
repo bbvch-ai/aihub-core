@@ -7,8 +7,7 @@ from collections.abc import AsyncGenerator
 from typing import override
 
 import openai
-from microsoft_agents.activity.teams import TeamsChannelAccount
-from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
+from microsoft_agents.hosting.core import TurnContext
 from openai import APIStatusError, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
@@ -21,13 +20,8 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam, ImageURL
-from swiss_ai_hub.core.auth import KeycloakAdminService
-from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMService
-from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import Content, Message
@@ -113,42 +107,7 @@ class OpenaiCompletionHandler(CompletionHandler):
             OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
 
-        user_id = turn_context.activity.from_property.id or "UNKNOWN"
-        user_email: str | None = None
-
-        connector_client = turn_context.turn_state.get("ConnectorClient")
-
-        if isinstance(connector_client, TeamsConnectorClient):
-            teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
-                turn_context.activity.conversation.id, user_id
-            )
-            if teams_account.email is not None:
-                user_email = teams_account.email
-
-        if not user_email:
-            fallback = turn_context.activity.from_property.name
-            if fallback and "@" in fallback:
-                user_email = fallback
-            else:
-                raise ValueError(
-                    f"Could not determine email for user '{turn_context.activity.from_property.name}'. "
-                    "Ensure the user has logged in via OAuth2 before using the bot."
-                )
-
-        keycloak_user = await KeycloakAdminService.find_user_by_email(user_email)
-        if not keycloak_user:
-            raise ValueError(f"User with email '{user_email}' not found in Keycloak")
-        realm_roles = await KeycloakAdminService.get_user_realm_roles(keycloak_user.id)
-        is_sys_admin = SYS_ADMIN_ROLE in realm_roles
-        tenant = await AuthHandler.get_active_tenant_for_user(keycloak_user.id)
-        user = UserIdentity(
-            id=keycloak_user.id,
-            name=keycloak_user.name,
-            email=keycloak_user.email,
-            roles=UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id),
-            acting_within_tenant=tenant,
-            is_sys_admin=is_sys_admin,
-        )
+        user = await CompletionHandler.resolve_user_identity(turn_context)
 
         logger.debug(f"Using user identity: {user}")
 
