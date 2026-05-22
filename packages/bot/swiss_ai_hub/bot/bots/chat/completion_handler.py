@@ -6,8 +6,14 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 from microsoft_agents.activity import Activity, ActivityTypes, Entity
-from microsoft_agents.hosting.core import TurnContext
+from microsoft_agents.activity.teams import TeamsChannelAccount
+from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
+from swiss_ai_hub.core.auth import KeycloakAdminService
+from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 from swiss_ai_hub.bot.bots.chat.content_extractor import ContentExtractor
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import Content, ConversationEntity, Message
@@ -59,6 +65,56 @@ class CompletionHandler:
             content=[Content(text=system_message, type="text")],
             role="system",
             name="system",
+        )
+
+    @staticmethod
+    async def resolve_user_email(turn_context: TurnContext) -> str:
+        """
+        Resolve the user's real email address from a Bot Framework activity.
+
+        Teams stores the *display name* (e.g. `John Doe`) in `from_property.name`, so the email
+        must be fetched from the Teams connector. The display name is only a usable fallback when
+        it already is an email (emulator / dev channels).
+        """
+        user_id = turn_context.activity.from_property.id or "UNKNOWN"
+
+        connector_client = turn_context.turn_state.get("ConnectorClient")
+        if isinstance(connector_client, TeamsConnectorClient):
+            teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
+                turn_context.activity.conversation.id, user_id
+            )
+            if teams_account.email is not None:
+                return teams_account.email
+
+        fallback = turn_context.activity.from_property.name
+        if fallback and "@" in fallback:
+            return fallback
+
+        raise ValueError(
+            f"Could not determine email for user '{turn_context.activity.from_property.name}'. "
+            "Ensure the user has logged in via OAuth2 before using the bot."
+        )
+
+    @staticmethod
+    async def resolve_user_identity(turn_context: TurnContext) -> UserIdentity:
+        """
+        Resolve the Keycloak-backed identity for the user behind the given activity.
+
+        Shared by every completion handler so the agent and OpenAI bots cannot drift apart.
+        """
+        user_email = await CompletionHandler.resolve_user_email(turn_context)
+        keycloak_user = await KeycloakAdminService.find_user_by_email(user_email)
+        if not keycloak_user:
+            raise ValueError(f"User with email '{user_email}' not found in Keycloak")
+        realm_roles = await KeycloakAdminService.get_user_realm_roles(keycloak_user.id)
+        tenant = await AuthHandler.get_active_tenant_for_user(keycloak_user.id)
+        return UserIdentity(
+            id=keycloak_user.id,
+            name=keycloak_user.name,
+            email=keycloak_user.email,
+            roles=UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id),
+            acting_within_tenant=tenant,
+            is_sys_admin=SYS_ADMIN_ROLE in realm_roles,
         )
 
     @staticmethod
