@@ -12,9 +12,13 @@
   >
     <div class="flex flex-col gap-4 p-2">
       <div class="flex flex-col gap-2">
-        <label class="font-medium">{{ t('user.language') }}</label>
+        <label
+          for="user-language-select"
+          class="font-medium"
+        >{{ t('user.language') }}</label>
         <Select
           v-model="selectedLocale"
+          input-id="user-language-select"
           :options="localeOptions"
           option-label="name"
           class="w-full"

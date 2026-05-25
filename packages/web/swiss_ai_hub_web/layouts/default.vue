@@ -103,14 +103,14 @@ const breadcrumbItems = computed(() => {
   }))
 })
 
-getHealth({
-  composable: '$fetch',
-  baseURL: '/api/v1',
-})
-  .then((response) => {
-    online.value = response.code == 200
+try {
+  const response = await getHealth({
+    composable: '$fetch',
+    baseURL: '/api/v1',
   })
-  .catch(() => {
-    online.value = false
-  })
+  online.value = response.code == 200
+}
+catch {
+  online.value = false
+}
 </script>

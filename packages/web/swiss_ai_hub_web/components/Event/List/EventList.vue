@@ -136,8 +136,8 @@ watch(display, () => {
 }, { immediate: true })
 
 const eventsInRuns = computed<ContextualizedAgentEvent[]>(() => {
-  const runIds = activeRuns.value.map((run: RunStatistics) => run.run_id)
-  return props.events.filter((event: ContextualizedAgentEvent) => runIds.includes(event.run_id))
+  const runIds = new Set(activeRuns.value.map((run: RunStatistics) => run.run_id))
+  return props.events.filter((event: ContextualizedAgentEvent) => runIds.has(event.run_id))
 })
 
 const { resolveComponentForEvent } = useEventComponent()

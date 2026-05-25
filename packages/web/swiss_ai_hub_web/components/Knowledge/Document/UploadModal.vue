@@ -55,7 +55,7 @@
         v-if="props.namespace && props.database"
         class="flex flex-col gap-2"
       >
-        <label class="text-sm font-medium">{{ t('knowledge.documents.upload.target_location.label') }}</label>
+        <p class="text-sm font-medium">{{ t('knowledge.documents.upload.target_location.label') }}</p>
         <div class="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800">
           <i
             class="pi pi-database text-surface-400"
