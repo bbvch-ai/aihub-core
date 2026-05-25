@@ -97,7 +97,7 @@ pr-ready:
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.289.11
+TAG ?= v0.289.18
 
 changelog:
 	@echo "Generating changelog"
@@ -156,6 +156,16 @@ install-ffmpeg:
 up-dev:
 	@echo "Starting development environment with Docker Compose..."
 	docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build
+
+down-dev:
+	@echo "Stopping development environment..."
+	docker compose -f infra/docker-compose.dev.yml --env-file .env down
+
+# Run the Dagster playground (pipeline SDK demo) against the dev stack.
+# Requires `make up-dev` first. UI at http://localhost:3000.
+playground:
+	@echo "Starting Dagster playground at http://localhost:3000 ..."
+	cd packages/pipeline && uv run dagster dev -m playground
 
 up-dev-gpu:
 	@echo "Starting development GPU environment with Docker Compose..."

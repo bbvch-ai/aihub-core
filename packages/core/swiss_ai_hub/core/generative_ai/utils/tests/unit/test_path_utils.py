@@ -1,9 +1,33 @@
 import pytest
 
 from swiss_ai_hub.core.generative_ai.utils.path_utils import (
+    create_figures_folder_name,
     decode_partition_key,
     encode_partition_key,
 )
+
+
+class TestCreateFiguresFolderName:
+    def test_filename_with_double_dot_is_accepted(self) -> None:
+        result = create_figures_folder_name("s3://bucket/dir/Kabelliste Geb..pdf")
+        assert result == "s3://bucket/dir/__figures__/Kabelliste_Geb__pdf"
+
+    def test_rejects_parent_traversal(self) -> None:
+        with pytest.raises(ValueError, match="Invalid filename"):
+            create_figures_folder_name("s3://bucket/dir/..")
+
+    def test_rejects_single_dot(self) -> None:
+        with pytest.raises(ValueError, match="Invalid filename"):
+            create_figures_folder_name("s3://bucket/dir/.")
+
+    @pytest.mark.parametrize("file_name", ["a\\b.pdf", "..\\etc\\passwd"])
+    def test_rejects_backslash_separator(self, file_name: str) -> None:
+        with pytest.raises(ValueError, match="Invalid filename"):
+            create_figures_folder_name(f"s3://bucket/dir/{file_name}")
+
+    def test_rejects_uri_without_slash(self) -> None:
+        with pytest.raises(ValueError, match="Invalid URI"):
+            create_figures_folder_name("nofileonly")
 
 
 class TestEncodePartitionKey:
