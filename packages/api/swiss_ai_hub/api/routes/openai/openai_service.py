@@ -237,6 +237,7 @@ class OpenaiService:
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         t: LocaleHandler,
+        aihub_headers: dict[str, str] | None = None,
     ) -> ChatCompletion | StreamingResponse:
         """
         Execute a chat completion request with an LLM or an assistant.
@@ -268,6 +269,7 @@ class OpenaiService:
                 usage_limits=usage_limits,
                 external_agent_event_distributor=external_agent_event_distributor,
                 locale=t.locale,
+                aihub_headers=aihub_headers,
             )
 
         return await OpenaiService.json_assistant(
@@ -279,6 +281,7 @@ class OpenaiService:
             usage_limits=usage_limits,
             external_agent_event_distributor=external_agent_event_distributor,
             locale=t.locale,
+            aihub_headers=aihub_headers,
         )
 
     @staticmethod
@@ -293,6 +296,7 @@ class OpenaiService:
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         locale: str | None = None,
+        aihub_headers: dict[str, str] | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
@@ -314,6 +318,7 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             locale=locale,
+            aihub_headers=aihub_headers,
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -358,6 +363,7 @@ class OpenaiService:
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         locale: str | None = None,
+        aihub_headers: dict[str, str] | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
@@ -379,6 +385,7 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             locale=locale,
+            aihub_headers=aihub_headers,
         )
 
         return StreamingResponse(

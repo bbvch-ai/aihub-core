@@ -9,7 +9,9 @@ def create_figures_folder_name(uri: str) -> str:
     if "/" not in uri:
         raise ValueError(f"Invalid URI, expected at least one '/': {uri}")
     base_path, file_name = uri.rsplit("/", 1)
-    if ".." in file_name or "/" in file_name or "\\" in file_name:
+    # Guard against path traversal: reject only filenames that *are* a traversal segment,
+    # not arbitrary occurrences of ".." within a legitimate name (e.g. "Foo..pdf").
+    if file_name in {".", ".."} or "/" in file_name or "\\" in file_name:
         raise ValueError(f"Invalid filename: {file_name}")
     folder_name = re.sub(r"[\s.%#?&=+/\\]", "_", file_name)
     return f"{base_path}/{FIGURES_DIRECTORY_NAME}/{folder_name}"

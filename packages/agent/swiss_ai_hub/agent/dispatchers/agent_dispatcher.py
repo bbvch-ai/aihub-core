@@ -55,6 +55,9 @@ class AgentDispatcher(BaseDispatcher):
     """
 
     _AGENT_CONFIG_KEY = "_agent_config"
+    # Underscore-prefixed so it cannot collide with a StartEvent field of the same name when
+    # StartEvent.to_context_dict() is later merged into RunContext.
+    _AIHUB_HEADERS_KEY = "_aihub_headers"
 
     def __init__(
         self,
@@ -106,6 +109,13 @@ class AgentDispatcher(BaseDispatcher):
         run_context = RunContext.for_topic(self.redis, topic)
         thread_context = ThreadContext.for_topic(self.redis, topic)
         agent_config_dict: dict[str, Any] | None = None
+
+        # Propagate X-AIHub-* request headers into RunContext so downstream steps can act on behalf
+        # of the user. Written on every header-carrying event, not only StartEvent, so HITL/BITL
+        # responses refresh the stored token instead of reusing a stale one. These are untrusted
+        # client input — a step must validate a header before treating it as an identity claim.
+        if event._aihub_headers:
+            await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
 
         if event.is_start_event:
             event = cast(StartEvent, event)

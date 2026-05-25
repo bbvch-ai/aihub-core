@@ -12,6 +12,4 @@ defs = default_definitions(
     with_table_refinement=True,
     observe_job_hour=0,
     observe_job_minute=0,
-    remove_job_hour=1,
-    remove_job_minute=0,
 )

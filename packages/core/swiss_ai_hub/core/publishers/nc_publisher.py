@@ -35,12 +35,19 @@ class NCPublisher(AbstractPublisher[TEvent]):
         super().__init__(name, protocol="NATS")
         self.nc = nc
 
-    async def publish_event(self, event: TEvent, subject: str):
+    async def publish_event(
+        self,
+        event: TEvent,
+        subject: str,
+        extra_headers: dict[str, str] | None = None,
+    ):
         """
         Publishes the given event to the specified subject, encoding it as JSON.
 
         Logs details, warns if there's a mismatch between event type and subject pattern,
         and then sends the message through the NATS client.
+
+        `extra_headers` is forwarded as NATS message headers, filtered to the ``X-AIHub-*`` prefix.
         """
         tracer = get_tracer(__name__)
 
@@ -61,7 +68,7 @@ class NCPublisher(AbstractPublisher[TEvent]):
                 serialized_event = event.model_dump_json(serialize_as_any=True)
                 logger.debug(f"{self.name} serialized event: {event.event_name}")
 
-                headers = NATSMessageHeaders().with_trace_context().to_dict()
+                headers = NATSMessageHeaders().with_trace_context().with_aihub_headers(extra_headers).to_dict()
 
                 await self.nc.publish(subject, serialized_event.encode(), headers=headers)
 
