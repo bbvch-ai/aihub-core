@@ -1,5 +1,4 @@
 import { getUserThreads, type ThreadDto } from '@core/sdk/client'
-import { useInfiniteQuery } from '@pinia/colada'
 
 export const useThreadsInfinite = defineQuery(() => {
   const { tenantId } = useTenant()

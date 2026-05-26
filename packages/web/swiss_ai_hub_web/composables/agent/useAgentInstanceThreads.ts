@@ -1,5 +1,4 @@
 import { getAgentInstanceThreads } from '@core/sdk/client'
-import { useQuery } from '@pinia/colada'
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 

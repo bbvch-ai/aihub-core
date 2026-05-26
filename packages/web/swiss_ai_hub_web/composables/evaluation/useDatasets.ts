@@ -2,7 +2,6 @@ import {
   getDatasets,
   type MinimalDataset,
 } from '@core/sdk/client'
-import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useDatasets = defineQuery(() => {

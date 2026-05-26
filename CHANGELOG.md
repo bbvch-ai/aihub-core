@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.22] - 2026-05-26 - Secure MCP Tool Integration and Robust CI/CD Pinning
+
+### Added
+
+- 🔑 **Introduced User-Token Passthrough for MCP Clients:** Agents can now securely connect to external Model Context
+  Protocol (MCP) servers using the requesting user's bearer token, ensuring proper attribution and per-user
+  authorization in external systems.
+- 📄 **New Documentation on MCP Client Authentication:** Detailed guides and architecture decision records explain the
+  new `auth_mode` options (`none`, `api_key`, `user_token`) for MCP connections.
+- 🔒 **GitHub Actions Pinning Enforcement:** A new CI/CD job and configuration (`pinact.yml`) have been added to
+  automatically verify and enforce that all GitHub Actions are pinned to specific commit SHAs, enhancing workflow
+  security and stability.
+- 🧪 **Comprehensive Unit Tests for MCP Authentication:** New test suites ensure the correct behavior and robust error
+  handling of MCP client authentication mechanisms.
+
+### Changed
+
+- ⚙️ **Refined MCP Client Configuration:** The `McpClientConfig` now includes an explicit `auth_mode` field, offering
+  clear choices for authentication (none, API key, user token), with improved UI presentation for the API key.
+- 🔄 **`McpReactAgent` Updated for User-Token Authentication:** The core `McpReactAgent` now leverages the new
+  `McpAuthResolver` to pass user tokens to MCP servers when configured for `user_token` authentication.
+- 📚 **GitHub Actions README Updated:** The documentation for GitHub Actions best practices has been updated to recommend
+  pinning to 40-character commit SHAs for increased stability.
+
+### Refactor
+
+- 🛡️ **Pinned GitHub Actions to Specific SHAs:** All GitHub Actions used in workflows and custom actions have been
+  updated from major version tags to immutable 40-character commit SHAs, significantly improving the security and
+  reliability of the CI/CD pipeline.
+- 🧹 **Improved MCP Client Factory Logic:** The `McpClientFactory` has been refactored to support the new authentication
+  modes, including explicit error handling for misconfigured connections (e.g., missing API key or user token).
+- ⚡️ **Frontend Composable Optimization:** Several frontend composables have been refactored to streamline data
+  fetching, removing redundant imports and simplifying their implementation.
+- 🛠️ **Internal Process Dispatcher Refinement:** Logic for binding configuration to events within the process dispatcher
+  has been extracted into a dedicated static method for better code organization.
+
+______________________________________________________________________
+
 ## [v0.289.21] - 2026-05-26 - Enhanced Workflow Security and Robustness
 
 ### Refactor
