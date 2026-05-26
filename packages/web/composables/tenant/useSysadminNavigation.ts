@@ -12,7 +12,7 @@ export function useSysadminNavigation() {
 
   function enterSysadmin(): void {
     if (!sysadminUrl.value || !import.meta.client) return
-    window.location.href = `${sysadminUrl.value}/${locale.value}/tenants`
+    globalThis.location.href = `${sysadminUrl.value}/${locale.value}/tenants`
   }
 
   return { sysadminUrl, enterSysadmin }

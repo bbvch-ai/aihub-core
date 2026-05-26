@@ -28,7 +28,7 @@ export default defineNuxtPlugin(() => {
   }
 
   const injected
-    = (window as unknown as { __AIHUB_CONFIG__?: Record<string, string> }).__AIHUB_CONFIG__ ?? {}
+    = (globalThis as unknown as { __AIHUB_CONFIG__?: Record<string, string> }).__AIHUB_CONFIG__ ?? {}
 
   const group = (name: string): Record<string, unknown> | undefined =>
     publicConfig[name] as Record<string, unknown> | undefined
