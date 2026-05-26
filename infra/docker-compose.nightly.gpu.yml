@@ -2599,8 +2599,19 @@ services:
       AIHUB_FRONTEND_ORIGIN: https://sysadmin.${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: true
 
-      # Mongo DB — the only persistence sysadmin-api touches at runtime
+      # Mongo DB — durable storage for tenant metadata, roles, dashboards
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATS + Redis — required by the medium lifespan in
+      # sysadmin_runner.py (ADR 2026_05_26_sysadmin_api_full_self_contained_lifespan).
+      # FastAPI eagerly resolves `use_nats` / `use_redis` for mounted endpoints
+      # from packages/api (UserController.get_user etc.) even when their hot
+      # path does not exercise the clients, so the settings classes must be
+      # constructible at startup. Hostnames mirror the main API's layout.
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3294,6 +3305,21 @@ services:
       NUM_WORKERS: 1
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # Keycloak OIDC config — required because bot imports
+      # KeycloakAuthHandler from core.auth, which instantiates
+      # KeycloakSettings() at module import time. KEYCLOAK_URL is the
+      # minimum that makes the settings class constructible.
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
+      KEYCLOAK_REALM: aihub
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+
+      # Oauth2 config — bot resolves user identity from inbound bearer
+      # tokens issued by the main API's Keycloak client.
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8001/api/v1/health]
       interval: 30s
