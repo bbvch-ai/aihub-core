@@ -1,5 +1,4 @@
 import { type Dataset, getDataset } from '@core/sdk/client'
-import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useDataset = defineQuery(() => {

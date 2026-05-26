@@ -1,5 +1,4 @@
 import { type FullAgentInstanceDto, getAllAgentInstances } from '@core/sdk/client'
-import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useAgentInstances = defineQuery((options?: { online?: boolean }) => {
