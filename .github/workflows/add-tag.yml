@@ -22,6 +22,8 @@ jobs:
           fetch-depth: 0  # Important: fetch all history for git diff to work
       - name: Create new version number & tag
         id: create-tag
+        env:
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |
           # List all tags that match the pattern 'v*' and check if the list is empty
           tags=$(git tag -l "v*")
@@ -45,9 +47,6 @@ jobs:
           # Check PR labels to determine version bump type
           # Default to patch if no label is found
           bump_type="patch"
-
-          # Get PR labels using GitHub API
-          PR_LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
           echo "PR Labels: $PR_LABELS"
 
           # Check for version bump labels
@@ -88,6 +87,8 @@ jobs:
           # Expose it to subsequent steps via outputs (not just GITHUB_ENV).
           echo "version=$new_tag" >> $GITHUB_OUTPUT
       - name: Tag the commit and push the tag
+        env:
+          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           set -euo pipefail
           git config --local user.name "github-actions[bot]"
@@ -102,7 +103,7 @@ jobs:
           fi
 
           # Create annotated tag
-          TARGET_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          TARGET_SHA="$MERGE_COMMIT_SHA"
           if [ -z "$TARGET_SHA" ] || [ "$TARGET_SHA" == "null" ] ; then
             # For squash/rebase merges, use the base branch tip after merge
             git fetch origin main
@@ -364,6 +365,8 @@ jobs:
           make generate-compose
           make format-yaml
       - name: Commit Changelog, License Report, Version Update and Finalize Tag
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
           git config user.name "github-actions[bot]"
@@ -392,7 +395,7 @@ jobs:
           fi
           git add -A
           git commit --amend --no-edit || echo "No file changes to commit."
-          git push origin HEAD:${{ github.event.pull_request.base.ref }} --force-with-lease
+          git push origin HEAD:"$BASE_REF" --force-with-lease
           echo "Creating final tag $VERSION and pushing..."
           git tag -a -f "${VERSION}" -m "Release ${VERSION}"
           git push origin "refs/tags/${VERSION}" --force
