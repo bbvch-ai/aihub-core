@@ -39,6 +39,7 @@ This guide is structured to build your knowledge progressively:
     anti-patterns, and troubleshooting.
 11. [**Events Reference**](./10_events_reference/) - Complete event hierarchy, choosing the right base event, and
     available events catalog.
+12. [**Using MCP Tools**](./11_using_mcp_tools/) - Connecting agents to external MCP servers to call their tools.
 
 ## Key Principles of the SDK
 
