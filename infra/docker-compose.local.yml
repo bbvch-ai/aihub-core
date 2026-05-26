@@ -2418,6 +2418,14 @@ services:
       REDIS_URL: redis://valkey:6379
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # OpenWebUI — needed by sysadmin-api's AccessChangeHook to keep the SCIM
+      # mirror in sync when role / tenant mutations come through this API.
+      OPENWEBUI_BASE_URL: http://open-webui:8080
+      OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
+      OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

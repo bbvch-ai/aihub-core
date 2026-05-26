@@ -12,6 +12,8 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
 from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, NatsSettings, RedisSettings
+from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
+from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 from swiss_ai_hub.core.routes import Controller
 
 logger = logging.getLogger(__name__)
@@ -108,6 +110,11 @@ class SysadminApiRunner:
             nc = await NatsSettings.create_client()
             api_app.state.nc = nc
             api_app.state.redis = redis
+
+            # MongoEngine signals are per-process — mutations through sysadmin-api
+            # need their own listener to mirror access changes to OpenWebUI.
+            AccessChangeHook.connect(OpenWebuiProvisioner(redis=redis))
+
             try:
                 yield
             finally:

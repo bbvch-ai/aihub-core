@@ -90,13 +90,20 @@ and a `mount()` that matches `Controller.mount(app, runner)`. It does **not**:
 - inject `tenant_id` into the OpenAPI schema (sysadmin-api inherits route shapes from re-mounted controllers — both
   tenant-scoped routes from `packages/api` and global routes from `sysadmin-api` itself coexist)
 
-**Lifespan:** MongoDB + NATS + Redis. The closure in `create_app()` captures the inner FastAPI app and stores
-`app.state.nc` + `app.state.redis` so the standard FastAPI deps (`use_nats`, `use_redis`) resolve at request time. This
-is intentionally a *medium* lifespan — enough to satisfy every controller currently mounted (some declare `use_nats` /
-`use_redis` even if their hot path doesn't touch the clients, since FastAPI resolves dependencies eagerly), but it
-deliberately omits Milvus / S3 / Neo4j / WebSocket / discovery services / provisioners / RPC responders / event
-subscribers. Extend it if a future mounted controller needs one of those — match the source pattern in
-`packages/api/.../lifetime_manager.py`.
+**Lifespan:** MongoDB + NATS + Redis + AccessChangeHook (with an OpenWebuiProvisioner instance). The closure in
+`create_app()` captures the inner FastAPI app and stores `app.state.nc` + `app.state.redis` so the standard FastAPI deps
+(`use_nats`, `use_redis`) resolve at request time. This is intentionally a *medium* lifespan — enough to satisfy every
+controller currently mounted (some declare `use_nats` / `use_redis` even if their hot path doesn't touch the clients,
+since FastAPI resolves dependencies eagerly), but it deliberately omits Milvus / S3 / Neo4j / WebSocket / discovery
+services / RPC responders / event subscribers. Extend it if a future mounted controller needs one of those — match the
+source pattern in `packages/api/.../lifetime_manager.py`.
+
+**Why AccessChangeHook is here too:** MongoEngine `post_save` / `post_delete` signals are per-process. Without this hook
+connected on sysadmin-api, a role assignment made through sysadmin-web (which lands on sysadmin-api's
+`UserController.assign_role`) would mutate `UserTenantRoleEntity` in Mongo but never notify OpenWebUI's SCIM mirror —
+the OpenWebUI access grants would silently drift out of sync until the next mutation went through main API. sysadmin-api
+builds its own `OpenWebuiProvisioner(redis=...)` instance and connects the hook. We deliberately do NOT call
+`provisioner.provision()` — that's main API's idempotent startup responsibility; calling it twice would race.
 
 ## Entry point
 

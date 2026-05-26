@@ -41,10 +41,19 @@ chose to honor that model — `sysadmin-{api,web}` should be runnable standalone
 
 ### Lifespan expansion
 
-`SysadminApiRunner._sysadmin_lifespan` is widened from "MongoDB-only" to **MongoDB + NATS + Redis**, plus
-`I18nMiddleware` is attached to the FastAPI app so `use_locale` resolves. This is intentionally a *medium* lifespan: it
-does NOT pull in Milvus, S3, Neo4j, WebSocket plumbing, discovery services, provisioners, RPC responders, or event
-subscribers — those remain main-API-only.
+`SysadminApiRunner._sysadmin_lifespan` is widened from "MongoDB-only" to **MongoDB + NATS + Redis + AccessChangeHook
+(with its own `OpenWebuiProvisioner` instance)**, plus `I18nMiddleware` is attached to the FastAPI app so `use_locale`
+resolves. This is intentionally a *medium* lifespan: it does NOT pull in Milvus, S3, Neo4j, WebSocket plumbing,
+discovery services, RPC responders, or event subscribers — those remain main-API-only.
+
+**Why the OpenWebUI provisioner shows up despite this being supposedly "without provisioners":** MongoEngine `post_save`
+/ `post_delete` signals are *per-process*. The access-mirror hook is registered against those signals in the process
+that wants to react to them. Without a listener on sysadmin-api, a role assignment made through sysadmin-web
+(`UserController.assign_role` mounted on sysadmin-api → `UserTenantRoleEntity.add_roles` → Mongo save) would silently
+leave OpenWebUI's SCIM grants stale until the next mutation happened to go through main API. sysadmin-api therefore
+builds its own `OpenWebuiProvisioner(redis=...)` and calls `AccessChangeHook.connect(...)`. We deliberately do NOT call
+`provisioner.provision()` from sysadmin-api — that's main API's idempotent startup responsibility; running it twice
+could race.
 
 ### Controller mount list
 
