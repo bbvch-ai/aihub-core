@@ -32,22 +32,22 @@ RUN pnpm exec nuxi prepare && pnpm exec nuxt prepare .app
 WORKDIR /app/packages/sysadmin-web
 RUN pnpm run build
 
-# Runtime stage: nginx serves the static SPA
-FROM nginx:stable-alpine
+# Runtime stage: unprivileged nginx image (UID 101, listens on 8080) — no root,
+# no privileged port.
+FROM nginxinc/nginx-unprivileged:stable-alpine
 
-ARG USERNAME=user
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-
-RUN addgroup -g "$USER_GID" "$USERNAME" \
-  && adduser -D -H -u "$USER_UID" -G "$USERNAME" -s /sbin/nologin "$USERNAME"
-
+USER root
 RUN apk add --no-cache gettext
 
 COPY --from=builder /app/packages/sysadmin-web/.app/.output/public /usr/share/nginx/html
 COPY packages/sysadmin-web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY packages/sysadmin-web/config.template.js /usr/share/nginx/html/config.template.js
 
-EXPOSE 80
+# nginx user (UID 101) needs write access to /usr/share/nginx/html so the
+# CMD's envsubst can land /config.js there at container start.
+RUN chown -R nginx:nginx /usr/share/nginx/html
+
+USER nginx
+EXPOSE 8080
 
 CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.js > /usr/share/nginx/html/config.js && nginx -g 'daemon off;'"]

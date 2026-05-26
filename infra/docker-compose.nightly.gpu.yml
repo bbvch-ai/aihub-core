@@ -2497,7 +2497,7 @@ services:
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
       SYSADMIN_URL: https://sysadmin.${DOMAIN}
     healthcheck:
-      test: [CMD, curl, -f, http://127.0.0.1/]
+      test: [CMD, wget, --spider, -q, http://127.0.0.1:8080/]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2537,7 +2537,7 @@ services:
       - traefik.http.routers.web-index.tls.certresolver=letsencrypt
       - traefik.http.routers.web-default.tls.certresolver=letsencrypt
       # --- Service & Middleware ---
-      - traefik.http.services.web.loadbalancer.server.port=80
+      - traefik.http.services.web.loadbalancer.server.port=8080
       - traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file
   # ===================================================================
   # Sysadmin API (Proprietary)
@@ -2670,7 +2670,7 @@ services:
       # non-sysadmin lands on sysadmin-web (`useMainAppNavigation.exitToMainApp`).
       MAIN_APP_URL: https://${DOMAIN}
     healthcheck:
-      test: [CMD, curl, -f, http://127.0.0.1/]
+      test: [CMD, wget, --spider, -q, http://127.0.0.1:8080/]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2711,7 +2711,7 @@ services:
       - traefik.http.routers.sysadmin-web-index.tls.certresolver=letsencrypt
       - traefik.http.routers.sysadmin-web-default.tls.certresolver=letsencrypt
       # --- Service & Middleware ---
-      - traefik.http.services.sysadmin-web.loadbalancer.server.port=80
+      - traefik.http.services.sysadmin-web.loadbalancer.server.port=8080
       - traefik.http.middlewares.sysadmin-web-standard-middleware.chain.middlewares=security-headers@file
 
   # ===================================================================

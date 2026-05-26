@@ -28,27 +28,23 @@ COPY packages/web ./packages/web
 WORKDIR /app/packages/web
 RUN pnpm run build
 
-# Stage 2: Serve the static files with Nginx
-FROM nginx:stable-alpine
+# Stage 2: Serve the static files with the unprivileged Nginx image (UID 101,
+# listens on 8080 by default — no root, no privileged port).
+FROM nginxinc/nginx-unprivileged:stable-alpine
 
-ARG USERNAME=user
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-
-RUN addgroup -g "$USER_GID" "$USERNAME" \
-  && adduser -D -H -u "$USER_UID" -G "$USERNAME" -s /sbin/nologin "$USERNAME"
-
-# Install 'gettext' to get the 'envsubst' utility
+USER root
 RUN apk add --no-cache gettext
 
-# Copy built Nuxt app
 COPY --from=builder /app/packages/web/.app/.output/public /usr/share/nginx/html
-
-# Copy the Nginx config + runtime config template
 COPY packages/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY packages/web/config.template.js /usr/share/nginx/html/config.template.js
 
-EXPOSE 80
+# nginx user (UID 101) needs write access to /usr/share/nginx/html so the
+# CMD's envsubst can land /config.js there at container start.
+RUN chown -R nginx:nginx /usr/share/nginx/html
+
+USER nginx
+EXPOSE 8080
 
 # Generate /config.js from the template and start Nginx on container startup.
 CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.js > /usr/share/nginx/html/config.js && nginx -g 'daemon off;'"]
