@@ -195,7 +195,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
             response = self._client.list_objects_v2(Bucket=self.container_name, Prefix=f"{directory_path}/", MaxKeys=1)
             return "Contents" in response
         except (ClientError, NoCredentialsError, BotoCoreError) as e:
-            logger.error(f"Failed to check directory existence for {directory_path}: {e}")
+            logger.exception(f"Failed to check directory existence for {directory_path}: {e}")
             return False
 
     def list_directory_contents(self, directory_path: str) -> list[str]:
@@ -218,7 +218,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
             return contents
         except (ClientError, NoCredentialsError, BotoCoreError) as e:
-            logger.error(f"Failed to list directory contents for {directory_path}: {e}")
+            logger.exception(f"Failed to list directory contents for {directory_path}: {e}")
             return []
 
     def delete_file(self, uri: str) -> None:
