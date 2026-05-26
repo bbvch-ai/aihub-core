@@ -19,11 +19,14 @@ jobs:
     steps:
       - name: Extract version
         id: version
+        env:
+          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+          CLIENT_PAYLOAD_VERSION: ${{ github.event.client_payload.release_version }}
         run: |
-          if [ -n "${{ github.event.inputs.release_version }}" ]; then
-            VERSION="${{ github.event.inputs.release_version }}"
-          elif [ -n "${{ github.event.client_payload.release_version }}" ]; then
-            VERSION="${{ github.event.client_payload.release_version }}"
+          if [ -n "$RELEASE_VERSION" ]; then
+            VERSION="$RELEASE_VERSION"
+          elif [ -n "$CLIENT_PAYLOAD_VERSION" ]; then
+            VERSION="$CLIENT_PAYLOAD_VERSION"
           else
             echo "No release_version provided. Failing."
             exit 1
