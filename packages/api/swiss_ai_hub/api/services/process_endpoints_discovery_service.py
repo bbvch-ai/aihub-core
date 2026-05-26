@@ -31,6 +31,8 @@ from swiss_ai_hub.api.services.endpoints_discovery_service import EndpointsDisco
 
 logger = logging.getLogger(__name__)
 
+_PROCESS_NAME_I18N_PATH = "api.controllers.process.name"
+
 
 class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
     """
@@ -207,7 +209,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             ),
             methods=["GET"],
             name=get_endpoint_name,
-            tags=[ApiLocaleString.from_i18n_path("api.controllers.process.name").en],
+            tags=[ApiLocaleString.from_i18n_path(_PROCESS_NAME_I18N_PATH).en],
         )
 
         # POST endpoint that accepts form
@@ -222,7 +224,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             ),
             methods=[human_input.method],
             name=post_endpoint_name,
-            tags=[ApiLocaleString.from_i18n_path("api.controllers.process.name").en],
+            tags=[ApiLocaleString.from_i18n_path(_PROCESS_NAME_I18N_PATH).en],
         )
         logger.info(f"Successfully registered endpoints for {process_class}")
 
@@ -257,7 +259,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             ),
             methods=[program_input.method],
             name=post_endpoint_name,
-            tags=[ApiLocaleString.from_i18n_path("api.controllers.process.name").en],
+            tags=[ApiLocaleString.from_i18n_path(_PROCESS_NAME_I18N_PATH).en],
         )
         logger.info(f"Successfully registered endpoints for {process_class}")
 

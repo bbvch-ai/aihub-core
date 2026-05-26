@@ -10,6 +10,8 @@ from swiss_ai_hub.api.routes.thread.dto.statistics.run_statistics import RunStat
 
 logger = logging.getLogger(__name__)
 
+_UTC_OFFSET_SUFFIX = "+00:00"
+
 
 class DisplayStatistics(BaseEventStatistics):
     """Statistics for a display, including its runs, intended for API response."""
@@ -45,7 +47,7 @@ class DisplayStatistics(BaseEventStatistics):
             started_at_str = run.started_at
             if started_at_str:
                 try:
-                    return datetime.fromisoformat(started_at_str.replace("Z", "+00:00"))
+                    return datetime.fromisoformat(started_at_str.replace("Z", _UTC_OFFSET_SUFFIX))
                 except ValueError:
                     logger.exception(f"Could not parse run start time for sorting: {started_at_str}")
                     return datetime.min.replace(tzinfo=UTC)  # Fallback
@@ -74,7 +76,7 @@ class DisplayStatistics(BaseEventStatistics):
             open_bitl=open_bitl,
             is_aitl=is_aitl,
             open_aitl=open_aitl,
-            started_at=started_at.isoformat().replace("+00:00", "Z") if started_at else None,
-            ended_at=ended_at.isoformat().replace("+00:00", "Z") if ended_at else None,
+            started_at=started_at.isoformat().replace(_UTC_OFFSET_SUFFIX, "Z") if started_at else None,
+            ended_at=ended_at.isoformat().replace(_UTC_OFFSET_SUFFIX, "Z") if ended_at else None,
             duration=duration,
         )

@@ -45,6 +45,8 @@ class AgentController(TenantScopedController):
 
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this resource")
 
+    _AGENT_INSTANCE_ROUTE = "/classes/{agent_class}/instances/{agent_id}"
+
     def __init__(
         self, *, auth: AuthHandler, route: str = "/agents", additionally_required_permission: str | None = None
     ):
@@ -117,7 +119,7 @@ class AgentController(TenantScopedController):
 
         return self
 
-    def get_agent_instance(self, route: str = "/classes/{agent_class}/instances/{agent_id}") -> Self:
+    def get_agent_instance(self, route: str = _AGENT_INSTANCE_ROUTE) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_instance(
             agent_class: str,
@@ -134,7 +136,7 @@ class AgentController(TenantScopedController):
 
         return self
 
-    def update_agent_instance(self, route: str = "/classes/{agent_class}/instances/{agent_id}") -> Self:
+    def update_agent_instance(self, route: str = _AGENT_INSTANCE_ROUTE) -> Self:
         @self.router.put(route, tags=self.tags)
         async def update_agent_instance(
             agent_class: str,
@@ -160,7 +162,7 @@ class AgentController(TenantScopedController):
 
         return self
 
-    def delete_agent_instance(self, route: str = "/classes/{agent_class}/instances/{agent_id}") -> Self:
+    def delete_agent_instance(self, route: str = _AGENT_INSTANCE_ROUTE) -> Self:
         from fastapi import Response, status
 
         @self.router.delete(route, tags=self.tags, status_code=status.HTTP_204_NO_CONTENT)

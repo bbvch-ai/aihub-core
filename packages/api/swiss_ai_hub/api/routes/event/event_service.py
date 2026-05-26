@@ -70,7 +70,7 @@ class EventService:
                 logger.warning(f"Received data through websocket connection, but it will be ignored: {data}")
 
         except WebSocketDisconnect as e:
-            logging.error(f"Websocket disconnected: {e}")
+            logging.exception(f"Websocket disconnected: {e}")
             logger.debug(f"User {user.id} disconnected from websocket")
             await ws_manager.disconnect(websocket, user.id)
 
