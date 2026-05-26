@@ -34,7 +34,6 @@
 
 <script setup lang="ts">
 import { changeLocale } from '@formkit/vue'
-import { useQueryCache } from '@pinia/colada'
 
 const auth = useAuth()
 const { t, locale, locales } = useI18n()

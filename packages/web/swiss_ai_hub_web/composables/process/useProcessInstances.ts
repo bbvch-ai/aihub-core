@@ -1,5 +1,4 @@
 import { type FullProcessInstanceDtoReadable, getAllProcessInstances } from '@core/sdk/client'
-import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export type FullProcessInstanceDto = FullProcessInstanceDtoReadable
