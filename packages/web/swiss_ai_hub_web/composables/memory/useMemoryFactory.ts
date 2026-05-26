@@ -10,6 +10,7 @@ import {
   deleteOrganizationMemory,
   deleteAllOrganizationMemories,
 } from '@core/sdk/client'
+import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 import { computed, ref } from 'vue'
 
@@ -55,7 +56,7 @@ export function createMemoryComposables(context: MemoryContext) {
   /**
    * Composable for fetching and paginating memories
    */
-  const useMemories = defineQuery(() => {
+  const useMemories = () => {
     const { tenantId } = useTenant()
     const currentPage = ref(1)
     const pageSize = ref(20)
@@ -155,12 +156,12 @@ export function createMemoryComposables(context: MemoryContext) {
       nextPage,
       prevPage,
     }
-  })
+  }
 
   /**
    * Composable for semantic memory search
    */
-  const useMemorySearch = defineQuery(() => {
+  const useMemorySearch = () => {
     const { tenantId } = useTenant()
     const query = ref<string>('')
     const limit = ref(100)
@@ -219,12 +220,12 @@ export function createMemoryComposables(context: MemoryContext) {
       setSearchQuery,
       clearSearch,
     }
-  })
+  }
 
   /**
    * Composable for updating memory content
    */
-  const useUpdateMemory = defineMutation(() => {
+  const useUpdateMemory = () => {
     const queryCache = useQueryCache()
     const { tenantId } = useTenant()
 
@@ -252,12 +253,12 @@ export function createMemoryComposables(context: MemoryContext) {
     })
 
     return { updateMemory: updateMemoryMutation }
-  })
+  }
 
   /**
    * Composable for deleting memories
    */
-  const useDeleteMemory = defineMutation(() => {
+  const useDeleteMemory = () => {
     const queryCache = useQueryCache()
     const { tenantId } = useTenant()
 
@@ -308,7 +309,7 @@ export function createMemoryComposables(context: MemoryContext) {
       deleteMemory: deleteMemoryMutation,
       deleteAllMemories: deleteAllMemoriesMutation,
     }
-  })
+  }
 
   return {
     useMemories,
