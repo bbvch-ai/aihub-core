@@ -12,6 +12,27 @@ from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
 logger = logging.getLogger(__name__)
 
 
+async def _consume_latest_event(poller: JSPoller) -> SourceUpdatedEvent | None:
+    """Drain the JetStream poller, acking valid `SourceUpdatedEvent`s.
+
+    Returns the most recent valid event (or None if none were found). Non-matching
+    event types and ack failures are negatively-acknowledged so JetStream redelivers.
+    """
+    latest_event: SourceUpdatedEvent | None = None
+    async for event, ack, nak in poller.poll(batch_size=10, timeout=1.0):
+        if not isinstance(event, SourceUpdatedEvent):
+            logger.warning(f"Unexpected event type: {type(event)}")
+            await nak()
+            continue
+        try:
+            latest_event = event
+            await ack()
+        except Exception as e:
+            logger.exception(f"Failed to process event: {e}")
+            await nak()
+    return latest_event
+
+
 def nats_document_uploaded_sensor(
     job: ExecutableDefinition,
     topic_manager: Annotated[PipelineInstanceTopicManager, "Topic manager for the pipeline instance"],
@@ -34,6 +55,7 @@ def nats_document_uploaded_sensor(
         """Poll NATS JetStream for SourceUpdatedEvent messages and trigger a single pipeline run."""
 
         async def check_for_events():
+            nc = None
             try:
                 nc = await NatsSettings.create_client()
                 js = nc.jetstream()
@@ -48,30 +70,15 @@ def nats_document_uploaded_sensor(
                 await poller.ensure_stream_exists()
                 await poller.ensure_consumer_exists()
 
-                latest_event: SourceUpdatedEvent | None = None
+                latest_event = await _consume_latest_event(poller)
+                if not latest_event:
+                    return []
 
-                async for event, ack, nak in poller.poll(batch_size=10, timeout=1.0):
-                    if not isinstance(event, SourceUpdatedEvent):
-                        logger.warning(f"Unexpected event type: {type(event)}")
-                        await nak()
-                        continue
-
-                    try:
-                        latest_event = event
-                        await ack()
-                    except Exception as e:
-                        logger.exception(f"Failed to process event: {e}")
-                        await nak()
-
-                if latest_event:
-                    run_key = (
-                        f"{topic_manager.source_id}_to_{topic_manager.target_id}"
-                        f"_{context.last_tick_completion_time or 0}"
-                    )
-                    # As an observation request will find ALL uploaded/modified documents, we only need to request 1 run
-                    return [RunRequest(run_key=run_key)]
-
-                return []
+                run_key = (
+                    f"{topic_manager.source_id}_to_{topic_manager.target_id}_{context.last_tick_completion_time or 0}"
+                )
+                # As an observation request will find ALL uploaded/modified documents, we only need to request 1 run
+                return [RunRequest(run_key=run_key)]
 
             except Exception as e:
                 logger.exception(f"Error in NATS sensor: {e}")
