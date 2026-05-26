@@ -180,8 +180,8 @@ response.
 ### Vendor independence
 
 The LLM gateway abstracts all model access behind a single OpenAI-compatible interface. Switching providers is a
-configuration change. All infrastructure components use open-source licenses compatible with the platform's Apache 2.0
-distribution model.
+configuration change. All infrastructure components use open-source licenses compatible with the platform's distribution
+model (see `LICENSES.md`).
 
 ### Operational self-sufficiency
 

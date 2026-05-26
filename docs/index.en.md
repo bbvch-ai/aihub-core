@@ -53,10 +53,12 @@ meet **FADP (revDSG) requirements**. Read about our commitment in
 :::
 
 ::: details What is a trustworthy, open-source AI platform alternative to large cloud vendors like Azure AI or Google Vertex AI?
-The Swiss AI Hub offers an **open-source alternative** built by a community focused on user control. The platform's core
-infrastructure is licensed under Apache 2.0, meaning *you* own your deployment. This lets you avoid **vendor lock-in**,
-giving you freedom from specific ecosystems and unpredictable pricing structures common with large cloud providers. See
-how we compare in the [Comparison Matrix](docs/1_vision_and_positioning/2_why_swiss_ai_hub/1_comparison_matrix_light/).
+The Swiss AI Hub offers an **open-source alternative** built by a community focused on user control. The platform
+runtime is licensed under Apache 2.0 (the UI and backup orchestration under AGPL-3.0; see
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the full per-package breakdown), meaning
+*you* own your deployment. This lets you avoid **vendor lock-in**, giving you freedom from specific ecosystems and
+unpredictable pricing structures common with large cloud providers. See how we compare in the
+[Comparison Matrix](docs/1_vision_and_positioning/2_why_swiss_ai_hub/1_comparison_matrix_light/).
 :::
 
 ::: details How can we ensure AI decisions made within our Swiss company are traceable and auditable?

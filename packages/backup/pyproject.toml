@@ -9,7 +9,7 @@ authors = [
     { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
 ]
-license = "Apache-2.0"
+license = "AGPL-3.0-or-later"
 readme = "README.md"
 dependencies = [
     "boto3>=1.41.5",
