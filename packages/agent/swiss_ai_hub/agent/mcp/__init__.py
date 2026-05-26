@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
     from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
     from swiss_ai_hub.agent.mcp.mcp_resource_schemas import (
         execute_resource_read,
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "McpAuthResolver",
     "McpClientFactory",
     "execute_resource_read",
     "execute_single_tool_call",
@@ -27,6 +29,7 @@ _MCP_RESOURCE_SCHEMAS_MODULE = "swiss_ai_hub.agent.mcp.mcp_resource_schemas"
 _MCP_TOOL_SCHEMAS_MODULE = "swiss_ai_hub.agent.mcp.mcp_tool_schemas"
 
 _LAZY_IMPORTS = {
+    "McpAuthResolver": "swiss_ai_hub.agent.mcp.mcp_auth_resolver",
     "McpClientFactory": "swiss_ai_hub.agent.mcp.mcp_client_factory",
     "execute_resource_read": _MCP_RESOURCE_SCHEMAS_MODULE,
     "fetch_static_resources": _MCP_RESOURCE_SCHEMAS_MODULE,

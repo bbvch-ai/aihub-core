@@ -6,9 +6,18 @@ config:
   url:
     label: URL du serveur
     help: L'URL HTTP du point de terminaison du serveur MCP (ex. https://mcp.example.com/mcp).
+  auth_mode:
+    label: Mode d'authentification
+    help: Comment les agents s'authentifient auprès du serveur MCP. « Jeton utilisateur
+      » transmet le jeton de l'utilisateur appelant et ne fonctionne que pour les
+      exécutions de chat initiées par un utilisateur.
+    none_label: Aucune
+    api_key_label: Clé API
+    user_token_label: Jeton utilisateur
   api_key:
     label: Clé API
-    help: Clé API optionnelle pour les serveurs MCP authentifiés.
+    help: Clé API statique pour le serveur MCP — utilisée uniquement lorsque le mode
+      d'authentification est « Clé API ».
   timeout:
     label: Délai d'attente (secondes)
     help: Temps maximum d'attente pour une réponse du serveur MCP.
