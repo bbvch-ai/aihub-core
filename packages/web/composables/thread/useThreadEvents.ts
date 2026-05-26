@@ -1,5 +1,4 @@
 import { getAgentEventsInThread, type ContextualizedAgentEvent } from '@core/sdk/client'
-import { useQuery, useQueryCache } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
 import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'

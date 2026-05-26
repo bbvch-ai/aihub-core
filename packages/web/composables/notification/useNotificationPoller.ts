@@ -1,5 +1,4 @@
 import { getNotifications, type NotificationDto } from '@core/sdk/client'
-import { useQuery, useQueryCache } from '@pinia/colada'
 import { useIntervalFn } from '@vueuse/core'
 import { useToast } from 'primevue/usetoast'
 

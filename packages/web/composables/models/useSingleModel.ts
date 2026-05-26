@@ -1,5 +1,4 @@
 import { getLitellmModel, type ModelDto } from '@core/sdk/client'
-import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useSingleModel = () => {

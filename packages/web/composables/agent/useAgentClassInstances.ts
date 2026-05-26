@@ -1,5 +1,4 @@
 import { type FullAgentInstanceDto, getAgentClassInstances } from '@core/sdk/client'
-import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
 

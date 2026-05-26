@@ -6,9 +6,18 @@ config:
   url:
     label: Server-URL
     help: Die HTTP-URL des MCP-Server-Endpunkts (z.B. https://mcp.example.com/mcp).
+  auth_mode:
+    label: Authentifizierungsmodus
+    help: Wie sich Agenten beim MCP-Server authentifizieren. "Benutzer-Token" leitet
+      das Token der anfragenden Person weiter und funktioniert nur bei benutzerinitiierten
+      Chat-Läufen.
+    none_label: Keine
+    api_key_label: API-Schlüssel
+    user_token_label: Benutzer-Token
   api_key:
     label: API-Schlüssel
-    help: Optionaler API-Schlüssel für authentifizierte MCP-Server.
+    help: Statischer API-Schlüssel für den MCP-Server — nur verwendet, wenn der Authentifizierungsmodus
+      "API-Schlüssel" ist.
   timeout:
     label: Zeitlimit (Sekunden)
     help: Maximale Wartezeit auf eine Antwort vom MCP-Server.
