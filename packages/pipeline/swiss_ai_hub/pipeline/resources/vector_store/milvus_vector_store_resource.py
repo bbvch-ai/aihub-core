@@ -108,7 +108,11 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-            async def _init() -> MilvusVectorStore:
+            # `_init` must remain async: `loop.run_until_complete(...)` below requires an
+            # awaitable. The body delegates to a sync factory call; there is no real await
+            # to add — this is the event-loop-binding idiom that lets MilvusVectorStore /
+            # AsyncMilvusClient see a running loop during Dagster's sync resource init.
+            async def _init() -> MilvusVectorStore:  # noqa: S7503
                 return create_milvus_vector_store(
                     client=client,
                     collection_name=self.collection_name,

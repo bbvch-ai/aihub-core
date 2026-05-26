@@ -13,12 +13,12 @@ on:
     #   - "src/**/*.jsx"
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-    if: ${{ !github.event.pull_request.draft && github.event.sender.type != 'Bot' }}
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.sender.type != 'Bot' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+      github.event.pull_request.author_association)
     runs-on: ubuntu-slim
     timeout-minutes: 20
     permissions:

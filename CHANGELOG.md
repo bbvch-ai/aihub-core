@@ -5,6 +5,228 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.20] - 2026-05-26 - Core Refinements and Enhanced Event Handling
+
+### Added
+
+- 🧪 **Comprehensive NATS Sensor Tests:** Introduced new unit tests for the **NATS Document Uploaded Sensor**,
+  specifically for the event consumption logic, to ensure reliable and correct processing of messages.
+
+### Refactor
+
+- 🧹 **Improved S3 Error Logging:** Switched to using `logger.exception` for directory existence and listing failures in
+  the **S3 Data Lake Client**, providing more detailed stack trace information for easier debugging.
+- 🔄 **Streamlined SharePoint Retry Logic:** Extracted asynchronous retry and backoff logic into a dedicated helper
+  method within the **SharePoint resource**, enhancing code readability and maintainability.
+- ⚡️ **Modularized NATS Sensor Event Processing:** Refactored the **NATS Document Uploaded Sensor** to abstract event
+  consumption, validation, and acknowledgment into a new, dedicated function, leading to clearer, more robust event
+  handling.
+
+______________________________________________________________________
+
+## [v0.289.19] - 2026-05-26 - Improved Tenant-Aware Document Source Retrieval
+
+### Changed
+
+- 🚀 **Document Source Retrieval**: Updated the generation of document source URLs to explicitly include the `tenantId`,
+  ensuring accurate and tenant-specific access to original documents within a multi-tenant environment.
+
+______________________________________________________________________
+
+## [v0.289.18] - 2026-05-22 - Enhanced Tenant Management and Robust Initialization
+
+### Added
+
+- 🚀 **Superuser Active Tenant Initialization:** The active tenant for the superuser is now automatically ensured during
+  the database initialization process, making the initial setup more robust and consistent.
+
+### Changed
+
+- ⚡️ **Improved Error Logging:** Critical database initialization steps, such as role, bucket, and namespace creation,
+  now utilize `logger.exception` to automatically include detailed stack trace information when errors occur,
+  significantly improving diagnostic capabilities.
+- 🔄 **Refined Default Tenant Selection Fallback:** The fallback logic for automatically selecting an active tenant has
+  been updated to reliably choose an available tenant ID, ensuring a consistent active tenant assignment even under
+  specific edge cases.
+
+### Refactor
+
+- 🧹 **Centralized Active Tenant Management Logic:** The core logic responsible for automatically selecting and ensuring
+  a user's active tenant has been moved from `KeycloakAuthHandler` to the `KeycloakAdminService`, enhancing modularity
+  and centralizing Keycloak-related administrative functions.
+
+______________________________________________________________________
+
+## [v0.289.17] - 2026-05-22 - OpenWebUI Upgrade and Backend Reliability Enhancements
+
+### Changed
+
+- ⬆️ **Upgraded OpenWebUI:** Updated the integrated OpenWebUI platform to version `v0.9.5`, incorporating its latest
+  features and stability improvements across all deployment configurations.
+
+### Fixed
+
+- ⚡️ **Improved UI Context Synchronization:** Enhanced the reliability of UI context updates by switching from two-way
+  `event_caller` to one-way `event_emitter` for JavaScript execution. This change prevents potential deadlocks that
+  could occur in distributed OpenWebUI environments with Redis-coordinated session pools, ensuring smoother and more
+  stable user experience.
+
+### Removed
+
+- 🗑️ **Cleaned Up Development Certificates:** Removed legacy `dev-cert.pem` and `dev-key.pem` files from the Traefik
+  configuration, streamlining the development environment setup.
+
+______________________________________________________________________
+
+## [v0.289.16] - 2026-05-22 - Improved Pipeline Scheduling and Path Safety
+
+### Added
+
+- ✨ **Introduced `run_after_success_sensor`:** A new Dagster sensor enabling jobs to be automatically triggered upon the
+  successful completion of another job, streamlining pipeline workflows and ensuring proper sequencing.
+- 🚀 **New Development Workflow Commands:** Added `down-dev` to easily stop the Docker Compose development environment
+  and `playground` to quickly launch the Dagster pipeline SDK demo.
+
+### Changed
+
+- 🔄 **Refined Pipeline Job Scheduling:** Cleanup (`remove`) jobs are now automatically triggered via a new sensor after
+  their corresponding observation (`observe`) jobs succeed. This replaces their previous independent daily schedules,
+  ensuring more timely and dependent cleanup operations.
+- 📄 **Updated Documentation for Pipeline Triggers:** The `CLAUDE.md` documentation has been updated to describe the new
+  run-status chaining mechanism for job automation.
+- 🛡️ **Improved Path Traversal Prevention:** The `create_figures_folder_name` utility now includes enhanced validation
+  to explicitly prevent path traversal attempts using `.` or `..` as filenames, increasing system robustness.
+
+### Removed
+
+- 🗑️ **Deprecated `remove_job_hour` and `remove_job_minute` parameters:** These scheduling parameters have been removed
+  from various pipeline `default_definitions` as cleanup jobs are now dynamically triggered by the success of
+  observation jobs.
+- 🧹 **Eliminated Redundant IDE Configuration:** Removed the `.idea/modules.xml` file, streamlining repository setup for
+  development environments.
+
+______________________________________________________________________
+
+## [v0.289.15] - 2026-05-22 - Enhanced User Identity Resolution and Teams Bot Fixes
+
+### Fixed
+
+- 🐛 **Teams Bot User Lookup:** Resolved a critical issue (#1314) where the Teams bot failed to authenticate users whose
+  display name in Teams did not directly match their Keycloak email, by correctly resolving the user's true email via
+  the Teams connector.
+
+### Added
+
+- ✨ **Centralized User Identity Resolution:** Introduced new `resolve_user_email` and `resolve_user_identity` methods in
+  the base `CompletionHandler`. This provides a robust and consistent mechanism to determine a user's email from various
+  chat platforms (e.g., Teams) and resolve their Keycloak-backed identity across all bot types.
+- 🧪 **Comprehensive User Identity Tests:** Added extensive unit tests for user email and identity resolution, covering
+  various scenarios and edge cases to ensure the reliability and correctness of user authentication flows.
+
+### Refactor
+
+- 🧹 **Unified User Identity Logic:** Consolidated the user identity resolution logic into the shared
+  `CompletionHandler`, moving it from the `AgentCompletionHandler` and `OpenaiCompletionHandler`. This improves code
+  reusability, maintainability, and ensures consistent user authentication across all bot implementations.
+
+______________________________________________________________________
+
+## [v0.289.14] - 2026-05-22 - Enhanced AI Workflow Security
+
+### Security
+
+- 🔒 **Strengthened Claude Code Review Workflow Security:** The automated Claude AI code review workflow is now
+  restricted to run exclusively for pull requests from within the same repository and initiated by trusted contributors
+  (Owners, Members, or Collaborators).
+- 🔑 **Improved Claude Bot Interaction Control:** Access to trigger the Claude AI bot via comments or issues (using
+  `@claude`) has been limited to repository Owners, Members, and Collaborators, enhancing control and preventing
+  unauthorized invocations.
+
+______________________________________________________________________
+
+## [v0.289.13] - 2026-05-22 - Securely Propagate User Identity to Agents
+
+### Added
+
+- 🔑 **Introduced `X-AIHub-*` Header Propagation:** Implemented a new mechanism to securely propagate `X-AIHub-*`
+  identity headers from incoming API requests through the NATS event bus to agent `RunContext`. This allows agents to
+  perform actions on behalf of the originating user, supporting use cases like delegated authentication.
+- 🔐 **`_aihub_headers` Attribute to Base Events:** Added a private attribute `_aihub_headers` to the `BaseEvent` class,
+  enabling temporary storage of untrusted `X-AIHub-*` headers received from NATS messages for subsequent processing and
+  validation by agent steps.
+- ⚡️ **New `NATSMessageHeaders` Utilities:** Introduced `with_aihub_headers` for filtering and merging `X-AIHub-*`
+  headers onto outgoing NATS messages, and `extract_aihub_headers` for safely extracting and standardizing these headers
+  from incoming messages.
+- 🧪 **Comprehensive Unit Tests for Header Handling:** Added new unit tests to ensure the robust and secure handling of
+  `X-AIHub-*` headers across publishers and the `NATSMessageHeaders` utility.
+
+### Changed
+
+- 🔄 **API Request Header Extraction:** Modified the OpenAI API controller to extract `X-AIHub-*` headers from incoming
+  HTTP requests, ensuring they are captured early in the request lifecycle.
+- 🚀 **Event Distributor Header Forwarding:** Updated the event distributor to forward `X-AIHub-*` headers onto NATS
+  control-path events (`StartEvent`, HITL/BITL responses) while intentionally excluding them from observability-only
+  display events to prevent credential over-sharing.
+- 📦 **Agent `RunContext` Identity Storage:** Enhanced the `AgentDispatcher` to persist extracted `X-AIHub-*` headers
+  into the agent's `RunContext`, making them accessible to agent steps that require user identity for delegated
+  operations.
+- 📡 **NATS Publisher and Subscriber Integration:** Integrated `X-AIHub-*` header processing into both NATS Core and
+  JetStream publishers and subscribers, enabling seamless propagation and extraction of these headers across the event
+  bus.
+
+______________________________________________________________________
+
+## [v0.289.12] - 2026-05-22 - Timestamp Precision and Code Refinements
+
+### Changed
+
+- ⚙️ Enhanced **conversation timestamp accuracy** by switching to timezone-aware UTC datetime objects for
+  `last_activity` records, ensuring more consistent timekeeping.
+
+### Refactor
+
+- 🧹 Streamlined **content type checks** within the content extractor, consolidating multiple `startswith` conditions for
+  improved code readability.
+- ⚡️ Optimized **Slack ID retrieval** by making the `_get_slack_ids` method synchronous, simplifying its execution flow.
+
+______________________________________________________________________
+
+## [v0.289.11] - 2026-05-22 - Core Agent Refinements and Dispatcher Improvements
+
+### Refactor
+
+- 🧹 **Streamlined Agent Dispatching Logic:** Extracted event normalization and handling into dedicated helper methods
+  within the `AgentDispatcher` for improved modularity, readability, and maintainability of event processing.
+- ⚙️ **Enhanced Multiprocess Runner Stability:** Centralized and improved the graceful shutdown mechanism for
+  `MultiprocessAgentRunner` to ensure more robust and consistent stopping of agent processes.
+- 🔄 **Simplified RAG Agent Preconditions:** Refined the `context_ready_for_history_limit` precondition in the RAG agent
+  by removing an unnecessary parameter, leading to cleaner code.
+- 📄 **Improved Module Import Clarity:** Introduced module constants for lazy imports in the MCP module, enhancing code
+  readability and reducing string literal duplication.
+
+### Changed
+
+- 📝 **Clarified Event Tracing Behavior:** Added a comment to explain that `EventDisplayer` arguments are intentionally
+  excluded from tracing, improving code documentation.
+
+______________________________________________________________________
+
+## [v0.289.10] - 2026-05-21 - Workflow Optimization and Release Tagging Enhancements
+
+### Fixed
+
+- 🔑 **Resolved Release Tagging Permissions:** Addressed an issue in the `set-latest` workflow that prevented `latest`
+  git tags from being moved when workflow files were modified, by leveraging an SSH deploy key for proper
+  authentication.
+
+### Refactor
+
+- 🧹 **Streamlined CI/CD YAML Parsing:** Replaced Python-based YAML parsing with `yq` and `jq` in the `build-agents`,
+  `build-pipelines`, and `set-latest` workflows. This change utilizes pre-installed tools on the `ubuntu-slim` runner,
+  enhancing workflow reliability and reducing external dependencies.
+
+______________________________________________________________________
+
 ## [v0.289.9] - 2026-05-20 - Infrastructure Maintenance
 
 ### Changed

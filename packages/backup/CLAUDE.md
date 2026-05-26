@@ -170,7 +170,7 @@ Three layers, mirroring the test pyramid:
     `PYTEST_POSTGRES_HOST=localhost PYTEST_POSTGRES_PORT=55432 PYTEST_POSTGRES_USER=postgres PYTEST_POSTGRES_PASSWORD=test uv run pytest tests/integration/`
 
 - **Layer 3 — E2E tests** (`tests/integration/test_e2e.py`, marker `e2e`): full backup/restore cycle against the running
-  dev stack. Requires `make up`. Slow.
+  dev stack. Requires `make up-dev`. Slow.
 
 `conftest.py` provides shared fixtures for `BackupSettings` and handler construction. The integration conftest
 auto-detects `pg_ctl` (process mode) or external Postgres (noproc mode); both paths feed the same `event_logs_engine`

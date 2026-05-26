@@ -36,14 +36,14 @@ jobs:
       - name: Parse pipeline images from compose-config.yml
         id: parse
         run: |
-          # Extract image names where build == "localbuild" and name ends with "_pipeline"
-          images=$(python3 -c "
-          import yaml, json
-          with open('infra/deployment/compose-config.yml') as f:
-              config = yaml.safe_load(f)
-          images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild' and k.endswith('_pipeline')]
-          print(json.dumps(images))
-          ")
+          # Extract image names where build == "localbuild" and name ends with "_pipeline".
+          # yq + jq are both preinstalled on ubuntu-slim; PyYAML is not.
+          images=$(yq -o=json '.' infra/deployment/compose-config.yml \
+            | jq -c '[.image_tags | to_entries[]
+                | select((.value | type) == "object"
+                  and .value.build == "localbuild"
+                  and (.key | endswith("_pipeline")))
+                | .key]')
           echo "Discovered pipelines: $images"
           echo "matrix={\"image\":$images}" >> $GITHUB_OUTPUT
   build:
@@ -60,15 +60,18 @@ jobs:
           fetch-depth: 0
       - name: Extract Tag / Version
         id: get_tag
+        env:
+          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+          CLIENT_PAYLOAD_VERSION: ${{ github.event.client_payload.release_version }}
         run: |
           # 1) Prefer workflow_dispatch input
-          if [ -n "${{ github.event.inputs.release_version }}" ] && [ "${{ github.event.inputs.release_version }}" != "manual" ]; then
-            TAG_NAME="${{ github.event.inputs.release_version }}"
+          if [ -n "$RELEASE_VERSION" ] && [ "$RELEASE_VERSION" != "manual" ]; then
+            TAG_NAME="$RELEASE_VERSION"
             echo "Using release version from workflow_dispatch input: $TAG_NAME"
 
           # 2) Then repository_dispatch client_payload
-          elif [ -n "${{ github.event.client_payload.release_version }}" ]; then
-            TAG_NAME="${{ github.event.client_payload.release_version }}"
+          elif [ -n "$CLIENT_PAYLOAD_VERSION" ]; then
+            TAG_NAME="$CLIENT_PAYLOAD_VERSION"
             echo "Using release version from repository_dispatch payload: $TAG_NAME"
 
           # 3) No Fallback

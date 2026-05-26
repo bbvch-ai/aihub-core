@@ -61,7 +61,7 @@ class BotInTheLoopHandler:
         else:
             return
 
-    async def _get_slack_ids(self, path: str) -> SlackIds:
+    def _get_slack_ids(self, path: str) -> SlackIds:
         """Get bot_id and team_id using the Slack auth.test API."""
         if path in self.slack_ids_cache:
             return self.slack_ids_cache[path]
@@ -174,7 +174,7 @@ class BotInTheLoopHandler:
     ):
         logger.info(f"[BITL-Handler] Handling Slack BITL request: thread_id={thread_id}, question={question!r}")
 
-        slack_ids = await self._get_slack_ids(self.path)
+        slack_ids = self._get_slack_ids(self.path)
         base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.channel_config.channel_id}"
 
         logger.info(

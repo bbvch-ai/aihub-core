@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 20.05.2026
+Generated on: 22.05.2026
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -1454,7 +1454,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`               | BSD-3-Clause       | Jupyter base image                                                                                                                                                                                         |
 | ✅     | nats                            | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                   | Apache-2.0         | Permissive license                                                                                                                                                                                         |
 | ✅     | neo4j                           | `ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community`                       | GPL                | Permissive license                                                                                                                                                                                         |
-| ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.8.10`                            | BSD-3-Clause       | Permissive with required branding retention                                                                                                                                                                |
+| ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.9.5`                             | BSD-3-Clause       | Permissive with required branding retention                                                                                                                                                                |
 | ✅     | pgbouncer                       | `ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1`                          | ISC                | Based on edoburu/pgbouncer (MIT wrapper); permissive licenses                                                                                                                                              |
 | ✅     | pgvector-repack                 | `ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17`                          | PostgreSQL License | BSD-style permissive license                                                                                                                                                                               |
 | ✅     | playwright                      | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy`                      | Apache-2.0         | Permissive license                                                                                                                                                                                         |

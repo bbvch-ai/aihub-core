@@ -93,7 +93,7 @@ async def context_ready_for_history_limit(
     Precondition for limit_chat_history_with_context_step.
     Allows the step to run when InOrderNodeCombinerEvent is present AND ContextSufficientAcceptEvent is present.
     """
-    return check_context_ready_for_history_limit(context_event, context_sufficient_event)
+    return check_context_ready_for_history_limit(context_sufficient_event)
 
 
 @precondition()
