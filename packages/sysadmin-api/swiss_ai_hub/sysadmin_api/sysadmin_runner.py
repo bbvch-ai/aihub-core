@@ -10,46 +10,36 @@ from mongoengine import connect, disconnect
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
+from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.routes import Controller
 
 logger = logging.getLogger(__name__)
-
-
-@asynccontextmanager
-async def _sysadmin_lifespan(_: Starlette) -> AsyncGenerator:
-    """The entire lifespan of the sysadmin plane: connect to MongoDB, nothing else.
-
-    sysadmin-api does not publish or subscribe to NATS, does not stream over
-    WebSockets, and does not touch Milvus / Redis / S3 / Neo4j. Keycloak access
-    is REST and initialised lazily per call. This is deliberately the whole
-    story — there is no "full" variant to fall back to.
-    """
-    print(AIHubSettings().startup_banner)
-    logger.info("Sysadmin API starting: connecting to MongoDB")
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-    try:
-        yield
-    finally:
-        logger.info("Sysadmin API shutting down: disconnecting from MongoDB")
-        disconnect()
 
 
 class SysadminApiRunner:
     """Standalone runner for the sysadmin plane.
 
     Deliberately does NOT inherit ``swiss_ai_hub.api.ApiRunner``. The main API's
-    runner builds an MCP server and wires a lifespan that connects NATS, Milvus,
-    Redis, S3, WebSocket plumbing, discovery services and provisioners — none of
-    which the sysadmin plane needs, and inheriting it forced a fragile "lite vs
-    full lifespan" override. This runner builds a plain FastAPI app mounted under
-    ``/api/v1`` with a MongoDB-only lifespan and CORS. No MCP, no i18n middleware
-    (sysadmin endpoints do not consume request locale), no OpenAPI tenant_id
-    injection (sysadmin-api has no tenant-prefixed routes).
+    runner builds an MCP server and wires a lifespan that connects Milvus, S3,
+    Neo4j, WebSocket plumbing, discovery services and provisioners — none of
+    which the sysadmin plane needs, and inheriting it forced a fragile
+    "lite vs full lifespan" override.
+
+    This runner builds a plain FastAPI app mounted under ``/api/v1`` with a
+    deliberately medium-sized lifespan: **MongoDB + NATS + Redis**. That set is
+    enough to mount any ``packages/api`` controller that doesn't depend on
+    Milvus / S3 / WebSocket / discovery (currently: ``UserController``,
+    ``RoleController``, ``MyAccountController.get_my_identity``,
+    ``AuthProviderController``). NATS isn't actively used by the mounted
+    controllers' code paths today — it's wired because ``use_nats`` is a
+    declared dependency on a handful of endpoints (e.g. ``UserController.get_user``)
+    and FastAPI resolves dependencies eagerly. ``I18nMiddleware`` is wired so
+    ``use_locale`` resolves cleanly for the same reason.
+
+    Adding more infra (Milvus, S3, Neo4j, WebSocket, discovery) here is fine
+    when a future mounted controller needs it — match the source pattern in
+    ``packages/api/.../lifetime_manager.py`` and extend the closure below.
     """
 
     def __init__(
@@ -80,6 +70,10 @@ class SysadminApiRunner:
             allow_methods=["*"],
             allow_headers=["*"],
         )
+        # I18nMiddleware sets ``request.state.locale`` so ``use_locale`` resolves
+        # for endpoints that declare it (currently dormant on sysadmin-api, but
+        # any mounted ``packages/api`` controller using ``use_locale`` works).
+        self._api_app.add_middleware(I18nMiddleware)
 
     def mount(self, *controllers: Controller) -> Self:
         for controller in controllers:
@@ -93,7 +87,36 @@ class SysadminApiRunner:
         return self
 
     def create_app(self) -> Starlette:
+        api_app = self._api_app
+
+        @asynccontextmanager
+        async def lifespan(_: Starlette) -> AsyncGenerator:
+            """MongoDB + NATS + Redis lifespan for sysadmin-api.
+
+            The closure captures ``api_app`` so resources land on the inner
+            FastAPI app's ``state`` — that's the app FastAPI dependencies
+            (``use_nats``, ``use_redis``) reach via ``request.app.state``.
+            """
+            print(AIHubSettings().startup_banner)
+            logger.info("Sysadmin API starting: MongoDB + NATS + Redis")
+            connect(
+                db=AIHubSettings().MONGO_MAIN_DB_NAME,
+                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+                uuidRepresentation="standard",
+            )
+            redis = RedisSettings.create_client()
+            nc = await NatsSettings.create_client()
+            api_app.state.nc = nc
+            api_app.state.redis = redis
+            try:
+                yield
+            finally:
+                logger.info("Sysadmin API shutting down")
+                await nc.drain()
+                await redis.close()
+                disconnect()
+
         return Starlette(
-            routes=[Mount(self.api_path, app=self._api_app)],
-            lifespan=_sysadmin_lifespan,
+            routes=[Mount(self.api_path, app=api_app)],
+            lifespan=lifespan,
         )

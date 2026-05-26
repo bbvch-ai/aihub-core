@@ -42,7 +42,12 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
 
   auth.events.addSilentRenewError((error) => {
     console.error('Silent renew error:', error)
-    // You could implement a retry logic here or redirect to login
+    // The refresh token is rejected (typically: Keycloak invalidated it).
+    // Without a working renew path, the SDK starts sending unauthenticated
+    // requests on the next navigation — surfacing as 401s downstream. Send
+    // the user to the login page now so they re-auth in place.
+    const locale = $i18n.locale.value
+    $router.push(`/${locale}/auth/login`)
   })
 
   // Check for user session on startup

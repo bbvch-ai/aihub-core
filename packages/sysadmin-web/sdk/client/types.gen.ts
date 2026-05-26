@@ -5,6 +5,48 @@ export type ClientOptions = {
 };
 
 /**
+ * Access
+ */
+export type Access = {
+  /**
+   * Services
+   *
+   * List of services and access levels
+   */
+  services?: Array<UserAccess>;
+  /**
+   * Agents
+   *
+   * List of agents and access levels
+   */
+  agents?: Array<UserAccess>;
+  /**
+   * Processes
+   *
+   * List of processes and access levels
+   */
+  processes?: Array<UserAccess>;
+};
+
+/**
+ * AccessLevel
+ *
+ * Defines the possible outcomes of a permission check.
+ */
+export const AccessLevel = {
+  0: 0,
+  1: 1,
+  2: 2,
+} as const;
+
+/**
+ * AccessLevel
+ *
+ * Defines the possible outcomes of a permission check.
+ */
+export type AccessLevel = (typeof AccessLevel)[keyof typeof AccessLevel];
+
+/**
  * AgentHealthChecks
  *
  * Health check results for Agent service dependencies.
@@ -75,6 +117,64 @@ export type ApiHealthChecks = {
 };
 
 /**
+ * AuthProviderResponse
+ *
+ * Represents a single identity provider available for login.
+ */
+export type AuthProviderResponse = {
+  /**
+   * Alias
+   *
+   * Keycloak IDP alias used as kc_idp_hint parameter
+   */
+  alias: string;
+  /**
+   * Display Name
+   *
+   * Human-readable name for the login button
+   */
+  display_name: string;
+  /**
+   * Icon
+   *
+   * PrimeIcon CSS class (e.g., pi-microsoft, pi-lock)
+   */
+  icon: string;
+};
+
+/**
+ * CreateRoleRequest
+ *
+ * Request model for creating a new role.
+ */
+export type CreateRoleRequest = {
+  /**
+   * Name
+   *
+   * The unique name of the role.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * A short description of the role's purpose.
+   */
+  description: string;
+  /**
+   * Access Rules
+   *
+   * A list of access rules granted by this role.
+   */
+  access_rules?: Array<string>;
+  /**
+   * Usage Limits
+   *
+   * Pattern-based usage limit rules.
+   */
+  usage_limits?: Array<UsageLimitDto>;
+};
+
+/**
  * CreateTenantMetadataRequest
  *
  * Request model for attaching metadata to an existing Keycloak tenant group.
@@ -115,6 +215,110 @@ export type CreateTenantMetadataRequest = {
 };
 
 /**
+ * DashboardDTO
+ */
+export type DashboardDto = {
+  /**
+   * Minrow
+   *
+   * Minimum number of rows in the grid.
+   */
+  minRow?: number | null;
+  /**
+   * Margin
+   *
+   * Gap between grid items in pixels.
+   */
+  margin?: number | null;
+  /**
+   * Column
+   *
+   * Number of columns in the grid.
+   */
+  column?: number | null;
+  /**
+   * Cellheight
+   *
+   * Height of one cell in pixels.
+   */
+  cellHeight?: number | null;
+  /**
+   * Children
+   *
+   * List of widgets (dashboard items) within the grid.
+   */
+  children?: Array<DashboardItemDto>;
+};
+
+/**
+ * DashboardItemDTO
+ */
+export type DashboardItemDto = {
+  /**
+   * Id
+   *
+   * Unique identifier for the dashboard widget.
+   */
+  id: string;
+  /**
+   * Component
+   *
+   * Specifies the component to render for this widget.
+   */
+  component: string;
+  /**
+   * X
+   *
+   * The x-coordinate of the widget in the grid.
+   */
+  x: number;
+  /**
+   * Y
+   *
+   * The y-coordinate of the widget in the grid.
+   */
+  y: number;
+  /**
+   * W
+   *
+   * Width of the widget in grid column units.
+   */
+  w?: number | null;
+  /**
+   * Noresize
+   *
+   * If true, the widget cannot be resized.
+   */
+  noResize?: boolean | null;
+  /**
+   * Timerange
+   *
+   * Time range for the data displayed in the widget.
+   */
+  timeRange?: string | null;
+  /**
+   * Event
+   *
+   * The type of event data the widget displays.
+   */
+  event?: string | null;
+};
+
+/**
+ * DeleteRoleResponse
+ *
+ * Confirmation response for a successful deletion.
+ */
+export type DeleteRoleResponse = {
+  /**
+   * Detail
+   *
+   * A confirmation message for the deletion.
+   */
+  detail?: string;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -151,6 +355,44 @@ export type HealthResponse = {
 };
 
 /**
+ * PaginatedUsersResponse
+ *
+ * Represents a paginated response containing a list of users.
+ */
+export type PaginatedUsersResponse = {
+  /**
+   * Total
+   *
+   * Total number of items available
+   */
+  total: number;
+  /**
+   * Page
+   *
+   * Current page number (1-indexed)
+   */
+  page: number;
+  /**
+   * Page Size
+   *
+   * Number of threads per page
+   */
+  page_size: number;
+  /**
+   * Total Pages
+   *
+   * Total number of pages available
+   */
+  total_pages: number;
+  /**
+   * Users
+   *
+   * List of MinimalUserDTO objects for the current page.
+   */
+  users: Array<UserDto>;
+};
+
+/**
  * ProcessHealthChecks
  *
  * Health check results for Process service dependencies.
@@ -174,6 +416,50 @@ export type ProcessHealthChecks = {
    * Redis/Valkey cache connectivity.
    */
   redis: boolean;
+};
+
+/**
+ * RoleResponse
+ *
+ * Response model representing a role.
+ */
+export type RoleResponse = {
+  /**
+   * Id
+   *
+   * The unique identifier of the role.
+   */
+  id: string;
+  /**
+   * Name
+   *
+   * The name of the role.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * The description of the role.
+   */
+  description: string;
+  /**
+   * Access Rules
+   *
+   * The list of access rules for the role.
+   */
+  access_rules: Array<string>;
+  /**
+   * Usage Limits
+   *
+   * Pattern-based usage limit rules.
+   */
+  usage_limits?: Array<UsageLimitDto>;
+  /**
+   * Tenant Id
+   *
+   * Tenant ID this role belongs to.
+   */
+  tenant_id: string;
 };
 
 /**
@@ -261,6 +547,38 @@ export const TenantState = { ACTIVE: "active", ORPHANED: "orphaned" } as const;
 export type TenantState = (typeof TenantState)[keyof typeof TenantState];
 
 /**
+ * UpdateRoleRequest
+ *
+ * Request model for updating an existing role. All fields are optional.
+ */
+export type UpdateRoleRequest = {
+  /**
+   * Name
+   *
+   * The new unique name of the role.
+   */
+  name?: string | null;
+  /**
+   * Description
+   *
+   * The new description for the role.
+   */
+  description?: string | null;
+  /**
+   * Access Rules
+   *
+   * The new list of access rules.
+   */
+  access_rules?: Array<string> | null;
+  /**
+   * Usage Limits
+   *
+   * Pattern-based usage limit rules.
+   */
+  usage_limits?: Array<UsageLimitDto> | null;
+};
+
+/**
  * UpdateTenantMetadataRequest
  *
  * Request model for updating a tenant. All fields are optional.
@@ -283,6 +601,168 @@ export type UpdateTenantMetadataRequest = {
    * Access rules granted to this tenant.
    */
   access_rules?: Array<string> | null;
+};
+
+/**
+ * UsageLimitDTO
+ *
+ * Pattern-based usage limit rule.
+ */
+export type UsageLimitDto = {
+  /**
+   * Pattern
+   *
+   * Full dotted resource pattern with wildcards (e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*').
+   */
+  pattern: string;
+  /**
+   * Limit
+   *
+   * Max calls per period for this pattern.
+   */
+  limit: number;
+  /**
+   * Period for limit: 1h, 1d, 7d, 1mo.
+   */
+  period: UsageLimitPeriod;
+  /**
+   * Description
+   *
+   * Human-readable description of the pattern.
+   */
+  description?: string | null;
+};
+
+/**
+ * UsageLimitPeriod
+ *
+ * Supported usage limit periods.
+ */
+export const UsageLimitPeriod = {
+  "1H": "1h",
+  "1D": "1d",
+  "7D": "7d",
+  "1MO": "1mo",
+} as const;
+
+/**
+ * UsageLimitPeriod
+ *
+ * Supported usage limit periods.
+ */
+export type UsageLimitPeriod =
+  (typeof UsageLimitPeriod)[keyof typeof UsageLimitPeriod];
+
+/**
+ * UserAccess
+ */
+export type UserAccess = {
+  /**
+   * Name
+   *
+   * Name of the service/agent/process to which user has access to
+   */
+  name: string;
+  /**
+   * Users access level to service/agent/process
+   */
+  level: AccessLevel;
+};
+
+/**
+ * UserDTO
+ */
+export type UserDto = {
+  /**
+   * Id
+   *
+   * The user's unique identifier (OID).
+   */
+  id: string;
+  /**
+   * Name
+   *
+   * The user's name.
+   */
+  name: string;
+  /**
+   * Email
+   *
+   * The user's email address.
+   */
+  email: string;
+  /**
+   * Profile Image
+   *
+   * User's profile image in base64.
+   */
+  profile_image?: string | null;
+  /**
+   * User dashboard configuration for index page
+   */
+  dashboard?: DashboardDto | null;
+  /**
+   * Roles
+   *
+   * Roles the user holds in the current tenant.
+   */
+  roles?: Array<string>;
+  /**
+   * Is Sys Admin
+   *
+   * Whether the user has the AIHubSysAdmin realm role in Keycloak.
+   */
+  is_sys_admin?: boolean;
+};
+
+/**
+ * UserWithAccessDTO
+ */
+export type UserWithAccessDto = {
+  /**
+   * Id
+   *
+   * The user's unique identifier (OID).
+   */
+  id: string;
+  /**
+   * Name
+   *
+   * The user's name.
+   */
+  name: string;
+  /**
+   * Email
+   *
+   * The user's email address.
+   */
+  email: string;
+  /**
+   * Profile Image
+   *
+   * User's profile image in base64.
+   */
+  profile_image?: string | null;
+  /**
+   * User dashboard configuration for index page
+   */
+  dashboard?: DashboardDto | null;
+  /**
+   * Roles
+   *
+   * Roles the user holds in the current tenant.
+   */
+  roles?: Array<string>;
+  /**
+   * Is Sys Admin
+   *
+   * Whether the user has the AIHubSysAdmin realm role in Keycloak.
+   */
+  is_sys_admin?: boolean;
+  /**
+   * User access levels
+   */
+  access: Access;
 };
 
 /**
@@ -313,18 +793,6 @@ export type ValidationError = {
   };
 };
 
-/**
- * WhoamiResponse
- */
-export type WhoamiResponse = {
-  /**
-   * Is Sys Admin
-   *
-   * Whether the authenticated user has the AIHubSysAdmin Keycloak realm role.
-   */
-  is_sys_admin: boolean;
-};
-
 export type GetHealthData = {
   body?: never;
   path?: never;
@@ -340,22 +808,6 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
-
-export type GetWhoamiData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/whoami/";
-};
-
-export type GetWhoamiResponses = {
-  /**
-   * Successful Response
-   */
-  200: WhoamiResponse;
-};
-
-export type GetWhoamiResponse = GetWhoamiResponses[keyof GetWhoamiResponses];
 
 export type ListTenantsData = {
   body?: never;
@@ -515,3 +967,243 @@ export type UpdateTenantMetadataResponses = {
 
 export type UpdateTenantMetadataResponse =
   UpdateTenantMetadataResponses[keyof UpdateTenantMetadataResponses];
+
+export type GetMyIdentityData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/{tenant_id}/my-account/identity";
+};
+
+export type GetMyIdentityResponses = {
+  /**
+   * Successful Response
+   */
+  200: UserDto;
+};
+
+export type GetMyIdentityResponse =
+  GetMyIdentityResponses[keyof GetMyIdentityResponses];
+
+export type GetUserData = {
+  body?: never;
+  path: {
+    /**
+     * User Id
+     *
+     * The user's unique identifier (OID).
+     */
+    user_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/users/{user_id}";
+};
+
+export type GetUserErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetUserError = GetUserErrors[keyof GetUserErrors];
+
+export type GetUserResponses = {
+  /**
+   * Successful Response
+   */
+  200: UserWithAccessDto;
+};
+
+export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
+
+export type GetUsersData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Page Number
+     *
+     * Page number to retrieve (starting from 1)
+     */
+    page?: number;
+    /**
+     * Page Size
+     *
+     * Number of items per page (maximum 100)
+     */
+    page_size?: number;
+  };
+  url: "/{tenant_id}/users/";
+};
+
+export type GetUsersErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
+
+export type GetUsersResponses = {
+  /**
+   * Successful Response
+   */
+  200: PaginatedUsersResponse;
+};
+
+export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
+
+export type DeleteRoleData = {
+  body?: never;
+  path: {
+    /**
+     * Role Id
+     */
+    role_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/roles/{role_id}";
+};
+
+export type DeleteRoleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteRoleError = DeleteRoleErrors[keyof DeleteRoleErrors];
+
+export type DeleteRoleResponses = {
+  /**
+   * Successful Response
+   */
+  200: DeleteRoleResponse;
+};
+
+export type DeleteRoleResponse2 =
+  DeleteRoleResponses[keyof DeleteRoleResponses];
+
+export type GetRoleData = {
+  body?: never;
+  path: {
+    /**
+     * Role Id
+     */
+    role_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/roles/{role_id}";
+};
+
+export type GetRoleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetRoleError = GetRoleErrors[keyof GetRoleErrors];
+
+export type GetRoleResponses = {
+  /**
+   * Successful Response
+   */
+  200: RoleResponse;
+};
+
+export type GetRoleResponse = GetRoleResponses[keyof GetRoleResponses];
+
+export type UpdateRoleData = {
+  body: UpdateRoleRequest;
+  path: {
+    /**
+     * Role Id
+     */
+    role_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/roles/{role_id}";
+};
+
+export type UpdateRoleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateRoleError = UpdateRoleErrors[keyof UpdateRoleErrors];
+
+export type UpdateRoleResponses = {
+  /**
+   * Successful Response
+   */
+  200: RoleResponse;
+};
+
+export type UpdateRoleResponse = UpdateRoleResponses[keyof UpdateRoleResponses];
+
+export type GetRolesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/{tenant_id}/roles/";
+};
+
+export type GetRolesResponses = {
+  /**
+   * Response Get Roles  Tenant Id  Roles  Get
+   *
+   * Successful Response
+   */
+  200: Array<RoleResponse>;
+};
+
+export type GetRolesResponse = GetRolesResponses[keyof GetRolesResponses];
+
+export type CreateRoleData = {
+  body: CreateRoleRequest;
+  path?: never;
+  query?: never;
+  url: "/{tenant_id}/roles/";
+};
+
+export type CreateRoleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateRoleError = CreateRoleErrors[keyof CreateRoleErrors];
+
+export type CreateRoleResponses = {
+  /**
+   * Successful Response
+   */
+  201: RoleResponse;
+};
+
+export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
+
+export type GetAuthProvidersData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/auth-providers/";
+};
+
+export type GetAuthProvidersResponses = {
+  /**
+   * Response Get Auth Providers Auth Providers  Get
+   *
+   * Successful Response
+   */
+  200: Array<AuthProviderResponse>;
+};
+
+export type GetAuthProvidersResponse =
+  GetAuthProvidersResponses[keyof GetAuthProvidersResponses];

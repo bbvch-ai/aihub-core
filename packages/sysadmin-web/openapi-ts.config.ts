@@ -7,7 +7,11 @@ export default defineConfig({
   input: 'http://localhost:8001/api/v1/openapi.json',
   output: {
     path: 'sdk/client',
-    postProcess: ['prettier', 'eslint'],
+    // ESLint is omitted on purpose: eslint.config.js globally ignores sdk/**, so
+    // running it here exits code 2 ("all files ignored"), which makes the
+    // post-process pipeline abort mid-way and leaves prettier's output in an
+    // unstable shape — each regen then produces a different diff. See PR #1304.
+    postProcess: ['prettier'],
   },
   plugins: [
     '@hey-api/client-nuxt',

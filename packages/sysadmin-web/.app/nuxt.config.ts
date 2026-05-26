@@ -7,15 +7,13 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       env: process.env.ENV,
-      // Inherited @swiss-ai-hub/web composables (useAuth, useAuthProviders, …)
-      // talk to the MAIN AI-Hub API, which for sysadmin-web is cross-origin
-      // (sysadmin.${DOMAIN} → ${DOMAIN}). Same-origin /api/v1 here would hit
-      // sysadmin-api, which doesn't expose those endpoints. In prod the layer's
-      // 0.runtime-config plugin maps API_BASE_URL from window.__AIHUB_CONFIG__
-      // (/config.js) onto this value.
-      apiBaseUrl: process.env.ENV == 'dev'
-        ? (process.env.MAIN_API_URL ?? 'http://localhost:8000') + '/api/v1'
-        : '/api/v1',
+      // Same-origin in both dev (Nitro proxy → sysadmin-api on :8001) and prod
+      // (sysadmin.${DOMAIN}/api/v1 → sysadmin-api). Inherited @swiss-ai-hub/web
+      // composables (useUsers, useRoles, …) share this base URL via the layer's
+      // api-client plugin, so sysadmin-api must mount every endpoint they call
+      // (see main.py — currently UserController + RoleController; expand the
+      // mount list as more inherited composables get used by sysadmin-web pages).
+      apiBaseUrl: '/api/v1',
       oidc: {
         clientId: process.env.ENV == 'dev' ? process.env.OAUTH_CLIENT_ID : '',
         authorityUrl: process.env.ENV == 'dev' ? process.env.OAUTH_AUTHORITY_URL : '',

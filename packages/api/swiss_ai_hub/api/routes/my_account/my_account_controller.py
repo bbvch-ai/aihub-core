@@ -12,6 +12,7 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.routes.my_account.my_account_service import MyAccountService
 from swiss_ai_hub.api.routes.user.dto.dashboard.dashboard_dto import DashboardDTO
+from swiss_ai_hub.api.routes.user.dto.user_dto import UserDTO
 from swiss_ai_hub.api.routes.user.dto.user_with_access_dto import UserWithAccessDTO
 
 
@@ -36,6 +37,23 @@ class MyAccountController(TenantScopedController):
         ) -> UserWithAccessDTO:
             """Returns the currently logged-in user's profile."""
             return await MyAccountService.get_my_account(user, runner=self._runner, nc=nc, t=t)
+
+        return self
+
+    def get_my_identity(self, route: str = "/identity") -> Self:
+        @self.router.get(route, tags=self.tags)
+        async def get_my_identity(
+            user: Annotated[UserIdentity, Security(self.authenticated_user())],
+        ) -> UserDTO:
+            """Returns the authenticated user's identity (id, name, roles, sys-admin status, dashboard).
+
+            Lightweight counterpart to ``get_my_account``: omits the access-rules matrix,
+            so this endpoint can be mounted on runners (e.g., sysadmin-api) that don't
+            wire NATS or i18n middleware. The ``{tenant_id}`` path segment is structural
+            (TenantScopedController prefix); the response does not depend on it, so any
+            value resolves — sysadmin-web's role-gate middleware passes ``"active"``.
+            """
+            return MyAccountService.get_my_identity(user)
 
         return self
 

@@ -5,13 +5,13 @@ import {
   useFetch,
   useLazyAsyncData,
   useLazyFetch,
-} from 'nuxt/app';
-import { reactive, ref, watch } from 'vue';
+} from "nuxt/app";
+import { reactive, ref, toValue, watch } from "vue";
 
-import { createSseClient } from '../core/serverSentEvents.gen';
-import type { HttpMethod } from '../core/types.gen';
-import { getValidRequestBody } from '../core/utils.gen';
-import type { Client, Config, RequestOptions } from './types.gen';
+import { createSseClient } from "../core/serverSentEvents.gen";
+import type { HttpMethod } from "../core/types.gen";
+import { getValidRequestBody } from "../core/utils.gen";
+import type { Client, Config, RequestOptions } from "./types.gen";
 import {
   buildUrl,
   createConfig,
@@ -22,7 +22,7 @@ import {
   serializeBody,
   setAuthParams,
   unwrapRefs,
-} from './utils.gen';
+} from "./utils.gen";
 
 export const createClient = (config: Config = {}): Client => {
   let _config = mergeConfigs(createConfig(), config);
@@ -60,9 +60,9 @@ export const createClient = (config: Config = {}): Client => {
     return { opts, url };
   };
 
-  const request: Client['request'] = ({
+  const request: Client["request"] = ({
     asyncDataOptions,
-    composable = '$fetch',
+    composable = "$fetch",
     ...options
   }) => {
     const key = options.key;
@@ -112,7 +112,7 @@ export const createClient = (config: Config = {}): Client => {
       opts.onResponse = [
         ...opts.onResponse,
         async ({ options, response }) => {
-          if (options.responseType && options.responseType !== 'json') {
+          if (options.responseType && options.responseType !== "json") {
             return;
           }
 
@@ -132,13 +132,13 @@ export const createClient = (config: Config = {}): Client => {
     }
 
     // remove Content-Type header if body is empty to avoid sending invalid requests
-    if (opts.body === undefined || opts.body === '') {
-      opts.headers.delete('Content-Type');
+    if (opts.body === undefined || opts.body === "") {
+      opts.headers.delete("Content-Type");
     }
 
     const fetchFn = opts.$fetch;
 
-    if (composable === '$fetch') {
+    if (composable === "$fetch") {
       return executeFetchFn(
         // @ts-expect-error
         opts,
@@ -146,20 +146,20 @@ export const createClient = (config: Config = {}): Client => {
       );
     }
 
-    if (composable === 'useFetch' || composable === 'useLazyFetch') {
+    if (composable === "useFetch" || composable === "useLazyFetch") {
       opts.rawBody = opts.body;
       const bodyParams = reactive({
         body: opts.body,
         bodySerializer: opts.bodySerializer,
       });
-      const body = ref(serializeBody(opts));
+      const body = ref(serializeBody({ ...opts, body: toValue(opts.body) }));
       opts.body = body;
       watch(bodyParams, (changed) => {
         body.value = serializeBody(changed);
       });
-      return composable === 'useLazyFetch'
-        ? useLazyFetch(() => buildUrl(opts), opts)
-        : useFetch(() => buildUrl(opts), opts);
+      return composable === "useLazyFetch"
+        ? useLazyFetch(() => buildUrl(opts), { ...opts, ...asyncDataOptions })
+        : useFetch(() => buildUrl(opts), { ...opts, ...asyncDataOptions });
     }
 
     const handler: any = () =>
@@ -169,13 +169,13 @@ export const createClient = (config: Config = {}): Client => {
         fetchFn,
       );
 
-    if (composable === 'useAsyncData') {
+    if (composable === "useAsyncData") {
       return key
         ? useAsyncData(key, handler, asyncDataOptions)
         : useAsyncData(handler, asyncDataOptions);
     }
 
-    if (composable === 'useLazyAsyncData') {
+    if (composable === "useLazyAsyncData") {
       return key
         ? useLazyAsyncData(key, handler, asyncDataOptions)
         : useLazyAsyncData(handler, asyncDataOptions);
@@ -205,30 +205,33 @@ export const createClient = (config: Config = {}): Client => {
       });
     };
 
+  const _buildUrl: Client["buildUrl"] = (options) =>
+    buildUrl({ ..._config, ...options } as typeof options);
+
   return {
-    buildUrl,
-    connect: makeMethodFn('CONNECT'),
-    delete: makeMethodFn('DELETE'),
-    get: makeMethodFn('GET'),
+    buildUrl: _buildUrl,
+    connect: makeMethodFn("CONNECT"),
+    delete: makeMethodFn("DELETE"),
+    get: makeMethodFn("GET"),
     getConfig,
-    head: makeMethodFn('HEAD'),
-    options: makeMethodFn('OPTIONS'),
-    patch: makeMethodFn('PATCH'),
-    post: makeMethodFn('POST'),
-    put: makeMethodFn('PUT'),
+    head: makeMethodFn("HEAD"),
+    options: makeMethodFn("OPTIONS"),
+    patch: makeMethodFn("PATCH"),
+    post: makeMethodFn("POST"),
+    put: makeMethodFn("PUT"),
     request,
     setConfig,
     sse: {
-      connect: makeSseFn('CONNECT'),
-      delete: makeSseFn('DELETE'),
-      get: makeSseFn('GET'),
-      head: makeSseFn('HEAD'),
-      options: makeSseFn('OPTIONS'),
-      patch: makeSseFn('PATCH'),
-      post: makeSseFn('POST'),
-      put: makeSseFn('PUT'),
-      trace: makeSseFn('TRACE'),
+      connect: makeSseFn("CONNECT"),
+      delete: makeSseFn("DELETE"),
+      get: makeSseFn("GET"),
+      head: makeSseFn("HEAD"),
+      options: makeSseFn("OPTIONS"),
+      patch: makeSseFn("PATCH"),
+      post: makeSseFn("POST"),
+      put: makeSseFn("PUT"),
+      trace: makeSseFn("TRACE"),
     },
-    trace: makeMethodFn('TRACE'),
+    trace: makeMethodFn("TRACE"),
   } as Client;
 };

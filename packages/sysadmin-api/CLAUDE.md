@@ -8,16 +8,44 @@ for any use. The package's `LICENSE` is the authoritative source for terms.
 
 ## Scope responsibility
 
-Anything that requires the `AIHubSysAdmin` Keycloak realm role and is **not tenant-scoped**. Today:
+`sysadmin-{api,web}` is a self-contained product slice: it is supposed to be runnable WITHOUT `packages/api` /
+`packages/web` running side-by-side. The SDK composability rule is — pick the UI components you want from
+`@swiss-ai-hub/web` (via Nuxt Layer extension), then mount the API controllers backing them on sysadmin-api. Expand the
+runner's lifespan if those controllers need more infra.
+
+### Code ownership rules
+
+Code that lives in this package (must require sysadmin role + be sysadmin-only):
 
 - Tenant lifecycle management (`TenantAdminController` — list / get / create / update / delete tenant metadata).
 
-NOT here:
+Code that does NOT live here (lives in `packages/api`):
 
-- Anything tenant-scoped (those endpoints belong in `packages/api`, mounted at `/api/v1/{tenant_id}/...`).
-- `MyTenantController` (user-facing "list my tenants" / "switch active tenant") — stays in `packages/api` because every
-  user needs it, not just sysadmins.
-- Agent/process runtime, knowledge, threads, events — those are the platform runtime, stay in `packages/api`.
+- Anything reused by main API too — including controllers that sysadmin-api also mounts.
+- Agent / process runtime, knowledge, threads, events — platform runtime stays in `packages/api`.
+
+### Runtime mount policy
+
+`main.py` mounts a curated subset of `packages/api` controllers (imported via the public `swiss_ai_hub.api` interface)
+so sysadmin-web's inherited `@swiss-ai-hub/web` composables resolve same-origin against sysadmin-api. Currently:
+
+| Controller                                   | Powers (inherited composables / pages)                               |
+| -------------------------------------------- | -------------------------------------------------------------------- |
+| `MyAccountController.get_my_identity()` only | `sysadmin.global.ts` role gate (replaces the old `WhoamiController`) |
+| `UserController`                             | `useUsers`, `useUser`                                                |
+| `RoleController`                             | `useRoles`, `useCreateRole`, `useUpdateRole`, `useDeleteRole`        |
+| `AuthProviderController`                     | `useAuthProviders` on inherited `/auth/login`                        |
+
+The controllers' own permission templates (`user_with_permission(aihub.admin.service.X)`) plus the sysadmin
+short-circuit (ADR `2026_04_15_sysadmin_implicit_admin_access`) keep the auth model coherent — sysadmins implicitly hold
+`ACCESS_ADMIN` in every tenant, so they can hit these endpoints on sysadmin-api just like on main API.
+
+`MyAccountController.get_my_account()` is deliberately NOT registered here: it returns an access matrix enumerated from
+`runner.controllers`, which on sysadmin-api would be a misleadingly narrow slice of the platform surface. The
+`is_sys_admin` field the middleware needs is on the identity DTO already (`get_my_identity` split).
+
+Extend the mount list when adding inherited composables that hit endpoints not in the table above; extend the lifespan
+(below) if those controllers depend on infra sysadmin-api doesn't yet wire.
 
 ## Folder structure
 
@@ -55,18 +83,20 @@ proved fragile — the inherited `create_app` builds an MCP server and the overr
 than in isolation. Inheriting a runner whose entire lifespan exists to wire
 NATS/Milvus/Redis/S3/WebSocket/discovery/provisioners, only to suppress all of it, was the wrong abstraction.
 
-`SysadminApiRunner` is ~90 lines: a plain `FastAPI` app mounted under `/api/v1` via Starlette, CORS middleware, a
-MongoDB-only lifespan, and a `mount()` that matches `Controller.mount(app, runner)`. It does **not**:
+`SysadminApiRunner` builds a plain `FastAPI` app mounted under `/api/v1` via Starlette, with CORS + `I18nMiddleware`,
+and a `mount()` that matches `Controller.mount(app, runner)`. It does **not**:
 
 - build an MCP server (sysadmin-api has no MCP need)
-- add the i18n middleware (sysadmin endpoints don't consume request locale; `ApiLocaleString` class attributes load
-  their YAML at import time, which needs no middleware)
-- inject `tenant_id` into the OpenAPI schema (sysadmin-api has no tenant-prefixed routes — `{tenant_id}` is an explicit
-  path parameter on the endpoints that take it)
+- inject `tenant_id` into the OpenAPI schema (sysadmin-api inherits route shapes from re-mounted controllers — both
+  tenant-scoped routes from `packages/api` and global routes from `sysadmin-api` itself coexist)
 
-**The entire lifespan** is: connect to MongoDB on startup, disconnect on shutdown. There is no "full" variant and no
-NATS/Milvus/Redis/S3/Neo4j/WebSocket/discovery/provisioner wiring anywhere. If a future sysadmin operation needs another
-resource, add it explicitly to `_sysadmin_lifespan` in `sysadmin_runner.py`.
+**Lifespan:** MongoDB + NATS + Redis. The closure in `create_app()` captures the inner FastAPI app and stores
+`app.state.nc` + `app.state.redis` so the standard FastAPI deps (`use_nats`, `use_redis`) resolve at request time. This
+is intentionally a *medium* lifespan — enough to satisfy every controller currently mounted (some declare `use_nats` /
+`use_redis` even if their hot path doesn't touch the clients, since FastAPI resolves dependencies eagerly), but it
+deliberately omits Milvus / S3 / Neo4j / WebSocket / discovery services / provisioners / RPC responders / event
+subscribers. Extend it if a future mounted controller needs one of those — match the source pattern in
+`packages/api/.../lifetime_manager.py`.
 
 When #1203 (the `aihub-daemon` extraction that thins the main API's `lifetime_manager`) lands, **nothing here needs to
 change** — sysadmin-api never depended on the API's lifespan in the first place.

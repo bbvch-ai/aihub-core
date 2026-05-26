@@ -14,23 +14,45 @@ import {
   updateTenantMetadataResponseTransformer,
 } from "./transformers.gen";
 import type {
+  CreateRoleData,
+  CreateRoleError,
+  CreateRoleResponse,
   CreateTenantMetadataData,
   CreateTenantMetadataError,
   CreateTenantMetadataResponse,
+  DeleteRoleData,
+  DeleteRoleError,
+  DeleteRoleResponse2,
   DeleteTenantMetadataData,
   DeleteTenantMetadataError,
   DeleteTenantMetadataResponse,
+  GetAuthProvidersData,
+  GetAuthProvidersResponse,
   GetHealthData,
   GetHealthResponse,
+  GetMyIdentityData,
+  GetMyIdentityResponse,
+  GetRoleData,
+  GetRoleError,
+  GetRoleResponse,
+  GetRolesData,
+  GetRolesResponse,
   GetTenantData,
   GetTenantError,
   GetTenantResponse,
-  GetWhoamiData,
-  GetWhoamiResponse,
+  GetUserData,
+  GetUserError,
+  GetUserResponse,
+  GetUsersData,
+  GetUsersError,
+  GetUsersResponse,
   ListTenantsData,
   ListTenantsResponse,
   ListUnconfiguredTenantsData,
   ListUnconfiguredTenantsResponse,
+  UpdateRoleData,
+  UpdateRoleError,
+  UpdateRoleResponse,
   UpdateTenantMetadataData,
   UpdateTenantMetadataError,
   UpdateTenantMetadataResponse,
@@ -73,31 +95,6 @@ export const getHealth = <
     unknown,
     DefaultT
   >({ url: "/health/", ...options });
-
-/**
- * Get Whoami
- *
- * Returns the authenticated user's sysadmin status.
- */
-export const getWhoami = <
-  TComposable extends Composable = "$fetch",
-  DefaultT extends GetWhoamiResponse = GetWhoamiResponse,
->(
-  options: Options<TComposable, GetWhoamiData, GetWhoamiResponse, DefaultT>,
-) =>
-  (options.client ?? client).get<
-    TComposable,
-    GetWhoamiResponse | DefaultT,
-    unknown,
-    DefaultT
-  >({
-    security: [
-      { scheme: "bearer", type: "http" },
-      { scheme: "bearer", type: "http" },
-    ],
-    url: "/whoami/",
-    ...options,
-  });
 
 /**
  * List Tenants
@@ -285,3 +282,243 @@ export const updateTenantMetadata = <
       ...options.headers,
     },
   });
+
+/**
+ * Get My Identity
+ *
+ * Returns the authenticated user's identity (id, name, roles, sys-admin status, dashboard).
+ *
+ * Lightweight counterpart to ``get_my_account``: omits the access-rules matrix,
+ * so this endpoint can be mounted on runners (e.g., sysadmin-api) that don't
+ * wire NATS or i18n middleware. The ``{tenant_id}`` path segment is structural
+ * (TenantScopedController prefix); the response does not depend on it, so any
+ * value resolves — sysadmin-web's role-gate middleware passes ``"active"``.
+ */
+export const getMyIdentity = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetMyIdentityResponse = GetMyIdentityResponse,
+>(
+  options: Options<
+    TComposable,
+    GetMyIdentityData,
+    GetMyIdentityResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetMyIdentityResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/my-account/identity",
+    ...options,
+  });
+
+/**
+ * Get User
+ *
+ * Retrieve user info by their OID. Shows access within the admin's current tenant context.
+ */
+export const getUser = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetUserResponse = GetUserResponse,
+>(
+  options: Options<TComposable, GetUserData, GetUserResponse, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetUserResponse | DefaultT,
+    GetUserError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/users/{user_id}",
+    ...options,
+  });
+
+/**
+ * Get Users
+ *
+ * Returns a paginated list of users within the requesting admin's tenant.
+ */
+export const getUsers = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetUsersResponse = GetUsersResponse,
+>(
+  options: Options<TComposable, GetUsersData, GetUsersResponse, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetUsersResponse | DefaultT,
+    GetUsersError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/users/",
+    ...options,
+  });
+
+/**
+ * Delete Role
+ *
+ * Permanently deletes a tenant-scoped role.
+ */
+export const deleteRole = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends DeleteRoleResponse2 = DeleteRoleResponse2,
+>(
+  options: Options<TComposable, DeleteRoleData, DeleteRoleResponse2, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    DeleteRoleResponse2 | DefaultT,
+    DeleteRoleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/roles/{role_id}",
+    ...options,
+  });
+
+/**
+ * Get Role
+ *
+ * Retrieves a single role by its unique ID.
+ */
+export const getRole = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetRoleResponse = GetRoleResponse,
+>(
+  options: Options<TComposable, GetRoleData, GetRoleResponse, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetRoleResponse | DefaultT,
+    GetRoleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/roles/{role_id}",
+    ...options,
+  });
+
+/**
+ * Update Role
+ *
+ * Updates a tenant-scoped role's name, description, or access rules.
+ */
+export const updateRole = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UpdateRoleResponse = UpdateRoleResponse,
+>(
+  options: Options<TComposable, UpdateRoleData, UpdateRoleResponse, DefaultT>,
+) =>
+  (options.client ?? client).patch<
+    TComposable,
+    UpdateRoleResponse | DefaultT,
+    UpdateRoleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/roles/{role_id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List Roles
+ *
+ * Retrieves all roles available to the current tenant (system + tenant-specific).
+ */
+export const getRoles = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetRolesResponse = GetRolesResponse,
+>(
+  options: Options<TComposable, GetRolesData, GetRolesResponse, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetRolesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/roles/",
+    ...options,
+  });
+
+/**
+ * Create Role
+ *
+ * Creates a new tenant-scoped role with a name, description, and access rules.
+ */
+export const createRole = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateRoleResponse = CreateRoleResponse,
+>(
+  options: Options<TComposable, CreateRoleData, CreateRoleResponse, DefaultT>,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateRoleResponse | DefaultT,
+    CreateRoleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/roles/",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get Auth Providers
+ */
+export const getAuthProviders = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAuthProvidersResponse = GetAuthProvidersResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAuthProvidersData,
+    GetAuthProvidersResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAuthProvidersResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({ url: "/auth-providers/", ...options });
