@@ -89,6 +89,14 @@ user:
   title: Utilisateurs
   logout: Déconnexion
   language: Langue
+  role_chips:
+    no_roles: Aucun rôle assigné
+    assign: Assigner un rôle
+    revoke: Révoquer
+    revoke_confirm_header: Révoquer le rôle
+    revoke_confirm_message: Révoquer le rôle « {role} » de cet utilisateur ?
+    assigned_toast: Rôle « {role} » assigné à {user}
+    revoked_toast: Rôle « {role} » révoqué de {user}
   list:
     name: Nom
     email: E-mail

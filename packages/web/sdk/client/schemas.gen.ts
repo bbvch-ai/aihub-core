@@ -1857,6 +1857,20 @@ export const ApiHealthChecksSchema = {
   description: "Health check results for API service dependencies.",
 } as const;
 
+export const AssignRoleRequestSchema = {
+  properties: {
+    role_name: {
+      type: "string",
+      minLength: 1,
+      title: "Role Name",
+      description: "Name of the tenant role to assign to the user.",
+    },
+  },
+  type: "object",
+  required: ["role_name"],
+  title: "AssignRoleRequest",
+} as const;
+
 export const AudioSchema = {
   properties: {
     id: {
@@ -13839,7 +13853,6 @@ export const ModelDetailsSchema = {
       type: "integer",
       title: "Created",
       description: "The Unix timestamp of when the model was created.",
-      default: 1779809376,
     },
     owned_by: {
       type: "string",

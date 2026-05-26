@@ -46,30 +46,34 @@
       :header="t('user.list.roles')"
     >
       <template #body="{ data }">
-        <div class="flex flex-wrap gap-2">
-          <Badge
-            v-for="role in data.roles"
-            :key="role"
-            :value="role"
-          />
-        </div>
+        <UserRoleChips
+          :roles="data.roles"
+          :available-roles="availableRoles ?? []"
+          :readonly="readonly"
+          @assign="(roleName) => emit('assign', { user: data, roleName })"
+          @revoke="(roleName) => emit('revoke', { user: data, roleName })"
+        />
       </template>
     </Column>
   </DataTable>
 </template>
 
 <script setup lang="ts">
-import type { UserDto } from '@core/sdk/client'
+import type { RoleResponse, UserDto } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
 
 const props = defineProps<{
   users: UserDto[]
+  availableRoles?: RoleResponse[]
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
   selected: [user: UserDto]
+  assign: [payload: { user: UserDto, roleName: string }]
+  revoke: [payload: { user: UserDto, roleName: string }]
 }>()
 
 const initials = (user: UserDto) => user.name?.split(' ').map(n => n[0]).join('')
