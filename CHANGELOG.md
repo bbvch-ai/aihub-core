@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.21] - 2026-05-26 - Enhanced Workflow Security and Robustness
+
+### Refactor
+
+- 🔒 **Improved GitHub Actions Script Security**: Refactored all CI/CD workflows to use explicit environment variables
+  for GitHub event contexts, significantly enhancing script execution safety and mitigating potential command injection
+  vulnerabilities.
+- 🧹 **Standardized Workflow Variable Handling**: Streamlined the access of GitHub event inputs and context within
+  workflow scripts, resulting in a cleaner, more consistent, and robust implementation for automated processes.
+
+______________________________________________________________________
+
+## [v0.289.20] - 2026-05-26 - Core Refinements and Enhanced Event Handling
+
+### Added
+
+- 🧪 **Comprehensive NATS Sensor Tests:** Introduced new unit tests for the **NATS Document Uploaded Sensor**,
+  specifically for the event consumption logic, to ensure reliable and correct processing of messages.
+
+### Refactor
+
+- 🧹 **Improved S3 Error Logging:** Switched to using `logger.exception` for directory existence and listing failures in
+  the **S3 Data Lake Client**, providing more detailed stack trace information for easier debugging.
+- 🔄 **Streamlined SharePoint Retry Logic:** Extracted asynchronous retry and backoff logic into a dedicated helper
+  method within the **SharePoint resource**, enhancing code readability and maintainability.
+- ⚡️ **Modularized NATS Sensor Event Processing:** Refactored the **NATS Document Uploaded Sensor** to abstract event
+  consumption, validation, and acknowledgment into a new, dedicated function, leading to clearer, more robust event
+  handling.
+
+______________________________________________________________________
+
 ## [v0.289.19] - 2026-05-26 - Improved Tenant-Aware Document Source Retrieval
 
 ### Changed
