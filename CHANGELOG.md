@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.23] - 2026-05-27 - API Refinements and Stability Improvements
+
+### Refactor
+
+- 🧹 **Centralized API Routes:** Standardized and centralized the definition of API routes for agent, process, role, and
+  tenant management endpoints, improving consistency and maintainability.
+- 🔄 **Enhanced Multimodal Content Handling:** Refactored the internal logic for processing multimodal chat completion
+  messages, leading to clearer, more robust content resolution for OpenAI API interactions.
+- ⚡️ **Modularized OpenAI Streaming:** Split the OpenAI chat completion streaming event generation into dedicated,
+  reusable helper methods for improved readability and easier maintenance.
+- 📄 **Standardized Error Messages:** Centralized common error messages, such as "Not authorized to view this database,"
+  "Role not found," and "Tenant not found," ensuring consistent error responses across the API.
+- 🧹 **Constants for Code Clarity:** Introduced dedicated constants for frequently used strings like UTC offset suffixes
+  and i18n paths, enhancing code clarity and reducing magic string usage.
+
+### Changed
+
+- 🩹 **Improved Websocket Error Logging:** Upgraded websocket disconnection error handling to include full traceback
+  information, aiding in faster diagnosis and debugging.
+- 🛡️ **Centralized Role Service Error Handling:** Shifted specific error handling for missing roles from controllers to
+  the `RoleService`, streamlining API responses and improving error consistency.
+
+### Fixed
+
+- 🐛 **Corrected Model Creation Timestamps:** Ensured that `ModelDetails` for OpenAI responses generate unique creation
+  timestamps for each instance by using a default factory.
+
+______________________________________________________________________
+
 ## [v0.289.22] - 2026-05-26 - Secure MCP Tool Integration and Robust CI/CD Pinning
 
 ### Added

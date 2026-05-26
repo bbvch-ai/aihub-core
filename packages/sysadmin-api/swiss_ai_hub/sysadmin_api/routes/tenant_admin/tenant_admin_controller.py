@@ -29,6 +29,8 @@ class TenantAdminController(Controller):
     description = SysadminApiLocaleString.from_i18n_path("sysadmin.controllers.tenant_admin.description")
     icon = "mage:building-tree"
 
+    _TENANT_ROUTE = "/{tenant_id}"
+
     def __init__(self, *, auth: AuthHandler, route: str = "/admin/tenants"):
         super().__init__(auth=auth, route=route)
 
@@ -52,7 +54,7 @@ class TenantAdminController(Controller):
 
         return self
 
-    def get_tenant(self, route: str = "/{tenant_id}") -> Self:
+    def get_tenant(self, route: str = _TENANT_ROUTE) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_tenant(
             tenant_id: str,
@@ -77,7 +79,7 @@ class TenantAdminController(Controller):
 
         return self
 
-    def update_tenant_metadata(self, route: str = "/{tenant_id}") -> Self:
+    def update_tenant_metadata(self, route: str = _TENANT_ROUTE) -> Self:
         @self.router.patch(route, tags=self.tags)
         async def update_tenant_metadata(
             tenant_id: str,
@@ -92,7 +94,7 @@ class TenantAdminController(Controller):
 
         return self
 
-    def delete_tenant_metadata(self, route: str = "/{tenant_id}") -> Self:
+    def delete_tenant_metadata(self, route: str = _TENANT_ROUTE) -> Self:
         @self.router.delete(route, status_code=status.HTTP_204_NO_CONTENT, tags=self.tags)
         async def delete_tenant_metadata(
             tenant_id: str,

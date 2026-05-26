@@ -11,6 +11,8 @@ from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.tenant_response import Te
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.tenant_state import TenantState
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.update_tenant_metadata_request import UpdateTenantMetadataRequest
 
+_TENANT_NOT_FOUND = "Tenant not found."
+
 
 class TenantAdminService:
     """Handles tenant CRUD operations for system administrators.
@@ -56,7 +58,7 @@ class TenantAdminService:
         """
         entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not entity:
-            raise HTTPException(status_code=404, detail="Tenant not found.")
+            raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
         try:
             await KeycloakAdminService.get_tenant_group(tenant_id)
@@ -118,7 +120,7 @@ class TenantAdminService:
         """
         existing = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not existing:
-            raise HTTPException(status_code=404, detail="Tenant not found.")
+            raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
         try:
             await KeycloakAdminService.get_tenant_group(tenant_id)
@@ -135,7 +137,7 @@ class TenantAdminService:
             access_rules=data.access_rules,
         )
         if not entity:
-            raise HTTPException(status_code=404, detail="Tenant not found.")
+            raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
     @staticmethod
@@ -158,7 +160,7 @@ class TenantAdminService:
         """
         tenant = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not tenant:
-            raise HTTPException(status_code=404, detail="Tenant not found.")
+            raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
         if TenantMetadataEntity.count_tenants() <= 1:
             raise HTTPException(
@@ -174,7 +176,7 @@ class TenantAdminService:
         }
 
         if not TenantMetadataEntity.delete_tenant_metadata(tenant_id):
-            raise HTTPException(status_code=404, detail="Tenant not found.")
+            raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
         if TenantMetadataEntity.count_tenants() == 0:
             TenantMetadataEntity.create_tenant_metadata(**snapshot)
