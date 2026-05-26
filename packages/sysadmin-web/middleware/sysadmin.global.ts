@@ -14,47 +14,52 @@ import { getMyIdentity } from '~/sdk/client'
 //     its own section — anything outside /tenants/* is redirected there.
 
 const AUTH_PATH = /^\/(en|de|fr|it)\/auth(\/|$)/
+const SYSADMIN_REQUIRED_PATH = /^\/(en|de|fr|it)\/sysadmin-required(\/|$)/
 const SYSADMIN_SECTION = /^\/(en|de|fr|it)\/tenants(\/|$)/
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  // OIDC callback / silent-renew must complete before we can ask anything.
-  if (AUTH_PATH.test(to.path)) return
+  // OIDC callback / silent-renew must complete before we can ask anything;
+  // the sysadmin-required page is the terminal state for non-sysadmin users
+  // and must not re-trigger the check (would cause a navigation loop).
+  if (AUTH_PATH.test(to.path) || SYSADMIN_REQUIRED_PATH.test(to.path)) return
 
   const { $i18n } = useNuxtApp()
   const locale = $i18n.locale.value
-  // Capture composables before the await so exitToMainApp() (used after the
-  // network call) does not re-enter Nuxt outside the instance context.
-  const { exitToMainApp } = useMainAppNavigation()
 
-  let isSysAdmin = false
-  let needsReauth = false
+  // Three outcomes from the identity probe:
+  //  - 200 + is_sys_admin=true:  carry on (this is THE happy path)
+  //  - 200 + is_sys_admin=false: user IS authenticated but NOT a sysadmin →
+  //                              show a clear "insufficient rights" message
+  //                              (we deliberately don't bounce them cross-origin
+  //                              — that hides what's going on)
+  //  - any throw (401 / network / 5xx): user is unauthenticated OR the
+  //                                     backend is unreachable. Send them to
+  //                                     the login page on this origin so they
+  //                                     can re-auth in place.
+  //
+  // The SDK under `composable: '$fetch'` returns the response body DIRECTLY
+  // (no `{ data, error }` envelope — that's the `useFetch` variant). So
+  // `await getMyIdentity(...)` resolves to a `UserDTO`, and `is_sys_admin`
+  // sits at the top level.
+  let identity: { is_sys_admin?: boolean } | null = null
+  let identityCheckFailed = false
   try {
-    const { data } = await getMyIdentity({
+    identity = await getMyIdentity({
       composable: '$fetch',
       path: { tenant_id: 'active' },
     })
-    isSysAdmin = Boolean(data?.is_sys_admin)
   }
   catch (error) {
     console.error('sysadmin middleware: failed to verify sysadmin status', error)
-    // A 401 here means the bearer token is missing / expired / rejected —
-    // typically because OIDC silent-renew failed in the background and the
-    // SDK now has no token to send. Bouncing the user cross-origin for that
-    // is wrong (they aren't NOT a sysadmin, they're just unauthenticated).
-    // Treat it as "needs re-auth" so the login page on this origin handles it.
-    const status = (error as { statusCode?: number, status?: number, response?: { status?: number } })?.statusCode
-      ?? (error as { status?: number })?.status
-      ?? (error as { response?: { status?: number } })?.response?.status
-    if (status === 401) needsReauth = true
+    identityCheckFailed = true
   }
 
-  if (needsReauth) {
+  if (identityCheckFailed) {
     return navigateTo(`/${locale}/auth/login`)
   }
 
-  if (!isSysAdmin) {
-    if (exitToMainApp()) return
-    return abortNavigation()
+  if (!identity?.is_sys_admin) {
+    return navigateTo(`/${locale}/sysadmin-required`)
   }
 
   if (!SYSADMIN_SECTION.test(to.path)) {

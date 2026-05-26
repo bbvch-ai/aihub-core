@@ -51,3 +51,9 @@ tenant_admin:
   tenant_saved:
     summary: Tenant gespeichert
     detail: Tenant erfolgreich aktualisiert.
+sysadmin_required:
+  title: Sysadmin access required
+  description: This page is only available to users with the AIHubSysAdmin role. Your
+    account does not have it. If you believe this is a mistake, contact your administrator.
+  exit: Go to main app
+  logout: Log out
