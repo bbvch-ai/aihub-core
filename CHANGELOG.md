@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.289.19] - 2026-05-26 - Improved Tenant-Aware Document Source Retrieval
+
+### Changed
+
+- 🚀 **Document Source Retrieval**: Updated the generation of document source URLs to explicitly include the `tenantId`,
+  ensuring accurate and tenant-specific access to original documents within a multi-tenant environment.
+
+______________________________________________________________________
+
 ## [v0.289.18] - 2026-05-22 - Enhanced Tenant Management and Robust Initialization
 
 ### Added
