@@ -98,9 +98,6 @@ deliberately omits Milvus / S3 / Neo4j / WebSocket / discovery services / provis
 subscribers. Extend it if a future mounted controller needs one of those — match the source pattern in
 `packages/api/.../lifetime_manager.py`.
 
-When #1203 (the `aihub-daemon` extraction that thins the main API's `lifetime_manager`) lands, **nothing here needs to
-change** — sysadmin-api never depended on the API's lifespan in the first place.
-
 ## Entry point
 
 `swiss_ai_hub.sysadmin_api.main:app` (gunicorn target). Deliberately a fully-qualified module path, **not** `app.main` —
