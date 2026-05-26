@@ -3,8 +3,9 @@
 Generated on: 26.05.2026
 
 This document contains license information for all dependencies across the monorepo:
+
 - Python packages (uv): **402 packages**
-- Node.js packages (pnpm): **0 packages**
+- Node.js packages (pnpm): **999 packages**
 - External Docker images: **0 images**
 
 ### License Compatibility
@@ -12,421 +13,1430 @@ This document contains license information for all dependencies across the monor
 ✅ **All dependencies have approved licenses!**
 
 ### Legend
+
 - ✅ = Permissive or Manually Approved License
 - ⚠️ = License requires manual review and approval
 - ❌ = Restrictive or Unknown License
 
-
 ## Python Dependencies
 
-| Status | Package | Version | License | Notes |
-|--------|---------|---------|---------|-------|
-| ✅ | adlfs | 2026.5.0 | BSD License |  |
-| ✅ | aiobotocore | 2.26.0 | Apache-2.0 |  |
-| ✅ | aiofile | 3.11.1 | Apache-2.0 |  |
-| ✅ | aiofiles | 25.1.0 | Apache Software License |  |
-| ✅ | aiohappyeyeballs | 2.6.1 | Python Software Foundation License |  |
-| ✅ | aiohttp | 3.13.5 | Apache-2.0 AND MIT |  |
-| ✅ | aioitertools | 0.13.0 | MIT |  |
-| ✅ | aiosignal | 1.4.0 | Apache Software License |  |
-| ✅ | aiosqlite | 0.22.1 | MIT License |  |
-| ✅ | alembic | 1.18.4 | MIT (override) |  |
-| ✅ | annotated-doc | 0.0.4 | MIT |  |
-| ✅ | annotated-types | 0.7.0 | MIT License |  |
-| ✅ | antlr4-python3-runtime | 4.13.2 | BSD |  |
-| ✅ | anyio | 4.13.0 | MIT (override) |  |
-| ✅ | apprise | 1.10.0 | BSD-2-Clause |  |
-| ✅ | asgi-lifespan | 2.1.0 | MIT |  |
-| ✅ | asgiref | 3.11.1 | BSD License |  |
-| ✅ | asttokens | 3.0.1 | Apache 2.0 |  |
-| ✅ | attrs | 26.1.0 | MIT (override) |  |
-| ✅ | audioop-lts | 0.2.2 | PSF-2.0 (override) |  |
-| ✅ | Authlib | 1.7.2 | BSD License |  |
-| ✅ | azure-ai-documentintelligence | 1.0.2 | MIT License |  |
-| ✅ | azure-ai-ml | 1.33.0 | MIT |  |
-| ✅ | azure-core | 1.41.0 | MIT |  |
-| ✅ | azure-core-tracing-opentelemetry | 1.0.0b13 | MIT |  |
-| ✅ | azure-identity | 1.25.3 | MIT |  |
-| ✅ | azure-mgmt-core | 1.6.0 | MIT License |  |
-| ✅ | azure-mgmt-cosmosdb | 9.9.0 | MIT |  |
-| ✅ | azure-mgmt-resource | 25.0.0 | MIT |  |
-| ✅ | azure-monitor-opentelemetry | 1.8.2 | MIT License |  |
-| ✅ | azure-monitor-opentelemetry-exporter | 1.0.0b45 | MIT License |  |
-| ✅ | azure-storage-blob | 12.29.0 | MIT License |  |
-| ✅ | azure-storage-file-datalake | 12.24.0 | MIT License |  |
-| ✅ | azure-storage-file-share | 12.25.0 | MIT License |  |
-| ✅ | backoff | 2.2.1 | MIT License |  |
-| ✅ | banks | 2.4.2 | BSD-3-Clause (override) |  |
-| ✅ | beartype | 0.22.9 | MIT License |  |
-| ✅ | beautifulsoup4 | 4.14.3 | MIT License |  |
-| ✅ | black | 26.5.1 | MIT |  |
-| ✅ | blinker | 1.9.0 | MIT License |  |
-| ✅ | boto3 | 1.41.5 | Apache-2.0 |  |
-| ✅ | boto3-stubs | 1.43.11 | MIT |  |
-| ✅ | botocore | 1.41.5 | Apache-2.0 |  |
-| ✅ | botocore-stubs | 1.42.41 | MIT |  |
-| ✅ | cachetools | 7.1.3 | MIT |  |
-| ✅ | caio | 0.9.25 | Apache-2.0 |  |
-| ✅ | certifi | 2026.4.22 | Mozilla Public License 2.0 (MPL 2.0) |  |
-| ✅ | cffi | 2.0.0 | MIT |  |
-| ✅ | charset-normalizer | 3.4.7 | MIT |  |
-| ✅ | click | 8.4.0 | BSD-3-Clause (override) |  |
-| ✅ | clickhouse-connect | 1.0.1 | Apache Software License |  |
-| ✅ | cobble | 0.1.4 | BSD License |  |
-| ✅ | cohere | 5.21.1 | MIT License |  |
-| ✅ | colorama | 0.4.6 | BSD License |  |
-| ✅ | coloredlogs | 14.0 | MIT License |  |
-| ✅ | colorlog | 6.10.1 | MIT License |  |
-| ✅ | contourpy | 1.3.3 | BSD License |  |
-| ✅ | coverage | 7.14.0 | Apache-2.0 |  |
-| ✅ | cryptography | 48.0.0 | Apache-2.0 OR BSD-3-Clause |  |
-| ✅ | cycler | 0.12.1 | BSD License |  |
-| ✅ | cyclopts | 4.14.1 | Apache-2.0 |  |
-| ✅ | dagster | 1.13.5 | Apache-2.0 |  |
-| ✅ | dagster-apprise | 0.0.2 | Apache-2.0 (override) |  |
-| ✅ | dagster-aws | 0.29.5 | Apache-2.0 |  |
-| ✅ | dagster-azure | 0.29.5 | Apache-2.0 |  |
-| ✅ | dagster-graphql | 1.13.5 | Apache-2.0 |  |
-| ✅ | dagster-pipes | 1.13.5 | Apache-2.0 |  |
-| ✅ | dagster-postgres | 0.29.5 | Apache-2.0 |  |
-| ✅ | dagster-shared | 1.13.5 | Apache-2.0 |  |
-| ✅ | dagster-webserver | 1.13.5 | Apache-2.0 |  |
-| ✅ | dataclasses-json | 0.6.7 | MIT License |  |
-| ✅ | decorator | 5.3.1 | BSD-2-Clause |  |
-| ✅ | defusedxml | 0.7.1 | Python Software Foundation License |  |
-| ✅ | Deprecated | 1.3.1 | MIT License |  |
-| ✅ | deprecation | 2.1.0 | Apache Software License |  |
-| ✅ | dirtyjson | 1.0.8 | Academic Free License (AFL); MIT License |  |
-| ✅ | distro | 1.9.0 | Apache Software License |  |
-| ✅ | dnspython | 2.8.0 | ISC License (ISCL) |  |
-| ✅ | docker | 7.1.0 | Apache-2.0 |  |
-| ✅ | docstring_parser | 0.18.0 | MIT License |  |
-| ✅ | email-validator | 2.3.0 | The Unlicense (Unlicense) |  |
-| ✅ | et_xmlfile | 2.0.0 | MIT License |  |
-| ✅ | exceptiongroup | 1.3.1 | MIT License |  |
-| ✅ | executing | 2.2.1 | MIT License |  |
-| ✅ | faiss-cpu | 1.13.2 | MIT AND BSD-3-Clause |  |
-| ✅ | fastapi | 0.136.1 | MIT |  |
-| ✅ | fastavro | 1.12.2 | MIT |  |
-| ✅ | fastmcp | 3.3.1 | Apache-2.0 |  |
-| ✅ | fastmcp-slim | 3.3.1 | Apache-2.0 |  |
-| ✅ | filelock | 3.29.0 | MIT |  |
-| ✅ | filetype | 1.2.0 | MIT License |  |
-| ✅ | flatbuffers | 25.12.19 | Apache Software License |  |
-| ✅ | fonttools | 4.63.0 | MIT |  |
-| ✅ | frozenlist | 1.8.0 | Apache-2.0 |  |
-| ✅ | fsspec | 2024.12.0 | BSD License |  |
-| ✅ | gherkin-official | 29.0.0 | MIT |  |
-| ✅ | googleapis-common-protos | 1.75.0 | Apache Software License |  |
-| ✅ | gql | 4.0.0 | MIT |  |
-| ✅ | graphene | 3.4.3 | MIT |  |
-| ✅ | graphql-core | 3.2.8 | MIT License |  |
-| ✅ | graphql-relay | 3.2.0 | MIT License |  |
-| ✅ | greenlet | 3.5.0 | MIT AND PSF-2.0 |  |
-| ✅ | griffe | 2.0.2 | ISC (override) |  |
-| ✅ | griffecli | 2.0.2 | ISC |  |
-| ✅ | griffelib | 2.0.2 | ISC |  |
-| ✅ | grpcio | 1.80.0 | Apache-2.0 |  |
-| ✅ | grpcio-health-checking | 1.80.0 | Apache-2.0 |  |
-| ✅ | gunicorn | 26.0.0 | MIT |  |
-| ✅ | h11 | 0.16.0 | MIT License |  |
-| ✅ | h2 | 4.3.0 | MIT License |  |
-| ✅ | hf-xet | 1.5.0 | Apache-2.0 (override) |  |
-| ✅ | hpack | 4.1.0 | MIT License |  |
-| ✅ | html5lib | 1.1 | MIT License |  |
-| ✅ | httpcore | 1.0.9 | BSD-3-Clause |  |
-| ✅ | httptools | 0.7.1 | MIT |  |
-| ✅ | httpx | 0.28.1 | BSD License |  |
-| ✅ | httpx-sse | 0.4.3 | MIT |  |
-| ✅ | huggingface_hub | 1.15.0 | Apache Software License |  |
-| ✅ | humanfriendly | 10.0 | MIT License |  |
-| ✅ | hyperframe | 6.1.0 | MIT License |  |
-| ✅ | idna | 3.15 | BSD-3-Clause |  |
-| ✅ | ImageHash | 4.3.2 | 2-clause BSD License |  |
-| ✅ | iniconfig | 2.3.0 | MIT |  |
-| ✅ | ipython | 9.13.0 | BSD-3-Clause |  |
-| ✅ | ipython_pygments_lexers | 1.1.1 | BSD License |  |
-| ✅ | isodate | 0.7.2 | BSD License |  |
-| ✅ | jambo | 0.1.dev234+g1da93a4d2 | MIT |  |
-| ✅ | jaraco.classes | 3.4.0 | MIT License |  |
-| ✅ | jaraco.context | 6.1.2 | MIT |  |
-| ✅ | jaraco.functools | 4.5.0 | MIT |  |
-| ✅ | jedi | 0.20.0 | MIT License |  |
-| ✅ | jeepney | 0.9.0 | MIT |  |
-| ✅ | Jinja2 | 3.1.6 | BSD License |  |
-| ✅ | jiter | 0.15.0 | MIT |  |
-| ✅ | jmespath | 1.1.0 | MIT License |  |
-| ✅ | joblib | 1.5.3 | BSD-3-Clause |  |
-| ✅ | joserfc | 1.6.5 | BSD License |  |
-| ✅ | json_repair | 0.59.10 | MIT |  |
-| ✅ | jsonpatch | 1.33 | BSD License |  |
-| ✅ | jsonpointer | 3.1.1 | BSD License |  |
-| ✅ | jsonref | 1.1.0 | MIT |  |
-| ✅ | jsonschema | 4.26.0 | MIT (override) |  |
-| ✅ | jsonschema-path | 0.5.0 | Apache Software License |  |
-| ✅ | jsonschema-specifications | 2025.9.1 | MIT (override) |  |
-| ✅ | jwcrypto | 1.5.7 | LGPL-3.0-or-later |  |
-| ✅ | keyring | 25.7.0 | MIT |  |
-| ✅ | kiwisolver | 1.5.0 | BSD License |  |
-| ✅ | kuzu | 0.11.3 | MIT |  |
-| ✅ | langchain | 1.3.1 | MIT License |  |
-| ✅ | langchain-aws | 1.1.0 | MIT |  |
-| ✅ | langchain-classic | 1.0.7 | MIT License |  |
-| ✅ | langchain-core | 1.4.0 | MIT License |  |
-| ✅ | langchain-memgraph | 0.1.14 | MIT |  |
-| ✅ | langchain-neo4j | 0.9.0 | MIT |  |
-| ✅ | langchain-protocol | 0.0.15 | MIT License |  |
-| ✅ | langchain-text-splitters | 1.1.2 | MIT License |  |
-| ✅ | langfuse | 4.6.1 | MIT |  |
-| ✅ | langgraph | 1.2.0 | MIT |  |
-| ✅ | langgraph-checkpoint | 4.1.0 | MIT |  |
-| ✅ | langgraph-prebuilt | 1.1.0 | MIT |  |
-| ✅ | langgraph-sdk | 0.3.14 | MIT |  |
-| ✅ | langsmith | 0.8.5 | MIT |  |
-| ✅ | llama-index-core | 0.14.22 | MIT (override) |  |
-| ✅ | llama-index-embeddings-openai | 0.6.0 | MIT |  |
-| ✅ | llama-index-embeddings-openai-like | 0.3.1 | MIT (override) |  |
-| ✅ | llama-index-embeddings-text-embeddings-inference | 0.5.0 | MIT |  |
-| ✅ | llama-index-instrumentation | 0.5.0 | MIT (override) |  |
-| ✅ | llama-index-llms-azure-openai | 0.5.5 | MIT |  |
-| ✅ | llama-index-llms-openai | 0.7.8 | MIT (override) |  |
-| ✅ | llama-index-llms-openai-like | 0.7.2 | MIT (override) |  |
-| ✅ | llama-index-postprocessor-cohere-rerank | 0.8.0 | MIT |  |
-| ✅ | llama-index-readers-file | 0.6.0 | MIT (override) |  |
-| ✅ | llama-index-storage-docstore-mongodb | 0.5.0 | MIT |  |
-| ✅ | llama-index-storage-kvstore-mongodb | 0.4.1 | MIT |  |
-| ✅ | llama-index-utils-huggingface | 0.4.1 | MIT |  |
-| ✅ | llama-index-vector-stores-milvus | 1.1.0 | MIT (override) |  |
-| ✅ | llama-index-workflows | 2.20.0 | MIT (override) |  |
-| ✅ | loguru | 0.7.3 | MIT License |  |
-| ✅ | lxml | 6.1.1 | BSD-3-Clause |  |
-| ✅ | lz4 | 4.4.5 | BSD License |  |
-| ✅ | magika | 0.6.3 | Apache Software License |  |
-| ✅ | maison | 2.0.2 | MIT |  |
-| ✅ | Mako | 1.3.12 | MIT License |  |
-| ✅ | mammoth | 1.11.0 | BSD License |  |
-| ✅ | Markdown | 3.10.2 | BSD-3-Clause |  |
-| ✅ | markdown-it-py | 4.2.0 | MIT License |  |
-| ✅ | markdownify | 1.2.2 | MIT License |  |
-| ✅ | markitdown | 0.1.5 | MIT |  |
-| ✅ | MarkupSafe | 3.0.3 | BSD-3-Clause |  |
-| ✅ | marshmallow | 3.26.2 | MIT License |  |
-| ✅ | matplotlib | 3.10.9 | Python Software Foundation License |  |
-| ✅ | matplotlib-inline | 0.2.2 | BSD-3-Clause (override) |  |
-| ✅ | mcp | 1.27.1 | MIT License |  |
-| ✅ | mdformat | 1.0.0 | MIT (override) |  |
-| ✅ | mdformat-gfm | 1.0.0 | MIT |  |
-| ✅ | mdformat-vuepress | 0.1.0 | MIT License |  |
-| ✅ | mdformat_footnote | 0.1.3 | MIT License |  |
-| ✅ | mdformat_front_matters | 2.0.0 | MIT |  |
-| ✅ | mdformat_myst | 0.3.0 | MIT License |  |
-| ✅ | mdformat_pyproject | 0.1.1 | MIT License |  |
-| ✅ | mdformat_simple_breaks | 0.1.0 | MIT License |  |
-| ✅ | mdit-py-plugins | 0.6.1 | MIT License |  |
-| ✅ | mdurl | 0.1.2 | MIT License |  |
-| ✅ | mem0ai | 1.0.11 | Apache-2.0 |  |
-| ✅ | memgraph-toolbox | 0.1.11 | MIT License |  |
-| ✅ | microsoft-agents-activity | 0.9.1 | MIT |  |
-| ✅ | microsoft-agents-authentication-msal | 0.9.1 | MIT |  |
-| ✅ | microsoft-agents-hosting-aiohttp | 0.9.1 | MIT |  |
-| ✅ | microsoft-agents-hosting-core | 0.9.1 | MIT |  |
-| ✅ | milvus-lite | 3.0 | Apache-2.0 (override) |  |
-| ✅ | mirakuru | 3.0.2 | LGPL-3.0-or-later |  |
-| ✅ | mongoengine | 0.29.3 | MIT License |  |
-| ✅ | more-itertools | 11.0.2 | MIT |  |
-| ✅ | motor | 3.7.1 | Apache Software License |  |
-| ✅ | mpmath | 1.3.0 | BSD License |  |
-| ✅ | msal | 1.36.0 | MIT License |  |
-| ✅ | msal-extensions | 1.3.1 | MIT License |  |
-| ✅ | msrest | 0.7.1 | MIT License |  |
-| ✅ | multidict | 6.7.1 | Apache License 2.0 |  |
-| ✅ | mypy-boto3-s3 | 1.43.5 | MIT |  |
-| ✅ | mypy_extensions | 1.1.0 | MIT (override) |  |
-| ✅ | nats-py | 2.14.0 | Apache-2.0 |  |
-| ✅ | neo4j | 6.2.0 | Apache-2.0 AND Python-2.0 |  |
-| ✅ | neo4j-graphrag | 1.16.0 | Apache-2.0 (override) |  |
-| ✅ | nest-asyncio | 1.6.0 | BSD License |  |
-| ✅ | networkx | 3.6.1 | BSD-3-Clause |  |
-| ✅ | nltk | 3.9.4 | Apache Software License |  |
-| ✅ | numpy | 2.4.6 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 |  |
-| ✅ | oauthlib | 3.3.1 | BSD-3-Clause |  |
-| ✅ | olefile | 0.47 | BSD License |  |
-| ✅ | onnxruntime | 1.20.1 | MIT License |  |
-| ✅ | openai | 2.37.0 | Apache Software License |  |
-| ✅ | openapi-pydantic | 0.5.1 | MIT License |  |
-| ✅ | openinference-instrumentation | 0.1.51 | Apache-2.0 |  |
-| ✅ | openinference-instrumentation-llama-index | 4.4.2 | Apache-2.0 |  |
-| ✅ | openinference-semantic-conventions | 0.1.29 | Apache-2.0 |  |
-| ✅ | openpyxl | 3.1.5 | MIT License |  |
-| ✅ | opentelemetry-api | 1.42.0 | Apache-2.0 (override) |  |
-| ✅ | opentelemetry-exporter-otlp | 1.42.0 | Apache-2.0 (override) |  |
-| ✅ | opentelemetry-exporter-otlp-proto-common | 1.42.0 | Apache-2.0 (override) |  |
-| ✅ | opentelemetry-exporter-otlp-proto-grpc | 1.42.0 | Apache-2.0 (override) |  |
-| ✅ | opentelemetry-exporter-otlp-proto-http | 1.42.0 | Apache-2.0 (override) |  |
-| ✅ | opentelemetry-instrumentation | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-aiohttp-client | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-asgi | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-asyncio | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-botocore | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-dbapi | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-django | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-fastapi | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-flask | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-httpx | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-jinja2 | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-logging | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-milvus | 0.60.0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-psycopg2 | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-pymongo | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-redis | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-requests | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-urllib | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-urllib3 | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-instrumentation-wsgi | 0.63b0 | Apache-2.0 |  |
-| ✅ | opentelemetry-propagator-aws-xray | 1.0.2 | Apache-2.0 |  |
-| ✅ | opentelemetry-proto | 1.42.0 | Apache-2.0 (override) |  |
-| ✅ | opentelemetry-resource-detector-azure | 0.1.5 | Apache-2.0 |  |
-| ✅ | opentelemetry-sdk | 1.42.0 | Apache-2.0 (override) |  |
-| ✅ | opentelemetry-semantic-conventions | 0.63b0 | Apache-2.0 (override) |  |
-| ✅ | opentelemetry-semantic-conventions-ai | 0.5.1 | Apache-2.0 |  |
-| ✅ | opentelemetry-util-http | 0.63b0 | Apache-2.0 |  |
-| ✅ | orjson | 3.11.9 | MPL-2.0 AND (Apache-2.0 OR MIT) |  |
-| ✅ | ormsgpack | 1.12.2 | Apache-2.0 OR MIT |  |
-| ✅ | packaging | 26.2 | Apache-2.0 OR BSD-2-Clause |  |
-| ✅ | pandas | 2.3.3 | BSD License |  |
-| ✅ | pandas-stubs | 3.0.0.260204 | BSD License |  |
-| ✅ | parse | 1.22.0 | MIT |  |
-| ✅ | parse_type | 0.6.6 | MIT (override) |  |
-| ✅ | parso | 0.8.7 | MIT License |  |
-| ✅ | pathable | 0.6.0 | Apache Software License |  |
-| ✅ | pathlib_abc | 0.5.2 | Python Software Foundation License |  |
-| ✅ | pathspec | 1.1.1 | Mozilla Public License 2.0 (MPL 2.0) |  |
-| ✅ | pexpect | 4.9.0 | ISC License (ISCL) |  |
-| ✅ | pillow | 12.2.0 | MIT-CMU (override) |  |
-| ✅ | platformdirs | 4.9.6 | MIT |  |
-| ✅ | pluggy | 1.6.0 | MIT License |  |
-| ✅ | port-for | 1.0.0 | MIT License |  |
-| ✅ | portalocker | 3.2.0 | BSD-3-Clause |  |
-| ✅ | posthog | 7.15.0 | MIT License |  |
-| ✅ | prompt_toolkit | 3.0.52 | BSD License |  |
-| ✅ | propcache | 0.5.2 | Apache Software License |  |
-| ✅ | protobuf | 6.33.6 | 3-Clause BSD License |  |
-| ✅ | psutil | 7.2.2 | BSD-3-Clause |  |
-| ✅ | psycopg | 3.3.4 | LGPL-3.0-only |  |
-| ✅ | psycopg-binary | 3.3.4 | LGPL-3.0-only |  |
-| ✅ | psycopg2-binary | 2.9.12 | GNU Library or Lesser General Public License (LGPL) |  |
-| ✅ | ptyprocess | 0.7.0 | ISC License (ISCL) |  |
-| ✅ | pure_eval | 0.2.3 | MIT License |  |
-| ✅ | py-key-value-aio | 0.4.4 | Apache Software License |  |
-| ✅ | pyarrow | 24.0.0 | Apache-2.0 |  |
-| ✅ | pycparser | 3.0 | BSD-3-Clause |  |
-| ✅ | pydantic | 2.13.4 | MIT |  |
-| ✅ | pydantic-settings | 2.14.1 | MIT |  |
-| ✅ | pydantic_core | 2.46.4 | MIT |  |
-| ✅ | pydash | 8.0.6 | MIT |  |
-| ✅ | pydub | 0.25.1 | MIT License |  |
-| ✅ | Pygments | 2.20.0 | BSD-2-Clause |  |
-| ✅ | PyJWT | 2.12.1 | MIT |  |
-| ✅ | pymilvus | 2.6.14 | Apache Software License |  |
-| ✅ | pymongo | 4.17.0 | Apache-2.0 |  |
-| ✅ | pyparsing | 3.3.2 | MIT |  |
-| ✅ | pypdf | 6.11.0 | BSD-3-Clause (override) |  |
-| ✅ | pyperclip | 1.11.0 | BSD License |  |
-| ✅ | pytest | 9.0.3 | MIT |  |
-| ✅ | pytest-asyncio | 1.3.0 | Apache-2.0 |  |
-| ✅ | pytest-bdd | 8.1.0 | MIT License |  |
-| ✅ | pytest-cov | 7.1.0 | MIT |  |
-| ✅ | pytest-mock | 3.15.1 | MIT License |  |
-| ✅ | pytest-postgresql | 8.1.0 | GNU Lesser General Public License v3 or later (LGPLv3+) |  |
-| ✅ | pytest-timeout | 2.4.0 | DFSG approved; MIT License |  |
-| ✅ | python-dateutil | 2.9.0.post0 | Apache Software License; BSD License |  |
-| ✅ | python-dotenv | 1.2.2 | BSD-3-Clause |  |
-| ✅ | python-i18n | 0.3.9 | MIT License |  |
-| ✅ | python-keycloak | 7.1.1 | MIT License |  |
-| ✅ | python-multipart | 0.0.29 | Apache-2.0 |  |
-| ✅ | python-pptx | 1.0.2 | MIT License |  |
-| ✅ | pytokens | 0.4.1 | MIT License |  |
-| ✅ | pytz | 2026.2 | MIT License |  |
-| ✅ | PyWavelets | 1.9.0 | MIT AND BSD-3-Clause |  |
-| ✅ | PyYAML | 6.0.3 | MIT License |  |
-| ✅ | qdrant-client | 1.18.0 | Apache Software License |  |
-| ✅ | rank-bm25 | 0.2.2 | Apache2.0 |  |
-| ✅ | redis | 7.4.0 | MIT |  |
-| ✅ | referencing | 0.37.0 | MIT (override) |  |
-| ✅ | regex | 2026.5.9 | Apache-2.0 (override) |  |
-| ✅ | requests | 2.34.2 | Apache Software License |  |
-| ✅ | requests-oauthlib | 2.0.0 | BSD License |  |
-| ✅ | requests-toolbelt | 1.0.0 | Apache Software License |  |
-| ✅ | rich | 15.0.0 | MIT License |  |
-| ✅ | rich-rst | 2.0.1 | MIT |  |
-| ✅ | rpds-py | 0.30.0 | MIT (override) |  |
-| ✅ | ruamel.yaml | 0.19.1 | MIT License |  |
-| ✅ | ruff | 0.15.13 | MIT |  |
-| ✅ | ruyaml | 0.91.0 | MIT License |  |
-| ✅ | s3fs | 2024.12.0 | BSD License |  |
-| ✅ | s3transfer | 0.15.0 | Apache Software License |  |
-| ✅ | safetensors | 0.7.0 | Apache Software License |  |
-| ✅ | scim2-client | 0.7.5 | Apache Software License |  |
-| ✅ | scim2-models | 0.6.12 | Apache Software License |  |
-| ✅ | scipy | 1.17.1 | BSD License |  |
-| ✅ | seaborn | 0.13.2 | BSD License |  |
-| ✅ | SecretStorage | 3.5.0 | BSD-3-Clause |  |
-| ✅ | shellingham | 1.5.4 | ISC License (ISCL) |  |
-| ✅ | six | 1.17.0 | MIT License |  |
-| ✅ | sniffio | 1.3.1 | Apache Software License; MIT License |  |
-| ✅ | soupsieve | 2.8.3 | MIT |  |
-| ✅ | SQLAlchemy | 2.0.49 | MIT |  |
-| ✅ | sse-starlette | 3.4.4 | BSD-3-Clause (override) |  |
-| ✅ | stack-data | 0.6.3 | MIT License |  |
-| ✅ | starlette | 1.0.0 | BSD-3-Clause |  |
-| ✅ | strictyaml | 1.7.3 | MIT License |  |
-| ✅ | stringcase | 1.2.0 | MIT |  |
-| ✅ | striprtf | 0.0.26 | BSD License |  |
-| ✅ | structlog | 25.5.0 | MIT OR Apache-2.0 |  |
-| ✅ | sympy | 1.14.0 | BSD License |  |
-| ✅ | tabulate | 0.10.0 | MIT |  |
-| ✅ | tenacity | 9.1.4 | Apache Software License |  |
-| ✅ | tiktoken | 0.13.0 | MIT (override) |  |
-| ✅ | tinytag | 2.2.1 | MIT License |  |
-| ✅ | tokenize_rt | 6.2.0 | MIT |  |
-| ✅ | tokenizers | 0.22.2 | Apache Software License |  |
-| ✅ | toml | 0.10.2 | MIT License |  |
-| ✅ | toml-sort | 0.24.4 | MIT License |  |
-| ✅ | tomlkit | 0.15.0 | MIT License |  |
-| ✅ | toposort | 1.10 | Apache Software License |  |
-| ✅ | tqdm | 4.67.3 | MPL-2.0 AND MIT |  |
-| ✅ | traitlets | 5.15.0 | BSD License |  |
-| ✅ | transformers | 5.8.1 | Apache 2.0 License |  |
-| ✅ | ty | 0.0.38 | MIT License |  |
-| ✅ | typer | 0.25.1 | MIT |  |
-| ✅ | types-awscrt | 0.31.3 | MIT License |  |
-| ✅ | types-PyYAML | 6.0.12.20260518 | Apache-2.0 (override) |  |
-| ✅ | types-requests | 2.33.0.20260518 | Apache-2.0 (override) |  |
-| ✅ | types-s3transfer | 0.16.0 | MIT |  |
-| ✅ | typing-inspect | 0.9.0 | MIT License |  |
-| ✅ | typing-inspection | 0.4.2 | MIT (override) |  |
-| ✅ | typing_extensions | 4.15.0 | PSF-2.0 (override) |  |
-| ✅ | tzdata | 2026.2 | Apache-2.0 |  |
-| ✅ | uncalled-for | 0.3.2 | MIT License |  |
-| ✅ | universal_pathlib | 0.3.10 | MIT |  |
-| ✅ | urllib3 | 2.7.0 | MIT (override) |  |
-| ✅ | uuid_utils | 0.16.0 | BSD-3-Clause |  |
-| ✅ | uvicorn | 0.47.0 | BSD-3-Clause |  |
-| ✅ | uvloop | 0.22.1 | Apache Software License; MIT License |  |
-| ✅ | watchdog | 6.0.0 | Apache Software License |  |
-| ✅ | watchfiles | 1.2.0 | MIT License |  |
-| ✅ | webencodings | 0.5.1 | BSD License |  |
-| ✅ | websockets | 16.0 | BSD-3-Clause |  |
-| ✅ | wrapt | 1.17.3 | BSD License |  |
-| ✅ | xlsxwriter | 3.2.9 | BSD License |  |
-| ✅ | xxhash | 3.7.0 | BSD License |  |
-| ✅ | yamlfix | 1.19.1 | GPL-3.0 | Dev-only YAML formatting tool; not distributed in production builds. |
-| ✅ | yarl | 1.24.2 | Apache-2.0 |  |
-| ✅ | zstandard | 0.25.0 | BSD-3-Clause |  |
-
+| Status | Package                                          | Version               | License                                                 | Notes                                                                |
+| ------ | ------------------------------------------------ | --------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
+| ✅     | adlfs                                            | 2026.5.0              | BSD License                                             |                                                                      |
+| ✅     | aiobotocore                                      | 2.26.0                | Apache-2.0                                              |                                                                      |
+| ✅     | aiofile                                          | 3.11.1                | Apache-2.0                                              |                                                                      |
+| ✅     | aiofiles                                         | 25.1.0                | Apache Software License                                 |                                                                      |
+| ✅     | aiohappyeyeballs                                 | 2.6.1                 | Python Software Foundation License                      |                                                                      |
+| ✅     | aiohttp                                          | 3.13.5                | Apache-2.0 AND MIT                                      |                                                                      |
+| ✅     | aioitertools                                     | 0.13.0                | MIT                                                     |                                                                      |
+| ✅     | aiosignal                                        | 1.4.0                 | Apache Software License                                 |                                                                      |
+| ✅     | aiosqlite                                        | 0.22.1                | MIT License                                             |                                                                      |
+| ✅     | alembic                                          | 1.18.4                | MIT (override)                                          |                                                                      |
+| ✅     | annotated-doc                                    | 0.0.4                 | MIT                                                     |                                                                      |
+| ✅     | annotated-types                                  | 0.7.0                 | MIT License                                             |                                                                      |
+| ✅     | antlr4-python3-runtime                           | 4.13.2                | BSD                                                     |                                                                      |
+| ✅     | anyio                                            | 4.13.0                | MIT (override)                                          |                                                                      |
+| ✅     | apprise                                          | 1.10.0                | BSD-2-Clause                                            |                                                                      |
+| ✅     | asgi-lifespan                                    | 2.1.0                 | MIT                                                     |                                                                      |
+| ✅     | asgiref                                          | 3.11.1                | BSD License                                             |                                                                      |
+| ✅     | asttokens                                        | 3.0.1                 | Apache 2.0                                              |                                                                      |
+| ✅     | attrs                                            | 26.1.0                | MIT (override)                                          |                                                                      |
+| ✅     | audioop-lts                                      | 0.2.2                 | PSF-2.0 (override)                                      |                                                                      |
+| ✅     | Authlib                                          | 1.7.2                 | BSD License                                             |                                                                      |
+| ✅     | azure-ai-documentintelligence                    | 1.0.2                 | MIT License                                             |                                                                      |
+| ✅     | azure-ai-ml                                      | 1.33.0                | MIT                                                     |                                                                      |
+| ✅     | azure-core                                       | 1.41.0                | MIT                                                     |                                                                      |
+| ✅     | azure-core-tracing-opentelemetry                 | 1.0.0b13              | MIT                                                     |                                                                      |
+| ✅     | azure-identity                                   | 1.25.3                | MIT                                                     |                                                                      |
+| ✅     | azure-mgmt-core                                  | 1.6.0                 | MIT License                                             |                                                                      |
+| ✅     | azure-mgmt-cosmosdb                              | 9.9.0                 | MIT                                                     |                                                                      |
+| ✅     | azure-mgmt-resource                              | 25.0.0                | MIT                                                     |                                                                      |
+| ✅     | azure-monitor-opentelemetry                      | 1.8.2                 | MIT License                                             |                                                                      |
+| ✅     | azure-monitor-opentelemetry-exporter             | 1.0.0b45              | MIT License                                             |                                                                      |
+| ✅     | azure-storage-blob                               | 12.29.0               | MIT License                                             |                                                                      |
+| ✅     | azure-storage-file-datalake                      | 12.24.0               | MIT License                                             |                                                                      |
+| ✅     | azure-storage-file-share                         | 12.25.0               | MIT License                                             |                                                                      |
+| ✅     | backoff                                          | 2.2.1                 | MIT License                                             |                                                                      |
+| ✅     | banks                                            | 2.4.2                 | BSD-3-Clause (override)                                 |                                                                      |
+| ✅     | beartype                                         | 0.22.9                | MIT License                                             |                                                                      |
+| ✅     | beautifulsoup4                                   | 4.14.3                | MIT License                                             |                                                                      |
+| ✅     | black                                            | 26.5.1                | MIT                                                     |                                                                      |
+| ✅     | blinker                                          | 1.9.0                 | MIT License                                             |                                                                      |
+| ✅     | boto3                                            | 1.41.5                | Apache-2.0                                              |                                                                      |
+| ✅     | boto3-stubs                                      | 1.43.11               | MIT                                                     |                                                                      |
+| ✅     | botocore                                         | 1.41.5                | Apache-2.0                                              |                                                                      |
+| ✅     | botocore-stubs                                   | 1.42.41               | MIT                                                     |                                                                      |
+| ✅     | cachetools                                       | 7.1.3                 | MIT                                                     |                                                                      |
+| ✅     | caio                                             | 0.9.25                | Apache-2.0                                              |                                                                      |
+| ✅     | certifi                                          | 2026.4.22             | Mozilla Public License 2.0 (MPL 2.0)                    |                                                                      |
+| ✅     | cffi                                             | 2.0.0                 | MIT                                                     |                                                                      |
+| ✅     | charset-normalizer                               | 3.4.7                 | MIT                                                     |                                                                      |
+| ✅     | click                                            | 8.4.0                 | BSD-3-Clause (override)                                 |                                                                      |
+| ✅     | clickhouse-connect                               | 1.0.1                 | Apache Software License                                 |                                                                      |
+| ✅     | cobble                                           | 0.1.4                 | BSD License                                             |                                                                      |
+| ✅     | cohere                                           | 5.21.1                | MIT License                                             |                                                                      |
+| ✅     | colorama                                         | 0.4.6                 | BSD License                                             |                                                                      |
+| ✅     | coloredlogs                                      | 14.0                  | MIT License                                             |                                                                      |
+| ✅     | colorlog                                         | 6.10.1                | MIT License                                             |                                                                      |
+| ✅     | contourpy                                        | 1.3.3                 | BSD License                                             |                                                                      |
+| ✅     | coverage                                         | 7.14.0                | Apache-2.0                                              |                                                                      |
+| ✅     | cryptography                                     | 48.0.0                | Apache-2.0 OR BSD-3-Clause                              |                                                                      |
+| ✅     | cycler                                           | 0.12.1                | BSD License                                             |                                                                      |
+| ✅     | cyclopts                                         | 4.14.1                | Apache-2.0                                              |                                                                      |
+| ✅     | dagster                                          | 1.13.5                | Apache-2.0                                              |                                                                      |
+| ✅     | dagster-apprise                                  | 0.0.2                 | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | dagster-aws                                      | 0.29.5                | Apache-2.0                                              |                                                                      |
+| ✅     | dagster-azure                                    | 0.29.5                | Apache-2.0                                              |                                                                      |
+| ✅     | dagster-graphql                                  | 1.13.5                | Apache-2.0                                              |                                                                      |
+| ✅     | dagster-pipes                                    | 1.13.5                | Apache-2.0                                              |                                                                      |
+| ✅     | dagster-postgres                                 | 0.29.5                | Apache-2.0                                              |                                                                      |
+| ✅     | dagster-shared                                   | 1.13.5                | Apache-2.0                                              |                                                                      |
+| ✅     | dagster-webserver                                | 1.13.5                | Apache-2.0                                              |                                                                      |
+| ✅     | dataclasses-json                                 | 0.6.7                 | MIT License                                             |                                                                      |
+| ✅     | decorator                                        | 5.3.1                 | BSD-2-Clause                                            |                                                                      |
+| ✅     | defusedxml                                       | 0.7.1                 | Python Software Foundation License                      |                                                                      |
+| ✅     | Deprecated                                       | 1.3.1                 | MIT License                                             |                                                                      |
+| ✅     | deprecation                                      | 2.1.0                 | Apache Software License                                 |                                                                      |
+| ✅     | dirtyjson                                        | 1.0.8                 | Academic Free License (AFL); MIT License                |                                                                      |
+| ✅     | distro                                           | 1.9.0                 | Apache Software License                                 |                                                                      |
+| ✅     | dnspython                                        | 2.8.0                 | ISC License (ISCL)                                      |                                                                      |
+| ✅     | docker                                           | 7.1.0                 | Apache-2.0                                              |                                                                      |
+| ✅     | docstring_parser                                 | 0.18.0                | MIT License                                             |                                                                      |
+| ✅     | email-validator                                  | 2.3.0                 | The Unlicense (Unlicense)                               |                                                                      |
+| ✅     | et_xmlfile                                       | 2.0.0                 | MIT License                                             |                                                                      |
+| ✅     | exceptiongroup                                   | 1.3.1                 | MIT License                                             |                                                                      |
+| ✅     | executing                                        | 2.2.1                 | MIT License                                             |                                                                      |
+| ✅     | faiss-cpu                                        | 1.13.2                | MIT AND BSD-3-Clause                                    |                                                                      |
+| ✅     | fastapi                                          | 0.136.1               | MIT                                                     |                                                                      |
+| ✅     | fastavro                                         | 1.12.2                | MIT                                                     |                                                                      |
+| ✅     | fastmcp                                          | 3.3.1                 | Apache-2.0                                              |                                                                      |
+| ✅     | fastmcp-slim                                     | 3.3.1                 | Apache-2.0                                              |                                                                      |
+| ✅     | filelock                                         | 3.29.0                | MIT                                                     |                                                                      |
+| ✅     | filetype                                         | 1.2.0                 | MIT License                                             |                                                                      |
+| ✅     | flatbuffers                                      | 25.12.19              | Apache Software License                                 |                                                                      |
+| ✅     | fonttools                                        | 4.63.0                | MIT                                                     |                                                                      |
+| ✅     | frozenlist                                       | 1.8.0                 | Apache-2.0                                              |                                                                      |
+| ✅     | fsspec                                           | 2024.12.0             | BSD License                                             |                                                                      |
+| ✅     | gherkin-official                                 | 29.0.0                | MIT                                                     |                                                                      |
+| ✅     | googleapis-common-protos                         | 1.75.0                | Apache Software License                                 |                                                                      |
+| ✅     | gql                                              | 4.0.0                 | MIT                                                     |                                                                      |
+| ✅     | graphene                                         | 3.4.3                 | MIT                                                     |                                                                      |
+| ✅     | graphql-core                                     | 3.2.8                 | MIT License                                             |                                                                      |
+| ✅     | graphql-relay                                    | 3.2.0                 | MIT License                                             |                                                                      |
+| ✅     | greenlet                                         | 3.5.0                 | MIT AND PSF-2.0                                         |                                                                      |
+| ✅     | griffe                                           | 2.0.2                 | ISC (override)                                          |                                                                      |
+| ✅     | griffecli                                        | 2.0.2                 | ISC                                                     |                                                                      |
+| ✅     | griffelib                                        | 2.0.2                 | ISC                                                     |                                                                      |
+| ✅     | grpcio                                           | 1.80.0                | Apache-2.0                                              |                                                                      |
+| ✅     | grpcio-health-checking                           | 1.80.0                | Apache-2.0                                              |                                                                      |
+| ✅     | gunicorn                                         | 26.0.0                | MIT                                                     |                                                                      |
+| ✅     | h11                                              | 0.16.0                | MIT License                                             |                                                                      |
+| ✅     | h2                                               | 4.3.0                 | MIT License                                             |                                                                      |
+| ✅     | hf-xet                                           | 1.5.0                 | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | hpack                                            | 4.1.0                 | MIT License                                             |                                                                      |
+| ✅     | html5lib                                         | 1.1                   | MIT License                                             |                                                                      |
+| ✅     | httpcore                                         | 1.0.9                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | httptools                                        | 0.7.1                 | MIT                                                     |                                                                      |
+| ✅     | httpx                                            | 0.28.1                | BSD License                                             |                                                                      |
+| ✅     | httpx-sse                                        | 0.4.3                 | MIT                                                     |                                                                      |
+| ✅     | huggingface_hub                                  | 1.15.0                | Apache Software License                                 |                                                                      |
+| ✅     | humanfriendly                                    | 10.0                  | MIT License                                             |                                                                      |
+| ✅     | hyperframe                                       | 6.1.0                 | MIT License                                             |                                                                      |
+| ✅     | idna                                             | 3.15                  | BSD-3-Clause                                            |                                                                      |
+| ✅     | ImageHash                                        | 4.3.2                 | 2-clause BSD License                                    |                                                                      |
+| ✅     | iniconfig                                        | 2.3.0                 | MIT                                                     |                                                                      |
+| ✅     | ipython                                          | 9.13.0                | BSD-3-Clause                                            |                                                                      |
+| ✅     | ipython_pygments_lexers                          | 1.1.1                 | BSD License                                             |                                                                      |
+| ✅     | isodate                                          | 0.7.2                 | BSD License                                             |                                                                      |
+| ✅     | jambo                                            | 0.1.dev234+g1da93a4d2 | MIT                                                     |                                                                      |
+| ✅     | jaraco.classes                                   | 3.4.0                 | MIT License                                             |                                                                      |
+| ✅     | jaraco.context                                   | 6.1.2                 | MIT                                                     |                                                                      |
+| ✅     | jaraco.functools                                 | 4.5.0                 | MIT                                                     |                                                                      |
+| ✅     | jedi                                             | 0.20.0                | MIT License                                             |                                                                      |
+| ✅     | jeepney                                          | 0.9.0                 | MIT                                                     |                                                                      |
+| ✅     | Jinja2                                           | 3.1.6                 | BSD License                                             |                                                                      |
+| ✅     | jiter                                            | 0.15.0                | MIT                                                     |                                                                      |
+| ✅     | jmespath                                         | 1.1.0                 | MIT License                                             |                                                                      |
+| ✅     | joblib                                           | 1.5.3                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | joserfc                                          | 1.6.5                 | BSD License                                             |                                                                      |
+| ✅     | json_repair                                      | 0.59.10               | MIT                                                     |                                                                      |
+| ✅     | jsonpatch                                        | 1.33                  | BSD License                                             |                                                                      |
+| ✅     | jsonpointer                                      | 3.1.1                 | BSD License                                             |                                                                      |
+| ✅     | jsonref                                          | 1.1.0                 | MIT                                                     |                                                                      |
+| ✅     | jsonschema                                       | 4.26.0                | MIT (override)                                          |                                                                      |
+| ✅     | jsonschema-path                                  | 0.5.0                 | Apache Software License                                 |                                                                      |
+| ✅     | jsonschema-specifications                        | 2025.9.1              | MIT (override)                                          |                                                                      |
+| ✅     | jwcrypto                                         | 1.5.7                 | LGPL-3.0-or-later                                       |                                                                      |
+| ✅     | keyring                                          | 25.7.0                | MIT                                                     |                                                                      |
+| ✅     | kiwisolver                                       | 1.5.0                 | BSD License                                             |                                                                      |
+| ✅     | kuzu                                             | 0.11.3                | MIT                                                     |                                                                      |
+| ✅     | langchain                                        | 1.3.1                 | MIT License                                             |                                                                      |
+| ✅     | langchain-aws                                    | 1.1.0                 | MIT                                                     |                                                                      |
+| ✅     | langchain-classic                                | 1.0.7                 | MIT License                                             |                                                                      |
+| ✅     | langchain-core                                   | 1.4.0                 | MIT License                                             |                                                                      |
+| ✅     | langchain-memgraph                               | 0.1.14                | MIT                                                     |                                                                      |
+| ✅     | langchain-neo4j                                  | 0.9.0                 | MIT                                                     |                                                                      |
+| ✅     | langchain-protocol                               | 0.0.15                | MIT License                                             |                                                                      |
+| ✅     | langchain-text-splitters                         | 1.1.2                 | MIT License                                             |                                                                      |
+| ✅     | langfuse                                         | 4.6.1                 | MIT                                                     |                                                                      |
+| ✅     | langgraph                                        | 1.2.0                 | MIT                                                     |                                                                      |
+| ✅     | langgraph-checkpoint                             | 4.1.0                 | MIT                                                     |                                                                      |
+| ✅     | langgraph-prebuilt                               | 1.1.0                 | MIT                                                     |                                                                      |
+| ✅     | langgraph-sdk                                    | 0.3.14                | MIT                                                     |                                                                      |
+| ✅     | langsmith                                        | 0.8.5                 | MIT                                                     |                                                                      |
+| ✅     | llama-index-core                                 | 0.14.22               | MIT (override)                                          |                                                                      |
+| ✅     | llama-index-embeddings-openai                    | 0.6.0                 | MIT                                                     |                                                                      |
+| ✅     | llama-index-embeddings-openai-like               | 0.3.1                 | MIT (override)                                          |                                                                      |
+| ✅     | llama-index-embeddings-text-embeddings-inference | 0.5.0                 | MIT                                                     |                                                                      |
+| ✅     | llama-index-instrumentation                      | 0.5.0                 | MIT (override)                                          |                                                                      |
+| ✅     | llama-index-llms-azure-openai                    | 0.5.5                 | MIT                                                     |                                                                      |
+| ✅     | llama-index-llms-openai                          | 0.7.8                 | MIT (override)                                          |                                                                      |
+| ✅     | llama-index-llms-openai-like                     | 0.7.2                 | MIT (override)                                          |                                                                      |
+| ✅     | llama-index-postprocessor-cohere-rerank          | 0.8.0                 | MIT                                                     |                                                                      |
+| ✅     | llama-index-readers-file                         | 0.6.0                 | MIT (override)                                          |                                                                      |
+| ✅     | llama-index-storage-docstore-mongodb             | 0.5.0                 | MIT                                                     |                                                                      |
+| ✅     | llama-index-storage-kvstore-mongodb              | 0.4.1                 | MIT                                                     |                                                                      |
+| ✅     | llama-index-utils-huggingface                    | 0.4.1                 | MIT                                                     |                                                                      |
+| ✅     | llama-index-vector-stores-milvus                 | 1.1.0                 | MIT (override)                                          |                                                                      |
+| ✅     | llama-index-workflows                            | 2.20.0                | MIT (override)                                          |                                                                      |
+| ✅     | loguru                                           | 0.7.3                 | MIT License                                             |                                                                      |
+| ✅     | lxml                                             | 6.1.1                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | lz4                                              | 4.4.5                 | BSD License                                             |                                                                      |
+| ✅     | magika                                           | 0.6.3                 | Apache Software License                                 |                                                                      |
+| ✅     | maison                                           | 2.0.2                 | MIT                                                     |                                                                      |
+| ✅     | Mako                                             | 1.3.12                | MIT License                                             |                                                                      |
+| ✅     | mammoth                                          | 1.11.0                | BSD License                                             |                                                                      |
+| ✅     | Markdown                                         | 3.10.2                | BSD-3-Clause                                            |                                                                      |
+| ✅     | markdown-it-py                                   | 4.2.0                 | MIT License                                             |                                                                      |
+| ✅     | markdownify                                      | 1.2.2                 | MIT License                                             |                                                                      |
+| ✅     | markitdown                                       | 0.1.5                 | MIT                                                     |                                                                      |
+| ✅     | MarkupSafe                                       | 3.0.3                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | marshmallow                                      | 3.26.2                | MIT License                                             |                                                                      |
+| ✅     | matplotlib                                       | 3.10.9                | Python Software Foundation License                      |                                                                      |
+| ✅     | matplotlib-inline                                | 0.2.2                 | BSD-3-Clause (override)                                 |                                                                      |
+| ✅     | mcp                                              | 1.27.1                | MIT License                                             |                                                                      |
+| ✅     | mdformat                                         | 1.0.0                 | MIT (override)                                          |                                                                      |
+| ✅     | mdformat-gfm                                     | 1.0.0                 | MIT                                                     |                                                                      |
+| ✅     | mdformat-vuepress                                | 0.1.0                 | MIT License                                             |                                                                      |
+| ✅     | mdformat_footnote                                | 0.1.3                 | MIT License                                             |                                                                      |
+| ✅     | mdformat_front_matters                           | 2.0.0                 | MIT                                                     |                                                                      |
+| ✅     | mdformat_myst                                    | 0.3.0                 | MIT License                                             |                                                                      |
+| ✅     | mdformat_pyproject                               | 0.1.1                 | MIT License                                             |                                                                      |
+| ✅     | mdformat_simple_breaks                           | 0.1.0                 | MIT License                                             |                                                                      |
+| ✅     | mdit-py-plugins                                  | 0.6.1                 | MIT License                                             |                                                                      |
+| ✅     | mdurl                                            | 0.1.2                 | MIT License                                             |                                                                      |
+| ✅     | mem0ai                                           | 1.0.11                | Apache-2.0                                              |                                                                      |
+| ✅     | memgraph-toolbox                                 | 0.1.11                | MIT License                                             |                                                                      |
+| ✅     | microsoft-agents-activity                        | 0.9.1                 | MIT                                                     |                                                                      |
+| ✅     | microsoft-agents-authentication-msal             | 0.9.1                 | MIT                                                     |                                                                      |
+| ✅     | microsoft-agents-hosting-aiohttp                 | 0.9.1                 | MIT                                                     |                                                                      |
+| ✅     | microsoft-agents-hosting-core                    | 0.9.1                 | MIT                                                     |                                                                      |
+| ✅     | milvus-lite                                      | 3.0                   | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | mirakuru                                         | 3.0.2                 | LGPL-3.0-or-later                                       |                                                                      |
+| ✅     | mongoengine                                      | 0.29.3                | MIT License                                             |                                                                      |
+| ✅     | more-itertools                                   | 11.0.2                | MIT                                                     |                                                                      |
+| ✅     | motor                                            | 3.7.1                 | Apache Software License                                 |                                                                      |
+| ✅     | mpmath                                           | 1.3.0                 | BSD License                                             |                                                                      |
+| ✅     | msal                                             | 1.36.0                | MIT License                                             |                                                                      |
+| ✅     | msal-extensions                                  | 1.3.1                 | MIT License                                             |                                                                      |
+| ✅     | msrest                                           | 0.7.1                 | MIT License                                             |                                                                      |
+| ✅     | multidict                                        | 6.7.1                 | Apache License 2.0                                      |                                                                      |
+| ✅     | mypy-boto3-s3                                    | 1.43.5                | MIT                                                     |                                                                      |
+| ✅     | mypy_extensions                                  | 1.1.0                 | MIT (override)                                          |                                                                      |
+| ✅     | nats-py                                          | 2.14.0                | Apache-2.0                                              |                                                                      |
+| ✅     | neo4j                                            | 6.2.0                 | Apache-2.0 AND Python-2.0                               |                                                                      |
+| ✅     | neo4j-graphrag                                   | 1.16.0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | nest-asyncio                                     | 1.6.0                 | BSD License                                             |                                                                      |
+| ✅     | networkx                                         | 3.6.1                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | nltk                                             | 3.9.4                 | Apache Software License                                 |                                                                      |
+| ✅     | numpy                                            | 2.4.6                 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0      |                                                                      |
+| ✅     | oauthlib                                         | 3.3.1                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | olefile                                          | 0.47                  | BSD License                                             |                                                                      |
+| ✅     | onnxruntime                                      | 1.20.1                | MIT License                                             |                                                                      |
+| ✅     | openai                                           | 2.37.0                | Apache Software License                                 |                                                                      |
+| ✅     | openapi-pydantic                                 | 0.5.1                 | MIT License                                             |                                                                      |
+| ✅     | openinference-instrumentation                    | 0.1.51                | Apache-2.0                                              |                                                                      |
+| ✅     | openinference-instrumentation-llama-index        | 4.4.2                 | Apache-2.0                                              |                                                                      |
+| ✅     | openinference-semantic-conventions               | 0.1.29                | Apache-2.0                                              |                                                                      |
+| ✅     | openpyxl                                         | 3.1.5                 | MIT License                                             |                                                                      |
+| ✅     | opentelemetry-api                                | 1.42.0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | opentelemetry-exporter-otlp                      | 1.42.0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | opentelemetry-exporter-otlp-proto-common         | 1.42.0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | opentelemetry-exporter-otlp-proto-grpc           | 1.42.0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | opentelemetry-exporter-otlp-proto-http           | 1.42.0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | opentelemetry-instrumentation                    | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-aiohttp-client     | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-asgi               | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-asyncio            | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-botocore           | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-dbapi              | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-django             | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-fastapi            | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-flask              | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-httpx              | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-jinja2             | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-logging            | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-milvus             | 0.60.0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-psycopg2           | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-pymongo            | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-redis              | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-requests           | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-urllib             | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-urllib3            | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-instrumentation-wsgi               | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-propagator-aws-xray                | 1.0.2                 | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-proto                              | 1.42.0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | opentelemetry-resource-detector-azure            | 0.1.5                 | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-sdk                                | 1.42.0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | opentelemetry-semantic-conventions               | 0.63b0                | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | opentelemetry-semantic-conventions-ai            | 0.5.1                 | Apache-2.0                                              |                                                                      |
+| ✅     | opentelemetry-util-http                          | 0.63b0                | Apache-2.0                                              |                                                                      |
+| ✅     | orjson                                           | 3.11.9                | MPL-2.0 AND (Apache-2.0 OR MIT)                         |                                                                      |
+| ✅     | ormsgpack                                        | 1.12.2                | Apache-2.0 OR MIT                                       |                                                                      |
+| ✅     | packaging                                        | 26.2                  | Apache-2.0 OR BSD-2-Clause                              |                                                                      |
+| ✅     | pandas                                           | 2.3.3                 | BSD License                                             |                                                                      |
+| ✅     | pandas-stubs                                     | 3.0.0.260204          | BSD License                                             |                                                                      |
+| ✅     | parse                                            | 1.22.0                | MIT                                                     |                                                                      |
+| ✅     | parse_type                                       | 0.6.6                 | MIT (override)                                          |                                                                      |
+| ✅     | parso                                            | 0.8.7                 | MIT License                                             |                                                                      |
+| ✅     | pathable                                         | 0.6.0                 | Apache Software License                                 |                                                                      |
+| ✅     | pathlib_abc                                      | 0.5.2                 | Python Software Foundation License                      |                                                                      |
+| ✅     | pathspec                                         | 1.1.1                 | Mozilla Public License 2.0 (MPL 2.0)                    |                                                                      |
+| ✅     | pexpect                                          | 4.9.0                 | ISC License (ISCL)                                      |                                                                      |
+| ✅     | pillow                                           | 12.2.0                | MIT-CMU (override)                                      |                                                                      |
+| ✅     | platformdirs                                     | 4.9.6                 | MIT                                                     |                                                                      |
+| ✅     | pluggy                                           | 1.6.0                 | MIT License                                             |                                                                      |
+| ✅     | port-for                                         | 1.0.0                 | MIT License                                             |                                                                      |
+| ✅     | portalocker                                      | 3.2.0                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | posthog                                          | 7.15.0                | MIT License                                             |                                                                      |
+| ✅     | prompt_toolkit                                   | 3.0.52                | BSD License                                             |                                                                      |
+| ✅     | propcache                                        | 0.5.2                 | Apache Software License                                 |                                                                      |
+| ✅     | protobuf                                         | 6.33.6                | 3-Clause BSD License                                    |                                                                      |
+| ✅     | psutil                                           | 7.2.2                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | psycopg                                          | 3.3.4                 | LGPL-3.0-only                                           |                                                                      |
+| ✅     | psycopg-binary                                   | 3.3.4                 | LGPL-3.0-only                                           |                                                                      |
+| ✅     | psycopg2-binary                                  | 2.9.12                | GNU Library or Lesser General Public License (LGPL)     |                                                                      |
+| ✅     | ptyprocess                                       | 0.7.0                 | ISC License (ISCL)                                      |                                                                      |
+| ✅     | pure_eval                                        | 0.2.3                 | MIT License                                             |                                                                      |
+| ✅     | py-key-value-aio                                 | 0.4.4                 | Apache Software License                                 |                                                                      |
+| ✅     | pyarrow                                          | 24.0.0                | Apache-2.0                                              |                                                                      |
+| ✅     | pycparser                                        | 3.0                   | BSD-3-Clause                                            |                                                                      |
+| ✅     | pydantic                                         | 2.13.4                | MIT                                                     |                                                                      |
+| ✅     | pydantic-settings                                | 2.14.1                | MIT                                                     |                                                                      |
+| ✅     | pydantic_core                                    | 2.46.4                | MIT                                                     |                                                                      |
+| ✅     | pydash                                           | 8.0.6                 | MIT                                                     |                                                                      |
+| ✅     | pydub                                            | 0.25.1                | MIT License                                             |                                                                      |
+| ✅     | Pygments                                         | 2.20.0                | BSD-2-Clause                                            |                                                                      |
+| ✅     | PyJWT                                            | 2.12.1                | MIT                                                     |                                                                      |
+| ✅     | pymilvus                                         | 2.6.14                | Apache Software License                                 |                                                                      |
+| ✅     | pymongo                                          | 4.17.0                | Apache-2.0                                              |                                                                      |
+| ✅     | pyparsing                                        | 3.3.2                 | MIT                                                     |                                                                      |
+| ✅     | pypdf                                            | 6.11.0                | BSD-3-Clause (override)                                 |                                                                      |
+| ✅     | pyperclip                                        | 1.11.0                | BSD License                                             |                                                                      |
+| ✅     | pytest                                           | 9.0.3                 | MIT                                                     |                                                                      |
+| ✅     | pytest-asyncio                                   | 1.3.0                 | Apache-2.0                                              |                                                                      |
+| ✅     | pytest-bdd                                       | 8.1.0                 | MIT License                                             |                                                                      |
+| ✅     | pytest-cov                                       | 7.1.0                 | MIT                                                     |                                                                      |
+| ✅     | pytest-mock                                      | 3.15.1                | MIT License                                             |                                                                      |
+| ✅     | pytest-postgresql                                | 8.1.0                 | GNU Lesser General Public License v3 or later (LGPLv3+) |                                                                      |
+| ✅     | pytest-timeout                                   | 2.4.0                 | DFSG approved; MIT License                              |                                                                      |
+| ✅     | python-dateutil                                  | 2.9.0.post0           | Apache Software License; BSD License                    |                                                                      |
+| ✅     | python-dotenv                                    | 1.2.2                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | python-i18n                                      | 0.3.9                 | MIT License                                             |                                                                      |
+| ✅     | python-keycloak                                  | 7.1.1                 | MIT License                                             |                                                                      |
+| ✅     | python-multipart                                 | 0.0.29                | Apache-2.0                                              |                                                                      |
+| ✅     | python-pptx                                      | 1.0.2                 | MIT License                                             |                                                                      |
+| ✅     | pytokens                                         | 0.4.1                 | MIT License                                             |                                                                      |
+| ✅     | pytz                                             | 2026.2                | MIT License                                             |                                                                      |
+| ✅     | PyWavelets                                       | 1.9.0                 | MIT AND BSD-3-Clause                                    |                                                                      |
+| ✅     | PyYAML                                           | 6.0.3                 | MIT License                                             |                                                                      |
+| ✅     | qdrant-client                                    | 1.18.0                | Apache Software License                                 |                                                                      |
+| ✅     | rank-bm25                                        | 0.2.2                 | Apache2.0                                               |                                                                      |
+| ✅     | redis                                            | 7.4.0                 | MIT                                                     |                                                                      |
+| ✅     | referencing                                      | 0.37.0                | MIT (override)                                          |                                                                      |
+| ✅     | regex                                            | 2026.5.9              | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | requests                                         | 2.34.2                | Apache Software License                                 |                                                                      |
+| ✅     | requests-oauthlib                                | 2.0.0                 | BSD License                                             |                                                                      |
+| ✅     | requests-toolbelt                                | 1.0.0                 | Apache Software License                                 |                                                                      |
+| ✅     | rich                                             | 15.0.0                | MIT License                                             |                                                                      |
+| ✅     | rich-rst                                         | 2.0.1                 | MIT                                                     |                                                                      |
+| ✅     | rpds-py                                          | 0.30.0                | MIT (override)                                          |                                                                      |
+| ✅     | ruamel.yaml                                      | 0.19.1                | MIT License                                             |                                                                      |
+| ✅     | ruff                                             | 0.15.13               | MIT                                                     |                                                                      |
+| ✅     | ruyaml                                           | 0.91.0                | MIT License                                             |                                                                      |
+| ✅     | s3fs                                             | 2024.12.0             | BSD License                                             |                                                                      |
+| ✅     | s3transfer                                       | 0.15.0                | Apache Software License                                 |                                                                      |
+| ✅     | safetensors                                      | 0.7.0                 | Apache Software License                                 |                                                                      |
+| ✅     | scim2-client                                     | 0.7.5                 | Apache Software License                                 |                                                                      |
+| ✅     | scim2-models                                     | 0.6.12                | Apache Software License                                 |                                                                      |
+| ✅     | scipy                                            | 1.17.1                | BSD License                                             |                                                                      |
+| ✅     | seaborn                                          | 0.13.2                | BSD License                                             |                                                                      |
+| ✅     | SecretStorage                                    | 3.5.0                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | shellingham                                      | 1.5.4                 | ISC License (ISCL)                                      |                                                                      |
+| ✅     | six                                              | 1.17.0                | MIT License                                             |                                                                      |
+| ✅     | sniffio                                          | 1.3.1                 | Apache Software License; MIT License                    |                                                                      |
+| ✅     | soupsieve                                        | 2.8.3                 | MIT                                                     |                                                                      |
+| ✅     | SQLAlchemy                                       | 2.0.49                | MIT                                                     |                                                                      |
+| ✅     | sse-starlette                                    | 3.4.4                 | BSD-3-Clause (override)                                 |                                                                      |
+| ✅     | stack-data                                       | 0.6.3                 | MIT License                                             |                                                                      |
+| ✅     | starlette                                        | 1.0.0                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | strictyaml                                       | 1.7.3                 | MIT License                                             |                                                                      |
+| ✅     | stringcase                                       | 1.2.0                 | MIT                                                     |                                                                      |
+| ✅     | striprtf                                         | 0.0.26                | BSD License                                             |                                                                      |
+| ✅     | structlog                                        | 25.5.0                | MIT OR Apache-2.0                                       |                                                                      |
+| ✅     | sympy                                            | 1.14.0                | BSD License                                             |                                                                      |
+| ✅     | tabulate                                         | 0.10.0                | MIT                                                     |                                                                      |
+| ✅     | tenacity                                         | 9.1.4                 | Apache Software License                                 |                                                                      |
+| ✅     | tiktoken                                         | 0.13.0                | MIT (override)                                          |                                                                      |
+| ✅     | tinytag                                          | 2.2.1                 | MIT License                                             |                                                                      |
+| ✅     | tokenize_rt                                      | 6.2.0                 | MIT                                                     |                                                                      |
+| ✅     | tokenizers                                       | 0.22.2                | Apache Software License                                 |                                                                      |
+| ✅     | toml                                             | 0.10.2                | MIT License                                             |                                                                      |
+| ✅     | toml-sort                                        | 0.24.4                | MIT License                                             |                                                                      |
+| ✅     | tomlkit                                          | 0.15.0                | MIT License                                             |                                                                      |
+| ✅     | toposort                                         | 1.10                  | Apache Software License                                 |                                                                      |
+| ✅     | tqdm                                             | 4.67.3                | MPL-2.0 AND MIT                                         |                                                                      |
+| ✅     | traitlets                                        | 5.15.0                | BSD License                                             |                                                                      |
+| ✅     | transformers                                     | 5.8.1                 | Apache 2.0 License                                      |                                                                      |
+| ✅     | ty                                               | 0.0.38                | MIT License                                             |                                                                      |
+| ✅     | typer                                            | 0.25.1                | MIT                                                     |                                                                      |
+| ✅     | types-awscrt                                     | 0.31.3                | MIT License                                             |                                                                      |
+| ✅     | types-PyYAML                                     | 6.0.12.20260518       | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | types-requests                                   | 2.33.0.20260518       | Apache-2.0 (override)                                   |                                                                      |
+| ✅     | types-s3transfer                                 | 0.16.0                | MIT                                                     |                                                                      |
+| ✅     | typing-inspect                                   | 0.9.0                 | MIT License                                             |                                                                      |
+| ✅     | typing-inspection                                | 0.4.2                 | MIT (override)                                          |                                                                      |
+| ✅     | typing_extensions                                | 4.15.0                | PSF-2.0 (override)                                      |                                                                      |
+| ✅     | tzdata                                           | 2026.2                | Apache-2.0                                              |                                                                      |
+| ✅     | uncalled-for                                     | 0.3.2                 | MIT License                                             |                                                                      |
+| ✅     | universal_pathlib                                | 0.3.10                | MIT                                                     |                                                                      |
+| ✅     | urllib3                                          | 2.7.0                 | MIT (override)                                          |                                                                      |
+| ✅     | uuid_utils                                       | 0.16.0                | BSD-3-Clause                                            |                                                                      |
+| ✅     | uvicorn                                          | 0.47.0                | BSD-3-Clause                                            |                                                                      |
+| ✅     | uvloop                                           | 0.22.1                | Apache Software License; MIT License                    |                                                                      |
+| ✅     | watchdog                                         | 6.0.0                 | Apache Software License                                 |                                                                      |
+| ✅     | watchfiles                                       | 1.2.0                 | MIT License                                             |                                                                      |
+| ✅     | webencodings                                     | 0.5.1                 | BSD License                                             |                                                                      |
+| ✅     | websockets                                       | 16.0                  | BSD-3-Clause                                            |                                                                      |
+| ✅     | wrapt                                            | 1.17.3                | BSD License                                             |                                                                      |
+| ✅     | xlsxwriter                                       | 3.2.9                 | BSD License                                             |                                                                      |
+| ✅     | xxhash                                           | 3.7.0                 | BSD License                                             |                                                                      |
+| ✅     | yamlfix                                          | 1.19.1                | GPL-3.0                                                 | Dev-only YAML formatting tool; not distributed in production builds. |
+| ✅     | yarl                                             | 1.24.2                | Apache-2.0                                              |                                                                      |
+| ✅     | zstandard                                        | 0.25.0                | BSD-3-Clause                                            |                                                                      |
 
 ## JavaScript/TypeScript Dependencies
 
+### web (Node.js)
+
+| Status | Package                                            | Version       | License                                       | Notes                                                                                                       |
+| ------ | -------------------------------------------------- | ------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| ✅     | @alloc/quick-lru                                   | 5.2.0         | MIT                                           |                                                                                                             |
+| ✅     | @antfu/install-pkg                                 | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | @antfu/utils                                       | 8.1.1         | MIT                                           |                                                                                                             |
+| ✅     | @babel/code-frame                                  | 7.29.0        | MIT                                           |                                                                                                             |
+| ✅     | @babel/compat-data                                 | 7.29.3        | MIT                                           |                                                                                                             |
+| ✅     | @babel/core                                        | 7.29.0        | MIT                                           |                                                                                                             |
+| ✅     | @babel/generator                                   | 7.29.1        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-annotate-as-pure                     | 7.27.3        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-compilation-targets                  | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-create-class-features-plugin         | 7.29.3        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-globals                              | 7.28.0        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-member-expression-to-functions       | 7.28.5        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-module-imports                       | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-module-transforms                    | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-optimise-call-expression             | 7.27.1        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-plugin-utils                         | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-replace-supers                       | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-skip-transparent-expression-wrappers | 7.27.1        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-string-parser                        | 7.27.1        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-validator-identifier                 | 7.28.5        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helper-validator-option                     | 7.27.1        | MIT                                           |                                                                                                             |
+| ✅     | @babel/helpers                                     | 7.29.2        | MIT                                           |                                                                                                             |
+| ✅     | @babel/parser                                      | 7.29.3        | MIT                                           |                                                                                                             |
+| ✅     | @babel/plugin-syntax-jsx                           | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/plugin-syntax-typescript                    | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/plugin-transform-typescript                 | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/standalone                                  | 7.29.4        | MIT                                           |                                                                                                             |
+| ✅     | @babel/template                                    | 7.28.6        | MIT                                           |                                                                                                             |
+| ✅     | @babel/traverse                                    | 7.29.0        | MIT                                           |                                                                                                             |
+| ✅     | @babel/types                                       | 7.29.0        | MIT                                           |                                                                                                             |
+| ✅     | @bomb.sh/tab                                       | 0.0.14        | MIT                                           |                                                                                                             |
+| ✅     | @capsizecss/unpack                                 | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @clack/core                                        | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | @clack/prompts                                     | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | @cloudflare/kv-asset-handler                       | 0.4.2         | MIT OR Apache-2.0                             |                                                                                                             |
+| ✅     | @colordx/core                                      | 5.4.3         | MIT                                           |                                                                                                             |
+| ✅     | @csstools/selector-resolve-nested                  | 3.1.0         | MIT-0                                         |                                                                                                             |
+| ✅     | @csstools/selector-specificity                     | 5.0.0         | MIT-0                                         |                                                                                                             |
+| ✅     | @dxup/nuxt                                         | 0.3.2         | MIT                                           |                                                                                                             |
+| ✅     | @dxup/unimport                                     | 0.1.2         | MIT                                           |                                                                                                             |
+| ✅     | @esbuild/linux-x64                                 | 0.25.12       | MIT                                           |                                                                                                             |
+| ✅     | @eslint-community/eslint-utils                     | 4.9.1         | MIT                                           |                                                                                                             |
+| ✅     | @eslint-community/regexpp                          | 4.12.2        | MIT                                           |                                                                                                             |
+| ✅     | @eslint/config-array                               | 0.21.2        | Apache-2.0                                    |                                                                                                             |
+| ✅     | @eslint/config-helpers                             | 0.4.2         | Apache-2.0                                    |                                                                                                             |
+| ✅     | @eslint/core                                       | 0.17.0        | Apache-2.0                                    |                                                                                                             |
+| ✅     | @eslint/eslintrc                                   | 3.3.5         | MIT                                           |                                                                                                             |
+| ✅     | @eslint/js                                         | 9.39.4        | MIT                                           |                                                                                                             |
+| ✅     | @eslint/object-schema                              | 2.1.7         | Apache-2.0                                    |                                                                                                             |
+| ✅     | @eslint/plugin-kit                                 | 0.4.1         | Apache-2.0                                    |                                                                                                             |
+| ✅     | @fingerprintjs/botd                                | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @floating-ui/core                                  | 1.7.4         | MIT                                           |                                                                                                             |
+| ✅     | @floating-ui/dom                                   | 1.7.5         | MIT                                           |                                                                                                             |
+| ✅     | @floating-ui/utils                                 | 0.2.10        | MIT                                           |                                                                                                             |
+| ✅     | @floating-ui/vue                                   | 1.1.10        | MIT                                           |                                                                                                             |
+| ✅     | @formkit/addons                                    | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/auto-animate                              | 0.9.0         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/core                                      | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/dev                                       | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/i18n                                      | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/inputs                                    | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/nuxt                                      | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/observer                                  | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/rules                                     | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/themes                                    | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/utils                                     | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/validation                                | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @formkit/vue                                       | 1.7.2         | MIT                                           |                                                                                                             |
+| ✅     | @hey-api/codegen-core                              | 0.8.1         | MIT                                           |                                                                                                             |
+| ✅     | @hey-api/json-schema-ref-parser                    | 1.4.2         | MIT                                           |                                                                                                             |
+| ✅     | @hey-api/nuxt                                      | 0.2.1         | MIT                                           |                                                                                                             |
+| ✅     | @hey-api/openapi-ts                                | 0.97.1        | MIT                                           |                                                                                                             |
+| ✅     | @hey-api/shared                                    | 0.4.3         | MIT                                           |                                                                                                             |
+| ✅     | @hey-api/spec-types                                | 0.2.0         | MIT                                           |                                                                                                             |
+| ✅     | @hey-api/types                                     | 0.1.4         | MIT                                           |                                                                                                             |
+| ✅     | @humanfs/core                                      | 0.19.2        | Apache-2.0                                    |                                                                                                             |
+| ✅     | @humanfs/node                                      | 0.16.8        | Apache-2.0                                    |                                                                                                             |
+| ✅     | @humanfs/types                                     | 0.15.0        | Apache-2.0                                    |                                                                                                             |
+| ✅     | @humanwhocodes/module-importer                     | 1.0.1         | Apache-2.0                                    |                                                                                                             |
+| ✅     | @humanwhocodes/retry                               | 0.4.3         | Apache-2.0                                    |                                                                                                             |
+| ✅     | @iconify/collections                               | 1.0.644       | MIT                                           |                                                                                                             |
+| ✅     | @iconify/types                                     | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @iconify/utils                                     | 2.3.0         | MIT                                           |                                                                                                             |
+| ✅     | @iconify/vue                                       | 5.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @internationalized/date                            | 3.10.1        | Apache-2.0                                    |                                                                                                             |
+| ✅     | @internationalized/number                          | 3.6.5         | Apache-2.0                                    |                                                                                                             |
+| ✅     | @intlify/bundle-utils                              | 11.1.2        | MIT                                           |                                                                                                             |
+| ✅     | @intlify/core                                      | 11.4.0        | MIT                                           |                                                                                                             |
+| ✅     | @intlify/core-base                                 | 11.4.0        | MIT                                           |                                                                                                             |
+| ✅     | @intlify/devtools-types                            | 11.4.0        | MIT                                           |                                                                                                             |
+| ✅     | @intlify/h3                                        | 0.7.4         | MIT                                           |                                                                                                             |
+| ✅     | @intlify/message-compiler                          | 11.4.0        | MIT                                           |                                                                                                             |
+| ✅     | @intlify/shared                                    | 11.4.0        | MIT                                           |                                                                                                             |
+| ✅     | @intlify/unplugin-vue-i18n                         | 11.1.2        | MIT                                           |                                                                                                             |
+| ✅     | @intlify/utils                                     | 0.13.0        | MIT                                           |                                                                                                             |
+| ✅     | @intlify/vue-i18n-extensions                       | 8.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @ioredis/commands                                  | 1.5.1         | MIT                                           |                                                                                                             |
+| ✅     | @isaacs/cliui                                      | 8.0.2         | ISC                                           |                                                                                                             |
+| ✅     | @isaacs/fs-minipass                                | 4.0.1         | ISC                                           |                                                                                                             |
+| ✅     | @jridgewell/gen-mapping                            | 0.3.13        | MIT                                           |                                                                                                             |
+| ✅     | @jridgewell/remapping                              | 2.3.5         | MIT                                           |                                                                                                             |
+| ✅     | @jridgewell/resolve-uri                            | 3.1.2         | MIT                                           |                                                                                                             |
+| ✅     | @jridgewell/source-map                             | 0.3.11        | MIT                                           |                                                                                                             |
+| ✅     | @jridgewell/sourcemap-codec                        | 1.5.5         | MIT                                           |                                                                                                             |
+| ✅     | @jridgewell/trace-mapping                          | 0.3.31        | MIT                                           |                                                                                                             |
+| ✅     | @jsdevtools/ono                                    | 7.1.3         | MIT                                           |                                                                                                             |
+| ✅     | @koa/router                                        | 12.0.2        | MIT                                           |                                                                                                             |
+| ✅     | @kwsites/file-exists                               | 1.1.1         | MIT                                           |                                                                                                             |
+| ✅     | @kwsites/promise-deferred                          | 1.1.1         | MIT                                           |                                                                                                             |
+| ✅     | @lukeed/ms                                         | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @mapbox/node-pre-gyp                               | 2.0.3         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | @miyaneee/rollup-plugin-json5                      | 1.2.0         | MIT                                           |                                                                                                             |
+| ✅     | @nodelib/fs.scandir                                | 2.1.5         | MIT                                           |                                                                                                             |
+| ✅     | @nodelib/fs.stat                                   | 2.0.5         | MIT                                           |                                                                                                             |
+| ✅     | @nodelib/fs.walk                                   | 1.2.8         | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/cli                                          | 3.35.1        | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/devalue                                      | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/devtools                                     | 3.2.4         | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/devtools-kit                                 | 2.7.0         | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/devtools-wizard                              | 3.2.4         | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/fonts                                        | 0.14.0        | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/icon                                         | 1.15.0        | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/kit                                          | 3.15.4        | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/nitro-server                                 | 3.21.0        | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/schema                                       | 3.21.0        | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/telemetry                                    | 2.8.0         | MIT                                           |                                                                                                             |
+| ✅     | @nuxt/vite-builder                                 | 3.21.0        | MIT                                           |                                                                                                             |
+| ✅     | @nuxtjs/i18n                                       | 10.3.0        | MIT                                           |                                                                                                             |
+| ✅     | @nuxtjs/mdc                                        | 0.22.0        | MIT                                           |                                                                                                             |
+| ✅     | @nuxtjs/robots                                     | 6.0.8         | MIT                                           |                                                                                                             |
+| ✅     | @nuxtjs/tailwindcss                                | 6.14.0        | MIT                                           |                                                                                                             |
+| ✅     | @oxc-minify/binding-linux-x64-gnu                  | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-minify/binding-linux-x64-musl                 | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-parser/binding-linux-x64-gnu                  | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-parser/binding-linux-x64-musl                 | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-project/types                                 | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-transform/binding-linux-x64-gnu               | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-transform/binding-linux-x64-musl              | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @parcel/watcher                                    | 2.5.6         | MIT                                           |                                                                                                             |
+| ✅     | @parcel/watcher-linux-x64-glibc                    | 2.5.6         | MIT                                           |                                                                                                             |
+| ✅     | @parcel/watcher-linux-x64-musl                     | 2.5.6         | MIT                                           |                                                                                                             |
+| ✅     | @parcel/watcher-wasm                               | 2.5.6         | MIT                                           |                                                                                                             |
+| ✅     | @pinia/colada                                      | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | @pinia/colada-nuxt                                 | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | @pinia/nuxt                                        | 0.11.3        | MIT                                           |                                                                                                             |
+| ✅     | @pkgjs/parseargs                                   | 0.11.0        | MIT                                           |                                                                                                             |
+| ✅     | @polka/url                                         | 1.0.0-next.29 | MIT                                           |                                                                                                             |
+| ✅     | @poppinss/colors                                   | 4.1.6         | MIT                                           |                                                                                                             |
+| ✅     | @poppinss/dumper                                   | 0.7.0         | MIT                                           |                                                                                                             |
+| ✅     | @poppinss/exception                                | 1.2.3         | MIT                                           |                                                                                                             |
+| ✅     | @primeuix/forms                                    | 0.1.0         | MIT                                           |                                                                                                             |
+| ✅     | @primeuix/styled                                   | 0.7.4         | MIT                                           |                                                                                                             |
+| ✅     | @primeuix/styles                                   | 2.0.3         | MIT                                           |                                                                                                             |
+| ✅     | @primeuix/themes                                   | 1.2.5         | MIT                                           |                                                                                                             |
+| ✅     | @primeuix/utils                                    | 0.6.4         | MIT                                           |                                                                                                             |
+| ✅     | @primevue/auto-import-resolver                     | 4.5.5         | MIT                                           |                                                                                                             |
+| ✅     | @primevue/core                                     | 4.5.5         | MIT                                           |                                                                                                             |
+| ✅     | @primevue/forms                                    | 4.5.5         | MIT                                           |                                                                                                             |
+| ✅     | @primevue/icons                                    | 4.5.5         | MIT                                           |                                                                                                             |
+| ✅     | @primevue/metadata                                 | 4.5.5         | MIT                                           |                                                                                                             |
+| ✅     | @primevue/nuxt-module                              | 4.5.5         | MIT                                           |                                                                                                             |
+| ✅     | @rolldown/pluginutils                              | 1.0.0-rc.13   | MIT                                           |                                                                                                             |
+| ✅     | @rollup/plugin-alias                               | 6.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @rollup/plugin-commonjs                            | 29.0.2        | MIT                                           |                                                                                                             |
+| ✅     | @rollup/plugin-inject                              | 5.0.5         | MIT                                           |                                                                                                             |
+| ✅     | @rollup/plugin-json                                | 6.1.0         | MIT                                           |                                                                                                             |
+| ✅     | @rollup/plugin-node-resolve                        | 16.0.3        | MIT                                           |                                                                                                             |
+| ✅     | @rollup/plugin-replace                             | 6.0.3         | MIT                                           |                                                                                                             |
+| ✅     | @rollup/plugin-terser                              | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @rollup/plugin-yaml                                | 4.1.2         | MIT                                           |                                                                                                             |
+| ✅     | @rollup/pluginutils                                | 5.3.0         | MIT                                           |                                                                                                             |
+| ✅     | @rollup/rollup-linux-x64-gnu                       | 4.60.3        | MIT                                           |                                                                                                             |
+| ✅     | @rollup/rollup-linux-x64-musl                      | 4.60.3        | MIT                                           |                                                                                                             |
+| ✅     | @sfxcode/formkit-primevue                          | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | @sfxcode/formkit-primevue-nuxt                     | 1.7.0         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/core                                      | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/engine-javascript                         | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/engine-oniguruma                          | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/langs                                     | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/primitive                                 | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/themes                                    | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/transformers                              | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/types                                     | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | @shikijs/vscode-textmate                           | 10.0.2        | MIT                                           |                                                                                                             |
+| ✅     | @sigma/edge-curve                                  | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | @simple-git/args-pathspec                          | 1.0.3         | MIT                                           |                                                                                                             |
+| ✅     | @simple-git/argv-parser                            | 1.1.1         | MIT                                           |                                                                                                             |
+| ✅     | @sindresorhus/is                                   | 4.6.0         | MIT                                           |                                                                                                             |
+| ✅     | @sindresorhus/merge-streams                        | 2.3.0         | MIT                                           |                                                                                                             |
+| ✅     | @socket.io/component-emitter                       | 3.1.2         | MIT                                           |                                                                                                             |
+| ✅     | @speed-highlight/core                              | 1.2.15        | CC0-1.0                                       |                                                                                                             |
+| ✅     | @svgdotjs/svg.draggable.js                         | 3.0.6         | MIT                                           |                                                                                                             |
+| ✅     | @svgdotjs/svg.filter.js                            | 3.0.9         | MIT                                           |                                                                                                             |
+| ✅     | @svgdotjs/svg.js                                   | 3.2.5         | MIT                                           |                                                                                                             |
+| ✅     | @svgdotjs/svg.resize.js                            | 2.0.5         | MIT                                           |                                                                                                             |
+| ✅     | @svgdotjs/svg.select.js                            | 4.0.3         | MIT                                           |                                                                                                             |
+| ✅     | @swc/helpers                                       | 0.5.18        | Apache-2.0                                    |                                                                                                             |
+| ✅     | @tanstack/virtual-core                             | 3.13.18       | MIT                                           |                                                                                                             |
+| ✅     | @tanstack/vue-virtual                              | 3.13.18       | MIT                                           |                                                                                                             |
+| ✅     | @types/debug                                       | 4.1.12        | MIT                                           |                                                                                                             |
+| ✅     | @types/estree                                      | 1.0.8         | MIT                                           |                                                                                                             |
+| ✅     | @types/hast                                        | 3.0.4         | MIT                                           |                                                                                                             |
+| ✅     | @types/json-schema                                 | 7.0.15        | MIT                                           |                                                                                                             |
+| ✅     | @types/mdast                                       | 4.0.4         | MIT                                           |                                                                                                             |
+| ✅     | @types/ms                                          | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | @types/node                                        | 22.19.19      | MIT                                           |                                                                                                             |
+| ✅     | @types/resolve                                     | 1.20.2        | MIT                                           |                                                                                                             |
+| ✅     | @types/unist                                       | 2.0.11        | MIT                                           |                                                                                                             |
+| ✅     | @types/web-bluetooth                               | 0.0.20        | MIT                                           |                                                                                                             |
+| ✅     | @typescript-eslint/project-service                 | 8.59.2        | MIT                                           |                                                                                                             |
+| ✅     | @typescript-eslint/scope-manager                   | 8.59.2        | MIT                                           |                                                                                                             |
+| ✅     | @typescript-eslint/tsconfig-utils                  | 8.59.2        | MIT                                           |                                                                                                             |
+| ✅     | @typescript-eslint/types                           | 8.59.2        | MIT                                           |                                                                                                             |
+| ✅     | @typescript-eslint/typescript-estree               | 8.59.2        | MIT                                           |                                                                                                             |
+| ✅     | @typescript-eslint/visitor-keys                    | 8.59.2        | MIT                                           |                                                                                                             |
+| ✅     | @ungap/structured-clone                            | 1.3.1         | ISC                                           |                                                                                                             |
+| ✅     | @unhead/vue                                        | 2.1.15        | MIT                                           |                                                                                                             |
+| ✅     | @vee-validate/nuxt                                 | 4.15.1        | MIT                                           |                                                                                                             |
+| ✅     | @vercel/nft                                        | 1.5.0         | MIT                                           |                                                                                                             |
+| ✅     | @vitejs/plugin-vue                                 | 6.0.6         | MIT                                           |                                                                                                             |
+| ✅     | @vitejs/plugin-vue-jsx                             | 5.1.5         | MIT                                           |                                                                                                             |
+| ✅     | @volar/language-core                               | 2.4.28        | MIT                                           |                                                                                                             |
+| ✅     | @volar/source-map                                  | 2.4.28        | MIT                                           |                                                                                                             |
+| ✅     | @vue-flow/background                               | 1.3.2         | MIT                                           |                                                                                                             |
+| ✅     | @vue-flow/controls                                 | 1.1.3         | MIT                                           |                                                                                                             |
+| ✅     | @vue-flow/core                                     | 1.48.2        | MIT                                           |                                                                                                             |
+| ✅     | @vue-flow/minimap                                  | 1.5.4         | MIT                                           |                                                                                                             |
+| ✅     | @vue-macros/common                                 | 3.1.2         | MIT                                           |                                                                                                             |
+| ✅     | @vue/babel-helper-vue-transform-on                 | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | @vue/babel-plugin-jsx                              | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | @vue/babel-plugin-resolve-type                     | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | @vue/compiler-core                                 | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vue/compiler-dom                                  | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vue/compiler-sfc                                  | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vue/compiler-ssr                                  | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vue/devtools-api                                  | 6.6.4         | MIT                                           |                                                                                                             |
+| ✅     | @vue/devtools-core                                 | 8.1.2         | MIT                                           |                                                                                                             |
+| ✅     | @vue/devtools-kit                                  | 7.7.9         | MIT                                           |                                                                                                             |
+| ✅     | @vue/devtools-shared                               | 7.7.9         | MIT                                           |                                                                                                             |
+| ✅     | @vue/language-core                                 | 3.2.8         | MIT                                           |                                                                                                             |
+| ✅     | @vue/reactivity                                    | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vue/runtime-core                                  | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vue/runtime-dom                                   | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vue/server-renderer                               | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vue/shared                                        | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | @vueuse/core                                       | 10.11.1       | MIT                                           |                                                                                                             |
+| ✅     | @vueuse/integrations                               | 13.9.0        | MIT                                           |                                                                                                             |
+| ✅     | @vueuse/math                                       | 13.9.0        | MIT                                           |                                                                                                             |
+| ✅     | @vueuse/metadata                                   | 10.11.1       | MIT                                           |                                                                                                             |
+| ✅     | @vueuse/nuxt                                       | 13.9.0        | MIT                                           |                                                                                                             |
+| ✅     | @vueuse/router                                     | 13.9.0        | MIT                                           |                                                                                                             |
+| ✅     | @vueuse/shared                                     | 10.11.1       | MIT                                           |                                                                                                             |
+| ✅     | @yr/monotone-cubic-spline                          | 1.0.3         | MIT                                           |                                                                                                             |
+| ✅     | abbrev                                             | 3.0.1         | ISC                                           |                                                                                                             |
+| ✅     | abort-controller                                   | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | accepts                                            | 1.3.8         | MIT                                           |                                                                                                             |
+| ✅     | acorn                                              | 8.16.0        | MIT                                           |                                                                                                             |
+| ✅     | acorn-import-attributes                            | 1.9.5         | MIT                                           |                                                                                                             |
+| ✅     | acorn-jsx                                          | 5.3.2         | MIT                                           |                                                                                                             |
+| ✅     | agent-base                                         | 7.1.4         | MIT                                           |                                                                                                             |
+| ✅     | ajv                                                | 6.15.0        | MIT                                           |                                                                                                             |
+| ✅     | alien-signals                                      | 3.1.2         | MIT                                           |                                                                                                             |
+| ✅     | ansi-colors                                        | 4.1.3         | MIT                                           |                                                                                                             |
+| ✅     | ansi-regex                                         | 5.0.1         | MIT                                           |                                                                                                             |
+| ✅     | ansi-styles                                        | 4.3.0         | MIT                                           |                                                                                                             |
+| ✅     | ansis                                              | 4.2.0         | ISC                                           |                                                                                                             |
+| ✅     | any-promise                                        | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | anymatch                                           | 3.1.3         | ISC                                           |                                                                                                             |
+| ✅     | apexcharts                                         | 4.7.0         | MIT                                           |                                                                                                             |
+| ✅     | archiver                                           | 7.0.1         | MIT                                           |                                                                                                             |
+| ✅     | archiver-utils                                     | 5.0.2         | MIT                                           |                                                                                                             |
+| ✅     | arg                                                | 5.0.2         | MIT                                           |                                                                                                             |
+| ✅     | argparse                                           | 2.0.1         | Python Software Foundation License (override) |                                                                                                             |
+| ✅     | aria-hidden                                        | 1.2.6         | MIT                                           |                                                                                                             |
+| ✅     | ast-kit                                            | 2.2.0         | MIT                                           |                                                                                                             |
+| ✅     | ast-walker-scope                                   | 0.8.3         | MIT                                           |                                                                                                             |
+| ✅     | async                                              | 3.2.6         | MIT                                           |                                                                                                             |
+| ✅     | async-sema                                         | 3.1.1         | MIT                                           |                                                                                                             |
+| ✅     | at-least-node                                      | 1.0.0         | ISC                                           |                                                                                                             |
+| ✅     | autoprefixer                                       | 10.5.0        | MIT                                           |                                                                                                             |
+| ✅     | b4a                                                | 1.8.1         | Apache-2.0                                    |                                                                                                             |
+| ✅     | bail                                               | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | balanced-match                                     | 1.0.2         | MIT                                           |                                                                                                             |
+| ✅     | bare-events                                        | 2.8.2         | Apache-2.0                                    |                                                                                                             |
+| ✅     | bare-fs                                            | 4.7.1         | Apache-2.0                                    |                                                                                                             |
+| ✅     | bare-os                                            | 3.9.1         | Apache-2.0                                    |                                                                                                             |
+| ✅     | bare-path                                          | 3.0.0         | Apache-2.0                                    |                                                                                                             |
+| ✅     | bare-stream                                        | 2.13.1        | Apache-2.0                                    |                                                                                                             |
+| ✅     | bare-url                                           | 2.4.3         | Apache-2.0                                    |                                                                                                             |
+| ✅     | base64-js                                          | 1.5.1         | MIT                                           |                                                                                                             |
+| ✅     | baseline-browser-mapping                           | 2.10.29       | Apache-2.0                                    |                                                                                                             |
+| ✅     | binary-extensions                                  | 2.3.0         | MIT                                           |                                                                                                             |
+| ✅     | bindings                                           | 1.5.0         | MIT                                           |                                                                                                             |
+| ✅     | birpc                                              | 2.9.0         | MIT                                           |                                                                                                             |
+| ✅     | boolbase                                           | 1.0.0         | ISC                                           |                                                                                                             |
+| ✅     | brace-expansion                                    | 1.1.14        | MIT                                           |                                                                                                             |
+| ✅     | braces                                             | 3.0.3         | MIT                                           |                                                                                                             |
+| ✅     | browserslist                                       | 4.28.2        | MIT                                           |                                                                                                             |
+| ✅     | buffer                                             | 6.0.3         | MIT                                           |                                                                                                             |
+| ✅     | buffer-crc32                                       | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | buffer-from                                        | 1.1.2         | MIT                                           |                                                                                                             |
+| ✅     | bundle-name                                        | 4.1.0         | MIT                                           |                                                                                                             |
+| ✅     | c12                                                | 2.0.4         | MIT                                           |                                                                                                             |
+| ✅     | cac                                                | 6.7.14        | MIT                                           |                                                                                                             |
+| ✅     | cache-content-type                                 | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | call-bind-apply-helpers                            | 1.0.2         | MIT                                           |                                                                                                             |
+| ✅     | call-bound                                         | 1.0.4         | MIT                                           |                                                                                                             |
+| ✅     | callsites                                          | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | camelcase-css                                      | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | caniuse-api                                        | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | caniuse-lite                                       | 1.0.30001792  | CC-BY-4.0                                     |                                                                                                             |
+| ✅     | ccount                                             | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | chalk                                              | 4.1.2         | MIT                                           |                                                                                                             |
+| ✅     | change-case                                        | 5.4.4         | MIT                                           |                                                                                                             |
+| ✅     | char-regex                                         | 1.0.2         | MIT                                           |                                                                                                             |
+| ✅     | character-entities                                 | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | character-entities-html4                           | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | character-entities-legacy                          | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | character-reference-invalid                        | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | chokidar                                           | 3.6.0         | MIT                                           |                                                                                                             |
+| ✅     | chownr                                             | 2.0.0         | ISC                                           |                                                                                                             |
+| ✅     | chownr                                             | 3.0.0         | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | citty                                              | 0.1.6         | MIT                                           |                                                                                                             |
+| ✅     | class-variance-authority                           | 0.7.1         | Apache-2.0                                    |                                                                                                             |
+| ✅     | cliui                                              | 8.0.1         | ISC                                           |                                                                                                             |
+| ✅     | clsx                                               | 2.1.1         | MIT                                           |                                                                                                             |
+| ✅     | cluster-key-slot                                   | 1.1.2         | Apache-2.0                                    |                                                                                                             |
+| ✅     | co                                                 | 4.6.0         | MIT                                           |                                                                                                             |
+| ✅     | color-convert                                      | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | color-name                                         | 1.1.4         | MIT                                           |                                                                                                             |
+| ✅     | color-support                                      | 1.1.3         | ISC                                           |                                                                                                             |
+| ✅     | comma-separated-tokens                             | 2.0.3         | MIT                                           |                                                                                                             |
+| ✅     | commander                                          | 2.20.3        | MIT                                           |                                                                                                             |
+| ✅     | commondir                                          | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | compatx                                            | 0.2.0         | MIT                                           |                                                                                                             |
+| ✅     | compress-commons                                   | 6.0.2         | MIT                                           |                                                                                                             |
+| ✅     | concat-map                                         | 0.0.1         | MIT                                           |                                                                                                             |
+| ✅     | confbox                                            | 0.1.8         | MIT                                           |                                                                                                             |
+| ✅     | consola                                            | 3.4.2         | MIT                                           |                                                                                                             |
+| ✅     | content-disposition                                | 0.5.4         | MIT                                           |                                                                                                             |
+| ✅     | content-type                                       | 1.0.5         | MIT                                           |                                                                                                             |
+| ✅     | convert-source-map                                 | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | cookie-es                                          | 1.2.3         | MIT                                           |                                                                                                             |
+| ✅     | cookies                                            | 0.9.1         | MIT                                           |                                                                                                             |
+| ✅     | copy-anything                                      | 4.0.5         | MIT                                           |                                                                                                             |
+| ✅     | core-util-is                                       | 1.0.3         | MIT                                           |                                                                                                             |
+| ✅     | crc-32                                             | 1.2.2         | Apache-2.0                                    |                                                                                                             |
+| ✅     | crc32-stream                                       | 6.0.0         | MIT                                           |                                                                                                             |
+| ✅     | croner                                             | 10.0.1        | MIT                                           |                                                                                                             |
+| ✅     | cross-spawn                                        | 7.0.6         | MIT                                           |                                                                                                             |
+| ✅     | crossws                                            | 0.3.5         | MIT                                           |                                                                                                             |
+| ✅     | css-declaration-sorter                             | 7.4.0         | ISC                                           |                                                                                                             |
+| ✅     | css-select                                         | 5.2.2         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | css-tree                                           | 2.2.1         | MIT                                           |                                                                                                             |
+| ✅     | css-what                                           | 6.2.2         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | cssesc                                             | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | cssnano                                            | 7.1.9         | MIT                                           |                                                                                                             |
+| ✅     | cssnano-preset-default                             | 7.0.17        | MIT                                           |                                                                                                             |
+| ✅     | cssnano-utils                                      | 5.0.3         | MIT                                           |                                                                                                             |
+| ✅     | csso                                               | 5.0.5         | MIT                                           |                                                                                                             |
+| ✅     | csstype                                            | 3.2.3         | MIT                                           |                                                                                                             |
+| ✅     | d3-color                                           | 3.1.0         | ISC                                           |                                                                                                             |
+| ✅     | d3-dispatch                                        | 3.0.1         | ISC                                           |                                                                                                             |
+| ✅     | d3-drag                                            | 3.0.0         | ISC                                           |                                                                                                             |
+| ✅     | d3-ease                                            | 3.0.1         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | d3-interpolate                                     | 3.0.1         | ISC                                           |                                                                                                             |
+| ✅     | d3-selection                                       | 3.0.0         | ISC                                           |                                                                                                             |
+| ✅     | d3-timer                                           | 3.0.1         | ISC                                           |                                                                                                             |
+| ✅     | d3-transition                                      | 3.0.1         | ISC                                           |                                                                                                             |
+| ✅     | d3-zoom                                            | 3.0.0         | ISC                                           |                                                                                                             |
+| ✅     | date-fns                                           | 4.1.0         | MIT                                           |                                                                                                             |
+| ✅     | db0                                                | 0.3.4         | MIT                                           |                                                                                                             |
+| ✅     | debug                                              | 3.2.7         | MIT                                           |                                                                                                             |
+| ✅     | decode-named-character-reference                   | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | deep-equal                                         | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | deep-is                                            | 0.1.4         | MIT                                           |                                                                                                             |
+| ✅     | deepmerge                                          | 4.3.1         | MIT                                           |                                                                                                             |
+| ✅     | default-browser                                    | 5.5.0         | MIT                                           |                                                                                                             |
+| ✅     | default-browser-id                                 | 5.0.1         | MIT                                           |                                                                                                             |
+| ✅     | define-lazy-prop                                   | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | defu                                               | 6.1.4         | MIT                                           |                                                                                                             |
+| ✅     | delegates                                          | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | denque                                             | 2.1.0         | Apache-2.0                                    |                                                                                                             |
+| ✅     | depd                                               | 1.1.2         | MIT                                           |                                                                                                             |
+| ✅     | dequal                                             | 2.0.3         | MIT                                           |                                                                                                             |
+| ✅     | destr                                              | 2.0.5         | MIT                                           |                                                                                                             |
+| ✅     | destroy                                            | 1.2.0         | MIT                                           |                                                                                                             |
+| ✅     | detab                                              | 3.0.2         | MIT                                           |                                                                                                             |
+| ✅     | detect-libc                                        | 2.1.2         | Apache-2.0                                    |                                                                                                             |
+| ✅     | devalue                                            | 5.8.0         | MIT                                           |                                                                                                             |
+| ✅     | devlop                                             | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | didyoumean                                         | 1.2.2         | Apache-2.0                                    |                                                                                                             |
+| ✅     | diff                                               | 8.0.4         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | dlv                                                | 1.1.3         | MIT                                           |                                                                                                             |
+| ✅     | dom-serializer                                     | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | domelementtype                                     | 2.3.0         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | domhandler                                         | 5.0.3         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | domutils                                           | 3.2.2         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | dot-prop                                           | 10.1.0        | MIT                                           |                                                                                                             |
+| ✅     | dotenv                                             | 16.6.1        | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | dunder-proto                                       | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | duplexer                                           | 0.1.2         | MIT                                           |                                                                                                             |
+| ✅     | eastasianwidth                                     | 0.2.0         | MIT                                           |                                                                                                             |
+| ✅     | ee-first                                           | 1.1.1         | MIT                                           |                                                                                                             |
+| ✅     | electron-to-chromium                               | 1.5.353       | ISC                                           |                                                                                                             |
+| ✅     | emoji-regex                                        | 8.0.0         | MIT                                           |                                                                                                             |
+| ✅     | emojilib                                           | 2.4.0         | MIT                                           |                                                                                                             |
+| ✅     | emoticon                                           | 4.1.0         | MIT                                           |                                                                                                             |
+| ✅     | encodeurl                                          | 1.0.2         | MIT                                           |                                                                                                             |
+| ✅     | engine.io-client                                   | 6.6.4         | MIT                                           |                                                                                                             |
+| ✅     | engine.io-parser                                   | 5.2.3         | MIT                                           |                                                                                                             |
+| ✅     | enhanced-resolve                                   | 5.21.2        | MIT                                           |                                                                                                             |
+| ✅     | entities                                           | 4.5.0         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | error-stack-parser-es                              | 1.0.5         | MIT                                           |                                                                                                             |
+| ✅     | errx                                               | 0.1.0         | MIT                                           |                                                                                                             |
+| ✅     | es-define-property                                 | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | es-errors                                          | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | es-module-lexer                                    | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | es-object-atoms                                    | 1.1.1         | MIT                                           |                                                                                                             |
+| ✅     | esbuild                                            | 0.25.12       | MIT                                           |                                                                                                             |
+| ✅     | escalade                                           | 3.2.0         | MIT                                           |                                                                                                             |
+| ✅     | escape-html                                        | 1.0.3         | MIT                                           |                                                                                                             |
+| ✅     | escape-string-regexp                               | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | escodegen                                          | 2.1.0         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | eslint                                             | 9.39.4        | MIT                                           |                                                                                                             |
+| ✅     | eslint-scope                                       | 8.4.0         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | eslint-visitor-keys                                | 3.4.3         | Apache-2.0                                    |                                                                                                             |
+| ✅     | espree                                             | 9.6.1         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | esprima                                            | 4.0.1         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | esquery                                            | 1.7.0         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | esrecurse                                          | 4.3.0         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | estraverse                                         | 5.3.0         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | estree-walker                                      | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | esutils                                            | 2.0.3         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | etag                                               | 1.8.1         | MIT                                           |                                                                                                             |
+| ✅     | event-target-shim                                  | 5.0.1         | MIT                                           |                                                                                                             |
+| ✅     | eventemitter3                                      | 5.0.4         | MIT                                           |                                                                                                             |
+| ✅     | events                                             | 3.3.0         | MIT                                           |                                                                                                             |
+| ✅     | events-universal                                   | 1.0.1         | Apache-2.0                                    |                                                                                                             |
+| ✅     | execa                                              | 8.0.1         | MIT                                           |                                                                                                             |
+| ✅     | exsolve                                            | 1.0.8         | MIT                                           |                                                                                                             |
+| ✅     | extend                                             | 3.0.2         | MIT                                           |                                                                                                             |
+| ✅     | externality                                        | 1.0.2         | MIT                                           |                                                                                                             |
+| ✅     | fast-deep-equal                                    | 3.1.3         | MIT                                           |                                                                                                             |
+| ✅     | fast-diff                                          | 1.3.0         | Apache-2.0                                    |                                                                                                             |
+| ✅     | fast-fifo                                          | 1.3.2         | MIT                                           |                                                                                                             |
+| ✅     | fast-glob                                          | 3.3.3         | MIT                                           |                                                                                                             |
+| ✅     | fast-json-stable-stringify                         | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | fast-levenshtein                                   | 2.0.6         | MIT                                           |                                                                                                             |
+| ✅     | fast-npm-meta                                      | 1.5.1         | MIT                                           |                                                                                                             |
+| ✅     | fast-string-truncated-width                        | 3.0.3         | MIT                                           |                                                                                                             |
+| ✅     | fast-string-width                                  | 3.0.2         | MIT                                           |                                                                                                             |
+| ✅     | fast-wrap-ansi                                     | 0.2.0         | MIT                                           |                                                                                                             |
+| ✅     | fastq                                              | 1.20.1        | ISC                                           |                                                                                                             |
+| ✅     | fdir                                               | 6.5.0         | MIT                                           |                                                                                                             |
+| ✅     | file-entry-cache                                   | 8.0.0         | MIT                                           |                                                                                                             |
+| ✅     | file-uri-to-path                                   | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | fill-range                                         | 7.1.1         | MIT                                           |                                                                                                             |
+| ✅     | find-up                                            | 5.0.0         | MIT                                           |                                                                                                             |
+| ✅     | flat                                               | 6.0.1         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | flat-cache                                         | 4.0.1         | MIT                                           |                                                                                                             |
+| ✅     | flatted                                            | 3.4.2         | ISC                                           |                                                                                                             |
+| ✅     | fontaine                                           | 0.8.0         | MIT                                           |                                                                                                             |
+| ✅     | fontkitten                                         | 1.0.3         | MIT                                           |                                                                                                             |
+| ✅     | fontless                                           | 0.2.1         | MIT                                           |                                                                                                             |
+| ✅     | foreground-child                                   | 3.3.1         | ISC                                           |                                                                                                             |
+| ✅     | fraction.js                                        | 5.3.4         | MIT                                           |                                                                                                             |
+| ✅     | fresh                                              | 0.5.2         | MIT                                           |                                                                                                             |
+| ✅     | fs-extra                                           | 9.1.0         | MIT                                           |                                                                                                             |
+| ✅     | fs-minipass                                        | 2.1.0         | ISC                                           |                                                                                                             |
+| ✅     | fs.realpath                                        | 1.0.0         | ISC                                           |                                                                                                             |
+| ✅     | function-bind                                      | 1.1.2         | MIT                                           |                                                                                                             |
+| ✅     | fuse.js                                            | 7.3.0         | Apache-2.0                                    |                                                                                                             |
+| ✅     | fzf                                                | 0.5.2         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | generator-function                                 | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | gensync                                            | 1.0.0-beta.2  | MIT                                           |                                                                                                             |
+| ✅     | get-caller-file                                    | 2.0.5         | ISC                                           |                                                                                                             |
+| ✅     | get-east-asian-width                               | 1.6.0         | MIT                                           |                                                                                                             |
+| ✅     | get-intrinsic                                      | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | get-port-please                                    | 3.2.0         | MIT                                           |                                                                                                             |
+| ✅     | get-proto                                          | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | get-stream                                         | 8.0.1         | MIT                                           |                                                                                                             |
+| ✅     | get-tsconfig                                       | 4.14.0        | MIT                                           |                                                                                                             |
+| ✅     | giget                                              | 1.2.5         | MIT                                           |                                                                                                             |
+| ✅     | github-slugger                                     | 2.0.0         | ISC                                           |                                                                                                             |
+| ✅     | glob                                               | 13.0.6        | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | glob                                               | 7.2.3         | ISC                                           |                                                                                                             |
+| ✅     | glob-parent                                        | 5.1.2         | ISC                                           |                                                                                                             |
+| ✅     | global-directory                                   | 4.0.1         | MIT                                           |                                                                                                             |
+| ✅     | globals                                            | 14.0.0        | MIT                                           |                                                                                                             |
+| ✅     | globby                                             | 14.1.0        | MIT                                           |                                                                                                             |
+| ✅     | gopd                                               | 1.2.0         | MIT                                           |                                                                                                             |
+| ✅     | graceful-fs                                        | 4.2.11        | ISC                                           |                                                                                                             |
+| ✅     | graphology                                         | 0.26.0        | MIT                                           |                                                                                                             |
+| ✅     | graphology-layout-forceatlas2                      | 0.10.1        | MIT                                           |                                                                                                             |
+| ✅     | graphology-types                                   | 0.24.8        | MIT                                           |                                                                                                             |
+| ✅     | graphology-utils                                   | 2.5.2         | MIT                                           |                                                                                                             |
+| ✅     | gridstack                                          | 12.6.0        | MIT                                           |                                                                                                             |
+| ✅     | gzip-size                                          | 7.0.0         | MIT                                           |                                                                                                             |
+| ✅     | h3                                                 | 1.15.11       | MIT                                           |                                                                                                             |
+| ✅     | has-flag                                           | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | has-symbols                                        | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | has-tostringtag                                    | 1.0.2         | MIT                                           |                                                                                                             |
+| ✅     | hasown                                             | 2.0.3         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-embedded                                 | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-format                                   | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-from-parse5                              | 8.0.3         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-has-property                             | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-heading-rank                             | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-is-body-ok-link                          | 3.0.1         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-is-element                               | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-minify-whitespace                        | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-parse-selector                           | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-phrasing                                 | 3.0.1         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-raw                                      | 9.1.0         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-to-html                                  | 9.0.5         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-to-mdast                                 | 10.1.2        | MIT                                           |                                                                                                             |
+| ✅     | hast-util-to-parse5                                | 8.0.1         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-to-string                                | 3.0.1         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-to-text                                  | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | hast-util-whitespace                               | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | hastscript                                         | 9.0.1         | MIT                                           |                                                                                                             |
+| ✅     | hookable                                           | 5.5.3         | MIT                                           |                                                                                                             |
+| ✅     | html-void-elements                                 | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | html-whitespace-sensitive-tag-names                | 3.0.1         | MIT                                           |                                                                                                             |
+| ✅     | http-assert                                        | 1.5.0         | MIT                                           |                                                                                                             |
+| ✅     | http-errors                                        | 1.6.3         | MIT                                           |                                                                                                             |
+| ✅     | http-shutdown                                      | 1.2.2         | MIT                                           |                                                                                                             |
+| ✅     | https-proxy-agent                                  | 7.0.6         | MIT                                           |                                                                                                             |
+| ✅     | httpxy                                             | 0.5.1         | MIT                                           |                                                                                                             |
+| ✅     | human-signals                                      | 5.0.0         | Apache-2.0                                    |                                                                                                             |
+| ✅     | ieee754                                            | 1.2.1         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | ignore                                             | 5.3.2         | MIT                                           |                                                                                                             |
+| ✅     | image-meta                                         | 0.2.2         | MIT                                           |                                                                                                             |
+| ✅     | import-fresh                                       | 3.3.1         | MIT                                           |                                                                                                             |
+| ✅     | impound                                            | 1.1.5         | MIT                                           |                                                                                                             |
+| ✅     | imurmurhash                                        | 0.1.4         | MIT                                           |                                                                                                             |
+| ✅     | inflight                                           | 1.0.6         | ISC                                           |                                                                                                             |
+| ✅     | inherits                                           | 2.0.3         | ISC                                           |                                                                                                             |
+| ✅     | ini                                                | 4.1.1         | ISC                                           |                                                                                                             |
+| ✅     | ioredis                                            | 5.10.1        | MIT                                           |                                                                                                             |
+| ✅     | iron-webcrypto                                     | 1.2.1         | MIT                                           |                                                                                                             |
+| ✅     | is-absolute-url                                    | 4.0.1         | MIT                                           |                                                                                                             |
+| ✅     | is-alphabetical                                    | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | is-alphanumerical                                  | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | is-binary-path                                     | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | is-core-module                                     | 2.16.2        | MIT                                           |                                                                                                             |
+| ✅     | is-decimal                                         | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | is-docker                                          | 2.2.1         | MIT                                           |                                                                                                             |
+| ✅     | is-extglob                                         | 2.1.1         | MIT                                           |                                                                                                             |
+| ✅     | is-fullwidth-code-point                            | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | is-generator-function                              | 1.1.2         | MIT                                           |                                                                                                             |
+| ✅     | is-glob                                            | 4.0.3         | MIT                                           |                                                                                                             |
+| ✅     | is-hexadecimal                                     | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | is-in-ssh                                          | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | is-inside-container                                | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | is-installed-globally                              | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | is-module                                          | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | is-number                                          | 7.0.0         | MIT                                           |                                                                                                             |
+| ✅     | is-path-inside                                     | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | is-plain-obj                                       | 4.1.0         | MIT                                           |                                                                                                             |
+| ✅     | is-reference                                       | 1.2.1         | MIT                                           |                                                                                                             |
+| ✅     | is-regex                                           | 1.2.1         | MIT                                           |                                                                                                             |
+| ✅     | is-stream                                          | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | is-what                                            | 5.5.0         | MIT                                           |                                                                                                             |
+| ✅     | is-wsl                                             | 2.2.0         | MIT                                           |                                                                                                             |
+| ✅     | isarray                                            | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | isexe                                              | 2.0.0         | ISC                                           |                                                                                                             |
+| ✅     | isexe                                              | 4.0.0         | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | jackspeak                                          | 3.4.3         | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | jiti                                               | 1.21.7        | MIT                                           |                                                                                                             |
+| ✅     | js-tokens                                          | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | js-yaml                                            | 4.1.1         | MIT                                           |                                                                                                             |
+| ✅     | jsesc                                              | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | json-buffer                                        | 3.0.1         | MIT                                           |                                                                                                             |
+| ✅     | json-schema-traverse                               | 0.4.1         | MIT                                           |                                                                                                             |
+| ✅     | json-stable-stringify-without-jsonify              | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | json5                                              | 2.2.3         | MIT                                           |                                                                                                             |
+| ✅     | jsonc-eslint-parser                                | 2.4.2         | MIT                                           |                                                                                                             |
+| ✅     | jsonfile                                           | 6.2.0         | MIT                                           |                                                                                                             |
+| ✅     | jwt-decode                                         | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | keygrip                                            | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | keyv                                               | 4.5.4         | MIT                                           |                                                                                                             |
+| ✅     | kleur                                              | 4.1.5         | MIT                                           |                                                                                                             |
+| ✅     | klona                                              | 2.0.6         | MIT                                           |                                                                                                             |
+| ✅     | knitwork                                           | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | koa                                                | 2.16.3        | MIT                                           |                                                                                                             |
+| ✅     | koa-compose                                        | 4.1.0         | MIT                                           |                                                                                                             |
+| ✅     | koa-convert                                        | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | koa-send                                           | 5.0.1         | MIT                                           |                                                                                                             |
+| ✅     | koa-static                                         | 5.0.0         | MIT                                           |                                                                                                             |
+| ✅     | kolorist                                           | 1.8.0         | MIT                                           |                                                                                                             |
+| ✅     | launch-editor                                      | 2.13.2        | MIT                                           |                                                                                                             |
+| ✅     | lazystream                                         | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | levn                                               | 0.4.1         | MIT                                           |                                                                                                             |
+| ✅     | lightningcss                                       | 1.32.0        | MPL-2.0                                       |                                                                                                             |
+| ✅     | lightningcss-linux-x64-gnu                         | 1.32.0        | MPL-2.0                                       |                                                                                                             |
+| ✅     | lightningcss-linux-x64-musl                        | 1.32.0        | MPL-2.0                                       |                                                                                                             |
+| ✅     | lilconfig                                          | 3.1.3         | MIT                                           |                                                                                                             |
+| ✅     | lines-and-columns                                  | 1.2.4         | MIT                                           |                                                                                                             |
+| ✅     | listhen                                            | 1.10.0        | MIT                                           |                                                                                                             |
+| ✅     | local-pkg                                          | 0.5.1         | MIT                                           |                                                                                                             |
+| ✅     | locate-path                                        | 6.0.0         | MIT                                           |                                                                                                             |
+| ✅     | lodash                                             | 4.18.1        | MIT                                           |                                                                                                             |
+| ✅     | lodash-es                                          | 4.18.1        | MIT                                           |                                                                                                             |
+| ✅     | lodash.clonedeep                                   | 4.5.0         | MIT                                           |                                                                                                             |
+| ✅     | lodash.defaults                                    | 4.2.0         | MIT                                           |                                                                                                             |
+| ✅     | lodash.isarguments                                 | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | lodash.isequal                                     | 4.5.0         | MIT                                           |                                                                                                             |
+| ✅     | lodash.memoize                                     | 4.1.2         | MIT                                           |                                                                                                             |
+| ✅     | lodash.merge                                       | 4.6.2         | MIT                                           |                                                                                                             |
+| ✅     | lodash.uniq                                        | 4.5.0         | MIT                                           |                                                                                                             |
+| ✅     | longest-streak                                     | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | lru-cache                                          | 11.3.6        | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | lru-cache                                          | 5.1.1         | ISC                                           |                                                                                                             |
+| ✅     | lucide-vue-next                                    | 0.577.0       | ISC                                           |                                                                                                             |
+| ✅     | magic-regexp                                       | 0.10.0        | MIT                                           |                                                                                                             |
+| ✅     | magic-string                                       | 0.30.21       | MIT                                           |                                                                                                             |
+| ✅     | magic-string-ast                                   | 1.0.3         | MIT                                           |                                                                                                             |
+| ✅     | magicast                                           | 0.5.2         | MIT                                           |                                                                                                             |
+| ✅     | markdown-table                                     | 3.0.4         | MIT                                           |                                                                                                             |
+| ✅     | math-intrinsics                                    | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-find-and-replace                        | 3.0.2         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-from-markdown                           | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-gfm                                     | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-gfm-autolink-literal                    | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-gfm-footnote                            | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-gfm-strikethrough                       | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-gfm-table                               | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-gfm-task-list-item                      | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-phrasing                                | 4.1.0         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-to-hast                                 | 13.2.1        | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-to-markdown                             | 2.1.2         | MIT                                           |                                                                                                             |
+| ✅     | mdast-util-to-string                               | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | mdn-data                                           | 2.0.28        | CC0-1.0                                       |                                                                                                             |
+| ✅     | media-typer                                        | 0.3.0         | MIT                                           |                                                                                                             |
+| ✅     | merge-stream                                       | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | merge2                                             | 1.4.1         | MIT                                           |                                                                                                             |
+| ✅     | methods                                            | 1.1.2         | MIT                                           |                                                                                                             |
+| ✅     | micromark                                          | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | micromark-core-commonmark                          | 2.0.3         | MIT                                           |                                                                                                             |
+| ✅     | micromark-extension-gfm                            | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | micromark-extension-gfm-autolink-literal           | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | micromark-extension-gfm-footnote                   | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | micromark-extension-gfm-strikethrough              | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | micromark-extension-gfm-table                      | 2.1.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-extension-gfm-tagfilter                  | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | micromark-extension-gfm-task-list-item             | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | micromark-factory-destination                      | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-factory-label                            | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-factory-space                            | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-factory-title                            | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-factory-whitespace                       | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-character                           | 2.1.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-chunked                             | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-classify-character                  | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-combine-extensions                  | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-decode-numeric-character-reference  | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-decode-string                       | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-encode                              | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-html-tag-name                       | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-normalize-identifier                | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-resolve-all                         | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-sanitize-uri                        | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-subtokenize                         | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-symbol                              | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | micromark-util-types                               | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | micromatch                                         | 4.0.8         | MIT                                           |                                                                                                             |
+| ✅     | mime                                               | 4.1.0         | MIT                                           |                                                                                                             |
+| ✅     | mime-db                                            | 1.52.0        | MIT                                           |                                                                                                             |
+| ✅     | mime-types                                         | 2.1.35        | MIT                                           |                                                                                                             |
+| ✅     | mimic-fn                                           | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | minimatch                                          | 10.2.5        | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | minimatch                                          | 3.1.5         | ISC                                           |                                                                                                             |
+| ✅     | minipass                                           | 3.3.6         | ISC                                           |                                                                                                             |
+| ✅     | minipass                                           | 7.1.3         | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | minizlib                                           | 2.1.2         | MIT                                           |                                                                                                             |
+| ✅     | mitt                                               | 3.0.1         | MIT                                           |                                                                                                             |
+| ✅     | mkdirp                                             | 1.0.4         | MIT                                           |                                                                                                             |
+| ✅     | mlly                                               | 1.7.4         | MIT                                           |                                                                                                             |
+| ✅     | mocked-exports                                     | 0.1.1         | MIT                                           |                                                                                                             |
+| ✅     | mrmime                                             | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | ms                                                 | 2.1.3         | MIT                                           |                                                                                                             |
+| ✅     | muggle-string                                      | 0.4.1         | MIT                                           |                                                                                                             |
+| ✅     | mz                                                 | 2.7.0         | MIT                                           |                                                                                                             |
+| ✅     | nanoid                                             | 3.3.12        | MIT                                           |                                                                                                             |
+| ✅     | nanotar                                            | 0.2.1         | MIT                                           |                                                                                                             |
+| ✅     | natural-compare                                    | 1.4.0         | MIT                                           |                                                                                                             |
+| ✅     | negotiator                                         | 0.6.3         | MIT                                           |                                                                                                             |
+| ✅     | nitropack                                          | 2.13.4        | MIT                                           |                                                                                                             |
+| ✅     | node-addon-api                                     | 7.1.1         | MIT                                           |                                                                                                             |
+| ✅     | node-emoji                                         | 2.2.0         | MIT                                           |                                                                                                             |
+| ✅     | node-fetch                                         | 2.7.0         | MIT                                           |                                                                                                             |
+| ✅     | node-fetch-native                                  | 1.6.7         | MIT                                           |                                                                                                             |
+| ✅     | node-forge                                         | 1.4.0         | (BSD-3-Clause OR GPL-2.0)                     | Dual-licensed; using under BSD-3-Clause (permissive).                                                       |
+| ✅     | node-gyp-build                                     | 4.8.4         | MIT                                           |                                                                                                             |
+| ✅     | node-mock-http                                     | 1.0.4         | MIT                                           |                                                                                                             |
+| ✅     | node-releases                                      | 2.0.38        | MIT                                           |                                                                                                             |
+| ✅     | nopt                                               | 8.1.0         | ISC                                           |                                                                                                             |
+| ✅     | normalize-path                                     | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | npm-run-path                                       | 5.3.0         | MIT                                           |                                                                                                             |
+| ✅     | nth-check                                          | 2.1.1         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | nuxt                                               | 3.21.0        | MIT                                           |                                                                                                             |
+| ✅     | nuxt-define                                        | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | nuxt-site-config                                   | 4.0.8         | MIT                                           |                                                                                                             |
+| ✅     | nuxt-site-config-kit                               | 4.0.8         | MIT                                           |                                                                                                             |
+| ✅     | nuxtseo-shared                                     | 5.1.3         | MIT                                           |                                                                                                             |
+| ✅     | nypm                                               | 0.5.4         | MIT                                           |                                                                                                             |
+| ✅     | object-assign                                      | 4.1.1         | MIT                                           |                                                                                                             |
+| ✅     | object-hash                                        | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | obug                                               | 2.1.1         | MIT                                           |                                                                                                             |
+| ✅     | ofetch                                             | 1.5.1         | MIT                                           |                                                                                                             |
+| ✅     | ohash                                              | 1.1.6         | MIT                                           |                                                                                                             |
+| ✅     | oidc-client-ts                                     | 3.5.0         | Apache-2.0                                    |                                                                                                             |
+| ✅     | on-change                                          | 6.0.2         | MIT                                           |                                                                                                             |
+| ✅     | on-finished                                        | 2.4.1         | MIT                                           |                                                                                                             |
+| ✅     | once                                               | 1.4.0         | ISC                                           |                                                                                                             |
+| ✅     | onetime                                            | 6.0.0         | MIT                                           |                                                                                                             |
+| ✅     | oniguruma-parser                                   | 0.12.1        | MIT                                           |                                                                                                             |
+| ✅     | oniguruma-to-es                                    | 4.3.4         | MIT                                           |                                                                                                             |
+| ✅     | only                                               | 0.0.2         | MIT                                           | MIT license per npm/GitHub (TJ Holowaychuk); npm reports Unknown due to missing SPDX field in package.json. |
+| ✅     | open                                               | 7.4.2         | MIT                                           |                                                                                                             |
+| ✅     | optionator                                         | 0.9.4         | MIT                                           |                                                                                                             |
+| ✅     | oxc-minify                                         | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | oxc-parser                                         | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | oxc-transform                                      | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | oxc-walker                                         | 0.7.0         | MIT                                           |                                                                                                             |
+| ✅     | p-limit                                            | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | p-locate                                           | 5.0.0         | MIT                                           |                                                                                                             |
+| ✅     | package-json-from-dist                             | 1.0.1         | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | package-manager-detector                           | 1.6.0         | MIT                                           |                                                                                                             |
+| ✅     | parchment                                          | 3.0.0         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | parent-module                                      | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | parse-entities                                     | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | parse5                                             | 7.3.0         | MIT                                           |                                                                                                             |
+| ✅     | parseurl                                           | 1.3.3         | MIT                                           |                                                                                                             |
+| ✅     | path-browserify                                    | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | path-exists                                        | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | path-is-absolute                                   | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | path-key                                           | 3.1.1         | MIT                                           |                                                                                                             |
+| ✅     | path-parse                                         | 1.0.7         | MIT                                           |                                                                                                             |
+| ✅     | path-scurry                                        | 1.11.1        | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | path-to-regexp                                     | 6.3.0         | MIT                                           |                                                                                                             |
+| ✅     | path-type                                          | 6.0.0         | MIT                                           |                                                                                                             |
+| ✅     | pathe                                              | 1.1.2         | MIT                                           |                                                                                                             |
+| ✅     | perfect-debounce                                   | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | picocolors                                         | 1.1.1         | ISC                                           |                                                                                                             |
+| ✅     | picomatch                                          | 2.3.2         | MIT                                           |                                                                                                             |
+| ✅     | pify                                               | 2.3.0         | MIT                                           |                                                                                                             |
+| ✅     | pinia                                              | 3.0.4         | MIT                                           |                                                                                                             |
+| ✅     | pirates                                            | 4.0.7         | MIT                                           |                                                                                                             |
+| ✅     | pkg-types                                          | 1.3.1         | MIT                                           |                                                                                                             |
+| ✅     | portfinder                                         | 1.0.38        | MIT                                           |                                                                                                             |
+| ✅     | postcss                                            | 8.5.14        | MIT                                           |                                                                                                             |
+| ✅     | postcss-calc                                       | 10.1.1        | MIT                                           |                                                                                                             |
+| ✅     | postcss-colormin                                   | 7.0.10        | MIT                                           |                                                                                                             |
+| ✅     | postcss-convert-values                             | 7.0.12        | MIT                                           |                                                                                                             |
+| ✅     | postcss-discard-comments                           | 7.0.8         | MIT                                           |                                                                                                             |
+| ✅     | postcss-discard-duplicates                         | 7.0.4         | MIT                                           |                                                                                                             |
+| ✅     | postcss-discard-empty                              | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-discard-overridden                         | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-import                                     | 15.1.0        | MIT                                           |                                                                                                             |
+| ✅     | postcss-js                                         | 4.1.0         | MIT                                           |                                                                                                             |
+| ✅     | postcss-load-config                                | 6.0.1         | MIT                                           |                                                                                                             |
+| ✅     | postcss-merge-longhand                             | 7.0.7         | MIT                                           |                                                                                                             |
+| ✅     | postcss-merge-rules                                | 7.0.11        | MIT                                           |                                                                                                             |
+| ✅     | postcss-minify-font-values                         | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-minify-gradients                           | 7.0.5         | MIT                                           |                                                                                                             |
+| ✅     | postcss-minify-params                              | 7.0.9         | MIT                                           |                                                                                                             |
+| ✅     | postcss-minify-selectors                           | 7.1.2         | MIT                                           |                                                                                                             |
+| ✅     | postcss-nested                                     | 6.2.0         | MIT                                           |                                                                                                             |
+| ✅     | postcss-nesting                                    | 13.0.2        | MIT-0                                         |                                                                                                             |
+| ✅     | postcss-normalize-charset                          | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-normalize-display-values                   | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-normalize-positions                        | 7.0.4         | MIT                                           |                                                                                                             |
+| ✅     | postcss-normalize-repeat-style                     | 7.0.4         | MIT                                           |                                                                                                             |
+| ✅     | postcss-normalize-string                           | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-normalize-timing-functions                 | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-normalize-unicode                          | 7.0.9         | MIT                                           |                                                                                                             |
+| ✅     | postcss-normalize-url                              | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-normalize-whitespace                       | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-ordered-values                             | 7.0.4         | MIT                                           |                                                                                                             |
+| ✅     | postcss-reduce-initial                             | 7.0.9         | MIT                                           |                                                                                                             |
+| ✅     | postcss-reduce-transforms                          | 7.0.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-selector-parser                            | 6.1.2         | MIT                                           |                                                                                                             |
+| ✅     | postcss-svgo                                       | 7.1.3         | MIT                                           |                                                                                                             |
+| ✅     | postcss-unique-selectors                           | 7.0.7         | MIT                                           |                                                                                                             |
+| ✅     | postcss-value-parser                               | 4.2.0         | MIT                                           |                                                                                                             |
+| ✅     | powershell-utils                                   | 0.1.0         | MIT                                           |                                                                                                             |
+| ✅     | prelude-ls                                         | 1.2.1         | MIT                                           |                                                                                                             |
+| ✅     | pretty-bytes                                       | 7.1.0         | MIT                                           |                                                                                                             |
+| ✅     | primeicons                                         | 7.0.0         | MIT                                           |                                                                                                             |
+| ✅     | primevue                                           | 4.5.5         | MIT                                           |                                                                                                             |
+| ✅     | process                                            | 0.11.10       | MIT                                           |                                                                                                             |
+| ✅     | process-nextick-args                               | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | property-information                               | 7.1.0         | MIT                                           |                                                                                                             |
+| ✅     | punycode                                           | 2.3.1         | MIT                                           |                                                                                                             |
+| ✅     | quansync                                           | 0.2.11        | MIT                                           |                                                                                                             |
+| ✅     | queue-microtask                                    | 1.2.3         | MIT                                           |                                                                                                             |
+| ✅     | quill                                              | 2.0.3         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | quill-delta                                        | 5.1.0         | MIT                                           |                                                                                                             |
+| ✅     | radix-vue                                          | 1.9.17        | MIT                                           |                                                                                                             |
+| ✅     | radix3                                             | 1.1.2         | MIT                                           |                                                                                                             |
+| ✅     | range-parser                                       | 1.2.1         | MIT                                           |                                                                                                             |
+| ✅     | rc9                                                | 2.1.2         | MIT                                           |                                                                                                             |
+| ✅     | read-cache                                         | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | readable-stream                                    | 2.3.8         | MIT                                           |                                                                                                             |
+| ✅     | readdir-glob                                       | 1.1.3         | Apache-2.0                                    |                                                                                                             |
+| ✅     | readdirp                                           | 3.6.0         | MIT                                           |                                                                                                             |
+| ✅     | redis-errors                                       | 1.2.0         | MIT                                           |                                                                                                             |
+| ✅     | redis-parser                                       | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | regex                                              | 6.1.0         | Apache-2.0 (override)                         |                                                                                                             |
+| ✅     | regex-recursion                                    | 6.0.2         | MIT                                           |                                                                                                             |
+| ✅     | regex-utilities                                    | 2.3.0         | MIT                                           |                                                                                                             |
+| ✅     | regexp-tree                                        | 0.1.27        | MIT                                           |                                                                                                             |
+| ✅     | rehype-external-links                              | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | rehype-minify-whitespace                           | 6.0.2         | MIT                                           |                                                                                                             |
+| ✅     | rehype-raw                                         | 7.0.0         | MIT                                           |                                                                                                             |
+| ✅     | rehype-remark                                      | 10.0.1        | MIT                                           |                                                                                                             |
+| ✅     | rehype-slug                                        | 6.0.0         | MIT                                           |                                                                                                             |
+| ✅     | rehype-sort-attribute-values                       | 5.0.1         | MIT                                           |                                                                                                             |
+| ✅     | rehype-sort-attributes                             | 5.0.1         | MIT                                           |                                                                                                             |
+| ✅     | remark-emoji                                       | 5.0.2         | MIT                                           |                                                                                                             |
+| ✅     | remark-gfm                                         | 4.0.1         | MIT                                           |                                                                                                             |
+| ✅     | remark-mdc                                         | 3.11.0        | MIT                                           |                                                                                                             |
+| ✅     | remark-parse                                       | 11.0.0        | MIT                                           |                                                                                                             |
+| ✅     | remark-rehype                                      | 11.1.2        | MIT                                           |                                                                                                             |
+| ✅     | remark-stringify                                   | 11.0.0        | MIT                                           |                                                                                                             |
+| ✅     | replace-in-file                                    | 6.3.5         | MIT                                           |                                                                                                             |
+| ✅     | require-directory                                  | 2.1.1         | MIT                                           |                                                                                                             |
+| ✅     | resolve                                            | 1.22.12       | MIT                                           |                                                                                                             |
+| ✅     | resolve-from                                       | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | resolve-path                                       | 1.4.0         | MIT                                           |                                                                                                             |
+| ✅     | resolve-pkg-maps                                   | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | reusify                                            | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | rfdc                                               | 1.4.1         | MIT                                           |                                                                                                             |
+| ✅     | rollup                                             | 4.60.3        | MIT                                           |                                                                                                             |
+| ✅     | rollup-plugin-visualizer                           | 6.0.11        | MIT                                           |                                                                                                             |
+| ✅     | rou3                                               | 0.7.12        | MIT                                           |                                                                                                             |
+| ✅     | run-applescript                                    | 7.1.0         | MIT                                           |                                                                                                             |
+| ✅     | run-parallel                                       | 1.2.0         | MIT                                           |                                                                                                             |
+| ✅     | safe-buffer                                        | 5.1.2         | MIT                                           |                                                                                                             |
+| ✅     | safe-regex-test                                    | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | sax                                                | 1.6.0         | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | scule                                              | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | semver                                             | 6.3.1         | ISC                                           |                                                                                                             |
+| ✅     | send                                               | 1.2.1         | MIT                                           |                                                                                                             |
+| ✅     | serialize-javascript                               | 7.0.5         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | seroval                                            | 1.5.4         | MIT                                           |                                                                                                             |
+| ✅     | serve-placeholder                                  | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | serve-static                                       | 2.2.1         | MIT                                           |                                                                                                             |
+| ✅     | setprototypeof                                     | 1.1.0         | ISC                                           |                                                                                                             |
+| ✅     | shebang-command                                    | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | shebang-regex                                      | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | shell-quote                                        | 1.8.3         | MIT                                           |                                                                                                             |
+| ✅     | shiki                                              | 4.0.2         | MIT                                           |                                                                                                             |
+| ✅     | sigma                                              | 3.0.3         | MIT                                           |                                                                                                             |
+| ✅     | signal-exit                                        | 4.1.0         | ISC                                           |                                                                                                             |
+| ✅     | simple-git                                         | 3.36.0        | MIT                                           |                                                                                                             |
+| ✅     | sirv                                               | 3.0.2         | MIT                                           |                                                                                                             |
+| ✅     | sisteransi                                         | 1.0.5         | MIT                                           |                                                                                                             |
+| ✅     | site-config-stack                                  | 4.0.8         | MIT                                           |                                                                                                             |
+| ✅     | skin-tone                                          | 2.0.0         | MIT                                           |                                                                                                             |
+| ✅     | slash                                              | 5.1.0         | MIT                                           |                                                                                                             |
+| ✅     | smob                                               | 1.6.1         | MIT                                           |                                                                                                             |
+| ✅     | socket.io-client                                   | 4.8.3         | MIT                                           |                                                                                                             |
+| ✅     | socket.io-parser                                   | 4.2.5         | MIT                                           |                                                                                                             |
+| ✅     | source-map                                         | 0.6.1         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | source-map-js                                      | 1.2.1         | BSD-3-Clause                                  |                                                                                                             |
+| ✅     | source-map-support                                 | 0.5.21        | MIT                                           |                                                                                                             |
+| ✅     | space-separated-tokens                             | 2.0.2         | MIT                                           |                                                                                                             |
+| ✅     | speakingurl                                        | 14.0.1        | BSD                                           |                                                                                                             |
+| ✅     | srvx                                               | 0.11.15       | MIT                                           |                                                                                                             |
+| ✅     | standard-as-callback                               | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | statuses                                           | 1.5.0         | MIT                                           |                                                                                                             |
+| ✅     | std-env                                            | 3.10.0        | MIT                                           |                                                                                                             |
+| ✅     | streamx                                            | 2.25.0        | MIT                                           |                                                                                                             |
+| ✅     | string-width                                       | 4.2.3         | MIT                                           |                                                                                                             |
+| ✅     | string_decoder                                     | 1.1.1         | MIT                                           |                                                                                                             |
+| ✅     | stringify-entities                                 | 4.0.4         | MIT                                           |                                                                                                             |
+| ✅     | strip-ansi                                         | 6.0.1         | MIT                                           |                                                                                                             |
+| ✅     | strip-final-newline                                | 3.0.0         | MIT                                           |                                                                                                             |
+| ✅     | strip-json-comments                                | 3.1.1         | MIT                                           |                                                                                                             |
+| ✅     | strip-literal                                      | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | structured-clone-es                                | 2.0.0         | ISC                                           |                                                                                                             |
+| ✅     | stylehacks                                         | 7.0.11        | MIT                                           |                                                                                                             |
+| ✅     | sucrase                                            | 3.35.1        | MIT                                           |                                                                                                             |
+| ✅     | superjson                                          | 2.2.6         | MIT                                           |                                                                                                             |
+| ✅     | supports-color                                     | 7.2.0         | MIT                                           |                                                                                                             |
+| ✅     | supports-preserve-symlinks-flag                    | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | svgo                                               | 4.0.1         | MIT                                           |                                                                                                             |
+| ✅     | tagged-tag                                         | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | tailwind-config-viewer                             | 2.0.4         | MIT                                           |                                                                                                             |
+| ✅     | tailwind-merge                                     | 3.6.0         | MIT                                           |                                                                                                             |
+| ✅     | tailwindcss                                        | 3.4.19        | MIT                                           |                                                                                                             |
+| ✅     | tailwindcss-animate                                | 1.0.7         | MIT                                           |                                                                                                             |
+| ✅     | tailwindcss-primeui                                | 0.6.1         | MIT                                           |                                                                                                             |
+| ✅     | tapable                                            | 2.3.3         | MIT                                           |                                                                                                             |
+| ✅     | tar                                                | 6.2.1         | ISC                                           |                                                                                                             |
+| ✅     | tar                                                | 7.5.15        | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | tar-stream                                         | 3.2.0         | MIT                                           |                                                                                                             |
+| ✅     | teex                                               | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | terser                                             | 5.47.1        | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | text-decoder                                       | 1.2.7         | Apache-2.0                                    |                                                                                                             |
+| ✅     | thenify                                            | 3.3.1         | MIT                                           |                                                                                                             |
+| ✅     | thenify-all                                        | 1.6.0         | MIT                                           |                                                                                                             |
+| ✅     | tiny-inflate                                       | 1.0.3         | MIT                                           |                                                                                                             |
+| ✅     | tiny-invariant                                     | 1.3.3         | MIT                                           |                                                                                                             |
+| ✅     | tinyclip                                           | 0.1.12        | MIT                                           |                                                                                                             |
+| ✅     | tinyexec                                           | 0.3.2         | MIT                                           |                                                                                                             |
+| ✅     | tinyglobby                                         | 0.2.16        | MIT                                           |                                                                                                             |
+| ✅     | to-regex-range                                     | 5.0.1         | MIT                                           |                                                                                                             |
+| ✅     | toidentifier                                       | 1.0.1         | MIT                                           |                                                                                                             |
+| ✅     | tosource                                           | 2.0.0-alpha.3 | zlib                                          | zlib/libpng license per LICENSE file; npm reports Unknown due to null license field in package.json.        |
+| ✅     | totalist                                           | 3.0.1         | MIT                                           |                                                                                                             |
+| ✅     | tr46                                               | 0.0.3         | MIT                                           |                                                                                                             |
+| ✅     | trim-lines                                         | 3.0.1         | MIT                                           |                                                                                                             |
+| ✅     | trim-trailing-lines                                | 2.1.0         | MIT                                           |                                                                                                             |
+| ✅     | trough                                             | 2.2.0         | MIT                                           |                                                                                                             |
+| ✅     | ts-api-utils                                       | 2.5.0         | MIT                                           |                                                                                                             |
+| ✅     | ts-interface-checker                               | 0.1.13        | Apache-2.0                                    |                                                                                                             |
+| ✅     | tslib                                              | 2.8.1         | 0BSD                                          |                                                                                                             |
+| ✅     | tsscmp                                             | 1.0.6         | MIT                                           |                                                                                                             |
+| ✅     | type-check                                         | 0.4.0         | MIT                                           |                                                                                                             |
+| ✅     | type-fest                                          | 4.41.0        | (MIT OR CC0-1.0)                              |                                                                                                             |
+| ✅     | type-is                                            | 1.6.18        | MIT                                           |                                                                                                             |
+| ✅     | type-level-regexp                                  | 0.1.17        | MIT                                           |                                                                                                             |
+| ✅     | typescript                                         | 5.9.3         | Apache-2.0                                    |                                                                                                             |
+| ✅     | ufo                                                | 1.6.4         | MIT                                           |                                                                                                             |
+| ✅     | ultrahtml                                          | 1.6.0         | MIT                                           |                                                                                                             |
+| ✅     | uncrypto                                           | 0.1.3         | MIT                                           |                                                                                                             |
+| ✅     | unctx                                              | 2.5.0         | MIT                                           |                                                                                                             |
+| ✅     | undici-types                                       | 6.21.0        | MIT                                           |                                                                                                             |
+| ✅     | unenv                                              | 2.0.0-rc.24   | MIT                                           |                                                                                                             |
+| ✅     | unhead                                             | 2.1.15        | MIT                                           |                                                                                                             |
+| ✅     | unicode-emoji-modifier-base                        | 1.0.0         | MIT                                           |                                                                                                             |
+| ✅     | unicorn-magic                                      | 0.3.0         | MIT                                           |                                                                                                             |
+| ✅     | unified                                            | 11.0.5        | MIT                                           |                                                                                                             |
+| ✅     | unifont                                            | 0.7.4         | MIT                                           |                                                                                                             |
+| ✅     | unimport                                           | 4.2.0         | MIT                                           |                                                                                                             |
+| ✅     | unist-builder                                      | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | unist-util-find-after                              | 5.0.0         | MIT                                           |                                                                                                             |
+| ✅     | unist-util-is                                      | 6.0.1         | MIT                                           |                                                                                                             |
+| ✅     | unist-util-position                                | 5.0.0         | MIT                                           |                                                                                                             |
+| ✅     | unist-util-stringify-position                      | 4.0.0         | MIT                                           |                                                                                                             |
+| ✅     | unist-util-visit                                   | 5.1.0         | MIT                                           |                                                                                                             |
+| ✅     | unist-util-visit-parents                           | 6.0.2         | MIT                                           |                                                                                                             |
+| ✅     | universalify                                       | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | unplugin                                           | 1.16.1        | MIT                                           |                                                                                                             |
+| ✅     | unplugin-formkit                                   | 0.2.13        | MIT                                           |                                                                                                             |
+| ✅     | unplugin-utils                                     | 0.2.5         | MIT                                           |                                                                                                             |
+| ✅     | unplugin-vue-components                            | 28.4.1        | MIT                                           |                                                                                                             |
+| ✅     | unplugin-vue-router                                | 0.19.2        | MIT                                           |                                                                                                             |
+| ✅     | unrouting                                          | 0.1.7         | MIT                                           |                                                                                                             |
+| ✅     | unstorage                                          | 1.17.5        | MIT                                           |                                                                                                             |
+| ✅     | untun                                              | 0.1.3         | MIT                                           |                                                                                                             |
+| ✅     | untyped                                            | 1.5.2         | MIT                                           |                                                                                                             |
+| ✅     | unwasm                                             | 0.5.3         | MIT                                           |                                                                                                             |
+| ✅     | update-browserslist-db                             | 1.2.3         | MIT                                           |                                                                                                             |
+| ✅     | uqr                                                | 0.1.3         | MIT                                           |                                                                                                             |
+| ✅     | uri-js                                             | 4.4.1         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | util-deprecate                                     | 1.0.2         | MIT                                           |                                                                                                             |
+| ✅     | uuid                                               | 11.1.1        | MIT                                           |                                                                                                             |
+| ✅     | vary                                               | 1.1.2         | MIT                                           |                                                                                                             |
+| ✅     | vee-validate                                       | 4.15.1        | MIT                                           |                                                                                                             |
+| ✅     | vfile                                              | 6.0.3         | MIT                                           |                                                                                                             |
+| ✅     | vfile-location                                     | 5.0.3         | MIT                                           |                                                                                                             |
+| ✅     | vfile-message                                      | 4.0.3         | MIT                                           |                                                                                                             |
+| ✅     | vite                                               | 7.3.3         | MIT                                           |                                                                                                             |
+| ✅     | vite-dev-rpc                                       | 1.1.0         | MIT                                           |                                                                                                             |
+| ✅     | vite-hot-client                                    | 2.2.0         | MIT                                           |                                                                                                             |
+| ✅     | vite-node                                          | 5.3.0         | MIT                                           |                                                                                                             |
+| ✅     | vite-plugin-checker                                | 0.12.0        | MIT                                           |                                                                                                             |
+| ✅     | vite-plugin-inspect                                | 11.3.3        | MIT                                           |                                                                                                             |
+| ✅     | vite-plugin-vue-tracer                             | 1.3.0         | MIT                                           |                                                                                                             |
+| ✅     | vscode-uri                                         | 3.1.0         | MIT                                           |                                                                                                             |
+| ✅     | vue                                                | 3.5.17        | MIT                                           |                                                                                                             |
+| ✅     | vue-bundle-renderer                                | 2.2.0         | MIT                                           |                                                                                                             |
+| ✅     | vue-demi                                           | 0.14.10       | MIT                                           |                                                                                                             |
+| ✅     | vue-devtools-stub                                  | 0.1.0         | MIT                                           |                                                                                                             |
+| ✅     | vue-i18n                                           | 11.4.0        | MIT                                           |                                                                                                             |
+| ✅     | vue-router                                         | 4.6.4         | MIT                                           |                                                                                                             |
+| ✅     | vue3-apexcharts                                    | 1.11.1        | MIT                                           | MIT license per GitHub repo; npm reports Unknown due to missing license field.                              |
+| ✅     | web-namespaces                                     | 2.0.1         | MIT                                           |                                                                                                             |
+| ✅     | webidl-conversions                                 | 3.0.1         | BSD-2-Clause                                  |                                                                                                             |
+| ✅     | webpack-virtual-modules                            | 0.6.2         | MIT                                           |                                                                                                             |
+| ✅     | whatwg-url                                         | 5.0.0         | MIT                                           |                                                                                                             |
+| ✅     | which                                              | 2.0.2         | ISC                                           |                                                                                                             |
+| ✅     | word-wrap                                          | 1.2.5         | MIT                                           |                                                                                                             |
+| ✅     | wrap-ansi                                          | 7.0.0         | MIT                                           |                                                                                                             |
+| ✅     | wrappy                                             | 1.0.2         | ISC                                           |                                                                                                             |
+| ✅     | ws                                                 | 8.18.3        | MIT                                           |                                                                                                             |
+| ✅     | wsl-utils                                          | 0.1.0         | MIT                                           |                                                                                                             |
+| ✅     | xmlhttprequest-ssl                                 | 2.1.2         | MIT                                           |                                                                                                             |
+| ✅     | y18n                                               | 5.0.8         | ISC                                           |                                                                                                             |
+| ✅     | yallist                                            | 3.1.1         | ISC                                           |                                                                                                             |
+| ✅     | yallist                                            | 5.0.0         | BlueOak-1.0.0                                 |                                                                                                             |
+| ✅     | yaml                                               | 2.8.4         | ISC                                           |                                                                                                             |
+| ✅     | yaml-eslint-parser                                 | 1.3.2         | MIT                                           |                                                                                                             |
+| ✅     | yargs                                              | 17.7.2        | MIT                                           |                                                                                                             |
+| ✅     | yargs-parser                                       | 21.1.1        | ISC                                           |                                                                                                             |
+| ✅     | ylru                                               | 1.4.0         | MIT                                           |                                                                                                             |
+| ✅     | yocto-queue                                        | 0.1.0         | MIT                                           |                                                                                                             |
+| ✅     | youch                                              | 4.1.1         | MIT                                           |                                                                                                             |
+| ✅     | youch-core                                         | 0.3.3         | MIT                                           |                                                                                                             |
+| ✅     | zip-stream                                         | 6.0.1         | MIT                                           |                                                                                                             |
+| ✅     | zwitch                                             | 2.0.4         | MIT                                           |                                                                                                             |
 
 ## Docker Images
-
