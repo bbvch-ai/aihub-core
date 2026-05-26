@@ -55,6 +55,7 @@ jobs:
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone
           - module: packages/sysadmin-api
+            runner: ubuntu-latest
             docker_compose_services: postgres-ferretdb ferretdb
     steps:
       - name: Checkout repository
