@@ -11,8 +11,9 @@ permissions:
 jobs:
   lint-backend:
     name: Lint Backend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -32,8 +33,9 @@ jobs:
           working_directory: ${{ matrix.folder }}
   lint-frontend:
     name: Lint Frontend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -47,8 +49,9 @@ jobs:
           lockfile: pnpm-lock.yaml
   license-check:
     name: License Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

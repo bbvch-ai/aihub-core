@@ -58,6 +58,11 @@ class MultiprocessAgentRunner:
             multiprocessing.set_start_method("fork")
 
     @staticmethod
+    async def _stop_runner_if_present(runner: AgentRunner | None) -> None:
+        if runner and hasattr(runner, "stop"):
+            await runner.stop()
+
+    @staticmethod
     def _process_runner(
         process_index: int,
         agent_type: type[Agent],
@@ -66,7 +71,7 @@ class MultiprocessAgentRunner:
     ):
         """Static method that runs in each process to initialize and run an agent."""
 
-        runner = None
+        runner: AgentRunner | None = None
         stop_loop = asyncio.Event()
         shutdown_task: asyncio.Task | None = None
 
@@ -75,14 +80,12 @@ class MultiprocessAgentRunner:
             if asyncio.get_event_loop().is_running():
                 shutdown_task = asyncio.create_task(shutdown_runner())
             else:
-                # If no event loop is running, just set the event
                 stop_loop.set()
 
         async def shutdown_runner():
             """Gracefully shutdown the runner"""
             logger.info(f"Process {process_index}: Received shutdown signal, stopping runner...")
-            if runner and hasattr(runner, "stop"):
-                await runner.stop()
+            await MultiprocessAgentRunner._stop_runner_if_present(runner)
             stop_loop.set()
 
         signal.signal(signal.SIGTERM, signal_handler)
@@ -99,24 +102,21 @@ class MultiprocessAgentRunner:
                 locale_paths=locale_paths,
             )
 
-            # Start the runner
             await runner.start()
 
             try:
-                # Wait until we're signaled to stop
                 await stop_loop.wait()
             except KeyboardInterrupt:
                 logger.info(f"Process {process_index}: Received KeyboardInterrupt")
             except Exception as e:
                 logger.exception(f"Process {process_index}: Error while running: {e}")
             finally:
-                # Ensure proper cleanup
                 if shutdown_task is not None:
                     logger.info(f"Process {process_index}: Waiting for shutdown task to complete")
                     await shutdown_task
-                if runner and hasattr(runner, "stop") and not stop_loop.is_set():
+                if not stop_loop.is_set():
                     logger.info(f"Process {process_index}: Stopping runner in finally block")
-                    await runner.stop()
+                    await MultiprocessAgentRunner._stop_runner_if_present(runner)
 
         try:
             asyncio.run(_run_agent())

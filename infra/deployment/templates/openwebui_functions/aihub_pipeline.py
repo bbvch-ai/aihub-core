@@ -122,7 +122,7 @@ class ThinkingBlock(ContentBlock):
                 f"{self.content.strip()}\n"
                 f"</details>\n"
             )
-        return f'\n<details type="reasoning" done="false">\n' f"{self.content.strip()}" f"</details>\n"
+        return f'\n<details type="reasoning" done="false">\n{self.content.strip()}</details>\n'
 
     def is_complete(self) -> Annotated[bool, "Whether block has content"]:
         """Thinking blocks are complete when they have content"""
@@ -674,9 +674,7 @@ class HumanInTheLoopHandler(EventHandler):
                 }
             )
             # Extract value from input result
-            result = (
-                result.get("value", "") if isinstance(result, dict) else str(result)
-            )
+            result = result.get("value", "") if isinstance(result, dict) else str(result)
 
         if result is not None and result != "":
             response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
@@ -1455,9 +1453,7 @@ class FileProcessingService:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             # Step 1: Initiate upload — get presigned URL + file_id
-            initiate_url = (
-                f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
-            )
+            initiate_url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
             initiate_resp = await client.post(
                 initiate_url,
                 headers=headers,
@@ -1478,9 +1474,7 @@ class FileProcessingService:
             put_resp.raise_for_status()
 
             # Step 3: Validate upload
-            validate_url = (
-                f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
-            )
+            validate_url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
             validate_resp = await client.post(
                 validate_url,
                 headers=headers,
@@ -1646,9 +1640,18 @@ class Pipe:
         self,
         thread_id: Annotated[str, "Thread ID"],
         display_id: Annotated[str, "Display ID"],
-        event_caller: Annotated[EventCaller, "Event caller function"],
+        event_emitter: Annotated[EventEmitter, "Event emitter function (one-way; do NOT use event_caller)"],
     ) -> None:
-        """Emit JavaScript to show trace viewer"""
+        """Post a `set-context` message to the parent window so its tracing/sources/memories side
+        panel auto-syncs to the current thread/display.
+
+        Uses ``event_emitter`` (one-way Socket.IO emit) rather than ``event_caller`` (emit + wait
+        for ack). With OpenWebUI running multiple uvicorn workers behind a Redis-coordinated
+        session pool, an emit-with-ack here can deadlock the SSE read loop: the ack has to round-
+        trip via Redis to the worker holding the user's Socket.IO session, and that path is
+        unreliable when the session-pool cleanup lock is lost ("Unable to renew session cleanup
+        lock. Exiting."). One-way emit doesn't depend on the ack path.
+        """
         code = f"""
         window.parent.postMessage({{
             type: 'set-context',
@@ -1657,7 +1660,7 @@ class Pipe:
         }}, '{self.valves.AIHUB_FRONTEND_URL}');
         """
 
-        await event_caller({"type": "execute", "data": {"code": code}})
+        await event_emitter({"type": "execute", "data": {"code": code}})
 
     async def _check_open_chat_hitl(
         self,
@@ -1720,9 +1723,7 @@ class Pipe:
                 messages = self._message_converter.convert_to_event_format(body["messages"])
 
                 # Process files — upload to agent's dedicated bucket
-                files = await self._file_service.prepare_files_for_event(
-                    __files__, agent_class, agent_id, headers
-                )
+                files = await self._file_service.prepare_files_for_event(__files__, agent_class, agent_id, headers)
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)
@@ -1768,7 +1769,7 @@ class Pipe:
                 state_manager = StreamingStateManager()
 
                 async def stream_start_callback():
-                    await self._set_ui_context(thread_id, hitl_display_id, __event_call__)
+                    await self._set_ui_context(thread_id, hitl_display_id, __event_emitter__)
 
                 # Stream the conversation
                 await self._streaming_service.stream_response(

@@ -324,6 +324,47 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def ensure_active_tenant(user_id: str) -> None:
+        """Ensures the user has a valid active tenant, auto-selecting one if needed.
+
+        Keycloak is the sole source of truth for tenant membership; the candidate
+        set is exactly the groups the user belongs to in Keycloak. The superuser
+        naturally has every tenant available because they are explicitly added to
+        every tenant group on creation — no sysadmin short-circuit.
+
+        Selection order when no valid active tenant is set:
+        1. The user's only tenant, if they have exactly one membership.
+        2. The configured startup tenant (``AIHUB_STARTUP_TENANT_ID``) if the user is a member.
+        3. The earliest-created tenant (by metadata timestamp) among the user's memberships.
+        """
+        from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
+        from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+
+        existing_tenant_ids = await KeycloakAdminService.get_user_tenant_ids(user_id)
+        if not existing_tenant_ids:
+            return
+
+        current = await KeycloakAdminService.get_active_tenant_id(user_id)
+        if current and current in existing_tenant_ids:
+            return
+
+        default_id = StartupTenantSettings().ID
+        if len(existing_tenant_ids) == 1:
+            selected_id = next(iter(existing_tenant_ids))
+        elif default_id in existing_tenant_ids:
+            selected_id = default_id
+        else:
+            earliest = TenantMetadataEntity.objects(id__in=list(existing_tenant_ids)).order_by("created_at").first()
+            if earliest:
+                selected_id = earliest.id
+            else:
+                selected_id = min(existing_tenant_ids)
+
+        await KeycloakAdminService.set_active_tenant(user_id, selected_id)
+        logger.info("Auto-selected active tenant %s for user %s", selected_id, user_id)
+
+    @staticmethod
+    @trace_fn
     async def clear_active_tenant(user_id: str) -> None:
         """Removes the active_tenant_id custom attribute from the Keycloak user.
 

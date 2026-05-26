@@ -23,6 +23,8 @@ aihub_*/.idea/
 .ty/
 .venv
 .idea/*.iml
+.idea/modules.xml
+.idea/pyLspTools.xml
 
 # Claude Code local overrides (personal preferences, not shared)
 CLAUDE.local.md

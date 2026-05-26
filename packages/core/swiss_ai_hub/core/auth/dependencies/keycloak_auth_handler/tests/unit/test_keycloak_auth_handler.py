@@ -12,6 +12,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
@@ -68,7 +69,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     )
     monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", staticmethod(mock_get_active_tenant_for_user))
     monkeypatch.setattr(KeycloakAuthHandler, "_sync_tenant_memberships", staticmethod(mock_sync_tenant_memberships))
-    monkeypatch.setattr(KeycloakAuthHandler, "_ensure_active_tenant", staticmethod(mock_ensure_active_tenant))
+    monkeypatch.setattr(KeycloakAdminService, "ensure_active_tenant", staticmethod(mock_ensure_active_tenant))
 
 
 # --- Fixtures ---

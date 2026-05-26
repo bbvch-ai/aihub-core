@@ -13,8 +13,9 @@ permissions:
 jobs:
   test-modules:
     name: Test Modules
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ${{ matrix.runner }}
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 30
     permissions:
       id-token: write
       contents: write
@@ -27,23 +28,29 @@ jobs:
       matrix:
         include:
           - module: packages/core
+            runner: ubuntu-latest
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone neo4j keycloak
           - module: packages/api
+            runner: ubuntu-latest
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone neo4j
           - module: packages/pipeline
+            runner: ubuntu-latest
             docker_compose_services: ''
           - module: packages/agent
+            runner: ubuntu-latest
             docker_compose_services: postgres clickhouse langfuse-worker langfuse-web
               otel-collector nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master
               seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init
               etcd milvus-standalone neo4j
           - module: packages/bot
+            runner: ubuntu-latest
             docker_compose_services: nats valkey postgres-ferretdb ferretdb
           - module: packages/process
+            runner: ubuntu-latest
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone
@@ -73,8 +80,9 @@ jobs:
           regenerate_compose: 'true'
   env-check:
     name: Env / Compose Consistency
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -95,8 +103,9 @@ jobs:
   pytest-coverage-comment:
     name: Pytest Coverage Comment
     needs: test-modules
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    timeout-minutes: 10
     permissions:
       contents: read
       issues: read
@@ -120,9 +129,10 @@ jobs:
           working_directory: ${{ matrix.module }}
   sonarcloud-scan:
     name: SonarCloud Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     needs: test-modules
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write

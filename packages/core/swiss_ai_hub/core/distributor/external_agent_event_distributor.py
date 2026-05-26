@@ -34,12 +34,21 @@ class ExternalAgentEventDistributor:
         self.nc_publisher = NCPublisher(name, nc)
         self.js_publisher = JSPublisher(name, js)
 
-    async def distribute_event(self, external_event: ExternalAgentEvent, user: UserIdentity | None = None):
+    async def distribute_event(
+        self,
+        external_event: ExternalAgentEvent,
+        user: UserIdentity | None = None,
+        aihub_headers: dict[str, str] | None = None,
+    ):
         """
         Entry point for distributing an external event (ExternalAgentEvent) to agents or other systems through NATs.
 
         Validates user's membership in the thread, identifies the event type, and delegates
         to specialized handlers.
+
+        `aihub_headers` carries X-AIHub-* request headers onto the control-path NATS envelopes
+        (StartEvent, HITL/BITL responses) so the agent can act on behalf of the user. They are
+        deliberately not forwarded onto display events — see `_handle_display_message`.
         """
         thread = ThreadEntity.get_thread_by_id(external_event.thread_id)
 
@@ -62,19 +71,25 @@ class ExternalAgentEventDistributor:
             raise ValueError(f"Received event of unhandled type: {external_event.event.event_name}")
 
         if external_event.event.is_hitl_response_event:
-            await self._handle_human_in_the_loop_response(thread, external_event)
+            await self._handle_human_in_the_loop_response(thread, external_event, aihub_headers)
 
         if external_event.event.is_bitl_response_event:
-            await self._handle_human_in_the_loop_response(thread, external_event)
+            await self._handle_human_in_the_loop_response(thread, external_event, aihub_headers)
 
         # Display the message back to the user who sent it - if it was user-sent
         if external_event.event.is_display_event and user:
             await self._handle_display_message(external_event, run_id, user)
 
         if external_event.event.is_start_event:
-            await self._handle_start_event(thread, external_event, run_id)
+            await self._handle_start_event(thread, external_event, run_id, aihub_headers)
 
-    async def _handle_start_event(self, thread: ThreadEntity, external_event: ExternalAgentEvent, run_id: str):
+    async def _handle_start_event(
+        self,
+        thread: ThreadEntity,
+        external_event: ExternalAgentEvent,
+        run_id: str,
+        aihub_headers: dict[str, str] | None = None,
+    ):
         """
         Handle a StartEvent from the user.
 
@@ -101,9 +116,14 @@ class ExternalAgentEventDistributor:
                 event_name=event.event_name,
                 event_id=event.event_id,
             )
-            await self.js_publisher.publish_event(event, subject)
+            await self.js_publisher.publish_event(event, subject, extra_headers=aihub_headers)
 
-    async def _handle_display_message(self, external_event: ExternalAgentEvent, run_id: str, user: UserIdentity):
+    async def _handle_display_message(
+        self,
+        external_event: ExternalAgentEvent,
+        run_id: str,
+        user: UserIdentity,
+    ):
         """
         Handle a DisplayEvent from the user.
 
@@ -122,9 +142,17 @@ class ExternalAgentEventDistributor:
             event_name=external_event.event.event_name,
             event_id=external_event.event.event_id,
         )
+        # X-AIHub-* headers are intentionally not forwarded here: display events are
+        # observability-only and never drive agent tool calls, so the credential has no use on
+        # this path and must not be spread to display-event subscribers.
         await self.nc_publisher.publish_event(external_event.event, subject)
 
-    async def _handle_human_in_the_loop_response(self, thread: ThreadEntity, external_event: ExternalAgentEvent):
+    async def _handle_human_in_the_loop_response(
+        self,
+        thread: ThreadEntity,
+        external_event: ExternalAgentEvent,
+        aihub_headers: dict[str, str] | None = None,
+    ):
         """
         Handle a HumanInTheLoopResponseEvent.
 
@@ -147,4 +175,4 @@ class ExternalAgentEventDistributor:
             event_name=external_event.event.event_name,
             event_id=external_event.event.event_id,
         )
-        await self.js_publisher.publish_event(external_event.event, subject)
+        await self.js_publisher.publish_event(external_event.event, subject, extra_headers=aihub_headers)

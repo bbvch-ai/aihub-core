@@ -35,7 +35,11 @@ CONFIG_SPECS = [
     ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{stage}{hardware}.yml"),
     # Keycloak configs - realm (platform) and identity providers (customer)
     ("templates/configs/keycloak-realm.json.j2", "configs/keycloak", "aihub-realm.{stage}{hardware}.json"),
-    ("templates/configs/keycloak-identity-providers.json.j2", "configs/keycloak", "identity-providers.{stage}{hardware}.json"),
+    (
+        "templates/configs/keycloak-identity-providers.json.j2",
+        "configs/keycloak",
+        "identity-providers.{stage}{hardware}.json",
+    ),
     # Service configs - optional, skipped if template missing
     ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{stage}{hardware}.yml"),
     ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}{hardware}.yml"),
@@ -298,7 +302,6 @@ def _release_compose_header(project, version, gpu_enabled):
         + f"# For the {'CPU-only' if gpu_enabled else 'GPU-enabled'} variant, "
         f"see the {project}-{version}{'' if gpu_enabled else '-gpu'} bundle.\n\n"
     )
-
 
 
 def _is_stage_variant(filename):
