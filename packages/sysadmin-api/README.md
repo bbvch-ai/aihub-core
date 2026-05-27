@@ -15,9 +15,13 @@ physically separate also avoids accidentally pulling proprietary terms onto any 
 
 ## What's in it
 
-Today: `TenantAdminController` (six endpoints under `/admin/tenants/*`) moved here from `packages/api`. The shape of the
-endpoints is unchanged; only their physical location and license have moved. See `docs/arc42/decisions/` for the full
-extraction rationale.
+Owned by this package: `TenantAdminController` (six endpoints under `/admin/tenants/*`) — tenant lifecycle management,
+sysadmin-gated.
+
+Re-mounted from `packages/api` (Apache-2.0) so sysadmin-web's inherited composables resolve same-origin against
+sysadmin-api: `MyAccountController.get_my_identity()`, `UserController` (get/list + role assign/revoke),
+`RoleController`, `AuthProviderController`. Code ownership stays in `packages/api`; sysadmin-api only picks the surface
+it needs. See `packages/sysadmin-api/CLAUDE.md` for the full mount table.
 
 In future: anything that requires the `AIHubSysAdmin` Keycloak realm role and is not tenant-scoped (platform-wide
 sysadmin operations beyond tenant lifecycle).
@@ -28,9 +32,10 @@ sysadmin operations beyond tenant lifecycle).
   sysadmin subdomain.
 - Auth: Same Keycloak realm + same `aihub-frontend` client as the main `api`. The `AIHubSysAdmin` realm role gate
   applies to every endpoint.
-- Persistence: MongoDB only (via `swiss_ai_hub.core.persistence.access.entities.TenantMetadataEntity` + `RoleEntity`).
-  No NATS, no Milvus, no S3 — `SysadminApiRunner` in `swiss_ai_hub/sysadmin_api/sysadmin_runner.py` has a MongoDB-only
-  lifespan and nothing else.
+- Runtime infra: MongoDB + NATS + Redis + `AccessChangeHook` (medium lifespan). `SysadminApiRunner` in
+  `swiss_ai_hub/sysadmin_api/sysadmin_runner.py` wires the subset of dependencies needed by the controllers it mounts —
+  deliberately omits Milvus / S3 / Neo4j / WebSocket / discovery / provisioners / RPC responders. See ADR
+  `2026_05_26_sysadmin_api_full_self_contained_lifespan.md`.
 - Local dev: `make run-dev` runs the API on port `8001` (so the main `api` on `8000` is unaffected).
 
 ## Tests
@@ -57,6 +62,7 @@ and are imported here, not duplicated.
 
 ## See also
 
-- `docs/arc42/decisions/2026_05_13_split-sysadmin-into-busl-packages.md` (ADR for the extraction)
+- `docs/arc42/decisions/2026_05_19_split-sysadmin-into-proprietary-packages.md` (ADR for the extraction)
+- `docs/arc42/decisions/2026_05_26_sysadmin_api_full_self_contained_lifespan.md` (ADR for the medium lifespan)
 - `packages/api/CLAUDE.md` — the parent API package
 - `LICENSES.md` (repo root) — the per-package license matrix

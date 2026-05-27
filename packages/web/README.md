@@ -6,7 +6,7 @@
 [Nuxt 3 layer](https://nuxt.com/docs/getting-started/layers).**
 
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL%203.0--or--later-blue?style=flat-square)](https://github.com/bbvch-ai/aihub-core/blob/main/packages/web/LICENSE)
 
 </div>
 
@@ -408,7 +408,9 @@ environment variables -- Nuxt automatically maps `NUXT_PUBLIC_*` variables to th
 
 ## License
 
-Apache 2.0 -- see [LICENSE](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSE).
+AGPL-3.0-or-later — see [packages/web/LICENSE](https://github.com/bbvch-ai/aihub-core/blob/main/packages/web/LICENSE).
+For the full per-package matrix (root, AGPL, and proprietary packages), see
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
 
 ______________________________________________________________________
 
