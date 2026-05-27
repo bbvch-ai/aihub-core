@@ -12,7 +12,7 @@
 
 ## Checklist
 
-- [ ] PR title follows `<type>(<scope>): <Subject starting with uppercase>` (see [CONTRIBUTING.md](../CONTRIBUTING.md))
+- [ ] PR title follows `<type>(<scope>): <Subject starting with uppercase>` (see [CONTRIBUTING.md](https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTING.md))
 - [ ] Exactly one of `major` / `minor` / `patch` label applied
 - [ ] CLA signed — post this exact comment on the PR if the bot hasn't prompted you yet:
   `I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA`

@@ -1,4 +1,5 @@
-> [!WARNING] **DRAFT — pending legal review.** This document has not yet been reviewed for legal compliance. Do not rely
+> [!WARNING]
+> **DRAFT — pending legal review.** This document has not yet been reviewed for legal compliance. Do not rely
 > on this text as a binding agreement until that review is complete and this banner is removed. Follow-up: remove this
 > banner after Adrian confirms the text is legally valid for BBV Software Services AG.
 
@@ -66,7 +67,7 @@ Contribution(s) alone or by combination of Your Contribution(s) with the Work to
 submitted.
 
 If any entity institutes patent litigation against You or any other entity (including a cross-claim or counterclaim in a
-lawsuit) alleging that your Contribution, or the Work to which you have contributed, constitutes direct or contributory
+lawsuit) alleging that Your Contribution, or the Work to which You have contributed, constitutes direct or contributory
 patent infringement, then any patent licenses granted to that entity under this Agreement for that Contribution or Work
 shall terminate as of the date such litigation is filed.
 
