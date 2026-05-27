@@ -8,7 +8,7 @@ property rights granted to the Company with respect to Contributions from any pe
 is for Your protection as a Contributor as well as the protection of the Company; it does not change Your rights to use
 Your own Contributions for any other purpose.
 
-If You have not already done so, please complete and sign this Agreement by commenting the following phrase on your
+If You have not already done so, please complete and sign this Agreement by commenting the following phrase on Your
 GitHub Pull Request:
 
 > `I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA`
@@ -118,11 +118,11 @@ ______________________________________________________________________
 
 ## 9. How to Sign
 
-You sign this Agreement electronically by commenting the following exact phrase on your GitHub Pull Request:
+You sign this Agreement electronically by commenting the following exact phrase on Your GitHub Pull Request:
 
 ```
 I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA
 ```
 
-The CLA Assistant bot will record your signature in the `bbvch-ai/cla-signatures` repository. Your signature applies to
-all future Contributions you make to this repository under the same GitHub account.
+The CLA Assistant bot will record Your signature in the `bbvch-ai/cla-signatures` repository. Your signature applies to
+all future Contributions You make to this repository under the same GitHub account.
