@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.1] - 2026-05-27 - Enhanced Dependency Stability and Configuration Flexibility
+
+### Added
+
+- ✨ **Introduced strict peer dependency enforcement:** A new `.npmrc` file has been added to enforce strict peer
+  dependency rules, improving consistency and preventing potential dependency conflicts during development.
+- 🚀 **Refined Pnpm dependency overrides:** New `pnpm.overrides` have been added for `@vueuse/router` to specifically pin
+  `vue-router` to a compatible version, enhancing overall project stability.
+- 📄 **Configured Pnpm peer dependency allowances:** Explicitly allowed specific versions of peer dependencies for key
+  packages like `@nuxt/schema`, `apexcharts`, and `magicast`, addressing potential installation warnings or conflicts.
+
+### Removed
+
+- 🗑️ **Removed explicit package manager version lock:** The `packageManager` field has been removed from the `web`
+  package, allowing for more flexible package manager usage and reducing configuration overhead.
+
+______________________________________________________________________
+
 ## [v0.290.0] - 2026-05-27 - Multi-Tenancy Expansion and Frontend Monorepo Standardization
 
 ### Added
