@@ -9,7 +9,7 @@
   "pnpm": {
     "overrides": {
       "vue": "3.5.17",
-      "vue-router": "4.6.4"
+      "@vueuse/router>vue-router": "4.6.4"
     },
     "peerDependencyRules": {
       "allowedVersions": {
