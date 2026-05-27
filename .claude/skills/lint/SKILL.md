@@ -73,12 +73,12 @@ Each scope's `pyproject.toml` configures ruff. Key settings:
 
 ## Troubleshooting
 
-| Problem                                        | Solution                                                    |
-| ---------------------------------------------- | ----------------------------------------------------------- |
-| `make pr-ready` fails with ModuleNotFoundError | Run `uv sync --all-packages` from workspace root            |
-| mdformat fails on deleted file                 | Stage the deletion with `git rm` first                      |
-| yamlfix changes too much                       | Check if the YAML file follows non-standard formatting      |
-| ESLint errors in packages/web                  | Run `pnpm lint --fix` from `packages/web/swiss_ai_hub_web/` |
+| Problem                                        | Solution                                               |
+| ---------------------------------------------- | ------------------------------------------------------ |
+| `make pr-ready` fails with ModuleNotFoundError | Run `uv sync --all-packages` from workspace root       |
+| mdformat fails on deleted file                 | Stage the deletion with `git rm` first                 |
+| yamlfix changes too much                       | Check if the YAML file follows non-standard formatting |
+| ESLint errors in packages/web                  | Run `pnpm lint --fix` from `packages/web/`             |
 
 ## Done When
 

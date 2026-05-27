@@ -1,0 +1,4 @@
+---
+tenant_admin:
+  name: Tenant-Verwaltung
+  description: Tenants erstellen, bearbeiten und löschen (nur Systemadministratoren)

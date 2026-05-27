@@ -1,0 +1,4 @@
+---
+tenant_admin:
+  name: Amministrazione tenant
+  description: Crea, modifica ed elimina i tenant (solo amministratori di sistema)

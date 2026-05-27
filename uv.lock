@@ -15,6 +15,7 @@ members = [
     "swiss-ai-hub-core",
     "swiss-ai-hub-pipeline",
     "swiss-ai-hub-process",
+    "swiss-ai-hub-sysadmin-api",
     "swiss-ai-hub-workspace",
 ]
 overrides = [{ name = "apache-age-python", marker = "sys_platform == 'never'" }]
@@ -5925,6 +5926,33 @@ dev = [
     { name = "asgi-lifespan", specifier = ">=2.1.0" },
     { name = "swiss-ai-hub-agent", editable = "packages/agent" },
 ]
+
+[[package]]
+name = "swiss-ai-hub-sysadmin-api"
+version = "0.289.3"
+source = { editable = "packages/sysadmin-api" }
+dependencies = [
+    { name = "gunicorn" },
+    { name = "swiss-ai-hub-api" },
+    { name = "swiss-ai-hub-core" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "asgi-lifespan" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "gunicorn", specifier = ">=23.0.0" },
+    { name = "swiss-ai-hub-api", editable = "packages/api" },
+    { name = "swiss-ai-hub-core", editable = "packages/core" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-workspace"

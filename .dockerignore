@@ -1,0 +1,39 @@
+# Git & history
+.git
+.gitignore
+.gitattributes
+
+# Python virtualenv / caches
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Node / pnpm
+**/node_modules
+**/.nuxt
+**/.output
+**/dist
+**/.app/.output
+**/.app/.nuxt
+**/pnpm-debug.log*
+
+# Docker runtime data (host bind mounts)
+.docker-volumes
+
+# Editors / IDE / OS
+.idea
+.vscode
+.DS_Store
+
+# Claude / agent artifacts
+.claude
+
+# Repo-level outputs
+LICENSE_REPORT.md
+CHANGELOG.md
+dist
+tmp.txt
+issues

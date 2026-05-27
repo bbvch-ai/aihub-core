@@ -6,6 +6,7 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.user.user_dashboard_entity import Dashboard, DashboardItem, UserDashboardEntity
 
 from swiss_ai_hub.api.routes.user.dto.dashboard.dashboard_dto import DashboardDTO
+from swiss_ai_hub.api.routes.user.dto.user_dto import UserDTO
 from swiss_ai_hub.api.routes.user.dto.user_with_access_dto import UserWithAccessDTO
 
 if TYPE_CHECKING:
@@ -19,6 +20,26 @@ class MyAccountService:
     async def get_my_account(user: UserIdentity, runner: "Runner", nc: NATS, t: LocaleHandler) -> UserWithAccessDTO:
         """Converts the authenticated user's identity into a full profile DTO."""
         return await UserWithAccessDTO.from_user_identity(user, user.acting_within_tenant, runner, nc, t)
+
+    @staticmethod
+    def get_my_identity(user: UserIdentity) -> UserDTO:
+        """Identity-only counterpart to ``get_my_account``: no access-rules enumeration.
+
+        Skips the agent/process discovery walk that ``get_my_account`` performs, so
+        this path needs no NATS or locale handler. Suitable for mounting on runners
+        that don't wire those dependencies (e.g., sysadmin-api).
+        """
+        dashboard = UserDashboardEntity.get_dashboard(user.id)
+        dashboard_dto = DashboardDTO(**dashboard.to_mongo()) if dashboard else None
+        return UserDTO(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            profile_image=None,
+            dashboard=dashboard_dto,
+            roles=user.roles,
+            is_sys_admin=user.is_sys_admin,
+        )
 
     @staticmethod
     def get_user_dashboard(user: UserIdentity) -> DashboardDTO | None:

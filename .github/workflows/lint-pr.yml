@@ -24,6 +24,7 @@ jobs:
           - packages/pipeline
           - packages/bot
           - packages/process
+          - packages/sysadmin-api
     steps:
       - name: Lint backend
         uses: bbvch-ai/aihub-core/.github/actions/lint_backend@main
@@ -31,16 +32,21 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.folder }}
   lint-frontend:
-    name: Lint Web
+    name: Lint Frontend
     runs-on: ubuntu-24.04-arm
+    if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: [packages/web, packages/sysadmin-web]
     steps:
       - name: Lint frontend
         uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          working_directory: packages/web/swiss_ai_hub_web
-          lockfile: packages/web/swiss_ai_hub_web/pnpm-lock.yaml
+          working_directory: ${{ matrix.folder }}
+          lockfile: pnpm-lock.yaml
   lint-actions:
     name: Lint Actions
     runs-on: ubuntu-24.04-arm
@@ -86,7 +92,7 @@ jobs:
           npm install -g --ignore-scripts corepack@0.34.7
           corepack enable pnpm
           corepack install
-        working-directory: packages/web/swiss_ai_hub_web
+        working-directory: packages/web
       - name: Make license check script executable
         run: chmod +x ./generate-license.sh
       - name: Run license check

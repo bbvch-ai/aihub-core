@@ -1,0 +1,44 @@
+[project]
+name = "swiss-ai-hub-sysadmin-api"
+version = "0.289.3"
+description = "Swiss AI Hub system administration plane (multi-tenant management API)"
+requires-python = ">=3.13, <3.14"
+authors = [
+    { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
+    { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
+    { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
+    { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
+]
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE"]
+readme = "README.md"
+dependencies = [
+    "swiss-ai-hub-core",
+    "swiss-ai-hub-api",
+    "uvicorn[standard]>=0.34.0",
+    "gunicorn>=23.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "asgi-lifespan>=2.1.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+module-name = "swiss_ai_hub.sysadmin_api"
+
+[tool.ruff]
+line-length = 120
+target-version = 'py313'
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "I"]
+
+[tool.black]
+line-length = 120
+target-version = ['py313']
