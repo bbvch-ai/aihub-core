@@ -168,6 +168,9 @@ jobs:
           - folder: packages/sysadmin-web
             sonar_project_key: aihub-core_sysadmin-web
             report_coverage: 'false'
+          - folder: packages/backup
+            sonar_project_key: aihub-core_backup-core
+            report_coverage: 'false'
     steps:
       - name: SonarCloud Scan
         uses: bbvch-ai/aihub-core/.github/actions/sonarcloud_scan@main

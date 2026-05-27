@@ -52,7 +52,3 @@ const onPageChange = (event) => {
   setPage(newPage)
 }
 </script>
-
-<style scoped>
-
-</style>

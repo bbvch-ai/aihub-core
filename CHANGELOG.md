@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.3] - 2026-05-27 - Platform Refinements and Developer Experience Improvements
+
+### Added
+
+- 🦾 **Backup Service SonarCloud Analysis:** Enabled SonarCloud scanning for the `backup` package to improve code quality
+  and maintainability.
+- 📄 **Backup Service SonarCloud Configuration:** Introduced `sonar-project.properties` for the `packages/backup`
+  service, configuring its code analysis.
+
+### Changed
+
+- ⚙️ **SonarCloud Rule Exclusions:** Updated SonarCloud configuration to exclude a rule
+  (`Web:ItemTagNotWithinContainerTagCheck`) for `Notification/Item.vue` to accommodate new semantic HTML structures.
+
+### Refactor
+
+- ✨ **Enhanced Accessibility for Input Components:** Improved form accessibility across various components by adding
+  explicit `input-id` attributes to input fields and `for` attributes to their corresponding labels. This includes:
+  - Agent Selector
+  - Chips Input
+  - Vector Store Input
+  - Knowledge Namespace Create and Edit Modals
+  - Memory Edit components
+  - User Settings Language Selector
+- 🚀 **Optimized Data Retrieval Performance:** Improved the efficiency of identifying active items and filtering events
+  by transitioning from array `filter` and `includes` methods to more performant `find` and `Set.has` operations,
+  notably in:
+  - Tenant details page navigation
+  - Event list filtering
+  - Agent, Knowledge document, and Thread navigation composables
+- 🧹 **Codebase Modernization and Cleanup:**
+  - Modernized asynchronous operations and error handling in core functionalities, including the application's health
+    check and authentication callbacks, by adopting `async/await` syntax.
+  - Replaced `window.location.origin` and `window.localStorage` with `globalThis` for improved cross-environment
+    compatibility in the OIDC client plugin.
+  - Standardized Node.js built-in module imports (`node:url`) in Nuxt configuration.
+  - Streamlined conditional checks with optional chaining syntax for better readability.
+  - Removed redundant or empty CSS selectors and unnecessary empty `<style scoped>` blocks from various web components
+    to reduce bundle size and improve code clarity.
+- semantic **Improved Semantic HTML Structure:** Refined the HTML structure in several components for better
+  accessibility and semantic correctness, including:
+- Converting non-interactive `<label>` elements to `<p>` tags for displaying static information (e.g., tenant ID,
+  knowledge document upload location, memory details).
+- Transforming Notification Item from a `div` to a semantically correct `<li>` element, and its interactive area from a
+  `div` with `role="link"` to a `button`, along with converting the Notification Overlay and main notifications list
+  containers to `<ul>` elements.
+
+______________________________________________________________________
+
 ## [v0.290.2] - 2026-05-27 - Introducing Comprehensive User Role Management
 
 ### Added

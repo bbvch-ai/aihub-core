@@ -2,11 +2,15 @@
   <div class="flex flex-col gap-4">
     <!-- Agent Class Selection -->
     <div>
-      <label class="mb-1 block text-sm font-medium">
+      <label
+        for="agent-class-select"
+        class="mb-1 block text-sm font-medium"
+      >
         {{ t('agent.selector.class.label') }}
       </label>
       <Select
         v-model="selectedClass"
+        input-id="agent-class-select"
         :options="filteredClassOptions"
         option-label="displayName"
         option-value="name"
@@ -41,11 +45,15 @@
 
     <!-- Agent ID Selection (shown when class selected) -->
     <div v-if="selectedClass">
-      <label class="mb-1 block text-sm font-medium">
+      <label
+        for="agent-id-select"
+        class="mb-1 block text-sm font-medium"
+      >
         {{ t('agent.selector.id.label') }}
       </label>
       <Select
         v-model="selectedId"
+        input-id="agent-id-select"
         :options="idOptions"
         option-label="displayName"
         option-value="id"

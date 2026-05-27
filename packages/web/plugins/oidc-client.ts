@@ -10,16 +10,16 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   const auth = new UserManager({
     authority: config.public.oidc.authorityUrl,
     client_id: config.public.oidc.clientId,
-    redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/callback`,
-    silent_redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/renew`,
-    post_logout_redirect_uri: window.location.origin,
+    redirect_uri: `${globalThis.location.origin}/${$i18n.locale.value}/auth/callback`,
+    silent_redirect_uri: `${globalThis.location.origin}/${$i18n.locale.value}/auth/renew`,
+    post_logout_redirect_uri: globalThis.location.origin,
     response_type: 'code',
     scope: 'openid profile email',
     filterProtocolClaims: true,
     automaticSilentRenew: true,
     silentRequestTimeoutInSeconds: 30,
     accessTokenExpiringNotificationTimeInSeconds: 120,
-    userStore: new WebStorageStateStore({ store: window?.localStorage }),
+    userStore: new WebStorageStateStore({ store: globalThis?.localStorage }),
     // Keycloak supports PKCE
     disablePKCE: false,
     // Disabled: OpenWebUI logout destroys the Keycloak SSO session, but we
@@ -56,7 +56,7 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     if (user && !user.expired) {
       console.log('User already logged in')
     }
-    else if (user && user.expired) {
+    else if (user?.expired) {
       console.log('User session expired, attempting renewal')
       try {
         await auth.signinSilent()

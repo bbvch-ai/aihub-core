@@ -49,14 +49,14 @@
         </template>
 
         <template #list="{ items }">
-          <div class="flex flex-col">
+          <ul class="m-0 flex list-none flex-col p-0">
             <NotificationItem
               v-for="item in items"
               :key="item.id"
               :notification="item"
               @click="handleNotificationClick"
             />
-          </div>
+          </ul>
         </template>
 
         <template #empty>

@@ -258,14 +258,8 @@ async function handleFormSubmit() {
   @apply pt-3 pb-1;
 }
 
-.content :deep(.formkit-group-fieldset) {
-}
-
 .content :deep(.formkit-group-fieldset legend) {
   @apply hidden;
-}
-
-.content :deep(.formkit-group-fieldset .formkit-group-fieldset) {
 }
 
 .content :deep(.formkit-slider-value-input) {

@@ -2,6 +2,7 @@
   <div class="flex flex-col gap-2">
     <InputText
       v-model="draft"
+      :input-id="inputId"
       :placeholder="placeholder"
       class="w-full"
       @keydown.enter.stop.prevent="commitDraft"
@@ -30,12 +31,14 @@ interface ChipsInputProps {
     node: { input: (value: string[]) => void }
     value?: string[] | null
     placeholder?: string
+    inputId?: string
   }
 }
 
 const props = defineProps<ChipsInputProps>()
 
 const placeholder = computed(() => props.context.placeholder)
+const inputId = computed(() => props.context.inputId)
 const draft = ref('')
 
 const chips = computed<string[]>({
