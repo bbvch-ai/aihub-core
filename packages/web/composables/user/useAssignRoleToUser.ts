@@ -10,7 +10,7 @@ export const useAssignRoleToUser = defineMutation(() => {
         path: { tenant_id: tenantId, user_id: userId },
         body: { role_name: roleName },
       })
-      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'users'] })
+      queryCache.invalidateQueries()
       return result
     },
   })

@@ -10,8 +10,7 @@ export const useCreateRole = defineMutation(() => {
         path: { tenant_id: tenantId },
         body: createdRole,
       })
-      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'roles'] })
-      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'suite'] })
+      queryCache.invalidateQueries()
     },
   })
   return {

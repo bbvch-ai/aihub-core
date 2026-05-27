@@ -12,7 +12,7 @@ export const useDeleteRole = defineMutation(() => {
           role_id: roleId,
         },
       })
-      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'roles'] })
+      queryCache.invalidateQueries()
     },
   })
   return {
