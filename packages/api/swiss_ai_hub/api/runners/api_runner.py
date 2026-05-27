@@ -12,7 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
 from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.routes import Controller
-from swiss_ai_hub.core.runners import Runner
+from swiss_ai_hub.core.runners import OpenApiSchemaService, Runner
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
@@ -115,34 +115,6 @@ class ApiRunner(Runner):
 
         return app
 
-    @staticmethod
-    def _inject_tenant_id_into_openapi(openapi_schema: dict) -> dict:
-        """Inject ``tenant_id`` as a path parameter into all tenant-scoped paths.
-
-        FastAPI doesn't auto-generate a parameter entry for variables that only
-        appear in the router prefix (not in endpoint function signatures).
-        This hook adds it so the generated SDK includes ``tenant_id`` in the types.
-        """
-        tenant_param = {
-            "name": "tenant_id",
-            "in": "path",
-            "required": True,
-            "description": "Tenant identifier: a name, ObjectId, or 'active'",
-            "schema": {"type": "string", "title": "Tenant Id"},
-        }
-
-        for path_key, path_val in openapi_schema.get("paths", {}).items():
-            if "{tenant_id}" not in path_key:
-                continue
-            for method_val in path_val.values():
-                if not isinstance(method_val, dict):
-                    continue
-                params = method_val.setdefault("parameters", [])
-                if not any(p.get("name") == "tenant_id" for p in params):
-                    params.insert(0, tenant_param)
-
-        return openapi_schema
-
     def _get_api_app(self) -> FastAPI:
         """
         Creates the API FastAPI application that will be mounted under `api_path`.
@@ -157,7 +129,7 @@ class ApiRunner(Runner):
             if app.openapi_schema:
                 return app.openapi_schema
             schema = original_openapi()
-            app.openapi_schema = self._inject_tenant_id_into_openapi(schema)
+            app.openapi_schema = OpenApiSchemaService.inject_tenant_id_into_openapi(schema)
             return app.openapi_schema
 
         app.openapi = custom_openapi  # type: ignore[method-assign]

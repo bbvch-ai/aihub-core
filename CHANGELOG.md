@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.2] - 2026-05-27 - Introducing Comprehensive User Role Management
+
+### Added
+
+- ✨ **New User Role Management API Endpoints:** Introduced `assign_role` and `revoke_role` API endpoints within the
+  `UserController`, enabling robust management of tenant-scoped user roles.
+- 🦾 **Service Layer for Role Actions:** Implemented core service and persistence logic for assigning and revoking user
+  roles, including validation for tenant membership and role existence.
+- 🧪 **Dedicated API Test Suite:** Added a comprehensive test suite to ensure the reliability and correctness of the new
+  user role assignment and revocation APIs.
+- 🖼️ **Interactive User Role Chips Component:** Introduced a new `UserRoleChips` Vue component for the frontend,
+  providing an intuitive interface to display, assign, and revoke user roles directly within user lists.
+- 🚀 **Frontend Composables for Role Management:** Developed new composables (`useAssignRoleToUser`,
+  `useRevokeRoleFromUser`) to streamline role management actions within the web application.
+- 🌐 **Internationalization Support for Role Management:** Added new localization strings across supported languages to
+  provide a consistent user experience for the new role management features.
+- ⚙️ **Centralized OpenAPI Schema Service:** Introduced `OpenApiSchemaService` in `packages/core` to centralize and
+  standardize the injection of `tenant_id` path parameters into OpenAPI schemas, improving SDK generation.
+
+### Changed
+
+- 🔄 **Integrated Role Management in User Controllers:** The `UserController` in both the main API and the Sysadmin API
+  now includes the new `assign_role` and `revoke_role` endpoints.
+- 🤝 **Shared OpenAPI Schema Generation:** Both `ApiRunner` and `SysadminApiRunner` now leverage the new
+  `OpenApiSchemaService` to ensure correct and consistent OpenAPI schema generation, especially for tenant-scoped paths.
+- 📊 **Enhanced User List Component:** Updated the `UserList` component to seamlessly integrate the new `UserRoleChips`
+  for interactive role display and management.
+- 📦 **Updated API Client SDK:** The `sysadmin-web` and `web` API client SDKs have been regenerated to include the new
+  role management methods and to accurately reflect `tenant_id` as a required path parameter for all tenant-scoped
+  endpoints.
+- ⚡️ **Broader Cache Invalidation for Roles:** Modified role-related mutations (create, update, delete) to trigger a
+  broader cache invalidation, ensuring up-to-date data after changes.
+- 📄 **Documentation Updates:** Revised `CLAUDE.md` and `README.md` in `packages/sysadmin-api` to reflect the adoption of
+  `OpenApiSchemaService` and the extended functionality of the re-mounted `UserController`.
+
+### Refactor
+
+- 🧹 **Centralized OpenAPI Schema Logic:** The logic for injecting `tenant_id` into OpenAPI schemas has been refactored
+  from `ApiRunner` into the new `OpenApiSchemaService` for better modularity and reusability across runners.
+
+### Security
+
+- 🔑 **License Change for Web Package:** The license for `packages/web` has been updated from Apache 2.0 to
+  **AGPL-3.0-or-later**.
+
+______________________________________________________________________
+
 ## [v0.290.1] - 2026-05-27 - Enhanced Dependency Stability and Configuration Flexibility
 
 ### Added

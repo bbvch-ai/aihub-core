@@ -48,7 +48,7 @@ runner.mount(
     SuiteController(auth=auth).get_suite(),
     MyTenantController(auth=auth).get_my_tenants().get_my_active_tenant().set_my_active_tenant(),
     MyAccountController(auth=auth).get_my_account().get_my_identity().get_my_dashboard().update_my_dashboard(),
-    UserController(auth=auth).get_user().get_users(),
+    UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
     I18nController(auth=auth).get_my_locale(),
     EventController(auth=auth).ws().get_agent_events_in_thread().get_agent_event_timeseries(),
     ModelController(auth=auth).get_litellm_models().get_litellm_models_by_mode().get_litellm_model(),

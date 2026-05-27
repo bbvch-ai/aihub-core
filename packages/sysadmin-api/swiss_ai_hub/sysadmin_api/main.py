@@ -44,7 +44,7 @@ runner.mount(
     # narrow subset of the platform surface. The middleware-relevant ``is_sys_admin``
     # field lives on the identity DTO already.
     MyAccountController(auth=auth).get_my_identity(),
-    UserController(auth=auth).get_user().get_users(),
+    UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     AuthProviderController(auth=auth).get_auth_providers(),
 )

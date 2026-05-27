@@ -90,6 +90,14 @@ user:
   title: Benutzer
   logout: Abmelden
   language: Sprache
+  role_chips:
+    no_roles: Keine Rollen zugewiesen
+    assign: Rolle zuweisen
+    revoke: Entziehen
+    revoke_confirm_header: Rolle entziehen
+    revoke_confirm_message: Soll die Rolle "{role}" diesem Benutzer entzogen werden?
+    assigned_toast: Rolle "{role}" an {user} zugewiesen
+    revoked_toast: Rolle "{role}" von {user} entzogen
   list:
     name: Name
     email: E-Mail
