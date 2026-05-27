@@ -6,7 +6,8 @@ on:
   pull_request:
     types: [opened, synchronize]
 concurrency:
-  group: cla-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+  group: cla-${{ github.repository }}-${{ github.event.pull_request.number || github.ref
+    }}
   cancel-in-progress: false
 permissions:
   actions: write
@@ -18,7 +19,8 @@ jobs:
     name: CLA Signature Check
     runs-on: ubuntu-24.04-arm
     if: >-
-      contains(github.event.comment.body, 'I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA') ||
+      contains(github.event.comment.body, 'I have read the CONTRIBUTOR_AGREEMENT and
+      I hereby sign the CLA') ||
       github.event.comment.body == 'recheck' ||
       github.event_name == 'pull_request'
     timeout-minutes: 5
@@ -32,10 +34,11 @@ jobs:
           path-to-signatures: signatures/v1/cla.json
           path-to-document: https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTOR_AGREEMENT.md
           branch: main
-          allowlist: dependabot[bot],github-actions[bot],claude[bot]
+          allowlist: dependabot[bot],github-actions[bot],claude[bot],orgs/bbvch-ai
           remote-organization-name: bbvch-ai
           remote-repository-name: cla-signatures
-          custom-pr-sign-comment: "I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA"
+          custom-pr-sign-comment: I have read the CONTRIBUTOR_AGREEMENT and I hereby
+            sign the CLA
           custom-notsigned-prcomment: |
             Thank you for your contribution! Before we can merge, please read our
             [Contributor License Agreement](https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTOR_AGREEMENT.md)
