@@ -77,7 +77,7 @@
     {
       "clientId": "aihub-frontend",
       "name": "AI-Hub Admin UI",
-      "description": "Frontend application for AI-Hub administration",
+      "description": "Frontend application for AI-Hub administration (covers both ${DOMAIN} for @swiss-ai-hub/web and sysadmin.${DOMAIN} for @swiss-ai-hub/sysadmin-web — same realm, shared SSO session via Keycloak's realm cookie).",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
@@ -88,13 +88,14 @@
       "rootUrl": "http://localhost:3333",
       "baseUrl": "/",
       "redirectUris": [
-        "http://localhost:3333/*"
+        "http://localhost:3333/*",
+        "http://localhost:3334/*"
       ],
       "webOrigins": ["+"],
       "protocol": "openid-connect",
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:3333/*"
+        "post.logout.redirect.uris": "http://localhost:3333/*##http://localhost:3334/*"
       },
       "defaultClientScopes": [
         "openid",

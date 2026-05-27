@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Web" type="js.build_tools.npm" folderName="Run Frontend">
-    <package-json value="$PROJECT_DIR$/packages/web/swiss_ai_hub_web/package.json" />
+    <package-json value="$PROJECT_DIR$/packages/web/package.json" />
     <command value="run" />
     <scripts>
       <script value="dev" />

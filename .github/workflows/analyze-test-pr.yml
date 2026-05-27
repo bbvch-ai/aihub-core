@@ -54,6 +54,9 @@ jobs:
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone
+          - module: packages/sysadmin-api
+            runner: ubuntu-latest
+            docker_compose_services: postgres-ferretdb ferretdb
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -119,6 +122,7 @@ jobs:
           - packages/pipeline
           - packages/bot
           - packages/process
+          - packages/sysadmin-api
     steps:
       - name: Coverage comment
         uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main
@@ -157,6 +161,12 @@ jobs:
             report_coverage: 'true'
           - folder: packages/web
             sonar_project_key: aihub-core_aihub-web
+            report_coverage: 'false'
+          - folder: packages/sysadmin-api
+            sonar_project_key: aihub-core_sysadmin-api
+            report_coverage: 'true'
+          - folder: packages/sysadmin-web
+            sonar_project_key: aihub-core_sysadmin-web
             report_coverage: 'false'
     steps:
       - name: SonarCloud Scan

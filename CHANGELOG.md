@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.0] - 2026-05-27 - Multi-Tenancy Expansion and Frontend Monorepo Standardization
+
+### Added
+
+- 🛡️ **Introduced proprietary Sysadmin Plane:** New `packages/sysadmin-api` (backend) and `packages/sysadmin-web`
+  (frontend) services have been added for multi-tenant administration, now shipped under a commercial license.
+- 📄 **New `LICENSES.md` for explicit mixed-license model:** A dedicated document now clearly outlines the licensing for
+  each package (Apache-2.0, AGPL-3.0-or-later, and Proprietary terms), significantly enhancing legal clarity.
+- 🐳 **Dedicated Docker ignore file (`.dockerignore`):** A new `.dockerignore` file has been added at the repository root
+  to improve Docker image build efficiency and reduce image size by excluding unnecessary development and build
+  artifacts.
+- 🚀 **New GitHub Actions workflow for Sysadmin Builds:** A dedicated workflow (`build-sysadmin.yml`) automates the build
+  and release process for the new `sysadmin-api` and `sysadmin-web` Docker images, ensuring consistent deployment.
+- 🔑 **Enhanced API `get_my_identity` endpoint:** A lightweight user identity endpoint has been introduced in the API
+  (`/{tenant_id}/my-account/identity`) that omits the full access matrix, making it suitable for quick sysadmin role
+  checks across different API runners.
+- ⚙️ **Centralized Frontend Runtime Configuration:** A new Nuxt plugin (`0.runtime-config.client.ts`) implements
+  synchronous loading of runtime configurations (OIDC, WebSocket, sysadmin URL) from a global `window.__AIHUB_CONFIG__`
+  object, improving reliability and performance.
+- 🤝 **Centralized Frontend API Client Configuration:** A new Nuxt plugin (`api-client.client.ts`) configures the SDK
+  client globally, ensuring consistent token injection and error handling across the main and extended frontend
+  applications.
+- 📝 **Architectural Decision Records (ADRs) for Sysadmin Plane:** New ADRs document the rationale and consequences of
+  splitting the sysadmin plane into separately licensed proprietary packages, ensuring transparency and future
+  maintainability of architectural decisions.
+- 💻 **IDE Run Configurations for Sysadmin Services:** Added new IntelliJ/VS Code run configurations to streamline local
+  development, testing, and deployment of the `sysadmin-api` and `sysadmin-web` services.
+- 🏷️ **Automated License Annotation in Docker Compose:** Generated Docker Compose files now include inline license
+  comments for each service, improving license transparency directly within the deployment configuration.
+
+### Changed
+
+- 📦 **Frontend Monorepo Restructuring:** The main frontend application's root directory has been refactored from
+  `packages/web/swiss_ai_hub_web` to `packages/web`, simplifying paths and improving monorepo consistency.
+- 🛠️ **Updated Frontend Tooling Configuration:** Paths and configurations across build scripts, ESLint, Dependabot, and
+  SDK generation have been adjusted to align with the new `packages/web` structure and pnpm workspace setup.
+- 🔒 **Keycloak Integration for Sysadmin Plane:** Keycloak realm configurations have been updated to support Single
+  Sign-On (SSO) for the new `sysadmin.${DOMAIN}` subdomain, enabling seamless authentication between the main and
+  sysadmin UIs.
+- 🧹 **Centralized `.gitignore` for Node.js modules:** The exclusion of `node_modules` has been moved to the repository
+  root `.gitignore` for better consistency and maintainability across the monorepo.
+- 📖 **Updated Documentation for Mixed Licensing:** All relevant documentation (README, arc42, user guides) has been
+  revised to reflect the new mixed-license model and refer to the `LICENSES.md` for detailed terms.
+- 📦 **Frontend `package.json` Updates:** The `package.json` for the `web` package has been modified to reflect its new
+  name (`@swiss-ai-hub/web`), new AGPL-3.0-or-later license, and alignment with the pnpm workspace.
+- ⚙️ **Frontend Docker Image Configuration:** The Dockerfile and Nginx configuration for the `web` service have been
+  updated, including health checks, changing the default port to 8080, and implementing the new runtime config loading
+  mechanism (`config.json` to `config.js`).
+
+### Removed
+
+- 🗑️ **Deprecated `TenantAdminController` from Main API:** The tenant administration API endpoints have been entirely
+  migrated from the main `packages/api` to the new proprietary `packages/sysadmin-api` service.
+- 🔄 **Obsolete `config-loader.client.ts` plugin:** This plugin, responsible for fetching runtime configuration, has been
+  replaced by the new, more efficient `0.runtime-config.client.ts` plugin.
+- 🧹 **Removed redundant Frontend `pnpm-workspace.yaml`:** The pnpm workspace configuration for the frontend is now
+  consolidated at the monorepo root.
+- 🚫 **Removed dedicated `sysadmin` middleware from `packages/web`:** Its functionality has been moved to the new
+  `packages/sysadmin-web` service to ensure proper confinement and role-gating within the proprietary plane.
+- 🗑️ **Deleted frontend `config.template.json`:** This configuration template was replaced by `config.template.js` as
+  part of the new runtime configuration loading mechanism.
+
+______________________________________________________________________
+
 ## [v0.289.23] - 2026-05-27 - API Refinements and Stability Improvements
 
 ### Refactor

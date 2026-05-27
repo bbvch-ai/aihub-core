@@ -1,12 +1,35 @@
-/tmp
-/out-tsc
-
-/node_modules
+# Node / pnpm
+node_modules
+package-lock.json
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-/.pnp
+.pnp
 .pnp.js
+.yarn/cache
+.yarn/*state*
 
+# Nuxt build artifacts
+.nuxt
+nuxt.d.ts
+.output
+.data
+.app/.output
+.app/dist
+
+# Build outputs
+/tmp
+/out-tsc
+dist
+framework
+*.tgz
+
+# Env files (root .env is the source of truth)
+.env
+
+# Editors / OS
 .vscode/*
 .idea
+.history
+.DS_Store

@@ -5,6 +5,22 @@
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
+#
+# =============================================================================
+# Licensing
+# =============================================================================
+# This Compose FILE is part of the open-source Swiss AI Hub repository and is
+# distributed under the Apache License 2.0 (see the root LICENSE).
+#
+# The SERVICES it orchestrates carry their OWN licenses — Apache-2.0, AGPL-3.0,
+# proprietary, and various permissive third-party terms. Each service block
+# below is annotated with `# License: <SPDX>` for at-a-glance reference.
+#
+# Authoritative sources for license details:
+#   - LICENSES.md            — per-package license matrix
+#   - LICENSE_REPORT.md      — per-dependency report (generated)
+#   - packages/<pkg>/LICENSE — authoritative for each in-repo package
+# =============================================================================
 # ===================================================================
 # TRAEFIK PRIORITY RULES
 # ===================================================================
@@ -65,6 +81,8 @@ services:
   # ===================================================================
   # This stack provides S3-compatible storage for the entire platform.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
@@ -99,7 +117,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [storage]
+    networks:
+      - storage
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
@@ -128,7 +149,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [storage]
+    networks:
+      - storage
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
@@ -179,6 +203,8 @@ services:
     networks:
       - storage
       - data  # For etcd access
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
@@ -233,6 +259,8 @@ services:
       - storage
       - backend  # Internal access from application services
       - proxy  # External S3 API access via Traefik
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-init:
     container_name: seaweedfs-init
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
@@ -255,7 +283,11 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [storage, backend]
+    networks:
+      - storage
+      - backend
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
@@ -308,6 +340,8 @@ services:
   # ===================================================================
   # This stack provides vector storage and search for RAG capabilities.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   etcd:
     container_name: etcd
     image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
@@ -345,6 +379,8 @@ services:
     networks:
       - data  # Milvus metadata storage
       - storage  # SeaweedFS filer metadata
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   etcd-init:
     container_name: etcd-init
     build:
@@ -366,6 +402,8 @@ services:
     networks:
       - data
       - storage  # Used by SeaweedFS filer for metadata
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   milvus-standalone:
     container_name: milvus
     image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
@@ -404,6 +442,8 @@ services:
     networks:
       - data
       - storage  # For S3 access to SeaweedFS
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   attu:
     container_name: attu
     image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
@@ -422,7 +462,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data]
+    networks:
+      - data
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
@@ -473,6 +516,8 @@ services:
   # ===================================================================
   # PostgreSQL instance for application relational data.
   # ===================================================================
+
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   postgres:
     container_name: postgres
     image: ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17
@@ -499,6 +544,7 @@ services:
   # ===================================================================
   # PgBouncer (Connection Pooler for Dagster)
   # ===================================================================
+  # License: ISC — third-party (see LICENSE_REPORT.md)
   pgbouncer:
     container_name: pgbouncer
     image: ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1
@@ -550,6 +596,8 @@ services:
   # ===================================================================
   # FerretDB provides MongoDB-compatible API backed by PostgreSQL.
   # ===================================================================
+
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   postgres-ferretdb:
     container_name: postgres-ferretdb
     image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
@@ -570,7 +618,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data]
+    networks:
+      - data
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   ferretdb:
     container_name: ferretdb
     image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
@@ -602,6 +653,8 @@ services:
   # Neo4j provides graph database capabilities for relationship-based
   # data modeling and querying.
   # ===================================================================
+
+  # License: GPL-3.0 — third-party (see LICENSE_REPORT.md)
   neo4j:
     container_name: neo4j
     image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
@@ -639,6 +692,8 @@ services:
   # Langfuse provides tracing, evaluation, and observability for LLM apps.
   # Open-source alternative with MIT license for self-hosted deployments.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   clickhouse:
     container_name: clickhouse
     image: ghcr.io/bbvch-ai/aihub-core/clickhouse/clickhouse-server:25.8
@@ -672,7 +727,11 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data, storage]
+    networks:
+      - data
+      - storage
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-worker:
     container_name: langfuse-worker
     image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3
@@ -726,6 +785,8 @@ services:
       - backend
       - data  # For PostgreSQL access
       - storage  # For SeaweedFS S3 access
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-web:
     container_name: langfuse-web
     image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3
@@ -829,6 +890,8 @@ services:
   # In dev: Local users for development and E2E testing.
   # In prod: Identity broker for Azure AD and other providers.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak:
     container_name: keycloak
     image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4
@@ -921,6 +984,8 @@ services:
   # Nats provides the messaging bus for asynchronous communication
   # between agents, and Valkey provides in-memory caching.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   nats:
     container_name: nats
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
@@ -947,6 +1012,8 @@ services:
         max-file: 2
     networks:
       - data  # Message broker is part of data infrastructure
+
+  # License: BSD-3-Clause — third-party (see LICENSE_REPORT.md)
   valkey:
     container_name: valkey
     image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
@@ -977,6 +1044,8 @@ services:
   # Provides RC API for syncing files from 70+ cloud providers
   # (OneDrive, SharePoint, S3, Google Drive, Dropbox, etc.)
   # ===================================================================
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   rclone:
     container_name: rclone
     image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
@@ -1014,6 +1083,8 @@ services:
   # Independent 3-container Dagster deployment: gRPC code server, daemon,
   # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
   # ===================================================================
+
+  # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   backup-code:
     container_name: backup-code
     build:
@@ -1105,7 +1176,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data, storage]
+    networks:
+      - data
+      - storage
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
@@ -1145,7 +1219,11 @@ services:
       - traefik.http.routers.backup.middlewares=security-headers@file
       - traefik.http.services.backup.loadbalancer.server.port=4180
       - traefik.http.routers.backup.tls=true
-    networks: [proxy, backend]
+    networks:
+      - proxy
+      - backend
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-webserver:
     container_name: backup-webserver
     build:
@@ -1182,7 +1260,11 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [proxy, data]
+    networks:
+      - proxy
+      - data
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-daemon:
     container_name: backup-daemon
     build:
@@ -1220,6 +1302,8 @@ services:
   # This stack provides a unified interface to various LLMs,
   # handles PII filtering, and manages API keys.
   # ===================================================================
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   presidio-analyzer:
     container_name: presidio-analyzer
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
@@ -1234,7 +1318,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [backend]
+    networks:
+      - backend
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   presidio-anonymizer:
     container_name: presidio-anonymizer
     image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
@@ -1249,7 +1336,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [backend]
+    networks:
+      - backend
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   litellm:
     container_name: litellm
     image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.83.10-stable
@@ -1323,6 +1413,8 @@ services:
   # These services provide code execution runtimes (Jupyter) and
   # browser automation (Playwright) for various platform features.
   # ===================================================================
+
+  # License: BSD-3-Clause — third-party (see LICENSE_REPORT.md)
   jupyter:
     container_name: jupyter-lab
     image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
@@ -1344,7 +1436,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [backend]
+    networks:
+      - backend
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
     container_name: playwright-server
     image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy
@@ -1366,6 +1461,8 @@ services:
     networks:
       - backend  # Internal service communication
       - egress  # Outbound internet access for web browsing
+
+  # License: AGPL-3.0 — third-party (see LICENSE_REPORT.md)
   searxng:
     container_name: searxng
     image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.4.29-cba0cffa8
@@ -1402,6 +1499,8 @@ services:
   # uploaded documents for the RAG pipeline. VLM requests are routed
   # through LiteLLM for unified model routing.
   # ===================================================================
+
+  # License: Apache-2.0 — own image (see LICENSES.md)
   mineru-api:
     container_name: mineru-api
     image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
@@ -1446,6 +1545,8 @@ services:
   # The OTEL Collector gathers traces, logs, and metrics for debugging
   # and monitoring. It is only enabled in the 'dev' stage.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
     image: otel/opentelemetry-collector-contrib:latest
@@ -1481,6 +1582,8 @@ services:
   # configuration is the most complex, with many stage-specific
   # environment variables for connecting to other services.
   # ===================================================================
+
+  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.9.5
@@ -1757,7 +1860,13 @@ services:
       - traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}
       - traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443
       - traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}
-    networks: [proxy, backend, data, storage]
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
+
+  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   openwebui-init:
     container_name: openwebui-init
     image: ghcr.io/bbvch-ai/aihub-core/postgres:17
@@ -1790,6 +1899,7 @@ services:
   # This stack runs the data pipelines, managed by the Dagster UI
   # and backend daemon. It's only present in non-dev stages.
   # ===================================================================
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-dagster:
     container_name: oauth2proxy-dagster
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
@@ -1829,7 +1939,11 @@ services:
       - traefik.http.routers.dagster.middlewares=security-headers@file
       - traefik.http.services.dagster.loadbalancer.server.port=4180
       - traefik.http.routers.dagster.tls=true
-    networks: [proxy, backend]
+    networks:
+      - proxy
+      - backend
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   dagster-webserver:
     container_name: dagster-webserver
     restart: always
@@ -1868,7 +1982,11 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [backend, data]
+    networks:
+      - backend
+      - data
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   dagster-daemon:
     container_name: dagster-daemon
     restart: always
@@ -1911,6 +2029,7 @@ services:
   # compromised, as the proxy only exposes the minimal Docker API
   # endpoints required for service discovery.
   # ===================================================================
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   docker-socket-proxy:
     container_name: docker-socket-proxy
     image: tecnativa/docker-socket-proxy:0.3
@@ -1957,6 +2076,7 @@ services:
   # Traefik manages incoming traffic, TLS, and routing to services.
   # It is only enabled in non-dev stages.
   # ===================================================================
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   traefik:
     container_name: traefik
     image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2
@@ -2000,6 +2120,7 @@ services:
   # This is the main backend API for the AI Hub. It is not present
   # in the 'dev' stage.
   # ===================================================================
+  # License: Apache-2.0 — own image (see LICENSES.md)
   api:
     container_name: api
     restart: always
@@ -2059,7 +2180,7 @@ services:
 
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_FRONTEND_ORIGIN: https://${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: true
       AIHUB_CREATE_DEFAULT_BUCKETS: true
       AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
@@ -2182,19 +2303,21 @@ services:
   # This is the main SvelteKit frontend for the AI Hub. It is not
   # present in the 'dev' stage.
   # ===================================================================
+  # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   web:
     container_name: web
     restart: always
     build:
-      context: ../packages/web/swiss_ai_hub_web
-      dockerfile: ./Dockerfile
+      context: ..
+      dockerfile: ./packages/web/Dockerfile
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
+      SYSADMIN_URL: https://sysadmin.${DOMAIN}
     healthcheck:
-      test: [CMD, curl, -f, http://127.0.0.1/]
+      test: [CMD, wget, --spider, -q, http://127.0.0.1:8080/]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2220,7 +2343,7 @@ services:
       - traefik.http.routers.web-auth.entrypoints=websecure
       - traefik.http.routers.web-auth.middlewares=web-standard-middleware
       - traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`)
-        || Path(`/config.json`))
+        || Path(`/config.js`))
       - traefik.http.routers.web-index.priority=400
       - traefik.http.routers.web-index.entrypoints=websecure
       - traefik.http.routers.web-index.middlewares=web-standard-middleware
@@ -2234,8 +2357,186 @@ services:
       - traefik.http.routers.web-index.tls=true
       - traefik.http.routers.web-default.tls=true
       # --- Service & Middleware ---
-      - traefik.http.services.web.loadbalancer.server.port=80
+      - traefik.http.services.web.loadbalancer.server.port=8080
       - traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file
+  # ===================================================================
+  # Sysadmin API (Proprietary)
+  # ===================================================================
+  # FastAPI service for system-administrator-only operations (multi-tenant
+  # management). Routed at sysadmin.${DOMAIN}/api/v1/*. Independent of the
+  # main `api` service — uses its own lightweight lifespan that only wires
+  # MongoDB and Keycloak (no NATS / Milvus / Redis / S3 / WebSocket).
+  # ===================================================================
+  # License: LicenseRef-Proprietary — own image (see LICENSES.md)
+  sysadmin-api:
+    container_name: sysadmin-api
+    restart: always
+    build:
+      context: ..
+      dockerfile: ./packages/sysadmin-api/Dockerfile
+    depends_on:
+      traefik:
+        condition: service_started
+      ferretdb:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    environment:
+      # Log Level
+      LOG_LEVEL: ${LOG_LEVEL}
+      ENV: ${ENV}
+      NUM_WORKERS: 1
+
+      # General Auth settings
+      AUTH_ENABLE_API_ACCESS: true
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+
+      # Keycloak OIDC config
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
+      KEYCLOAK_REALM: aihub
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_SHOW_KEYCLOAK_LOGIN: ${KEYCLOAK_SHOW_KEYCLOAK_LOGIN}
+
+      # Oauth2 config
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
+
+      # Azure Oauth2 config
+      AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
+      AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+
+      # Superuser — assign_superuser_to_tenant() is called when a sysadmin
+      # configures a previously-unconfigured tenant, which requires resolving
+      # the superuser's Keycloak id via SUPERUSER_EMAIL.
+      SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_ROLES_JSON: ${SUPERUSER_ROLES_JSON}
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: https://sysadmin.${DOMAIN}
+      AIHUB_CREATE_DEFAULT_ROLES: true
+
+      # Mongo DB — durable storage for tenant metadata, roles, dashboards
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATS + Redis — required by the medium lifespan in
+      # sysadmin_runner.py (ADR 2026_05_26_sysadmin_api_full_self_contained_lifespan).
+      # FastAPI eagerly resolves `use_nats` / `use_redis` for mounted endpoints
+      # from packages/api (UserController.get_user etc.) even when their hot
+      # path does not exercise the clients, so the settings classes must be
+      # constructible at startup. Hostnames mirror the main API's layout.
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # OpenWebUI — needed by sysadmin-api's AccessChangeHook to keep the SCIM
+      # mirror in sync when role / tenant mutations come through this API.
+      OPENWEBUI_BASE_URL: http://open-webui:8080
+      OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
+      OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: sysadmin-api
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/api/v1/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.sysadmin-api.rule=Host(`sysadmin.${DOMAIN}`) && PathPrefix(`/api/v1`)
+      - traefik.http.routers.sysadmin-api.priority=6000
+      - traefik.http.routers.sysadmin-api.entrypoints=websecure
+      - traefik.http.routers.sysadmin-api.middlewares=security-headers@file
+      - traefik.http.services.sysadmin-api.loadbalancer.server.port=8000
+      - traefik.http.routers.sysadmin-api.tls=true
+    networks:
+      - proxy
+      - backend
+      - data
+  # ===================================================================
+  # Sysadmin Web UI (Proprietary)
+  # ===================================================================
+  # Nuxt 3 SPA dedicated to system administration. Routed at
+  # sysadmin.${DOMAIN}/* (path /api/v1 goes to sysadmin-api by priority).
+  # ===================================================================
+  # License: LicenseRef-Proprietary — own image (see LICENSES.md)
+  sysadmin-web:
+    container_name: sysadmin-web
+    restart: always
+    build:
+      context: ..
+      dockerfile: ./packages/sysadmin-web/Dockerfile
+    environment:
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
+      # The main app's UI origin for the cross-origin browser redirect when a
+      # non-sysadmin lands on sysadmin-web (`useMainAppNavigation.exitToMainApp`).
+      MAIN_APP_URL: https://${DOMAIN}
+    healthcheck:
+      test: [CMD, wget, --spider, -q, http://127.0.0.1:8080/]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks: [proxy]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      # --- Routers — mirror web's pattern, scoped to sysadmin subdomain ---
+      - traefik.http.routers.sysadmin-web-static.rule=Host(`sysadmin.${DOMAIN}`) &&
+        PathPrefix(`/_nuxt`)
+      - traefik.http.routers.sysadmin-web-static.priority=2000
+      - traefik.http.routers.sysadmin-web-static.entrypoints=websecure
+      - traefik.http.routers.sysadmin-web-static.middlewares=sysadmin-web-standard-middleware
+      - traefik.http.routers.sysadmin-web-auth.rule=Host(`sysadmin.${DOMAIN}`) &&
+        (PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`)
+        || PathPrefix(`/it/auth`))
+      - traefik.http.routers.sysadmin-web-auth.priority=750
+      - traefik.http.routers.sysadmin-web-auth.entrypoints=websecure
+      - traefik.http.routers.sysadmin-web-auth.middlewares=sysadmin-web-standard-middleware
+      - traefik.http.routers.sysadmin-web-index.rule=Host(`sysadmin.${DOMAIN}`) &&
+        (Path(`/`) || Path(`/index.html`) || Path(`/config.js`))
+      - traefik.http.routers.sysadmin-web-index.priority=400
+      - traefik.http.routers.sysadmin-web-index.entrypoints=websecure
+      - traefik.http.routers.sysadmin-web-index.middlewares=sysadmin-web-standard-middleware
+      - traefik.http.routers.sysadmin-web-default.rule=Host(`sysadmin.${DOMAIN}`)
+      - traefik.http.routers.sysadmin-web-default.priority=100
+      - traefik.http.routers.sysadmin-web-default.entrypoints=websecure
+      - traefik.http.routers.sysadmin-web-default.middlewares=sysadmin-web-standard-middleware
+      # --- TLS Resolver Logic ---
+      - traefik.http.routers.sysadmin-web-static.tls=true
+      - traefik.http.routers.sysadmin-web-auth.tls=true
+      - traefik.http.routers.sysadmin-web-index.tls=true
+      - traefik.http.routers.sysadmin-web-default.tls=true
+      # --- Service & Middleware ---
+      - traefik.http.services.sysadmin-web.loadbalancer.server.port=8080
+      - traefik.http.middlewares.sysadmin-web-standard-middleware.chain.middlewares=security-headers@file
 
   # ===================================================================
   # Common Agents & Pipelines
@@ -2243,6 +2544,7 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
+  # License: Apache-2.0 — own image (see LICENSES.md)
   llm_wrapping_agent:
     container_name: llm-wrapping-agent
     restart: always
@@ -2304,7 +2606,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [backend, data]
+    networks:
+      - backend
+      - data
+  # License: Apache-2.0 — own image (see LICENSES.md)
   rag_agent:
     container_name: rag-agent
     restart: always
@@ -2369,7 +2674,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    networks: [backend, data, storage]
+    networks:
+      - backend
+      - data
+      - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
   expert_rag_agent:
     container_name: expert-rag-agent
     restart: always
@@ -2424,7 +2733,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    networks: [backend, data, storage]
+    networks:
+      - backend
+      - data
+      - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
   expert_asking_agent:
     container_name: expert-asking-agent
     restart: always
@@ -2479,7 +2792,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    networks: [backend, data]
+    networks:
+      - backend
+      - data
+  # License: Apache-2.0 — own image (see LICENSES.md)
   retrieval_agent:
     container_name: retrieval-agent
     restart: always
@@ -2534,7 +2850,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    networks: [backend, data, storage]
+    networks:
+      - backend
+      - data
+      - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
   few_shot_agent:
     container_name: few-shot-agent
     restart: always
@@ -2581,7 +2901,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    networks: [backend, data]
+    networks:
+      - backend
+      - data
+  # License: Apache-2.0 — own image (see LICENSES.md)
   namespace_selection_agent:
     container_name: namespace-selection-agent
     restart: always
@@ -2628,7 +2951,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    networks: [backend, data]
+    networks:
+      - backend
+      - data
+  # License: Apache-2.0 — own image (see LICENSES.md)
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
@@ -2703,7 +3029,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    networks: [backend, data, storage]
+    networks:
+      - backend
+      - data
+      - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
@@ -2797,6 +3127,7 @@ services:
   # ===================================================================
   # This service provides MS Teams bot integration for the AI Hub.
   # ===================================================================
+  # License: Apache-2.0 — own image (see LICENSES.md)
   bot:
     container_name: bot
     restart: always
@@ -2827,6 +3158,21 @@ services:
       NUM_WORKERS: 1
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # Keycloak OIDC config — required because bot imports
+      # KeycloakAuthHandler from core.auth, which instantiates
+      # KeycloakSettings() at module import time. KEYCLOAK_URL is the
+      # minimum that makes the settings class constructible.
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
+      KEYCLOAK_REALM: aihub
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+
+      # Oauth2 config — bot resolves user identity from inbound bearer
+      # tokens issued by the main API's Keycloak client.
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8001/api/v1/health]
       interval: 30s
@@ -2896,5 +3242,7 @@ networks:
 # inside the Docker VM where this works correctly.
 # ===================================================================
 volumes:
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   clickhouse-data:
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   clickhouse-logs:
