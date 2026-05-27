@@ -97,7 +97,8 @@ class UserService:
             raise HTTPException(status_code=404, detail="User not found in tenant.")
         if not RoleEntity.filter_existing_roles([role_name], tenant_id):
             raise HTTPException(status_code=400, detail=f"Role '{role_name}' does not exist in this tenant.")
-        entity = UserTenantRoleEntity.add_roles(user_oid, tenant_id, [role_name])
+        # validate_roles=False: role existence is already checked above, so skip the redundant DB lookup.
+        entity = UserTenantRoleEntity.add_roles(user_oid, tenant_id, [role_name], validate_roles=False)
         return entity.roles
 
     @staticmethod
