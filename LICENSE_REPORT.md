@@ -5,7 +5,7 @@ Generated on: 27.05.2026
 This document contains license information for all dependencies across the monorepo:
 
 - Python packages (uv): **402 packages**
-- Node.js packages (pnpm): **999 packages**
+- Node.js packages (pnpm): **1000 packages**
 - External Docker images: **0 images**
 
 ### License Compatibility
@@ -633,6 +633,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | @types/debug                                       | 4.1.12        | MIT                                           |                                                                                                             |
 | ✅     | @types/estree                                      | 1.0.8         | MIT                                           |                                                                                                             |
 | ✅     | @types/hast                                        | 3.0.4         | MIT                                           |                                                                                                             |
+| ✅     | @types/jsesc                                       | 2.5.1         | MIT                                           |                                                                                                             |
 | ✅     | @types/json-schema                                 | 7.0.15        | MIT                                           |                                                                                                             |
 | ✅     | @types/mdast                                       | 4.0.4         | MIT                                           |                                                                                                             |
 | ✅     | @types/ms                                          | 2.1.0         | MIT                                           |                                                                                                             |
