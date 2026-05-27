@@ -11,9 +11,11 @@ subscribe to or a framework you build upon - it's production-ready infrastructur
 
 The Swiss AI Hub consists of two complementary parts:
 
-**The platform** is your AI infrastructure. Apache 2.0 licensed, it includes everything needed to run AI in production:
-LLM gateway, vector databases, data pipelines, authentication, monitoring, and user interfaces. Deploy it with
-`docker compose up` and you have a working AI system.
+**The platform** is your AI infrastructure. Open-source (Apache 2.0 for the runtime + SDK, AGPL-3.0 for the UI and
+backup orchestration; see [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the
+per-package breakdown), it includes everything needed to run AI in production: LLM gateway, vector databases, data
+pipelines, authentication, monitoring, and user interfaces. Deploy it with `docker compose up` and you have a working AI
+system.
 
 **The SDK** is how you extend the platform. It provides the patterns, tools, and frameworks for building agents,
 pipelines, and processes that automatically integrate with the platform. When you build with our SDK, your components
@@ -96,7 +98,8 @@ external systems.
 
 ## Why open source changes everything
 
-The Apache 2.0 license means you're not adopting a platform - you're acquiring one:
+The open-source license model (see [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the
+per-package breakdown) means you're not adopting a platform - you're acquiring one:
 
 - **No vendor lock-in**: The code is yours. Run it anywhere, modify it as needed
 - **No licensing fees**: Pay only for the infrastructure you run it on

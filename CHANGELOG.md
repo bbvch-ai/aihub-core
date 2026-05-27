@@ -5,6 +5,177 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.0] - 2026-05-27 - Multi-Tenancy Expansion and Frontend Monorepo Standardization
+
+### Added
+
+- 🛡️ **Introduced proprietary Sysadmin Plane:** New `packages/sysadmin-api` (backend) and `packages/sysadmin-web`
+  (frontend) services have been added for multi-tenant administration, now shipped under a commercial license.
+- 📄 **New `LICENSES.md` for explicit mixed-license model:** A dedicated document now clearly outlines the licensing for
+  each package (Apache-2.0, AGPL-3.0-or-later, and Proprietary terms), significantly enhancing legal clarity.
+- 🐳 **Dedicated Docker ignore file (`.dockerignore`):** A new `.dockerignore` file has been added at the repository root
+  to improve Docker image build efficiency and reduce image size by excluding unnecessary development and build
+  artifacts.
+- 🚀 **New GitHub Actions workflow for Sysadmin Builds:** A dedicated workflow (`build-sysadmin.yml`) automates the build
+  and release process for the new `sysadmin-api` and `sysadmin-web` Docker images, ensuring consistent deployment.
+- 🔑 **Enhanced API `get_my_identity` endpoint:** A lightweight user identity endpoint has been introduced in the API
+  (`/{tenant_id}/my-account/identity`) that omits the full access matrix, making it suitable for quick sysadmin role
+  checks across different API runners.
+- ⚙️ **Centralized Frontend Runtime Configuration:** A new Nuxt plugin (`0.runtime-config.client.ts`) implements
+  synchronous loading of runtime configurations (OIDC, WebSocket, sysadmin URL) from a global `window.__AIHUB_CONFIG__`
+  object, improving reliability and performance.
+- 🤝 **Centralized Frontend API Client Configuration:** A new Nuxt plugin (`api-client.client.ts`) configures the SDK
+  client globally, ensuring consistent token injection and error handling across the main and extended frontend
+  applications.
+- 📝 **Architectural Decision Records (ADRs) for Sysadmin Plane:** New ADRs document the rationale and consequences of
+  splitting the sysadmin plane into separately licensed proprietary packages, ensuring transparency and future
+  maintainability of architectural decisions.
+- 💻 **IDE Run Configurations for Sysadmin Services:** Added new IntelliJ/VS Code run configurations to streamline local
+  development, testing, and deployment of the `sysadmin-api` and `sysadmin-web` services.
+- 🏷️ **Automated License Annotation in Docker Compose:** Generated Docker Compose files now include inline license
+  comments for each service, improving license transparency directly within the deployment configuration.
+
+### Changed
+
+- 📦 **Frontend Monorepo Restructuring:** The main frontend application's root directory has been refactored from
+  `packages/web/swiss_ai_hub_web` to `packages/web`, simplifying paths and improving monorepo consistency.
+- 🛠️ **Updated Frontend Tooling Configuration:** Paths and configurations across build scripts, ESLint, Dependabot, and
+  SDK generation have been adjusted to align with the new `packages/web` structure and pnpm workspace setup.
+- 🔒 **Keycloak Integration for Sysadmin Plane:** Keycloak realm configurations have been updated to support Single
+  Sign-On (SSO) for the new `sysadmin.${DOMAIN}` subdomain, enabling seamless authentication between the main and
+  sysadmin UIs.
+- 🧹 **Centralized `.gitignore` for Node.js modules:** The exclusion of `node_modules` has been moved to the repository
+  root `.gitignore` for better consistency and maintainability across the monorepo.
+- 📖 **Updated Documentation for Mixed Licensing:** All relevant documentation (README, arc42, user guides) has been
+  revised to reflect the new mixed-license model and refer to the `LICENSES.md` for detailed terms.
+- 📦 **Frontend `package.json` Updates:** The `package.json` for the `web` package has been modified to reflect its new
+  name (`@swiss-ai-hub/web`), new AGPL-3.0-or-later license, and alignment with the pnpm workspace.
+- ⚙️ **Frontend Docker Image Configuration:** The Dockerfile and Nginx configuration for the `web` service have been
+  updated, including health checks, changing the default port to 8080, and implementing the new runtime config loading
+  mechanism (`config.json` to `config.js`).
+
+### Removed
+
+- 🗑️ **Deprecated `TenantAdminController` from Main API:** The tenant administration API endpoints have been entirely
+  migrated from the main `packages/api` to the new proprietary `packages/sysadmin-api` service.
+- 🔄 **Obsolete `config-loader.client.ts` plugin:** This plugin, responsible for fetching runtime configuration, has been
+  replaced by the new, more efficient `0.runtime-config.client.ts` plugin.
+- 🧹 **Removed redundant Frontend `pnpm-workspace.yaml`:** The pnpm workspace configuration for the frontend is now
+  consolidated at the monorepo root.
+- 🚫 **Removed dedicated `sysadmin` middleware from `packages/web`:** Its functionality has been moved to the new
+  `packages/sysadmin-web` service to ensure proper confinement and role-gating within the proprietary plane.
+- 🗑️ **Deleted frontend `config.template.json`:** This configuration template was replaced by `config.template.js` as
+  part of the new runtime configuration loading mechanism.
+
+______________________________________________________________________
+
+## [v0.289.23] - 2026-05-27 - API Refinements and Stability Improvements
+
+### Refactor
+
+- 🧹 **Centralized API Routes:** Standardized and centralized the definition of API routes for agent, process, role, and
+  tenant management endpoints, improving consistency and maintainability.
+- 🔄 **Enhanced Multimodal Content Handling:** Refactored the internal logic for processing multimodal chat completion
+  messages, leading to clearer, more robust content resolution for OpenAI API interactions.
+- ⚡️ **Modularized OpenAI Streaming:** Split the OpenAI chat completion streaming event generation into dedicated,
+  reusable helper methods for improved readability and easier maintenance.
+- 📄 **Standardized Error Messages:** Centralized common error messages, such as "Not authorized to view this database,"
+  "Role not found," and "Tenant not found," ensuring consistent error responses across the API.
+- 🧹 **Constants for Code Clarity:** Introduced dedicated constants for frequently used strings like UTC offset suffixes
+  and i18n paths, enhancing code clarity and reducing magic string usage.
+
+### Changed
+
+- 🩹 **Improved Websocket Error Logging:** Upgraded websocket disconnection error handling to include full traceback
+  information, aiding in faster diagnosis and debugging.
+- 🛡️ **Centralized Role Service Error Handling:** Shifted specific error handling for missing roles from controllers to
+  the `RoleService`, streamlining API responses and improving error consistency.
+
+### Fixed
+
+- 🐛 **Corrected Model Creation Timestamps:** Ensured that `ModelDetails` for OpenAI responses generate unique creation
+  timestamps for each instance by using a default factory.
+
+______________________________________________________________________
+
+## [v0.289.22] - 2026-05-26 - Secure MCP Tool Integration and Robust CI/CD Pinning
+
+### Added
+
+- 🔑 **Introduced User-Token Passthrough for MCP Clients:** Agents can now securely connect to external Model Context
+  Protocol (MCP) servers using the requesting user's bearer token, ensuring proper attribution and per-user
+  authorization in external systems.
+- 📄 **New Documentation on MCP Client Authentication:** Detailed guides and architecture decision records explain the
+  new `auth_mode` options (`none`, `api_key`, `user_token`) for MCP connections.
+- 🔒 **GitHub Actions Pinning Enforcement:** A new CI/CD job and configuration (`pinact.yml`) have been added to
+  automatically verify and enforce that all GitHub Actions are pinned to specific commit SHAs, enhancing workflow
+  security and stability.
+- 🧪 **Comprehensive Unit Tests for MCP Authentication:** New test suites ensure the correct behavior and robust error
+  handling of MCP client authentication mechanisms.
+
+### Changed
+
+- ⚙️ **Refined MCP Client Configuration:** The `McpClientConfig` now includes an explicit `auth_mode` field, offering
+  clear choices for authentication (none, API key, user token), with improved UI presentation for the API key.
+- 🔄 **`McpReactAgent` Updated for User-Token Authentication:** The core `McpReactAgent` now leverages the new
+  `McpAuthResolver` to pass user tokens to MCP servers when configured for `user_token` authentication.
+- 📚 **GitHub Actions README Updated:** The documentation for GitHub Actions best practices has been updated to recommend
+  pinning to 40-character commit SHAs for increased stability.
+
+### Refactor
+
+- 🛡️ **Pinned GitHub Actions to Specific SHAs:** All GitHub Actions used in workflows and custom actions have been
+  updated from major version tags to immutable 40-character commit SHAs, significantly improving the security and
+  reliability of the CI/CD pipeline.
+- 🧹 **Improved MCP Client Factory Logic:** The `McpClientFactory` has been refactored to support the new authentication
+  modes, including explicit error handling for misconfigured connections (e.g., missing API key or user token).
+- ⚡️ **Frontend Composable Optimization:** Several frontend composables have been refactored to streamline data
+  fetching, removing redundant imports and simplifying their implementation.
+- 🛠️ **Internal Process Dispatcher Refinement:** Logic for binding configuration to events within the process dispatcher
+  has been extracted into a dedicated static method for better code organization.
+
+______________________________________________________________________
+
+## [v0.289.21] - 2026-05-26 - Enhanced Workflow Security and Robustness
+
+### Refactor
+
+- 🔒 **Improved GitHub Actions Script Security**: Refactored all CI/CD workflows to use explicit environment variables
+  for GitHub event contexts, significantly enhancing script execution safety and mitigating potential command injection
+  vulnerabilities.
+- 🧹 **Standardized Workflow Variable Handling**: Streamlined the access of GitHub event inputs and context within
+  workflow scripts, resulting in a cleaner, more consistent, and robust implementation for automated processes.
+
+______________________________________________________________________
+
+## [v0.289.20] - 2026-05-26 - Core Refinements and Enhanced Event Handling
+
+### Added
+
+- 🧪 **Comprehensive NATS Sensor Tests:** Introduced new unit tests for the **NATS Document Uploaded Sensor**,
+  specifically for the event consumption logic, to ensure reliable and correct processing of messages.
+
+### Refactor
+
+- 🧹 **Improved S3 Error Logging:** Switched to using `logger.exception` for directory existence and listing failures in
+  the **S3 Data Lake Client**, providing more detailed stack trace information for easier debugging.
+- 🔄 **Streamlined SharePoint Retry Logic:** Extracted asynchronous retry and backoff logic into a dedicated helper
+  method within the **SharePoint resource**, enhancing code readability and maintainability.
+- ⚡️ **Modularized NATS Sensor Event Processing:** Refactored the **NATS Document Uploaded Sensor** to abstract event
+  consumption, validation, and acknowledgment into a new, dedicated function, leading to clearer, more robust event
+  handling.
+
+______________________________________________________________________
+
+## [v0.289.19] - 2026-05-26 - Improved Tenant-Aware Document Source Retrieval
+
+### Changed
+
+- 🚀 **Document Source Retrieval**: Updated the generation of document source URLs to explicitly include the `tenantId`,
+  ensuring accurate and tenant-specific access to original documents within a multi-tenant environment.
+
+______________________________________________________________________
+
 ## [v0.289.18] - 2026-05-22 - Enhanced Tenant Management and Robust Initialization
 
 ### Added

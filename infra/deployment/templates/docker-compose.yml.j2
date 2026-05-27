@@ -7,7 +7,23 @@
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
-{%- endif -%}
+{%- endif %}
+#
+# =============================================================================
+# Licensing
+# =============================================================================
+# This Compose FILE is part of the open-source Swiss AI Hub repository and is
+# distributed under the Apache License 2.0 (see the root LICENSE).
+#
+# The SERVICES it orchestrates carry their OWN licenses — Apache-2.0, AGPL-3.0,
+# proprietary, and various permissive third-party terms. Each service block
+# below is annotated with `# License: <SPDX>` for at-a-glance reference.
+#
+# Authoritative sources for license details:
+#   - LICENSES.md            — per-package license matrix
+#   - LICENSE_REPORT.md      — per-dependency report (generated)
+#   - packages/<pkg>/LICENSE — authoritative for each in-repo package
+# =============================================================================
 
 {%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
 {%- set config_variant_suffix = config_file_suffix if config_file_suffix is defined else "." + stage_postfix %}
@@ -133,6 +149,7 @@ services:
   # This stack provides S3-compatible storage for the entire platform.
   # ===================================================================
 
+  {{ service_license('seaweedfs-master') }}
   seaweedfs-master:
     container_name: seaweedfs-master
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
@@ -171,6 +188,7 @@ services:
     networks:
       - storage
 
+  {{ service_license('seaweedfs-volume') }}
   seaweedfs-volume:
     container_name: seaweedfs-volume
     image: "{{ global.registry_prefix }}{{ image_tags.seaweedfs }}"
@@ -207,6 +225,7 @@ services:
     networks:
       - storage
 
+  {{ service_license('seaweedfs-filer') }}
   seaweedfs-filer:
     container_name: seaweedfs-filer
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
@@ -257,6 +276,7 @@ services:
       - storage
       - data  # For etcd access
 
+  {{ service_license('seaweedfs-s3') }}
   seaweedfs-s3:
     container_name: seaweedfs-s3
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
@@ -317,6 +337,7 @@ services:
       - proxy    # External S3 API access via Traefik
       {%- endif %}
 
+  {{ service_license('seaweedfs-init') }}
   seaweedfs-init:
     container_name: seaweedfs-init
     image: {{ global.registry_prefix }}{{ image_tags.aws_cli }}
@@ -344,6 +365,7 @@ services:
       - backend
 
   {% if stage != 'dev' -%}
+  {{ service_license('oauth2proxy-seaweed') }}
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
     image: {{ image_tags.oauth2proxy }}
@@ -402,6 +424,7 @@ services:
   # This stack provides vector storage and search for RAG capabilities.
   # ===================================================================
 
+  {{ service_license('etcd') }}
   etcd:
     container_name: etcd
     image: {{ global.registry_prefix }}{{ image_tags.etcd }}
@@ -454,6 +477,7 @@ services:
       - data     # Milvus metadata storage
       - storage  # SeaweedFS filer metadata
 
+  {{ service_license('etcd-init') }}
   etcd-init:
     container_name: etcd-init
     build:
@@ -476,6 +500,7 @@ services:
       - data
       - storage  # Used by SeaweedFS filer for metadata
 
+  {{ service_license('milvus-standalone') }}
   milvus-standalone:
     container_name: milvus
     image: {{ global.registry_prefix }}{{ image_tags.milvus }}
@@ -520,6 +545,7 @@ services:
       - data
       - storage  # For S3 access to SeaweedFS
 
+  {{ service_license('attu') }}
   attu:
     container_name: attu
     image: {{ global.registry_prefix }}{{ image_tags.attu }}
@@ -546,6 +572,7 @@ services:
       - data
 
   {% if stage != 'dev' -%}
+  {{ service_license('oauth2proxy-attu') }}
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
     image: {{ image_tags.oauth2proxy }}
@@ -603,6 +630,7 @@ services:
   # PostgreSQL instance for application relational data.
   # ===================================================================
 
+  {{ service_license('postgres') }}
   postgres:
     container_name: postgres
     image: {{ global.registry_prefix }}{{ image_tags.postgres }}
@@ -633,6 +661,7 @@ services:
   # ===================================================================
   # PgBouncer (Connection Pooler for Dagster)
   # ===================================================================
+  {{ service_license('pgbouncer') }}
   pgbouncer:
     container_name: pgbouncer
     image: {{ global.registry_prefix }}{{ image_tags.pgbouncer }}
@@ -678,6 +707,7 @@ services:
   # FerretDB provides MongoDB-compatible API backed by PostgreSQL.
   # ===================================================================
 
+  {{ service_license('postgres-ferretdb') }}
   postgres-ferretdb:
     container_name: postgres-ferretdb
     image: {{ global.registry_prefix }}{{ image_tags.postgres_ferretdb }}
@@ -701,6 +731,7 @@ services:
     networks:
       - data
 
+  {{ service_license('ferretdb') }}
   ferretdb:
     container_name: ferretdb
     image: {{ global.registry_prefix }}{{ image_tags.ferretdb }}
@@ -736,6 +767,7 @@ services:
   # data modeling and querying.
   # ===================================================================
 
+  {{ service_license('neo4j') }}
   neo4j:
     container_name: neo4j
     image: {{ global.registry_prefix }}{{ image_tags.neo4j }}
@@ -773,6 +805,7 @@ services:
   # Open-source alternative with MIT license for self-hosted deployments.
   # ===================================================================
 
+  {{ service_license('clickhouse') }}
   clickhouse:
     container_name: clickhouse
     image: {{ global.registry_prefix }}{{ image_tags.clickhouse }}
@@ -818,6 +851,7 @@ services:
       - data
       - storage
 
+  {{ service_license('langfuse-worker') }}
   langfuse-worker:
     container_name: langfuse-worker
     image: {{ global.registry_prefix }}{{ image_tags.langfuse_worker }}
@@ -875,6 +909,7 @@ services:
       - data  # For PostgreSQL access
       - storage  # For SeaweedFS S3 access
 
+  {{ service_license('langfuse-web') }}
   langfuse-web:
     container_name: langfuse-web
     image: {{ global.registry_prefix }}{{ image_tags.langfuse_web }}
@@ -992,6 +1027,7 @@ services:
   # In prod: Identity broker for Azure AD and other providers.
   # ===================================================================
 
+  {{ service_license('keycloak') }}
   keycloak:
     container_name: keycloak
     image: {{ global.registry_prefix }}{{ image_tags.keycloak }}
@@ -1091,6 +1127,7 @@ services:
   # between agents, and Valkey provides in-memory caching.
   # ===================================================================
 
+  {{ service_license('nats') }}
   nats:
     container_name: nats
     image: {{ global.registry_prefix }}{{ image_tags.nats }}
@@ -1122,6 +1159,7 @@ services:
     networks:
       - data  # Message broker is part of data infrastructure
 
+  {{ service_license('valkey') }}
   valkey:
     container_name: valkey
     image: {{ global.registry_prefix }}{{ image_tags.valkey }}
@@ -1156,6 +1194,7 @@ services:
   # (OneDrive, SharePoint, S3, Google Drive, Dropbox, etc.)
   # ===================================================================
 
+  {{ service_license('rclone') }}
   rclone:
     container_name: rclone
     image: {{ image_tags.rclone }}
@@ -1202,6 +1241,7 @@ services:
   # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
   # ===================================================================
 
+  {{ service_license('backup-code') }}
   backup-code:
     container_name: backup-code
     {%- if image_tags.backup[stage] == 'localbuild' %}
@@ -1294,6 +1334,7 @@ services:
       - storage
 
   {%- if stage != 'dev' %}
+  {{ service_license('oauth2proxy-backup') }}
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
     image: {{ image_tags.oauth2proxy }}
@@ -1342,6 +1383,7 @@ services:
       - backend
   {%- endif %}
 
+  {{ service_license('backup-webserver') }}
   backup-webserver:
     container_name: backup-webserver
     {%- if image_tags.backup[stage] == 'localbuild' %}
@@ -1389,6 +1431,7 @@ services:
       - proxy
       - data
 
+  {{ service_license('backup-daemon') }}
   backup-daemon:
     container_name: backup-daemon
     {%- if image_tags.backup[stage] == 'localbuild' %}
@@ -1438,6 +1481,7 @@ services:
   # for a unified experience.
   # ===================================================================
 
+  {{ service_license('vllm') }}
   vllm:
     container_name: vllm
     platform: "linux/amd64"
@@ -1489,6 +1533,7 @@ services:
     networks:
       - backend
 
+  {{ service_license('vllm-bge-m3') }}
   vllm-bge-m3:
     container_name: vllm-bge-m3
     platform: "linux/amd64"
@@ -1535,6 +1580,7 @@ services:
     networks:
       - backend
 
+  {{ service_license('vllm-bge-reranker') }}
   vllm-bge-reranker:
     container_name: vllm-bge-reranker
     platform: "linux/amd64"
@@ -1588,6 +1634,7 @@ services:
   # https://github.com/speaches-ai/speaches
   # ===================================================================
 
+  {{ service_license('speaches') }}
   speaches:
     container_name: speaches
     image: {{ image_tags.speaches }}
@@ -1630,6 +1677,7 @@ services:
   # handles PII filtering, and manages API keys.
   # ===================================================================
 
+  {{ service_license('presidio-analyzer') }}
   presidio-analyzer:
     container_name: presidio-analyzer
     image: {{ global.registry_prefix }}{{ image_tags.presidio_analyzer }}
@@ -1647,6 +1695,7 @@ services:
     networks:
       - backend
 
+  {{ service_license('presidio-anonymizer') }}
   presidio-anonymizer:
     container_name: presidio-anonymizer
     image: {{ global.registry_prefix }}{{ image_tags.presidio_anonymizer }}
@@ -1664,6 +1713,7 @@ services:
     networks:
       - backend
 
+  {{ service_license('litellm') }}
   litellm:
     container_name: litellm
     image: {{ global.registry_prefix }}{{ image_tags.litellm }}
@@ -1746,6 +1796,7 @@ services:
   # browser automation (Playwright) for various platform features.
   # ===================================================================
 
+  {{ service_license('jupyter') }}
   jupyter:
     container_name: jupyter-lab
     image: {{ global.registry_prefix }}{{ image_tags.jupyter }}
@@ -1773,6 +1824,7 @@ services:
     networks:
       - backend
 
+  {{ service_license('playwright') }}
   playwright:
     container_name: playwright-server
     image: {{ global.registry_prefix }}{{ image_tags.playwright }}
@@ -1798,6 +1850,7 @@ services:
       - backend  # Internal service communication
       - egress   # Outbound internet access for web browsing
 
+  {{ service_license('searxng') }}
   searxng:
     container_name: searxng
     image: {{ global.registry_prefix }}{{ image_tags.searxng }}
@@ -1834,6 +1887,7 @@ services:
   # through LiteLLM for unified model routing.
   # ===================================================================
 
+  {{ service_license('mineru-api') }}
   mineru-api:
     container_name: mineru-api
     image: {{ global.registry_prefix }}{{ image_tags.mineru_api }}
@@ -1876,6 +1930,7 @@ services:
       - backend
 
   {%- if gpu_enabled %}
+  {{ service_license('mineru-vlm') }}
   mineru-vlm:
     container_name: mineru-vlm
     platform: "linux/amd64"
@@ -1923,6 +1978,7 @@ services:
   # and monitoring. It is only enabled in the 'dev' stage.
   # ===================================================================
 
+  {{ service_license('otel-collector') }}
   otel-collector:
     container_name: otel-collector
     image: {{ image_tags.otel_collector }}
@@ -1967,6 +2023,7 @@ services:
   # environment variables for connecting to other services.
   # ===================================================================
 
+  {{ service_license('open-webui') }}
   open-webui:
     container_name: open-webui
     image: {{ global.registry_prefix }}{{ image_tags.open_webui }}
@@ -2275,6 +2332,7 @@ services:
       - storage
     {%- endif %}
 
+  {{ service_license('openwebui-init') }}
   openwebui-init:
     container_name: openwebui-init
     image: {{ global.registry_prefix }}postgres:17
@@ -2309,6 +2367,7 @@ services:
   # This stack runs the data pipelines, managed by the Dagster UI
   # and backend daemon. It's only present in non-dev stages.
   # ===================================================================
+  {{ service_license('oauth2proxy-dagster') }}
   oauth2proxy-dagster:
     container_name: oauth2proxy-dagster
     image: {{ image_tags.oauth2proxy }}
@@ -2356,6 +2415,7 @@ services:
       - proxy
       - backend
 
+  {{ service_license('dagster-webserver') }}
   dagster-webserver:
     container_name: dagster-webserver
     restart: always
@@ -2405,6 +2465,7 @@ services:
       - backend
       - data
 
+  {{ service_license('dagster-daemon') }}
   dagster-daemon:
     container_name: dagster-daemon
     restart: always
@@ -2455,6 +2516,7 @@ services:
   # compromised, as the proxy only exposes the minimal Docker API
   # endpoints required for service discovery.
   # ===================================================================
+  {{ service_license('docker-socket-proxy') }}
   docker-socket-proxy:
     container_name: docker-socket-proxy
     image: "{{ image_tags.docker_socket_proxy }}"
@@ -2503,6 +2565,7 @@ services:
   # Traefik manages incoming traffic, TLS, and routing to services.
   # It is only enabled in non-dev stages.
   # ===================================================================
+  {{ service_license('traefik') }}
   traefik:
     container_name: traefik
     image: "{{ global.registry_prefix }}{{ image_tags.traefik }}"
@@ -2567,6 +2630,7 @@ services:
   # This is the main backend API for the AI Hub. It is not present
   # in the 'dev' stage.
   # ===================================================================
+  {{ service_license('api') }}
   api:
     container_name: api
     restart: always
@@ -2630,7 +2694,7 @@ services:
 
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_FRONTEND_ORIGIN: https://${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: True
       AIHUB_CREATE_DEFAULT_BUCKETS: True
       AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
@@ -2761,13 +2825,14 @@ services:
   # This is the main SvelteKit frontend for the AI Hub. It is not
   # present in the 'dev' stage.
   # ===================================================================
+  {{ service_license('web') }}
   web:
     container_name: web
     restart: always
     {%- if image_tags.web[stage] == 'localbuild' %}
     build:
-      context: ../packages/web/swiss_ai_hub_web
-      dockerfile: ./Dockerfile
+      context: ..
+      dockerfile: ./packages/web/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.web[stage] }}
     {%- endif %}
@@ -2776,8 +2841,9 @@ services:
       OAUTH_AUTHORITY_URL: {{ 'http://localhost:8180/realms/aihub' if stage == 'dev' else 'https://auth.${DOMAIN}/realms/aihub' }}
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
+      SYSADMIN_URL: https://sysadmin.${DOMAIN}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2801,7 +2867,7 @@ services:
       - "traefik.http.routers.web-auth.priority=750"
       - "traefik.http.routers.web-auth.entrypoints=websecure"
       - "traefik.http.routers.web-auth.middlewares=web-standard-middleware"
-      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))"
+      - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.js`))"
       - "traefik.http.routers.web-index.priority=400"
       - "traefik.http.routers.web-index.entrypoints=websecure"
       - "traefik.http.routers.web-index.middlewares=web-standard-middleware"
@@ -2822,8 +2888,208 @@ services:
       - "traefik.http.routers.web-default.tls=true"
       {%- endif %}
       # --- Service & Middleware ---
-      - "traefik.http.services.web.loadbalancer.server.port=80"
+      - "traefik.http.services.web.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
+  {%- endif %}
+
+  {%- if image_tags['sysadmin-api'][stage] %}
+  # ===================================================================
+  # Sysadmin API (Proprietary)
+  # ===================================================================
+  # FastAPI service for system-administrator-only operations (multi-tenant
+  # management). Routed at sysadmin.${DOMAIN}/api/v1/*. Independent of the
+  # main `api` service — uses its own lightweight lifespan that only wires
+  # MongoDB and Keycloak (no NATS / Milvus / Redis / S3 / WebSocket).
+  # ===================================================================
+  {{ service_license('sysadmin-api') }}
+  sysadmin-api:
+    container_name: sysadmin-api
+    restart: always
+    {%- if image_tags['sysadmin-api'][stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/sysadmin-api/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags['sysadmin-api'][stage] }}
+    {%- endif %}
+    depends_on:
+      traefik:
+        condition: service_started
+      ferretdb:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    environment:
+      # Log Level
+      LOG_LEVEL: ${LOG_LEVEL}
+      ENV: ${ENV}
+      NUM_WORKERS: 1
+
+      # General Auth settings
+      AUTH_ENABLE_API_ACCESS: True
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+
+      # Keycloak OIDC config
+      KEYCLOAK_URL: {{ KEYCLOAK_INTERNAL_URL }}
+      KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
+      KEYCLOAK_REALM: {{ KEYCLOAK_REALM }}
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_SHOW_KEYCLOAK_LOGIN: ${KEYCLOAK_SHOW_KEYCLOAK_LOGIN}
+
+      # Oauth2 config
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: {{ 'http://localhost:8180/realms/aihub' if stage == 'dev' else 'https://auth.${DOMAIN}/realms/aihub' }}
+
+      # Azure Oauth2 config
+      AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
+      AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+
+      # Superuser — assign_superuser_to_tenant() is called when a sysadmin
+      # configures a previously-unconfigured tenant, which requires resolving
+      # the superuser's Keycloak id via SUPERUSER_EMAIL.
+      SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_ROLES_JSON: ${SUPERUSER_ROLES_JSON}
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: https://sysadmin.${DOMAIN}
+      AIHUB_CREATE_DEFAULT_ROLES: True
+
+      # Mongo DB — durable storage for tenant metadata, roles, dashboards
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATS + Redis — required by the medium lifespan in
+      # sysadmin_runner.py (ADR 2026_05_26_sysadmin_api_full_self_contained_lifespan).
+      # FastAPI eagerly resolves `use_nats` / `use_redis` for mounted endpoints
+      # from packages/api (UserController.get_user etc.) even when their hot
+      # path does not exercise the clients, so the settings classes must be
+      # constructible at startup. Hostnames mirror the main API's layout.
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # OpenWebUI — needed by sysadmin-api's AccessChangeHook to keep the SCIM
+      # mirror in sync when role / tenant mutations come through this API.
+      OPENWEBUI_BASE_URL: http://open-webui:8080
+      OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
+      OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: sysadmin-api
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('sysadmin-api') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.sysadmin-api.rule=Host(`sysadmin.${DOMAIN}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.sysadmin-api.priority=6000"
+      - "traefik.http.routers.sysadmin-api.entrypoints=websecure"
+      - "traefik.http.routers.sysadmin-api.middlewares=security-headers@file"
+      - "traefik.http.services.sysadmin-api.loadbalancer.server.port=8000"
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.sysadmin-api.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.sysadmin-api.tls=true"
+      {%- endif %}
+    networks:
+      - proxy
+      - backend
+      - data
+  {%- endif %}
+
+  {%- if image_tags['sysadmin-web'][stage] %}
+  # ===================================================================
+  # Sysadmin Web UI (Proprietary)
+  # ===================================================================
+  # Nuxt 3 SPA dedicated to system administration. Routed at
+  # sysadmin.${DOMAIN}/* (path /api/v1 goes to sysadmin-api by priority).
+  # ===================================================================
+  {{ service_license('sysadmin-web') }}
+  sysadmin-web:
+    container_name: sysadmin-web
+    restart: always
+    {%- if image_tags['sysadmin-web'][stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/sysadmin-web/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags['sysadmin-web'][stage] }}
+    {%- endif %}
+    environment:
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_AUTHORITY_URL: {{ 'http://localhost:8180/realms/aihub' if stage == 'dev' else 'https://auth.${DOMAIN}/realms/aihub' }}
+      # The main app's UI origin for the cross-origin browser redirect when a
+      # non-sysadmin lands on sysadmin-web (`useMainAppNavigation.exitToMainApp`).
+      MAIN_APP_URL: https://${DOMAIN}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      # --- Routers — mirror web's pattern, scoped to sysadmin subdomain ---
+      - "traefik.http.routers.sysadmin-web-static.rule=Host(`sysadmin.${DOMAIN}`) && PathPrefix(`/_nuxt`)"
+      - "traefik.http.routers.sysadmin-web-static.priority=2000"
+      - "traefik.http.routers.sysadmin-web-static.entrypoints=websecure"
+      - "traefik.http.routers.sysadmin-web-static.middlewares=sysadmin-web-standard-middleware"
+      - "traefik.http.routers.sysadmin-web-auth.rule=Host(`sysadmin.${DOMAIN}`) && (PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`))"
+      - "traefik.http.routers.sysadmin-web-auth.priority=750"
+      - "traefik.http.routers.sysadmin-web-auth.entrypoints=websecure"
+      - "traefik.http.routers.sysadmin-web-auth.middlewares=sysadmin-web-standard-middleware"
+      - "traefik.http.routers.sysadmin-web-index.rule=Host(`sysadmin.${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.js`))"
+      - "traefik.http.routers.sysadmin-web-index.priority=400"
+      - "traefik.http.routers.sysadmin-web-index.entrypoints=websecure"
+      - "traefik.http.routers.sysadmin-web-index.middlewares=sysadmin-web-standard-middleware"
+      - "traefik.http.routers.sysadmin-web-default.rule=Host(`sysadmin.${DOMAIN}`)"
+      - "traefik.http.routers.sysadmin-web-default.priority=100"
+      - "traefik.http.routers.sysadmin-web-default.entrypoints=websecure"
+      - "traefik.http.routers.sysadmin-web-default.middlewares=sysadmin-web-standard-middleware"
+      # --- TLS Resolver Logic ---
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.sysadmin-web-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.sysadmin-web-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.sysadmin-web-index.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.sysadmin-web-default.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.sysadmin-web-static.tls=true"
+      - "traefik.http.routers.sysadmin-web-auth.tls=true"
+      - "traefik.http.routers.sysadmin-web-index.tls=true"
+      - "traefik.http.routers.sysadmin-web-default.tls=true"
+      {%- endif %}
+      # --- Service & Middleware ---
+      - "traefik.http.services.sysadmin-web.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.sysadmin-web-standard-middleware.chain.middlewares=security-headers@file"
   {%- endif %}
 
   # ===================================================================
@@ -2834,6 +3100,7 @@ services:
   # ===================================================================
 
   {%- if image_tags.llm_wrapping_agent[stage] %}
+  {{ service_license('llm_wrapping_agent') }}
   llm_wrapping_agent:
     container_name: llm-wrapping-agent
     restart: always
@@ -2905,6 +3172,7 @@ services:
   {%- endif %}
 
   {%- if image_tags.rag_agent[stage] %}
+  {{ service_license('rag_agent') }}
   rag_agent:
     container_name: rag-agent
     restart: always
@@ -2980,6 +3248,7 @@ services:
   {%- endif %}
 
   {%- if image_tags.expert_rag_agent[stage] %}
+  {{ service_license('expert_rag_agent') }}
   expert_rag_agent:
     container_name: expert-rag-agent
     restart: always
@@ -3045,6 +3314,7 @@ services:
   {%- endif %}
 
   {%- if image_tags.expert_asking_agent[stage] %}
+  {{ service_license('expert_asking_agent') }}
   expert_asking_agent:
     container_name: expert-asking-agent
     restart: always
@@ -3109,6 +3379,7 @@ services:
   {%- endif %}
 
   {%- if image_tags.retrieval_agent[stage] %}
+  {{ service_license('retrieval_agent') }}
   retrieval_agent:
     container_name: retrieval-agent
     restart: always
@@ -3174,6 +3445,7 @@ services:
   {%- endif %}
 
   {%- if image_tags.few_shot_agent[stage] %}
+  {{ service_license('few_shot_agent') }}
   few_shot_agent:
     container_name: few-shot-agent
     restart: always
@@ -3230,6 +3502,7 @@ services:
   {%- endif %}
 
   {%- if image_tags.namespace_selection_agent[stage] %}
+  {{ service_license('namespace_selection_agent') }}
   namespace_selection_agent:
     container_name: namespace-selection-agent
     restart: always
@@ -3286,6 +3559,7 @@ services:
   {%- endif %}
 
   {%- if image_tags.default_rag_pipeline[stage] %}
+  {{ service_license('default_rag_pipeline') }}
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
@@ -3363,6 +3637,7 @@ services:
   {%- endif %}
 
   {%- if image_tags.shared_rag_pipeline[stage] %}
+  {{ service_license('shared_rag_pipeline') }}
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
@@ -3455,6 +3730,7 @@ services:
   # ===================================================================
   # This service provides MS Teams bot integration for the AI Hub.
   # ===================================================================
+  {{ service_license('bot') }}
   bot:
     container_name: bot
     restart: always
@@ -3492,6 +3768,21 @@ services:
       NUM_WORKERS: 1
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # Keycloak OIDC config — required because bot imports
+      # KeycloakAuthHandler from core.auth, which instantiates
+      # KeycloakSettings() at module import time. KEYCLOAK_URL is the
+      # minimum that makes the settings class constructible.
+      KEYCLOAK_URL: {{ KEYCLOAK_INTERNAL_URL }}
+      KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
+      KEYCLOAK_REALM: {{ KEYCLOAK_REALM }}
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+
+      # Oauth2 config — bot resolves user identity from inbound bearer
+      # tokens issued by the main API's Keycloak client.
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORITY_URL: https://auth.${DOMAIN}/realms/aihub
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/api/v1/health"]
       interval: 30s
@@ -3573,6 +3864,8 @@ networks:
 # inside the Docker VM where this works correctly.
 # ===================================================================
 volumes:
+  {{ service_license('clickhouse-data') }}
   clickhouse-data:
+  {{ service_license('clickhouse-logs') }}
   clickhouse-logs:
 {%- endif %}

@@ -1,0 +1,59 @@
+---
+tenant_admin:
+  title: Administration des tenants
+  exit: Quitter
+  tenants_title: Tenants
+  select_description: Gérer les tenants, les règles d'accès et les paramètres système.
+  create_new: Nouveau tenant
+  cancel: Annuler
+  save: Enregistrer
+  tenant_id: ID du tenant
+  navigation:
+    overview: Vue d'ensemble
+    roles: Rôles
+    users: Utilisateurs
+  keycloak_unreachable: Keycloak est inaccessible — la liste des tenants peut être
+    incomplète. Veuillez réessayer.
+  state:
+    orphaned_label: Orphelin
+    orphaned_tooltip: Ce tenant a des métadonnées mais aucun groupe Keycloak correspondant.
+      Les utilisateurs n'y ont pas accès.
+  configure:
+    title: Configurer un tenant
+    description: Attachez des métadonnées à un groupe de tenants Keycloak existant.
+      L'ID du tenant doit correspondre à un groupe Keycloak sous /tenants/ qui n'a
+      pas encore de métadonnées.
+    tenant_id_label: ID du tenant Keycloak
+    empty_unconfigured: Aucun tenant Keycloak non configuré disponible. Créez d'abord
+      un groupe de tenants dans la console d'administration Keycloak.
+  form:
+    name: Nom du tenant
+    description: Description
+  table:
+    name: Nom
+    description: Description
+    access_rules: Règles d'accès
+    default: Par défaut
+    actions: Actions
+  create_dialog:
+    description: Créez un nouveau tenant avec des règles d'accès qui définissent la
+      portée maximale pour tous les utilisateurs au sein de ce tenant.
+  delete_dialog:
+    confirm: Supprimer le tenant ?
+    explanation: La suppression du tenant "{name}" supprimera tous les rôles et attributions
+      d'utilisateurs associés. Cette action est irréversible.
+    proceed: Supprimer
+    last_tenant_blocked: Impossible de supprimer le dernier tenant restant. La plateforme
+      doit toujours avoir au moins un tenant.
+  tenant_deleted:
+    summary: Tenant supprimé
+    detail: Le tenant et toutes les données associées ont été supprimés.
+  tenant_saved:
+    summary: Tenant enregistré
+    detail: Tenant mis à jour avec succès.
+sysadmin_required:
+  title: Sysadmin access required
+  description: This page is only available to users with the AIHubSysAdmin role. Your
+    account does not have it. If you believe this is a mistake, contact your administrator.
+  exit: Go to main app
+  logout: Log out

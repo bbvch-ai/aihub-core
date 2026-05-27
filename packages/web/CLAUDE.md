@@ -7,7 +7,7 @@ dashboards, and chat. Vue 3 Composition API, TypeScript strict, PrimeVue, Tailwi
 ## Folder Structure
 
 ```
-swiss_ai_hub_web/
+packages/web/
 ├── .app/                    # Nuxt layer entry point (extends parent, runtimeConfig, FormKit config)
 ├── assets/css/              # Global CSS (main.css)
 ├── components/              # Domain-organized Vue components (~170 files)
@@ -37,7 +37,7 @@ swiss_ai_hub_web/
 ├── pages/                   # File-based routing
 │   ├── [tenant]/service/    # Tenant-scoped admin pages (regular users + tenant admins)
 │   └── sysadmin/            # Sysadmin tenant management (requires AIHubSysAdmin realm role)
-├── plugins/                 # oidc-client.ts, config-loader.client.ts, apexcharts.client.ts
+├── plugins/                 # 0.runtime-config.client.ts (config), api-client.client.ts (SDK), oidc-client.ts, apexcharts.client.ts
 ├── sdk/client/              # Auto-generated HeyAPI TypeScript client (NEVER edit)
 ├── themes/                  # aihub-theme.ts (PrimeVue Aura preset customization)
 └── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
@@ -46,8 +46,8 @@ swiss_ai_hub_web/
 ## Nuxt Layer Architecture
 
 The `.app/` directory is the actual entry point — it extends the parent via `extends: ['..']` in its `nuxt.config.ts`.
-`pnpm dev` runs `nuxi dev .app`. The parent `swiss_ai_hub_web/` provides components, composables, pages, and config.
-`.app/` adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
+`pnpm dev` runs `nuxi dev .app`. The parent `packages/web/` provides components, composables, pages, and config. `.app/`
+adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
 
 ## Page Composition Pattern
 
@@ -133,9 +133,11 @@ export const useDeleteAgentInstance = defineMutation(() => {
 - **Output**: `sdk/client/` — NEVER edit, fully generated
 - **Import types**: `import type { AgentDto } from '@core/sdk/client'`
 - **Import endpoints**: `import { getAgent } from '@core/sdk/client'`
-- **`@core` alias** = app root (`packages/web/swiss_ai_hub_web/`), defined in `nuxt.config.ts`
+- **`@core` alias** = app root (`packages/web/`), defined in `nuxt.config.ts`
 
-SDK client initialized in `app.vue` with global auth token injection and error handling.
+SDK client initialized in `plugins/api-client.client.ts` with global auth token injection and error handling. This
+plugin runs in every app that extends this layer (including `sysadmin-web`), which is why it lives in a plugin rather
+than `app.vue` — extenders supply their own `app.vue`, so anything in the layer's `app.vue` would not run for them.
 
 ## FormKit Dynamic Forms
 
@@ -275,4 +277,7 @@ The UI strictly separates blueprint from profile:
 - Event resolver: `composables/event/useEventComponent.ts`
 - WebSocket events: `composables/thread/useThreadEvents.ts`
 - NavItem type: `types/NavItem.ts`
-- App entry: `app.vue` (SDK client init, global setup)
+- App entry: `app.vue` (global setup — theme imports, toast/confirm providers)
+- SDK client plugin: `plugins/api-client.client.ts` (SDK base URL + auth — runs in this app and all extenders)
+- Runtime config plugin: `plugins/0.runtime-config.client.ts` (maps `window.__AIHUB_CONFIG__` into
+  `runtimeConfig.public`; runs first due to numeric prefix)

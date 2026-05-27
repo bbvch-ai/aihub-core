@@ -68,6 +68,3 @@ organization_memory:
 webhook:
   name: Webhooks
   description: Webhook-Empfänger für externe Dienste
-tenant_admin:
-  name: Tenant-Verwaltung
-  description: Tenants erstellen, bearbeiten und löschen (nur Systemadministratoren)

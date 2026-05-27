@@ -24,6 +24,7 @@ jobs:
           - packages/pipeline
           - packages/bot
           - packages/process
+          - packages/sysadmin-api
     steps:
       - name: Lint backend
         uses: bbvch-ai/aihub-core/.github/actions/lint_backend@main
@@ -31,16 +32,35 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.folder }}
   lint-frontend:
-    name: Lint Web
+    name: Lint Frontend
     runs-on: ubuntu-24.04-arm
+    if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: [packages/web, packages/sysadmin-web]
     steps:
       - name: Lint frontend
         uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          working_directory: packages/web/swiss_ai_hub_web
-          lockfile: packages/web/swiss_ai_hub_web/pnpm-lock.yaml
+          working_directory: ${{ matrix.folder }}
+          lockfile: pnpm-lock.yaml
+  lint-actions:
+    name: Lint Actions
+    runs-on: ubuntu-24.04-arm
+    if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - name: Verify GitHub Actions are pinned
+        uses: suzuki-shunsuke/pinact-action@cf51507d80d4d6522a07348e3d58790290eaf0b6  # v2.0.0
+        with:
+          skip_push: 'true'
+          verify: 'true'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
   license-check:
     name: License Check
     runs-on: ubuntu-24.04-arm
@@ -48,9 +68,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       - name: Set up Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: '3.13'
       - name: Install system dependencies
@@ -58,13 +78,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq make
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
         with:
           enable-cache: true
       - name: Install dev dependencies
         run: uv sync --all-packages --dev --frozen
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
         with:
           node-version: 25.x
       - name: Install pnpm via corepack
@@ -72,7 +92,7 @@ jobs:
           npm install -g --ignore-scripts corepack@0.34.7
           corepack enable pnpm
           corepack install
-        working-directory: packages/web/swiss_ai_hub_web
+        working-directory: packages/web
       - name: Make license check script executable
         run: chmod +x ./generate-license.sh
       - name: Run license check

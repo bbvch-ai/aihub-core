@@ -41,6 +41,8 @@ class ProcessController(TenantScopedController):
     description = ApiLocaleString.from_i18n_path("api.controllers.process.description")
     icon = "mage:arrowlist"
 
+    _INSTANCE_ROUTE = "/classes/{process_class}/instances/{process_id}"
+
     def __init__(
         self, *, auth: AuthHandler, route: str = "/processes", additionally_required_permission: str | None = None
     ):
@@ -109,7 +111,7 @@ class ProcessController(TenantScopedController):
 
         return self
 
-    def get_process_instance(self, route: str = "/classes/{process_class}/instances/{process_id}") -> Self:
+    def get_process_instance(self, route: str = _INSTANCE_ROUTE) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_process_instance(
             process_class: str,
@@ -124,7 +126,7 @@ class ProcessController(TenantScopedController):
 
         return self
 
-    def update_process_instance(self, route: str = "/classes/{process_class}/instances/{process_id}") -> Self:
+    def update_process_instance(self, route: str = _INSTANCE_ROUTE) -> Self:
         @self.router.put(route, tags=self.tags)
         async def update_process_instance(
             process_class: str,
@@ -148,7 +150,7 @@ class ProcessController(TenantScopedController):
 
         return self
 
-    def delete_process_instance(self, route: str = "/classes/{process_class}/instances/{process_id}") -> Self:
+    def delete_process_instance(self, route: str = _INSTANCE_ROUTE) -> Self:
         from fastapi import Response, status
 
         @self.router.delete(route, tags=self.tags, status_code=status.HTTP_204_NO_CONTENT)

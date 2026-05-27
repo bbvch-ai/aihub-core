@@ -26,7 +26,7 @@ runs:
   using: composite
   steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       with:
         fetch-depth: 0
     - name: Sanitize artifact name
@@ -35,14 +35,14 @@ runs:
       run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
         '-')" >> "$GITHUB_OUTPUT"
     - name: Download Coverage (if exists)
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
       if: inputs.report_coverage == 'true'
       with:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
         path: ${{ inputs.working_directory }}
     - name: Run SonarCloud Without Coverage
       if: inputs.report_coverage == 'false'
-      uses: SonarSource/sonarqube-scan-action@v5
+      uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703  # v5.3.2
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
@@ -53,7 +53,7 @@ runs:
           -Dsonar.organization=${{ inputs.sonar_organization }}
     - name: Run SonarCloud With Coverage
       if: inputs.report_coverage == 'true'
-      uses: SonarSource/sonarqube-scan-action@v5
+      uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703  # v5.3.2
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}

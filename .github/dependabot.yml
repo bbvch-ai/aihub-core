@@ -38,7 +38,7 @@
 #
 # Dependabot enforces uniqueness on (package-ecosystem, directory,
 # target-branch). npm spans three real pnpm projects (the web app lives at
-# /packages/web/swiss_ai_hub_web — there is NO npm project at repo root;
+# /packages/web — there is NO npm project at repo root;
 # only uv.lock is at root). docker uses `directories:` to fan out per
 # Dockerfile within a single entry. Cooldown/schedule are inlined per entry
 # because Dependabot's schema rejects unknown top-level keys (no YAML anchors).
@@ -73,12 +73,12 @@ updates:
         patterns: ['*']
 
   # ============================================================================
-  # Frontend admin/process UI (pnpm) — /packages/web/swiss_ai_hub_web
-  # (NOT repo root — that path has no package.json/pnpm-lock.yaml, which is
-  # why grouped version updates for the web app never matched before)
+  # Frontend admin/process UI (pnpm workspace) — admin/process UI + sysadmin-web
+  # extender. Repo root (/) IS a pnpm workspace post-flatten; that is where
+  # the single root pnpm-lock.yaml lives.
   # ============================================================================
   - package-ecosystem: npm
-    directory: /packages/web/swiss_ai_hub_web
+    directory: /
     schedule:
       interval: monthly
     # NO Dependabot cooldown for npm — it is fundamentally broken with pnpm:
@@ -171,7 +171,9 @@ updates:
       - /packages/bot
       - /packages/backup
       - /packages/pipeline
-      - /packages/web/swiss_ai_hub_web
+      - /packages/web
+      - /packages/sysadmin-api
+      - /packages/sysadmin-web
       - /infra/deployment/docker/playwright
     schedule:
       interval: monthly

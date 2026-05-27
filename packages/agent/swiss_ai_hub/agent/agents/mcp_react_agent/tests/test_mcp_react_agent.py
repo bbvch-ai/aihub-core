@@ -51,7 +51,10 @@ def _deduplicate(events: list[BaseEvent]) -> list[BaseEvent]:
 
 
 @asynccontextmanager
-async def _fake_mcp_create(_config: McpClientConfig) -> AsyncIterator[AsyncMock]:
+async def _fake_mcp_create(
+    _config: McpClientConfig,
+    user_token: str | None = None,  # noqa: ARG001
+) -> AsyncIterator[AsyncMock]:
     mock_mcp_client = AsyncMock()
     mock_mcp_client.list_tools = AsyncMock(return_value=[MOCK_TOOL])
     mock_mcp_client.call_tool = AsyncMock(
