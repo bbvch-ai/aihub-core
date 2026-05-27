@@ -1,10 +1,3 @@
-> [!WARNING]
-> **DRAFT — pending legal review.** This document has not yet been reviewed for legal compliance. Do not rely
-> on this text as a binding agreement until that review is complete and this banner is removed. Follow-up: remove this
-> banner after Adrian confirms the text is legally valid for BBV Software Services AG.
-
-______________________________________________________________________
-
 # Swiss AI Hub Individual Contributor License Agreement
 
 **Version 1.0**
@@ -121,8 +114,6 @@ This Agreement shall be governed by and construed in accordance with the laws of
 conflict of laws provisions. Any disputes arising under or in connection with this Agreement shall be subject to the
 exclusive jurisdiction of the courts of Switzerland.
 
-*(Provisional — governing law to be confirmed by legal review.)*
-
 ______________________________________________________________________
 
 ## 9. How to Sign
@@ -135,9 +126,3 @@ I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA
 
 The CLA Assistant bot will record your signature in the `bbvch-ai/cla-signatures` repository. Your signature applies to
 all future Contributions you make to this repository under the same GitHub account.
-
-______________________________________________________________________
-
-*This Agreement is based on the Salesforce, Inc. Individual Contributor License Agreement, which is itself derived from
-the Apache Software Foundation Individual Contributor License Agreement. Adapted for BBV Software Services AG and the
-Swiss AI Hub project.*
