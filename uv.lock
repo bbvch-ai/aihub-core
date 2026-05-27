@@ -5806,7 +5806,7 @@ requires-dist = [
     { name = "azure-storage-file-datalake", specifier = ">=12.22.0" },
     { name = "blinker", specifier = ">=1.9.0" },
     { name = "boto3", specifier = ">=1.41.5" },
-    { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.42.30" },
+    { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.43.11" },
     { name = "cachetools", specifier = ">=5.5.2" },
     { name = "colorlog", specifier = ">=6.9.0" },
     { name = "fastapi", specifier = ">=0.128.0" },
