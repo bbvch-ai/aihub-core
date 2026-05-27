@@ -5617,7 +5617,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "stringcase", specifier = ">=1.2.0" },
     { name = "swiss-ai-hub-core", editable = "packages/core" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.47.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -5918,7 +5918,7 @@ dev = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "swiss-ai-hub-core", editable = "packages/core" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.47.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -5948,7 +5948,7 @@ requires-dist = [
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "swiss-ai-hub-api", editable = "packages/api" },
     { name = "swiss-ai-hub-core", editable = "packages/core" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.47.0" },
 ]
 
 [package.metadata.requires-dev]
