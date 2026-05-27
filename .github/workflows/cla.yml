@@ -21,7 +21,7 @@ jobs:
     if: >-
       contains(github.event.comment.body, 'I have read the CONTRIBUTOR_AGREEMENT and
       I hereby sign the CLA') ||
-      github.event.comment.body == 'recheck' ||
+      contains(github.event.comment.body, 'recheck') ||
       github.event_name == 'pull_request'
     timeout-minutes: 5
     steps:
