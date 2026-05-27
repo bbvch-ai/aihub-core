@@ -62,7 +62,7 @@
         </template>
 
         <template #list="{ items }">
-          <ul class="flex flex-col list-none p-0 m-0">
+          <ul class="m-0 flex list-none flex-col p-0">
             <NotificationItem
               v-for="item in items"
               :key="item.id"

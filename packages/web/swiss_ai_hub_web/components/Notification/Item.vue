@@ -46,7 +46,7 @@
         />
       </div>
     </div>
-  </div>
+  </li>
 </template>
 
 <script setup lang="ts">
