@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-workspace"
-version = "0.289.18"
+version = "0.290.0"
 requires-python = ">=3.13, <3.14"
 description = "Swiss AI Hub Monorepo Workspace"
 dependencies = [
@@ -51,6 +51,7 @@ members = [
     "packages/pipeline",
     "packages/process",
     "packages/backup",
+    "packages/sysadmin-api",
 ]
 
 [tool.uv.sources]
@@ -60,6 +61,7 @@ swiss-ai-hub-api = { workspace = true }
 swiss-ai-hub-bot = { workspace = true }
 swiss-ai-hub-pipeline = { workspace = true }
 swiss-ai-hub-process = { workspace = true }
+swiss-ai-hub-sysadmin-api = { workspace = true }
 
 # Ruff config for files outside the per-package scopes (root-level scripts and
 # `infra/`). Each `packages/*/pyproject.toml` defines its own `[tool.ruff]` and

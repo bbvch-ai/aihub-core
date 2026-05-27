@@ -210,8 +210,8 @@ classmethods.
 - Persistence entities: `packages/core/persistence/<domain>/entities/`
 - API controllers: `packages/api/routes/<domain>/`
 - API services: `packages/api/routes/<domain>/`
-- Frontend composables: `packages/web/swiss_ai_hub_web/composables/<domain>/`
-- Frontend components: `packages/web/swiss_ai_hub_web/components/<Domain>/`
+- Frontend composables: `packages/web/composables/<domain>/`
+- Frontend components: `packages/web/components/<Domain>/`
 - i18n: 4 locales (de, en, fr, it), YAML files in each scope's `i18n/translations/`
 
 ### Code Placement Decision Tree

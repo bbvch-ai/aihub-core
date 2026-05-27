@@ -1,0 +1,800 @@
+---
+test: Questo è un test
+welcome: Benvenuti in bbv ai-hub
+common:
+  actions:
+    save: Salva
+    cancel: Annulla
+    create: Crea
+    delete: Elimina
+    edit: Modifica
+  loading: Caricamento...
+  selectModel: Seleziona un modello
+  selectDatabase: Seleziona un database
+models:
+  title: Modelli
+  error: Errore nel caricamento dei modelli
+  card:
+    tokens: Token
+    costPer1M: Costo/1M
+  modelDetails:
+    overview: Panoramica del modello
+    name: Nome
+    mode: Modalità
+    additionalInfo: Informazioni aggiuntive
+    maxInputTokens: Max token di input
+    maxOutputTokens: Max token di output
+    basicInputCost: Costo input per 1M token
+    basicOutputCost: Costo output per 1M token
+    advancedPricing: Prezzi avanzati
+    cacheCreationCost: Costo creazione cache
+    cacheReadCost: Costo lettura cache
+    inputCostAbove128k: Costo input (sopra 128K)
+    inputCostAbove200k: Costo input (sopra 200K)
+    inputAudioCost: Costo audio input
+    inputBatchCost: Costo batch input
+    outputBatchCost: Costo batch output
+    outputAudioCost: Costo audio output
+    reasoningTokenCost: Costo token di ragionamento
+    outputCostAbove128k: Costo output (sopra 128K)
+    outputCostAbove200k: Costo output (sopra 200K)
+    imageCost: Costo immagine
+    searchContextCost: Costo contesto ricerca
+    rateLimits: Limiti di velocità
+    tokensPerMinute: Token per minuto
+    requestsPerMinute: Richieste per minuto
+    capabilities: Capacità
+    supportsSystemMessages: Messaggi di sistema
+    supportsResponseSchema: Schema di risposta
+    supportsVision: Visione
+    supportsFunctionCalling: Chiamata di funzione
+    supportsToolChoice: Scelta strumento
+    supportsAssistantPrefill: Precompilazione assistente
+    supportsPromptCaching: Cache del prompt
+    supportsAudioInput: Input audio
+    supportsAudioOutput: Output audio
+    supportsPdfInput: Input PDF
+    supportsNativeStreaming: Streaming nativo
+    supportsWebSearch: Ricerca web
+    supportsUrlContext: Contesto URL
+    supportsReasoning: Ragionamento
+    supportsComputerUse: Uso del computer
+    otherDetails: Altri dettagli
+    outputVectorSize: Dimensione vettore output
+    supportsEmbeddingImageInput: Input immagine embedding
+    supportedParams: Parametri OpenAI supportati
+    notSpecified: Non specificato
+languages:
+  en: Inglese
+  de: Tedesco
+  it: Italiano
+  fr: Francese
+http_error:
+  code:
+    # 4xx Client Errors
+    400: Richiesta non valida. Controlla l'indirizzo e riprova.
+    401: Effettua il login per accedere a questa pagina.
+    403: Non hai il permesso di visualizzare questo.
+    404: Spiacenti, non siamo riusciti a trovare quella pagina.
+    405: Questa azione non è consentita qui.
+    408: La richiesta è scaduta. Riprova.
+    429: Troppe richieste.
+
+    # 5xx Server Errors
+    500: Si è verificato un errore sui nostri server.
+    502: Si è verificato un errore del server. Riprova.
+    503: Il nostro servizio è temporaneamente non disponibile.
+    504: Un server non risponde. Riprova.
+user:
+  title: Utenti
+  logout: Esci
+  language: Lingua
+  list:
+    name: Nome
+    email: E-mail
+    avatar: Avatar
+    roles: Ruoli
+    sys_admin: Amministratore di sistema
+    sys_admin_tag: Sys Admin
+    sys_admin_no: 'No'
+    last_accessed: Ultimo accesso
+my_account:
+  title: Il mio account
+  services: Servizi
+  agents: Agenti
+  processes: Processi
+time_ago:
+  last_hour: Ultima ora
+  last_day: Ultimo giorno
+  last_week: La settimana scorsa
+  last_month: Lo scorso mese
+  last_year: L''anno scorso
+  long_time_ago: Molto tempo fa
+thread:
+  title: Interazioni
+  users: Utenti
+  assistants: Assistenti
+  navigation:
+    basic: Base
+    hierarchy: Gerarchia
+    chat: Chat
+    display: Turni
+    memories: Memorie
+  list:
+    name: Nome
+    agents: Agenti
+    created: Creato
+    numTurns: Numero di turni
+    numEvents: Numero di eventi
+    status: Stato
+    pending: In attesa
+  utils:
+    pendingTypes:
+      hitl: Umano nel loop
+      aitl: Agente nel loop
+      bitl: Bot nel loop
+      unknown: Motivo sconosciuto
+  display:
+    title: Turni di interazione
+    list:
+      started: Avviato
+      duration: Durata
+      events: Eventi
+      status: Stato
+      pending: In attesa
+      dateFormat: DD.MM.YYYY HH:mm:ss
+  events:
+    title: Vista di tracciamento dei turni
+  hierarchy:
+    title: Vista gerarchica sui turni
+  chat:
+    title: Vista Chat
+  memories:
+    title: Memorie del thread
+    description: Memorie raccolte durante {threadName}
+    delete_all:
+      confirm_header: Elimina tutte le memorie del thread
+      confirm_message: Sei sicuro di voler eliminare tutte le memorie da questo thread?
+        Questa azione non può essere annullata.
+      success:
+        title: Successo
+        message: Tutte le memorie del thread sono state eliminate con successo
+      error:
+        title: Eliminazione fallita
+        message: Impossibile eliminare le memorie del thread. Riprova.
+chat:
+  assistant: Assistente
+  document: Documento
+event:
+  list:
+    firstInteraction: 'Prima interazione:'
+    lastInteraction: 'Ultima interazione:'
+    costs: 'Costi:'
+    duration: 'Durata:'
+    pending: 'In attesa:'
+    no: 'No'
+    status: 'Stato:'
+    error: Errore
+    successful: Riuscito
+    chat: Chat
+    agents: 'Agenti:'
+  base:
+    view_raw_data: Visualizza dati evento grezzi
+    view_formatted: Visualizza evento formattato
+    event_data: Dati evento
+  rag_start:
+    selected_namespaces: 'Namespace selezionati:'
+    additional_filters: 'Filtri di metadati aggiuntivi:'
+    no_filters: Nessun filtro aggiuntivo
+  rag_stop:
+    failure_reason:
+      context_insufficient: Il contesto recuperato era insufficiente — la risposta
+        è un ripiego e non è ancorata alle vostre fonti di conoscenza.
+      expert_declined: L'esperto umano non ha potuto fornire una risposta — questa
+        esecuzione non ha prodotto una risposta fondata.
+      expert_errored: L'escalation all'esperto è fallita con un errore — questa esecuzione
+        non ha prodotto una risposta fondata.
+      few_shot_rejected: La richiesta non corrispondeva a nessun pattern noto, quindi
+        la risposta è stata prodotta senza recupero.
+  limitChatHistory:
+    summary: Cronologia chat limitata a {count} messaggi
+    assistant: Assistente
+    system: Sistema
+    user: Utente
+    description: La cronologia della chat è stata troncata in base ai limiti di token
+      per rimanere entro i vincoli del modello
+  reranker:
+    topDocuments: 'Top {count} documenti più rilevanti:'
+    query: Query di ricerca
+  retriever:
+    foundDocuments: '{count} documenti rilevanti trovati'
+    query: Query di ricerca
+    chunksFound: '{count} frammenti trovati'
+    documentsSpanning: In {count} documenti
+    avgScore: 'Rilevanza media: {score}%'
+    chunksFromDoc: '{count} frammento | {count} frammenti'
+    chunk: Frammento
+    position: 'Pos: {pos}'
+    lines: Righe {start}-{end}
+    chars: '{count} caratteri'
+    sourceDocument: '{count} documento sorgente | {count} documenti sorgente'
+    contentChunk: '{count} frammento di contenuto | {count} frammenti di contenuto'
+    noChunksFound: Nessun frammento trovato
+    noChunksFoundDescription: La ricerca di recupero non ha trovato frammenti di contenuto
+      rilevanti.
+  retrieveMemory:
+    title: Memoria recuperata
+    memories: Memorie
+    relations: Grafo della conoscenza
+    score: Rilevanza
+    noMemories: Nessuna memoria recuperata
+  storeMemory:
+    title: Modifiche alla memoria
+    added: Aggiunto
+    updated: Aggiornato
+    deleted: Eliminato
+    addedRelations: relazioni aggiunte
+    deletedRelations: relazioni eliminate
+    relationChanges: Modifiche alle relazioni
+    noChanges: Nessuna modifica
+  addMemoryToChatHistory:
+    summary: '{count} messaggio di memoria aggiunto alla cronologia | {count} messaggi
+      di memoria aggiunti alla cronologia'
+    description: La cronologia della chat è stata arricchita con memorie rilevanti
+      dalle interazioni precedenti
+    assistant: Assistente
+    system: Sistema
+    user: Utente
+  standaloneQuestionCondenser:
+    summary: Domanda rifinita e condensata
+    condensedQuestion: Domanda Condensata
+    user: Utente
+    description: La domanda originale è stata riformulata per essere più specifica
+      e consapevole del contesto per migliori risultati di ricerca
+  statistics:
+    charts:
+      agentInvocations: Invocazioni di agenti
+      agentStart: Avvio agente
+      endEvents: Eventi finali
+      success: Successo
+      openHumanInTheLoop: Aperto (Umano nel loop)
+      openBotInTheLoop: Aperto (Bot nel loop)
+      error: Errore
+      delegations: Deleghe
+      delegatedTaskAgentInTheLoop: Compito delegato (Agente nel loop)
+      allEvents: Tutti gli eventi
+costs:
+  table:
+    count: Conteggio
+    cost: Costo
+    input: Input
+    output: Output
+    embedding: Incorporamento
+    total: Totale
+    currency: CHF
+service:
+  selection:
+    title: Servizi
+    description: Qui sono elencati tutti i servizi che hai attivato
+    search: Cerca
+    button: Cerca
+agent:
+  title: Agenti
+  can_chat: Può chattare
+  tabs:
+    myAgents: I miei agenti
+    templates: Modelli
+  templates:
+    empty: Nessun modello disponibile
+  navigation:
+    basic: Panoramica
+    workflow: Flusso di lavoro
+    threads: Thread
+    configuration: Configurazione
+    chat: Chat
+    memories: Memorie
+  overview:
+    startEvents: Eventi di avvio
+    stopEvents: Eventi di arresto
+    config: Configurazione
+    name: 'Nome:'
+    class: 'Classe:'
+    agentId: 'ID Agente:'
+    status: 'Stato:'
+    online: Online
+    offline: Offline
+  configuration:
+    title: Configurazione dell'agente
+    description: Configura il comportamento runtime e le impostazioni per questo agente
+    runtimeSettings: Impostazioni runtime
+    noConfiguration: Nessuna configurazione disponibile per questo agente
+    saveSuccess: Configurazione salvata con successo
+    saveError: Impossibile salvare la configurazione
+  chat:
+    title: Inizia una nuova chat
+    placeholder: Digita il messaggio che vuoi inviare all'Agente
+    createThreadAndSend: Crea thread e invia
+    manuallyCreatedThread: Thread creato manualmente
+  availableAgents: Agenti disponibili
+  list:
+    name: Nome
+    description: Descrizione
+    agent: Agente
+    is_conversational: Conversazionale
+    true: Sì
+    false: 'No'
+    status: Stato
+    online: Online
+    offline: Offline
+    clone: Clonare
+  workflow:
+    title: Flusso di lavoro agentico
+    view_tooltip: Visualizza il flusso di lavoro
+    empty: Nessun grafo del flusso di lavoro disponibile per questa classe di agente.
+  threads:
+    title: Thread dell'agente
+  create:
+    button: Crea nuovo agente
+    title: Crea nuovo agente
+    cancel: Annulla
+    selectClass: Tipo di agente
+    selectClassPlaceholder: Seleziona un tipo di agente...
+    agentId: ID agente
+    agentIdPlaceholder: mio-nuovo-agente
+    agentIdHelp: Identificatore univoco (lettere minuscole, numeri, trattini, underscore)
+    agentIdInvalid: Sono consentiti solo lettere minuscole, numeri, trattini e underscore
+    agentIdTooLong: L'ID agente deve essere al massimo di 100 caratteri
+    configuration: Configurazione
+    noAgentClasses: Nessun tipo di agente disponibile. Assicurati che almeno un agente
+      sia in esecuzione.
+    submit: Crea agente
+    success: Agente creato con successo
+    error: Impossibile creare l'agente
+    steps:
+      basicInfo: Informazioni di base
+  delete:
+    button: Elimina
+    title: Elimina agente
+    confirm: Sei sicuro di voler eliminare questo agente?
+    confirmMessage: Questa azione non può essere annullata. La configurazione dell'agente
+      verrà rimossa definitivamente.
+    success: Agente eliminato con successo
+    error: Impossibile eliminare l'agente
+    cannotDeleteDefault: Le configurazioni degli agenti predefiniti non possono essere
+      eliminate
+  add_instance:
+    title: Aggiungi agente
+    description: Crea una nuova istanza dell'agente
+  selector:
+    class:
+      label: Tipo di agente
+      placeholder: Seleziona un tipo di agente...
+    id:
+      label: Profilo agente
+      placeholder: Seleziona un profilo agente...
+      help: Scegli il profilo agente specifico da utilizzare
+  memories:
+    title: Memorie dell'agente
+    description: Memorie raccolte da {agentName} su di te
+    delete_all:
+      confirm_header: Elimina tutte le memorie dell'agente
+      confirm_message: Sei sicuro di voler eliminare tutte le memorie raccolte da
+        questo agente? Questa azione non può essere annullata.
+      success:
+        title: Successo
+        message: Tutte le memorie dell'agente sono state eliminate con successo
+      error:
+        title: Eliminazione fallita
+        message: Impossibile eliminare le memorie dell'agente. Riprova.
+document:
+  list:
+    title: Titolo del documento
+    created: Creato
+    updated_at: Ultimo aggiornamento
+    language: Lingua
+    document_type: Tipo di documento
+    number_of_pages: Numero di pagine
+    download: Scarica
+    is_processing: Elaborazione in corso
+knowledge:
+  title: Basi di conoscenza
+  created_at: 'Creato:'
+  updated_at: 'Ultimo aggiornamento:'
+  navigation:
+    document:
+      basic: Panoramica
+      original: Originale
+      content: Contenuto
+      nodes: Chunk
+      summary: Riassunti
+  original:
+    not_available: La vista del documento originale è disponibile solo per i file
+      PDF.
+    load_error: Impossibile caricare il documento originale.
+    view_button: Visualizza originale
+    open_new_tab: Apri in una nuova scheda
+    click_to_view: Clicca sul pulsante qui sotto per visualizzare il documento PDF
+      originale.
+  documents:
+    title: Documenti
+    search:
+      placeholder: Cerca per titolo documento...
+    upload:
+      title: Carica documenti
+      drag_and_drop: Trascina i file qui o clicca per selezionare i file
+      target_location:
+        label: Posizione di destinazione
+        help: Cartella dove i documenti dovrebbero essere archiviati
+      errors:
+        unsupported_file_type: 'Un file ha un tipo non supportato. I tipi supportati
+          sono: {supportedTypes} | {count} file hanno un tipo non supportato. I tipi
+          supportati sono: {supportedTypes}'
+      actions:
+        upload: Carica
+        cancel: Annulla
+  nodes:
+    title: Chunk di documento
+  summary:
+    title: Riassunti del documento
+    level: Livello
+    no_summaries_at_level: Nessun riassunto a questo livello
+  actions:
+    save: Salva
+    create: Crea
+    cancel: Annulla
+  add_folder:
+    title: Aggiungi collezione
+    description: Crea una nuova collezione di conoscenza
+    cancel: Annulla
+  auto_sync:
+    title: Sincronizzato automaticamente
+    description: Le collezioni sono gestite automaticamente
+  manual_management:
+    description: Le collezioni possono essere create e gestite manualmente
+  edit_namespace: Modifica collezione
+  upload_documents: Carica documenti
+  form:
+    create:
+      title: Crea collezione
+    edit:
+      title: Modifica collezione
+    database:
+      label: Database di conoscenza
+      placeholder: Nome del database di conoscenza
+    folder_name:
+      label: Nome collezione
+      placeholder: mia-collezione
+      help: Sono consentiti solo caratteri alfanumerici, trattini (-) e trattini bassi
+        (_)
+      edit_help: Nome tecnico della collezione
+      validation_error: Il nome della collezione può contenere solo caratteri alfanumerici,
+        trattini (-) e trattini bassi (_)
+    display_name:
+      label: Nome visualizzato
+      placeholder: Nome visualizzato
+      help: Nome visualizzato della collezione
+    description:
+      label: Descrizione
+      placeholder: Descrizione
+      help: Descrizione della collezione
+auth:
+  renew:
+    processing: Elaborazione del rinnovo silenzioso del token...
+  callback:
+    processing: Elaborazione del callback di autenticazione...
+    loggingIn: Accesso in corso...
+    loginError: Errore di accesso
+    redirectingToLogin: Reindirizzamento alla pagina di accesso...
+    genericError: Si è verificato un errore durante l'accesso. Riprova.
+  login:
+    title: Accesso
+    description: Effettua il login per accedere all'applicazione
+    tagline: Sperimenta il futuro dell'intelligenza artificiale
+    welcome: Benvenuti nell'AI Hub di {companyName}
+    pleaseLogin: Effettua il login
+    loginWith: Accedi con {provider}
+    customSolutions: Soluzioni AI personalizzate per la tua azienda
+    logoAlt: Logo dell'azienda
+timerange:
+  1h: 1 ora
+  24h: 1 giorno
+  30d: 1 mese
+  365d: 1 anno
+chart:
+  no_data: Nessun dato disponibile per questo periodo.
+  trending_up: Tendenza al rialzo
+  trending_down: Tendenza al ribasso
+dashboard:
+  all_agents: Tutti gli agenti
+  users: Utenti AI-Hub
+  unknown_agent: Agente sconosciuto
+  add_widget: Aggiungi widget
+  select_data_type: Seleziona tipo di dati
+  select_agent: Seleziona un agente (Opzionale)
+  create: Crea
+  create_widget: Crea nuovo widget
+  events:
+    StartEvent:
+      label: Esecuzioni agente avviate
+    StopEvent:
+      label: Esecuzioni riuscite
+    UserMessageEvent:
+      label: Messaggi chat utente
+    ExceptionEvent:
+      label: Errori
+    HumanInTheLoopRequestEvent:
+      label: Umano nel loop
+    BotInTheLoopRequestEvent:
+      label: Chiedi in Slack/Teams
+    AgentInTheLoopRequestEvent:
+      label: Compiti delegati
+evaluation:
+  langfuse_link: Esegui esperimenti
+  dataset:
+    title: Set di dati
+    created_at: 'Creato:'
+    updated_at: 'Aggiornato il:'
+    create_description: Crea un nuovo set di dati che puoi utilizzare per valutare
+      le prestazioni dei tuoi Assistenti!
+    name: Nome
+    description: Descrizione
+    cancel: Annulla
+    save: Salva
+    create_new: Crea nuovo set di dati
+    add_at_least_one: Aggiungi almeno 1 punto dati
+    question_header: Domanda
+    answer_header: Risposta
+    status: Stato
+    new: Nuovo
+    question_placeholder: Domanda
+    answer_placeholder: Risposta
+    add_button: Aggiungi
+    save_button: Salva set di dati
+    save_confirmation: Salvare il set di dati? Una volta aggiunti, non potrai più
+      rimuovere gli elementi.
+    cancel_button: Annulla
+    save_action: Salva
+    saved_summary: Salvato
+    saved_detail: Set di dati salvato
+role:
+  title: Ruoli di accesso
+  name: Nome
+  description: Descrizione
+  edit: Modifica ruolo
+  create_new: Nuovo ruolo
+  add_access_role: Aggiungi ruolo di accesso
+  add_button: Aggiungi
+  is_new: Nuovo
+  save_button: Salva
+  access_rules: Regole di accesso
+  usage_limits: Limiti di utilizzo
+  usage_pattern: Modello
+  usage_limit_value: Limite
+  usage_period: Periodo
+  calls_per: chiamate
+  unlimited: Illimitato
+  no_access_rules: Nessuna regola di accesso definita
+  access_rules_help_intro: "Le regole gerarchiche controllano l'accesso alle risorse:"
+  access_rules_help_all_agents: Tutti gli agenti
+  access_rules_help_agent_instances: Tutte le istanze di MyAgent
+  access_rules_help_service: Servizio Knowledge
+  access_rules_help_admin: Accesso admin a tutto
+  pattern_help_intro: 'I modelli usano caratteri jolly per gli agenti:'
+  pattern_help_all: Tutti gli agenti
+  pattern_help_wildcard: Tutte le istanze di MyAgent
+  pattern_help_specific: Solo un'istanza specifica
+  create_dialog:
+    description: Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo
+      ruolo agli utenti, utilizza il tuo AD.
+    cancel: Annulla
+    save: Salva
+  remove_dialog:
+    confirm: Sei sicuro?
+    explanation: Se rimuovi questo ruolo, gli utenti potrebbero perdere l'accesso
+      a determinate funzionalità dell'hub AI.
+    cancel: Annulla
+    proceed: Elimina comunque
+  role_deleted:
+    summary: Ruolo eliminato
+    detail: Il ruolo è stato eliminato. Gli utenti con questo ruolo potrebbero aver
+      perso l'accesso a determinate funzionalità.
+  role_saved:
+    summary: Ruolo salvato
+    detail: Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato.
+usage:
+  title: Utilizzo
+  calls_remaining: '{current} / {limit} chiamate agente'
+  unlimited_calls: Chiamate agente illimitate
+  resets_at: Reset {time}
+  limit_exceeded: Limite chiamate agente raggiunto
+  limit_exceeded_detail: Attendere fino a {time} o contattare l'amministratore
+period:
+  1h: All'ora
+  1d: Al giorno
+  7d: Alla settimana
+  1mo: Al mese
+notification:
+  title: Notifiche
+  no_unread_notifications: Nessuna notifica non letta
+  no_notifications: Nessuna notifica disponibile
+  no_pending_notifications: Nessuna notifica in sospeso
+  mark_all_as_read: Segna tutte come lette
+  mark_as_read: Segna come letto
+  mark_as_done: Segna come completato
+  view_all: Visualizza tutte le notifiche
+  click_to_view: Clicca per visualizzare la notifica
+  clear_selection: Cancella selezione
+  select_all: Seleziona tutte le notifiche
+  filter_notifications: Filtra notifiche
+  select_notification: Seleziona notifica
+  default_summary: Nuova notifica
+  view_button: Visualizza
+  filter:
+    all: Tutte
+    unread: Non lette
+    not_done: Da fare
+  types:
+    info: Info
+    success: Successo
+    warn: Avviso
+    error: Errore
+  severities:
+    low: Bassa
+    medium: Media
+    high: Alta
+    critical: Critica
+bar:
+  toggle_dark_mode: Attiva/disattiva modalità scura
+  show_notifications: Mostra notifiche
+process:
+  title: Processi
+  overview:
+    name: Nome
+    class: Classe
+    processId: ID processo
+    status: Stato
+    online: Online
+    offline: Offline
+  navigation:
+    overview: Panoramica
+    walkthroughs: Esecuzioni
+    start: Avvia esecuzione
+    configuration: Configurazione
+  list:
+    online: Online
+    offline: Offline
+  configuration:
+    title: Configurazione del processo
+    description: Configura il comportamento di esecuzione di questa istanza del processo.
+    runtimeSettings: Impostazioni di esecuzione
+    saveSuccess: Configurazione salvata con successo
+    saveError: Salvataggio della configurazione non riuscito
+    noConfiguration: Nessuna configurazione disponibile per questo processo.
+  create:
+    title: Crea nuovo processo
+    selectClass: Tipo di processo
+    selectClassPlaceholder: Seleziona un tipo di processo...
+    noProcessClasses: Nessun tipo di processo disponibile.
+    steps:
+      basicInfo: Informazioni di base
+    submit: Crea processo
+    cancel: Annulla
+    success: Processo creato con successo
+    error: Creazione del processo non riuscita
+  delete:
+    button: Elimina
+    title: Elimina processo
+    confirmMessage: Sei sicuro di voler eliminare questa istanza del processo? Questa
+      azione non può essere annullata.
+    success: Processo eliminato con successo
+    error: Eliminazione del processo non riuscita
+  add_instance:
+    title: Aggiungi processo
+    description: Crea una nuova istanza del processo
+  walkthrough:
+    list:
+      created: Creato
+      updated: Ultima interazione
+      agents: Agenti
+      users: Utenti
+      state: Stato
+      in_progress: In corso
+      done: Completato
+      steps: Progresso
+form:
+  locale_input:
+    translate_tooltip: Traduci in tutte le lingue
+lib:
+  vectorStore:
+    label: Archivio vettoriale
+    help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
+    database:
+      label: Database
+    namespaces:
+      label: Spazi dei nomi
+      placeholder: Seleziona gli spazi dei nomi (vuoto = tutti)
+      help: Lascia vuoto per cercare tutti gli spazi dei nomi
+    allowedFilterFields:
+      label: Campi filtro consentiti
+      placeholder: Inserisci una chiave di metadati e premi Invio
+      help: Chiavi di metadati su cui i publisher possono filtrare in fase di query.
+        La chiave riservata `namespace` non è mai consentita.
+memory:
+  title: Ricordi
+  graph:
+    title: Grafo della conoscenza
+  list:
+    title: Elenco dei ricordi
+  detail:
+    title: Dettagli del ricordo
+    created_at: Creato il
+    agent_link_label: Creato dall'agente
+    thread_link_label: Thread correlato
+    thread_title: Interazione thread
+  update:
+    success:
+      title: Successo
+      message: Ricordo aggiornato con successo
+    error:
+      title: Aggiornamento fallito
+      message: Impossibile aggiornare il ricordo. Riprova.
+  delete:
+    success:
+      title: Successo
+      message: Ricordo eliminato con successo
+    error:
+      title: Eliminazione fallita
+      message: Impossibile eliminare il ricordo. Riprova.
+  edit:
+    memory_content_label: Contenuto del ricordo
+    edit_button: Modifica
+    save_button: Salva
+    cancel_button: Annulla
+    delete_button: Elimina
+    delete_confirm_header: Elimina ricordo
+    delete_confirm_message: Sei sicuro di voler eliminare questo ricordo? Questa azione
+      non può essere annullata.
+    validation_error: Errore di validazione
+    validation_empty: Il contenuto del ricordo non può essere vuoto
+  table:
+    memory: Ricordo
+    agent: Agente
+    created: Creato
+    score: Punteggio
+    pagination: Pagina {currentPage} di {totalPages}
+  search:
+    button: Cerca
+    placeholder: Cerca ricordi...
+    clear: Cancella
+  delete_all:
+    button: Elimina tutto
+    confirm_header: Elimina tutti i ricordi
+    confirm_message: Sei sicuro di voler eliminare tutti i ricordi? Questa azione
+      non può essere annullata.
+    success:
+      title: Successo
+      message: Tutti i ricordi sono stati eliminati con successo
+    error:
+      title: Eliminazione fallita
+      message: Impossibile eliminare tutti i ricordi. Riprova.
+openwebui:
+  memories:
+    title: Ricordi dell'Agente
+    select_agent: Seleziona Agente
+    list: Lista
+    graph: Grafico
+    user_memories: Ricordi dell'Utente
+    org_memories: Ricordi dell'Organizzazione
+tenant:
+  select_title: Seleziona un tenant
+  select_description: Scegli l'organizzazione in cui desideri lavorare
+  no_tenant_title: Nessun accesso al tenant
+  no_tenant_description: Non hai accesso a nessun tenant. Contatta il tuo amministratore.
+  switcher_label: Cambia tenant
+  current_tenant: Tenant attuale
+  mismatch_warning: Conflitto di tenant
+  mismatch_description: Il tuo tenant attivo è stato cambiato in {tenant} in un'altra
+    sessione. L'interfaccia di chat utilizza il tenant attivo per tutte le richieste.
+  mismatch_switch_action: Cambia tenant
+  administration_title: Amministrazione tenant
+  administration_description: Gestisci i tenant nell'intera piattaforma

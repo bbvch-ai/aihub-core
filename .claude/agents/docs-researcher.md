@@ -19,9 +19,9 @@ documentation using MCP servers and return a concise summary tailored to the cal
 
 ## What You Know About This Project's Tech Stack
 
-**Frontend** (`packages/web/swiss_ai_hub_web/`): Nuxt 3, Vue 3, PrimeVue 4.x, Tailwind CSS 3, Pinia + @pinia/colada,
-@vueuse/nuxt, @formkit/nuxt with @sfxcode/formkit-primevue-nuxt, @nuxtjs/i18n, @vue-flow/core, apexcharts, gridstack,
-date-fns, vee-validate
+**Frontend** (`packages/web/`): Nuxt 3, Vue 3, PrimeVue 4.x, Tailwind CSS 3, Pinia + @pinia/colada, @vueuse/nuxt,
+@formkit/nuxt with @sfxcode/formkit-primevue-nuxt, @nuxtjs/i18n, @vue-flow/core, apexcharts, gridstack, date-fns,
+vee-validate
 
 **Backend** (`packages/core/`, `packages/api/`, `packages/agent/`, `packages/process/`): Python 3.13, FastAPI, Pydantic
 v2, LlamaIndex 0.14.x, MongoEngine, nats-py, OpenTelemetry, Langfuse, Redis/Valkey

@@ -1,0 +1,4 @@
+---
+tenant_admin:
+  name: Tenant Administration
+  description: Create, edit, and delete tenants (system administrators only)

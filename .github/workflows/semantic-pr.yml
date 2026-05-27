@@ -23,7 +23,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Semantic Pull Request
-        uses: amannn/action-semantic-pull-request@v6
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50  # v6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -40,6 +40,7 @@ jobs:
             tracing
             workflows
             backup
+            sysadmin
           types: |
             fix
             feat
@@ -63,7 +64,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Lint branch name
-        uses: lekterable/branchlint-action@2.1.0
+        uses: lekterable/branchlint-action@cb295893552feff32a809be9c8a6a2535bbf7713  # 2.1.0
         with:
           errorMessage: Invalid branch name. Please follow the pattern
           allowed: |
@@ -82,11 +83,10 @@ jobs:
       pull-requests: read
     steps:
       - name: Check for version label
+        env:
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |-
           echo "Checking for version bump labels (major, minor, patch)..."
-
-          # Get PR labels
-          PR_LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
           echo "PR Labels: $PR_LABELS"
 
           # Check if at least one version label exists

@@ -68,6 +68,3 @@ organization_memory:
 webhook:
   name: Webhooks
   description: Ricevitori webhook per servizi esterni
-tenant_admin:
-  name: Amministrazione tenant
-  description: Crea, modifica ed elimina i tenant (solo amministratori di sistema)
