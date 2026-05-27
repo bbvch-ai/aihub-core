@@ -5996,7 +5996,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
+    { name = "black", extras = ["jupyter"], specifier = ">=26.5.1" },
     { name = "huggingface-hub", specifier = ">=0.36.2" },
     { name = "mdformat", specifier = ">=0.7.21" },
     { name = "mdformat-gfm", specifier = ">=0.4.1" },

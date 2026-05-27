@@ -18,7 +18,7 @@ dev = [
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.14.0",
     # Linting & formatting
-    "black[jupyter]>=26.1.0",
+    "black[jupyter]>=26.5.1",
     "ty>=0.0.34",
     "ruff>=0.15.12",
     "toml-sort>=0.24.4",
