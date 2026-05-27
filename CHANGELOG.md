@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.4] - 2026-05-27 - Development Environment Update
+
+### Changed
+
+- ⚡️ **Upgraded `pnpm` Package Manager:** The monorepo's package management tool has been updated to `pnpm` version
+  `10.20.0`, enhancing dependency resolution and optimizing the overall development workflow.
+
+______________________________________________________________________
+
 ## [v0.290.3] - 2026-05-27 - Platform Refinements and Developer Experience Improvements
 
 ### Added
