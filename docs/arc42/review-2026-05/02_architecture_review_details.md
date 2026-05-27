@@ -31,7 +31,8 @@ ______________________________________________________________________
 
 02. [Phương pháp đánh giá (checklist)](#2-ph%C6%B0%C6%A1ng-ph%C3%A1p-%C4%91%C3%A1nh-gi%C3%A1-checklist)
 03. [Tổng quan hệ sinh thái](#3-t%E1%BB%95ng-quan-h%E1%BB%87-sinh-th%C3%A1i)
-04. [Trụ cột 1: Multi-Tenancy & Customer Isolation](#4-tr%E1%BB%A5-c%E1%BB%99t-1-multi-tenancy--customer-isolation)
+04. [Trụ cột 1: Multi-Tenancy & Customer Isolation](#4-tr%E1%BB%A5-c%E1%BB%99t-1-multi-tenancy--customer-isolation) —
+    **§4.0 Critical Verified Violations** (đọc trước)
 05. [Trụ cột 2: SDK Versioning & Extension Contract](#5-tr%E1%BB%A5-c%E1%BB%99t-2-sdk-versioning--extension-contract)
 06. [Trụ cột 3: Security & Compliance](#6-tr%E1%BB%A5-c%E1%BB%99t-3-security--compliance)
 07. [Trụ cột 4: Reliability & Data Integrity](#7-tr%E1%BB%A5-c%E1%BB%99t-4-reliability--data-integrity)
@@ -191,6 +192,102 @@ aihub-ctc (Customer B, v0.274.3)
 ______________________________________________________________________
 
 ## 4. Trụ cột 1: Multi-Tenancy & Customer Isolation
+
+### 4.0. CRITICAL — Verified Multi-Tenancy Violations
+
+> **Platform's own arc42 documentation** (`docs/arc42/chapters/11_risks_and_technical_debt.md`) acknowledges: *"The
+> platform currently operates as a **single-tenant system**. All users share one set of databases, one NATS instance,
+> one Milvus collection namespace, and one set of agent configurations."*
+>
+> But the API/auth layer **publicly exposes multi-tenant URLs** (`/api/v1/{tenant_id}/...` via `TenantScopedController`)
+> and tenant-scoped roles, creating a **false sense of isolation** for any customer with multiple subsidiaries /
+> business units / data-isolated teams within one organization.
+
+Các finding bên dưới đã được verify trực tiếp trong code, không phải false positive. Reviewer cần tập trung vào đây
+trước khi đọc các phần khác của trụ cột Multi-Tenancy.
+
+#### V1. Data layer KHÔNG có `tenant_id` trên resource entities
+
+Verified via `grep` toàn bộ `packages/core/swiss_ai_hub/core/persistence/`:
+
+| Entity                          | Có `tenant_id`? | File                                                 | Impact                              |
+| ------------------------------- | :-------------: | ---------------------------------------------------- | ----------------------------------- |
+| `RoleEntity`                    |      ✅ Có      | `access/entities/role_entity.py:45`                  | Permissions tenant-scoped           |
+| `UserTenantRoleEntity`          |      ✅ Có      | `access/entities/user_tenant_role_entity.py:48`      | Role assignments tenant-scoped      |
+| `TenantMetadataEntity`          |  ✅ Là tenant   | `access/entities/tenant_metadata_entity.py`          | —                                   |
+| **`BucketEntity`**              |    ❌ Không     | `rag/datalake/entities/bucket_entity.py`             | Knowledge buckets shared globally   |
+| **`NamespaceEntity`**           |    ❌ Không     | `rag/datalake/entities/namespace_entity.py`          | Folders shared globally             |
+| **`RefDoc`**                    |    ❌ Không     | `rag/documents/entities/ref_doc.py`                  | Documents shared globally           |
+| **`AgentConfigEntity`**         |    ❌ Không     | `agents/agent_config_entity.py`                      | Agent configs shared globally       |
+| **`ProcessConfigEntity`**       |    ❌ Không     | `process/process_config_entity.py`                   | Process configs shared globally     |
+| **`ThreadEntity`**              |    ❌ Không     | `messaging/entities/thread_entity.py`                | **User conversations cross-tenant** |
+| **`PersistedAgentEventEntity`** |    ❌ Không     | `messaging/entities/persisted_agent_event_entity.py` | Audit trail not tenant-scoped       |
+| **`NotificationEntity`**        |    ❌ Không     | `notification/notification_entity.py`                | Notifications shared globally       |
+
+**Why this matters**: Isolation phụ thuộc **hoàn toàn** vào `AccessChecker` permission rules. Một role config sai = full
+data leak. Không có defense-in-depth ở DB layer (không có `WHERE tenant_id = current_tenant` filter ở entity layer).
+
+#### V2. Global unique constraint trên `bucket_name` → information disclosure
+
+`packages/core/swiss_ai_hub/core/persistence/rag/datalake/entities/bucket_entity.py`:
+
+```python
+{"fields": ["bucket_name"], "unique": True}  # global unique, KHÔNG phải (tenant_id, bucket_name)
+{"fields": ["db_name"], "unique": True}      # cùng vấn đề
+```
+
+**Exploit path**:
+
+1. Tenant A's admin tạo bucket `policies` trước
+2. Tenant B's admin tạo bucket `policies` → MongoDB throw `DuplicateKeyError`
+3. Tenant B biết Tenant A đã có bucket tên này → information disclosure
+
+Vấn đề tương tự ở `NamespaceEntity`.
+
+#### V3. NATS subjects KHÔNG include `tenant_id`
+
+`packages/core/swiss_ai_hub/core/topic_managers/`:
+
+```
+Agent topic:   agent.{class}.{id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}
+Process topic: process.{class}.{id}.{walkthrough_id}.{event_type}.{event_name}.{event_id}
+```
+
+**Không có tenant segment** trong topic pattern. Bất kỳ subscriber nào có NATS access (vd compromised agent,
+mis-deployed service) có thể subscribe **toàn bộ events của tất cả tenants** via wildcard `agent.>` hoặc `process.>`.
+
+#### V4. Milvus collection shared globally
+
+`MilvusVectorStoreConfig.collection_name` set per-agent-config, không phải per-tenant. Hai tenants' RAG agents có thể
+write/query **cùng 1 Milvus collection** nếu configs đặt cùng tên. Không có tenant partition key mặc định trong schema.
+
+#### V5. `TenantScopedController` URL chỉ là cosmetic — data fetch KHÔNG filter tenant
+
+`packages/api/swiss_ai_hub/api/routes/knowledge/knowledge_service.py:129`:
+
+```python
+buckets = BucketEntity.get_all_buckets()  # ← KHÔNG có tenant_id filter
+```
+
+URL `/api/v1/{tenant_id}/knowledge/databases` trông giống tenant-scoped, nhưng service query tất cả buckets globally rồi
+chỉ filter bằng `AccessChecker` permissions. **Tenant boundary chỉ được enforce ở permission layer**, không phải data
+layer.
+
+#### Tổng kết V1–V5
+
+Public API surface (URL paths, tenant selector, role-per-tenant) **advertise multi-tenancy**, nhưng data model bên dưới
+vẫn là **single-tenant**. Với single-organization self-hosted deployment thì chấp nhận được. Với **bất kỳ deployment nào
+có multiple subsidiaries / business units / data-isolated teams trong 1 org customer**, đây là **commercial-blocker**:
+
+- Một role misconfiguration = cross-tenant data leak, không có DB-layer safety net
+- Information disclosure side-channel tồn tại ngay hôm nay (bucket name collision)
+- Audit trail (`PersistedAgentEventEntity`) không thể filter per-tenant cho compliance
+- Conversations (`ThreadEntity`) không có tenant boundary
+
+**Khuyến nghị tức thì**: Không market hoặc contractually commit tới multi-tenant isolation cho tới khi V1–V5 được fix.
+Trước đó, deploy 1 stack/tenant cô lập (đúng như arc42 doc hiện đang khuyến cáo).
+
+______________________________________________________________________
 
 ### 4.1. Thực trạng tenant model
 

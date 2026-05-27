@@ -1,8 +1,95 @@
 # Multi-Tenancy Review — Finding
 
-**Date:** 2026-05-26 **Reviewer:** Architecture audit **Scope:** `packages/core`, `packages/api`, `packages/web`, infra
-(NATS, Redis, Milvus, LiteLLM) **Verdict:** ⚠️ **Partially implemented** — control plane is tenant-aware, data plane is
-not.
+**Date:** 2026-05-27 (updated) **Reviewer:** Architecture audit **Scope:** `packages/core`, `packages/api`,
+`packages/web`, infra (NATS, Redis, Milvus, LiteLLM) **Verdict:** ⚠️ **Partially implemented** — control plane is
+tenant-aware, data plane is not.
+
+______________________________________________________________________
+
+## 0. CRITICAL — Verified Violations (đọc trước)
+
+> **Platform's own arc42 documentation** (`docs/arc42/chapters/11_risks_and_technical_debt.md`) acknowledges: *"The
+> platform currently operates as a **single-tenant system**. All users share one set of databases, one NATS instance,
+> one Milvus collection namespace, and one set of agent configurations."*
+>
+> Nhưng API/auth layer **public expose multi-tenant URLs** (`/api/v1/{tenant_id}/...` via `TenantScopedController`) và
+> tenant-scoped roles, tạo **false sense of isolation** cho bất kỳ customer nào có nhiều subsidiaries / business units /
+> data-isolated teams trong cùng 1 org.
+
+Các finding bên dưới đã được verify trực tiếp trong code (file path + line number kèm theo), không phải false positive:
+
+### V1. Data layer KHÔNG có `tenant_id` trên resource entities (mở rộng từ §3)
+
+Verified via `grep` toàn bộ `packages/core/swiss_ai_hub/core/persistence/`. Ngoài 3 entities đã list ở §3, còn thiếu
+thêm:
+
+| Entity                    | File                                        |
+| ------------------------- | ------------------------------------------- |
+| **`NamespaceEntity`**     | `rag/datalake/entities/namespace_entity.py` |
+| **`RefDoc`** (documents)  | `rag/documents/entities/ref_doc.py`         |
+| **`AgentConfigEntity`**   | `agents/agent_config_entity.py`             |
+| **`ProcessConfigEntity`** | `process/process_config_entity.py`          |
+| **`NotificationEntity`**  | `notification/notification_entity.py`       |
+
+→ Tổng cộng **8 resource entities** thiếu `tenant_id`. Chỉ `RoleEntity`, `UserTenantRoleEntity`, `TenantMetadataEntity`
+được tenant-scoped.
+
+### V2. Global unique constraint trên `bucket_name` → information disclosure
+
+`packages/core/swiss_ai_hub/core/persistence/rag/datalake/entities/bucket_entity.py`:
+
+```python
+{"fields": ["bucket_name"], "unique": True}  # global unique, KHÔNG phải (tenant_id, bucket_name)
+{"fields": ["db_name"], "unique": True}      # cùng vấn đề
+```
+
+Cùng pattern ở `NamespaceEntity`. Xem chi tiết exploit ở §5 — Scenario B2.
+
+### V3. NATS subjects KHÔNG include `tenant_id`
+
+`packages/core/swiss_ai_hub/core/topic_managers/`:
+
+```
+Agent topic:   agent.{class}.{id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}
+Process topic: process.{class}.{id}.{walkthrough_id}.{event_type}.{event_name}.{event_id}
+```
+
+Không có tenant segment trong topic pattern. Bất kỳ subscriber nào có NATS access có thể subscribe **toàn bộ events của
+tất cả tenants** via wildcard `agent.>` hoặc `process.>` (xem Scenario C3).
+
+### V4. Milvus collection shared globally
+
+`MilvusVectorStoreConfig.collection_name` set per-agent-config, không phải per-tenant. Hai tenants' RAG agents có thể
+write/query **cùng 1 Milvus collection** nếu configs đặt cùng tên. Không có tenant partition key mặc định trong schema.
+
+### V5. `TenantScopedController` URL là cosmetic — service query KHÔNG filter tenant (finding mới)
+
+`packages/api/swiss_ai_hub/api/routes/knowledge/knowledge_service.py:129`:
+
+```python
+buckets = BucketEntity.get_all_buckets()  # ← KHÔNG có tenant_id filter
+```
+
+URL `/api/v1/{tenant_id}/knowledge/databases` trông giống tenant-scoped, nhưng service query tất cả buckets globally rồi
+chỉ filter bằng `AccessChecker` permissions. **Tenant boundary chỉ được enforce ở permission layer**, không phải data
+layer. Một role config sai = full cross-tenant data leak, không có DB-layer safety net.
+
+### Tổng kết V1–V5
+
+| Layer trong stack                                     | Tenant-aware? |
+| ----------------------------------------------------- | :-----------: |
+| Keycloak (identity), Roles, URL routing               |     ✅ Có     |
+| `AccessChecker` permissions                           |     ✅ Có     |
+| MongoDB data entities (8 entities ở trên)             |   ❌ Không    |
+| API service layer (BucketEntity.get_all_buckets v.v.) |   ❌ Không    |
+| NATS subjects, Milvus collections, Redis keys         |   ❌ Không    |
+
+Public API surface (URL paths, tenant selector, role-per-tenant) **advertise multi-tenancy**, nhưng data model bên dưới
+vẫn là **single-tenant**. Với single-organization self-hosted deployment thì chấp nhận được (xem Scenario A). Với bất kỳ
+deployment nào có nhiều subsidiaries / business units / data-isolated teams trong 1 org customer, đây là
+**commercial-blocker** (xem Scenario B).
+
+**Khuyến nghị tức thì**: Không market hoặc contractually commit tới multi-tenant isolation cho tới khi V1–V5 được fix.
 
 ______________________________________________________________________
 
