@@ -5,6 +5,129 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.4] - 2026-05-27 - Development Environment Update
+
+### Changed
+
+- ⚡️ **Upgraded `pnpm` Package Manager:** The monorepo's package management tool has been updated to `pnpm` version
+  `10.20.0`, enhancing dependency resolution and optimizing the overall development workflow.
+
+______________________________________________________________________
+
+## [v0.290.3] - 2026-05-27 - Platform Refinements and Developer Experience Improvements
+
+### Added
+
+- 🦾 **Backup Service SonarCloud Analysis:** Enabled SonarCloud scanning for the `backup` package to improve code quality
+  and maintainability.
+- 📄 **Backup Service SonarCloud Configuration:** Introduced `sonar-project.properties` for the `packages/backup`
+  service, configuring its code analysis.
+
+### Changed
+
+- ⚙️ **SonarCloud Rule Exclusions:** Updated SonarCloud configuration to exclude a rule
+  (`Web:ItemTagNotWithinContainerTagCheck`) for `Notification/Item.vue` to accommodate new semantic HTML structures.
+
+### Refactor
+
+- ✨ **Enhanced Accessibility for Input Components:** Improved form accessibility across various components by adding
+  explicit `input-id` attributes to input fields and `for` attributes to their corresponding labels. This includes:
+  - Agent Selector
+  - Chips Input
+  - Vector Store Input
+  - Knowledge Namespace Create and Edit Modals
+  - Memory Edit components
+  - User Settings Language Selector
+- 🚀 **Optimized Data Retrieval Performance:** Improved the efficiency of identifying active items and filtering events
+  by transitioning from array `filter` and `includes` methods to more performant `find` and `Set.has` operations,
+  notably in:
+  - Tenant details page navigation
+  - Event list filtering
+  - Agent, Knowledge document, and Thread navigation composables
+- 🧹 **Codebase Modernization and Cleanup:**
+  - Modernized asynchronous operations and error handling in core functionalities, including the application's health
+    check and authentication callbacks, by adopting `async/await` syntax.
+  - Replaced `window.location.origin` and `window.localStorage` with `globalThis` for improved cross-environment
+    compatibility in the OIDC client plugin.
+  - Standardized Node.js built-in module imports (`node:url`) in Nuxt configuration.
+  - Streamlined conditional checks with optional chaining syntax for better readability.
+  - Removed redundant or empty CSS selectors and unnecessary empty `<style scoped>` blocks from various web components
+    to reduce bundle size and improve code clarity.
+- semantic **Improved Semantic HTML Structure:** Refined the HTML structure in several components for better
+  accessibility and semantic correctness, including:
+- Converting non-interactive `<label>` elements to `<p>` tags for displaying static information (e.g., tenant ID,
+  knowledge document upload location, memory details).
+- Transforming Notification Item from a `div` to a semantically correct `<li>` element, and its interactive area from a
+  `div` with `role="link"` to a `button`, along with converting the Notification Overlay and main notifications list
+  containers to `<ul>` elements.
+
+______________________________________________________________________
+
+## [v0.290.2] - 2026-05-27 - Introducing Comprehensive User Role Management
+
+### Added
+
+- ✨ **New User Role Management API Endpoints:** Introduced `assign_role` and `revoke_role` API endpoints within the
+  `UserController`, enabling robust management of tenant-scoped user roles.
+- 🦾 **Service Layer for Role Actions:** Implemented core service and persistence logic for assigning and revoking user
+  roles, including validation for tenant membership and role existence.
+- 🧪 **Dedicated API Test Suite:** Added a comprehensive test suite to ensure the reliability and correctness of the new
+  user role assignment and revocation APIs.
+- 🖼️ **Interactive User Role Chips Component:** Introduced a new `UserRoleChips` Vue component for the frontend,
+  providing an intuitive interface to display, assign, and revoke user roles directly within user lists.
+- 🚀 **Frontend Composables for Role Management:** Developed new composables (`useAssignRoleToUser`,
+  `useRevokeRoleFromUser`) to streamline role management actions within the web application.
+- 🌐 **Internationalization Support for Role Management:** Added new localization strings across supported languages to
+  provide a consistent user experience for the new role management features.
+- ⚙️ **Centralized OpenAPI Schema Service:** Introduced `OpenApiSchemaService` in `packages/core` to centralize and
+  standardize the injection of `tenant_id` path parameters into OpenAPI schemas, improving SDK generation.
+
+### Changed
+
+- 🔄 **Integrated Role Management in User Controllers:** The `UserController` in both the main API and the Sysadmin API
+  now includes the new `assign_role` and `revoke_role` endpoints.
+- 🤝 **Shared OpenAPI Schema Generation:** Both `ApiRunner` and `SysadminApiRunner` now leverage the new
+  `OpenApiSchemaService` to ensure correct and consistent OpenAPI schema generation, especially for tenant-scoped paths.
+- 📊 **Enhanced User List Component:** Updated the `UserList` component to seamlessly integrate the new `UserRoleChips`
+  for interactive role display and management.
+- 📦 **Updated API Client SDK:** The `sysadmin-web` and `web` API client SDKs have been regenerated to include the new
+  role management methods and to accurately reflect `tenant_id` as a required path parameter for all tenant-scoped
+  endpoints.
+- ⚡️ **Broader Cache Invalidation for Roles:** Modified role-related mutations (create, update, delete) to trigger a
+  broader cache invalidation, ensuring up-to-date data after changes.
+- 📄 **Documentation Updates:** Revised `CLAUDE.md` and `README.md` in `packages/sysadmin-api` to reflect the adoption of
+  `OpenApiSchemaService` and the extended functionality of the re-mounted `UserController`.
+
+### Refactor
+
+- 🧹 **Centralized OpenAPI Schema Logic:** The logic for injecting `tenant_id` into OpenAPI schemas has been refactored
+  from `ApiRunner` into the new `OpenApiSchemaService` for better modularity and reusability across runners.
+
+### Security
+
+- 🔑 **License Change for Web Package:** The license for `packages/web` has been updated from Apache 2.0 to
+  **AGPL-3.0-or-later**.
+
+______________________________________________________________________
+
+## [v0.290.1] - 2026-05-27 - Enhanced Dependency Stability and Configuration Flexibility
+
+### Added
+
+- ✨ **Introduced strict peer dependency enforcement:** A new `.npmrc` file has been added to enforce strict peer
+  dependency rules, improving consistency and preventing potential dependency conflicts during development.
+- 🚀 **Refined Pnpm dependency overrides:** New `pnpm.overrides` have been added for `@vueuse/router` to specifically pin
+  `vue-router` to a compatible version, enhancing overall project stability.
+- 📄 **Configured Pnpm peer dependency allowances:** Explicitly allowed specific versions of peer dependencies for key
+  packages like `@nuxt/schema`, `apexcharts`, and `magicast`, addressing potential installation warnings or conflicts.
+
+### Removed
+
+- 🗑️ **Removed explicit package manager version lock:** The `packageManager` field has been removed from the `web`
+  package, allowing for more flexible package manager usage and reducing configuration overhead.
+
+______________________________________________________________________
+
 ## [v0.290.0] - 2026-05-27 - Multi-Tenancy Expansion and Frontend Monorepo Standardization
 
 ### Added

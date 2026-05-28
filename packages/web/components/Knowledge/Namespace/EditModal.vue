@@ -8,9 +8,9 @@
   >
     <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">
+        <p class="text-sm font-medium">
           {{ t('knowledge.form.folder_name.label') }}
-        </label>
+        </p>
         <InputText
           :value="namespace?.name || ''"
           disabled
@@ -20,24 +20,32 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">
+        <label
+          for="edit-namespace-display-name-input"
+          class="text-sm font-medium"
+        >
           {{ t('knowledge.form.display_name.label') }}
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
         <InputText
           v-model="displayName"
+          input-id="edit-namespace-display-name-input"
           :placeholder="t('knowledge.form.display_name.placeholder')"
         />
         <small class="text-gray-500">{{ t('knowledge.form.display_name.help') }}</small>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">
+        <label
+          for="edit-namespace-description-textarea"
+          class="text-sm font-medium"
+        >
           {{ t('knowledge.form.description.label') }}
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
         <Textarea
           v-model="description"
+          input-id="edit-namespace-description-textarea"
           :placeholder="t('knowledge.form.description.placeholder')"
           rows="3"
         />

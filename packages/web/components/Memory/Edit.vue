@@ -2,10 +2,14 @@
   <div class="flex h-full flex-col space-y-4">
     <div class="flex-1 space-y-4 overflow-y-auto">
       <div class="space-y-2">
-        <label class="text-xs font-medium text-gray-700 dark:text-gray-500">{{ t('memory.edit.memory_content_label') }}</label>
+        <label
+          for="memory-content-textarea"
+          class="text-xs font-medium text-gray-700 dark:text-gray-500"
+        >{{ t('memory.edit.memory_content_label') }}</label>
         <Textarea
           v-if="isEditing"
           v-model="editedData"
+          input-id="memory-content-textarea"
           auto-resize
           rows="5"
           class="w-full"
@@ -21,9 +25,9 @@
       <div class="space-y-4">
         <!-- Created At - always shown -->
         <div class="space-y-2">
-          <label class="text-xs font-medium text-gray-500">
+          <p class="text-xs font-medium text-gray-500">
             {{ t('memory.detail.created_at') }}
-          </label>
+          </p>
           <div class="text-sm">
             {{ new Date(memory.created_at).toLocaleString() }}
           </div>
@@ -35,9 +39,9 @@
           v-if="canNavigateToAgent"
           class="space-y-2"
         >
-          <label class="text-xs font-medium text-gray-500">
+          <p class="text-xs font-medium text-gray-500">
             {{ t('memory.detail.agent_link_label') }}
-          </label>
+          </p>
           <div
             class="flex cursor-pointer gap-2 rounded border border-surface-200 p-2 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
             @click="navigateToAgent"
@@ -63,9 +67,9 @@
           v-if="canNavigateToThread"
           class="space-y-2"
         >
-          <label class="text-xs font-medium text-gray-500">
+          <p class="text-xs font-medium text-gray-500">
             {{ t('memory.detail.thread_link_label') }}
-          </label>
+          </p>
           <div
             class="flex cursor-pointer gap-2 rounded border border-surface-200 p-2 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
             @click="navigateToThreadDisplay"

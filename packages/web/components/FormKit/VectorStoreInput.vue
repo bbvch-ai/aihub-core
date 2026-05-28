@@ -2,11 +2,15 @@
   <div class="flex flex-col gap-4">
     <!-- Database Selection -->
     <div>
-      <label class="mb-1 block text-sm font-medium">
+      <label
+        for="vector-store-database-select"
+        class="mb-1 block text-sm font-medium"
+      >
         {{ t('lib.vectorStore.database.label') }}
       </label>
       <Select
         v-model="selectedDatabase"
+        input-id="vector-store-database-select"
         :options="databaseOptions"
         option-label="displayName"
         option-value="name"
@@ -41,11 +45,15 @@
 
     <!-- Namespace Selection (shown when database selected) -->
     <div v-if="selectedDatabase">
-      <label class="mb-1 block text-sm font-medium">
+      <label
+        for="vector-store-namespaces-select"
+        class="mb-1 block text-sm font-medium"
+      >
         {{ t('lib.vectorStore.namespaces.label') }}
       </label>
       <MultiSelect
         v-model="selectedNamespaces"
+        input-id="vector-store-namespaces-select"
         :options="namespaceOptions"
         option-label="displayName"
         option-value="name"
@@ -71,7 +79,10 @@
 
     <!-- Allowed metadata filter fields (shown when database selected) -->
     <div v-if="selectedDatabase">
-      <label class="mb-1 block text-sm font-medium">
+      <label
+        for="vector-store-filter-fields-input"
+        class="mb-1 block text-sm font-medium"
+      >
         {{ t('lib.vectorStore.allowedFilterFields.label') }}
       </label>
       <ChipsInput :context="chipsInputContext" />
@@ -173,6 +184,7 @@ const chipsInputContext = computed(() => ({
   },
   value: allowedFilterFields.value,
   placeholder: allowedFilterFieldsPlaceholder.value ?? t('lib.vectorStore.allowedFilterFields.placeholder'),
+  inputId: 'vector-store-filter-fields-input',
 }))
 
 // Emit complete value object

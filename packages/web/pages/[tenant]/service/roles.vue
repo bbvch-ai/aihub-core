@@ -82,7 +82,3 @@ const confirmDeleteRole = (role: RoleResponse) => {
   })
 }
 </script>
-
-<style scoped>
-
-</style>

@@ -63,7 +63,7 @@ export const useDocuments = defineQuery(() => {
   }
 
   const setSearch = (query: string | null) => {
-    searchQuery.value = query && query.trim() ? query.trim() : null
+    searchQuery.value = query?.trim() || null
     currentPage.value = 1
   }
 
@@ -83,7 +83,7 @@ export const useDocuments = defineQuery(() => {
     }
   })
 
-  const documents = computed(() => (documentsQuery.state.value?.data)?.documents ?? [] as DocumentDto[])
+  const documents = computed(() => documentsQuery.state.value?.data?.documents ?? [] as DocumentDto[])
 
   // Only show loading on initial load, not during refetch/search when we have data
   const isLoading = computed(() => documentsQuery.asyncStatus.value === 'loading' && !documentsQuery.state.value?.data)

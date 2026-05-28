@@ -104,6 +104,20 @@ export const ApiHealthChecksSchema = {
   description: "Health check results for API service dependencies.",
 } as const;
 
+export const AssignRoleRequestSchema = {
+  properties: {
+    role_name: {
+      type: "string",
+      minLength: 1,
+      title: "Role Name",
+      description: "Name of the tenant role to assign to the user.",
+    },
+  },
+  type: "object",
+  required: ["role_name"],
+  title: "AssignRoleRequest",
+} as const;
+
 export const AuthProviderResponseSchema = {
   properties: {
     alias: {

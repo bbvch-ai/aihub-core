@@ -11,9 +11,9 @@
       class="flex flex-col gap-4"
     >
       <div class="flex flex-col gap-1">
-        <label class="text-xs text-surface-500 dark:text-surface-400">
+        <p class="text-xs text-surface-500 dark:text-surface-400">
           {{ t('tenant_admin.tenant_id') }}
-        </label>
+        </p>
         <span class="font-mono text-sm">{{ tenantId }}</span>
       </div>
       <TenantAdminEdit

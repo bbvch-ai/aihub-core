@@ -36,21 +36,17 @@ definePageMeta({
 
 const { t, locale } = useI18n()
 
-// Add proper error handling
-$auth.signinRedirectCallback()
-  .then(() => {
-    console.log('Successfully processed authentication callback')
-    navigateTo('/')
-  })
-  .catch((err) => {
-    console.error('Error during authentication callback:', err)
-    error.value = err.message || t('auth.callback.genericError')
-    // After 3 seconds, redirect to login page
-    setTimeout(() => {
-      navigateTo(`/${locale.value}/auth/login`)
-    }, 3000)
-  })
-  .finally(() => {
-    loading.value = false
-  })
+try {
+  await $auth.signinRedirectCallback()
+  navigateTo('/')
+}
+catch (err) {
+  error.value = err.message || t('auth.callback.genericError')
+  setTimeout(() => {
+    navigateTo(`/${locale.value}/auth/login`)
+  }, 3000)
+}
+finally {
+  loading.value = false
+}
 </script>

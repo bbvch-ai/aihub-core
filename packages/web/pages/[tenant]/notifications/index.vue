@@ -62,10 +62,7 @@
         </template>
 
         <template #list="{ items }">
-          <div
-            class="flex flex-col"
-            role="list"
-          >
+          <ul class="m-0 flex list-none flex-col p-0">
             <NotificationItem
               v-for="item in items"
               :key="item.id"
@@ -75,7 +72,7 @@
               @click="handleNotificationClick(item)"
               @toggle-selection="toggleSelection"
             />
-          </div>
+          </ul>
         </template>
 
         <template #empty>

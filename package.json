@@ -2,13 +2,21 @@
   "name": "swiss-ai-hub-monorepo",
   "private": true,
   "description": "Swiss AI Hub — pnpm workspace root. JS/TS packages live under packages/*. Python packages are managed via uv workspaces (see root pyproject.toml).",
-  "packageManager": "pnpm@9.14.2+sha512.6e2baf77d06b9362294152c851c4f278ede37ab1eba3a55fda317a4a17b209f4dbb973fb250a77abc463a341fcb1f17f17cfa24091c4eb319cda0d9b84278387",
+  "packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd",
   "engines": {
     "node": ">=22"
   },
   "pnpm": {
     "overrides": {
-      "vue": "3.5.17"
+      "vue": "3.5.17",
+      "@vueuse/router>vue-router": "4.6.4"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@nuxt/cli>@nuxt/schema": "3.21.0",
+        "vue3-apexcharts>apexcharts": "4.7.0",
+        "c12>magicast": "0.5.2"
+      }
     }
   },
   "devDependencies": {

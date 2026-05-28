@@ -14,6 +14,9 @@ import {
   updateTenantMetadataResponseTransformer,
 } from "./transformers.gen";
 import type {
+  AssignRoleData,
+  AssignRoleError,
+  AssignRoleResponse,
   CreateRoleData,
   CreateRoleError,
   CreateRoleResponse,
@@ -50,6 +53,9 @@ import type {
   ListTenantsResponse,
   ListUnconfiguredTenantsData,
   ListUnconfiguredTenantsResponse,
+  RevokeRoleData,
+  RevokeRoleError,
+  RevokeRoleResponse,
   UpdateRoleData,
   UpdateRoleError,
   UpdateRoleResponse,
@@ -366,6 +372,60 @@ export const getUsers = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/users/",
+    ...options,
+  });
+
+/**
+ * Assign Role
+ *
+ * Assign a tenant role to the user. Returns the user's resulting role list within the tenant.
+ */
+export const assignRole = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends AssignRoleResponse = AssignRoleResponse,
+>(
+  options: Options<TComposable, AssignRoleData, AssignRoleResponse, DefaultT>,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    AssignRoleResponse | DefaultT,
+    AssignRoleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/users/{user_id}/roles",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Revoke Role
+ *
+ * Revoke a tenant role from the user. Returns the user's resulting role list within the tenant.
+ */
+export const revokeRole = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends RevokeRoleResponse = RevokeRoleResponse,
+>(
+  options: Options<TComposable, RevokeRoleData, RevokeRoleResponse, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    RevokeRoleResponse | DefaultT,
+    RevokeRoleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/users/{user_id}/roles/{role_name}",
     ...options,
   });
 

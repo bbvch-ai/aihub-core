@@ -66,7 +66,3 @@ const isActive = computed(() => {
   return route.params.role_id === props.role.id
 })
 </script>
-
-<style scoped>
-
-</style>
