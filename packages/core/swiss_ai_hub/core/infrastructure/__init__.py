@@ -95,16 +95,13 @@ __all__ = [
     "use_vector_store_factory",
 ]
 
-_RCLONE_SOURCE_FACTORY_MODULE = "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory"
-_USE_S3_MODULE = "swiss_ai_hub.core.infrastructure.s3.use_s3"
-
 _LAZY_IMPORTS = {
-    "sharepoint_source": _RCLONE_SOURCE_FACTORY_MODULE,
-    "sftp_source": _RCLONE_SOURCE_FACTORY_MODULE,
-    "s3_source": _RCLONE_SOURCE_FACTORY_MODULE,
-    "onedrive_source": _RCLONE_SOURCE_FACTORY_MODULE,
-    "google_drive_source": _RCLONE_SOURCE_FACTORY_MODULE,
-    "azure_blob_source": _RCLONE_SOURCE_FACTORY_MODULE,
+    "sharepoint_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
+    "sftp_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
+    "s3_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
+    "onedrive_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
+    "google_drive_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
+    "azure_blob_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
     "SharePointSettings": "swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings",
     "OpenTelemetrySettings": "swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings",
     "MemoryRelation": "swiss_ai_hub.core.infrastructure.mem0.types.memory_relation",
@@ -133,15 +130,15 @@ _LAZY_IMPORTS = {
     "RedisSettings": "swiss_ai_hub.core.infrastructure.redis.redis_settings",
     "S3StorageSettings": "swiss_ai_hub.core.infrastructure.s3.s3_storage_settings",
     "UserSignupSettings": "swiss_ai_hub.core.infrastructure.api.user_signup_settings",
-    "create_s3_filesystem": _USE_S3_MODULE,
+    "create_s3_filesystem": "swiss_ai_hub.core.infrastructure.s3.use_s3",
     "enable_logging": "swiss_ai_hub.core.infrastructure.logging.logger",
     "get_tracer": "swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer",
     "no_trace": "swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.no_trace",
     "trace_fn": "swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn",
     "use_milvus": "swiss_ai_hub.core.infrastructure.milvus.use_milvus",
     "use_redis": "swiss_ai_hub.core.infrastructure.redis.use_redis",
-    "use_s3": _USE_S3_MODULE,
-    "use_s3_service": _USE_S3_MODULE,
+    "use_s3": "swiss_ai_hub.core.infrastructure.s3.use_s3",
+    "use_s3_service": "swiss_ai_hub.core.infrastructure.s3.use_s3",
     "use_vector_store_factory": "swiss_ai_hub.core.infrastructure.milvus.use_vector_store_factory",
 }
 

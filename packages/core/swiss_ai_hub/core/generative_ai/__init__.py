@@ -133,15 +133,13 @@ __all__ = [
     "route_to_event_using_llm",
 ]
 
-_PATH_UTILS_MODULE = "swiss_ai_hub.core.generative_ai.utils.path_utils"
-
 _LAZY_IMPORTS = {
     "AgentMemory": "swiss_ai_hub.core.generative_ai.memory.agent_memory",
     "BucketMetadataFilters": "swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters",
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
     "DocumentIntelligenceLoader": "swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader",
     "EmbeddingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config",
-    "FIGURES_DIRECTORY_NAME": _PATH_UTILS_MODULE,
+    "FIGURES_DIRECTORY_NAME": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "FewShotExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example",
     "FewShotGuardExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_guard_example",
     "FileTypeConfig": "swiss_ai_hub.core.generative_ai.document.types.file_type_config",
@@ -173,9 +171,9 @@ _LAZY_IMPORTS = {
     "condense_standalone_question": "swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question",
     "context_sufficient_guard": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",
     "create_few_shot_messages": "swiss_ai_hub.core.generative_ai.prompting.few_shot.create_few_shot_messages",
-    "create_figures_folder_name": _PATH_UTILS_MODULE,
-    "decode_partition_key": _PATH_UTILS_MODULE,
-    "encode_partition_key": _PATH_UTILS_MODULE,
+    "create_figures_folder_name": "swiss_ai_hub.core.generative_ai.utils.path_utils",
+    "decode_partition_key": "swiss_ai_hub.core.generative_ai.utils.path_utils",
+    "encode_partition_key": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "extend_chat_history_with_organization_memory": "swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory",
     "extend_chat_history_with_user_memory": "swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory",
     "few_shot_guard": "swiss_ai_hub.core.generative_ai.guards.few_shot_guard",

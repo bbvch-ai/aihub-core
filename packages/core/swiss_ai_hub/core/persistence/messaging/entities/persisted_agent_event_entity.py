@@ -18,30 +18,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# MongoDB aggregation pipeline syntax constants. Field references ($-prefixed
-# strings used as VALUES point to document fields; operators ($-prefixed strings
-# used as KEYS introduce a stage or expression).
-_EVENT_PARENTS_REF = "$event_parents"
-_EVENT_TIME_REF = "$event_time"
-_AGENT_CLASS_REF = "$agent_class"
-_AGENT_ID_REF = "$agent_id"
-_EVENT_TYPE_REF = "$event_type"
-_FIRST_EVENT_TIME_REF = "$first_event_time"
-_LATEST_EVENT_TIME_REF = "$latest_event_time"
-
-_OP_SUM = "$sum"
-_OP_FIRST = "$first"
-_OP_IN = "$in"
-_OP_COND = "$cond"
-_OP_GT = "$gt"
-_OP_ADD_FIELDS = "$addFields"
-_OP_TO_DATE = "$toDate"
-_OP_GROUP = "$group"
-_OP_IF_NULL = "$ifNull"
-_OP_DIVIDE = "$divide"
-_OP_AND = "$and"
-_OP_ADD = "$add"
-
 
 class TimeRange(StrEnum):
     ONE_HOUR = "1h"
@@ -216,41 +192,41 @@ class PersistedAgentEventEntity(Document):
             # 1. Match events for the given thread
             {"$match": {"thread_id": thread_id}},
             # 2. Add a standardized BSON date field (simplified)
-            {_OP_ADD_FIELDS: {"event_time": {_OP_TO_DATE: {_OP_DIVIDE: ["$event_data.created_at", 1e6]}}}},
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
             # 3. Sort events within the thread by time
             {"$sort": {"event_time": 1}},
             # 4. Group by run_id and event_id to de-duplicate events
             # We take the first occurrence of each event_id within a run.
             # All fields needed for the subsequent $group stage must be preserved here.
             {
-                _OP_GROUP: {
+                "$group": {
                     "_id": {"run_id": "$run_id", "event_id": "$event_id"},
-                    "run_id_val": {_OP_FIRST: "$run_id"},  # Keep run_id for next stage
-                    "display_id": {_OP_FIRST: "$display_id"},
-                    "event_time": {_OP_FIRST: _EVENT_TIME_REF},
-                    "event_parents": {_OP_FIRST: _EVENT_PARENTS_REF},
-                    "agent_class": {_OP_FIRST: _AGENT_CLASS_REF},
-                    "agent_id": {_OP_FIRST: _AGENT_ID_REF},
-                    "event_data": {_OP_FIRST: "$event_data"},  # For LLM cost calculation
-                    "event_type": {_OP_FIRST: _EVENT_TYPE_REF},
+                    "run_id_val": {"$first": "$run_id"},  # Keep run_id for next stage
+                    "display_id": {"$first": "$display_id"},
+                    "event_time": {"$first": "$event_time"},
+                    "event_parents": {"$first": "$event_parents"},
+                    "agent_class": {"$first": "$agent_class"},
+                    "agent_id": {"$first": "$agent_id"},
+                    "event_data": {"$first": "$event_data"},  # For LLM cost calculation
+                    "event_type": {"$first": "$event_type"},
                 }
             },
             # 5. Group events by run_id to calculate run-level stats
             # This stage now operates on the de-duplicated events from the previous stage.
             {
-                _OP_GROUP: {
+                "$group": {
                     "_id": "$run_id_val",
-                    "display_id": {_OP_FIRST: "$display_id"},
-                    "first_event_time": {"$min": _EVENT_TIME_REF},
-                    "latest_event_time": {"$max": _EVENT_TIME_REF},
-                    "n_events": {_OP_SUM: 1},
+                    "display_id": {"$first": "$display_id"},
+                    "first_event_time": {"$min": "$event_time"},
+                    "latest_event_time": {"$max": "$event_time"},
+                    "n_events": {"$sum": 1},
                     "start_events": {
-                        _OP_SUM: {
-                            _OP_COND: [
+                        "$sum": {
+                            "$cond": [
                                 {
-                                    _OP_AND: [
-                                        {_OP_IN: ["StartEvent", _EVENT_PARENTS_REF]},
-                                        {"$eq": [_EVENT_TYPE_REF, AgentTopicManager.CONTROL_EVENT]},
+                                    "$and": [
+                                        {"$in": ["StartEvent", "$event_parents"]},
+                                        {"$eq": ["$event_type", AgentTopicManager.CONTROL_EVENT]},
                                     ]
                                 },
                                 1,
@@ -258,36 +234,36 @@ class PersistedAgentEventEntity(Document):
                             ]
                         }
                     },
-                    "stop_events": {_OP_SUM: {_OP_COND: [{_OP_IN: ["StopEvent", _EVENT_PARENTS_REF]}, 1, 0]}},
-                    "exception_events": {_OP_SUM: {_OP_COND: [{_OP_IN: ["ExceptionEvent", _EVENT_PARENTS_REF]}, 1, 0]}},
+                    "stop_events": {"$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}},
+                    "exception_events": {"$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}},
                     "hitl_request_events": {
-                        _OP_SUM: {_OP_COND: [{_OP_IN: ["HumanInTheLoopRequestEvent", _EVENT_PARENTS_REF]}, 1, 0]}
+                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
                     },
                     "hitl_response_events": {
-                        _OP_SUM: {_OP_COND: [{_OP_IN: ["HumanInTheLoopResponseEvent", _EVENT_PARENTS_REF]}, 1, 0]}
+                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
                     },
                     "bitl_request_events": {
-                        _OP_SUM: {_OP_COND: [{_OP_IN: ["BotInTheLoopRequestEvent", _EVENT_PARENTS_REF]}, 1, 0]}
+                        "$sum": {"$cond": [{"$in": ["BotInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
                     },
                     "bitl_response_events": {
-                        _OP_SUM: {_OP_COND: [{_OP_IN: ["BotInTheLoopResponseEvent", _EVENT_PARENTS_REF]}, 1, 0]}
+                        "$sum": {"$cond": [{"$in": ["BotInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
                     },
                     "aitl_request_events": {
-                        _OP_SUM: {_OP_COND: [{_OP_IN: ["AgentInTheLoopRequestEvent", _EVENT_PARENTS_REF]}, 1, 0]}
+                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
                     },
                     "aitl_response_events": {
-                        _OP_SUM: {_OP_COND: [{_OP_IN: ["AgentInTheLoopResponseEvent", _EVENT_PARENTS_REF]}, 1, 0]}
+                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
                     },
                     # --- Calculate LLM Cost ---
                     "llm_cost": {
-                        _OP_SUM: {
-                            _OP_COND: {
-                                "if": {_OP_IN: ["LLMCostEvent", _EVENT_PARENTS_REF]},
+                        "$sum": {
+                            "$cond": {
+                                "if": {"$in": ["LLMCostEvent", "$event_parents"]},
                                 "then": {
-                                    _OP_ADD: [
-                                        {_OP_IF_NULL: ["$event_data.prompt_tokens_costs", 0]},
-                                        {_OP_IF_NULL: ["$event_data.completion_tokens_costs", 0]},
-                                        {_OP_IF_NULL: ["$event_data.embedding_tokens_costs", 0]},
+                                    "$add": [
+                                        {"$ifNull": ["$event_data.prompt_tokens_costs", 0]},
+                                        {"$ifNull": ["$event_data.completion_tokens_costs", 0]},
+                                        {"$ifNull": ["$event_data.embedding_tokens_costs", 0]},
                                     ]
                                 },
                                 "else": 0,
@@ -296,49 +272,47 @@ class PersistedAgentEventEntity(Document):
                     },
                     # --- Collect Agent Info ---
                     "participating_agents_in_run": {
-                        "$addToSet": {"agent_class": _AGENT_CLASS_REF, "agent_id": _AGENT_ID_REF}
+                        "$addToSet": {"agent_class": "$agent_class", "agent_id": "$agent_id"}
                     },
                     "potential_start_events": {
                         "$push": {
-                            "agent_class": _AGENT_CLASS_REF,
-                            "agent_id": _AGENT_ID_REF,
-                            "event_time": _EVENT_TIME_REF,
-                            "is_start": {_OP_IN: ["StartEvent", _EVENT_PARENTS_REF]},
-                            "is_not_user": {"$ne": [_AGENT_CLASS_REF, "UserAgent"]},
-                            "is_control": {"$eq": [_EVENT_TYPE_REF, AgentTopicManager.CONTROL_EVENT]},
+                            "agent_class": "$agent_class",
+                            "agent_id": "$agent_id",
+                            "event_time": "$event_time",
+                            "is_start": {"$in": ["StartEvent", "$event_parents"]},
+                            "is_not_user": {"$ne": ["$agent_class", "UserAgent"]},
+                            "is_control": {"$eq": ["$event_type", AgentTopicManager.CONTROL_EVENT]},
                         }
                     },
                 }
             },
             # 6. Project/AddFields to calculate derived stats for each run and format output
             {
-                _OP_ADD_FIELDS: {
+                "$addFields": {
                     "run_id": "$_id",
-                    "started_at": _FIRST_EVENT_TIME_REF,
-                    "ended_at": _LATEST_EVENT_TIME_REF,
+                    "started_at": "$first_event_time",
+                    "ended_at": "$latest_event_time",
                     "duration": {
-                        _OP_COND: {
-                            "if": {_OP_AND: [_FIRST_EVENT_TIME_REF, _LATEST_EVENT_TIME_REF]},
-                            "then": {
-                                _OP_DIVIDE: [{"$subtract": [_LATEST_EVENT_TIME_REF, _FIRST_EVENT_TIME_REF]}, 1000]
-                            },
+                        "$cond": {
+                            "if": {"$and": ["$first_event_time", "$latest_event_time"]},
+                            "then": {"$divide": [{"$subtract": ["$latest_event_time", "$first_event_time"]}, 1000]},
                             "else": None,
                         }
                     },
-                    "has_pending": {_OP_GT: ["$start_events", {_OP_ADD: ["$stop_events", "$exception_events"]}]},
-                    "has_errors": {_OP_GT: ["$exception_events", 0]},
-                    "is_hitl": {_OP_GT: ["$hitl_request_events", 0]},
-                    "open_hitl": {_OP_GT: ["$hitl_request_events", "$hitl_response_events"]},
-                    "is_bitl": {_OP_GT: ["$bitl_request_events", 0]},
-                    "open_bitl": {_OP_GT: ["$bitl_request_events", "$bitl_response_events"]},
-                    "is_aitl": {_OP_GT: ["$aitl_request_events", 0]},
-                    "open_aitl": {_OP_GT: ["$aitl_request_events", "$aitl_response_events"]},
+                    "has_pending": {"$gt": ["$start_events", {"$add": ["$stop_events", "$exception_events"]}]},
+                    "has_errors": {"$gt": ["$exception_events", 0]},
+                    "is_hitl": {"$gt": ["$hitl_request_events", 0]},
+                    "open_hitl": {"$gt": ["$hitl_request_events", "$hitl_response_events"]},
+                    "is_bitl": {"$gt": ["$bitl_request_events", 0]},
+                    "open_bitl": {"$gt": ["$bitl_request_events", "$bitl_response_events"]},
+                    "is_aitl": {"$gt": ["$aitl_request_events", 0]},
+                    "open_aitl": {"$gt": ["$aitl_request_events", "$aitl_response_events"]},
                     "start_event_info": {
-                        _OP_FIRST: {
+                        "$first": {
                             "$filter": {
                                 "input": "$potential_start_events",
                                 "as": "event",
-                                "cond": {_OP_AND: ["$$event.is_start", "$$event.is_not_user", "$$event.is_control"]},
+                                "cond": {"$and": ["$$event.is_start", "$$event.is_not_user", "$$event.is_control"]},
                             }
                         }
                     },
@@ -530,38 +504,38 @@ class PersistedAgentEventEntity(Document):
             # 1. Match events based on primary criteria
             {"$match": match_filter},
             # 2. Add a standardized BSON date field
-            {_OP_ADD_FIELDS: {"event_time": {_OP_TO_DATE: {_OP_DIVIDE: ["$event_data.created_at", 1e6]}}}},
+            {"$addFields": {"event_time": {"$toDate": {"$divide": ["$event_data.created_at", 1e6]}}}},
             # 3. Create time buckets (timestamp in milliseconds)
             {
-                _OP_ADD_FIELDS: {
+                "$addFields": {
                     "time_bucket": {
                         "$subtract": [
-                            {"$toLong": _EVENT_TIME_REF},
-                            {"$mod": [{"$toLong": _EVENT_TIME_REF}, config.interval_seconds * 1000]},
+                            {"$toLong": "$event_time"},
+                            {"$mod": [{"$toLong": "$event_time"}, config.interval_seconds * 1000]},
                         ]
                     }
                 }
             },
             # 4. Group by time_bucket and event_id to de-duplicate events
             {
-                _OP_GROUP: {
+                "$group": {
                     "_id": {"time_bucket": "$time_bucket", "event_id": "$event_id"},
-                    "time_bucket_val": {_OP_FIRST: "$time_bucket"},
+                    "time_bucket_val": {"$first": "$time_bucket"},
                 }
             },
             # 5. Group events by time bucket and count them
             {
-                _OP_GROUP: {
+                "$group": {
                     "_id": "$time_bucket_val",  #
-                    "start_time": {_OP_FIRST: {_OP_TO_DATE: "$time_bucket_val"}},
-                    "total_events": {_OP_SUM: 1},
+                    "start_time": {"$first": {"$toDate": "$time_bucket_val"}},
+                    "total_events": {"$sum": 1},
                 }
             },
             # 6. Add end_time field (derived from bucket start + interval)
             {
-                _OP_ADD_FIELDS: {
+                "$addFields": {
                     "end_time": {
-                        _OP_TO_DATE: {_OP_ADD: ["$_id", config.interval_seconds * 1000]}
+                        "$toDate": {"$add": ["$_id", config.interval_seconds * 1000]}
                     }  # $_id is time_bucket (ms)
                 }
             },

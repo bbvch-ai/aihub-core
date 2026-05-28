@@ -9,16 +9,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.base_event import BaseEvent
     from swiss_ai_hub.core.topics import ProcessInstanceTopic
 
-# MongoDB aggregation pipeline syntax constants. Field references ($-prefixed
-# strings used as VALUES point to document fields; operators ($-prefixed strings
-# used as KEYS introduce a stage or expression).
-_PROCESS_WALKTHROUGH_ID_REF = "$process_walkthrough_id"
-_PROCESS_CLASS_REF = "$process_class"
-_PROCESS_ID_REF = "$process_id"
-
-_OP_MATCH = "$match"
-_OP_EQ = "$eq"
-
 
 class PersistedProcessEventEntity(Document):
     meta = {
@@ -74,7 +64,7 @@ class PersistedProcessEventEntity(Document):
             # Stage 1: Filter for all documents that are human work requests
             # within the specified process walkthrough.
             {
-                _OP_MATCH: {
+                "$match": {
                     "process_class": process_class,
                     "process_id": process_id,
                     "process_walkthrough_id": process_walkthrough_id,
@@ -88,19 +78,19 @@ class PersistedProcessEventEntity(Document):
                     "from": cls._get_collection_name(),
                     "let": {
                         "form_event_names": "$event_data.forms._event_name",
-                        "form_process_class": _PROCESS_CLASS_REF,
-                        "form_process_id": _PROCESS_ID_REF,
-                        "form_process_walkthrough_id": _PROCESS_WALKTHROUGH_ID_REF,
+                        "form_process_class": "$process_class",
+                        "form_process_id": "$process_id",
+                        "form_process_walkthrough_id": "$process_walkthrough_id",
                     },
                     "pipeline": [
                         {
-                            _OP_MATCH: {
+                            "$match": {
                                 "$expr": {
                                     "$and": [
-                                        {_OP_EQ: [_PROCESS_WALKTHROUGH_ID_REF, "$$form_process_walkthrough_id"]},
-                                        {_OP_EQ: [_PROCESS_CLASS_REF, "$$form_process_class"]},
-                                        {_OP_EQ: [_PROCESS_ID_REF, "$$form_process_id"]},
-                                        {_OP_EQ: ["$event_type", "work"]},
+                                        {"$eq": ["$process_walkthrough_id", "$$form_process_walkthrough_id"]},
+                                        {"$eq": ["$process_class", "$$form_process_class"]},
+                                        {"$eq": ["$process_id", "$$form_process_id"]},
+                                        {"$eq": ["$event_type", "work"]},
                                         {"$in": ["$event_name", "$$form_event_names"]},
                                     ]
                                 }
@@ -113,7 +103,7 @@ class PersistedProcessEventEntity(Document):
             # Stage 3: Filter the results to only include work requests where the $lookup
             # found no corresponding work events. An empty 'corresponding_work_events'
             # array signifies an unanswered request.
-            {_OP_MATCH: {"corresponding_work_events": {"$size": 0}}},
+            {"$match": {"corresponding_work_events": {"$size": 0}}},
         ]
 
         unanswered_requests_data = list(cls.objects.aggregate(pipeline))
@@ -164,14 +154,14 @@ class PersistedProcessEventEntity(Document):
         # First, get the total count of unique walkthroughs
         pipeline_count = [
             {
-                _OP_MATCH: {
+                "$match": {
                     "process_class": process_class,
                     "process_id": process_id,
                 }
             },
             {
                 "$group": {
-                    "_id": _PROCESS_WALKTHROUGH_ID_REF,
+                    "_id": "$process_walkthrough_id",
                 }
             },
             {"$count": "total"},
@@ -186,7 +176,7 @@ class PersistedProcessEventEntity(Document):
         # Main pipeline to get walkthrough data with events
         pipeline = [
             {
-                _OP_MATCH: {
+                "$match": {
                     "process_class": process_class,
                     "process_id": process_id,
                 }
@@ -194,9 +184,9 @@ class PersistedProcessEventEntity(Document):
             {"$sort": {"event_data.created_at": 1}},  # Sort events by creation time
             {
                 "$group": {
-                    "_id": _PROCESS_WALKTHROUGH_ID_REF,
-                    "process_class": {"$first": _PROCESS_CLASS_REF},
-                    "process_id": {"$first": _PROCESS_ID_REF},
+                    "_id": "$process_walkthrough_id",
+                    "process_class": {"$first": "$process_class"},
+                    "process_id": {"$first": "$process_id"},
                     "events": {
                         "$push": {
                             "event_id": "$event_id",
@@ -204,9 +194,9 @@ class PersistedProcessEventEntity(Document):
                             "event_name": "$event_name",
                             "event_data": "$event_data",
                             "event_parents": "$event_parents",
-                            "process_class": _PROCESS_CLASS_REF,
-                            "process_id": _PROCESS_ID_REF,
-                            "process_walkthrough_id": _PROCESS_WALKTHROUGH_ID_REF,
+                            "process_class": "$process_class",
+                            "process_id": "$process_id",
+                            "process_walkthrough_id": "$process_walkthrough_id",
                         }
                     },
                     "first_event_timestamp": {"$min": "$event_data.created_at"},

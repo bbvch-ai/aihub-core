@@ -57,8 +57,6 @@ __all__ = [
     "transform_formkit_arrays",
 ]
 
-_NORMALIZATION_MODULE = "swiss_ai_hub.core.form.normalization"
-
 _LAZY_IMPORTS = {
     "ALL_FORM_OPTIONS": "swiss_ai_hub.core.form.all_form_options",
     "AgentSelector": "swiss_ai_hub.core.form.elements.agent_selector",
@@ -82,9 +80,9 @@ _LAZY_IMPORTS = {
     "Slider": "swiss_ai_hub.core.form.elements.slider",
     "TemplateData": "swiss_ai_hub.core.form.template_data",
     "Textarea": "swiss_ai_hub.core.form.elements.textarea",
-    "normalize_empty_locale_strings": _NORMALIZATION_MODULE,
-    "normalize_empty_objects_to_none": _NORMALIZATION_MODULE,
-    "transform_formkit_arrays": _NORMALIZATION_MODULE,
+    "normalize_empty_locale_strings": "swiss_ai_hub.core.form.normalization",
+    "normalize_empty_objects_to_none": "swiss_ai_hub.core.form.normalization",
+    "transform_formkit_arrays": "swiss_ai_hub.core.form.normalization",
 }
 
 
