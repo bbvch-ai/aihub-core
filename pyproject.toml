@@ -41,6 +41,10 @@ package = false
 # needs libpq-dev to compile). We only use the Neo4j provider (see
 # packages/core/.../mem0/mem0_settings.py), so drop apache-age-python entirely.
 override-dependencies = ["apache-age-python ; sys_platform == 'never'"]
+# Security floor: starlette 1.0.0 has a known vulnerability, fixed in 1.0.1. starlette is
+# only a transitive dependency (fastapi, mcp, sse-starlette, dagster-graphql), so pin the
+# lower bound to the first fixed release to stop the resolver selecting the affected version.
+constraint-dependencies = ["starlette>=1.0.1"]
 
 [tool.uv.workspace]
 members = [
