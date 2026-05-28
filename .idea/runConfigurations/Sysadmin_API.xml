@@ -1,0 +1,20 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Sysadmin API" type="docker-deploy" factoryName="dockerfile" folderName="Docker Build Image" server-name="Docker">
+    <deployment type="dockerfile">
+      <settings>
+        <option name="buildArgs">
+          <list>
+            <DockerEnvVarImpl>
+              <option name="name" value="ssh" />
+              <option name="value" value="default" />
+            </DockerEnvVarImpl>
+          </list>
+        </option>
+        <option name="buildOnly" value="true" />
+        <option name="contextFolderPath" value="." />
+        <option name="sourceFilePath" value="packages/sysadmin-api/Dockerfile" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

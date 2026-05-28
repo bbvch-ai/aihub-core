@@ -28,9 +28,9 @@ AgentRunner(agent_type, config)  → packages/agent/{Name}/runners/{Name}Runner.
   ↓ responds to ClassDiscoveryRequestEvent
 AgentEndpointsDiscoveryService   → packages/api/swiss_ai_hub/api/services/AgentEndpointsDiscoveryService.py
   ↓ creates dynamic API routes
-SDK types generated              → packages/web/swiss_ai_hub_web/sdk/client/ (pnpm generate-sdk)
+SDK types generated              → packages/web/sdk/client/ (pnpm generate-sdk)
   ↓ imported by composables
-Frontend composables + pages     → packages/web/swiss_ai_hub_web/composables/agent/
+Frontend composables + pages     → packages/web/composables/agent/
 ```
 
 **What to check:**
@@ -52,7 +52,7 @@ ProcessRunner(process_type, config) → packages/process runner
   ↓ responds to ProcessClassDiscoveryRequestEvent
 ProcessEndpointsDiscoveryService → packages/api/swiss_ai_hub/api/services/ProcessEndpointsDiscoveryService.py
   ↓ creates dynamic API routes
-SDK types + composables          → packages/web/swiss_ai_hub_web/composables/process/
+SDK types + composables          → packages/web/composables/process/
 ```
 
 **What to check:**
@@ -72,11 +72,11 @@ DisplayEvent subclass            → packages/core/swiss_ai_hub/core/nats/events
   ↓ published by EventDisplayer or agent step
 WebSocketSender                  → packages/api/swiss_ai_hub/api/sockets/sender/WebSocketSender.py
   ↓ wraps in ContextualizedAgentEvent
-useThreadEvents composable       → packages/web/swiss_ai_hub_web/composables/thread/useThreadEvents.ts
+useThreadEvents composable       → packages/web/composables/thread/useThreadEvents.ts
   ↓ routes to component
-useEventComponent resolver       → packages/web/swiss_ai_hub_web/composables/event/useEventComponent.ts
+useEventComponent resolver       → packages/web/composables/event/useEventComponent.ts
   ↓ maps event._event_name → Vue component
-Event display component          → packages/web/swiss_ai_hub_web/components/Event/Display/{EventName}.vue
+Event display component          → packages/web/components/Event/Display/{EventName}.vue
 ```
 
 **What to check:**
@@ -96,7 +96,7 @@ Form subclass with Annotated fields → packages/core/swiss_ai_hub/core/nats/eve
   ↓ to_formkit_form() produces FormkitElement[]
 AgentConfig/ProcessConfig.as_form() → carries form in discovery response
   ↓ API stores and serves
-buildFormKitSchema()             → packages/web/swiss_ai_hub_web/composables/form/useFormKitTransform.ts
+buildFormKitSchema()             → packages/web/composables/form/useFormKitTransform.ts
   ↓ transforms to FormKitSchemaNode[]
 FormKit renders                  → .app/formkit.config.ts has custom inputs registered
 ```
@@ -104,7 +104,7 @@ FormKit renders                  → .app/formkit.config.ts has custom inputs re
 **What to check:**
 
 1. Each custom FormkitElement type used (e.g., `ModelSelect`, `LocaleInput`, `IconPicker`) has a corresponding
-   registration in `packages/web/swiss_ai_hub_web/.app/formkit.config.ts`
+   registration in `packages/web/.app/formkit.config.ts`
 2. `Repeater`-type fields are handled by `extractRepeaterConfigs()` — check that the frontend component renders
    `<FormKitRepeater>` for them
 3. Form uses `swiss_ai_hub.core.nats.events.form.constraints.Ge/Le/etc.` (not Pydantic's built-in `ge=`), because
@@ -133,7 +133,7 @@ lib/agents.it.yml → agents.config.name.label: "Nome"
 | `packages/agent`   | `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`       | `agent.`   |
 | `packages/process` | `packages/process/swiss_ai_hub/process/i18n/translations/process/` | `process.` |
 | `packages/api`     | `packages/api/swiss_ai_hub/api/i18n/translations/api/`             | `api.`     |
-| `packages/web`     | `packages/web/swiss_ai_hub_web/i18n/locales/`                      | (flat)     |
+| `packages/web`     | `packages/web/i18n/locales/`                                       | (flat)     |
 
 **What to check:**
 
@@ -157,11 +157,11 @@ Grep "class {Name}Runner" in packages/agent --include="*.py"
 Grep "AgentRunner.*agent_type.*{Name}" in packages/agent --include="*.py"
 
 # Chain 3: Check event display component mapping
-Grep "{EventName}" in packages/web/swiss_ai_hub_web/composables/event/useEventComponent.ts
-Glob "packages/web/swiss_ai_hub_web/components/Event/Display/{EventName}.vue"
+Grep "{EventName}" in packages/web/composables/event/useEventComponent.ts
+Glob "packages/web/components/Event/Display/{EventName}.vue"
 
 # Chain 4: Check FormKit custom input registration
-Grep "{elementType}" in packages/web/swiss_ai_hub_web/.app/formkit.config.ts
+Grep "{elementType}" in packages/web/.app/formkit.config.ts
 
 # Chain 5: Check all 4 locale files for a key
 Grep "{key_path}" in packages/*/swiss_ai_hub/*/i18n/ --include="*.yml"

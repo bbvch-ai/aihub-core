@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, Path, Security
+from fastapi import Body, Depends, HTTPException, Path, Security, status
 from mongoengine.errors import DoesNotExist
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
@@ -13,6 +13,7 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.pagination.type.page_number import PageNumber
 from swiss_ai_hub.api.pagination.type.page_size import PageSize
+from swiss_ai_hub.api.routes.user.dto.assign_role_request import AssignRoleRequest
 from swiss_ai_hub.api.routes.user.dto.paginated_users_response import PaginatedUsersResponse
 from swiss_ai_hub.api.routes.user.dto.user_with_access_dto import UserWithAccessDTO
 from swiss_ai_hub.api.routes.user.user_service import UserService
@@ -75,5 +76,51 @@ class UserController(TenantScopedController):
                 )
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="User not found.")
+
+        return self
+
+    def assign_role(self, route: str = "/{user_id}/roles") -> Self:
+        """Registers an endpoint to assign a tenant-scoped role to a user.
+
+        Idempotent: assigning a role the user already holds returns the unchanged role list with 201.
+        """
+
+        @self.router.post(route, status_code=status.HTTP_201_CREATED, tags=self.tags)
+        async def assign_role(
+            user_id: Annotated[str, Path(description="The user's unique identifier (OID).")],
+            payload: Annotated[AssignRoleRequest, Body()],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
+        ) -> list[str]:
+            """Assign a tenant role to the user. Returns the user's resulting role list within the tenant."""
+            return await UserService.assign_role_to_user(
+                user_oid=user_id,
+                tenant_id=user.acting_within_tenant.id,
+                role_name=payload.role_name,
+            )
+
+        return self
+
+    def revoke_role(self, route: str = "/{user_id}/roles/{role_name}") -> Self:
+        """Registers an endpoint to revoke a tenant-scoped role from a user.
+
+        Idempotent: revoking a role the user does not have returns the unchanged role list with 200.
+        """
+
+        @self.router.delete(route, tags=self.tags)
+        async def revoke_role(
+            user_id: Annotated[str, Path(description="The user's unique identifier (OID).")],
+            role_name: Annotated[str, Path(description="Name of the role to revoke from the user.")],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
+        ) -> list[str]:
+            """Revoke a tenant role from the user. Returns the user's resulting role list within the tenant."""
+            return await UserService.revoke_role_from_user(
+                user_oid=user_id,
+                tenant_id=user.acting_within_tenant.id,
+                role_name=role_name,
+            )
 
         return self

@@ -72,3 +72,12 @@ approval before taking a step. For example, an agent might draft a customer resp
 to review and approve it before sending.
 
 This lets you automate routine parts while maintaining control over decisions.
+
+## Connecting to external tools
+
+Agents are not limited to reading from knowledge bases — they can also take actions in other systems. Through the Model
+Context Protocol (MCP), an agent connects to an external tool server and uses the tools it exposes: creating a ticket,
+sending a message, or looking up a record in another application.
+
+A connection can authenticate as the requesting user, so an external action is attributed to that person rather than to
+a shared service account. The other system's audit trail and per-user permissions stay correct.

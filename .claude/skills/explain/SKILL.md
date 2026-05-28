@@ -21,7 +21,7 @@ Determine which monorepo scope the target path belongs to:
 | `packages/pipeline` | `packages/pipeline/swiss_ai_hub/pipeline/` | Data ingestion (Dagster)                              |
 | `packages/process`  | `packages/process/swiss_ai_hub/process/`   | Business process orchestration                        |
 | `packages/bot`      | `packages/bot/swiss_ai_hub/bot/`           | Bot integrations (Teams, Slack)                       |
-| `packages/web`      | `packages/web/swiss_ai_hub_web/`           | Frontend admin UI (Nuxt 3)                            |
+| `packages/web`      | `packages/web/`                            | Frontend admin UI (Nuxt 3)                            |
 
 Note the double-nesting convention: `{scope}/{scope}/` where the outer directory is the package root and the inner
 contains the source code.

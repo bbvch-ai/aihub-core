@@ -39,8 +39,10 @@ everyone's document processing improves. When someone adds a new security featur
 
 ## The contribution dynamic
 
-The Swiss AI Hub is entirely Apache 2.0 licensed - platform, SDK, agents, pipelines, and processes. This permissive
-licensing creates natural collaboration incentives without forcing them.
+The Swiss AI Hub platform runtime, SDK, agents, pipelines, and processes are licensed under Apache 2.0. (The web UI and
+backup orchestration are AGPL-3.0; the multi-tenant management plane is proprietary. See
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the per-package breakdown.) The
+permissive license on the runtime + SDK creates natural collaboration incentives without forcing them.
 
 **Shared infrastructure benefits everyone:** When organizations improve core infrastructure, sharing makes sense because
 everyone benefits. A bank that adds better compliance logging helps every regulated industry. A healthcare provider that
@@ -49,8 +51,8 @@ shared infrastructure reduces everyone's costs.
 
 **Strategic differentiation stays private:** Organizations keep their competitive advantages proprietary. The
 customer-facing agent that embodies your unique business processes, your specialized data processing, your domain
-expertise - these stay yours. Apache 2.0 doesn't require sharing anything back, so you're free to keep strategic
-innovations private while benefiting from and contributing to shared infrastructure.
+expertise - these stay yours. The Apache 2.0 runtime doesn't require sharing anything back, so you're free to keep
+strategic innovations private while benefiting from and contributing to shared infrastructure.
 
 ## Why licensing matters for AI infrastructure
 
@@ -105,15 +107,20 @@ The Swiss AI Hub rigorously evaluates every dependency - all 232 Python packages
 Docker images. We verify that every component uses permissive licenses (MIT, Apache 2.0, BSD) or has been explicitly
 reviewed and approved.
 
-**You get complete freedom:** Use the entire stack commercially, modify anything, integrate with proprietary systems,
-offer it as a service, or build products on top - without license conflicts, hidden restrictions, or future surprises.
+**You get the freedom each package's license confers — see
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the exact terms per package.** Briefly:
+the runtime + SDK (Apache 2.0) place no restrictions on commercial use or integration with proprietary systems; the web
+UI and backup orchestration (AGPL-3.0) require source disclosure of your modifications when you offer them as a network
+service; the multi-tenant administration plane is proprietary and requires a commercial license.
 
-**Why Apache 2.0 specifically:** Beyond being permissive, Apache 2.0 includes explicit patent grants, protecting you
-from patent claims by contributors. It's trusted by enterprises, well-understood by legal teams, and compatible with
-virtually all other licenses. It's the gold standard for collaborative infrastructure.
+**Why Apache 2.0 specifically for the runtime and SDK:** Beyond being permissive, Apache 2.0 includes explicit patent
+grants, protecting you from patent claims by contributors. It's trusted by enterprises, well-understood by legal teams,
+and compatible with virtually all other licenses. It's the gold standard for collaborative infrastructure — which is
+precisely the role of the runtime and SDK.
 
-This isn't just idealism - it's pragmatism. Permissive licensing removes barriers to adoption, prevents vendor lock-in,
-and ensures you own your AI infrastructure completely. No license audits, no compliance risks, no sudden rule changes.
+This isn't just idealism - it's pragmatism. A permissive runtime + SDK removes barriers to adoption and prevents vendor
+lock-in for the building blocks you extend; the AGPL components protect against hostile SaaS rehosts of the UI without
+burdening the building blocks; the proprietary plane funds continued development.
 
 ## Real collaboration patterns
 

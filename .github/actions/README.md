@@ -66,10 +66,10 @@ runs:
 
   steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
     - name: Set up Python 3.13
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
       with:
         python-version: "3.13"
 
@@ -118,6 +118,6 @@ jobs:
 - Ensure each action is focused on a single task.
 - Test actions thoroughly before integrating them into repositories.
 - Use descriptive names and clear documentation in `action.yml` files.
-- Use tagged versions (`@v1.0.0`) instead of `@main` in workflows for stability.
+- Use 40-character commit SHA instead of `@main` in workflows for stability.
 - Store sensitive data, such as `GITHUB_TOKEN`, in the repository's Secrets.
 :::

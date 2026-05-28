@@ -54,9 +54,12 @@ jobs:
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone
+          - module: packages/sysadmin-api
+            runner: ubuntu-latest
+            docker_compose_services: postgres-ferretdb ferretdb
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       - name: Run Tests
         uses: ./.github/actions/test_backend
         with:
@@ -83,13 +86,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       - name: Set up Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: '3.13'
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
         with:
           enable-cache: true
       - name: Install dependencies
@@ -119,6 +122,7 @@ jobs:
           - packages/pipeline
           - packages/bot
           - packages/process
+          - packages/sysadmin-api
     steps:
       - name: Coverage comment
         uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main
@@ -157,6 +161,15 @@ jobs:
             report_coverage: 'true'
           - folder: packages/web
             sonar_project_key: aihub-core_aihub-web
+            report_coverage: 'false'
+          - folder: packages/sysadmin-api
+            sonar_project_key: aihub-core_sysadmin-api
+            report_coverage: 'true'
+          - folder: packages/sysadmin-web
+            sonar_project_key: aihub-core_sysadmin-web
+            report_coverage: 'false'
+          - folder: packages/backup
+            sonar_project_key: aihub-core_backup-core
             report_coverage: 'false'
     steps:
       - name: SonarCloud Scan

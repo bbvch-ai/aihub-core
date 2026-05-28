@@ -252,14 +252,23 @@ class SharePointResource(ConfigurableResource):
             except aiohttp.ClientResponseError as e:
                 # Only retry on "429 Too Many Requests" errors
                 if e.status == 429 and attempt < self.max_retries - 1:
-                    retry_after = e.headers.get("Retry-After")
-                    wait_time = float(retry_after) if retry_after else delay
-                    await asyncio.sleep(wait_time)
-                    if not retry_after:
-                        delay *= 2
+                    delay = await self._wait_for_retry(e, delay)
                 else:
                     raise
         raise Exception(f"Request failed after {self.max_retries} retries.")
+
+    @staticmethod
+    async def _wait_for_retry(e: aiohttp.ClientResponseError, delay: float) -> float:
+        """Sleep before the next retry attempt and return the updated delay.
+
+        Honors a `Retry-After` header if present (in which case the current
+        backoff delay is left unchanged); otherwise sleeps for ``delay`` and
+        doubles it for the next round (exponential backoff).
+        """
+        retry_after = e.headers.get("Retry-After")
+        wait_time = float(retry_after) if retry_after else delay
+        await asyncio.sleep(wait_time)
+        return delay if retry_after else delay * 2
 
     async def get_minimal_share_point_file_async(
         self, session: aiohttp.ClientSession, file_id: str
