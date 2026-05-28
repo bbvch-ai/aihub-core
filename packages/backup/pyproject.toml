@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-backup"
-version = "0.289.21"
+version = "0.290.4"
 description = "Backup and restore orchestration for AI-Hub data services"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -9,7 +9,7 @@ authors = [
     { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
 ]
-license = "Apache-2.0"
+license = "AGPL-3.0-or-later"
 readme = "README.md"
 dependencies = [
     "boto3>=1.41.5",

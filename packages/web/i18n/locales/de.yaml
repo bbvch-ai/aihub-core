@@ -1,0 +1,815 @@
+---
+test: Dies ist ein Test
+welcome: Willkommen im bbv ai-hub
+common:
+  actions:
+    save: Speichern
+    cancel: Abbrechen
+    create: Erstellen
+    delete: Löschen
+    edit: Bearbeiten
+  loading: Laden...
+  selectModel: Modell auswählen
+  selectDatabase: Datenbank auswählen
+models:
+  title: Modelle
+  error: Fehler beim Laden der Modelle
+  card:
+    tokens: Token
+    costPer1M: Kosten/1M
+  modelDetails:
+    overview: Modell-Übersicht
+    name: Name
+    mode: Modus
+    additionalInfo: Zusätzliche Informationen
+    maxInputTokens: Max. Input-Token
+    maxOutputTokens: Max. Output-Token
+    basicInputCost: Input-Kosten pro 1M Token
+    basicOutputCost: Output-Kosten pro 1M Token
+    advancedPricing: Erweiterte Preise
+    cacheCreationCost: Cache-Erstellungskosten
+    cacheReadCost: Cache-Lesekosten
+    inputCostAbove128k: Input-Kosten (über 128K)
+    inputCostAbove200k: Input-Kosten (über 200K)
+    inputAudioCost: Input-Audio-Kosten
+    inputBatchCost: Input-Batch-Kosten
+    outputBatchCost: Output-Batch-Kosten
+    outputAudioCost: Output-Audio-Kosten
+    reasoningTokenCost: Reasoning-Token-Kosten
+    outputCostAbove128k: Output-Kosten (über 128K)
+    outputCostAbove200k: Output-Kosten (über 200K)
+    imageCost: Bild-Kosten
+    searchContextCost: Suchkontext-Kosten
+    rateLimits: Rate Limits
+    tokensPerMinute: Token pro Minute
+    requestsPerMinute: Anfragen pro Minute
+    capabilities: Fähigkeiten
+    supportsSystemMessages: System-Nachrichten
+    supportsResponseSchema: Response-Schema
+    supportsVision: Vision
+    supportsFunctionCalling: Function Calling
+    supportsToolChoice: Tool Choice
+    supportsAssistantPrefill: Assistant Prefill
+    supportsPromptCaching: Prompt Caching
+    supportsAudioInput: Audio-Input
+    supportsAudioOutput: Audio-Output
+    supportsPdfInput: PDF-Input
+    supportsNativeStreaming: Native Streaming
+    supportsWebSearch: Web-Suche
+    supportsUrlContext: URL-Kontext
+    supportsReasoning: Reasoning
+    supportsComputerUse: Computer Use
+    otherDetails: Weitere Details
+    outputVectorSize: Output-Vektor-Größe
+    supportsEmbeddingImageInput: Embedding Bild-Input
+    supportedParams: Unterstützte OpenAI-Parameter
+    notSpecified: Nicht spezifiziert
+languages:
+  en: Englisch
+  de: Deutsch
+  it: Italienisch
+  fr: Französisch
+http_error:
+  code:
+    # 4xx Client Errors
+    400: Ungültige Anfrage. Bitte überprüfen Sie die Adresse und versuchen Sie es
+      erneut.
+    401: Bitte melden Sie sich an, um auf diese Seite zuzugreifen.
+    403: Sie haben keine Berechtigung, dies anzuzeigen.
+    404: Entschuldigung, wir konnten diese Seite nicht finden.
+    405: Diese Aktion ist hier nicht erlaubt.
+    408: Die Anfrage hat das Zeitlimit überschritten. Bitte versuchen Sie es erneut.
+    429: Zu viele Anfragen.
+
+    # 5xx Server Errors
+    500: Auf unseren Servern ist ein Fehler aufgetreten.
+    502: Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es erneut.
+    503: Unser Dienst ist vorübergehend nicht verfügbar.
+    504: Ein Server antwortet nicht. Bitte versuchen Sie es erneut.
+user:
+  title: Benutzer
+  logout: Abmelden
+  language: Sprache
+  role_chips:
+    no_roles: Keine Rollen zugewiesen
+    assign: Rolle zuweisen
+    revoke: Entziehen
+    revoke_confirm_header: Rolle entziehen
+    revoke_confirm_message: Soll die Rolle "{role}" diesem Benutzer entzogen werden?
+    assigned_toast: Rolle "{role}" an {user} zugewiesen
+    revoked_toast: Rolle "{role}" von {user} entzogen
+  list:
+    name: Name
+    email: E-Mail
+    avatar: Profilbild
+    roles: Rollen
+    sys_admin: System-Admin
+    sys_admin_tag: Sys-Admin
+    sys_admin_no: Nein
+    last_accessed: Zuletzt aktiv
+my_account:
+  title: Mein Konto
+  services: Dienste
+  agents: Assistenten
+  processes: Prozesse
+time_ago:
+  last_hour: Letzte Stunde
+  last_day: Letzter Tag
+  last_week: Letzte Woche
+  last_month: Letzter Monat
+  last_year: Letztes Jahr
+  long_time_ago: Vor langer Zeit
+thread:
+  title: Interaktionen
+  users: Benutzer
+  assistants: Assistenten
+  navigation:
+    basic: Grundlegend
+    hierarchy: Hierarchie
+    chat: Chat
+    display: Turns
+    memories: Erinnerungen
+  list:
+    name: Name
+    agents: Agenten
+    created: Erstellt
+    numTurns: Anzahl der Turns
+    numEvents: Anzahl der Ereignisse
+    status: Status
+    pending: Ausstehend
+  utils:
+    pendingTypes:
+      hitl: Mensch in der Schleife
+      aitl: Agent in der Schleife
+      bitl: Bot in der Schleife
+      unknown: Grund unbekannt
+  display:
+    title: Interaktions-Turns
+    list:
+      started: Gestartet
+      duration: Dauer
+      events: Ereignisse
+      status: Status
+      pending: Ausstehend
+      dateFormat: DD.MM.YYYY HH:mm:ss
+  events:
+    title: Turn Tracing Ansicht
+  hierarchy:
+    title: Hierarchische Ansicht der Turns
+  chat:
+    title: Chat-Ansicht
+  memories:
+    title: Thread-Erinnerungen
+    description: Während {threadName} gesammelte Erinnerungen
+    delete_all:
+      confirm_header: Alle Thread-Erinnerungen löschen
+      confirm_message: Sind Sie sicher, dass Sie alle Erinnerungen aus diesem Thread
+        löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+      success:
+        title: Erfolgreich
+        message: Alle Thread-Erinnerungen wurden erfolgreich gelöscht
+      error:
+        title: Löschen fehlgeschlagen
+        message: Fehler beim Löschen der Thread-Erinnerungen. Bitte versuchen Sie
+          es erneut.
+chat:
+  assistant: Assistent
+  document: Dokument
+event:
+  list:
+    firstInteraction: 'Erste Interaktion:'
+    lastInteraction: 'Letzte Interaktion:'
+    costs: 'Kosten:'
+    duration: 'Dauer:'
+    pending: 'Ausstehend:'
+    no: Nein
+    status: 'Status:'
+    error: Fehler
+    successful: Erfolgreich
+    chat: Chat
+    agents: 'Agenten:'
+  base:
+    view_raw_data: Ereignis-Rohdaten anzeigen
+    view_formatted: Formatiertes Ereignis anzeigen
+    event_data: Ereignisdaten
+  rag_start:
+    selected_namespaces: 'Ausgewählte Namespaces:'
+    additional_filters: 'Zusätzliche Metadatenfilter:'
+    no_filters: Keine zusätzlichen Filter
+  rag_stop:
+    failure_reason:
+      context_insufficient: Der abgerufene Kontext war unzureichend – die Antwort
+        ist eine Notlösung und nicht in Ihren Wissensquellen verankert.
+      expert_declined: Der menschliche Experte konnte keine Antwort liefern – dieser
+        Lauf hat keine fundierte Antwort produziert.
+      expert_errored: Die Experten-Eskalation ist mit einem Fehler fehlgeschlagen
+        – dieser Lauf hat keine fundierte Antwort produziert.
+      few_shot_rejected: Die Anfrage entsprach keinem bekannten Muster, daher wurde
+        die Antwort ohne Retrieval erzeugt.
+  limitChatHistory:
+    summary: Chat-Verlauf auf {count} Nachrichten begrenzt
+    assistant: Assistent
+    system: System
+    user: Benutzer/in
+    description: Chat-Verlauf wurde aufgrund von Token-Limits gekürzt, um innerhalb
+      der Modellbeschränkungen zu bleiben
+  addMemoryToChatHistory:
+    summary: '{count} Erinnerungsnachricht zum Chat-Verlauf hinzugefügt | {count}
+      Erinnerungsnachrichten zum Chat-Verlauf hinzugefügt'
+    description: Chat-Verlauf wurde mit relevanten Erinnerungen aus früheren Interaktionen
+      erweitert
+    assistant: Assistent
+    system: System
+    user: Benutzer/in
+  reranker:
+    topDocuments: 'Top {count} relevanteste Dokumente:'
+    query: Suchanfrage
+  retriever:
+    foundDocuments: '{count} relevante Dokumente gefunden'
+    query: Suchanfrage
+    chunksFound: '{count} Textabschnitte gefunden'
+    documentsSpanning: Aus {count} Dokumenten
+    avgScore: 'Ø Relevanz: {score}%'
+    chunksFromDoc: '{count} Abschnitt | {count} Abschnitte'
+    chunk: Abschnitt
+    position: 'Pos: {pos}'
+    lines: Zeilen {start}-{end}
+  retrieveMemory:
+    title: Erinnerung abgerufen
+    memories: Erinnerungen
+    relations: Wissensgraph
+    score: Relevanz
+    noMemories: Keine Erinnerungen abgerufen
+  storeMemory:
+    title: Erinnerungsänderungen
+    added: Hinzugefügt
+    updated: Aktualisiert
+    deleted: Gelöscht
+    addedRelations: hinzugefügte Beziehungen
+    deletedRelations: gelöschte Beziehungen
+    relationChanges: Beziehungsänderungen
+    noChanges: Keine Änderungen
+    chars: '{count} Zeichen'
+    sourceDocument: '{count} Quelldokument | {count} Quelldokumente'
+    contentChunk: '{count} Inhaltsabschnitt | {count} Inhaltsabschnitte'
+    noChunksFound: Keine Abschnitte gefunden
+    noChunksFoundDescription: Die Abrufsuche hat keine relevanten Inhaltsabschnitte
+      gefunden.
+  standaloneQuestionCondenser:
+    summary: Frage verfeinert und verdichtet
+    condensedQuestion: Verdichtete Frage
+    user: Benutzer/in
+    description: Die ursprüngliche Frage wurde reformuliert, um spezifischer und kontextbewusster
+      für bessere Suchergebnisse zu sein
+  statistics:
+    charts:
+      agentInvocations: Agentenaufrufe
+      agentStart: Agentenstart
+      endEvents: Endereignisse
+      success: Erfolg
+      openHumanInTheLoop: Offen (Mensch in der Schleife)
+      openBotInTheLoop: Offen (Bot in der Schleife)
+      error: Fehler
+      delegations: Delegationen
+      delegatedTaskAgentInTheLoop: Delegierte Aufgabe (Agent in der Schleife)
+      allEvents: Alle Ereignisse
+costs:
+  table:
+    count: Anzahl
+    cost: Kosten
+    input: Eingabe
+    output: Ausgabe
+    embedding: Einbettung
+    total: Gesamt
+    currency: CHF
+service:
+  selection:
+    title: Dienste
+    description: Hier sind alle Dienste aufgelistet, die Sie aktiviert haben
+    search: Suche
+    button: Suchen
+agent:
+  title: Agenten
+  can_chat: Kann chatten
+  tabs:
+    myAgents: Meine Agenten
+    templates: Vorlagen
+  templates:
+    empty: Keine Vorlagen verfügbar
+  navigation:
+    basic: Übersicht
+    workflow: Workflow
+    threads: Threads
+    configuration: Konfiguration
+    chat: Chat
+    memories: Erinnerungen
+  overview:
+    startEvents: Startereignisse
+    stopEvents: Stoppereignisse
+    config: Konfiguration
+    name: 'Name:'
+    class: 'Klasse:'
+    agentId: 'Agenten-ID:'
+    status: 'Status:'
+    online: Online
+    offline: Offline
+  configuration:
+    title: Agentenkonfiguration
+    description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für
+      diesen Agenten
+    runtimeSettings: Laufzeiteinstellungen
+    noConfiguration: Keine Konfiguration für diesen Agenten verfügbar
+    saveSuccess: Konfiguration erfolgreich gespeichert
+    saveError: Konfiguration konnte nicht gespeichert werden
+  chat:
+    title: Neuen Chat starten
+    placeholder: Geben Sie die Nachricht ein, die Sie an den Agenten senden möchten
+    createThreadAndSend: Thread erstellen und senden
+    manuallyCreatedThread: Manuell erstellter Thread
+  availableAgents: Verfügbare Agenten
+  list:
+    name: Name
+    description: Beschreibung
+    agent: Agent
+    is_conversational: Konversationell
+    true: Ja
+    false: Nein
+    status: Status
+    online: Online
+    offline: Offline
+    clone: Klonen
+  workflow:
+    title: Agenten-Workflow
+    view_tooltip: Workflow anzeigen
+    empty: Für diese Agentenklasse ist kein Workflow-Graph verfügbar.
+  threads:
+    title: Agenten-Threads
+  create:
+    button: Neuen Agenten erstellen
+    title: Neuen Agenten erstellen
+    cancel: Abbrechen
+    selectClass: Agententyp
+    selectClassPlaceholder: Agententyp auswählen...
+    agentId: Agenten-ID
+    agentIdPlaceholder: mein-neuer-agent
+    agentIdHelp: Eindeutige Kennung (Kleinbuchstaben, Zahlen, Bindestriche, Unterstriche)
+    agentIdInvalid: Nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche erlaubt
+    agentIdTooLong: Agenten-ID darf maximal 100 Zeichen lang sein
+    configuration: Konfiguration
+    noAgentClasses: Keine Agententypen verfügbar. Stellen Sie sicher, dass mindestens
+      ein Agent läuft.
+    submit: Agent erstellen
+    success: Agent erfolgreich erstellt
+    error: Agent konnte nicht erstellt werden
+    steps:
+      basicInfo: Grundlagen
+  delete:
+    button: Löschen
+    title: Agent löschen
+    confirm: Möchten Sie diesen Agenten wirklich löschen?
+    confirmMessage: Diese Aktion kann nicht rückgängig gemacht werden. Die Agentenkonfiguration
+      wird dauerhaft entfernt.
+    success: Agent erfolgreich gelöscht
+    error: Agent konnte nicht gelöscht werden
+    cannotDeleteDefault: Standardkonfigurationen von Agenten können nicht gelöscht
+      werden
+  add_instance:
+    title: Agent hinzufügen
+    description: Neue Agenteninstanz erstellen
+  selector:
+    class:
+      label: Agententyp
+      placeholder: Agententyp auswählen...
+    id:
+      label: Agentenprofil
+      placeholder: Agentenprofil auswählen...
+      help: Wählen Sie das spezifische Agentenprofil aus
+  memories:
+    title: Agenten-Erinnerungen
+    description: Von {agentName} gesammelte Erinnerungen über Sie
+    delete_all:
+      confirm_header: Alle Agenten-Erinnerungen löschen
+      confirm_message: Sind Sie sicher, dass Sie alle von diesem Agenten gesammelten
+        Erinnerungen löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+      success:
+        title: Erfolgreich
+        message: Alle Agenten-Erinnerungen wurden erfolgreich gelöscht
+      error:
+        title: Löschen fehlgeschlagen
+        message: Fehler beim Löschen der Agenten-Erinnerungen. Bitte versuchen Sie
+          es erneut.
+document:
+  list:
+    title: Dokumenttitel
+    created: Erstellt
+    updated_at: Zuletzt aktualisiert
+    language: Sprache
+    document_type: Dokumenttyp
+    number_of_pages: Anzahl der Seiten
+    download: Download
+    is_processing: Verarbeitung läuft
+knowledge:
+  title: Wissensdatenbanken
+  created_at: 'Erstellt:'
+  updated_at: 'Zuletzt aktualisiert:'
+  navigation:
+    document:
+      basic: Übersicht
+      original: Original
+      content: Inhalt
+      nodes: Chunks
+      summary: Zusammenfassungen
+  original:
+    not_available: Die Originalansicht ist nur für PDF-Dateien verfügbar.
+    load_error: Das Originaldokument konnte nicht geladen werden.
+    view_button: Original anzeigen
+    open_new_tab: In neuem Tab öffnen
+    click_to_view: Klicken Sie auf die Schaltfläche unten, um das Original-PDF anzuzeigen.
+  documents:
+    title: Dokumente
+    search:
+      placeholder: Nach Dokumenttitel suchen...
+    upload:
+      title: Dokumente hochladen
+      drag_and_drop: Ziehen Sie Dateien hierher oder klicken Sie, um Dateien auszuwählen
+      target_location:
+        label: Speicherort
+        help: Ordner, in dem die Dokumente gespeichert werden sollen
+      errors:
+        unsupported_file_type: 'Eine Datei hat einen nicht unterstützten Dateityp.
+          Unterstützte Typen sind: {supportedTypes} | {count} Dateien haben einen
+          nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes}'
+      actions:
+        upload: Hochladen
+        cancel: Abbrechen
+  nodes:
+    title: Dokument-Chunks
+  summary:
+    title: Dokumentzusammenfassungen
+    level: Ebene
+    no_summaries_at_level: Keine Zusammenfassungen auf dieser Ebene
+  actions:
+    save: Speichern
+    create: Erstellen
+    cancel: Abbrechen
+  add_folder:
+    title: Sammlung hinzufügen
+    description: Eine neue Wissenssammlung erstellen
+    cancel: Abbrechen
+  auto_sync:
+    title: Automatisch synchronisiert
+    description: Sammlungen werden automatisch verwaltet
+  manual_management:
+    description: Sammlungen können manuell erstellt und verwaltet werden
+  edit_namespace: Sammlung bearbeiten
+  upload_documents: Dokumente hochladen
+  form:
+    create:
+      title: Sammlung erstellen
+    edit:
+      title: Sammlung bearbeiten
+    database:
+      label: Wissensdatenbank
+      placeholder: Name der Wissensdatenbank
+    folder_name:
+      label: Sammlungsname
+      placeholder: meine-sammlung
+      help: Nur alphanumerische Zeichen, Bindestriche (-) und Unterstriche (_) sind
+        erlaubt
+      edit_help: Technischer Name der Sammlung
+      validation_error: Der Sammlungsname darf nur alphanumerische Zeichen, Bindestriche
+        (-) und Unterstriche (_) enthalten
+    display_name:
+      label: Anzeigename
+      placeholder: Anzeigename
+      help: Anzeigename der Sammlung
+    description:
+      label: Beschreibung
+      placeholder: Beschreibung
+      help: Beschreibung der Sammlung
+auth:
+  renew:
+    processing: Stille Token-Erneuerung wird verarbeitet...
+  callback:
+    processing: Authentifizierungs-Callback wird verarbeitet...
+    loggingIn: Sie werden angemeldet...
+    loginError: Anmeldefehler
+    redirectingToLogin: Weiterleitung zur Anmeldeseite...
+    genericError: Während der Anmeldung ist ein Fehler aufgetreten. Bitte versuchen
+      Sie es erneut.
+  login:
+    title: Anmelden
+    description: Bitte melden Sie sich an, um auf die Anwendung zuzugreifen
+    tagline: Erleben Sie die Zukunft der künstlichen Intelligenz
+    welcome: Willkommen im AI Hub von {companyName}
+    pleaseLogin: Bitte melden Sie sich an
+    loginWith: Anmelden mit {provider}
+    customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
+    logoAlt: Logo des Unternehmens
+timerange:
+  1h: 1 Stunde
+  24h: 1 Tag
+  30d: 1 Monat
+  365d: 1 Jahr
+chart:
+  no_data: Für diesen Zeitraum sind keine Daten verfügbar.
+  trending_up: Aufwärtstrend
+  trending_down: Abwärtstrend
+dashboard:
+  all_agents: Alle Agenten
+  users: AI-Hub Benutzer
+  unknown_agent: Unbekannter Agent
+  add_widget: Widget hinzufügen
+  select_data_type: Datentyp auswählen
+  select_agent: Einen Agenten auswählen (Optional)
+  create: Erstellen
+  create_widget: Neues Widget erstellen
+  events:
+    StartEvent:
+      label: Gestartete Agentenläufe
+    StopEvent:
+      label: Erfolgreiche Läufe
+    UserMessageEvent:
+      label: Benutzer-Chat-Nachrichten
+    ExceptionEvent:
+      label: Fehler
+    HumanInTheLoopRequestEvent:
+      label: Mensch in der Schleife
+    BotInTheLoopRequestEvent:
+      label: In Slack/Teams fragen
+    AgentInTheLoopRequestEvent:
+      label: Delegierte Aufgaben
+evaluation:
+  langfuse_link: Experimente ausführen
+  dataset:
+    title: Datensätze
+    created_at: 'Erstellt:'
+    updated_at: 'Aktualisiert am:'
+    create_description: Erstellen Sie einen neuen Datensatz, mit dem Sie die Leistung
+      Ihrer Assistenten bewerten können!
+    name: Name
+    description: Beschreibung
+    cancel: Abbrechen
+    save: Speichern
+    create_new: Neuen Datensatz erstellen
+    add_at_least_one: Fügen Sie mindestens 1 Datenpunkt hinzu
+    question_header: Frage
+    answer_header: Antwort
+    status: Status
+    new: Neu
+    question_placeholder: Frage
+    answer_placeholder: Antwort
+    add_button: Hinzufügen
+    save_button: Datensatz speichern
+    save_confirmation: Datensatz speichern? Einmal hinzugefügt, können Sie Elemente
+      nicht mehr entfernen.
+    cancel_button: Abbrechen
+    save_action: Speichern
+    saved_summary: Gespeichert
+    saved_detail: Datensatz gespeichert
+role:
+  title: Zugriffsrollen
+  name: Name
+  description: Beschreibung
+  edit: Rolle bearbeiten
+  create_new: Neue Rolle
+  add_access_role: Zugriffsrolle hinzufügen
+  add_button: Hinzufügen
+  is_new: Neu
+  save_button: Speichern
+  access_rules: Zugriffsregeln
+  usage_limits: Nutzungslimits
+  usage_pattern: Muster
+  usage_limit_value: Limit
+  usage_period: Zeitraum
+  calls_per: Aufrufe
+  unlimited: Unbegrenzt
+  no_access_rules: Keine Zugriffsregeln definiert
+  access_rules_help_intro: 'Hierarchische Regeln steuern den Zugriff auf Ressourcen:'
+  access_rules_help_all_agents: Alle Agenten
+  access_rules_help_agent_instances: Alle Instanzen von MyAgent
+  access_rules_help_service: Knowledge-Service
+  access_rules_help_admin: Admin-Zugriff auf alles
+  pattern_help_intro: 'Muster verwenden Platzhalter für Agenten:'
+  pattern_help_all: Alle Agenten
+  pattern_help_wildcard: Alle Instanzen von MyAgent
+  pattern_help_specific: Nur eine bestimmte Instanz
+  create_dialog:
+    description: Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle
+      Benutzern zuzuweisen, verwenden Sie bitte Ihr AD.
+    cancel: Abbrechen
+    save: Speichern
+  remove_dialog:
+    confirm: Sind Sie sicher?
+    explanation: Wenn Sie diese Rolle entfernen, verlieren Benutzer möglicherweise
+      den Zugriff auf bestimmte Funktionen des AI-Hubs.
+    cancel: Abbrechen
+    proceed: Trotzdem löschen
+  role_deleted:
+    summary: Rolle gelöscht
+    detail: Die Rolle wurde gelöscht. Benutzer mit dieser Rolle haben möglicherweise
+      den Zugriff auf bestimmte Funktionen verloren.
+  role_saved:
+    summary: Rolle gespeichert
+    detail: Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort
+      in Kraft.
+usage:
+  title: Nutzung
+  calls_remaining: '{current} / {limit} Agentenaufrufe'
+  unlimited_calls: Unbegrenzte Agentenaufrufe
+  resets_at: Zurücksetzung {time}
+  limit_exceeded: Agentenaufruf-Limit erreicht
+  limit_exceeded_detail: Bitte warten Sie bis {time} oder kontaktieren Sie Ihren Administrator
+period:
+  1h: Pro Stunde
+  1d: Pro Tag
+  7d: Pro Woche
+  1mo: Pro Monat
+notification:
+  title: Benachrichtigungen
+  no_unread_notifications: Keine ungelesenen Benachrichtigungen
+  no_notifications: Keine Benachrichtigungen verfügbar
+  no_pending_notifications: Keine ausstehenden Benachrichtigungen
+  mark_all_as_read: Alle als gelesen markieren
+  mark_as_read: Als gelesen markieren
+  mark_as_done: Als erledigt markieren
+  view_all: Alle Benachrichtigungen anzeigen
+  click_to_view: Klicken, um Benachrichtigung anzuzeigen
+  clear_selection: Auswahl aufheben
+  select_all: Alle Benachrichtigungen auswählen
+  filter_notifications: Benachrichtigungen filtern
+  select_notification: Benachrichtigung auswählen
+  default_summary: Neue Benachrichtigung
+  view_button: Anzeigen
+  filter:
+    all: Alle
+    unread: Ungelesen
+    not_done: Zu erledigen
+  types:
+    info: Info
+    success: Erfolg
+    warn: Warnung
+    error: Fehler
+  severities:
+    low: Niedrig
+    medium: Mittel
+    high: Hoch
+    critical: Kritisch
+bar:
+  toggle_dark_mode: Dunkelmodus umschalten
+  show_notifications: Benachrichtigungen anzeigen
+process:
+  title: Prozesse
+  overview:
+    name: Name
+    class: Klasse
+    processId: Prozess-ID
+    status: Status
+    online: Online
+    offline: Offline
+  navigation:
+    overview: Übersicht
+    walkthroughs: Durchläufe
+    start: Durchlauf starten
+    configuration: Konfiguration
+  list:
+    online: Online
+    offline: Offline
+  configuration:
+    title: Prozesskonfiguration
+    description: Konfigurieren Sie das Laufzeitverhalten dieser Prozessinstanz.
+    runtimeSettings: Laufzeiteinstellungen
+    saveSuccess: Konfiguration erfolgreich gespeichert
+    saveError: Fehler beim Speichern der Konfiguration
+    noConfiguration: Keine Konfiguration für diesen Prozess verfügbar.
+  create:
+    title: Neuen Prozess erstellen
+    selectClass: Prozesstyp
+    selectClassPlaceholder: Prozesstyp auswählen...
+    noProcessClasses: Keine Prozesstypen verfügbar.
+    steps:
+      basicInfo: Grundinformationen
+    submit: Prozess erstellen
+    cancel: Abbrechen
+    success: Prozess erfolgreich erstellt
+    error: Fehler beim Erstellen des Prozesses
+  delete:
+    button: Löschen
+    title: Prozess löschen
+    confirmMessage: Sind Sie sicher, dass Sie diese Prozessinstanz löschen möchten?
+      Diese Aktion kann nicht rückgängig gemacht werden.
+    success: Prozess erfolgreich gelöscht
+    error: Fehler beim Löschen des Prozesses
+  add_instance:
+    title: Prozess hinzufügen
+    description: Neue Prozessinstanz erstellen
+  walkthrough:
+    list:
+      created: Erstellt
+      updated: Letzte Interaktion
+      agents: Agenten
+      users: Benutzer
+      state: Status
+      in_progress: In Bearbeitung
+      done: Abgeschlossen
+      steps: Fortschritt
+form:
+  locale_input:
+    translate_tooltip: In alle Sprachen übersetzen
+lib:
+  vectorStore:
+    label: Vektorspeicher
+    help: Wissensdatenbank und Namensräume für die Suche auswählen
+    database:
+      label: Datenbank
+    namespaces:
+      label: Namensräume
+      placeholder: Namensräume auswählen (leer = alle)
+      help: Leer lassen, um alle Namensräume zu durchsuchen
+    allowedFilterFields:
+      label: Erlaubte Filterfelder
+      placeholder: Metadatenschlüssel eingeben und Enter drücken
+      help: Metadatenschlüssel, auf die Publisher beim Abfragen filtern dürfen. Der
+        reservierte Schlüssel `namespace` ist nie erlaubt.
+memory:
+  title: Erinnerungen
+  graph:
+    title: Wissensgraph
+  list:
+    title: Erinnerungsliste
+  detail:
+    title: Erinnerungsdetails
+    created_at: Erstellt am
+    agent_link_label: Erstellt von Agent
+    thread_link_label: Zugehöriger Thread
+    thread_title: Thread-Interaktion
+  update:
+    success:
+      title: Erfolg
+      message: Erinnerung erfolgreich aktualisiert
+    error:
+      title: Aktualisierung fehlgeschlagen
+      message: Erinnerung konnte nicht aktualisiert werden. Bitte versuchen Sie es
+        erneut.
+  delete:
+    success:
+      title: Erfolg
+      message: Erinnerung erfolgreich gelöscht
+    error:
+      title: Löschen fehlgeschlagen
+      message: Erinnerung konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.
+  edit:
+    memory_content_label: Erinnerungsinhalt
+    edit_button: Bearbeiten
+    save_button: Speichern
+    cancel_button: Abbrechen
+    delete_button: Löschen
+    delete_confirm_header: Erinnerung löschen
+    delete_confirm_message: Sind Sie sicher, dass Sie diese Erinnerung löschen möchten?
+      Diese Aktion kann nicht rückgängig gemacht werden.
+    validation_error: Validierungsfehler
+    validation_empty: Der Erinnerungsinhalt darf nicht leer sein
+  table:
+    memory: Erinnerung
+    agent: Agent
+    created: Erstellt
+    score: Punktzahl
+    pagination: Seite {currentPage} von {totalPages}
+  search:
+    button: Suchen
+    placeholder: Erinnerungen durchsuchen...
+    clear: Löschen
+  delete_all:
+    button: Alle löschen
+    confirm_header: Alle Erinnerungen löschen
+    confirm_message: Sind Sie sicher, dass Sie alle Erinnerungen löschen möchten?
+      Diese Aktion kann nicht rückgängig gemacht werden.
+    success:
+      title: Erfolg
+      message: Alle Erinnerungen erfolgreich gelöscht
+    error:
+      title: Löschen fehlgeschlagen
+      message: Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie
+        es erneut.
+openwebui:
+  memories:
+    title: Agent-Erinnerungen
+    select_agent: Agent auswählen
+    list: Liste
+    graph: Graph
+    user_memories: Benutzererinnerungen
+    org_memories: Organisationserinnerungen
+tenant:
+  select_title: Mandant auswählen
+  select_description: Wählen Sie die Organisation, in der Sie arbeiten möchten
+  no_tenant_title: Kein Mandantenzugriff
+  no_tenant_description: Sie haben keinen Zugriff auf einen Mandanten. Bitte kontaktieren
+    Sie Ihren Administrator.
+  switcher_label: Mandant wechseln
+  current_tenant: Aktueller Mandant
+  mismatch_warning: Mandantenkonflikt
+  mismatch_description: Ihr aktiver Mandant wurde in einer anderen Sitzung auf {tenant}
+    geändert. Die Chat-Oberfläche verwendet den aktiven Mandanten für alle Anfragen.
+  mismatch_switch_action: Mandant wechseln
+  administration_title: Tenant-Verwaltung
+  administration_description: Tenants plattformweit verwalten

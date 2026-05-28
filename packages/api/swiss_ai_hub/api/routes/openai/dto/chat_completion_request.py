@@ -18,6 +18,26 @@ from pydantic import BaseModel, ConfigDict, Field
 from swiss_ai_hub.core.events.agent import UserUploadedFile
 
 
+def _resolve_dict_part(part: dict[str, Any]) -> dict[str, Any] | None:
+    part_type = part.get("type")
+    if part_type == "text":
+        return {"type": "text", "text": part.get("text", "")}
+    if part_type == "image_url":
+        return {"type": "image_url", "image_url": part.get("image_url", {})}
+    return None
+
+
+def _resolve_content_part(part: Any) -> dict[str, Any] | None:
+    if isinstance(part, dict):
+        return _resolve_dict_part(part)
+    if hasattr(part, "dict"):
+        return part.dict()
+    try:
+        return dict(part)
+    except Exception:
+        return None
+
+
 def resolve_message_content(message: dict[str, Any]) -> dict[str, Any]:
     """
     Resolves the content field in a message, handling ValidatorIterator instances.
@@ -28,36 +48,42 @@ def resolve_message_content(message: dict[str, Any]) -> dict[str, Any]:
 
     content = message["content"]
 
-    # If content is already a string, no processing needed
     if isinstance(content, str):
         return message
 
-    if hasattr(content, "schema"):
-        resolved_content = []
-        # Iterate through the validator iterator to extract content parts
-        for part in content:
-            if isinstance(part, dict):
-                part_type = part.get("type")
-                if part_type == "text":
-                    resolved_content.append({"type": "text", "text": part.get("text", "")})
-                elif part_type == "image_url":
-                    resolved_content.append({"type": "image_url", "image_url": part.get("image_url", {})})
-            elif hasattr(part, "dict"):
-                # If it's a Pydantic model
-                resolved_content.append(part.dict())
-            else:
-                # Fallback - try to convert to dict somehow
-                try:
-                    resolved_content.append(dict(part))
-                except Exception:
-                    pass
+    if not hasattr(content, "schema"):
+        return message
 
-        new_message = message.copy()
-        new_message["content"] = resolved_content
-        return new_message
+    resolved_content = [resolved for resolved in (_resolve_content_part(p) for p in content) if resolved is not None]
+    new_message = message.copy()
+    new_message["content"] = resolved_content
+    return new_message
 
-    # Content might already be a list of content parts
-    return message
+
+def _image_part_to_block(part: dict[str, Any]) -> ImageBlock | None:
+    image_url = part.get("image_url", {})
+    if not isinstance(image_url, dict) or "url" not in image_url:
+        return None
+    return ImageBlock(url=image_url.get("url"), detail=image_url.get("detail", "auto"))
+
+
+def _content_part_to_block(part: Any) -> ContentBlock | None:
+    if not isinstance(part, dict):
+        return None
+    part_type = part.get("type")
+    if part_type == "text":
+        return TextBlock(text=part.get("text", ""))
+    if part_type == "image_url":
+        return _image_part_to_block(part)
+    return None
+
+
+def _content_to_blocks(content: Any) -> list[ContentBlock]:
+    if isinstance(content, str):
+        return [TextBlock(text=content)]
+    if not isinstance(content, Iterable) or isinstance(content, str | bytes):
+        return []
+    return [block for block in (_content_part_to_block(p) for p in content) if block is not None]
 
 
 def openai_message_to_llama_index(message: dict[str, Any]) -> ChatMessage:
@@ -65,26 +91,10 @@ def openai_message_to_llama_index(message: dict[str, Any]) -> ChatMessage:
     Converts an OpenAI message dict to a llama-index ChatMessage.
     Handles both simple string content and complex multimodal content.
     """
-    # First, ensure content is properly resolved
     message = resolve_message_content(message)
 
     role = message.get("role", "user")
-    content = message.get("content")
-    blocks: list[ContentBlock] = []
-
-    if isinstance(content, str):
-        blocks.append(TextBlock(text=content))
-    elif isinstance(content, Iterable) and not isinstance(content, str | bytes):
-        for part in content:
-            if isinstance(part, dict):
-                part_type = part.get("type")
-                if part_type == "text":
-                    blocks.append(TextBlock(text=part.get("text", "")))
-                elif part_type == "image_url":
-                    image_url = part.get("image_url", {})
-                    if isinstance(image_url, dict) and "url" in image_url:
-                        blocks.append(ImageBlock(url=image_url.get("url"), detail=image_url.get("detail", "auto")))
-
+    blocks = _content_to_blocks(message.get("content"))
     additional_kwargs = {k: v for k, v in message.items() if k not in ["role", "content"]}
 
     return ChatMessage(role=MessageRole(role), blocks=blocks, additional_kwargs=additional_kwargs)

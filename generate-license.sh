@@ -127,7 +127,7 @@ check_python_workspace() {
     license_data=$(uv run pip-licenses \
         --from=mixed \
         --format=json \
-        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth swiss-ai-hub-core swiss-ai-hub-agent swiss-ai-hub-api swiss-ai-hub-bot swiss-ai-hub-pipeline swiss-ai-hub-process swiss-ai-hub-backup \
+        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth swiss-ai-hub-core swiss-ai-hub-agent swiss-ai-hub-api swiss-ai-hub-bot swiss-ai-hub-pipeline swiss-ai-hub-process swiss-ai-hub-backup swiss-ai-hub-sysadmin-api \
         2>"$license_stderr") || {
         echo -e "${RED}Failed to run pip-licenses${NC}"
         echo "Error output: $(cat "$license_stderr")"

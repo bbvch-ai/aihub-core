@@ -64,6 +64,16 @@ image_tags:
     local: web:latest
     nightly: web:nightly
     latest: web:latest
+  sysadmin-api:
+    build: localbuild
+    local: sysadmin-api:latest
+    nightly: sysadmin-api:nightly
+    latest: sysadmin-api:latest
+  sysadmin-web:
+    build: localbuild
+    local: sysadmin-web:latest
+    nightly: sysadmin-web:nightly
+    latest: sysadmin-web:latest
   dagster:
     build: localbuild
     local: dagster:latest

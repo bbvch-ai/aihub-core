@@ -14,7 +14,7 @@ setup:
 
 setup-frontend:
 	@echo "Installing frontend dependencies..."
-	cd packages/web/swiss_ai_hub_web && pnpm install
+	pnpm install --filter @swiss-ai-hub/web... --filter @swiss-ai-hub/sysadmin-web...
 
 setup-all: setup setup-frontend
 
@@ -25,6 +25,7 @@ test:
 	@(cd packages/agent && make test)
 	@(cd packages/process && make test)
 	@(cd packages/api && make test)
+	@(cd packages/sysadmin-api && make test)
 	@(cd packages/bot && make test)
 	@(cd packages/backup && make test)
 	@$(MAKE) check-env
@@ -43,6 +44,7 @@ lint:
 	@(cd packages/agent && make lint)
 	@(cd packages/process && make lint)
 	@(cd packages/api && make lint)
+	@(cd packages/sysadmin-api && make lint)
 	@(cd packages/bot && make lint)
 	@(cd packages/backup && make lint)
 
@@ -54,6 +56,7 @@ format:
 	@(cd packages/agent && make format)
 	@(cd packages/process && make format)
 	@(cd packages/api && make format)
+	@(cd packages/sysadmin-api && make format)
 	@(cd packages/bot && make format)
 	@(cd packages/backup && make format)
 
@@ -77,6 +80,7 @@ typecheck:
 	@(cd packages/agent && make typecheck)
 	@(cd packages/process && make typecheck)
 	@(cd packages/api && make typecheck)
+	@(cd packages/sysadmin-api && make typecheck)
 	@(cd packages/bot && make typecheck)
 
 # Run format, type-check, and test in sequence
@@ -87,9 +91,11 @@ pr-ready:
 	@(cd packages/agent &&  make pr-ready)
 	@(cd packages/process &&  make pr-ready)
 	@(cd packages/api &&  make pr-ready)
+	@(cd packages/sysadmin-api &&  make pr-ready)
 	@(cd packages/bot &&  make pr-ready)
 	@(cd packages/backup &&  make pr-ready)
 	@(cd packages/web && make pr-ready)
+	@(cd packages/sysadmin-web && make pr-ready)
 	@$(MAKE) generate-compose
 	@$(MAKE) check-env
 	@$(MAKE) generate-env-docs
@@ -97,7 +103,7 @@ pr-ready:
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.289.21
+TAG ?= v0.290.4
 
 changelog:
 	@echo "Generating changelog"
@@ -191,10 +197,11 @@ up-local-gpu: local-cert
 VERSION ?= 0.263.0
 version-bump:
 	@echo "Bumping version to $(VERSION) across all packages..."
-	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml packages/backup/pyproject.toml; do \
+	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/sysadmin-api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml packages/backup/pyproject.toml; do \
 		sed -i '/^\[project\]/,/^version =/ s/version = "[^"]*"/version = "$(VERSION)"/' $$f; \
 	done
-	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/web/swiss_ai_hub_web/package.json
+	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/web/package.json
+	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/sysadmin-web/package.json
 	@sed -i 's/^TAG ?= .*/TAG ?= v$(VERSION)/' Makefile
 	@uv lock
 	@echo "Version bumped to $(VERSION)"

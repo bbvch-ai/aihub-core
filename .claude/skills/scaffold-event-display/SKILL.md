@@ -14,12 +14,12 @@ Read the frontend scope guide: `packages/web/CLAUDE.md`
 
 Study existing event display components:
 
-- Simple: `packages/web/swiss_ai_hub_web/components/Event/Display/ThoughtEvent.vue`
-- With data fields: `packages/web/swiss_ai_hub_web/components/Event/Display/ToolEvent.vue`
-- Complex: `packages/web/swiss_ai_hub_web/components/Event/Display/LLMEvent.vue`
-- Base wrapper: `packages/web/swiss_ai_hub_web/components/Event/Display/Base.vue`
+- Simple: `packages/web/components/Event/Display/ThoughtEvent.vue`
+- With data fields: `packages/web/components/Event/Display/ToolEvent.vue`
+- Complex: `packages/web/components/Event/Display/LLMEvent.vue`
+- Base wrapper: `packages/web/components/Event/Display/Base.vue`
 
-Check the event component resolver: `packages/web/swiss_ai_hub_web/composables/event/useEventComponent.ts`
+Check the event component resolver: `packages/web/composables/event/useEventComponent.ts`
 
 ## Step 1: Identify the Event Type
 
@@ -29,11 +29,11 @@ Check the backend event definition in `packages/core/swiss_ai_hub/core/events/` 
 - Fields available on the event
 - Parent event class (for inheritance-based resolution)
 
-Also check the SDK types in `packages/web/swiss_ai_hub_web/sdk/client/` for the TypeScript type.
+Also check the SDK types in `packages/web/sdk/client/` for the TypeScript type.
 
 ## Step 2: Create the Component
 
-Create `packages/web/swiss_ai_hub_web/components/Event/Display/{EventName}Event.vue`:
+Create `packages/web/components/Event/Display/{EventName}Event.vue`:
 
 ```vue
 <template>
@@ -75,7 +75,7 @@ The `Base.vue` wrapper provides the card layout, raw data toggle, and agent badg
 
 ## Step 3: Register in Event Resolver
 
-Edit `packages/web/swiss_ai_hub_web/composables/event/useEventComponent.ts`:
+Edit `packages/web/composables/event/useEventComponent.ts`:
 
 1. Add the import to the `#components` import block:
 
@@ -107,7 +107,7 @@ Match the icon to the event's semantic meaning (e.g., `mynaui:tool` for tools, `
 
 ## Step 5: Verify
 
-1. Confirm the component file exists at `packages/web/swiss_ai_hub_web/components/Event/Display/{EventName}Event.vue`
+1. Confirm the component file exists at `packages/web/components/Event/Display/{EventName}Event.vue`
 2. Confirm `useEventComponent.ts` has both the `#components` import and the mapping entry for the new event
 3. Verify the component wraps content in `EventDisplayBase` with `event`, `thread`, and `icon` props
 4. Verify props use the intersection type pattern: `ContextualizedAgentEvent & { event: {EventType} }`

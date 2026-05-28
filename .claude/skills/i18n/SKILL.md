@@ -15,8 +15,8 @@ Frontend and backend use **completely independent** i18n systems. They share no 
 
 ### Frontend (Nuxt `@nuxtjs/i18n`)
 
-- **Config**: `packages/web/swiss_ai_hub_web/nuxt.config.ts` (i18n section, `strategy: 'prefix'`, `lazy: true`)
-- **Files**: `packages/web/swiss_ai_hub_web/i18n/locales/{locale}.yaml` — one mega YAML per locale (`.yaml` extension)
+- **Config**: `packages/web/nuxt.config.ts` (i18n section, `strategy: 'prefix'`, `lazy: true`)
+- **Files**: `packages/web/i18n/locales/{locale}.yaml` — one mega YAML per locale (`.yaml` extension)
 - **Usage**: `$t('key.path')` in templates, `t('key.path')` in `<script setup>` via `useI18n()`
 - **Navigation**: ALL routes MUST use `localePath()` — URLs include locale prefix (`/en/service/agents`)
 - **Key structure**: Nested YAML, accessed via dot-notation: `common.actions.save` ->
@@ -269,7 +269,7 @@ without `$t()` or `t()`.
 Extract i18n keys from Vue templates and verify they exist in `en.yaml`:
 
 ```bash
-grep -rhoP "\$t\(['\"]([^'\"]+)['\"]\)" packages/web/swiss_ai_hub_web/ --include='*.vue' | sort -u
+grep -rhoP "\$t\(['\"]([^'\"]+)['\"]\)" packages/web/ --include='*.vue' | sort -u
 ```
 
 Ignore dynamic keys like `$t(variable)`.

@@ -19,7 +19,7 @@ LOCALES = ["de", "en", "fr", "it"]
 REFERENCE_LOCALE = "en"
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 
-FRONTEND_LOCALE_DIR = PROJECT_ROOT / "packages" / "web" / "swiss_ai_hub_web" / "i18n" / "locales"
+FRONTEND_LOCALE_DIR = PROJECT_ROOT / "packages" / "web" / "i18n" / "locales"
 
 BACKEND_TRANSLATION_DIRS = [
     PROJECT_ROOT / "packages" / "core" / "swiss_ai_hub" / "core" / "i18n" / "translations",

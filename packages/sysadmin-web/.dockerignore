@@ -1,0 +1,23 @@
+# Docker
+.dockerignore
+Dockerfile
+
+# Git
+.git
+.gitignore
+
+# Node / pnpm
+node_modules
+pnpm-debug.log*
+
+# Nuxt build artifacts
+.nuxt
+.output
+dist
+
+# Environment files
+.env*
+
+# OS / Editor specific
+.DS_Store
+*.log

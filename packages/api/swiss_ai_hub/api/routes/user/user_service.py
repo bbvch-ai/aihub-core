@@ -82,3 +82,33 @@ class UserService:
             for m in members
         ]
         return total, user_dtos
+
+    @staticmethod
+    async def assign_role_to_user(user_oid: str, tenant_id: str, role_name: str) -> list[str]:
+        """Assign a tenant-scoped role to a user. Returns the user's resulting role list in the tenant.
+
+        Validates that the user is a member of the tenant and that the role exists in the tenant.
+        Idempotent: assigning an already-held role is a no-op (the resulting list is unchanged).
+        """
+        # Runtime import: RoleEntity ↔ UserTenantRoleEntity have mutual references; mirror the entity's own pattern.
+        from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+
+        if not await KeycloakAdminService.is_user_member_of_tenant(user_oid, tenant_id):
+            raise HTTPException(status_code=404, detail="User not found in tenant.")
+        if not RoleEntity.filter_existing_roles([role_name], tenant_id):
+            raise HTTPException(status_code=400, detail=f"Role '{role_name}' does not exist in this tenant.")
+        # validate_roles=False: role existence is already checked above, so skip the redundant DB lookup.
+        entity = UserTenantRoleEntity.add_roles(user_oid, tenant_id, [role_name], validate_roles=False)
+        return entity.roles
+
+    @staticmethod
+    async def revoke_role_from_user(user_oid: str, tenant_id: str, role_name: str) -> list[str]:
+        """Revoke a tenant-scoped role from a user. Returns the user's resulting role list in the tenant.
+
+        Validates that the user is a member of the tenant. Idempotent: revoking a role the user
+        doesn't have is a no-op (returns the unchanged list).
+        """
+        if not await KeycloakAdminService.is_user_member_of_tenant(user_oid, tenant_id):
+            raise HTTPException(status_code=404, detail="User not found in tenant.")
+        entity = UserTenantRoleEntity.remove_roles(user_oid, tenant_id, [role_name])
+        return entity.roles if entity else []
