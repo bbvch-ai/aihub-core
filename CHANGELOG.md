@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.6] - 2026-05-29 - Backup Service Refinements and Code Quality Enhancements
+
+### Changed
+
+- 📄 **Refined SonarQube Configurations:** Updated SonarQube issue suppression rules for backup services (Neo4j, Valkey,
+  Milvus) to accurately reflect intentional design patterns and improve the clarity of code quality analysis.
+
+### Refactor
+
+- 🧹 **Optimized Regular Expressions:** Streamlined regex patterns in ClickHouse and PostgreSQL backup services by
+  adopting `\w` shorthand and the `re.ASCII` flag, enhancing readability and precision.
+- ⚡️ **Enhanced Milvus Backup Selection:** Improved the efficiency of Milvus backup selection logic by replacing
+  `sorted()[-1]` with `max()`, leading to a more direct and performant approach for identifying the latest backup.
+
+______________________________________________________________________
+
 ## [v0.290.5] - 2026-05-28 - Dependency Security Enhancement
 
 ### Security

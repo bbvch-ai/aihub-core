@@ -10,8 +10,8 @@ from swiss_ai_hub.backup.settings import BackupSettings
 
 logger = logging.getLogger(__name__)
 
-_BACKUP_NAME_RE = re.compile(r"^backup_[a-zA-Z0-9_]+$")
-_TABLE_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+_BACKUP_NAME_RE = re.compile(r"^backup_\w+$", re.ASCII)
+_TABLE_NAME_RE = re.compile(r"^[a-zA-Z_]\w*$", re.ASCII)
 
 _BACKUP_TIMEOUT = 3600
 
