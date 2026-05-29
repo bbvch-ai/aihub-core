@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.7] - 2026-05-29 - Introducing API Token Management and Documentation
+
+### Added
+
+- 📄 **New Documentation for API Tokens:** Added comprehensive documentation guiding users on how to generate, manage,
+  and use personal API tokens (`sk-`) for authenticating REST API requests, ensuring secure and long-lived access for
+  scripts and integrations.
+
+______________________________________________________________________
+
 ## [v0.290.6] - 2026-05-29 - Backup Service Refinements and Code Quality Enhancements
 
 ### Changed
