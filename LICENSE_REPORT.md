@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 27.05.2026
+Generated on: 28.05.2026
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -379,7 +379,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | SQLAlchemy                                       | 2.0.49                | MIT                                                     |                                                                      |
 | ✅     | sse-starlette                                    | 3.4.4                 | BSD-3-Clause (override)                                 |                                                                      |
 | ✅     | stack-data                                       | 0.6.3                 | MIT License                                             |                                                                      |
-| ✅     | starlette                                        | 1.0.0                 | BSD-3-Clause                                            |                                                                      |
+| ✅     | starlette                                        | 1.1.0                 | BSD-3-Clause                                            |                                                                      |
 | ✅     | strictyaml                                       | 1.7.3                 | MIT License                                             |                                                                      |
 | ✅     | stringcase                                       | 1.2.0                 | MIT                                                     |                                                                      |
 | ✅     | striprtf                                         | 0.0.26                | BSD License                                             |                                                                      |
