@@ -5324,6 +5324,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/LLMStopEvent",
         },
         {
+          $ref: "#/components/schemas/MetaQuestionDetectedEvent",
+        },
+        {
           $ref: "#/components/schemas/RerankerEvent",
         },
         {
@@ -13584,6 +13587,91 @@ export const MessageRoleSchema = {
   ],
   title: "MessageRole",
   description: "Message role.",
+} as const;
+
+export const MetaQuestionCategorySchema = {
+  type: "string",
+  enum: ["identity", "capabilities", "behavior"],
+} as const;
+
+export const MetaQuestionDetectedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    user_query: {
+      type: "string",
+      title: "User Query",
+      description: "The user message classified as a meta question.",
+    },
+    category: {
+      $ref: "#/components/schemas/MetaQuestionCategory",
+      description: "Which aspect of the agent the question is about.",
+    },
+    reasoning: {
+      type: "string",
+      title: "Reasoning",
+      description: "Why the message was classified as a meta question.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "user_query",
+    "category",
+    "reasoning",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "MetaQuestionDetectedEvent",
+  description:
+    "Emitted when the user's message is a meta question about the agent itself —\nits identity, its capabilities, or why it behaved a certain way — rather than a\ntask for the agent to perform. Routes the run to the self-awareness answer step\ninstead of the agent's normal workflow.",
 } as const;
 
 export const MetadataSchema = {
@@ -25330,6 +25418,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/LLMStopEventWritable",
         },
         {
+          $ref: "#/components/schemas/MetaQuestionDetectedEventWritable",
+        },
+        {
           $ref: "#/components/schemas/RerankerEventWritable",
         },
         {
@@ -30141,6 +30232,63 @@ export const MessageWritableSchema = {
   type: "object",
   required: ["role"],
   title: "Message",
+} as const;
+
+export const MetaQuestionDetectedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    user_query: {
+      type: "string",
+      title: "User Query",
+      description: "The user message classified as a meta question.",
+    },
+    category: {
+      $ref: "#/components/schemas/MetaQuestionCategory",
+      description: "Which aspect of the agent the question is about.",
+    },
+    reasoning: {
+      type: "string",
+      title: "Reasoning",
+      description: "Why the message was classified as a meta question.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["user_query", "category", "reasoning"],
+  title: "MetaQuestionDetectedEvent",
+  description:
+    "Emitted when the user's message is a meta question about the agent itself —\nits identity, its capabilities, or why it behaved a certain way — rather than a\ntask for the agent to perform. Routes the run to the self-awareness answer step\ninstead of the agent's normal workflow.",
 } as const;
 
 export const MinimalAgentInstanceDTOWritableSchema = {

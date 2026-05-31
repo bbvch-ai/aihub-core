@@ -9,6 +9,9 @@ from swiss_ai_hub.core.events.agent import (
     FewShotRejectEvent,
     LimitChatHistoryEvent,
     LLMEvent,
+    LLMStopEvent,
+    MetaQuestionDetectedEvent,
+    NotAMetaQuestionEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
     RAGSuccessStopEvent,
@@ -22,6 +25,7 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
+    LLMConfig,
     OrgMemoryNamespaceResolver,
     RetrievalRuntimeConfig,
     extend_chat_history_with_organization_memory,
@@ -47,6 +51,7 @@ from swiss_ai_hub.agent.rag.preconditions import (
     check_memory_added_to_chat_history,
     check_memory_ready_for_chat_history,
     check_organization_memory_enabled,
+    check_passed_meta_question_gate,
     check_ready_for_stop,
     check_reranking_complete_or_disabled,
     check_reranking_enabled,
@@ -65,6 +70,7 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_respond_with_llm,
     do_retrieve,
 )
+from swiss_ai_hub.agent.self_awareness.self_awareness_mixin import SelfAwarenessMixin
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
 )
@@ -97,15 +103,23 @@ async def context_ready_for_history_limit(
 
 
 @precondition()
-async def organization_memory_enabled(config: RAGAgentConfig) -> bool:
-    """Precondition to check if organization memory retrieval is enabled."""
-    return check_organization_memory_enabled(config)
+async def organization_memory_enabled(
+    config: RAGAgentConfig,
+    start_event: UserMessageEvent | RAGStartEvent,
+    clear: NotAMetaQuestionEvent | None = None,
+) -> bool:
+    """Precondition to check if organization memory retrieval is enabled (gated by meta-question detection)."""
+    return check_passed_meta_question_gate(start_event, clear) and check_organization_memory_enabled(config)
 
 
 @precondition()
-async def user_memory_retrieval_enabled(config: RAGAgentConfig) -> bool:
-    """Precondition to check if user memory retrieval is enabled."""
-    return check_user_memory_retrieval_enabled(config)
+async def user_memory_retrieval_enabled(
+    config: RAGAgentConfig,
+    start_event: UserMessageEvent | RAGStartEvent,
+    clear: NotAMetaQuestionEvent | None = None,
+) -> bool:
+    """Precondition to check if user memory retrieval is enabled (gated by meta-question detection)."""
+    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(config)
 
 
 @precondition()
@@ -117,20 +131,28 @@ async def user_memory_storage_enabled(config: RAGAgentConfig) -> bool:
 @precondition()
 async def memory_ready_for_chat_history(
     config: RAGAgentConfig,
+    start_event: UserMessageEvent | RAGStartEvent,
+    clear: NotAMetaQuestionEvent | None = None,
     user_memory_event: RetrieveUserMemoryEvent | None = None,
     org_memory_event: RetrieveOrganizationMemoryEvent | None = None,
 ) -> bool:
     """Precondition to ensure all required memory events are present before extending chat history."""
-    return check_memory_ready_for_chat_history(config, user_memory_event, org_memory_event)
+    return check_passed_meta_question_gate(start_event, clear) and check_memory_ready_for_chat_history(
+        config, user_memory_event, org_memory_event
+    )
 
 
 @precondition()
 async def memory_added_to_chat_history(
     config: RAGAgentConfig,
+    start_event: UserMessageEvent | RAGStartEvent,
+    clear: NotAMetaQuestionEvent | None = None,
     memory_history_event: AddMemoryToChatHistoryEvent | None = None,
 ) -> bool:
-    """Precondition to ensure memory has been added to chat history when required."""
-    return check_memory_added_to_chat_history(config, memory_history_event)
+    """Precondition to ensure memory has been added to chat history when required (gated by meta detection)."""
+    return check_passed_meta_question_gate(start_event, clear) and check_memory_added_to_chat_history(
+        config, memory_history_event
+    )
 
 
 @precondition()
@@ -142,7 +164,7 @@ async def ready_for_stop(
     return check_ready_for_stop(config, store_memory_event)
 
 
-class RAGAgent(Agent):
+class RAGAgent(SelfAwarenessMixin, Agent):
     """
     Implements a Retrieval-Augmented Generation (RAG) Agent.
 
@@ -166,6 +188,40 @@ class RAGAgent(Agent):
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.description")
     icon: ClassVar[str] = "mage:file"
 
+    def self_awareness_llm_config(self, agent_config: RAGAgentConfig) -> LLMConfig:
+        return agent_config.llm
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
+        icon="mdi:help-circle-outline",
+    )
+    async def detect_meta_question_step(
+        self,
+        event: UserMessageEvent,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
+        """Gate every chat message: classify it as a meta question or release the normal RAG pipeline."""
+        return await self.run_meta_question_detection(event.user_query, agent_config, displayer, t)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
+        icon="mdi:account-voice",
+    )
+    async def answer_meta_question_step(
+        self,
+        event: MetaQuestionDetectedEvent,
+        user_message_event: UserMessageEvent,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> LLMStopEvent:
+        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
+        return await self.run_meta_question_answer(event, user_message_event.messages, agent_config, displayer, t)
+
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.name"),
         description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.description"),
@@ -177,6 +233,7 @@ class RAGAgent(Agent):
         event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         memory: AgentMemory,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context."""
         query = event.user_query
@@ -201,6 +258,7 @@ class RAGAgent(Agent):
         event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         memory: AgentMemory,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         assert agent_config.org_memory is not None  # precondition enforces this
@@ -236,6 +294,7 @@ class RAGAgent(Agent):
         org_memory_event: RetrieveOrganizationMemoryEvent | None,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> AddMemoryToChatHistoryEvent:
         """Extend chat history with memory context (user and/or organization)."""
         chat_history = user_message_event.messages
@@ -272,6 +331,7 @@ class RAGAgent(Agent):
         user_event: UserMessageEvent | RAGStartEvent,
         memory_history_event: AddMemoryToChatHistoryEvent | None,
         agent_config: RAGAgentConfig,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> LimitChatHistoryEvent:
         # Use extended history if memory was added, otherwise use original messages
         messages = memory_history_event.extended_history if memory_history_event is not None else user_event.messages

@@ -1,0 +1,52 @@
+---
+steps:
+  detect:
+    name: Meta-Frage erkennen
+    description: Klassifiziert, ob die Nachricht der Nutzerin oder des Nutzers eine
+      Frage über den Assistenten selbst ist (Identität, Fähigkeiten oder Verhalten)
+      und keine auszuführende Aufgabe.
+  answer:
+    name: Meta-Frage beantworten
+    description: Beantwortet eine Frage über den Assistenten anhand seiner eigenen
+      Konfiguration und Workflow-Definition.
+thought:
+  detecting: Prüfe, ob dies eine Frage über mich ist
+  answering: Beantworte eine Frage über mich selbst
+detect:
+  is_meta: Wahr, wenn die Nutzerin oder der Nutzer nach dem Assistenten selbst fragt
+    — nach seiner Identität, was er kann oder warum er sich auf eine bestimmte Weise
+    verhalten hat — und nicht darum bittet, eine Aufgabe auszuführen.
+  category: Der Aspekt des Assistenten, um den es in der Frage geht - Identität, Fähigkeiten
+    oder Verhalten. Null, wenn die Nachricht keine Meta-Frage ist.
+  reasoning: Kurze Begründung für die Klassifizierung.
+  prompt: |
+    Du bist ein Klassifikator, der entscheidet, ob die Nachricht einer Nutzerin oder
+    eines Nutzers eine "Meta-Frage" über den KI-Assistenten selbst ist und keine
+    normale Aufgabe für den Assistenten.
+
+    Eine Meta-Frage ist eine der folgenden:
+    - identity: wer oder was der Assistent ist (z. B. "Wer bist du?", "Wie heisst du?")
+    - capabilities: was der Assistent kann (z. B. "Was kannst du?", "Kannst du bei X helfen?")
+    - behavior: warum der Assistent etwas getan hat (z. B. "Warum hast du das gemacht?")
+
+    Eine Nachricht ist KEINE Meta-Frage, wenn sie den Assistenten bittet, eine Aufgabe
+    auszuführen, eine Fachfrage zu beantworten oder Inhalte zu verarbeiten — selbst
+    wenn sie die Wörter "du" oder "machen" enthält (z. B. "Was kann ich mit diesem
+    Dokument machen?" ist eine normale Aufgabe).
+
+    Klassifiziere die folgende Nachricht.
+
+    Nachricht: {user_query}
+answer:
+  prompt: |
+    Du bist {agent_name}. {agent_description}
+
+    Die Nutzerin oder der Nutzer stellt eine Frage über dich (insbesondere über deine
+    {category}). Beantworte sie hilfreich und prägnant in der Ich-Form, ausschliesslich
+    auf Basis der folgenden Fakten. Erfinde keine Fähigkeiten, die du nicht hast.
+    Wenn du anhand dieser Fakten nicht antworten kannst, sage das klar.
+
+    Dein Workflow — die Schritte, die du zur Bearbeitung einer Anfrage ausführst — ist:
+    {workflow}
+
+    Antworte in der Sprache der Nachricht der Nutzerin oder des Nutzers.

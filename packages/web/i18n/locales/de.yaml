@@ -255,6 +255,11 @@ event:
     noChunksFound: Keine Abschnitte gefunden
     noChunksFoundDescription: Die Abrufsuche hat keine relevanten Inhaltsabschnitte
       gefunden.
+  metaQuestionDetected:
+    category:
+      identity: Identität
+      capabilities: Fähigkeiten
+      behavior: Verhalten
   standaloneQuestionCondenser:
     summary: Frage verfeinert und verdichtet
     condensedQuestion: Verdichtete Frage

@@ -253,6 +253,11 @@ event:
     assistant: Assistente
     system: Sistema
     user: Utente
+  metaQuestionDetected:
+    category:
+      identity: Identità
+      capabilities: Capacità
+      behavior: Comportamento
   standaloneQuestionCondenser:
     summary: Domanda rifinita e condensata
     condensedQuestion: Domanda Condensata

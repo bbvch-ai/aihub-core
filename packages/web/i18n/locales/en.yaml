@@ -252,6 +252,11 @@ event:
     noChunksFound: No chunks found
     noChunksFoundDescription: The retrieval search didn't find any relevant content
       chunks.
+  metaQuestionDetected:
+    category:
+      identity: Identity
+      capabilities: Capabilities
+      behavior: Behaviour
   standaloneQuestionCondenser:
     summary: Question refined and condensed
     condensedQuestion: Condensed Question
