@@ -5,6 +5,67 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.9] - 2026-06-01 - Next-Gen Agents and Operational Excellence
+
+### Added
+
+- 🦾 **New Agent Blueprints**: Introduced a suite of powerful, pre-built agent blueprints for diverse use cases:
+  - 📄 **Document Intelligence Assistant**: A highly configurable Retrieval-Augmented Generation (RAG) agent that answers
+    questions from internal documents with citations, replacing the previous generic RAG agent with advanced
+    capabilities including context-sufficiency guards and user/organization memory.
+  - 🤝 **Company Knowledge Agent**: An extension of the Document Intelligence Assistant that incorporates
+    human-in-the-loop for user consent and bot-in-the-loop for expert consultation, capturing human replies as
+    organizational knowledge.
+  - 🧑‍💻 **Expert Coordinator Agent**: Designed to relay questions to human experts via Slack or Teams, verify their
+    responses, and store them as reusable organizational knowledge. Channel configuration is now managed directly within
+    the agent's profile.
+  - 🧠 **Instructed Assistant**: A foundational chat assistant that follows plain-text system prompts for focused tasks
+    like drafting, translation, or style-guided responses without document retrieval.
+  - 📚 **Teachable Assistant**: An agent that learns behavior from a few examples (few-shot prompting), making it ideal
+    for tasks requiring specific response styles or formats.
+  - 🔍 **Retrieval Agent**: A headless, composable building block that performs document retrieval from a knowledge base
+    without generating an answer, providing raw context for custom workflows.
+  - 🧭 **Document Navigation Assistant**: A routing agent that intelligently identifies the most relevant knowledge
+    bases/namespaces for a user's question, confirms the selection with the user, and then delegates to a RAG agent.
+  - 🛠️ **MCP Tool Agent**: Enables agents to connect to external Model Context Protocol (MCP) servers and execute
+    actions in other systems, such as creating tickets, querying databases, or sending messages.
+- ⚙️ **Automated PostgreSQL Maintenance**: Integrated continuous weekly cleanup and monthly repack jobs for the Dagster
+  PostgreSQL database, ensuring long-term operational stability by managing log growth and freeing disk space.
+- 📄 **Comprehensive Environment Variable Reference**: Added a new, automatically generated documentation page listing
+  all environment variables, their purpose, and consumer services, clarifying setup and configuration.
+- 🌐 **Self-Hosted Web Search**: Documented the new privacy-focused web search feature, powered by a self-hosted SearXNG
+  meta-search instance for Open-WebUI, including its default search engine list and customization options.
+- 🔗 **MCP Tooling for SDK Agents**: Provided detailed SDK guidance on connecting custom agents to external MCP servers
+  and invoking their tools, including `McpClientConfig` and various authentication modes.
+- 💬 **External Tool Connectivity Overview**: Expanded the Agents overview documentation to include a new section
+  explaining how agents can interact with external systems using the Model Context Protocol (MCP).
+
+### Changed
+
+- 🔄 **Updated Documentation Structure**: Significantly reorganized the agent documentation, reordering blueprint pages
+  for improved logical flow and discoverability.
+- 📝 **Refined German Translations**: Numerous minor textual and stylistic improvements across German documentation for
+  enhanced clarity and consistency.
+- 🔑 **Clarified Tenant Deletion Rules**: Updated multi-tenancy documentation to state that any tenant can be deleted as
+  long as at least one remains, clarifying the lack of special deletion protection for the initial startup tenant.
+- ⚙️ **Standardized Startup Tenant Variables**: Renamed environment variables related to initial tenant configuration
+  (e.g., `AIHUB_DEFAULT_TENANT_NAME` to `AIHUB_STARTUP_TENANT_NAME`) for clearer semantics.
+- 🌐 **Updated Network Egress Requirements**: Removed Jina AI from the list of external service dependencies in the
+  network requirements documentation.
+- 📄 **Improved Main Page Tagline**: Updated the tagline on the main documentation landing page for better clarity and
+  impact.
+- 🔄 **Refined Docs Sync Script**: Improved the `sync-docs.sh` script to precisely control which `README.md` files are
+  synchronized into the `docs/6_code_deep_dive` section, preventing unintended content.
+
+### Removed
+
+- 🗑️ **Deprecated Agent Documentation**: Removed the outdated "RAG Agent" and "Expert Asking Agent" documentation, as
+  their functionalities have been superseded and enhanced by the new agent blueprints.
+- 🗑️ **Removed Internal Tooling Documentation**: Cleaned up documentation pages previously generated from internal
+  `.claude`, `.github/actions`, and `infra/deployment` directories, streamlining the documentation scope.
+
+______________________________________________________________________
+
 ## [v0.290.8] - 2026-06-01 - Introducing a Mixed-License Model and Enhanced Contribution Guidelines
 
 ### Added
