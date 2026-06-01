@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.11] - 2026-06-01 - Enhanced Documentation and Licensing Clarity
+
+### Added
+
+- 📄 **New API Tokens Documentation**: A dedicated guide has been added explaining how to generate, use, and revoke
+  personal API tokens for REST API authentication, including steps within the Swagger UI.
+- ✨ **Comprehensive SDK Licensing Rationale**: New documentation now details the platform's mixed-license model,
+  clarifying the rationale behind using Apache 2.0 for the backend and AGPLv3 for the user interface, and its
+  implications for proprietary agent development and community contributions.
+- 📄 **Licensing Clarifications**: The `LICENSES.md` and `README.md` files have been updated with explicit explanations
+  of the mixed-license model, emphasizing the permissive backend and copyleft UI.
+- 🔑 **UI Extensibility Licensing Note**: A new licensing note has been added to the UI extensibility documentation,
+  explicitly detailing the AGPL-3.0 implications for modifying and offering the UI as a network service.
+
+### Changed
+
+- 🔄 **Refined Ecosystem Model Documentation**: The documentation for the ecosystem model has been significantly revised
+  to provide a clearer and more in-depth explanation of the platform's collaborative approach and licensing strategy.
+- 📝 **Clarified Agent Behaviors**: Extensive updates have been made across several agent documentation pages (**Company
+  Knowledge Agent**, **Instructed Assistant**, **Teachable Assistant**, **Retrieval Agent**, **Document Navigation
+  Assistant**, and **MCP Tool Agent**) to provide clearer descriptions of their purpose, workflows, capabilities,
+  limitations, and setup instructions.
+- 📝 **Improved UI Extensibility Guide**: The UI extensibility documentation has been substantially rewritten to offer
+  more detailed insights into architectural foundations, custom service implementation, development workflows,
+  deployment, and strategic value.
+- 📝 **Updated MCP Tools Usage in SDK**: The SDK documentation for using MCP tools has been rephrased for better clarity,
+  particularly regarding connection configuration and authentication modes.
+- 📄 **Minor Documentation Updates**: Small adjustments and rephrasing have been applied to the **Web Search** and
+  **Environment Variables** documentation pages for improved readability and consistency.
+- 📝 **API Tokens Documentation Enhancement**: The English version of the API Tokens documentation has been updated to
+  include the revoke endpoint in its lifecycle table.
+
+______________________________________________________________________
+
 ## [v0.290.10] - 2026-06-01 - Enhancing Project Governance: CLA and Contributor Guidelines
 
 ### Added
