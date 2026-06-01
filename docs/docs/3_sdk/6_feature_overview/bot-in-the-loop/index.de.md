@@ -312,6 +312,6 @@ Um Bot-in-the-Loop in Ihrem Swiss AI Hub Deployment zu implementieren:
    Entscheidungspunkten, an denen menschliche Eingaben einen Mehrwert für automatisierte Prozesse darstellen
 
 Für detaillierte Agent-Integrationsmuster lesen Sie die
-[Expert Agents-Dokumentation](../../../2_platform/5_agents/3_expert_asking_agent/) für praxisnahe
+[Expert Agents-Dokumentation](../../../2_platform/5_agents/9_expert_coordinator_agent/) für praxisnahe
 Implementierungsbeispiele und das Swiss AI Hub Agent Developer's Guide für umfassende Anweisungen zur
 Workflow-Integration.
