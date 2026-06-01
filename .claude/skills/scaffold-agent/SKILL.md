@@ -563,9 +563,16 @@ another agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly a
 | Cost information                | `LLMCostEvent`                                                |
 | Generic workflow state          | `ControlAndDisplayEvent`                                      |
 | Generic UI update               | `DisplayEvent`                                                |
+| Meta-question about the agent   | `MetaQuestionDetectedEvent` / `NotAMetaQuestionEvent`         |
 
 **Rule of thumb**: If a step consumes it → `ControlEvent`. If only the UI needs it → `DisplayEvent`. If both →
 `ControlAndDisplayEvent`. Most custom agent events are `ControlEvent`.
+
+**Self-awareness pattern**: If the new agent should answer meta-questions about itself ("What can you do?", "Who are
+you?"), mix in `SelfAwarenessMixin` from `packages/agent/swiss_ai_hub/agent/self_awareness/self_awareness_mixin.py`.
+Implement `self_awareness_llm_config()` and add two thin `@step` methods delegating to `run_meta_question_detection`
+and `run_meta_question_answer`. Gate all normal entry steps on `_clear: NotAMetaQuestionEvent | None = None`. See
+`RAGAgent` for the reference implementation.
 
 ### The Stop Event Constraint
 

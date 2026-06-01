@@ -310,7 +310,7 @@ the relevant steps.
 
 | Agent                       | Purpose                          | Key Pattern                                            |
 | --------------------------- | -------------------------------- | ------------------------------------------------------ |
-| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory   |
+| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + SelfAwarenessMixin (meta-question gate) |
 | **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                  |
 | **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory       |
 | **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop         |
@@ -393,5 +393,6 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
 
 - RAGAgent: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/rag_agent.py`
 - RAGAgentConfig: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/configs/rag_agent_config.py`
+- SelfAwarenessMixin: `packages/agent/swiss_ai_hub/agent/self_awareness/self_awareness_mixin.py`
 
 **Playground patterns**: `playground/minimal_workflow/`
