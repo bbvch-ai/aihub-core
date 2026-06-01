@@ -33,7 +33,12 @@ root_intro="./docs/6_code_deep_dive/1_introduction/index.en.md"
 mkdir -p "$(dirname "$root_intro")"
 cp "../README.md" "$root_intro"
 # Rewrite image paths for the root README (docs/media/... → ../../../media/...)
-sed -i 's|docs/media/|../../../media/|g' "$root_intro"
+# Portable in-place edit: BSD/macOS sed needs an explicit empty backup suffix; GNU sed does not.
+if [[ "$OSTYPE" == darwin* ]]; then
+    sed -i '' 's|docs/media/|../../../media/|g' "$root_intro"
+else
+    sed -i 's|docs/media/|../../../media/|g' "$root_intro"
+fi
 cp "$root_intro" "${root_intro/.en.md/.de.md}"
 echo "  -> Copied '../README.md' to '$root_intro'"
 
@@ -41,7 +46,7 @@ echo "  -> Copied '../README.md' to '$root_intro'"
 # Search ONLY within '../packages'. This intentionally excludes infra/, .github/,
 # .claude/ (and its worktrees), and any other top-level directory — they are not
 # part of the "code deep dive" of the SDK packages and must not leak into the docs.
-find ../packages \( -path '*/node_modules' -o -path '*/.docker-volumes' -o -path '*/.pytest_cache' -o -path '*/__pycache__' -o -path '*/.mypy_cache' -o -path '*/.venv' \) -prune -o -type f -name "README.md" -print | while read -r source_file; do
+find ../packages \( -path '*/node_modules' -o -path '*/.docker-volumes' -o -path '*/.pytest_cache' -o -path '*/__pycache__' -o -path '*/.mypy_cache' -o -path '*/.venv' \) -prune -o -type f -name "README.md" -print0 | while IFS= read -r -d '' source_file; do
     # 'source_file' is the full path from find, e.g., ../packages/api/README.md
 
     # Skip deeply nested package-internal README files
