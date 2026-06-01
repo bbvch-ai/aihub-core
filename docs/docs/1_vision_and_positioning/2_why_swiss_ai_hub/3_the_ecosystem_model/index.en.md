@@ -77,8 +77,9 @@ modifications private. No strings attached. These are ideal for building busines
 
 **Copyleft licenses** (GPL, AGPL): Require that any modifications or derivative works be released under the same
 license. If you build on GPL software and distribute it, you must open-source your entire application. **AGPL extends
-this to network use** - even offering the software as a service triggers the requirement. Dangerous for proprietary AI
-products.
+this to network use** - even offering the software as a service triggers the requirement. This makes copyleft a poor fit
+for the building blocks you extend with proprietary logic - which is exactly why the Swiss AI Hub runtime and SDK are
+permissive, not copyleft. (Copyleft is the right choice for end-user applications such as the UI; see below.)
 
 **Source-available licenses** (Elastic License, BSL, SSPL, "Sustainable Use"): Let you view and sometimes use the code,
 but impose severe restrictions - often prohibiting commercial use, managed services, or competing products. Not
@@ -99,7 +100,10 @@ For production AI systems, be extremely cautious with:
 - **Custom "source-available" licenses**: Usually prohibit commercial use or have unclear terms
 
 These licenses might seem acceptable initially, but create legal landmines when you scale, offer services, or integrate
-with customer systems.
+with customer systems - **when they sit underneath the code you build on**. That is precisely why the Swiss AI Hub keeps
+the runtime and SDK permissive. The web UI and backup orchestration are a deliberate exception: they are AGPL-3.0
+*because* they are end-user applications rather than building blocks, so copyleft protects community improvements without
+ever forcing your agents or business logic open.
 
 ### Our licensing commitment
 
