@@ -91,4 +91,4 @@ processing.
 - [Container security](../3_container_security/) - Container isolation and hardening
 - [Authentication](../1_authentication/) - Authentication mechanisms
 - [Input validation](../2_input_validation/) - Input sanitization and validation
-- [Infrastructure layers](../../2_architecture/2_infrastructure_layers/) - Infrastructure component overview
+- [Infrastructure layers](../../../1_vision_and_positioning/4_infrastructure_layers/) - Infrastructure component overview

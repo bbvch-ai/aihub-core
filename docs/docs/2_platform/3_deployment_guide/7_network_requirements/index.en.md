@@ -106,4 +106,4 @@ The platform reaches various external APIs based on your integrations. No additi
 - [Deployment options](../1_deployment_options/) - Architecture and hosting strategies
 - [Network security](../../20_security/4_network_security/) - Security architecture and defense-in-depth
 - [Authentication](../../20_security/1_authentication/) - Identity provider integration details
-- [Infrastructure layers](../../2_architecture/2_infrastructure_layers/) - Infrastructure component overview
+- [Infrastructure layers](../../../1_vision_and_positioning/4_infrastructure_layers/) - Infrastructure component overview

@@ -1,0 +1,99 @@
+// C4 Level 1 — System Context
+// Actors, the System Under Test (SUT), and the categories of external system the platform integrates with.
+// Hybrid labelling: each external box is a pluggable integration *capability*; the description lists concrete
+// examples for grep / mental anchoring. Specific shipped wirings (the dev defaults) live in the deployment view.
+
+model {
+  // ─── Actors ────────────────────────────────────────────────────────────────
+  // Four roles split at surface boundaries (Option C). Permission tiers within
+  // the Enterprise User surface (tenant-scoped roles like AIHubAgentAdmin) live
+  // in the RBAC matrix (arc42 §8, future work), not on L1.
+
+  enterprise_user = person "Enterprise User" {
+    description "Any tenant member — covers both regular users and tenant administrators, who share the same surface (Admin UI + OpenWebUI + Main API) with feature visibility gated by tenant-scoped roles (AIHubUser, AIHubAdmin, AIHubAgentAdmin, AIHubKnowledgeAdmin, AIHubProcessAdmin, …)."
+  }
+
+  sysadmin = person "System Administrator" {
+    #sysadmin
+    description "Cross-tenant platform admin. Holds the AIHubSysAdmin realm role; uses the separate sysadmin plane (sysadmin.${DOMAIN}) to manage tenants, user-tenant assignments, and platform-level configuration."
+  }
+
+  bot_user = person "Collaboration Channel User" {
+    description "Subset of tenant users who interact with Swiss AI Hub agents from collaboration channels (Slack, Teams, Webex, email) rather than the dedicated web UI."
+  }
+
+  platform_operator = person "Platform Operator" {
+    description "Platform DevOps / SRE engineer. Holds the AIHubDeveloper realm role; consumes observability and operational surfaces (Dagster pipeline + backup UIs, Langfuse traces, Attu Milvus admin, SeaweedFS Filer) — each on its own subdomain, uniformly gated by oauth2-proxy. Distinct from people who edit infra/configs/* (those are outside the system boundary)."
+  }
+
+  // ─── System Under Test ─────────────────────────────────────────────────────
+  hub = softwareSystem "Swiss AI Hub" {
+    description "Self-hosted, open-source AI platform for enterprises. Routes LLM calls, runs AI agents, orchestrates business processes, ingests documents into a RAG knowledge base, and surfaces capabilities to collaboration channels."
+  }
+
+  // ─── External integration categories ───────────────────────────────────────
+  // Each box is a *pluggable capability*, not a specific vendor. The platform
+  // ships preconfigured for the listed examples but supports any conforming
+  // implementation through its respective gateway / adapter.
+
+  identity_provider = externalSystem "Identity Provider" {
+    #external
+    description "Customer's chosen SSO source — e.g. Entra ID, Okta, on-prem LDAP/AD, Google, GitHub. Federated into the platform via the internal Keycloak realm. Any OIDC- or SAML-capable IdP works."
+  }
+
+  llm_provider = externalSystem "LLM Provider" {
+    #external
+    description "Upstream model API — e.g. Swiss LLM Cloud, OpenAI, Anthropic, Azure OpenAI, Gemini, or any OpenAI-compatible endpoint. Configured per-deployment in the internal LiteLLM gateway; all tenants in a deployment share the same model roster."
+  }
+
+  document_source = externalSystem "Document Source" {
+    #external
+    description "Where customer documents live — e.g. SharePoint, OneDrive, Google Drive, Azure Blob, S3, Dropbox, FTP. Synced via Rclone (70+ supported backends) into the RAG ingestion pipeline."
+  }
+
+  collaboration_platform = externalSystem "Collaboration Platform" {
+    #external
+    description "Two-way chat surface where users converse with bots — e.g. Slack, Microsoft Teams, Webex, email. Routed via the Microsoft Agents SDK (microsoft-agents-*); the Azure Bot Service still hosts the connector endpoint."
+  }
+
+  observability_sink = externalSystem "Observability Sink" {
+    #external
+    description "Customer-managed trace/log receiver — e.g. SigNoz, Grafana Cloud, Honeycomb, or any OTEL-compatible collector. The platform exports OpenTelemetry traces and structured logs."
+  }
+
+  notification_target = externalSystem "Notification Target" {
+    #external
+    description "One-way alert destination for pipeline failures and operational alerts — e.g. Slack channels, Discord webhooks, email, PagerDuty. Routed via Apprise (80+ supported targets). Distinct integration from the Collaboration Platform even when the vendor overlaps."
+  }
+
+  external_mcp_tools = externalSystem "External MCP Tools" {
+    #external
+    description "Customer-exposed MCP servers that agents call as tools — domain-specific APIs, internal CRMs, ticketing systems, etc. Consumed by the agent runtime's MCPClientFactory."
+  }
+
+  // ─── Relationships ─────────────────────────────────────────────────────────
+  enterprise_user   -> hub "Uses via Admin UI, OpenWebUI chat, REST APIs"
+  sysadmin          -> hub "Manages tenants and platform config via the sysadmin plane"
+  platform_operator -> hub "Operates via Dagster, Langfuse, Attu, Backup, and SeaweedFS Filer UIs (oauth2-proxy gated)"
+  bot_user          -> collaboration_platform "Chats with bots in"
+
+  // Bidirectional bot flow.
+  collaboration_platform -> hub "Forwards user messages via webhook"
+  hub -> collaboration_platform "Sends bot replies and BITL questions"
+
+  // SSO federation.
+  hub -[federate]-> identity_provider "Federates SSO (OIDC / SAML)"
+
+  // LLM gateway.
+  hub -> llm_provider "Routes LLM, embedding, reranking, ASR, OCR calls"
+
+  // Document ingestion.
+  hub -> document_source "Ingests documents from"
+
+  // Tool consumption.
+  hub -> external_mcp_tools "Calls customer-exposed tools"
+
+  // Outbound async streams.
+  hub -[async]-> observability_sink   "Exports OTEL traces and logs"
+  hub -[async]-> notification_target  "Posts pipeline + operational alerts"
+}

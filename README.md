@@ -78,7 +78,7 @@ One `docker compose up` starts ~30 containers, fully integrated. Every component
 wired together.
 
 <p align="center" width="100%">
-<img src="docs/media/architecture/low_level/tier_2.png" width="100%" alt="Architecture overview">
+<img src="docs/media/architecture/low_level/tier_2.svg" width="100%" alt="Architecture overview">
 <em>Tier 2 architecture: every component connected, from LLM providers to data sources</em><br><br>
 </p>
 

@@ -119,8 +119,13 @@ Collapsible content (JSON payloads, HTTP examples).
 :::
 ```
 
-**Images**: reference with relative paths to `media/` (`../../../../media/architecture/high_level/tier_1.png`). Add
+**Images**: reference with relative paths to `media/` (`../../../../media/architecture/high_level/tier_1.svg`). Add
 `data-zoomable` attribute for lightbox behavior.
+
+**Architecture diagrams**: the eight `media/architecture/{high_level,low_level}/tier_*.svg` files are rendered from
+`media/architecture/architecture.drawio` by `pnpm run docs:render-diagrams` (a Docker-based step that exports each
+drawio page using the page name as the output filename). Run it after editing the `.drawio` and commit the regenerated
+SVGs alongside the source.
 
 **Mermaid diagrams**: inline fenced code blocks with `mermaid` language tag.
 
@@ -130,10 +135,50 @@ Collapsible content (JSON payloads, HTTP examples).
 
 Images in topic-specific subdirectories under `media/`:
 
-- `media/architecture/` — `.drawio` source files + `.png` exports (`high_level/`, `low_level/`)
+- `media/architecture/` — `.drawio` source files + `.svg` exports (`high_level/`, `low_level/`), regenerated via
+  `pnpm run docs:render-diagrams`
 - `media/sdk/` — tutorial screenshots and videos
 - `media/platform/` — demo videos
 - `media/evaluation/`, `media/knowledge/`, `media/open_webui/` — UI screenshots
+
+## Architecture diagrams (LikeC4)
+
+The platform's C4 model lives in `docs/likec4/` and is rendered as interactive web components in any docs page via
+`<likec4-view view-id="...">`. Source files:
+
+- `docs/likec4/specification.c4` — element kinds, colors, tags
+- `docs/likec4/model/*.c4` — actors, containers, components, relationships (one file per C4 level)
+- `docs/likec4/views/*.c4` — view definitions (one file per view family: context, containers, centered, dynamic, …)
+
+The web component bundle is regenerated automatically by `pnpm run docs:dev` (prepended via `likec4:codegen` script).
+Output: `docs/.vitepress/theme/likec4-webcomponent.js` (gitignored). It's side-effect-imported in
+`docs/.vitepress/theme/index.js`; the Vue compiler is told `likec4-*` tags are custom elements in
+`docs/.vitepress/config.mts`.
+
+### When creating or editing views
+
+Apply the design principles from the `likec4-dsl` skill, especially:
+
+- **Less per view, more views**: target ≤10 boxes per view; split when over budget. For central containers (e.g. API
+  Gateway) split inbound / outbound into separate views.
+- **Multiple parallel view families**: tier views answer "what's in this layer?"; package-centered views answer "what
+  does my package touch?"; dynamic views answer "how does scenario X flow?". Same model, different projections.
+- **Code-first for connectivity**: when adding or editing edges, verify against source — READMEs and
+  `docker-compose.yml` miss runtime integrations (e.g. custom OpenWebUI pipelines, NATS RPC patterns).
+- **Honest self-criticism**: open the rendered diagram in the dev server before declaring a change done. If labels are
+  squashed or edges tangled, fix it.
+
+### Connectivity research subagent
+
+For deep-dive connectivity mapping of a single application container (packages/api, packages/agent, etc.), use the
+`connectivity-researcher` subagent (`.claude/agents/connectivity-researcher.md`). It reads code, not docker-compose, and
+returns structured edge inventories.
+
+### MCP server
+
+The `likec4` MCP server (`.claude/mcp/mcp-likec4.sh`) exposes the model for runtime introspection —
+`read-project-summary`, `read-view`, `query-graph`, `find-relationship-paths`. Useful for sanity-checking the model
+without re-reading the `.c4` files.
 
 ## ADRs
 

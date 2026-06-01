@@ -1,0 +1,73 @@
+specification {
+  // bbv brand red — matches --vp-c-red-1 in docs/.vitepress/theme/custom.css.
+  // Used by the SUT and actors; externals stay muted so the L1 boundary reads at a glance.
+  color aihub-red #bd0007
+
+  // C4 element kinds. Names match canonical C4 vocabulary; LikeC4 itself is kind-agnostic.
+  element person {
+    notation "Person"
+    style { shape person; color aihub-red }
+  }
+
+  element softwareSystem {
+    notation "Software System (SUT)"
+    style { color aihub-red }
+  }
+
+  element externalSystem {
+    notation "External System"
+    style { color muted }
+  }
+
+  element container {
+    notation "Container"
+    style { color aihub-red }
+  }
+
+  // Specialised container kinds for visual differentiation.
+  // All still C4 "containers" conceptually — just shape-distinguished.
+  element webapp {
+    notation "Web UI Container"
+    style { color aihub-red; shape browser }
+  }
+
+  element datastore {
+    notation "Data Store Container"
+    style { color aihub-red; shape storage }
+  }
+
+  element messagebroker {
+    notation "Message Broker Container"
+    style { color aihub-red; shape queue }
+  }
+
+  element component {
+    notation "Component"
+    style { color aihub-red }
+  }
+
+  // Relationship kinds.
+  // `sync` is the default style. `async` styles NATS / event-bus hops. `federate` styles SSO/OIDC trust links.
+  relationship sync     { color slate }
+  relationship async    { color amber; line dotted }
+  relationship federate { color sky;   line dashed }
+
+  // Tags. Applied to elements via `#tag` syntax; used for filtering in views.
+  tag external
+  tag proprietary
+  tag sysadmin
+  tag stateful
+  tag stateless
+  tag oidc-middleware
+  tag prod-only
+  tag host-network
+
+  // L2 tier tags. Each container carries exactly one. Views slice by tag.
+  tag tier-application
+  tag tier-llm
+  tag tier-data
+  tag tier-eventing
+  tag tier-identity-edge
+  tag tier-observability
+  tag tier-utility
+}
