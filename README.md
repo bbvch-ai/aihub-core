@@ -462,6 +462,10 @@ Swiss AI Hub uses a **mixed-license model** — each published artifact carries 
   modify, run, or distribute these packages. A commercial license is required for any use; contact bbv Software Services
   AG.
 
+The split is intentional: the backend stays **permissive** so you can build and run proprietary agents and extensions
+without any obligation to disclose them, while the UI is **copyleft** so improvements to the user-facing application
+flow back to the community.
+
 See [LICENSES.md](LICENSES.md) for the full per-package matrix and rationale.
 
 ______________________________________________________________________
