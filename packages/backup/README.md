@@ -43,3 +43,12 @@ ORDER BY c.relkind, c.relname;
 ```
 
 Run this against the `postgres` database on `postgres-ferretdb`. `relkind = 'r'` = tables, `'S'` = sequences.
+
+## License
+
+Copyright (C) 2024-2026 bbv Software Services AG.
+
+AGPL-3.0-or-later — see
+[packages/backup/LICENSE](https://github.com/bbvch-ai/aihub-core/blob/main/packages/backup/LICENSE). For the full
+per-package matrix (root, AGPL, and proprietary packages), see
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
