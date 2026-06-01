@@ -12,9 +12,9 @@ platform:
 - **Backend — Apache 2.0.** The runtime and SDK (`core`, `agent`, `api`, `bot`, `pipeline`, `process`) are where you
   build agents, workflows, and business logic. A permissive license lets you run and extend proprietary agents without
   any obligation to disclose your implementations — even when operating a modified backend as a network service.
-- **UI — AGPL-3.0.** Network-copyleft keeps improvements to the user-facing application in the community: modifications
-  offered as a hosted service must be shared back, which blocks proprietary SaaS forks of the interface. The `backup`
-  orchestration service is AGPL for the same reason.
+- **UI — AGPL-3.0-or-later.** Network-copyleft keeps improvements to the user-facing application in the community:
+  modifications offered as a hosted service must be shared back, which blocks proprietary SaaS forks of the interface.
+  The `backup` orchestration service is AGPL for the same reason.
 
 See the **SDK Licensing** page in the documentation (Ecosystem → Certification → SDK Licensing) for the full rationale.
 
