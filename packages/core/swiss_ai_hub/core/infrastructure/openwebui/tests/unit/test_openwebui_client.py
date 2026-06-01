@@ -47,6 +47,29 @@ class TestUpdateModelAccess:
         assert call_args.kwargs["json"]["access_grants"] is None
 
 
+class TestUpdateModel:
+    @pytest.mark.asyncio
+    async def test_posts_model_data_to_update_endpoint(self, owui_client: OpenWebuiClient) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.post.return_value = _response(json_data={"id": "m1", "name": "New Name"})
+
+        result = await owui_client.update_model(mock_client, {"id": "m1", "name": "New Name"})
+        assert result == {"id": "m1", "name": "New Name"}
+
+        call_args = mock_client.post.call_args
+        assert call_args.args[0].endswith("/api/v1/models/model/update")
+        assert call_args.kwargs["json"]["name"] == "New Name"
+        assert call_args.kwargs["json"]["params"] == {}
+
+    @pytest.mark.asyncio
+    async def test_raises_on_server_error(self, owui_client: OpenWebuiClient) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.post.return_value = _response(status_code=500)
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await owui_client.update_model(mock_client, {"id": "m1", "name": "New Name"})
+
+
 class TestListModels:
     @pytest.mark.asyncio
     async def test_list_models_handles_dict_response_with_items(self, owui_client: OpenWebuiClient) -> None:

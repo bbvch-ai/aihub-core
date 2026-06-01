@@ -43,6 +43,7 @@ from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
+from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
@@ -187,9 +188,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
     async def _sync_agent_instances_to_provisioners(self) -> None:
         """Sync online agent instances to external provisioners when the set changes."""
-        instances = await AgentService.get_all_agent_instances(t=self.locale_handler, online=True)
+        name_locale_handler = ApiLocaleHandler(locale=self._openwebui_provisioner.model_name_locale)
+        instances = await AgentService.get_all_agent_instances(t=name_locale_handler, online=True)
 
-        current_set = {(inst.agent_class, inst.agent_id) for inst in instances}
+        current_set = {(inst.agent_class, inst.agent_id, inst.name) for inst in instances}
         current_hash = self._compute_agents_hash(current_set)
 
         if await self._agents_hash_unchanged(current_hash):
@@ -202,8 +204,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             await self._store_agents_hash(current_hash)
 
     @staticmethod
-    def _compute_agents_hash(agent_set: set[tuple[str, str]]) -> str:
-        normalized = sorted(f"{ac}:{ai}" for ac, ai in agent_set)
+    def _compute_agents_hash(agent_set: set[tuple[str, str, str]]) -> str:
+        normalized = sorted(f"{ac}:{ai}:{name}" for ac, ai, name in agent_set)
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
     async def _agents_hash_unchanged(self, current_hash: str) -> bool:

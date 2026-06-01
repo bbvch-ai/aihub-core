@@ -112,6 +112,16 @@ class OpenWebuiClient:
         response.raise_for_status()
         return response.json()
 
+    async def update_model(self, http: httpx.AsyncClient, model_data: dict[str, Any]) -> dict[str, Any]:
+        model_data.setdefault("params", {})
+        response = await http.post(
+            f"{self._base_url}{MODELS_ENDPOINT}/model/update",
+            headers=self._jwt_headers,
+            json=model_data,
+        )
+        response.raise_for_status()
+        return response.json()
+
     async def delete_model(self, http: httpx.AsyncClient, model_id: str) -> None:
         response = await http.post(
             f"{self._base_url}{MODELS_ENDPOINT}/model/delete",
