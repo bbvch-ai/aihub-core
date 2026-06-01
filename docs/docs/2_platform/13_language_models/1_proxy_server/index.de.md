@@ -1,20 +1,20 @@
 ---
 title: Proxy-Server
-source_sha: 037993d1bb4c858e4249c90fa91c76df2a05d6752c21bd68faa8b80b8e66a4b2
+source_sha: f1021f95bcc58de1dc6793dbd5a73d613f50056e498a9a0c2f434ce4019d6297
 ---
 
 # LLM-Proxy
 
 Der LLM-Proxy (LiteLLM) bietet ein zentralisiertes Gateway zu Sprachmodell-Anbietern. Er abstrahiert anbieterspezifische
-APIs hinter einer OpenAI-kompatiblen Schnittstelle, wodurch die Plattform mit mehreren KI-Anbietern zusammenarbeiten
-kann, ohne den Code ändern zu müssen.
+APIs hinter einer OpenAI-kompatiblen Schnittstelle, sodass die Plattform mit mehreren KI-Anbietern arbeiten kann, ohne
+den Code ändern zu müssen.
 
 ## Konfiguration
 
 Modelle werden in der LiteLLM-Konfigurationsdatei konfiguriert. Jeder Modelleintrag spezifiziert den Anbieter, den
 API-Endpunkt, die Authentifizierung und die Fähigkeiten.
 
-::: details Beispiel-Modellkonfiguration:
+::: details Beispielmodellkonfiguration:
 ```yaml
 model_list:
   # Cloud model (Swiss LLM Cloud)
@@ -47,25 +47,24 @@ model_list:
 
 Der `model_name` identifiziert das Modell in Agent-Konfigurationen unter Verwendung des echten kanonischen Modellnamens.
 Der Abschnitt `litellm_params` enthält anbieterspezifische Verbindungsdetails. Der Abschnitt `model_info` spezifiziert
-Funktionen und Preisgestaltung pro Token für die Kostenverfolgung durch Langfuse.
+Fähigkeiten und Preise pro Token für die Kostenverfolgung über Langfuse.
 :::
 
 ## Kernfunktionen
 
-Vereinheitlichte Schnittstelle: LiteLLM bietet eine OpenAI-kompatible API, die mit der Swiss LLM Cloud, lokal gehosteten
-vLLM-Modellen und anderen Anbietern funktioniert. Plattformcode verwendet dieselbe Schnittstelle, unabhängig davon,
+Vereinheitlichte Schnittstelle: LiteLLM bietet eine OpenAI-kompatible API, die mit Swiss LLM Cloud, lokal gehosteten
+vLLM-Modellen und anderen Anbietern funktioniert. Der Plattformcode verwendet dieselbe Schnittstelle, unabhängig davon,
 welches Modell die Anfrage verarbeitet.
 
 Anfrage-Routing: Der Proxy leitet Anfragen basierend auf der konfigurierten Strategie weiter. Die aktuelle Konfiguration
-verwendet „usage-based-routing-v2“, welches die Last auf die verfügbaren Modelle verteilt.
+verwendet „usage-based-routing-v2“, welche die Last auf die verfügbaren Modelle verteilt.
 
-Kostenverfolgung: Die Nutzungsverfolgung erfasst den Token-Verbrauch pro Anfrage. Die Kosten pro Token werden für jedes
-Modell konfiguriert, wodurch die Plattform die Kosten pro Konversation berechnen und anzeigen kann. Weitere Details zur
-Kostenverfolgung und -optimierung finden Sie unter [Kostenkontrolle](../../14_cost_control/).
+Kostenverfolgung: Die Nutzungsverfolgung erfasst den Token-Verbrauch pro Anfrage. Die Kosten pro Token sind für jedes
+Modell konfiguriert, sodass die Plattform die Kosten pro Konversation berechnen und anzeigen kann. Weitere Informationen
+zur Kostenverfolgung und -optimierung finden Sie unter [Kostenkontrolle](../../14_cost_control/).
 
 PII-Schutz: Die Presidio-Integration (sofern aktiviert) scannt Anfragen nach persönlich identifizierbaren Informationen,
-bevor diese an externe Anbieter gesendet werden. Weitere Details finden Sie unter
-[Datenanonymisierung](../2_anonymization/).
+bevor sie an externe Anbieter gesendet werden. Details finden Sie unter [Datenanonymisierung](../2_anonymization/).
 
 Wiederholungsrichtlinien: Die Konfiguration spezifiziert die Anzahl der Wiederholungsversuche für Timeout-Fehler,
 Ratenbegrenzungsfehler und interne Serverfehler.

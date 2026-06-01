@@ -53,3 +53,4 @@ repository purports to summarise or amend any third-party license.
 ## Reference
 
 - Root `LICENSE` — Apache License 2.0 (canonical text).
+- Root `NOTICE` — Apache-2.0 attribution notice (copyright holder + per-license breakdown).
