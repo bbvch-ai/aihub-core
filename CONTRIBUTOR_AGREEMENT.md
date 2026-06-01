@@ -2,8 +2,8 @@
 
 **Version 1.0**
 
-Thank you for your interest in contributing to Swiss AI Hub, an open-source project maintained by BBV Software Services
-AG ("BBV CH", "the Company", "We", or "Us"). This Contributor License Agreement ("Agreement") clarifies the intellectual
+Thank you for your interest in contributing to Swiss AI Hub, an open-source project maintained by bbv Software Services
+AG ("bbv", "the Company", "We", or "Us"). This Contributor License Agreement ("Agreement") clarifies the intellectual
 property rights granted to the Company with respect to Contributions from any person or entity ("You"). This Agreement
 is for Your protection as a Contributor as well as the protection of the Company; it does not change Your rights to use
 Your own Contributions for any other purpose.
@@ -108,7 +108,25 @@ representation in this Agreement inaccurate in any respect.
 
 ______________________________________________________________________
 
-## 8. Governing Law
+## 8. Clarifications
+
+8.1 You retain ownership of all copyrights in Your Contributions. This Agreement grants licenses only and does not
+transfer or assign ownership.
+
+8.2 The licenses granted under this Agreement are non-exclusive, and You remain free to use, license, distribute, and
+otherwise exploit Your Contributions.
+
+8.3 Nothing in this Agreement grants the Company the right to use Your name, likeness, trademarks, or logos for
+endorsement or promotion without separate permission.
+
+8.4 Nothing in this Agreement creates an obligation to make future Contributions, to maintain Contributions, or to
+provide support.
+
+8.5 You retain any moral rights that cannot be waived under applicable law.
+
+______________________________________________________________________
+
+## 9. Governing Law
 
 This Agreement shall be governed by and construed in accordance with the laws of Switzerland, without regard to its
 conflict of laws provisions. Any disputes arising under or in connection with this Agreement shall be subject to the
@@ -116,7 +134,7 @@ exclusive jurisdiction of the courts of Switzerland.
 
 ______________________________________________________________________
 
-## 9. How to Sign
+## 10. How to Sign
 
 You sign this Agreement electronically by commenting the following exact phrase on Your GitHub Pull Request:
 
