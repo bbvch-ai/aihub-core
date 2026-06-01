@@ -157,6 +157,6 @@ ______________________________________________________________________
 - Erkunden Sie die [SigNoz-Dokumentation](https://signoz.io/docs/) für Abfrage-Builder und Alarmkonfiguration.
 - Lesen Sie die [OpenTelemetry Collector-Dokumentation](https://opentelemetry.io/docs/collector/) für erweiterte
   Konfigurationen.
-- Konfigurieren Sie die [Langfuse LLM Observability](/de/docs/10_chat_ui/10_observability/) für KI-spezifisches
+- Konfigurieren Sie die [Langfuse LLM Observability](../../../10_chat_ui/10_observability/) für KI-spezifisches
   Debugging.
-- Richten Sie die [Kostenverfolgung](/de/docs/14_cost_control/) für die Überwachung der LLM-Nutzung ein.
+- Richten Sie die [Kostenverfolgung](../../../14_cost_control/) für die Überwachung der LLM-Nutzung ein.

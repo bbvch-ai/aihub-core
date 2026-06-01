@@ -13,9 +13,9 @@ Antwort die Frage tatsächlich beantwortet (und fragt bei Bedarf nach), und spei
 **Organisationsgedächtnis**, damit sie beim nächsten Mal automatisch wiederverwendet werden kann.
 
 Normalerweise ist er nicht etwas, womit Endbenutzer direkt chatten. Stattdessen arbeitet er im Hintergrund — meistens
-wird er vom [Company Knowledge Agent](/de/docs/10_company_knowledge_agent/) aufgerufen, wenn dieser Agent keine
-dokumentierten Antworten mehr findet. Sein Wert liegt in der **Wissenserfassung**: Jede Expertenkonsultation verwandelt
-eine einmalige menschliche Antwort in wiederverwendbares organisatorisches Wissen.
+wird er vom [Company Knowledge Agent](../10_company_knowledge_agent/) aufgerufen, wenn dieser Agent keine dokumentierten
+Antworten mehr findet. Sein Wert liegt in der **Wissenserfassung**: Jede Expertenkonsultation verwandelt eine einmalige
+menschliche Antwort in wiederverwendbares organisatorisches Wissen.
 
 ## Was er tut
 
@@ -52,7 +52,7 @@ im Chat; ihm wird mitgeteilt, dass die Frage weitergeleitet wurde und beantworte
 Der Grund, diesen Agent anstelle einer E-Mail an einen Experten zu verwenden, ist, dass **jede Antwort erfasst wird**.
 Wenn ein Experte einmal antwortet, werden die Frage und Antwort ins Organisationsgedächtnis geschrieben und sind für
 jeden durchsuchbar. Das nächste Mal, wenn dasselbe Thema aufkommt, kann der
-[Company Knowledge Agent](/de/docs/10_company_knowledge_agent/) es aus diesem gespeicherten Wissen beantworten, ohne den
+[Company Knowledge Agent](../10_company_knowledge_agent/) es aus diesem gespeicherten Wissen beantworten, ohne den
 Experten erneut zu belästigen — so summiert sich der Aufwand des Experten mit der Zeit, anstatt in einem Chat-Thread
 verloren zu gehen.
 
@@ -69,7 +69,7 @@ verloren zu gehen.
 
 1. **Ein verbundener Teams- oder Slack-Bot.** Der Agent erreicht Experten über einen Bot, der auf Ihrer
    Kollaborationsplattform registriert ist. Diese Bot-Verbindung muss zuerst eingerichtet werden — siehe
-   [Slack & Teams Integrationseinrichtung](/de/docs/17_slack_teams_integrations/1_setup/). Sie benötigen die Kanal- und
+   [Slack & Teams Integrationseinrichtung](../../17_slack_teams_integrations/1_setup/). Sie benötigen die Kanal- und
    Bot-Identifikatoren aus dieser Einrichtung, um die unten stehende Konfiguration auszufüllen.
 2. **Ein Expertenkanal.** Ein Teams- oder Slack-Kanal, in dem Ihre Experten anwesend und bereit sind, Fragen zu
    beantworten.
@@ -79,7 +79,7 @@ verloren zu gehen.
 ## Einrichtung
 
 Der Agent wird als **Blueprint** (Vorlage) bereitgestellt, aus dem Sie konfigurierte **Profile** erstellen — siehe
-[Blueprints & Profile](/de/docs/2_blueprints_and_profiles/). Mit den erfüllten Voraussetzungen:
+[Blueprints & Profile](../2_blueprints_and_profiles/). Mit den erfüllten Voraussetzungen:
 
 1. **Öffnen Sie den Blueprint** unter **Admin > Agents > Blueprints** und wählen Sie **Expert Coordinator Agent** aus.
 2. **Erstellen Sie ein Profil** mit einer **Agent-ID**, einem **Namen**, einer **Beschreibung** und einem **Icon**.
@@ -110,7 +110,7 @@ andernorts Referenzen auf diese Umgebungsvariablen finden, betrachten Sie diese 
 ### Expertenkanal
 
 Wählen Sie die Plattform aus und füllen Sie dann die Felder dieser Plattform aus. Die Identifikatoren stammen aus Ihrer
-[Bot-Integrations-Einrichtung](/de/docs/17_slack_teams_integrations/1_setup/).
+[Bot-Integrations-Einrichtung](../../17_slack_teams_integrations/1_setup/).
 
 | Feld         | Typ     | Standard | Beschreibung                                                                |
 | :----------- | :------ | :------- | :-------------------------------------------------------------------------- |
@@ -139,11 +139,11 @@ Wählen Sie die Plattform aus und füllen Sie dann die Felder dieser Plattform a
 
 ### Sprachmodell
 
-| Feld                                                                                      | Typ           | Standard | Beschreibung                                                                                                                                    |
-| :---------------------------------------------------------------------------------------- | :------------ | :------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Modell**                                                                                | Modellauswahl | —        | Das Chat-Modell, das verwendet wird, um die Vollständigkeit der Antwort zu beurteilen und Nachfragen zu verfassen. Erforderlich.                |
-| **Temperatur**                                                                            | Zahl          | `0.0`    | Niedrig halten — dies ist eine Beurteilungs-/Extraktionsaufgabe, keine kreative. Bereich 0.0–2.0.                                               |
-| **Log-Wahrscheinlichkeiten zurückgeben** / **Top Log-Wahrscheinlichkeiten** / **Timeout** | —             | —        | Standard-Sprachmodelloptionen, wie auf der Seite [Document Intelligence Assistant](/de/docs/5_document_intelligence_assistant/#language-model). |
+| Feld                                                                                      | Typ           | Standard | Beschreibung                                                                                                                              |
+| :---------------------------------------------------------------------------------------- | :------------ | :------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Modell**                                                                                | Modellauswahl | —        | Das Chat-Modell, das verwendet wird, um die Vollständigkeit der Antwort zu beurteilen und Nachfragen zu verfassen. Erforderlich.          |
+| **Temperatur**                                                                            | Zahl          | `0.0`    | Niedrig halten — dies ist eine Beurteilungs-/Extraktionsaufgabe, keine kreative. Bereich 0.0–2.0.                                         |
+| **Log-Wahrscheinlichkeiten zurückgeben** / **Top Log-Wahrscheinlichkeiten** / **Timeout** | —             | —        | Standard-Sprachmodelloptionen, wie auf der Seite [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model). |
 
 ### Organisationsgedächtnis
 
@@ -163,12 +163,12 @@ Antworten automatisch wiederverwendet werden.
 Kanal, in dem kompetente Kollegen anwesend und bereit sind zu helfen.
 
 **Den Namespace konsistent mit Ihren Wissens-Agents halten.** Damit erfasste Antworten wiederverwendet werden können,
-schreiben Sie sie in einen Namespace, aus dem der [Company Knowledge Agent](/de/docs/10_company_knowledge_agent/) (oder
-ein RAG-Agent) tatsächlich liest.
+schreiben Sie sie in einen Namespace, aus dem der [Company Knowledge Agent](../10_company_knowledge_agent/) (oder ein
+RAG-Agent) tatsächlich liest.
 
 **Das Nachfragelimit an die Geduld Ihrer Experten anpassen.** Zwei oder drei Runden sind in der Regel ausreichend; zu
 viele können sich wie ein Verhör für den antwortenden Menschen anfühlen.
 
 **Koppeln Sie ihn mit einem Company Knowledge Agent.** Allein leitet dieser Agent nur Fragen weiter. Seine wahre Stärke
-kommt daher, dass er das Eskalationsziel eines [Company Knowledge Agent](/de/docs/10_company_knowledge_agent/) ist, der
-ihn nur konsultiert, wenn seine eigenen Dokumente nicht ausreichen.
+kommt daher, dass er das Eskalationsziel eines [Company Knowledge Agent](../10_company_knowledge_agent/) ist, der ihn
+nur konsultiert, wenn seine eigenen Dokumente nicht ausreichen.

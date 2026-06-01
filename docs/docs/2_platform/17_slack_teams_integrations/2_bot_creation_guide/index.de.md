@@ -45,7 +45,7 @@ Details zur automatisierten Einrichtung finden Sie in der [Anleitung zur Azure B
 
 - **[Übersicht über Slack- und Teams-Integrationen](../)** – High-Level-Konzepte und geschäftlicher Nutzen
 - **[Azure Bot Service-Integration](../1_setup/)** – Anleitung zur automatisierten Einrichtung
-- **[Entwicklerhandbuch für Swiss AI Hub Bot](../../../6_code_deep_dive/aihub_bot/)** – Technische
+- **[Entwicklerhandbuch für Swiss AI Hub Bot](../../../6_code_deep_dive/packages/bot/)** – Technische
   Implementierungsdetails
 - **[Bot-in-the-Loop-Dokumentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/)** –
   Mensch-KI-Kollaborations-Workflows
@@ -152,7 +152,7 @@ devtunnel host
 ```
 
 Ein detailliertes Setup für die lokale Entwicklung finden Sie im
-[Entwicklerhandbuch](../../../6_code_deep_dive/aihub_bot/).
+[Entwicklerhandbuch](../../../6_code_deep_dive/packages/bot/).
 :::
 
 ### Schritt 4: Client Secret erstellen
@@ -749,8 +749,8 @@ Nach Abschluss der manuellen Bot-Einrichtung:
 2. **Logs überprüfen**: Überprüfen Sie die Anwendungsprotokolle auf Fehler oder Warnungen während der Bot-Interaktionen
 3. **Zusätzliche Funktionen konfigurieren**: Erkunden Sie
    [Bot-in-the-Loop](../../../3_sdk/6_feature_overview/bot-in-the-loop/) für die Zusammenarbeit zwischen Mensch und KI
-4. **Benutzerdefinierte Logik implementieren**: Im [Entwicklerhandbuch](../../../6_code_deep_dive/aihub_bot/) finden Sie
-   Informationen zu benutzerdefinierten Bot-Implementierungen
+4. **Benutzerdefinierte Logik implementieren**: Im [Entwicklerhandbuch](../../../6_code_deep_dive/packages/bot/) finden
+   Sie Informationen zu benutzerdefinierten Bot-Implementierungen
 5. **Leistung überwachen**: Richten Sie Observability und Monitoring für Production-Deployments ein
 
 ______________________________________________________________________
