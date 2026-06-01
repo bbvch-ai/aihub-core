@@ -102,8 +102,8 @@ For production AI systems, be extremely cautious with:
 These licenses might seem acceptable initially, but create legal landmines when you scale, offer services, or integrate
 with customer systems - **when they sit underneath the code you build on**. That is precisely why the Swiss AI Hub keeps
 the runtime and SDK permissive. The web UI and backup orchestration are a deliberate exception: they are AGPL-3.0
-*because* they are end-user applications rather than building blocks, so copyleft protects community improvements without
-ever forcing your agents or business logic open.
+*because* they are end-user applications rather than building blocks, so copyleft protects community improvements
+without ever forcing your agents or business logic open.
 
 ### Our licensing commitment
 

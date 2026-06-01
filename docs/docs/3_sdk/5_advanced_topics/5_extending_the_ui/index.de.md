@@ -1,8 +1,7 @@
 ---
 title: Erweiterbarkeit und Anpassung
-source_sha: "eb206c9118f83ca12d29616aa160088adec48f59c055247c5a189b039390633d"
+source_sha: eb206c9118f83ca12d29616aa160088adec48f59c055247c5a189b039390633d
 ---
-```
 
 # Erweiterbarkeit und Anpassung
 

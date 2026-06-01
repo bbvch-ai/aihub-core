@@ -38,10 +38,15 @@ https://<your-deployment>/api/v1/docs
 ```
 
 1. Click Authorize (top right).
+
 2. Paste the access token into the HTTPBearer field. Enter the token only, without a `Bearer ` prefix.
+
 3. Click Authorize, then Close.
+
 4. Find `POST /api/v1/{tenant_id}/tokens/` (Create API Token) and click Try it out.
+
 5. Set `tenant_id` to `active`, which resolves to your active tenant.
+
 6. Provide a request body. The name is 1 to 100 characters and the expiry date must be a future ISO-8601 datetime:
 
    ```json
@@ -85,10 +90,10 @@ integrations.
 
 The same controller exposes the rest of the token lifecycle, also callable from the Swagger UI:
 
-| Operation | Endpoint                                |
-| --------- | --------------------------------------- |
-| Create    | `POST /api/v1/{tenant_id}/tokens/`      |
-| List      | `GET /api/v1/{tenant_id}/tokens/`       |
+| Operation | Endpoint                                       |
+| --------- | ---------------------------------------------- |
+| Create    | `POST /api/v1/{tenant_id}/tokens/`             |
+| List      | `GET /api/v1/{tenant_id}/tokens/`              |
 | Revoke    | `DELETE /api/v1/{tenant_id}/tokens/{token_id}` |
 
 The list endpoint returns each token's id, name, and expiry date, but never the token value. Revoking a token deletes it
