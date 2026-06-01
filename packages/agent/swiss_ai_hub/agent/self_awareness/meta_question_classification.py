@@ -1,8 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import BaseModel, Field
-
-type MetaQuestionCategory = Literal["identity", "capabilities", "behavior"]
+from swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event import MetaQuestionCategory
 
 
 class MetaQuestionClassification(BaseModel):
