@@ -115,6 +115,26 @@ technical/non-technical audiences.
 - **Showcase our work:** Demonstrate the Swiss AI-Hub to your colleagues and leadership. Your internal support helps
   grow the entire ecosystem.
 
+## ✍️ Contributor License Agreement (CLA)
+
+To accept your contribution we need you to sign our Contributor License Agreement. This is a one-time step per GitHub
+account — once you sign, all future contributions from that account are covered.
+
+1. Read [CONTRIBUTOR_AGREEMENT.md](./CONTRIBUTOR_AGREEMENT.md).
+2. When you open a Pull Request, the CLA Assistant bot will comment with sign-off instructions if you haven't signed
+   yet.
+3. Post the following comment on your PR (copy it exactly):
+   ```
+   I have read the CONTRIBUTOR_AGREEMENT and I hereby sign the CLA
+   ```
+4. The bot records your signature and the `CLA Signature Check` status turns green.
+
+> **Tip for fork contributors:** If you opened your PR from a fork, the bot may not have been able to post the sign-off
+> prompt (GitHub restricts this for security reasons). Simply post the phrase above manually and the bot will detect it.
+
+If you are contributing on behalf of your employer, please confirm that your employer has authorized the contribution
+and the grants described in the agreement.
+
 ## ⚖️ License
 
 Swiss AI Hub uses a **mixed-license model** — each package carries its own license. Most packages are Apache-2.0; the

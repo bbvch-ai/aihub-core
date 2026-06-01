@@ -4,12 +4,8 @@ Copyright 2024-2026 bbv Software Services AG
 This product includes software developed by bbv Software Services AG
 (https://www.bbv.ch) and the Swiss AI Hub contributors.
 
-Unless otherwise noted, the contents of this repository are licensed under the
-Apache License, Version 2.0 (see LICENSE). The following parts are distributed
-under different terms:
-
-  - packages/web, packages/backup ........ GNU AGPL v3.0 or later
-  - packages/sysadmin-api, packages/sysadmin-web ... Proprietary, all rights reserved
-
-The per-package LICENSE file is authoritative for everything in that subtree.
-See LICENSES.md for the full per-package matrix and rationale.
+This repository uses a mixed-license model. Unless otherwise noted, its
+contents are licensed under the Apache License, Version 2.0 (see LICENSE);
+some subtrees are distributed under different terms. The per-package LICENSE
+file is authoritative for everything in that subtree. See LICENSES.md for the
+full per-package matrix and rationale.

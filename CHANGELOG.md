@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.10] - 2026-06-01 - Enhancing Project Governance: CLA and Contributor Guidelines
+
+### Added
+
+- ✨ **Contributor License Agreement (CLA):** Introduced a formal Individual Contributor License Agreement
+  (`CONTRIBUTOR_AGREEMENT.md`) to clarify intellectual property rights for contributions.
+- 🚀 **Automated CLA Checks:** Implemented a new GitHub Actions workflow (`cla.yml`) to automatically verify CLA
+  signatures for pull requests, streamlining the contribution process.
+- 📄 **Pull Request Template:** Added a standard pull request template (`pull_request_template.md`) to guide contributors
+  in providing necessary information, improving PR quality and review efficiency.
+
+### Changed
+
+- ✍️ **Updated Contributing Guidelines:** Expanded `CONTRIBUTING.md` with a new section detailing the Contributor
+  License Agreement process and instructions for signing it.
+- ⚖️ **Refined Licensing Notice:** Updated the project's `NOTICE` file to provide a more general description of the
+  mixed-license model, referencing `LICENSES.md` for full details.
+
+______________________________________________________________________
+
 ## [v0.290.9] - 2026-06-01 - Next-Gen Agents and Operational Excellence
 
 ### Added
