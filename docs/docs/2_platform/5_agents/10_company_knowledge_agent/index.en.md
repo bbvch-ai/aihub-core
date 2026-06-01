@@ -86,7 +86,7 @@ The agent is delivered as a **blueprint** from which you create configured **pro
    [Document Intelligence Assistant](../5_document_intelligence_assistant/): profile identity, chat model, at least one
    knowledge source, and any reranking, guards, prompts, and memory you want.
 3. **Turn on the context-sufficiency guard.** Expert escalation is triggered by the sufficiency check deciding the
-   context isn't enough — so this guard should be enabled, or the agent will rarely escalate.
+   context isn't enough — so this guard should be enabled, or the agent will not escalate.
 4. **Select the Expert Agent.** Choose the [Expert Coordinator Agent](../9_expert_coordinator_agent/) profile to
    escalate to. This is the one setting unique to this agent.
 5. **Save and test** with a question your documents *can* answer (expect a normal cited answer) and one they *can't*
