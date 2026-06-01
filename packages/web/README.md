@@ -408,6 +408,8 @@ environment variables -- Nuxt automatically maps `NUXT_PUBLIC_*` variables to th
 
 ## License
 
+Copyright (C) 2024-2026 bbv Software Services AG.
+
 AGPL-3.0-or-later — see [packages/web/LICENSE](https://github.com/bbvch-ai/aihub-core/blob/main/packages/web/LICENSE).
 For the full per-package matrix (root, AGPL, and proprietary packages), see
 [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).

@@ -137,5 +137,12 @@ and the grants described in the agreement.
 
 ## ⚖️ License
 
-By contributing to the Swiss AI-Hub, you agree that your contributions will be licensed under the Apache 2.0 License,
-and you grant the additional rights described in the Contributor License Agreement above.
+Swiss AI Hub uses a **mixed-license model** — each package carries its own license. Most packages are Apache-2.0; the
+web frontend (`packages/web`) and the backup service (`packages/backup`) are AGPL-3.0-or-later; the `sysadmin-*`
+packages are proprietary. The full per-package matrix is in [`LICENSES.md`](LICENSES.md).
+
+By contributing, you agree that your contribution is licensed under the license of the package it targets, as listed in
+[`LICENSES.md`](LICENSES.md). Contributions are additionally covered by our Contributor License Agreement (CLA), which
+grants bbv Software Services AG the rights needed to sustain this dual-licensed model — including offering the software
+to bbv and its customers under separate commercial terms alongside the open-source distribution. You will be prompted to
+sign the CLA on your first pull request.
