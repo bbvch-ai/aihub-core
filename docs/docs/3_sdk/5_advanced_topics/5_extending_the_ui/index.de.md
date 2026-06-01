@@ -1,228 +1,127 @@
 ---
 title: Erweiterbarkeit und Anpassung
-source_sha: c28d0e1391a574d478d35f67faf167d9ce0577f26da5ae06913ae371d29bf043
+source_sha: "eb206c9118f83ca12d29616aa160088adec48f59c055247c5a189b039390633d"
 ---
+```
 
 # Erweiterbarkeit und Anpassung
 
-Die Benutzeroberfläche der Swiss AI Hub Suite ist auf Erweiterbarkeit ausgelegt. Dies ermöglicht Organisationen,
-benutzerdefinierte KI-Funktionen hinzuzufügen, proprietäre Systeme zu integrieren und die Plattform an spezifische
-Geschäftsanforderungen anzupassen – und das alles unter Beibehaltung des einheitlichen Suite-Erlebnisses und ohne den
-Kernplattformcode zu modifizieren.
+Die Benutzeroberfläche der Swiss AI Hub Suite ist auf Erweiterbarkeit ausgelegt. Dies ermöglicht Unternehmen, massgeschneiderte KI-Funktionen hinzuzufügen, proprietäre Systeme zu integrieren und die Plattform an spezifische Geschäftsanforderungen anzupassen – und das alles, ohne das einheitliche Suite-Erlebnis zu beeinträchtigen oder den Kerncode der Plattform zu modifizieren.
 
-## Architektonische Grundlagen für Erweiterbarkeit
+::: tip Hinweis zur Lizenzierung
+Das hier beschriebene Erweiterungsmodell – benutzerdefinierte Services und Ihre eigenen Komponenten, die *auf* der Plattform aufgebaut sind – lässt Ihren Service-Code unter der Lizenz Ihrer Wahl; Sie modifizieren die Plattform selbst nicht. Die gebündelte UI (`packages/web`) ist jedoch unter der Lizenz **AGPL-3.0** lizenziert. Wenn Sie diese UI selbst modifizieren und als Netzwerkdienst anbieten, verlangt AGPL-3.0 von Ihnen, diese UI-Modifikationen unter derselben Lizenz zu veröffentlichen. Weitere Details finden Sie unter [Warum Backend und UI unterschiedliche Lizenzen verwenden](../../../4_ecosystem/3_certification/2_sdk_licensing/) und [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
+:::
 
-Die Erweiterbarkeit der Suite resultiert aus bewussten Architektur-Entscheidungen, die Erweiterungspunkte von der
-Kerninfrastruktur trennen. Dies ermöglicht Organisationen, Funktionen hinzuzufügen, ohne den Code zu forken oder
-benutzerdefinierte Plattformversionen zu erstellen.
+## Architektonische Grundlagen für die Erweiterbarkeit
 
-**Plugin-Architektur**: Services integrieren sich in die Suite über ein klar definiertes Controller-Pattern anstatt
-durch direkte Code-Integration. Organisationen, die benutzerdefinierte Services implementieren, folgen den gleichen
-Patterns wie native Services und stellen so sicher, dass ihre Erweiterungen eine automatische Integration mit der
-Authentifizierungs-, Berechtigungs-, Internationalisierungs- und Observability-Infrastruktur erhalten.
+Die Erweiterbarkeit der Suite resultiert aus bewussten Architektur-Entscheidungen, die Erweiterungspunkte von der Kerninfrastruktur trennen. Dies ermöglicht Unternehmen, Funktionen hinzuzufügen, ohne die Codebasis zu forken oder benutzerdefinierte Plattformversionen zu erstellen.
 
-**Standard-Integrationsverträge**: Das Controller-Pattern definiert klare Verträge für die Service-Integration.
-Benutzerdefinierte Services implementieren diese Verträge, deklarieren ihre Metadaten (Name, Beschreibung, Icon,
-Berechtigungen) und mounten ihre API-Endpunkte. Die Suite erkennt und integriert konforme Controller automatisch, ohne
-Änderungen am Kern der Plattform zu erfordern.
+**Plugin-Architektur**: Services integrieren sich in die Suite über ein klar definiertes Controller-Muster statt durch direkte Code-Integration. Unternehmen, die benutzerdefinierte Services implementieren, folgen denselben Mustern wie native Services, wodurch sichergestellt wird, dass ihre Erweiterungen automatisch in die Infrastruktur für Authentifizierung, Berechtigungen, Internationalisierung und Observability integriert werden.
 
-**Trennung von Kern und Erweiterung**: Die Plattform trennt explizit die Kerninfrastruktur (Authentifizierung,
-Autorisierung, Messaging, Persistenz) von den Service-Implementierungen. Erweiterungen nutzen die Kerninfrastruktur,
-ohne sie zu modifizieren, wodurch sichergestellt wird, dass Plattform-Updates keine benutzerdefinierten Services
-unterbrechen und benutzerdefinierte Services die Stabilität der Kernplattform nicht beeinträchtigen.
+**Standard-Integrationsverträge**: Das Controller-Muster definiert klare Verträge für die Service-Integration. Benutzerdefinierte Services implementieren diese Verträge, deklarieren ihre Metadaten (Name, Beschreibung, Icon, Berechtigungen) und binden ihre API-Endpunkte ein. Die Suite erkennt und integriert konforme Controller automatisch, ohne dass Modifikationen an der Kernplattform erforderlich sind.
 
-**Versionskompatibilität**: Der Controller-Integrationsvertrag gewährleistet die Abwärtskompatibilität über verschiedene
-Plattformversionen hinweg. Services, die für eine Plattformversion implementiert wurden, funktionieren auch nach
-Plattform-Updates weiterhin und schützen so die Investitionen der Organisation in benutzerdefinierte Funktionen.
+**Trennung von Kern und Erweiterung**: Die Plattform trennt explizit die Kerninfrastruktur (Authentifizierung, Autorisierung, Messaging, Persistenz) von den Service-Implementierungen. Erweiterungen nutzen die Kerninfrastruktur, ohne sie zu modifizieren, wodurch sichergestellt wird, dass Plattform-Updates benutzerdefinierte Services nicht beeinträchtigen und benutzerdefinierte Services die Stabilität der Kernplattform nicht gefährden.
 
-## Implementierung von benutzerdefinierten Services
+**Versionskompatibilität**: Der Controller-Integrationsvertrag gewährleistet Abwärtskompatibilität über verschiedene Plattformversionen hinweg. Services, die für eine Plattformversion implementiert wurden, funktionieren weiterhin, wenn die Plattform aktualisiert wird, was die Investition des Unternehmens in benutzerdefinierte Funktionen schützt.
 
-Organisationen können benutzerdefinierte Services implementieren, die in der Suite-Oberfläche als vollwertige
-Komponenten erscheinen und sich nicht von nativen Funktionen unterscheiden lassen.
+## Implementierung benutzerdefinierter Services
 
-**Controller-Implementierung**: Benutzerdefinierte Services implementieren eine Controller-Klasse, die vom
-Basis-Controller der Plattform erbt. Dieser Controller definiert die API-Endpunkte des Services,
-Berechtigungsanforderungen und Metadaten. Die Implementierung folgt den Standard-FastAPI-Patterns, die
-Python-Entwicklern vertraut sind.
+Unternehmen können benutzerdefinierte Services implementieren, die als First-Class-Citizens in der Suite-Oberfläche erscheinen und von nativen Funktionen nicht zu unterscheiden sind.
 
-**Frontend-Komponentenentwicklung**: Services, die benutzerdefinierte Benutzeroberflächen benötigen, implementieren
-Frontend-Komponenten mit demselben Technologie-Stack wie die native Oberfläche – Nuxt 3, Vue 3 und PrimeVue. Diese
-Komponenten greifen über automatisch generierte TypeScript-Clients auf die API-Endpunkte des benutzerdefinierten
-Controllers zu, um die Typsicherheit über die Frontend-Backend-Grenze hinweg zu gewährleisten.
+**Controller-Implementierung**: Benutzerdefinierte Services implementieren eine Controller-Klasse, die vom Basis-Controller der Plattform erbt. Dieser Controller definiert die API-Endpunkte des Services, Berechtigungsanforderungen und Metadaten. Die Implementierung folgt Standard-FastAPI-Mustern, die Python-Entwicklern vertraut sind.
 
-**Automatische Suite-Integration**: Wenn ein benutzerdefinierter Controller bei der Plattform registriert wird,
-erscheint er automatisch in der dynamischen Service-Erkennung der Suite. Benutzer mit entsprechenden Berechtigungen
-sehen den benutzerdefinierten Service in ihrer Seitenleisten-Navigation neben nativen Services. Icon, Name und
-Beschreibung des benutzerdefinierten Services integrieren sich nahtlos in die einheitliche Oberfläche.
+**Frontend-Komponentenentwicklung**: Services, die benutzerdefinierte Benutzeroberflächen benötigen, implementieren Frontend-Komponenten unter Verwendung desselben Technologie-Stacks wie die native Schnittstelle – Nuxt 3, Vue 3 und PrimeVue. Diese Komponenten greifen über automatisch generierte TypeScript-Clients auf die API-Endpunkte des benutzerdefinierten Controllers zu, wodurch Typsicherheit über die Frontend-Backend-Grenze hinweg gewährleistet wird.
 
-**Zugriff auf geteilte Infrastruktur**: Benutzerdefinierte Services erhalten automatisch Zugang zur
-Plattforminfrastruktur – NATS Messaging für ereignisgesteuerte Kommunikation, MongoDB Persistenz für die
-Datenspeicherung, Authentifizierung/Autorisierung für die Sicherheit, Internationalisierung für mehrsprachige
-Unterstützung und Observability-Tools für Monitoring und Tracing.
+**Automatische Suite-Integration**: Wenn ein benutzerdefinierter Controller bei der Plattform registriert wird, erscheint er automatisch in der dynamischen Service-Erkennung der Suite. Benutzer mit den entsprechenden Berechtigungen sehen den benutzerdefinierten Service in ihrer Seitenleisten-Navigation neben den nativen Services. Das Icon, der Name und die Beschreibung des benutzerdefinierten Services integrieren sich nahtlos in die einheitliche Benutzeroberfläche.
+
+**Zugriff auf gemeinsame Infrastruktur**: Benutzerdefinierte Services erhalten automatisch Zugriff auf die Plattform-Infrastruktur – NATS Messaging für ereignisgesteuerte Kommunikation, MongoDB Persistenz für die Datenspeicherung, Authentifizierung/Autorisierung für Sicherheit, Internationalisierung für mehrsprachige Unterstützung und Observability-Tools für Monitoring und Tracing.
 
 ## Anwendungsfälle für Erweiterungen
 
-Organisationen implementieren verschiedene Arten von benutzerdefinierten Services, um spezifische Geschäftsanforderungen
-zu erfüllen.
+Unternehmen implementieren verschiedene Arten von benutzerdefinierten Services, um spezifische Geschäftsanforderungen zu erfüllen.
 
-**Branchenspezifische Agents**: Ein Finanzdienstleistungsunternehmen könnte benutzerdefinierte Agents für die Analyse
-der Einhaltung gesetzlicher Vorschriften, Finanzmodellierung oder Risikobewertung implementieren. Diese Agents
-integrieren sich in den Agent-Service der Suite und erscheinen neben nativen Agents mit branchenspezifischen Workflows
-und Wissensintegration.
+**Branchenspezifische Agents**: Ein Finanzdienstleistungsunternehmen könnte benutzerdefinierte Agents für die Analyse der Einhaltung gesetzlicher Vorschriften, Finanzmodellierung oder Risikobewertung implementieren. Diese Agents integrieren sich in den Agent-Service der Suite und erscheinen neben nativen Agents mit branchenspezifischen Workflows und Wissensintegration.
 
-**Proprietäre Systemintegration**: Organisationen können Services implementieren, die den Swiss AI Hub mit proprietären
-Unternehmenssystemen – ERP-Systemen, benutzerdefinierten Datenbanken, Altanwendungen – verbinden. Diese
-Integrations-Services könnten spezialisierte Agents bereitstellen, die mit proprietären Systemen interagieren, oder
-Überwachungsschnittstellen für KI-gesteuerte Automatisierung innerhalb dieser Systeme anbieten.
+**Proprietäre Systemintegration**: Unternehmen können Services implementieren, die den Swiss AI Hub mit proprietären Unternehmenssystemen – ERP-Systemen, kundenspezifischen Datenbanken, Legacy-Anwendungen – verbinden. Diese Integrations-Services könnten spezialisierte Agents bereitstellen, die mit proprietären Systemen interagieren, oder Monitoring-Schnittstellen für KI-gesteuerte Automatisierung innerhalb dieser Systeme anbieten.
 
-**Benutzerdefinierte Analyse-Dashboards**: Organisationen mit spezifischen Berichts- oder Analyseanforderungen können
-benutzerdefinierte Dashboard-Services implementieren, die Daten von Agents, Prozessen und Wissenssystemen aggregieren
-und unternehmensspezifische Metriken und Visualisierungen präsentieren.
+**Benutzerdefinierte Analyse-Dashboards**: Unternehmen mit spezifischen Berichts- oder Analyseanforderungen können benutzerdefinierte Dashboard-Services implementieren, die Daten von Agents, Prozessen und Wissenssystemen aggregieren und unternehmensspezifische Metriken und Visualisierungen präsentieren.
 
-**Spezialisierte Workflows**: Prozesslastige Organisationen könnten benutzerdefinierte Prozessmanagement-Schnittstellen
-implementieren, die auf spezifische Workflow-Typen zugeschnitten sind – Dokumentenfreigabe-Workflows,
-Compliance-Verifizierungsprozesse, mehrstufige Überprüfungsverfahren. Diese benutzerdefinierten Schnittstellen nutzen
-die Prozessautomatisierungs-Infrastruktur der Plattform, während sie domänenspezifische Ansichten präsentieren.
+**Spezialisierte Workflows**: Prozessintensive Unternehmen könnten benutzerdefinierte Prozessmanagement-Schnittstellen implementieren, die auf spezifische Workflow-Typen zugeschnitten sind – Dokumenten-Genehmigungs-Workflows, Compliance-Verifizierungsprozesse, mehrstufige Überprüfungsverfahren. Diese benutzerdefinierten Schnittstellen nutzen die Prozessautomatisierungs-Infrastruktur der Plattform, während sie domänenspezifische Ansichten präsentieren.
 
-**Integration externer KI-Modelle**: Organisationen, die proprietäre oder spezialisierte KI-Modelle verwenden, können
-benutzerdefinierte Modellintegrations-Services implementieren, die diese Modelle über die Suite zugänglich machen.
-Dadurch können Agents unternehmensspezifische KI-Funktionen neben Standardmodellen nutzen.
+**Integration externer KI-Modelle**: Unternehmen, die proprietäre oder spezialisierte KI-Modelle verwenden, können benutzerdefinierte Modellintegrations-Services implementieren, die diese Modelle über die Suite zugänglich machen, wodurch Agents unternehmensspezifische KI-Funktionen neben Standardmodellen nutzen können.
 
-## Workflow zur Entwicklung von Erweiterungen
+## Workflow für die Erweiterungsentwicklung
 
-Die Plattform bietet umfassende Tools und Dokumentation zur Unterstützung der Entwicklung benutzerdefinierter Services.
+Die Plattform bietet umfassende Tools und Dokumentationen zur Unterstützung der Entwicklung benutzerdefinierter Services.
 
-**Entwicklungsumgebung**: Organisationen richten lokale Entwicklungsumgebungen ein, die Produktions-Deployments
-widerspiegeln. Dies ermöglicht die Entwicklung und das Testen benutzerdefinierter Services, ohne Produktionssysteme zu
-beeinträchtigen. Docker Compose-Konfigurationen stellen die gesamte erforderliche Infrastruktur (Datenbanken, Message
-Buses, Observability-Tools) für die lokale Entwicklung bereit.
+**Entwicklungsumgebung**: Unternehmen richten lokale Entwicklungsumgebungen ein, die Produktions-Deployments widerspiegeln. Dies ermöglicht die Entwicklung und das Testen benutzerdefinierter Services, ohne Produktionssysteme zu beeinträchtigen. Docker Compose-Konfigurationen stellen die gesamte erforderliche Infrastruktur (Datenbanken, Message Buses, Observability-Tools) für die lokale Entwicklung bereit.
 
-**Codegenerierung**: Die Plattform bietet Code-Generatoren, die neue Services mit korrekter Struktur, Boilerplate-Code
-und Integrations-Patterns gerüstet. Entwickler beginnen mit funktionierenden Service-Vorlagen anstatt von Grund auf neu
-zu entwickeln, was die Entwicklung beschleunigt und die Einhaltung von Plattformkonventionen sicherstellt.
+**Code-Generierung**: Die Plattform bietet Code-Generatoren, die neue Services mit der korrekten Struktur, Boilerplate-Code und Integrationsmustern gerüsten. Entwickler beginnen mit funktionierenden Service-Vorlagen, anstatt von Grund auf neu zu entwickeln, was die Entwicklung beschleunigt und die Einhaltung von Plattform-Konventionen sicherstellt.
 
-**Testinfrastruktur**: Benutzerdefinierte Services nutzen dieselben Test-Frameworks wie native Services. Die Plattform
-stellt Test Runner bereit, die die Suite-Umgebung simulieren und so ein umfassendes Testen benutzerdefinierter Services
-vor dem Deployment ermöglichen.
+**Testinfrastruktur**: Benutzerdefinierte Services nutzen dieselben Test-Frameworks wie native Services. Die Plattform stellt Test-Runner bereit, die die Suite-Umgebung simulieren und so ein umfassendes Testen benutzerdefinierter Services vor dem Deployment ermöglichen.
 
-**Dokumentationsvorlagen**: Die Plattform enthält Dokumentationsvorlagen und Beispiele, die die Implementierung
-benutzerdefinierter Services, die Entwicklung von Frontend-Komponenten, das API-Design und die Suite-Integration
-demonstrieren. Diese Ressourcen beschleunigen die Entwicklung, indem sie funktionierende Beispiele gängiger Patterns
-bereitstellen.
+**Dokumentationsvorlagen**: Die Plattform enthält Dokumentationsvorlagen und Beispiele, die die Implementierung benutzerdefinierter Services, die Frontend-Komponentenentwicklung, das API-Design und die Suite-Integration demonstrieren. Diese Ressourcen beschleunigen die Entwicklung, indem sie funktionierende Beispiele gängiger Muster bereitstellen.
 
 ## Deployment und Distribution
 
-Benutzerdefinierte Services werden zusammen mit der nativen Plattform deployed und werden so zu integralen Bestandteilen
-der Swiss AI Hub-Installationen einer Organisation.
+Benutzerdefinierte Services werden zusammen mit der nativen Plattform deployed und werden so zu integralen Bestandteilen der Swiss AI Hub-Installationen von Unternehmen.
 
-**Container-Verpackung**: Benutzerdefinierte Services werden als Docker-Container gemäß den Plattformkonventionen
-verpackt. Diese Container werden zusammen mit nativen Plattformkomponenten deployed, was eine unabhängige Skalierung und
-Versionsverwaltung ermöglicht.
+**Container-Verpackung**: Benutzerdefinierte Services werden als Docker-Container nach den Plattformkonventionen verpackt. Diese Container werden zusammen mit nativen Plattformkomponenten deployed, was eine unabhängige Skalierung und Versionsverwaltung ermöglicht.
 
-**Konfigurationsmanagement**: Benutzerdefinierte Services nutzen das Konfigurationsmanagement-System der Plattform und
-lesen Einstellungen aus Umgebungsvariablen und Konfigurationsdateien. Diese Integration ermöglicht konsistente
-Konfigurationspraktiken über native und benutzerdefinierte Services hinweg.
+**Konfigurationsmanagement**: Benutzerdefinierte Services nutzen das Konfigurationsmanagement-System der Plattform und lesen Einstellungen aus Umgebungsvariablen und Konfigurationsdateien. Diese Integration ermöglicht konsistente Konfigurationspraktiken über native und benutzerdefinierte Services hinweg.
 
-**Deployment-Orchestrierung**: Organisationen erweitern Plattform-Deployment-Konfigurationen (Docker Compose-Dateien,
-Kubernetes-Manifeste), um benutzerdefinierte Services einzuschließen. Deployment-Tools behandeln benutzerdefinierte
-Services identisch zu nativen Services und wenden dieselben Health Checks, Monitoring- und
-Lifecycle-Management-Verfahren an.
+**Deployment-Orchestrierung**: Unternehmen erweitern die Plattform-Deployment-Konfigurationen (Docker Compose-Dateien, Kubernetes-Manifeste), um benutzerdefinierte Services einzuschliessen. Deployment-Tools behandeln benutzerdefinierte Services identisch mit nativen Services und wenden dieselben Health Checks, Monitoring- und Lifecycle-Management-Verfahren an.
 
-**Update-Unabhängigkeit**: Benutzerdefinierte Services können unabhängig von der nativen Plattform aktualisiert werden
-(innerhalb der Versionskompatibilitätsgarantien). Organisationen können neue Versionen benutzerdefinierter Services
-deployen, ohne vollständige Plattform-Updates zu benötigen, was eine agile Entwicklung benutzerdefinierter Funktionen
-ermöglicht.
+**Update-Unabhängigkeit**: Benutzerdefinierte Services können unabhängig von der nativen Plattform aktualisiert werden (innerhalb der Garantien für Versionskompatibilität). Unternehmen können neue benutzerdefinierte Service-Versionen deployen, ohne vollständige Plattform-Updates zu benötigen, was eine agile Entwicklung benutzerdefinierter Funktionen ermöglicht.
 
 ## Governance und Qualität
 
-Während die Plattform Erweiterbarkeit ermöglicht, behalten Organisationen die Kontrolle darüber, welche
-benutzerdefinierten Services deployed werden und wie sie sich integrieren.
+Während die Plattform Erweiterbarkeit ermöglicht, behalten Unternehmen die Kontrolle darüber, welche benutzerdefinierten Services deployed werden und wie sie integriert werden.
 
-**Berechtigungskontrolle**: Benutzerdefinierte Services deklarieren Berechtigungsanforderungen wie native Services.
-Administratoren steuern den Zugriff von Benutzern auf benutzerdefinierte Services über dieselben Rollen- und
-Berechtigungsmanagement-Oberflächen, die für native Funktionen verwendet werden.
+**Berechtigungssteuerung**: Benutzerdefinierte Services deklarieren Berechtigungsanforderungen wie native Services. Administratoren steuern den Zugriff von Benutzern auf benutzerdefinierte Services über dieselben Rollen- und Berechtigungsmanagement-Schnittstellen, die für native Funktionen verwendet werden.
 
-**Qualitätsstandards**: Organisationen können Qualitäts-Gates für das Deployment benutzerdefinierter Services festlegen
-– Anforderungen an Code-Reviews, Teststandards, Sicherheitsaudits, Performance-Benchmarks. Die Erweiterbarkeit der
-Plattform schreibt keine niedrigeren Standards für benutzerdefinierte Services vor.
+**Qualitätsstandards**: Unternehmen können Qualitätstore für das Deployment benutzerdefinierter Services etablieren – Anforderungen an Code-Reviews, Teststandards, Sicherheitsaudits, Performance-Benchmarks. Die Erweiterbarkeit der Plattform schreibt keine niedrigeren Standards für benutzerdefinierte Services vor.
 
-**Service-Registry**: Organisationen behalten den Überblick über deployed benutzerdefinierte Services durch dieselben
-Monitoring- und Management-Oberflächen, die für native Services verwendet werden. Benutzerdefinierte Services melden den
-Zustand, geben Metriken aus und generieren Audit-Logs identisch zu nativen Funktionen.
+**Service-Registry**: Unternehmen behalten über dieselben Monitoring- und Management-Schnittstellen, die für native Services verwendet werden, den Überblick über deployed benutzerdefinierte Services. Benutzerdefinierte Services melden den Zustand, stellen Metriken bereit und generieren Audit-Logs identisch mit nativen Funktionen.
 
-**Namespace-Isolation**: Organisationen können Namespace-Isolation implementieren, bei der benutzerdefinierte Services
-für verschiedene Organisationseinheiten sich nicht gegenseitig beeinflussen. Das Berechtigungssystem gewährleistet
-angemessene Zugriffsgrenzen.
+**Namespace-Isolation**: Unternehmen können Namespace-Isolation implementieren, bei der benutzerdefinierte Services für verschiedene Organisationseinheiten sich nicht gegenseitig stören. Das Berechtigungssystem stellt angemessene Zugriffsbarrieren sicher.
 
-## Potenzial für Community und Ökosystem
+## Community- und Ökosystem-Potenzial
 
-Die Erweiterbarkeitsarchitektur ermöglicht die potenzielle Entwicklung eines Ökosystems rund um die Swiss AI Hub
-Plattform.
+Die Erweiterbarkeitsarchitektur ermöglicht die potenzielle Entwicklung eines Ökosystems rund um die Swiss AI Hub Plattform.
 
-**Geteilte Erweiterungen**: Organisationen könnten benutzerdefinierte Services mit Branchenkollegen teilen, die ähnliche
-Anforderungen haben. Ein benutzerdefinierter Service für die Einhaltung gesetzlicher Vorschriften im Schweizer Bankwesen
-könnte mehreren Finanzinstituten zugutekommen und die gemeinsame Entwicklung fördern.
+**Geteilte Erweiterungen**: Unternehmen könnten benutzerdefinierte Services mit Branchenkollegen teilen, die ähnliche Anforderungen haben. Ein benutzerdefinierter Service für die Einhaltung gesetzlicher Vorschriften im Schweizer Bankwesen könnte mehreren Finanzinstituten zugutekommen und die kollaborative Entwicklung fördern.
 
-**Partner-Ökosystem**: Technologiepartner könnten benutzerdefinierte Services entwickeln, die ihre Lösungen in den Swiss
-AI Hub integrieren. Dies schafft einen Marktplatz komplementärer Funktionen, die Organisationen je nach ihren
-Bedürfnissen deployen können.
+**Partner-Ökosystem**: Technologiepartner könnten benutzerdefinierte Services entwickeln, die ihre Lösungen mit dem Swiss AI Hub integrieren. Dadurch entsteht ein Marktplatz komplementärer Funktionen, die Unternehmen je nach ihren Bedürfnissen bereitstellen können.
 
-**Innovationsbeschleunigung**: Durch die Ermöglichung der Entwicklung benutzerdefinierter Services erlaubt die Plattform
-Organisationen, schnell auf neue Anforderungen zu reagieren, ohne auf native Plattformfunktionen warten zu müssen.
-Erfolgreiche benutzerdefinierte Services könnten die zukünftige native Plattformentwicklung beeinflussen.
+**Innovationsbeschleunigung**: Durch die Ermöglichung der Entwicklung benutzerdefinierter Services erlaubt die Plattform Unternehmen, schnell auf neue Anforderungen zu reagieren, ohne auf native Plattformfunktionen warten zu müssen. Erfolgreiche benutzerdefinierte Services könnten die zukünftige Entwicklung der nativen Plattform beeinflussen.
 
-**Wissensaustausch**: Die Community der Swiss AI Hub-Benutzer kann Implementierungs-Patterns, Best Practices und
-Referenzarchitekturen für gängige benutzerdefinierte Service-Typen teilen, was die Capability-Entwicklung des gesamten
-Ökosystems beschleunigt.
+**Wissensaustausch**: Die Community der Swiss AI Hub-Benutzer kann Implementierungsmuster, Best Practices und Referenzarchitekturen für gängige benutzerdefinierte Service-Typen austauschen, was die Fähigkeitsentwicklung des gesamten Ökosystems beschleunigt.
 
-## Strategischer Wert für Organisationen
+## Strategischer Wert für Unternehmen
 
-Die Erweiterbarkeit der Suite bietet erhebliche strategische Vorteile für Organisationen, die in KI-Fähigkeiten
-investieren.
+Die Erweiterbarkeit der Suite bietet Unternehmen, die in KI-Funktionen investieren, erhebliche strategische Vorteile.
 
-**Zukunftssichere Investition**: Während sich die KI-Technologie weiterentwickelt und neue Funktionen entstehen, können
-Organisationen diese über benutzerdefinierte Services in ihr Swiss AI Hub-Deployment integrieren. Die heutige
-Plattforminvestition bleibt relevant, während die Technologie fortschreitet.
+**Zukunftssichere Investition**: Während sich die KI-Technologie weiterentwickelt und neue Funktionen entstehen, können Unternehmen diese über benutzerdefinierte Services in ihr Swiss AI Hub Deployment integrieren. Die heutige Plattforminvestition bleibt relevant, während die Technologie fortschreitet.
 
-**Vendor Lock-In vermeiden**: Organisationen können proprietäre KI-Funktionen, benutzerdefinierte Modelle oder
-Drittanbieter-Services neben nativen Funktionen integrieren. Diese Flexibilität verhindert die Abhängigkeit von der
-Feature-Roadmap oder den Technologieentscheidungen eines einzelnen Anbieters.
+**Vermeidung von Vendor Lock-in**: Unternehmen können proprietäre KI-Funktionen, benutzerdefinierte Modelle oder Drittanbieter-Services neben nativen Funktionen integrieren. Diese Flexibilität verhindert die Abhängigkeit von der Feature-Roadmap oder den Technologieentscheidungen eines einzelnen Anbieters.
 
-**Wettbewerbsdifferenzierung**: Organisationen können KI-Funktionen implementieren, die ihre einzigartigen
-Geschäftsprozesse, Branchenanforderungen oder Wettbewerbsstrategien widerspiegeln. Die Suite bietet die Infrastruktur,
-während Organisationen die Differenzierung steuern.
+**Wettbewerbsdifferenzierung**: Unternehmen können KI-Funktionen implementieren, die ihre einzigartigen Geschäftsprozesse, Branchenanforderungen oder Wettbewerbsstrategien widerspiegeln. Die Suite bietet die Infrastruktur, während Unternehmen die Differenzierung steuern.
 
-**Inkrementelle Investition**: Anstatt massiver kundenspezifischer Entwicklungsprojekte können Organisationen
-fokussierte benutzerdefinierte Services implementieren, die spezifische Bedürfnisse adressieren, während sie native
-Funktionen für Standardanforderungen nutzen. Dies ermöglicht inkrementelle Investitionen, die auf die Wertschöpfung
-ausgerichtet sind.
+**Inkrementelle Investition**: Anstatt massiver kundenspezifischer Entwicklungsprojekte können Unternehmen zielgerichtete benutzerdefinierte Services implementieren, die spezifische Bedürfnisse adressieren, während sie native Funktionen für Standardanforderungen nutzen. Dies ermöglicht inkrementelle Investitionen, die auf die Wertschöpfung abgestimmt sind.
 
-**Kontrolle über die Roadmap**: Organisationen bestimmen, welche benutzerdefinierten Funktionen wann entwickelt werden,
-anstatt auf Feature-Releases von Anbietern zu warten. Kritische Geschäftsanforderungen können sofort durch
-kundenspezifische Entwicklung adressiert werden.
+**Kontrolle über die Roadmap**: Unternehmen bestimmen, welche benutzerdefinierten Funktionen wann entwickelt werden sollen, anstatt auf Feature-Releases von Anbietern zu warten. Kritische Geschäftsanforderungen können durch kundenspezifische Entwicklung sofort adressiert werden.
 
 ## Technische Überlegungen
 
-Organisationen, die die Entwicklung benutzerdefinierter Services planen, sollten verschiedene technische Faktoren
-berücksichtigen.
+Unternehmen, die die Entwicklung benutzerdefinierter Services planen, sollten mehrere technische Faktoren berücksichtigen.
 
-**Entwicklungsfähigkeiten**: Die Entwicklung benutzerdefinierter Services erfordert Python-Expertise für die
-Backend-Implementierung und TypeScript/Vue.js-Fähigkeiten für die Frontend-Entwicklung. Organisationen sollten den
-Zugang zu Entwicklern mit diesen Fähigkeiten sicherstellen oder in Schulungen investieren.
+**Entwicklungskompetenzen**: Die Entwicklung benutzerdefinierter Services erfordert Python-Expertise für die Backend-Implementierung und TypeScript-/Vue.js-Kenntnisse für die Frontend-Entwicklung. Unternehmen sollten den Zugang zu Entwicklern mit diesen Fähigkeiten sicherstellen oder in Schulungen investieren.
 
-**Wartungsaufwand**: Benutzerdefinierte Services erfordern eine kontinuierliche Wartung – Bugfixes, Sicherheitsupdates,
-Kompatibilität mit der Plattformentwicklung. Organisationen sollten eine langfristige Wartung planen, anstatt
-benutzerdefinierte Services als einmalige Entwicklungsprojekte zu behandeln.
+**Wartungsaufwand**: Benutzerdefinierte Services erfordern fortlaufende Wartung – Bugfixes, Sicherheitsupdates, Kompatibilität mit der Plattformentwicklung. Unternehmen sollten langfristige Wartung planen, anstatt benutzerdefinierte Services als einmalige Entwicklungsprojekte zu behandeln.
 
-**Testanforderungen**: Umfassendes Testen ist für benutzerdefinierte Services unerlässlich, um sicherzustellen, dass sie
-die Plattformstabilität oder -sicherheit nicht gefährden. Organisationen sollten in Testinfrastruktur und -praktiken
-investieren, die für ihr Portfolio an benutzerdefinierten Services angemessen sind.
+**Testanforderungen**: Umfassende Tests sind für benutzerdefinierte Services unerlässlich, um sicherzustellen, dass sie die Plattformstabilität oder -sicherheit nicht beeinträchtigen. Unternehmen sollten in Testinfrastruktur und -praktiken investieren, die für ihr Portfolio an benutzerdefinierten Services angemessen sind.
 
-**Dokumentation**: Benutzerdefinierte Services sollten nach denselben Standards wie native Funktionen dokumentiert
-werden, um sicherzustellen, dass Benutzer deren Zweck, Fähigkeiten und Nutzungsmuster verstehen. Dieser
-Dokumentationsaufwand sollte in die Entwicklungsplanung einfließen.
+**Dokumentation**: Benutzerdefinierte Services sollten nach denselben Standards wie native Funktionen dokumentiert werden, um sicherzustellen, dass Benutzer deren Zweck, Funktionen und Nutzungsmuster verstehen. Dieser Dokumentationsaufwand sollte in die Entwicklungsplanung einfliessen.
 
-Diese Erweiterbarkeitsarchitektur stellt sicher, dass die Swiss AI Hub Suite eine Grundlage für die langfristige
-Evolution von KI-Fähigkeiten bietet. Sie ermöglicht Organisationen, vertrauensvoll in die Plattform zu investieren, da
-sie wissen, dass sie diese an neue Anforderungen anpassen können, ohne das einheitliche Suite-Erlebnis zu
-beeinträchtigen oder Plattformmodifikationen zu erfordern, die Updates erschweren.
+Diese Erweiterbarkeitsarchitektur stellt sicher, dass die Swiss AI Hub Suite eine Grundlage für die langfristige Entwicklung von KI-Funktionen bietet. Sie ermöglicht Unternehmen, vertrauensvoll in die Plattform zu investieren, da sie wissen, dass sie diese an neue Anforderungen anpassen können, ohne das einheitliche Suite-Erlebnis zu beeinträchtigen oder Plattformmodifikationen vornehmen zu müssen, die Updates erschweren.
