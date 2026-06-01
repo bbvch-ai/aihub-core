@@ -5,6 +5,146 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.11] - 2026-06-01 - Enhanced Documentation and Licensing Clarity
+
+### Added
+
+- 📄 **New API Tokens Documentation**: A dedicated guide has been added explaining how to generate, use, and revoke
+  personal API tokens for REST API authentication, including steps within the Swagger UI.
+- ✨ **Comprehensive SDK Licensing Rationale**: New documentation now details the platform's mixed-license model,
+  clarifying the rationale behind using Apache 2.0 for the backend and AGPLv3 for the user interface, and its
+  implications for proprietary agent development and community contributions.
+- 📄 **Licensing Clarifications**: The `LICENSES.md` and `README.md` files have been updated with explicit explanations
+  of the mixed-license model, emphasizing the permissive backend and copyleft UI.
+- 🔑 **UI Extensibility Licensing Note**: A new licensing note has been added to the UI extensibility documentation,
+  explicitly detailing the AGPL-3.0 implications for modifying and offering the UI as a network service.
+
+### Changed
+
+- 🔄 **Refined Ecosystem Model Documentation**: The documentation for the ecosystem model has been significantly revised
+  to provide a clearer and more in-depth explanation of the platform's collaborative approach and licensing strategy.
+- 📝 **Clarified Agent Behaviors**: Extensive updates have been made across several agent documentation pages (**Company
+  Knowledge Agent**, **Instructed Assistant**, **Teachable Assistant**, **Retrieval Agent**, **Document Navigation
+  Assistant**, and **MCP Tool Agent**) to provide clearer descriptions of their purpose, workflows, capabilities,
+  limitations, and setup instructions.
+- 📝 **Improved UI Extensibility Guide**: The UI extensibility documentation has been substantially rewritten to offer
+  more detailed insights into architectural foundations, custom service implementation, development workflows,
+  deployment, and strategic value.
+- 📝 **Updated MCP Tools Usage in SDK**: The SDK documentation for using MCP tools has been rephrased for better clarity,
+  particularly regarding connection configuration and authentication modes.
+- 📄 **Minor Documentation Updates**: Small adjustments and rephrasing have been applied to the **Web Search** and
+  **Environment Variables** documentation pages for improved readability and consistency.
+- 📝 **API Tokens Documentation Enhancement**: The English version of the API Tokens documentation has been updated to
+  include the revoke endpoint in its lifecycle table.
+
+______________________________________________________________________
+
+## [v0.290.10] - 2026-06-01 - Enhancing Project Governance: CLA and Contributor Guidelines
+
+### Added
+
+- ✨ **Contributor License Agreement (CLA):** Introduced a formal Individual Contributor License Agreement
+  (`CONTRIBUTOR_AGREEMENT.md`) to clarify intellectual property rights for contributions.
+- 🚀 **Automated CLA Checks:** Implemented a new GitHub Actions workflow (`cla.yml`) to automatically verify CLA
+  signatures for pull requests, streamlining the contribution process.
+- 📄 **Pull Request Template:** Added a standard pull request template (`pull_request_template.md`) to guide contributors
+  in providing necessary information, improving PR quality and review efficiency.
+
+### Changed
+
+- ✍️ **Updated Contributing Guidelines:** Expanded `CONTRIBUTING.md` with a new section detailing the Contributor
+  License Agreement process and instructions for signing it.
+- ⚖️ **Refined Licensing Notice:** Updated the project's `NOTICE` file to provide a more general description of the
+  mixed-license model, referencing `LICENSES.md` for full details.
+
+______________________________________________________________________
+
+## [v0.290.9] - 2026-06-01 - Next-Gen Agents and Operational Excellence
+
+### Added
+
+- 🦾 **New Agent Blueprints**: Introduced a suite of powerful, pre-built agent blueprints for diverse use cases:
+  - 📄 **Document Intelligence Assistant**: A highly configurable Retrieval-Augmented Generation (RAG) agent that answers
+    questions from internal documents with citations, replacing the previous generic RAG agent with advanced
+    capabilities including context-sufficiency guards and user/organization memory.
+  - 🤝 **Company Knowledge Agent**: An extension of the Document Intelligence Assistant that incorporates
+    human-in-the-loop for user consent and bot-in-the-loop for expert consultation, capturing human replies as
+    organizational knowledge.
+  - 🧑‍💻 **Expert Coordinator Agent**: Designed to relay questions to human experts via Slack or Teams, verify their
+    responses, and store them as reusable organizational knowledge. Channel configuration is now managed directly within
+    the agent's profile.
+  - 🧠 **Instructed Assistant**: A foundational chat assistant that follows plain-text system prompts for focused tasks
+    like drafting, translation, or style-guided responses without document retrieval.
+  - 📚 **Teachable Assistant**: An agent that learns behavior from a few examples (few-shot prompting), making it ideal
+    for tasks requiring specific response styles or formats.
+  - 🔍 **Retrieval Agent**: A headless, composable building block that performs document retrieval from a knowledge base
+    without generating an answer, providing raw context for custom workflows.
+  - 🧭 **Document Navigation Assistant**: A routing agent that intelligently identifies the most relevant knowledge
+    bases/namespaces for a user's question, confirms the selection with the user, and then delegates to a RAG agent.
+  - 🛠️ **MCP Tool Agent**: Enables agents to connect to external Model Context Protocol (MCP) servers and execute
+    actions in other systems, such as creating tickets, querying databases, or sending messages.
+- ⚙️ **Automated PostgreSQL Maintenance**: Integrated continuous weekly cleanup and monthly repack jobs for the Dagster
+  PostgreSQL database, ensuring long-term operational stability by managing log growth and freeing disk space.
+- 📄 **Comprehensive Environment Variable Reference**: Added a new, automatically generated documentation page listing
+  all environment variables, their purpose, and consumer services, clarifying setup and configuration.
+- 🌐 **Self-Hosted Web Search**: Documented the new privacy-focused web search feature, powered by a self-hosted SearXNG
+  meta-search instance for Open-WebUI, including its default search engine list and customization options.
+- 🔗 **MCP Tooling for SDK Agents**: Provided detailed SDK guidance on connecting custom agents to external MCP servers
+  and invoking their tools, including `McpClientConfig` and various authentication modes.
+- 💬 **External Tool Connectivity Overview**: Expanded the Agents overview documentation to include a new section
+  explaining how agents can interact with external systems using the Model Context Protocol (MCP).
+
+### Changed
+
+- 🔄 **Updated Documentation Structure**: Significantly reorganized the agent documentation, reordering blueprint pages
+  for improved logical flow and discoverability.
+- 📝 **Refined German Translations**: Numerous minor textual and stylistic improvements across German documentation for
+  enhanced clarity and consistency.
+- 🔑 **Clarified Tenant Deletion Rules**: Updated multi-tenancy documentation to state that any tenant can be deleted as
+  long as at least one remains, clarifying the lack of special deletion protection for the initial startup tenant.
+- ⚙️ **Standardized Startup Tenant Variables**: Renamed environment variables related to initial tenant configuration
+  (e.g., `AIHUB_DEFAULT_TENANT_NAME` to `AIHUB_STARTUP_TENANT_NAME`) for clearer semantics.
+- 🌐 **Updated Network Egress Requirements**: Removed Jina AI from the list of external service dependencies in the
+  network requirements documentation.
+- 📄 **Improved Main Page Tagline**: Updated the tagline on the main documentation landing page for better clarity and
+  impact.
+- 🔄 **Refined Docs Sync Script**: Improved the `sync-docs.sh` script to precisely control which `README.md` files are
+  synchronized into the `docs/6_code_deep_dive` section, preventing unintended content.
+
+### Removed
+
+- 🗑️ **Deprecated Agent Documentation**: Removed the outdated "RAG Agent" and "Expert Asking Agent" documentation, as
+  their functionalities have been superseded and enhanced by the new agent blueprints.
+- 🗑️ **Removed Internal Tooling Documentation**: Cleaned up documentation pages previously generated from internal
+  `.claude`, `.github/actions`, and `infra/deployment` directories, streamlining the documentation scope.
+
+______________________________________________________________________
+
+## [v0.290.8] - 2026-06-01 - Introducing a Mixed-License Model and Enhanced Contribution Guidelines
+
+### Added
+
+- 📄 **New `NOTICE` File:** Introduced a new `NOTICE` file to formally outline the project's mixed-license model,
+  providing clear attribution and a detailed license breakdown for different components.
+- 👨‍💻 **Author Information for Web Package:** Explicitly added the author (`bbv Software Services AG`) to the
+  `packages/web/package.json` metadata.
+
+### Changed
+
+- ⚖️ **Revised Project Licensing Model:** The project now operates under a mixed-license model; `packages/web` and
+  `packages/backup` are explicitly licensed under AGPL-3.0-or-later, while most other packages remain Apache-2.0 and
+  `sysadmin-*` packages are proprietary.
+- 📝 **Updated Contribution Guidelines:** The `CONTRIBUTING.md` file has been significantly updated to reflect the new
+  mixed-license model, detailing that contributions are subject to the target package's license and requiring
+  contributors to sign a Contributor License Agreement (CLA).
+- 📅 **Extended Copyright Information:** Updated the root `LICENSE` file and relevant package `README.md` files to extend
+  the copyright period to `2026` and specify `bbv Software Services AG` as the copyright holder.
+- 🔗 **Enhanced License Documentation:** `CLAUDE.md`, `LICENSES.md`, `packages/backup/README.md`, and
+  `packages/web/README.md` have been updated to accurately reflect and reference the detailed per-package licensing
+  matrix and the new `NOTICE` file, ensuring greater transparency.
+
+______________________________________________________________________
+
 ## [v0.290.7] - 2026-05-29 - Introducing API Token Management and Documentation
 
 ### Added
