@@ -1,9 +1,12 @@
-
 #!/bin/bash
 #
-# This script synchronizes README.md files from the monorepo root
-# into the current documentation directory ('docs').
+# This script synchronizes README.md files from the monorepo into the
+# 'docs/6_code_deep_dive' documentation directory.
 # It must be run from within 'docs'.
+#
+# Scope: ONLY the root README (-> Introduction) and READMEs under 'packages/'
+# are published. Other top-level directories (infra/, .github/, .claude/ —
+# including .claude/worktrees — etc.) are deliberately NOT synced.
 
 echo "🔄 Syncing README files..."
 
@@ -25,61 +28,51 @@ cp "../LICENSE_REPORT.md" "./licenses/index.de.md"
 cp "../CHANGELOG.md" "./changelog/index.en.md"
 cp "../CHANGELOG.md" "./changelog/index.de.md"
 
-# Find all 'README.md' files in the parent directory (../),
-# while excluding 'node_modules', '.pytest_cache', '.docker-volumes', and the current 'docs' directory.
-# The output of find is piped to the while loop.
-find ../ \( -path '*/node_modules' -o -path '../docs' -o -path '*/.docker-volumes' -o -path '*/.pytest_cache' -o -path '*/__pycache__' -o -path '*/.mypy_cache' -o -path '*/.venv' \) -prune -o -type f -name "README.md" -print | while read -r source_file; do
+# == Root README -> Introduction page ==
+root_intro="./docs/6_code_deep_dive/1_introduction/index.en.md"
+mkdir -p "$(dirname "$root_intro")"
+cp "../README.md" "$root_intro"
+# Rewrite image paths for the root README (docs/media/... → ../../../media/...)
+# Portable in-place edit: BSD/macOS sed needs an explicit empty backup suffix; GNU sed does not.
+if [[ "$OSTYPE" == darwin* ]]; then
+    sed -i '' 's|docs/media/|../../../media/|g' "$root_intro"
+else
+    sed -i 's|docs/media/|../../../media/|g' "$root_intro"
+fi
+cp "$root_intro" "${root_intro/.en.md/.de.md}"
+echo "  -> Copied '../README.md' to '$root_intro'"
+
+# == Package READMEs ==
+# Search ONLY within '../packages'. This intentionally excludes infra/, .github/,
+# .claude/ (and its worktrees), and any other top-level directory — they are not
+# part of the "code deep dive" of the SDK packages and must not leak into the docs.
+find ../packages \( -path '*/node_modules' -o -path '*/.docker-volumes' -o -path '*/.pytest_cache' -o -path '*/__pycache__' -o -path '*/.mypy_cache' -o -path '*/.venv' \) -prune -o -type f -name "README.md" -print0 | while IFS= read -r -d '' source_file; do
     # 'source_file' is the full path from find, e.g., ../packages/api/README.md
 
-    dest_file=""
-
-    # == Special Case Handling ==
-    # Check if the file is the root README.md.
-    if [[ "$source_file" == "../README.md" ]]; then
-        # If it is, set the destination to the introduction page.
-        dest_file="./docs/6_code_deep_dive/1_introduction/index.en.md"
-    # Ignore files in .docker-volumes
-    elif [[ "$source_file" == *".docker-volumes"* ]]; then
+    # Skip deeply nested package-internal README files
+    # (e.g. ../packages/core/swiss_ai_hub/core/auth/README.md creates orphaned intermediate dirs)
+    if [[ "$source_file" == *"/packages/"*"/swiss_ai_hub/"* ]]; then
         continue
-    # Skip deeply nested README files (more than 2 levels deep in a package)
-    # For example: ../packages/core/swiss_ai_hub/core/auth/README.md creates orphaned intermediate dirs
-    elif [[ "$source_file" == *"/packages/"*"/swiss_ai_hub/"* ]]; then
-        continue
-    else
-        # Otherwise, handle the package directories.
-        # Get the directory of the source file (e.g., ../packages/api)
-        source_dir=$(dirname "$source_file")
-
-        # Remove the leading '../' (e.g., packages/api)
-        relative_dir="${source_dir#../}"
-
-        # Set the final destination path.
-        dest_file="./docs/6_code_deep_dive/${relative_dir}/index.en.md"
     fi
 
-    # Get the directory part of the destination path.
-    dest_dir=$(dirname "$dest_file")
+    # Get the directory of the source file (e.g., ../packages/api)
+    source_dir=$(dirname "$source_file")
+    # Remove the leading '../' (e.g., packages/api)
+    relative_dir="${source_dir#../}"
+    # Set the final destination path.
+    dest_file="./docs/6_code_deep_dive/${relative_dir}/index.en.md"
 
     # Create the destination directory if it doesn't already exist.
-    mkdir -p "$dest_dir"
+    mkdir -p "$(dirname "$dest_file")"
 
     # Copy the original file to its new location and name.
     cp "$source_file" "$dest_file"
-
-    # Rewrite image paths for the root README (docs/media/... → ../../../media/...)
-    if [[ "$source_file" == "../README.md" ]]; then
-        sed -i 's|docs/media/|../../../media/|g' "$dest_file"
-    fi
-
     echo "  -> Copied '$source_file' to '$dest_file'"
 
-    # For files in 6_code_deep_dive, also create a .de.md copy (no translation needed)
-    # Copy from the already-processed .en.md so any path rewrites are preserved
-    if [[ "$dest_file" == *"6_code_deep_dive"* ]]; then
-        dest_file_de="${dest_file/.en.md/.de.md}"
-        cp "$dest_file" "$dest_file_de"
-        echo "  -> Duplicated to '$dest_file_de' (no translation)"
-    fi
+    # Also create a .de.md copy (no translation needed for synced READMEs)
+    dest_file_de="${dest_file/.en.md/.de.md}"
+    cp "$dest_file" "$dest_file_de"
+    echo "  -> Duplicated to '$dest_file_de' (no translation)"
 done
 
 echo "✅ Sync complete."
