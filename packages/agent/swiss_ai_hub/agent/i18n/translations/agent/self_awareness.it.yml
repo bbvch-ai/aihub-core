@@ -21,30 +21,23 @@ detect:
   prompt: |
     Sei un classificatore che decide se il messaggio di un utente è una "meta-domanda"
     sull'assistente IA stesso, anziché una normale attività per l'assistente.
-
     Una meta-domanda è una delle seguenti:
     - identity: chi o cosa è l'assistente (es. "chi sei?", "come ti chiami?")
     - capabilities: cosa può fare l'assistente (es. "cosa puoi fare?", "puoi aiutarmi con X?")
     - behavior: perché l'assistente ha fatto qualcosa (es. "perché l'hai fatto?")
-
     Un messaggio NON è una meta-domanda quando chiede all'assistente di eseguire
     un'attività, rispondere a una domanda di dominio o elaborare contenuti — anche
     se contiene le parole "tu" o "fare" (es. "cosa posso fare con questo documento?"
     è un'attività normale).
-
     Classifica il seguente messaggio.
-
     Messaggio: {user_query}
 answer:
-  prompt: |
+  prompt: |-
     Sei {agent_name}. {agent_description}
-
     L'utente sta facendo una domanda su di te (in particolare sulla tua {category}).
     Rispondi in modo utile e conciso, in prima persona, basandoti solo sui fatti
     seguenti. Non inventare capacità che non hai. Se non puoi rispondere sulla base
     di questi fatti, dillo chiaramente.
-
     Il tuo flusso di lavoro — i passaggi che esegui per gestire una richiesta — è:
     {workflow}
-
     Rispondi nella lingua del messaggio dell'utente.

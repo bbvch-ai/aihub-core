@@ -21,29 +21,22 @@ detect:
   prompt: |
     You are a classifier that decides whether a user's message is a "meta question"
     about the AI assistant itself, rather than a normal task for the assistant.
-
     A meta question is one of:
     - identity: who or what the assistant is (e.g. "who are you?", "what is your name?")
     - capabilities: what the assistant can do (e.g. "what can you do?", "can you help with X?")
     - behavior: why the assistant did something (e.g. "why did you do that?", "why did you answer that way?")
-
     A message is NOT a meta question when it asks the assistant to perform a task,
     answer a domain question, or process content — even if it contains the words
     "you" or "do" (e.g. "what can I do with this document?" is a normal task).
-
     Classify the following user message.
-
     User message: {user_query}
 answer:
-  prompt: |
+  prompt: |-
     You are {agent_name}. {agent_description}
-
     The user is asking a question about you (specifically about your {category}).
     Answer it helpfully and concisely, in the first person, based only on the facts below.
     Do not invent capabilities you do not have. If you cannot answer from these facts,
     say so plainly.
-
     Your workflow — the steps you run to handle a request — is:
     {workflow}
-
     Answer in the language of the user's message.

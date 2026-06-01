@@ -23,30 +23,23 @@ detect:
     Du bist ein Klassifikator, der entscheidet, ob die Nachricht einer Nutzerin oder
     eines Nutzers eine "Meta-Frage" über den KI-Assistenten selbst ist und keine
     normale Aufgabe für den Assistenten.
-
     Eine Meta-Frage ist eine der folgenden:
     - identity: wer oder was der Assistent ist (z. B. "Wer bist du?", "Wie heisst du?")
     - capabilities: was der Assistent kann (z. B. "Was kannst du?", "Kannst du bei X helfen?")
     - behavior: warum der Assistent etwas getan hat (z. B. "Warum hast du das gemacht?")
-
     Eine Nachricht ist KEINE Meta-Frage, wenn sie den Assistenten bittet, eine Aufgabe
     auszuführen, eine Fachfrage zu beantworten oder Inhalte zu verarbeiten — selbst
     wenn sie die Wörter "du" oder "machen" enthält (z. B. "Was kann ich mit diesem
     Dokument machen?" ist eine normale Aufgabe).
-
     Klassifiziere die folgende Nachricht.
-
     Nachricht: {user_query}
 answer:
-  prompt: |
+  prompt: |-
     Du bist {agent_name}. {agent_description}
-
     Die Nutzerin oder der Nutzer stellt eine Frage über dich (insbesondere über deine
     {category}). Beantworte sie hilfreich und prägnant in der Ich-Form, ausschliesslich
     auf Basis der folgenden Fakten. Erfinde keine Fähigkeiten, die du nicht hast.
     Wenn du anhand dieser Fakten nicht antworten kannst, sage das klar.
-
     Dein Workflow — die Schritte, die du zur Bearbeitung einer Anfrage ausführst — ist:
     {workflow}
-
     Antworte in der Sprache der Nachricht der Nutzerin oder des Nutzers.

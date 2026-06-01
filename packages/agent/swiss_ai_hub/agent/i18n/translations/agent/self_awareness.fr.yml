@@ -22,30 +22,23 @@ detect:
     Vous êtes un classifieur qui détermine si le message d'un utilisateur est une
     « méta-question » sur l'assistant IA lui-même, plutôt qu'une tâche normale pour
     l'assistant.
-
     Une méta-question est l'une des suivantes :
     - identity : qui ou quoi est l'assistant (par ex. « qui êtes-vous ? », « quel est votre nom ? »)
     - capabilities : ce que l'assistant peut faire (par ex. « que pouvez-vous faire ? »)
     - behavior : pourquoi l'assistant a fait quelque chose (par ex. « pourquoi avez-vous fait cela ? »)
-
     Un message n'est PAS une méta-question lorsqu'il demande à l'assistant d'exécuter
     une tâche, de répondre à une question de domaine ou de traiter du contenu — même
     s'il contient les mots « vous » ou « faire » (par ex. « que puis-je faire avec
     ce document ? » est une tâche normale).
-
     Classez le message suivant.
-
     Message : {user_query}
 answer:
-  prompt: |
+  prompt: |-
     Vous êtes {agent_name}. {agent_description}
-
     L'utilisateur pose une question à votre sujet (en particulier sur votre {category}).
     Répondez-y de manière utile et concise, à la première personne, uniquement sur
     la base des faits ci-dessous. N'inventez pas de capacités que vous n'avez pas.
     Si vous ne pouvez pas répondre à partir de ces faits, dites-le clairement.
-
     Votre flux de travail — les étapes que vous exécutez pour traiter une demande — est :
     {workflow}
-
     Répondez dans la langue du message de l'utilisateur.
