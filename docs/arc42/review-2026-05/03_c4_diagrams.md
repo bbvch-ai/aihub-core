@@ -1,15 +1,16 @@
 # C4 Model Diagrams — Swiss AI Hub Ecosystem
 
-**Phương pháp**: Simon Brown's C4 Model (4 levels of abstraction). **Phạm vi**: Platform (aihub-core) + 2 customer
-deployments (aihub-bmd, aihub-ctc). **Định dạng**: Mermaid (render được trong VitePress, GitHub, IDE preview). **Tài
-liệu song hành**:
+**Method**: Simon Brown's C4 Model (4 levels of abstraction). **Scope**: Platform (aihub-core v0.290.4) + 5
+customer deployments (aihub-bmd, aihub-ctc, aihub-demoscope, aihub-wpe, aihub-fmh). This file covers Platform + bmd +
+ctc; detailed per-customer diagrams live in `c4/` (see [Cross-reference](#cross-reference-per-customer-c4-files) at the
+end of the file). **Format**: Mermaid (renders in VitePress, GitHub, IDE preview). **Companion documents**:
 
-- [Architecture Review Overview](01_architecture_review_overview.vi.md): Executive summary cho stakeholders.
-- [Architecture Review Details](02_architecture_review_details.md): Technical deep-dive cho dev team.
+- [Architecture Review Overview](01_architecture_review_overview.en.md): Executive summary for stakeholders.
+- [Architecture Review Details](02_architecture_review_details.md): Technical deep-dive for the dev team.
 
 ______________________________________________________________________
 
-## Mục lục
+## Table of Contents
 
 - [Level 1 — System Context](#level-1--system-context)
 - [Level 2 — Container](#level-2--container) (3 views)
@@ -23,16 +24,16 @@ ______________________________________________________________________
 
 ## Level 1 — System Context
 
-**Mục đích**: Đặt Swiss AI Hub trong bối cảnh — ai dùng nó, nó tích hợp với hệ thống nào.
+**Purpose**: Place Swiss AI Hub in context — who uses it and which systems it integrates with.
 
 ```mermaid
 C4Context
     title System Context — Swiss AI Hub Platform
 
-    Person(end_user, "End User", "Nhân viên trong tenant — tương tác chat, gọi agent")
-    Person(tenant_admin, "Tenant Admin", "Quản lý users, roles, agent configs trong tenant của mình")
-    Person(sys_admin, "Sys Admin", "AIHubSysAdmin — quản lý platform-wide, provision tenants")
-    Person(dev, "Developer", "Build customer projects (bmd, ctc) consume SDK")
+    Person(end_user, "End User", "Employee within a tenant — chats, invokes agents")
+    Person(tenant_admin, "Tenant Admin", "Manages users, roles, agent configs within their own tenant")
+    Person(sys_admin, "Sys Admin", "AIHubSysAdmin — platform-wide management, provisions tenants")
+    Person(dev, "Developer", "Build customer projects (bmd, ctc, demoscope, wpe, fmh) consume SDK")
 
     System(aihub, "Swiss AI Hub", "Self-hosted AI platform: agents, pipelines, processes, multi-tenant")
 
@@ -61,9 +62,9 @@ C4Context
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
 
-**Quan sát từ Context**:
+**Observations from the Context**:
 
-| Actor         | Tần suất tương tác      | Concern chính                      |
+| Actor         | Interaction frequency   | Main concern                       |
 | ------------- | ----------------------- | ---------------------------------- |
 | End User      | High (chat, HITL)       | Latency, accuracy, privacy         |
 | Tenant Admin  | Medium                  | Config UI usability, audit log     |
@@ -90,8 +91,8 @@ C4Context
 
 > **Gap visible at this level**:
 >
-> - OpenWebUI ở "ngoài" trust boundary nhưng có access trực tiếp vào agents → G1.5 (RBAC bypass).
-> - LiteLLM Cloud xử lý PII chưa được scrub bởi Presidio (DTC-3) trước khi gửi ra.
+> - OpenWebUI is "outside" the trust boundary but has direct access to agents → G1.5 (RBAC bypass).
+> - LiteLLM Cloud processes PII that has not been scrubbed by Presidio (DTC-3) before being sent out.
 
 ______________________________________________________________________
 
@@ -99,7 +100,7 @@ ______________________________________________________________________
 
 ### View 2.1 — Platform Container Diagram
 
-**Mục đích**: Các "containers" (deployable units) của Swiss AI Hub.
+**Purpose**: The "containers" (deployable units) of Swiss AI Hub.
 
 ```mermaid
 C4Container
@@ -127,7 +128,7 @@ C4Container
         ContainerDb(valkey, "Valkey", "Redis-compat", "StepStore, ThreadContext, RunContext")
         ContainerQueue(nats, "NATS JetStream", "Event broker", "Control + Display events")
         ContainerDb(seaweedfs, "SeaweedFS", "S3-compat", "Documents, artifacts, backups")
-        ContainerDb(etcd, "etcd", "KV store", "Metadata cho Milvus + SeaweedFS")
+        ContainerDb(etcd, "etcd", "KV store", "Metadata for Milvus + SeaweedFS")
     }
 
     Rel(user, traefik, "HTTPS")
@@ -177,32 +178,32 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
 ```
 
-**30+ containers thực tế** trong `infra/docker-compose.dev.yml` — diagram trên đã consolidate các phụ trợ (etcd,
-postgres-ferretdb) vào logical containers.
+**30+ actual containers** in `infra/docker-compose.dev.yml` — the diagram above consolidates auxiliary services (etcd,
+postgres-ferretdb) into logical containers.
 
 **Container vs scaling readiness**:
 
 | Container        | Stateless? | Horizontal scale ready? | Bottleneck                           |
 | ---------------- | :--------: | :---------------------: | ------------------------------------ |
-| Admin UI (Nuxt)  |     ✅     |           ✅            | Asset CDN cần                        |
+| Admin UI (Nuxt)  |     ✅     |           ✅            | Asset CDN needed                     |
 | OpenWebUI        |     ⚠️     |           ⚠️            | DB-backed sessions                   |
 | API Gateway      |     ✅     |           ✅            | Keycloak call per req                |
 | Agent Workers    |     ✅     |           ✅            | NATS consumer groups OK              |
 | Bot Service      |     ✅     |           ✅            | -                                    |
 | Pipeline Workers |     ❌     |           ❌            | `in_process_executor` (DTC-6)        |
 | Backup Service   |     ❌     |           N/A           | Singleton design OK                  |
-| LiteLLM Proxy    |     ✅     |           ✅            | Single instance hiện tại             |
+| LiteLLM Proxy    |     ✅     |           ✅            | Single instance currently            |
 | PostgreSQL       |     ❌     |           ❌            | Single instance                      |
-| FerretDB         |     ❌     |           ❌            | **FerretDB không sharding**          |
+| FerretDB         |     ❌     |           ❌            | **FerretDB does not shard**          |
 | Milvus           |     ❌     |           ❌            | **Single-node, HNSW wall**           |
-| Neo4j            |     ❌     |           ⚠️            | Cluster mode khả thi                 |
+| Neo4j            |     ❌     |           ⚠️            | Cluster mode feasible                |
 | Valkey           |     ❌     |           ❌            | **Single instance**                  |
-| NATS JetStream   |     ⚠️     |           ⚠️            | Single node hiện tại                 |
+| NATS JetStream   |     ⚠️     |           ⚠️            | Single node currently                |
 | SeaweedFS        |     ❌     |           ⚠️            | **replication="000"** (no replicate) |
 
 ### View 2.2 — Customer Project Container Diagram (BMD example)
 
-**Mục đích**: Customer project consume SDK như thế nào.
+**Purpose**: How a customer project consumes the SDK.
 
 ```mermaid
 C4Container
@@ -240,17 +241,17 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-**Quan sát BMD**:
+**BMD observations**:
 
-- 5 deployable containers tự chạy (3 agent services + 2 pipelines).
-- Tất cả dùng `aihub-core SDK v0.279.2` qua git tag.
-- Phụ thuộc aihub-core platform deployment cho NATS, Milvus, SeaweedFS, FerretDB.
-- 6 docker-compose files: chia theo concern (agents, pipelines, backfill).
-- `configs/` là Jinja2 templates cho 16 service configs — duplicate effort với core.
+- 5 self-running deployable containers (3 agent services + 2 pipelines).
+- All use `aihub-core SDK v0.279.2` via git tag.
+- Depends on the aihub-core platform deployment for NATS, Milvus, SeaweedFS, FerretDB.
+- 6 docker-compose files: split by concern (agents, pipelines, backfill).
+- `configs/` are Jinja2 templates for 16 service configs — duplicate effort with core.
 
 ### View 2.3 — Customer Project Container Diagram (CTC example)
 
-**Mục đích**: Customer phức tạp hơn — có custom API.
+**Purpose**: A more complex customer — has a custom API.
 
 ```mermaid
 C4Container
@@ -280,7 +281,7 @@ C4Container
     Rel(log_agent_svc, lib_common, "Import")
     Rel(orchestrator_svc, lib_common, "Import")
     Rel(custom_api, lib_common, "Import")
-    Rel(lib_common, aihub_core_sdk, "⚠️ Vi phạm import: from swiss_ai_hub.core.events.agent (internal)")
+    Rel(lib_common, aihub_core_sdk, "⚠️ Import violation: from swiss_ai_hub.core.events.agent (internal)")
 
     Rel(custom_api, jira_cloud, "Webhook receive")
     Rel(custom_api, jira_cloud, "Support Desk API")
@@ -297,15 +298,15 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-**Quan sát CTC**:
+**CTC observations**:
 
-- 9 deployable containers (4 agents + 1 custom API + 3 pipelines + lib shared).
-- **Có `lib/common/`** — pattern bmd KHÔNG có. Tốt cho code sharing trong cùng customer, nhưng raises câu hỏi tại sao
-  không ở core.
-- **Vi phạm import rule** (`lib/common/types/RetrievalAgentInTheLoop.py:1-4`).
-- **Custom API** với 2 endpoints (Jira webhook + Support request) — không có ở bmd, không ở core.
-- Tích hợp Azure Key Vault (enterprise-grade), bmd dùng .env files.
-- Version SDK CŨ HƠN bmd (v0.274.3 vs v0.279.2).
+- 9 deployable containers (4 agents + 1 custom API + 3 pipelines + shared lib).
+- **Has `lib/common/`** — a pattern bmd does NOT have. Good for code sharing within the same customer, but raises the
+  question of why it isn't in core.
+- **Import-rule violation** (`lib/common/types/RetrievalAgentInTheLoop.py:1-4`).
+- **Custom API** with 2 endpoints (Jira webhook + Support request) — not in bmd, not in core.
+- Integrates Azure Key Vault (enterprise-grade); bmd uses .env files.
+- SDK version OLDER than bmd (v0.274.3 vs v0.279.2).
 
 ______________________________________________________________________
 
@@ -313,7 +314,7 @@ ______________________________________________________________________
 
 ### View 3.1 — `packages/core` Components
 
-**Mục đích**: Zoom vào shared infrastructure package.
+**Purpose**: Zoom into the shared infrastructure package.
 
 ```mermaid
 C4Component
@@ -330,7 +331,7 @@ C4Component
     Container_Boundary(core, "packages/core") {
         Component(auth_handlers, "Auth Handlers", "5 implementations", "Keycloak/Token/Bearer/OAuth2/OpenWebUI")
         Component(access_checker, "AccessChecker", "RBAC + ABAC", "Hierarchical permission template, tenant ceiling")
-        Component(usage_limits, "UsageLimits", "❌ NOT WIRED", "Defined nhưng không enforce — DTC-1")
+        Component(usage_limits, "UsageLimits", "❌ NOT WIRED", "Defined but not enforced — DTC-1")
         
         Component(base_event, "BaseEvent", "Auto-registry", "Polymorphic deserialization via _event_registry")
         Component(publishers, "JSPublisher", "NATS publish", "UUID + Nats-Msg-Id, 60s dedup")
@@ -352,7 +353,7 @@ C4Component
         
         Component(otel, "OpenTelemetry", "Tracing", "SmartTracer, @trace_fn, NATSMessageHeaders")
         Component(langfuse_int, "Langfuse Integration", "LLM tracing", "Prompt/response, cost tracking")
-        Component(health, "HealthController", "Liveness check", "⚠️ Không phân biệt readiness")
+        Component(health, "HealthController", "Liveness check", "⚠️ Does not distinguish readiness")
         
         Component(settings, "Pydantic Settings", "20+ classes", "MongoSettings, NatsSettings, etc.")
         Component(i18n, "LocaleHandler", "i18n", "DE/EN/FR/IT translations")
@@ -385,16 +386,16 @@ C4Component
 
 **Critical components highlighted**:
 
-- 🔴 `UsageLimits` — defined nhưng KHÔNG wire (DTC-1)
-- 🔴 `PartitionAwareMilvusVectorStore` — không có upsert (DTC-4)
-- 🔴 `AbstractSubscriber` — ack-on-receive, không có DLQ (I3)
-- ⚠️ `Persistence` — `version` field exists nhưng không dùng (I5)
-- ⚠️ `HealthController` — không phân biệt liveness/readiness
+- 🔴 `UsageLimits` — defined but NOT wired (DTC-1)
+- 🔴 `PartitionAwareMilvusVectorStore` — no upsert (DTC-4)
+- 🔴 `AbstractSubscriber` — ack-on-receive, no DLQ (I3)
+- ⚠️ `Persistence` — `version` field exists but is unused (I5)
+- ⚠️ `HealthController` — does not distinguish liveness/readiness
 - ⚠️ `Form System` — 28 elements × 2 modes = 56 surfaces (maintenance cost)
 
 ### View 3.2 — `packages/agent` Components
 
-**Mục đích**: Agent framework internals.
+**Purpose**: Agent framework internals.
 
 ```mermaid
 C4Component
@@ -470,16 +471,16 @@ C4Component
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
-**Framework gaps highlighted** (xem 02_architecture_review_details.md §12):
+**Framework gaps highlighted** (see 02_architecture_review_details.md §12):
 
-- ❌ Không có `@step(timeout=...)` parameter
-- ❌ Không có `@step(retry={"attempts": 3, "backoff": "exp"})` native
-- ❌ Không có cron trigger event class
-- ❌ Không có per-tenant MCP tool authorization layer
+- ❌ No `@step(timeout=...)` parameter
+- ❌ No native `@step(retry={"attempts": 3, "backoff": "exp"})`
+- ❌ No cron trigger event class
+- ❌ No per-tenant MCP tool authorization layer
 
 ### View 3.3 — `packages/pipeline` Components
 
-**Mục đích**: Dagster-based ingestion pipeline internals.
+**Purpose**: Dagster-based ingestion pipeline internals.
 
 ```mermaid
 C4Component
@@ -539,15 +540,15 @@ C4Component
 
 **Critical issues highlighted**:
 
-- 🔴 `executor_factory` dùng `in_process_executor` → all ops single-thread (DTC-6)
-- 🔴 `MilvusWriteOp` không upsert-by-id → vector duplication (DTC-4)
+- 🔴 `executor_factory` uses `in_process_executor` → all ops single-thread (DTC-6)
+- 🔴 `MilvusWriteOp` no upsert-by-id → vector duplication (DTC-4)
 - 🟠 `replace_partition_keys()` max 1000/tick → 1M files = DAG explosion (DTC-10)
-- 🟠 `parse_op` không có per-document timeout — pipeline stuck on slow doc
-- 🟠 `embed_op` không có explicit batch size — recursive bisection suboptimal
+- 🟠 `parse_op` has no per-document timeout — pipeline stuck on a slow doc
+- 🟠 `embed_op` has no explicit batch size — recursive bisection suboptimal
 
 ### View 3.4 — Customer Extension Points (Mapping)
 
-**Mục đích**: Khi customer (bmd/ctc) extend core, họ extend những điểm nào.
+**Purpose**: When a customer (bmd/ctc) extends core, which points do they extend.
 
 ```mermaid
 graph LR
@@ -600,21 +601,21 @@ graph LR
     style OrchestratorAgent fill:#fff4e1
 ```
 
-**Quan sát extension patterns**:
+**Extension-pattern observations**:
 
 | Extension type               | BMD usage      | CTC usage             |            Reusable?            |
 | ---------------------------- | -------------- | --------------------- | :-----------------------------: |
 | `Agent` base class           | 3 services     | 4 agents              |         ✅ Core pattern         |
 | `AgentConfig (Form)`         | BMDAgentConfig | Multiple configs      |         ✅ Core pattern         |
-| `Controller` base            | ❌ Không dùng  | 2 custom controllers  |           ⚠️ CTC-only           |
-| `AgentInTheLoopRequestEvent` | ❌ Không dùng  | RetrievalOrchestrator | ✅ Core pattern (underutilized) |
+| `Controller` base            | ❌ Not used    | 2 custom controllers  |           ⚠️ CTC-only           |
+| `AgentInTheLoopRequestEvent` | ❌ Not used    | RetrievalOrchestrator | ✅ Core pattern (underutilized) |
 | `HumanInTheLoopRequestEvent` | BMDAgent       | NamespaceSelection    |               ✅                |
 | `default_definitions()`      | 4 pipelines    | 6 pipelines           |         ✅ Core pattern         |
-| Custom events                | SNK events     | 10 event types        |       ⚠️ Pattern lặp lại        |
-| i18n LocaleString            | DE/EN/FR/IT    | (chưa rõ scope)       |               ✅                |
+| Custom events                | SNK events     | 10 event types        |        ⚠️ Repeated pattern       |
+| i18n LocaleString            | DE/EN/FR/IT    | (scope unclear)       |               ✅                |
 
-**Insight quan trọng**: CTC's `RetrievalOrchestratorAgent` đang dùng đúng pattern `AgentInTheLoop` của core. Pattern
-multi-agent orchestration NÊN được document rõ trong arc42 + extract example về `packages/agent/app/`.
+**Key insight**: CTC's `RetrievalOrchestratorAgent` uses core's `AgentInTheLoop` pattern correctly. The multi-agent
+orchestration pattern SHOULD be clearly documented in arc42 + an example extracted into `packages/agent/app/`.
 
 ______________________________________________________________________
 
@@ -622,7 +623,7 @@ ______________________________________________________________________
 
 ### Dynamic 4.1 — Agent Workflow Execution (Happy Path)
 
-**Scenario**: User gửi message qua OpenWebUI → RAGAgent xử lý.
+**Scenario**: User sends a message via OpenWebUI → RAGAgent processes it.
 
 ```mermaid
 sequenceDiagram
@@ -641,7 +642,7 @@ sequenceDiagram
     OW->>API: POST /api/v1/{tenant_id}/threads/{id}/messages
     API->>API: AuthHandler.authenticate (Keycloak JWT)
     API->>API: AccessChecker.has_access (tenant + permission)
-    Note over API: ❌ UsageLimits không enforce here (DTC-1)
+    Note over API: ❌ UsageLimits not enforced here (DTC-1)
     API->>NATS: Publish StartEvent (UUID + Nats-Msg-Id, 60s dedup)
     API->>OTEL: Span "api.message.create"
     API-->>OW: 202 Accepted + thread_id
@@ -669,11 +670,11 @@ sequenceDiagram
     Note over OTEL: Trace context propagates via NATSMessageHeaders<br/>(api → agent → all downstream linked)
 ```
 
-**Tracing**: ✅ End-to-end visible. **Idempotency**: ✅ Step execution dedup. **Gaps marked**: ❌ UsageLimits không check.
+**Tracing**: ✅ End-to-end visible. **Idempotency**: ✅ Step execution dedup. **Gaps marked**: ❌ UsageLimits not checked.
 
 ### Dynamic 4.2 — Document Ingestion Pipeline (2-Stage)
 
-**Scenario**: File mới ở SharePoint → indexed vào Milvus.
+**Scenario**: A new file in SharePoint → indexed into Milvus.
 
 ```mermaid
 sequenceDiagram
@@ -711,7 +712,7 @@ sequenceDiagram
     S2->>Embed: Embedding batch (recursive bisection fallback)
     Embed-->>S2: Vectors
     S2->>Milvus: Insert (❌ no upsert — DTC-4)
-    Note over Milvus: Re-ingest cùng doc = duplicate vectors
+    Note over Milvus: Re-ingesting the same doc = duplicate vectors
 
     S2->>NATS: Publish index-completed event
 ```
@@ -726,7 +727,7 @@ sequenceDiagram
 
 ### Dynamic 4.3 — HITL (Human-In-The-Loop) Flow
 
-**Scenario**: Agent gặp uncertain situation → escalate to expert.
+**Scenario**: Agent hits an uncertain situation → escalates to an expert.
 
 ```mermaid
 sequenceDiagram
@@ -756,7 +757,7 @@ sequenceDiagram
     Agent->>NATS: Publish StopEvent + answer to user
 ```
 
-**Strength**: HITL first-class trong framework. ✅
+**Strength**: HITL is first-class in the framework. ✅
 
 ### Dynamic 4.4 — Multi-Agent Collaboration (AgentInTheLoop)
 
@@ -795,15 +796,15 @@ sequenceDiagram
     NATS->>Chat: Deliver
     Chat->>Chat: Resume with consolidated context
 
-    Note right of Chat: Pattern này nên<br/>được extract về core<br/>như reference example
+    Note right of Chat: This pattern should<br/>be extracted into core<br/>as a reference example
 ```
 
-**Insight**: CTC built pattern này custom, nhưng dùng đúng core primitives (`AgentInTheLoopRequestEvent`). Core nên
-document rõ và provide example.
+**Insight**: CTC built this pattern custom, but uses the correct core primitives (`AgentInTheLoopRequestEvent`). Core
+should document it clearly and provide an example.
 
 ### Dynamic 4.5 — Failure Scenario (Poison Message Without DLQ)
 
-**Scenario**: Một event gây handler crash repeatedly.
+**Scenario**: An event causes the handler to crash repeatedly.
 
 ```mermaid
 sequenceDiagram
@@ -818,7 +819,7 @@ sequenceDiagram
     NATS->>Sub: Deliver
     Sub->>Sub: Deserialize OK
     Sub->>NATS: Ack (ack-on-receive policy)
-    Note over Sub: ❌ Already ack'd — không retry được
+    Note over Sub: ❌ Already ack'd — cannot retry
 
     Sub->>Handler: Process async
     Handler->>Handler: Step execution fails
@@ -936,11 +937,11 @@ graph TB
 **Critical issues highlighted in deployment**:
 
 - 🔴 **Single host** = single point of failure (G6.1)
-- 🔴 **Volumes không encrypt** at rest (G3.3)
-- 🔴 **Tất cả stateful single instance** — no HA
-- 🟠 **NATS single node** — không cluster
-- 🟠 **No K8s** — không có Helm chart (G5.5)
-- 🟠 **No resource limits** trong docker-compose
+- 🔴 **Volumes not encrypted** at rest (G3.3)
+- 🔴 **All stateful services single-instance** — no HA
+- 🟠 **NATS single node** — no cluster
+- 🟠 **No K8s** — no Helm chart (G5.5)
+- 🟠 **No resource limits** in docker-compose
 
 ### View 5.2 — Network Zones (Defense in Depth)
 
@@ -1002,58 +1003,83 @@ flowchart TB
 | `storage` | Object storage cluster                  | SeaweedFS only                         |
 | `egress`  | Outbound to internet                    | `inter_container_communication: false` |
 
-**Strength**: ✅ Network isolation good (defense in depth). **Gap**: ⚠️ Service-to-service auth bên trong network không
+**Strength**: ✅ Network isolation good (defense in depth). **Gap**: ⚠️ Service-to-service auth inside the network has no
 mTLS (DTC-9).
 
 ______________________________________________________________________
 
 ## Multi-Customer Topology View
 
-### View 6.1 — Hiện tại — Per-Customer Stack
+### View 6.1 — Current — Per-Customer Stack
 
 ```mermaid
 flowchart TB
-    subgraph customer_a["Customer A (e.g., aihub-bmd)"]
-        A_All[Toàn bộ stack 30+ containers<br/>aihub-core v0.279.2<br/>1 host, 1 set DBs]
+    subgraph customer_bmd["aihub-bmd (v0.279.2, drift 11)"]
+        BMD_All[Stack 30+ containers<br/>Azure OpenAI Sweden + Cohere<br/>SMB data source<br/>1 host, 1 set DBs]
     end
-    
-    subgraph customer_b["Customer B (e.g., aihub-ctc)"]
-        B_All[Toàn bộ stack 30+ containers<br/>aihub-core v0.274.3<br/>1 host, 1 set DBs<br/>+ Custom API]
+
+    subgraph customer_ctc["aihub-ctc (v0.274.3, drift 16)"]
+        CTC_All[Stack 30+ containers<br/>Azure Foundry SUI+SWE<br/>Jira/Confluence/SharePoint<br/>+ Custom API + lib/common]
     end
-    
+
+    subgraph customer_demoscope["aihub-demoscope (v0.246.4*, drift 44)"]
+        DS_All[Stack 30+ containers<br/>Azure OpenAI SUI + local vLLM<br/>MongoDB + Phoenix divergence<br/>MinIO backup same VM]
+    end
+
+    subgraph customer_wpe["aihub-wpe (v0.255.6, drift 35)"]
+        WPE_All[Deploy-only ~30 containers<br/>Azure OpenAI (region not in repo)<br/>Azure AD/Entra<br/>TLS key in git — see adr_041]
+    end
+
+    subgraph customer_fmh["aihub-fmh (v0.186.0, drift 104)"]
+        FMH_All[Stack 30+ containers + bot<br/>Azure OpenAI SUI + Azure AI Search<br/>Pulumi committed (10 deploy units)<br/>LlamaIndex monkey-patch]
+    end
+
     subgraph customer_n["Customer N (future)"]
-        N_All[Toàn bộ stack lặp lại<br/>aihub-core v?.?.?<br/>1 host, 1 set DBs]
+        N_All[Entire stack repeated<br/>aihub-core v?.?.?<br/>1 host, 1 set DBs]
     end
-    
+
     subgraph shared["Shared / External"]
         SLC[Swiss LLM Cloud]
-        KCSaaS[Keycloak SaaS<br/>chia sẻ realms]
+        AzOAI[Azure OpenAI<br/>multiple regions]
+        KCSaaS[Keycloak SaaS<br/>shared realms]
         Repo[(GitHub aihub-core<br/>git tag references)]
     end
-    
-    customer_a -->|LLM API| SLC
-    customer_b -->|LLM API| SLC
+
+    customer_bmd -->|LLM API| AzOAI
+    customer_ctc -->|LLM API| AzOAI
+    customer_demoscope -->|partial LLM| AzOAI
+    customer_wpe -->|LLM API| AzOAI
+    customer_fmh -->|LLM API| AzOAI
     customer_n -->|LLM API| SLC
-    
-    customer_a -.->|OIDC| KCSaaS
-    customer_b -.->|OIDC| KCSaaS
-    customer_n -.->|OIDC| KCSaaS
-    
-    customer_a -.->|git clone tag| Repo
-    customer_b -.->|git clone tag| Repo
-    customer_n -.->|git clone tag| Repo
-    
-    style customer_a fill:#e1f5ff
-    style customer_b fill:#fff4e1
-    style customer_n fill:#f5e1ff
+
+    customer_bmd -.->|OIDC| KCSaaS
+    customer_ctc -.->|OIDC + Azure AD B2C| KCSaaS
+    customer_demoscope -.->|OAuth Azure| KCSaaS
+    customer_wpe -.->|Azure AD| KCSaaS
+    customer_fmh -.->|Azure AD| KCSaaS
+
+    customer_bmd -.->|git clone tag| Repo
+    customer_ctc -.->|git clone tag| Repo
+    customer_demoscope -.->|git clone tag*| Repo
+    customer_wpe -.->|CORE_VERSION env| Repo
+    customer_fmh -.->|git clone tag| Repo
+
+    style customer_bmd fill:#e1f5ff
+    style customer_ctc fill:#fff4e1
+    style customer_demoscope fill:#e1ffe1
+    style customer_wpe fill:#ffe1e1
+    style customer_fmh fill:#f5e1ff
+    style customer_n stroke-dasharray: 5 5,fill:#f5f5f5
 ```
 
-**Vấn đề**:
+> *Demoscope SDK pin cannot be verified from `pyproject.toml` (see footnote in the Overview Component-versions table).
 
-- 🔴 Chi phí vận hành tuyến tính theo số customers.
-- 🔴 Version drift không kiểm soát.
-- 🔴 Mỗi customer = 30+ containers tự quản — operational burden.
-- 🔴 Không có shared resource (Milvus, Mongo, NATS) → wasted capacity.
+**Problems**:
+
+- 🔴 Operating cost grows linearly with the number of customers.
+- 🔴 Uncontrolled version drift.
+- 🔴 Each customer = 30+ self-managed containers — operational burden.
+- 🔴 No shared resources (Milvus, Mongo, NATS) → wasted capacity.
 
 ### View 6.2 — Target — Shared Multi-Tenant SaaS (H3 vision)
 
@@ -1099,7 +1125,7 @@ flowchart TB
     style control_plane fill:#ccccff
 ```
 
-**Để đạt được target**:
+**To reach the target**:
 
 | Component           | Current state                       | Target state                   | Gap          |
 | ------------------- | ----------------------------------- | ------------------------------ | ------------ |
@@ -1115,7 +1141,7 @@ ______________________________________________________________________
 
 ## Future-State Target Architecture
 
-### View 7.1 — Architecture sau H1 + H2 (6 tháng)
+### View 7.1 — Architecture after H1 + H2 (6 months)
 
 ```mermaid
 C4Container
@@ -1153,23 +1179,31 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
 ```
 
-**Bổ sung sau H1+H2**:
+**Additions after H1+H2**:
 
 - ✅ Audit Service (DTC-2)
-- ✅ Presidio integration (DTC-3) HOẶC remove claim
+- ✅ Presidio integration (DTC-3) OR remove the claim
 - ✅ Migration Runner (G4.1)
 - ✅ DLQ Consumer (I3)
 - ✅ Milvus cluster mode (DTC-7)
-- ✅ NATS cluster với tenant subjects (G1.1)
-- ✅ Mongo replica set với tenant_id index (G1.1)
+- ✅ NATS cluster with tenant subjects (G1.1)
+- ✅ Mongo replica set with tenant_id index (G1.1)
 - ✅ Valkey cluster (sharding + HA)
 - ✅ SeaweedFS HA (replication=002)
 - ✅ Grafana + AlertManager
-- ✅ Secrets Vault với rotation
+- ✅ Secrets Vault with rotation
 
-### View 7.2 — Quick Reference: Containers Khác Biệt
+> **As-built note (Gen 3 / `aihub-k8s`)**: this view is the *target*. The shipped `aihub-k8s` charts diverge in two
+> ways verified from the repo: (1) **NATS, Redis and Neo4j are deployed per-tenant** (each `tenant-<name>` namespace runs
+> its own), not as a shared cluster with `aihub.tenant.{id}.*` subjects; (2) tenant isolation is **logical, not
+> hardened** — no NetworkPolicy, no ResourceQuota, and a **shared Milvus credential across tenants**. See
+> [`c4/deployment_generations.md`](c4/deployment_generations.md) for the real split and
+> [`05_proposed_adrs/adr_047_gen3_tenant_isolation_hardening.md`](05_proposed_adrs/adr_047_gen3_tenant_isolation_hardening.md)
+> for the hardening plan.
 
-| Container          | Hôm nay           | Sau H1 (3m)                    | Sau H2 (6m)               | Sau H3 (12m)              |
+### View 7.2 — Quick Reference: Containers That Differ
+
+| Container          | Today             | After H1 (3m)                  | After H2 (6m)             | After H3 (12m)            |
 | ------------------ | ----------------- | ------------------------------ | ------------------------- | ------------------------- |
 | Milvus             | Standalone        | Standalone (DISKANN benchmark) | Cluster mode              | Cluster + cross-region    |
 | NATS               | Single node       | Single node + DLQ              | Cluster (3 nodes)         | Cluster + cross-region    |
@@ -1184,22 +1218,22 @@ C4Container
 
 ______________________________________________________________________
 
-## Tổng kết Phase 3
+## Phase 3 Summary
 
-### Deliverables đã tạo
+### Deliverables produced
 
-| #   | Diagram                        | Mục đích                            |
+| #   | Diagram                        | Purpose                             |
 | --- | ------------------------------ | ----------------------------------- |
 | 1   | System Context                 | Actors + external systems           |
-| 2.1 | Platform Container             | Tất cả containers Swiss AI Hub      |
-| 2.2 | aihub-bmd Container            | Customer A consume SDK              |
-| 2.3 | aihub-ctc Container            | Customer B consume SDK + custom API |
+| 2.1 | Platform Container             | All Swiss AI Hub containers         |
+| 2.2 | aihub-bmd Container            | Customer A consumes SDK             |
+| 2.3 | aihub-ctc Container            | Customer B consumes SDK + custom API |
 | 3.1 | `packages/core` Components     | Shared infrastructure internals     |
 | 3.2 | `packages/agent` Components    | Agent framework internals           |
 | 3.3 | `packages/pipeline` Components | Pipeline internals                  |
-| 3.4 | Extension Points Mapping       | Customer extends core như thế nào   |
+| 3.4 | Extension Points Mapping       | How a customer extends core         |
 | 4.1 | Dynamic: Agent Workflow        | Happy path end-to-end               |
-| 4.2 | Dynamic: Document Ingestion    | 2-stage pipeline với gaps marked    |
+| 4.2 | Dynamic: Document Ingestion    | 2-stage pipeline with gaps marked   |
 | 4.3 | Dynamic: HITL Flow             | Human-in-the-loop                   |
 | 4.4 | Dynamic: Multi-Agent Collab    | CTC's orchestrator pattern          |
 | 4.5 | Dynamic: Failure (Poison Msg)  | Gap analysis I3                     |
@@ -1210,35 +1244,56 @@ ______________________________________________________________________
 | 7.1 | Future: After H1+H2            | Target architecture 6 months        |
 | 7.2 | Future: Container delta        | Container progression table         |
 
-### Liên kết với assessment
+### Link to the assessment
 
-Mỗi diagram đều tham chiếu tới gaps được identify trong
+Each diagram references gaps identified in
 [02_architecture_review_details.md](02_architecture_review_details.md):
 
-- Container 2.1 highlight các stateful single instances (G6.x)
+- Container 2.1 highlights the stateful single instances (G6.x)
 - Component 3.1 marks DTC-1, DTC-4, I3, I5
 - Dynamic 4.2 marks DTC-6, DTC-4, DTC-10
 - Dynamic 4.5 illustrates I3 (no DLQ)
 - Deployment 5.1 marks G3.3, G6.1, G5.5
 
-### Render diagrams
+### Rendering diagrams
 
-Tất cả diagrams dùng Mermaid syntax. Render được trong:
+All diagrams use Mermaid syntax. They render in:
 
-- VitePress (đã setup trong `docs/.vitepress/config.mts`)
+- VitePress (already set up in `docs/.vitepress/config.mts`)
 - GitHub markdown preview
 - VS Code Markdown Preview Mermaid Support extension
 - mermaid.live (online editor)
 
-### Tiếp theo
+### Next
 
-- **Phase 4**: arc42 multi-customer view (12 chapters bằng tiếng Việt)
-- **Phase 5**: 15 Proposed ADRs cho critical gaps
+- **Phase 4**: arc42 multi-customer view (12 chapters)
+- **Phase 5**: 15 Proposed ADRs for critical gaps
 - **Phase 6**: Executive Summary + Index page
 
 ______________________________________________________________________
 
-**Phiên bản**: 1.0 — 2026-05-25 **Liên kết**:
+**Version**: 1.1 — 2026-05-28 (refresh: v0.290.4 + 47 ADRs + 5 customer coverage in the Multi-Customer Topology
+View) **Links**:
 
-- [02_architecture_review_details.md](02_architecture_review_details.md) — Architecture review chi tiết
-- [05_proposed_adrs/](05_proposed_adrs/) — Proposed ADRs
+- [02_architecture_review_details.md](02_architecture_review_details.md) — Detailed architecture review
+- [05_proposed_adrs/](05_proposed_adrs/) — Proposed ADRs (40 total)
+- [c4/](c4/) — Per-customer C4 diagrams (Platform / B*D / C*C / Dem*scope / W*P / F*H)
+
+______________________________________________________________________
+
+## Cross-reference: Per-customer C4 files
+
+This file (`03_c4_diagrams.md`) is the cross-customer aggregate view. Per-customer detail lives in the
+[`c4/`](c4/) folder:
+
+| File                            | Scope                                  |
+| ------------------------------- | -------------------------------------- |
+| [`c4/platform.md`](c4/platform.md) | aihub-core L1 + L2 (extracted from §1, §2.1) |
+| [`c4/bmd.md`](c4/bmd.md)           | aihub-bmd L1 + L2 (SMB, Azure Sweden + Cohere) |
+| [`c4/ctc.md`](c4/ctc.md)           | aihub-ctc L1 + L2 (Jira/Confluence/SharePoint, Azure Foundry, custom API) |
+| [`c4/demoscope.md`](c4/demoscope.md) | aihub-demoscope L1 + L2 (Azure SUI + local vLLM, MongoDB, MinIO) |
+| [`c4/wpe.md`](c4/wpe.md)           | aihub-wpe L1 + L2 (deploy-only, Azure OpenAI, TLS-key-in-git annotation) |
+| [`c4/fmh.md`](c4/fmh.md)           | aihub-fmh L1 + L2 (Azure SUI + Azure AI Search, Pulumi committed, bot, evaluation framework) |
+
+Deployment diagram + Multi-Customer Topology View remain in this file as the cross-customer reference. Each
+per-customer file links back here for the cross-customer view.

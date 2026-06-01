@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Architecture Review — Analysis Baseline</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --ink:#1c2024; --muted:#6b7280;
+    --line:#e6e8eb; --brand:#e2001a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 24px 44px}
+
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+    border-bottom:3px solid var(--brand);padding-bottom:16px;margin-bottom:8px;flex-wrap:wrap}
+  header h1{margin:0;font-size:26px;letter-spacing:-.2px}
+  header h1 .accent{color:var(--brand)}
+  header .sub{margin:6px 0 0;color:var(--muted);font-size:14px;max-width:720px}
+  header .meta{color:var(--muted);font-size:12px;text-align:right;white-space:nowrap}
+
+  .lead{margin:18px 0 24px;font-size:15px;color:#374151}
+  .lead b{color:var(--ink)}
+
+  .grid{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:22px;align-items:start}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 22px 24px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
+  .panel .tag{display:inline-block;font-size:11px;font-weight:700;color:var(--brand);
+    text-transform:uppercase;letter-spacing:.7px}
+  .panel h2{margin:4px 0 2px;font-size:19px}
+  .panel .note{margin:4px 0 18px;color:var(--muted);font-size:12.5px}
+
+  ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  ul.items.cols2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:560px){ul.items.cols2{grid-template-columns:1fr}}
+  li.row{display:flex;align-items:center;gap:13px;padding:11px 13px;border:1px solid var(--line);
+    border-radius:10px;background:#fcfcfd}
+  li.row .idx{flex:0 0 28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;
+    font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  li.row .name{flex:1;font-size:14.5px;font-weight:560}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Architecture Review — <span class="accent">Analysis Baseline</span></h1>
+      <p class="sub">The two sets of criteria used to assess Swiss AI Hub. This is the starting point for the analysis.</p>
+    </div>
+    <div class="meta">Swiss AI Hub · review-2026-05<br/>Snapshot 2026-05-28</div>
+  </header>
+
+  <p class="lead">Two baselines frame the whole review: an <b>engineering scorecard</b> (The 10 Pillars) and a
+  <b>promise-vs-truth check</b> (Business Core Values, assessed against reality).</p>
+
+  <div class="grid">
+
+    <!-- PANEL A -->
+    <section class="panel">
+      <span class="tag">Lens 1 · engineering scorecard</span>
+      <h2>The 10 Pillars</h2>
+      <p class="note">Azure Well-Architected Framework + 4 platform-specific pillars (Multi-Tenancy, SDK Versioning, Observability, QA).</p>
+      <ul class="items">
+        <li class="row"><span class="idx">1</span><span class="name">Multi-Tenancy &amp; Customer Isolation</span></li>
+        <li class="row"><span class="idx">2</span><span class="name">SDK Versioning &amp; Extension Contract</span></li>
+        <li class="row"><span class="idx">3</span><span class="name">Security &amp; Compliance</span></li>
+        <li class="row"><span class="idx">4</span><span class="name">Reliability &amp; Data Integrity</span></li>
+        <li class="row"><span class="idx">5</span><span class="name">Operational Excellence</span></li>
+        <li class="row"><span class="idx">6</span><span class="name">Performance &amp; Scalability</span></li>
+        <li class="row"><span class="idx">7</span><span class="name">Observability</span></li>
+        <li class="row"><span class="idx">8</span><span class="name">Quality Assurance</span></li>
+        <li class="row"><span class="idx">9</span><span class="name">Cost Optimization</span></li>
+        <li class="row"><span class="idx">10</span><span class="name">Sustainability</span></li>
+      </ul>
+    </section>
+
+    <!-- PANEL B -->
+    <section class="panel">
+      <span class="tag">Lens 2 · promise vs reality</span>
+      <h2>Business Core Values</h2>
+      <p class="note">Declared values &amp; marketing claims — each one checked against what the code and deployments actually do.</p>
+      <ul class="items cols2">
+        <li class="row"><span class="idx">1</span><span class="name">Swiss data sovereignty</span></li>
+        <li class="row"><span class="idx">2</span><span class="name">No vendor lock-in</span></li>
+        <li class="row"><span class="idx">3</span><span class="name">Self-hosted / on-premise capable</span></li>
+        <li class="row"><span class="idx">4</span><span class="name">"Swiss Sovereign AI" marketing</span></li>
+        <li class="row"><span class="idx">5</span><span class="name">Open-source platform</span></li>
+        <li class="row"><span class="idx">6</span><span class="name">Multi-tenant SaaS support</span></li>
+        <li class="row"><span class="idx">7</span><span class="name">GDPR Art. 17 — right to erasure</span></li>
+        <li class="row"><span class="idx">8</span><span class="name">Audit log immutability</span></li>
+        <li class="row"><span class="idx">9</span><span class="name">Presidio PII protection</span></li>
+        <li class="row"><span class="idx">10</span><span class="name">MCP secure tool execution</span></li>
+        <li class="row"><span class="idx">11</span><span class="name">Document ACL respect</span></li>
+        <li class="row"><span class="idx">12</span><span class="name">Multi-language Swiss (DE/FR/IT/EN)</span></li>
+        <li class="row"><span class="idx">13</span><span class="name">Cost protection per tenant</span></li>
+        <li class="row"><span class="idx">14</span><span class="name">Disaster recovery capability</span></li>
+        <li class="row"><span class="idx">15</span><span class="name">Common enterprise AI patterns</span></li>
+      </ul>
+    </section>
+
+  </div>
+
+</div>
+</body>
+</html>

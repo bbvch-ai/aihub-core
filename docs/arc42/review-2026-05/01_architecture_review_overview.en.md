@@ -9,12 +9,19 @@
 - `aihub-core` - platform application stack
 - **Customer deployments**:
   - `aihub-b*d`, `aihub-c*c` - Gen 1 (Azure VM + shell scripts), in production
-  - `aihub-Ig*s`, `aihub-Dem*scope`, `aihub-W*P`, `aihub-Balmer-E*` - TBD (deployment generation, version, status
-    pending team input)
+  - `aihub-Dem*scope`, `aihub-W*P`, `aihub-F*H` - Gen 1 (Azure / manual VM), in production
+  - `aihub-Ig*s`, `aihub-Balmer-E*` - TBD (deployment generation, version, status pending team input)
 - **Infrastructure repos (Gen 2)**:
   - `aihub-playbook` - Ansible Pull infrastructure-as-code (every 15-min reconcile)
   - `aihub-ops` - VM provisioning automation for OpenStack (cloud-init + setup script)
   - `aihub-{customer_id}` - per-customer encrypted secrets + custom config repos (template pattern)
+- **Kubernetes deployment (Gen 3, emerging)**:
+  - `aihub-k8s` - Terraform (Azure AKS + Stoney OpenStack Magnum) + two Helm charts
+    (`aihub-common`, `aihub-tenant`) for **namespace-per-tenant multi-tenancy** and horizontal scale-out. Both charts
+    declare `appVersion: "0.1.0"` and pull images via `${CORE_VERSION:-latest}` — the chart does **not** pin a
+    specific aihub-core version; the deployed core version is whatever `CORE_VERSION` is set to at apply time.
+    Tenants `tenant1`, `jointcreate`, `postgres-test` are present as test/sample only - no production customer
+    migrated yet.
 
 The document structure is extensible for additional customer projects.
 
@@ -38,27 +45,43 @@ The document structure is extensible for additional customer projects.
 
 ## Component versions
 
-_Snapshot as of 2026-05-26._
+_Snapshot as of 2026-05-28._
 
-| Component                   | Version        | Note                                                                            |
-| --------------------------- | -------------- | ------------------------------------------------------------------------------- |
-| aihub-core (HEAD on `main`) | v0.289.10      | Application stack - Latest dev                                                  |
-| aihub-b\*d using core       | v0.279.2       | Customer Gen 1 - Azure VM + shell scripts, 10 minors behind core                |
-| aihub-c\*c using core       | v0.274.3       | Customer Gen 1 - Azure VM + shell scripts, 15 minors behind core, 5 behind b\*d |
-| aihub-Ig\*s                 | TBD            | Customer - version + deployment gen details pending                             |
-| aihub-W\*P                  | TBD            | Customer - version + deployment gen details pending                             |
-| aihub-Dem\*scope            | TBD            | Customer - version + deployment gen details pending                             |
-| aihub-Balmer-E\*            | TBD            | Customer - version + deployment gen details pending                             |
-| aihub-playbook              | HEAD on `main` | Infra Gen 2 - Ansible Pull (every 15 min), 3-repo coordination                  |
-| aihub-ops                   | HEAD on `main` | VM provisioning automation (OpenStack Infomaniak)                               |
-| aihub-\{customer_id}        | per-customer   | Encrypted Ansible Vault + custom config (template repo pattern)                 |
+| Component                   | Version        | Note                                                                                                                                                                                                       |
+| --------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| aihub-core (HEAD on `main`) | v0.290.4       | Application stack - Latest dev (`pyproject.toml:3`); 47 ADRs under `docs/arc42/decisions/`                                                                                                                  |
+| aihub-b\*d using core       | v0.279.2       | Customer Gen 1 - Azure VM + shell scripts, 11 minors behind core                                                                                                                                            |
+| aihub-c\*c using core       | v0.274.3       | Customer Gen 1 - Azure VM + shell scripts, 16 minors behind core, 5 behind b\*d                                                                                                                             |
+| aihub-Ig\*s                 | TBD            | Customer - version + deployment gen details pending                                                                                                                                                         |
+| aihub-W\*P                  | v0.255.6       | Customer Gen 1 - manual VM (docker-compose copy-paste), 35 minors behind core                                                                                                                               |
+| aihub-Dem\*scope            | v0.246.4 [^1]  | Customer Gen 1 - Azure VM (Pulumi per README; IaC code not in repo), 44 behind                                                                                                                              |
+| aihub-F\*H                  | v0.186.0       | Customer Gen 1 - Azure VM (Pulumi committed in `.iac/iac_azure/`), 104 behind                                                                                                                               |
+| aihub-Balmer-E\*            | TBD            | Customer - version + deployment gen details pending                                                                                                                                                         |
+| aihub-playbook              | HEAD on `main` | Infra Gen 2 - Ansible Pull (every 15 min), 3-repo coordination; **7 roles** (`docker_runtime`, `traefik_proxy`, `signoz`, `aihub_application`, `os_backups`, `custom_vars_sync`, `restore_os_backup`)       |
+| aihub-ops                   | HEAD on `main` | VM provisioning automation (OpenStack Infomaniak)                                                                                                                                                           |
+| aihub-\{customer_id}        | per-customer   | Encrypted Ansible Vault + custom config (template repo pattern)                                                                                                                                             |
+| aihub-k8s                   | HEAD on `main` (Helm chart `appVersion 0.1.0`; images via `${CORE_VERSION:-latest}` — chart does NOT pin core version) | Infra Gen 3 - Terraform (Azure AKS + Stoney OpenStack Magnum) + Helm (`aihub-common` + `aihub-tenant`); namespace-per-tenant; deployed core version is whatever operator sets at apply time |
+
+[^1]: Demoscope SDK pin not present in `aihub-demoscope/pyproject.toml`; no `swiss-ai-hub-*` git dependency
+declared and docker-compose images carry no version tag. The `v0.246.4` figure is carried over from the previous
+review snapshot pending operational confirmation (CI logs / deploy manifests).
 
 Warnings:
 
-- The two existing customers (B*D/C*C) run different SDK versions, both older than core. No policy enforces upgrades.
+- All five Gen 1 customers (B*D/C*C/W*P/Dem*scope/F*H) run different SDK versions, all older than core. No policy
+  enforces upgrades. Drift spread: 11 → 104 minor versions (F*H at v0.186.0 is the largest drift, 104 minors behind).
 - Security patches on `main` do not propagate automatically to Gen 1 customers; Gen 2 (Ansible Pull) auto-deploys within
   15 min.
-- B*D/C*C migration path from Gen 1 (Azure manual) to Gen 2 (Infomaniak OpenStack + Ansible) is not yet documented.
+- Gen 1 → Gen 2 migration path (Azure manual → Infomaniak OpenStack + Ansible) is not yet documented for any of B*D /
+  C*C / W*P / Dem*scope / F*H.
+- **Gen 3 (`aihub-k8s`) partially closes the "No K8s migration path" gap** raised in §3.1 Item #20 of this review:
+  Helm charts, Terraform for two cloud providers (Azure AKS + Stoney OpenStack Magnum), CloudNativePG + Keycloak
+  Operator + cert-manager + NGINX Ingress are committed. **However**: no production customer is yet on this path
+  (only `tenant1`, `jointcreate`, `postgres-test` test tenants exist); Stoney Magnum has a documented limitation
+  that `node_count` is not updatable after cluster creation; Milvus runs standalone by default (scale-out cluster
+  mode is documented but optional); the Keycloak Operator cross-namespace-watch trick is called out as a
+  "community workaround, not a first-class Keycloak support statement"; **and the charts do not pin a specific
+  aihub-core version** — they pull whatever image tag `CORE_VERSION` evaluates to (see `adr_040`).
 
 ______________________________________________________________________
 
@@ -67,7 +90,8 @@ ______________________________________________________________________
 1. [Summary](#1-summary)
 2. [Ecosystem Diagram](#2-ecosystem-diagram)
 3. [Priority items for go-live (CRITICAL + HIGH)](#3-priority-items-for-go-live-critical--high) 3.1.
-   [aihub-core (Platform)](#31-aihub-core-platform) 3.2. [aihub-b\*d](#32-aihub-bd) 3.3. [aihub-c\*c](#33-aihub-cc)
+   [aihub-core (Platform)](#31-aihub-core-platform) 3.2. [aihub-b\*d](#32-aihub-bd) 3.3. [aihub-c\*c](#33-aihub-cc) 3.4.
+   [aihub-Dem\*scope](#34-aihub-demscope) 3.5. [aihub-W\*P](#35-aihub-wp) 3.6. [aihub-F\*H](#36-aihub-fh)
 4. [Assessment](#4-assessment) 4.1. [By 10-pillar framework](#41-by-10-pillar-framework) 4.2.
    [Business core values vs reality](#42-business-core-values-vs-reality)
 5. [Concerns and Documentation Backlog](#5-concerns-and-documentation-backlog)
@@ -82,19 +106,19 @@ ______________________________________________________________________
 
 | Strengths                                                                                                                                                                                                          | Weaknesses                                                                                                                                                     |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Event-driven architecture (NATS JetStream and Swiss AI Agent Protocol)                                                                                                                                             | Sovereignty violation - B*D/C*C use Azure OpenAI/Foundry, violating ADR `2026_02_24`                                                                           |
-| 43 ADRs documenting major decisions                                                                                                                                                                                | Gen 1 customer backup on the same VM (violates [3-2-1 rule](https://www.cisa.gov/news-events/news/data-backup-options)); Gen 2 partial fix via Restic→Swift    |
+| Event-driven architecture (NATS JetStream and Swiss AI Agent Protocol)                                                                                                                                             | Sovereignty violation across customers - B*D Azure Sweden, C*C Azure Foundry SUI+SWE, F*H Azure SUI + Azure AI Search; W*P region unverified (env-var only); Dem*scope partial (Azure SUI + local vLLM). Only Dem*scope shows any sovereign-LLM intent |
+| 47 ADRs documenting major decisions (under `docs/arc42/decisions/`)                                                                                                                                                | Gen 1 customer backup on the same VM (violates [3-2-1 rule](https://www.cisa.gov/news-events/news/data-backup-options)); Gen 2 partial fix via Restic→Swift    |
 | OpenTelemetry observability stack (cross-service traces)                                                                                                                                                           | No HA architecture - every stateful service is single-instance (PostgreSQL/NATS/Valkey/Milvus/Keycloak/etcd)                                                   |
 | Agent framework supports common enterprise AI patterns (conversational, RAG single+multi-source, document parsing, tool calling/MCP, HITL, multi-agent, voice STT/TTS, code execution sandbox, browser automation) | AI use case scope not documented in an ADR, coverage claim not defensible for audit; vision / predictive analytics / fine-tuning out of scope but not explicit |
 | Full CI/CD (lint, semantic-pr, per-package build)                                                                                                                                                                  | UsageLimits partially wired (agent endpoints + OpenAI route) but no 4-layer enforcement, no pre-flight estimation, no hard cap → LLM cost runaway risk         |
 | Hierarchical permission template with AccessChecker tenant-ceiling (BDD tested)                                                                                                                                    | AuditLogEntity missing, GDPR right-to-erasure unimplementable, false docs claims                                                                               |
-| LiteLLM gateway abstracts the LLM provider (easy to swap)                                                                                                                                                          | Large customer SDK drift - B*D 10 minors, C*C 15 minors, no versioning policy                                                                                  |
+| LiteLLM gateway abstracts the LLM provider (easy to swap)                                                                                                                                                          | Customer SDK drift across **5 production customers**: B*D 11, C*C 16, W*P 35, Dem*scope 44, F*H 104 minors behind core - no versioning policy or CI gate                                                  |
 | Dagster pipeline orchestration with asset lineage                                                                                                                                                                  | No customer-facing SLA, no alerting infra; only Slack notification on Ansible Pull failure                                                                     |
-| License compliance OK (402 Python + 993 npm + 33 Docker images approved)                                                                                                                                           | Single-server ceiling (Docker Compose only, no K8s, no horizontal scale)                                                                                       |
-| 43 ADRs and existing arc42 chapters for the platform                                                                                                                                                               | Customer docs gap - B*D/C*C have no arc42 or ADRs                                                                                                              |
+| License compliance OK (402 Python + 993 npm + 33 Docker images approved)                                                                                                                                           | Single-server ceiling for Gen 1 / Gen 2 (Docker Compose only) - partially mitigated by emerging **Gen 3 `aihub-k8s`** (Helm + Terraform, namespace-per-tenant), but no prod customer migrated yet |
+| 47 ADRs and existing arc42 chapters for the platform                                                                                                                                                               | Customer docs gap - **none of B*D / C*C / W*P / Dem*scope / F*H have own arc42 or ADRs** (5 customers, 0 docs)                                                |
 | Hierarchical scoping protocol (Thread → Display → Run)                                                                                                                                                             | Missing connector framework - every customer rebuilds (O(N×M) onboarding cost)                                                                                 |
 | Multi-language i18n for the UI (DE/EN/FR/IT)                                                                                                                                                                       | Presidio is DE-only, multilingual PII gap for Swiss FR/IT/EN                                                                                                   |
-| **Gen 2 deployment: Ansible Pull self-configuring VMs (15-min auto-reconcile)**                                                                                                                                    | B*D/C*C still Gen 1 (Azure manual) - no migration plan to Gen 2                                                                                                |
+| **Gen 2 deployment: Ansible Pull self-configuring VMs (15-min auto-reconcile)**                                                                                                                                    | **All 5 customers still Gen 1** (Azure manual or copy-paste VM) - no migration plan to Gen 2 or Gen 3 (`aihub-k8s`) for any customer                          |
 | **Infomaniak OpenStack - Swiss-sovereign cloud for Gen 2**                                                                                                                                                         | Restic → Swift uses same provider Infomaniak; no cross-provider replication                                                                                    |
 | **3-repo coordination pattern (playbook/core/customer) - separation of concerns**                                                                                                                                  | 3-repo version compatibility has no matrix / CI gate testing combos                                                                                            |
 | **Customer onboarding template (`setup-aihub.sh`)** automated VM provisioning                                                                                                                                      | Ansible Pull 15-min cadence too slow for hot-fix; GitHub dependency = deploy SPOF                                                                              |
@@ -104,9 +128,16 @@ ______________________________________________________________________
 | **Env vars drift detection CI** (`check_env_drift.py` nightly)                                                                                                                                                     | Drift check only for env vars, doesn't cover docs claims                                                                                                       |
 | Langfuse cost tracking per LLM call                                                                                                                                                                                | No per-tenant cost attribution → showback impossible                                                                                                           |
 | Open-source self-hosted positioning                                                                                                                                                                                | Open-source dependency lock-in (parser/embedding/reranker/vector store not abstracted)                                                                         |
-| BDD test integration with real NATS                                                                                                                                                                                | Test coverage zero in C*C, 59 lines in B*D                                                                                                                     |
+| BDD test integration with real NATS                                                                                                                                                                                | Test coverage across 5 customers: **ZERO in Dem*scope, W*P**; **C*C has 3 files / 788 lines but only in `log_analysis_agent`** (other 3 agents + 6 pipelines + custom API + `lib/common` untested); 58 lines in B*D; 5 `test_*.py` + 5 BDD `.feature` in F*H |
 | Trace context propagated via NATS message headers                                                                                                                                                                  | Bot scope lacks OTEL → trace breaks at the bot boundary                                                                                                        |
-| Pulumi adopted as IaC framework (ADR `2024_12_18`) — superseded by Ansible Pull for Gen 2                                                                                                                          | ADR exists but no Pulumi code in `aihub-core` repo; no K8s migration path (no Helm chart, no StatefulSets)                                                     |
+| Pulumi adopted as IaC framework (ADR `2024_12_18`) — superseded by Ansible Pull for Gen 2; **Gen 3 `aihub-k8s` adds Terraform + Helm + CloudNativePG + Keycloak Operator for AKS / Stoney Magnum** | K8s path is committed but unproven in production; Pulumi code still absent from `aihub-core`; no ADR yet adopts `aihub-k8s` as the official Gen 3 path; **Helm charts do NOT pin a core version** (`appVersion: "0.1.0"`, images via `${CORE_VERSION:-latest}`) — see proposed `adr_040` |
+| **F\*H committed Pulumi IaC** (10 deploy units: agents / ai / api / bot / dagster / nats / network / openwebui / phoenix / stores) - best IaC of the 3 new customers                                                                                                                                                | **Dem\*scope claims Pulumi in README but `.iac/` code NOT committed** to repo; W*P has no IaC at all (manual `cp docker-compose.latest.yml /opt/docker/config/bbv/`)                                  |
+| **`aihub-k8s` introduces real multi-tenancy** - namespace-per-tenant, realm-per-tenant (Keycloak), DB-per-tenant (CNPG), Milvus DB-per-tenant, bucket-prefix-per-tenant (SeaweedFS)                                                                                                                                  | F\*H **monkey-patches LlamaIndex** at import time (`lib/common/register_openai_models.py` modifies third-party globals to register GPT-5 names); behaviour depends on import order; drops on SDK upgrade |
+| **`aihub-k8s` chart pulls via `${CORE_VERSION:-latest}`** — operators can match current core HEAD `v0.290.4` by setting that env at apply time (dramatically lower drift than Gen 1 if pinned to a recent version); no built-in chart-level pin policy yet (see proposed `adr_040`)                                  | F\*H uses **Azure AI Search instead of Milvus** - vendor lock-in + double inference cost (AI Search query + LLM call); matches §3.3 C*C "Azure stack triple redundancy" pattern (see proposed `adr_039`) |
+| Dem\*scope runs **local vLLM** (Gemma-3 12b/27b + gte-Qwen2 embedding + bge-reranker) - only customer with partial sovereign-LLM stack                                                                                                                                                                                | **W\*P TLS private key committed in git** (`wpe.ai-agents.ch+1-key.pem` tracked alongside the production-domain cert); only `.env` is in `.gitignore`                                                  |
+| F\*H has its own **evaluation framework** (`evaluation/` with own evaluators + testsets + Excel test catalogue)                                                                                                                                                                                                       | Stack divergence: Dem\*scope and F\*H still use **MongoDB + Redis + Phoenix v10.0.4** (pre-Langfuse ADR `2026_02_10`), divergent from core's FerretDB + Valkey + Langfuse                              |
+| Existing **C4 model** (`03_c4_diagrams.md`): L1 + 3×L2 + 4×L3 + 5 sequence diagrams + deployment + multi-customer topology covering Platform + B*D + C*C; per-customer C4 files for Platform / B*D / C*C / Dem*scope / W*P / F*H now in `c4/`                                                                       | **C4 missing for Dem*scope / W*P / F*H** previously (3 of 5 prod customers) — addressed by the new `c4/` per-customer folder in this review                                                          |
+| C*C `log_analysis_agent` has its own test suite (3 files / 788 lines incl. integration + extract logs)                                                                                                                                                                                                                  | C*C deep-import violation: `agents/chat_agent/chat_agent/ChatAgent.py` reaches `swiss_ai_hub.core.generative_ai.{chat_history,guards}` and `swiss_ai_hub.core.i18n.locale_handler` (bypasses public API) — see proposed `adr_038` |
 
 **Next steps**
 
@@ -122,14 +153,14 @@ ______________________________________________________________________
 
 ```mermaid
 flowchart TB
-    subgraph CORE["Swiss AI Hub Core (aihub-core v0.289.10)"]
+    subgraph CORE["Swiss AI Hub Core (aihub-core v0.290.4)"]
         direction TB
         CorePkgs["packages/<br/>core • agent • api • pipeline<br/>bot • backup • web • process"]
-        CoreADR["43 ADRs"]
+        CoreADR["47 ADRs"]
         CoreInfra["30+ containers<br/>per deployment"]
     end
 
-    subgraph B*D["aihub-b*d v0.279.2 (drift 10 minors)"]
+    subgraph B*D["aihub-b*d v0.279.2 (drift 11 minors)"]
         direction TB
         B*DAgents["Agents (3)<br/>b*d · expert_rag · expert_asking"]
         B*DPipes["Pipelines (4)<br/>customers × 2-stage<br/>suppliers × 2-stage"]
@@ -137,7 +168,7 @@ flowchart TB
         B*DExt["External: Azure OpenAI (Sweden)<br/>Cohere reranking<br/>SMB share"]
     end
 
-    subgraph C*C["aihub-c*c v0.274.3 (drift 15 minors)"]
+    subgraph C*C["aihub-c*c v0.274.3 (drift 16 minors)"]
         direction TB
         C*CAgents["Agents (4)<br/>chat · jira · log<br/>retrieval_orchestrator"]
         C*CPipes["Pipelines (6)<br/>jira/confluence/sharepoint<br/>× 2-stage"]
@@ -146,18 +177,55 @@ flowchart TB
         C*CExt["External: Azure Foundry SUI+SWE<br/>Azure Doc Intelligence<br/>Azure AD B2C · Key Vault · VM<br/>Jira · Confluence · SharePoint"]
     end
 
-    Future["Other customers (TBD info):<br/>Ig*s · Dem*scope · W*P · Balmer-E*<br/>(deployment gen + components pending)"]
+    subgraph DEMOSCOPE["aihub-Dem*scope v0.246.4* (drift 44 minors, *SDK pin unverified)"]
+        direction TB
+        DemoAgents["Agents (2 pkg / 4 deployed)<br/>persona_agent · multi_personas_agent<br/>(each public + private variant)"]
+        DemoPipes["Pipelines (1)<br/>personas (imputation + insertion jobs)"]
+        DemoAPI["Custom API (mounts core controllers)"]
+        DemoLib["lib/common/<br/>events · ops · schemas · persistence"]
+        DemoExt["External: Azure OpenAI SUI<br/>+ local vLLM (Gemma-3 12b/27b)<br/>+ gte-Qwen2 embed · bge-rerank<br/>Azure AD · MongoDB · Milvus"]
+    end
+
+    subgraph WPE["aihub-W*P v0.255.6 (drift 35 minors)"]
+        direction TB
+        WPEDeploy["Deployment only<br/>(no custom agents / pipelines / API)<br/>uses core llm_wrapping_agent + rag_agent<br/>uses core default_rag_pipeline"]
+        WPECfg["Configs: LiteLLM, Milvus, Postgres,<br/>SeaweedFS, OTEL→SigNoz<br/>manual VM deploy (docker-compose copy)"]
+        WPEExt["External: Azure OpenAI (region via env)<br/>Azure AD / Entra (Microsoft v2.0)"]
+    end
+
+    subgraph FMH["aihub-F*H v0.186.0 (drift 104 minors)"]
+        direction TB
+        FMHAgents["Agents (3)<br/>handbook_agent · rules_agent · routing_agent"]
+        FMHPipes["Pipelines (2)<br/>handbook_ingestion · position_ingestion<br/>(TARDOC / TARMED data)"]
+        FMHAPI["Custom API + Bot (MS Bot Framework)"]
+        FMHEval["evaluation/ framework<br/>own evaluators · testsets"]
+        FMHExt["External: Azure OpenAI SUI<br/>(`*-openai-sui`) + Azure AI Search<br/>(NOT Milvus) · Azure Data Lake<br/>Azure AD · TARDOC/TARMED"]
+    end
+
+    Future["Other customers (TBD info):<br/>Ig*s · Balmer-E*<br/>(deployment gen + components pending)"]
 
     subgraph INFRA["Infrastructure Repos (Gen 2)"]
         direction TB
-        Playbook["aihub-playbook<br/>Ansible Pull (every 15min)<br/>docker_runtime · traefik_proxy<br/>signoz · aihub_application<br/>os_backups (Restic→Swift)"]
+        Playbook["aihub-playbook<br/>Ansible Pull (every 15min)<br/>7 roles: docker_runtime · traefik_proxy<br/>signoz · aihub_application<br/>os_backups (Restic→Swift) · custom_vars_sync<br/>restore_os_backup"]
         Ops["aihub-ops<br/>OpenStack VM provisioning<br/>setup-aihub.sh · cloud-init<br/>vault-vars-routing.yml<br/>nightly drift check"]
         CustomerRepo["aihub-{customer_id}<br/>Ansible Vault (encrypted)<br/>Custom config + secrets"]
     end
 
+    subgraph K8S["aihub-k8s (Gen 3, emerging) — chart appVersion 0.1.0; pulls via ${CORE_VERSION:-latest}"]
+        direction TB
+        K8STerraform["Terraform<br/>Azure AKS (Switzerland North, OIDC + workload identity)<br/>+ Stoney OpenStack Magnum (Flannel, Cinder, floating IP)<br/>one `deploy.sh` for both clouds"]
+        K8SCommon["Helm chart: `aihub-common`<br/>CloudNativePG (PostgreSQL 17 + pgvector)<br/>Keycloak Operator (1 instance, **realm per tenant**)<br/>SeaweedFS (shared, **bucket prefix per tenant**)<br/>Milvus (standalone; **DB per tenant**; scale-out optional)<br/>FerretDB · Langfuse · LiteLLM · MinerU · SearXNG"]
+        K8STenant["Helm chart: `aihub-tenant`<br/>**namespace `tenant-<name>`** · subdomain `<name>.k8s.ai-agents.ch`<br/>~27 services (api · web · openwebui · dagster · bot ·<br/>NATS · Redis · Neo4j · Phoenix · Jupyter · Playwright ·<br/>Presidio · rclone · 9 agents · 2 RAG pipelines)<br/>NGINX Ingress + cert-manager (Let's Encrypt)"]
+        K8STenants["Test tenants only (no prod customer yet):<br/>tenant1 · jointcreate · postgres-test"]
+    end
+
     CORE -.->|git tag<br/>v0.279.2| B*D
     CORE -.->|git tag<br/>v0.274.3| C*C
+    CORE -.->|git tag<br/>v0.246.4| DEMOSCOPE
+    CORE -.->|git tag<br/>v0.255.6| WPE
+    CORE -.->|git tag<br/>v0.186.0| FMH
     CORE -.->|git tag<br/>vX.Y.Z| Future
+    CORE -.->|image pull via<br/>${CORE_VERSION}| K8S
 
     Playbook -->|pulls every 15min| Future
     Ops -.->|provisions VM| Future
@@ -166,8 +234,12 @@ flowchart TB
     style CORE fill:#e8f0ff
     style B*D fill:#fff4e8
     style C*C fill:#fff4e8
+    style DEMOSCOPE fill:#fff4e8
+    style WPE fill:#fff4e8
+    style FMH fill:#fff4e8
     style Future stroke-dasharray: 5 5,stroke:#888,fill:#f5f5f5
     style INFRA fill:#e8ffe8
+    style K8S fill:#f0e8ff
 ```
 
 **Customer Registry** (extend when new customers join)
@@ -178,11 +250,12 @@ Gen 2 = OpenStack Infomaniak + Ansible Pull (aihub-playbook/aihub-ops).
 
 | Customer              | Status            | Core ver (drift)     | Components      | Deployment Gen                                          | Data sources                         | LLM Provider                                        | Identity                |        Off-site Backup         | Own arc42 + ADRs | Test coverage               |
 | --------------------- | ----------------- | -------------------- | --------------- | ------------------------------------------------------- | ------------------------------------ | --------------------------------------------------- | ----------------------- | :----------------------------: | :--------------: | --------------------------- |
-| aihub-b\*d            | Production 4/2026 | v0.279.2 (10 behind) | 3A / 4P / -     | **Gen 1** - On-prem (SMB share)                         | SMB share (customer + supplier docs) | Azure OpenAI Sweden - **sovereignty violated**      | Keycloak SaaS           |          No (same VM)          |        No        | Minimal (59 lines / 1 util) |
-| aihub-c\*c            | Production        | v0.274.3 (15 behind) | 4A / 6P / 1 API | **Gen 1** - Azure VM (SUI+SWE)                          | Jira / Confluence / SharePoint       | Azure AI Foundry SUI+SWE - **sovereignty violated** | Keycloak + Azure AD B2C |          No (same VM)          |        No        | Zero                        |
+| aihub-b\*d            | Production 4/2026 | v0.279.2 (11 behind) | 3A / 4P / -     | **Gen 1** - On-prem (SMB share)                         | SMB share (customer + supplier docs) | Azure OpenAI Sweden - **sovereignty violated**      | Keycloak SaaS           |          No (same VM)          |        No        | Minimal (58 lines / 1 util) |
+| aihub-c\*c            | Production        | v0.274.3 (16 behind) | 4A / 6P / 1 API | **Gen 1** - Azure VM (SUI+SWE)                          | Jira / Confluence / SharePoint       | Azure AI Foundry SUI+SWE - **sovereignty violated** | Keycloak + Azure AD B2C |          No (same VM)          |        No        | Minimal (3 files / 788 lines in `log_analysis_agent` only) |
 | aihub-Ig\*s           | TBD               | TBD                  | TBD             | TBD                                                     | TBD                                  | TBD                                                 |                         |                                |                  |                             |
-| aihub-W\*P            | TBD               | TBD                  | TBD             | TBD                                                     | TBD                                  | TBD                                                 |                         |                                |                  |                             |
-| aihub-Dem\*scope      | TBD               | TBD                  | TBD             | TBD                                                     | TBD                                  | TBD                                                 |                         |                                |                  |                             |
+| aihub-W\*P            | Production        | v0.255.6 (35 behind) | - (deploy only) | **Gen 1** - manual VM (docker-compose copy-paste)       | OpenWebUI knowledge / RAG (Milvus + SeaweedFS, user-uploaded) | Azure OpenAI (region not in repo - configured via env var) - **sovereignty unverified** | Azure AD / Entra ID (Microsoft v2.0) |       No (none in repo)        |        No        | N/A (no custom code)        |
+| aihub-Dem\*scope      | Production        | v0.246.4 (44 behind)[^1] | 2A / 1P / 1 API | **Gen 1** - Azure VM (Pulumi per README; IaC code not in repo) | MongoDB persona data + Milvus (questions, personas) | Azure OpenAI Switzerland + local vLLM (Gemma-3-12b/27b, gte-Qwen2 embedding, bge-reranker) - **partial sovereignty** | Azure AD / Entra ID (login.microsoftonline.com) |          No (MinIO same VM)         |        No        | Zero (no test files)        |
+| aihub-F\*H            | Production (last commit 4/2026) | v0.186.0 (104 behind) | 3A / 2P / 1 API / 1 bot | **Gen 1** - Azure (Pulumi committed: 10 deploy units) | Azure Data Lake Storage (TARDOC / TARMED: handbook + positions) | Azure OpenAI Switzerland North (`*-openai-sui`) + Azure AI Search (not Milvus) - **sovereignty Switzerland** | Azure AD (AUTH_AZURE_AD_*) |        No (none in repo)        |        No        | Minimal (5 tests + 5 BDD)   |
 | aihub-Balmer-E\*      | TBD               | TBD                  | TBD             | TBD                                                     | TBD                                  | TBD                                                 |                         |                                |                  |                             |
 | Customer #N+ (future) | Template ready    | TBD                  | TBD             | **Gen 2** - OpenStack Infomaniak (Swiss) + Ansible Pull | TBD                                  | TBD                                                 | TBD                     | Restic → Swift (partial 3-2-1) | TBD via template | TBD                         |
 
@@ -190,7 +263,8 @@ ______________________________________________________________________
 
 ## 3. Priority items for go-live (CRITICAL + HIGH)
 
-This section highlights items to prioritize for go-live preparation, grouped by scope (Core / B*D / C*C). Severity:
+This section highlights items to prioritize for go-live preparation, grouped by scope (Core / B*D / C*C / Dem*scope /
+W*P / F*H). Severity:
 
 - **CRITICAL**: blocks go-live; causes data loss / security breach / compliance violation / fatal scenario if not
   addressed
@@ -229,7 +303,7 @@ list.
 | 17  | Milvus single-node memory wall (122 GB for 10M × 3072d)                                                  |     HIGH     | Milvus cluster mode + DISKANN benchmark for disk-backed index                                                                                                 |
 | 18  | No formal alerting infrastructure                                                                        |     HIGH     | Prometheus AlertManager + PagerDuty/OpsGenie on-call routing + per-service severity rules                                                                     |
 | 19  | No business metrics + formal SLI/SLO                                                                     |     HIGH     | Business metrics export (agent_runs, HITL escalations, RAG latency); formal SLI/SLO documented per service                                                    |
-| 20  | No K8s migration path                                                                                    |     HIGH     | K8s migration plan with Helm chart + StatefulSets for stateful services + HPA for stateless                                                                   |
+| 20  | No K8s migration path **(partially addressed: `aihub-k8s` Gen 3 exists)**                                |     HIGH     | `aihub-k8s` already provides Terraform (AKS + Stoney Magnum) + Helm (`aihub-common` + `aihub-tenant`). Charts declare `appVersion: "0.1.0"` and pull images via `${CORE_VERSION:-latest}` — no chart-level pin yet (see proposed `adr_040`). Remaining: ADR adopting Gen 3 as official path; chart-level core version pin policy; migrate ≥ 1 prod customer; cluster-mode Milvus + HPA validation; document Gen 1 → Gen 3 migration |
 | 21  | No load test baseline                                                                                    |     HIGH     | Load test suite (k6/Locust) in CI with baseline numbers per critical path                                                                                     |
 | 22  | Connector framework missing                                                                              |     HIGH     | `BaseSourceConnector` framework + 12 built-in connectors (SMB, S3, SharePoint, Confluence, Jira, GitHub, Notion, Drive, Box, Salesforce, IMAP)                |
 | 23  | Code RAG semantic-only (missing structural chunks)                                                       |     HIGH     | tree-sitter AST chunking + code-specific embedding (CodeBERT/UniXcoder) + hybrid index (vector + symbol + Neo4j call-graph)                                   |
@@ -248,7 +322,7 @@ list.
 | 1   | Backup destination on the same VM (FATAL: VM dies = total loss) | **CRITICAL** | Emergency cron sync to Swiss-sovereign off-site (Infomaniak CH / Exoscale CH / Hetzner); long-term migrate to Gen 2 (Restic→Swift)                                 |
 | 2   | Azure OpenAI (Sweden) sovereignty violation                     |     HIGH     | Tied to Core sovereignty path decision (Option A/B/C); ADR documenting trade-off or migration plan. Severity depends on customer compliance contract               |
 | 3   | Test coverage near-zero (59 lines / 1 utility)                  |     HIGH     | Baseline test plan (smoke tests per agent / pipeline); integration test with staging data; coverage threshold 60% for new code                                     |
-| 4   | SDK drift 10 minor versions (v0.279.2 vs v0.289.10)             |     HIGH     | SDK upgrade plan with security delta audit; extract reusable patterns (`resolve_selection`, HITL helpers) to core; CI gate blocking drift > N versions             |
+| 4   | SDK drift 11 minor versions (v0.279.2 vs v0.290.4)              |     HIGH     | SDK upgrade plan with security delta audit; extract reusable patterns (`resolve_selection`, HITL helpers) to core; CI gate blocking drift > N versions. **Near-latest pin — lowest-risk upgrade of all customers; do first as a quick win (bump straight to core tip)** |
 | 5   | Cohere reranking US/Canada vendor                               |     HIGH     | ADR documenting sovereignty trade-off or migrate to sovereign alternative (local BGE, local Jina)                                                                  |
 | 6   | Storage multiplier 3.9x (1.9 TB insufficient for 2+ customers)  |     HIGH     | Data partitioning strategy (sharding / time-based / customer-based / cold storage); ADR documenting strategy                                                       |
 | 7   | Hardcoded customer config (SNK_ANCHOR, BASE_PATH SMB)           |     HIGH     | Pydantic Settings from env per deployment; documented config matrix                                                                                                |
@@ -264,8 +338,8 @@ list.
 | 1   | Backup destination on the same Azure VM (FATAL)                                | **CRITICAL** | Tier 1 emergency cron sync to Swiss off-site; plan migration to Gen 2 with cross-region replication                                                                                                                                                                                                                                                                                                                                       |
 | 2   | Azure AI Foundry + Azure DI sovereignty violation                              | **CRITICAL** | Standardize on core stack (MinerU + LiteLLM gateway); migration roadmap DI → MinerU, Foundry → vLLM/Swiss LLM Cloud via LiteLLM                                                                                                                                                                                                                                                                                                           |
 | 3   | Per-user data access control missing (3 manifestations, same root cause)       | **CRITICAL** | Holistic fix: (a) per-user OAuth delegated permissions for Jira/SharePoint/Confluence instead of service account shared keys; (b) move isolation down to the data layer (per-tenant Milvus collection, per-user ACL filter at retrieval query, pre-filter chunks before LLM context); (c) ACL inheritance into Milvus metadata + retrieval-time filter; (d) documented user access matrix; forensic audit log. GDPR Art. 32/25 compliance |
-| 4   | Test coverage ZERO (4 agents + 6 pipelines + custom API + lib/common untested) |     HIGH     | Baseline test plan; smoke tests per component; integration test with staging Jira/Confluence/SharePoint                                                                                                                                                                                                                                                                                                                                   |
-| 5   | SDK drift 15 minor versions (largest drift)                                    |     HIGH     | SDK upgrade with security delta audit; standardize uv workflow; deprecate poetry.lock; CI gate blocking drift                                                                                                                                                                                                                                                                                                                             |
+| 4   | Test coverage minimal — 3 files / 788 lines in `log_analysis_agent` only; chat / jira_issue / retrieval_orchestrator agents + 6 pipelines + custom API + `lib/common` untested |     HIGH     | Extend `log_analysis_agent` style coverage to all components; smoke tests per agent; integration test with staging Jira/Confluence/SharePoint; coverage threshold 60% for new code                                                                                                                                                                                                                                                                                                                                  |
+| 5   | SDK drift 16 minor versions                                                    |     HIGH     | SDK upgrade with security delta audit; standardize uv workflow; deprecate poetry.lock; CI gate blocking drift                                                                                                                                                                                                                                                                                                                             |
 | 6   | SharePoint over-permissioned `Sites.Read.All` tenant-wide                      |     HIGH     | Scoped permission `Sites.Selected` per site; documented access matrix per site (sub-aspect of item #3)                                                                                                                                                                                                                                                                                                                                    |
 | 7   | Hardcoded Jira config (URL/IDs)                                                |     HIGH     | Pydantic Settings from env per deployment                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 8   | Naming camouflage (gpt-oss-120b → azure/gpt-5-nano)                            |     HIGH     | Transparent naming convention (e.g., `azure-eu/gpt-5-nano`); ADR documenting trade-off                                                                                                                                                                                                                                                                                                                                                    |
@@ -277,12 +351,78 @@ list.
 | 14  | Internal import violation `lib/common/types/RetrievalAgentInTheLoop.py:1-4`    |     HIGH     | Fix import via core public API; lint rule blocking                                                                                                                                                                                                                                                                                                                                                                                        |
 | 15  | Dual lock files (poetry.lock 84KB + uv.lock)                                   |     HIGH     | Migrate to uv-only workflow; deprecate poetry.lock; standard uv commands                                                                                                                                                                                                                                                                                                                                                                  |
 | 16  | No own arc42 + ADRs                                                            |     HIGH     | arc42 12 chapters skeleton + C4 L1/L2 + 13 ADRs answering design questions (Azure Foundry, DI vs MinerU, naming camouflage, service account, AD B2C, etc.)                                                                                                                                                                                                                                                                                |
+| 17  | Deep-import violations in `ChatAgent.py` reach `swiss_ai_hub.core.generative_ai.{chat_history,guards}` and `swiss_ai_hub.core.i18n.locale_handler` — bypasses public `__init__.py` API |     HIGH     | Refactor to import via `from swiss_ai_hub.core import …` after promoting needed symbols to package public interface; add ruff/lint rule blocking deep imports across scope boundary; CI gate (see proposed `adr_038`) |
+| 18  | MongoDB tenant-entry schema changed between the pinned and current core → migration required before SDK upgrade (the biggest upgrade risk for C\*C) | **CRITICAL** | Build on the DB migration framework (ADR-NEW-003); author a forward + rollback migration; reconcile tenant docs against the Keycloak source of truth; dry-run on a restored copy in a maintenance window (see proposed `adr_045`) |
+
+### 3.4. aihub-Dem\*scope
+
+Evidence base: code, configs, scripts, and README in `aihub-demoscope` repo (HEAD commit
+`abe968f 2026-01-13`).
+
+| #   | Item                                                                                  |   Severity   | Recommendation actions                                                                                                                                                                                                                |
+| --- | ------------------------------------------------------------------------------------- | :----------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | SDK drift 44 minor versions (v0.246.4* vs v0.290.4) - 4.5+ months behind (*SDK pin not in `pyproject.toml`) | **CRITICAL** | Confirm actual SDK pin via deploy manifests / CI; SDK upgrade plan with security delta audit (covers 44 minors of fixes); CI gate blocking drift > N versions; coordinate breaking-change migration |
+| 2   | Backup destination on the same VM (MinIO same host as Milvus / Mongo)                 | **CRITICAL** | Emergency cron sync to Swiss off-site (Infomaniak / Exoscale / Hetzner); replace ad-hoc `backup_updater_script.py` with official `milvus-backup` to off-host bucket; documented restore drill                                         |
+| 3   | Pulumi mentioned in README but **IaC code not committed** (no `.iac/` folder in repo) | **CRITICAL** | Commit the actual Pulumi code or remove the README sections; pick one IaC approach (Pulumi vs Terraform); document the real deployment process - currently undocumented and irreproducible from this repo                             |
+| 4   | Test coverage ZERO (no `test_*.py`, no `.feature` files in 2 agents + 1 pipeline)     |     HIGH     | Baseline test plan (smoke tests per agent + pipeline); BDD `.feature` for hash-partitioned questions flow; integration test against staging Milvus                                                                                    |
+| 5   | Manual production migration via SSH + `screen` + `scp`                                |     HIGH     | Replace `scp migrate_questions.py demoscope:aihub/scripts/...` + `screen -r migration` workflow with Dagster job or k8s Job; track migration progress in DB, not `migration_log.json` on the VM                                       |
+| 6   | Hash-partitioned Milvus design hardcoded in 3 places (drift risk)                     |     HIGH     | Single source of truth (already partially done in `lib/common/partition_utils.py`); CI test asserting agent + pipeline + migration script use the same hash function                                                                  |
+| 7   | 4 agent variants deployed (persona / multi\_personas × public / private)              |     HIGH     | Document the public/private split rationale in ADR; verify the 4 instances run the same code or merge into 1 binary with config flag; reduce operational surface                                                                      |
+| 8   | Stack divergence from core: MongoDB + Redis instead of FerretDB + Valkey              |     HIGH     | ADR documenting why Demoscope diverged from core stack; migration plan or accept divergence; check whether Demoscope-specific Mongo features (BSON types, transactions) prevent migration                                             |
+| 9   | Phoenix v10.0.4 + LiteLLM v1.77.7 - pre-Langfuse (ADR `2026_02_10`) and older LiteLLM |     HIGH     | Plan migration Phoenix → Langfuse following ADR `2026_02_10`; bump LiteLLM to current stable (v1.79+) for security patches                                                                                                            |
+| 10  | Mixed sovereignty: Azure OpenAI SUI + local vLLM (Gemma-3, gte-Qwen2, bge-reranker)   |     HIGH     | Document the partial-sovereignty position in an ADR; clarify which workloads route to Azure SUI vs local vLLM; tied to Core sovereignty path decision (Option A/B/C)                                                                  |
+| 11  | No own arc42 + ADRs                                                                   |     HIGH     | arc42 12 chapters + C4 L1/L2 + ADRs for: stack divergence (Mongo/Redis), hash partitioning, 4-variant split, sovereignty position, MinIO same-VM backup, hashed `persona_id` mod 1000                                                 |
+| 12  | Agent crashes on start when upgrading the SDK (pin is very old) | **CRITICAL** | Reproduce the crash on a staging copy; decide remediate-in-place vs rebuild on the current core generation; sequence after a verified backup (PO roadmap Q4) |
+| 13  | No backup/restore actually built (only an ad-hoc `backup_updater_script.py`); no token/key renewal management — customer formally accepts responsibility | **CRITICAL** | Record as a customer-accepted risk (RACI) with explicit sign-off and documented data-loss exposure; still provide a minimal backup + key/token renewal runbook (see `adr_030`) |
+| 14  | Vectors held in-memory (works only because the box has 200 GB RAM) — cost wall as data grows | **HIGH** | Plan move to disk-backed Milvus / DISKANN before data growth; add a capacity projection; run the RAG/vector-design gate (see proposed `adr_044`, `adr_046`) |
+
+### 3.5. aihub-W\*P
+
+Evidence base: docker-compose, configs, README in `aihub-wpe` repo (HEAD commit
+`c4b1527 2025-12-18`). Note: `.env.prod` is sensitive-file-guarded; only env-var **names** were inspected, not
+values.
+
+| #   | Item                                                                                       |   Severity   | Recommendation actions                                                                                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------ | :----------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **TLS private key committed to git** (`wpe.ai-agents.ch+1-key.pem` tracked, only `.env` is ignored) | **CRITICAL** | Rotate the cert + key **immediately** (Let's Encrypt re-issue via Traefik); add `*.pem`, `*-key.pem`, `secrets/` to `.gitignore`; rewrite git history (BFG / `git filter-repo`) to purge the key; audit who pulled the repo since |
+| 2   | Manual VM deployment via copy-paste (README: `cp docker-compose.latest.yml /opt/docker/config/bbv/`) | **CRITICAL** | Add minimum reproducible deploy: bash script + checksums, or migrate to Gen 2 (Ansible Pull) / Gen 3 (`aihub-k8s`); current workflow has no rollback, no audit trail, no drift detection                                        |
+| 3   | LLM region not in repo (Azure OpenAI base URL is env-var only) → **sovereignty unverified** |     HIGH     | Commit a non-secret `litellm-region.md` or `.env.example` stating Azure region; ADR aligning with Core sovereignty path; the choice must be explicit, not buried in a sysadmin's `/opt/bbv/.env`                                |
+| 4   | SDK drift 35 minor versions (v0.255.6 vs v0.290.4)                                         |     HIGH     | Bump `CORE_VERSION` in `.env.prod` with security delta review; CI gate blocking drift > N versions; pin via tag, not `latest` fallback                                                                                          |
+| 5   | `${CORE_VERSION:-latest}` fallback to `latest` if env var missing                          |     HIGH     | Remove `:-latest` default - force explicit pinning; deployment must fail-fast if `CORE_VERSION` is unset; reproducible builds require explicit versions                                                                         |
+| 6   | `VOLUME_ROOT:-./.docker-volumes` defaults to local relative dir in production              |     HIGH     | Force `VOLUME_ROOT` to be set (no `:-` fallback); document the production volume root (e.g. `/var/lib/aihub`) and snapshot strategy                                                                                             |
+| 7   | Off-site backup not in repo (no evidence of Restic / Swift / cross-region sync)            |     HIGH     | Add backup config to repo (cron + Restic to Swiss off-site); follow 3-2-1 rule; document RTO/RPO; if backup exists out-of-repo, document where                                                                                  |
+| 8   | No own arc42 + ADRs - deployment-only repo with no design docs                             |     HIGH     | Minimal arc42 (context + deployment + crosscutting); ADRs for: manual VM choice, identity provider choice, LLM region, sovereignty position; explain why WPE differs from core defaults                                         |
+| 9   | No tests of any kind (deployment-only repo, but no smoke / health validation scripts)      |     HIGH     | Add post-deploy smoke test (curl health endpoints, OAuth round-trip, LiteLLM ping, OpenWebUI login); fail fast on broken deploy                                                                                                 |
+| 10  | SigNoz Cloud "EU" region for OTEL - same caveat as core (sovereignty unclear)              |     HIGH     | Inherit core ADR on SigNoz region once written; document the choice locally in WPE README                                                                                                                                       |
+| 11  | Customer reports poor platform performance — root cause unknown, customer unresponsive | **HIGH** | Review Langfuse/OTEL traces + run a load-test baseline (Locust) against a config/hardware replica to locate the bottleneck; investigation BLOCKED pending customer input/data (see proposed `adr_046`) |
+
+### 3.6. aihub-F\*H
+
+Evidence base: code, configs, Pulumi IaC, evaluation framework, and README in `aihub-fmh` repo (HEAD commit
+`5509d39 2026-04-07`).
+
+| #   | Item                                                                                       |   Severity   | Recommendation actions                                                                                                                                                                                                                            |
+| --- | ------------------------------------------------------------------------------------------ | :----------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | SDK drift 104 minor versions (v0.186.0 vs v0.290.4) - **largest of all customers**         | **CRITICAL** | Multi-step SDK upgrade plan with security delta audit (104 minors = 10+ months of patches missed); incremental upgrades v0.186 → v0.220 → v0.260 → v0.290; CI gate blocking drift > N versions                                                  |
+| 2   | LlamaIndex **monkey-patch** for GPT-5 (`lib/common/register_openai_models.py` modifies third-party globals at import time) | **CRITICAL** | Replace with first-class core support (PR to `aihub-core` adding GPT-5 model registry); SDK upgrade will drop this patch automatically; document the workaround in ADR until removed                                                            |
+| 3   | Azure AI Search **instead of** Milvus - stack divergence from core                         | **CRITICAL** | ADR justifying Azure AI Search vs core Milvus (vendor lock-in, double inference cost, sovereignty); migration plan to Milvus or formal acceptance of divergence with cost analysis; matches §3.3 C\*C "Azure stack triple redundancy" pattern   |
+| 4   | Backup status not in repo (Pulumi `stores/` deploys infra but no backup workload visible)  | **CRITICAL** | Verify Azure backup policy on `Storage Account` + `CosmosDB`/Mongo; cross-region replication for TARDOC/TARMED handbook data; documented restore drill; if backup exists out-of-Pulumi, document where                                          |
+| 5   | Stack divergence from core: MongoDB + Redis + Phoenix (pre-Langfuse) - same as Dem\*scope  |     HIGH     | Plan migration Phoenix → Langfuse (ADR `2026_02_10`); plan MongoDB → FerretDB; tied to SDK upgrade #1                                                                                                                                            |
+| 6   | Minimal test coverage (5 `test_*.py` + 5 BDD `.feature` for 3 agents + 2 pipelines)        |     HIGH     | Coverage threshold 60% for new code; BDD feature files for the 3-agent routing flow (routing → handbook + rules); integration test against TARMED test fixtures                                                                                 |
+| 7   | Azure OpenAI Switzerland North + Azure AD - vendor lock-in (similar to C\*C)               |     HIGH     | ADR documenting Azure choice rationale (TARDOC/TARMED is Swiss-only data, so Switzerland North is defensible); evaluate Keycloak federation as identity alternative                                                                             |
+| 8   | Bot uses MS Bot Framework + dev tunnel - dev/prod parity risk                              |     HIGH     | Document the MS Teams integration deployment path; remove `agents/playground/bot_emulator/` references from prod docs; ensure prod doesn't depend on `devtunnel` workflow                                                                       |
+| 9   | Pulumi state in **Azure storage account** - single-cloud dependency                        |     HIGH     | Document the Pulumi state account name / region in repo (not just credentials); plan state backup; if Azure account compromised, deployment is unrecoverable                                                                                    |
+| 10  | No own arc42 + ADRs - has good IaC + evaluation framework but no design docs               |     HIGH     | arc42 12 chapters + C4 L1/L2 + ADRs for: Azure AI Search vs Milvus (#3), GPT-5 monkey-patch (#2), 3-agent routing design, TARDOC/TARMED data ingestion, MS Bot Framework choice                                                                 |
+| 11  | Hardcoded handbook namespace (`handbook_02_2026`) in pipeline `__init__.py`                |     HIGH     | Pydantic Settings from env; allow multiple snapshots in parallel; document the versioning convention (`handbook_MM_YYYY`)                                                                                                                       |
+| 12  | Customer dissatisfied with answer quality — structured TARDOC/TARMED data not ingested with a designed vector schema; no RAG testing/eval strategy (the `evaluation/` framework exists but is unused) | **CRITICAL** | Run the RAG/vector-design gate (see proposed `adr_044`): field-aware chunking + metadata schema for the structured data; wire an eval harness on the existing `evaluation/` framework + Langfuse datasets; baseline then tune; tie to the AI-Search-vs-Milvus decision (`adr_039`) |
 
 ______________________________________________________________________
 
 ## 4. Assessment
 
-Two parallel perspectives.
+Two parallel perspectives. Coverage now includes **5 Gen 1 production customers** (B*D / C*C / Dem*scope / W*P / F*H);
+per-customer go-live items are detailed in **§3.4 (Dem\*scope)**, **§3.5 (W\*P)**, **§3.6 (F\*H)**. Ig*s and Balmer-E*
+remain TBD pending team input.
 
 ### 4.1. By 10-pillar framework
 
@@ -290,38 +430,38 @@ Two parallel perspectives.
 extended with platform-specific pillars for multi-customer platforms (Multi-Tenancy, SDK Versioning, Observability,
 Quality Assurance). Each cell lists findings for that scope. A cell marked `-` means that scope has no specific finding.
 
-| #   | Pillar - Status                                                              | Core                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | B\*D                                                                                                                                                                                                                                                   | C\*C                                                                                                                                                                                                                                                                                                                                                | Ig\*s | Dem\*scope | W\*P | Balmer-E\* | Cross-cutting                                                                                                                                                                                                                   |
-| --- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------- | ---- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Multi-Tenancy & Customer Isolation** - Critical                            | • NATS subjects lack hierarchy `aihub.tenant.{id}.*`<br>• Milvus collections not namespaced per-tenant<br>• MongoDB entities lack required `tenant_id` field<br>• Valkey keys lack per-tenant prefix<br>• Neo4j graphs single, not namespaced<br>• No tenant provisioning workflow / automation API<br>• No per-tenant feature flags<br>• No per-tenant resource quotas (rate limit, storage, LLM budget)<br>• Tenant exists only at Keycloak layer (groups `/tenants/{id}`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | -                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                                   | TBD   | TBD        | TBD  | TBD        | • Each customer = separate Docker stack<br>• Cannot run shared multi-tenant SaaS<br>• Operational cost grows linearly with customers<br>• No cross-tenant isolation test in CI                                                  |
-| 2   | **SDK Versioning & Extension Contract** - Gap                                | • No public SDK release (PyPI/internal registry), only git+ssh<br>• No policy on breaking change, deprecation window<br>• No CHANGELOG categorization<br>• No downstream CI integration test with customers<br>• No lint rule blocking imports from internal modules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | • Drift 10 minor versions (v0.279.2 vs v0.289.10)<br>• Internal import violation `pipelines/snk_enrichment.py:2`<br>• Patterns not extracted to core (`resolve_selection()`, HITL helpers)                                                             | • Drift 15 minor versions (v0.274.3 vs v0.289.10)<br>• Internal import violation `lib/common/types/RetrievalAgentInTheLoop.py:1-4`<br>• Custom `switch_dependencies.py` instead of standard uv workflow<br>• Dual lock files `poetry.lock` (84KB) + `uv.lock`<br>• Multi-agent orchestrator and Jira/Confluence/SharePoint connectors not extracted | TBD   | TBD        | TBD  | TBD        | -                                                                                                                                                                                                                               |
-| 3   | **Security & Compliance** - Partial                                          | **Strengths**: 5 auth handlers (Keycloak/Token/Bearer/OAuth2/OpenWebUI) with JWKS 6h cache; hierarchical permission template with wildcards; AccessChecker tenant-ceiling + BDD tests; two-stage access control tested.<br>**Gaps**:<br>• UsageLimits partially wired (agent endpoints + OpenAI route only); no 4-layer enforcement or hard cap<br>• No `AuditLogEntity` (violates GDPR Art. 30, ISO 27001 A.12.4, SOC2)<br>• Event payloads not signed (JetStream unsigned JSON)<br>• NATS token-only auth, no mTLS; MongoDB/Redis connection string<br>• Presidio claim ≠ reality (code uses fragile LLM-based guard)<br>• MCP tool args bypass LiteLLM → Presidio guards bypassed 100%<br>• File upload trusts mime-type, no content sniffing<br>• OpenWebUI renders model list bypassing RBAC<br>• Docker volume not encrypted at rest<br>• No rate limiting per user/tenant at API<br>• No SAST / dep vuln scan / SBOM / image signing / container vuln scan                                                                                                                                                                                                                  | • Cohere reranking (US/Canada vendor)<br>• Hardcoded customer-specific config (SNK_ANCHOR, BASE_PATH)<br>• No secrets rotation policy                                                                                                                  | • Service account shared keys for Jira/SharePoint/Confluence (violates least-privilege)<br>• SharePoint Azure AD app-only `Sites.Read.All` tenant-wide<br>• Hardcoded Jira IDs (URL, Service Desk, Request Type, Project)<br>• Azure AD B2C federation instead of pure Keycloak (vendor lock-in)                                                    | TBD   | TBD        | TBD  | TBD        | • Document ACL not inherited from Jira/SharePoint/Confluence into Milvus<br>• Service account ingests everything, users query everything (cross-user leak)<br>• Presidio is DE-only, Swiss multilingual FR/IT/EN PII not masked |
-| 4   | **Reliability & Data Integrity** - Critical (Gen 2 partial fix)              | • No DB migration framework (schemas created implicitly by Pydantic + MongoEngine at startup)<br>• Cross-store consistency not guaranteed (NATS + Mongo + Valkey)<br>• No documented RTO/RPO<br>• No automated DR test / restore drill<br>• Backup encryption at rest unclear for Gen 1<br>• Milvus has no upsert-by-id → re-ingest = duplicate vectors<br>• Agent config schema evolution has no versioning<br>• No agent versioning for in-flight runs<br>• No run / delegation timeout<br>• No circuit breaker for external deps (LiteLLM, Keycloak, Milvus cascade)<br>• No DLQ for JetStream poison messages<br>• No HA architecture (PostgreSQL/NATS/Valkey/Milvus/Keycloak/etcd all single-instance)<br>• **Gen 2 partial fix**: Ansible Pull auto-reconciles container drift; Restic backup to OpenStack Swift container (off-host)<br>• Still missing: cross-provider replication, HA stateful services, no automated DR drill                                                                                                                                                                                                                                            | • **Gen 1 fatal**: Backup destination on same SeaweedFS, same VM → VM dies = total loss<br>• No off-site replication<br>• Production 3.9x storage multiplier (1 TB → 5.1 TB)<br>• Not yet migrated to Gen 2 (Restic→Swift)                             | • **Gen 1 fatal**: Backup destination on same Azure VM<br>• Jira webhook not idempotent (`JiraWebhookController`): same event 2x = 2 agent runs<br>• External services cascade (Jira/Confluence/SharePoint/Azure outage)<br>• Not yet migrated to Gen 2 (Restic→Swift)                                                                              | TBD   | TBD        | TBD  | TBD        | • Gen 2 Restic→Swift is off-host but **same cloud provider** (Infomaniak) - Infomaniak region outage = loses both primary and backup<br>• No cross-provider replication yet                                                     |
-| 5   | **Operational Excellence** - Partial (improved with Gen 2)                   | **Strengths**: Full CI/CD (lint-pr, semantic-pr, build-\* per package, deploy-docs, auto-tag); pre-commit hooks; 43 ADRs; Docker Compose Jinja2 templates; **Gen 2 Ansible Pull pattern** (aihub-playbook every 15min auto-reconcile); **customer onboarding automation** (`setup-aihub.sh`); **Ansible Vault encrypted secrets** with auto-gen via `vault-vars-routing.yml`; **Traefik + Let's Encrypt ACME** automated SSL; **env vars drift detection CI** (`check_env_drift.py` nightly).<br>**Gaps**:<br>• No Operations Guide / Runbook for incident response<br>• No Incident Response Process (severity, escalation)<br>• No Upgrade Procedure documented<br>• No K8s/Helm chart for production<br>• Health checks don't distinguish liveness vs readiness<br>• arc42 ch.11 (Risks) needs update with new findings<br>• CLAUDE.md has false claims (Presidio integration)<br>• GDPR docs have false claims (right to erasure, audit logs immutable)<br>• Ansible Pull 15-min cadence too slow for hot-fix<br>• GitHub is a deploy SPOF (no local mirror)<br>• 3-repo version compatibility has no matrix / CI gate<br>• Deploy key rotation policy implicit, no automation | • Gen 1 deployment (Azure manual, not yet Gen 2)<br>• Own CI (build-agents, build-pipelines, auto-tag)<br>• No own arc42 docs (12 chapters required)<br>• No own ADRs (8+ key decisions)<br>• 6 docker-compose files separation rationale undocumented | • Gen 1 deployment (Azure VM + shell scripts, not yet Gen 2)<br>• Own CI (build-agents, build-pipelines, build-api, lint-pr)<br>• No own arc42 docs (12 chapters required)<br>• No own ADRs (13+ key decisions)<br>• Azure IaC `.iac/scripts/` shell scripts instead of Pulumi<br>• Custom API deployment monitoring undocumented                   | TBD   | TBD        | TBD  | TBD        | • No formal alerting infrastructure (only Slack on Ansible Pull failure)<br>• Customer documentation gate before go-production undefined<br>• B*D/C*C migration path from Gen 1 → Gen 2 missing                                 |
-| 6   | **Performance & Scalability** - Critical                                     | • Single-server ceiling (Docker Compose only, no K8s)<br>• Milvus single-node, HNSW memory wall (122 GB RAM for 10M × 3072d × 4B)<br>• PostgreSQL single instance (no replica, no failover)<br>• SeaweedFS single master/volume/filer (no HA, replication="000")<br>• NATS single node, `max_memory_store: 512MB`, `max_file_store: 10GB` (dev config)<br>• Valkey single instance (SPOF)<br>• Pipeline ops use `in_process_executor` (single-thread)<br>• Dagster dynamic partition explosion risk (1 partition per file)<br>• Embedding batch size not tuned (recursive bisection fallback)<br>• LiteLLM throughput limit undocumented<br>• Tenant membership not cached (Keycloak call per request)<br>• GPU pinned to device 0, multi-GPU not utilized<br>• No resource limits in docker-compose                                                                                                                                                                                                                                                                                                                                                                               | • Production sizing (4/2026): 16 CPU + 64 GiB RAM + 1.9 TB disk<br>• 1.9 TB disk insufficient for 2+ shared customers                                                                                                                                  | -                                                                                                                                                                                                                                                                                                                                                   | TBD   | TBD        | TBD  | TBD        | • No Load Test Baseline (k6, Locust)<br>• No Performance Baseline document<br>• No Horizontal Scaling Guide                                                                                                                     |
-| 7   | **Observability** - Traces strong, metrics weak (improved with Gen 2 SigNoz) | **Strengths**: Comprehensive OTEL (NATS/Mongo/Redis/Milvus/HTTP/asyncio); `SmartTracer` + `@trace_fn`; trace context cross-service via NATS headers; Langfuse LLM observability (prompt/response, cost); Docker healthchecks; HealthController; **Gen 2 SigNoz OTEL collector role** (host metrics, OTLP traces, journald log collection); **Slack failure notifications** from Ansible Pull.<br>**Gaps**:<br>• Bot scope (`packages/bot`) lacks OTEL → trace broken at bot boundary<br>• No business metrics (agent_runs, HITL escalations, ingestion rate, RAG latency)<br>• No formal SLO/SLI<br>• No Prometheus AlertManager with per-service severity rules<br>• No Grafana dashboards<br>• No on-call routing (PagerDuty/OpsGenie)<br>• Logs unstructured, default WARNING level<br>• No centralized log aggregation (self-hosted ELK/Loki)<br>• No per-tenant cost attribution in Langfuse<br>• No synthetic monitoring<br>• **SigNoz Cloud region "eu"** - observability data leaves tenant infra; sovereignty implication unclear<br>• SigNoz only on Gen 2; Gen 1 (B*D/C*C) doesn't have it                                                                              | • Gen 1 - no SigNoz<br>• Business-level metrics missing                                                                                                                                                                                                | • Gen 1 - no SigNoz<br>• Business-level metrics missing<br>• Custom API endpoints lack monitoring                                                                                                                                                                                                                                                   | TBD   | TBD        | TBD  | TBD        | -                                                                                                                                                                                                                               |
-| 8   | **Quality Assurance** - Gap                                                  | **Strengths**: ~69 test files in `packages/core`, ~35 `packages/api`, ~33 `packages/agent`; BDD via pytest-bdd; integration tests with real NATS (`SimulatedAgentApiTestRunner`); E2E for key flows.<br>**Gaps**:<br>• No Load test in CI<br>• No Chaos engineering<br>• No coverage threshold enforcement (no 80% gate)<br>• No SAST in CI<br>• No dependency audit (pip-audit, trivy)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | • Test coverage: 59 lines total (`tests/test_snk_enrichment.py`)<br>• 9 parametrized tests for 1 utility function only<br>• Agents and pipelines have no tests                                                                                         | • Test coverage: ZERO<br>• No tests directory<br>• 4 agents + 6 pipelines + custom API + `lib/common` all untested                                                                                                                                                                                                                                  | TBD   | TBD        | TBD  | TBD        | • No integration test between core release and customer projects<br>• No E2E test for multi-tenant isolation                                                                                                                    |
-| 9   | **Cost Optimization** - Critical                                             | • LLM cost tracking via `LLMCostEvent` (per-model, per-token rates)<br>• Per-agent run cost attribution via Langfuse<br>• S3 file expiration 7 days (`FILE_EXPIRATION_DAYS = 7`)<br>• Backup retention configured<br>• `UsageLimits` partially wired (agent endpoints + OpenAI route only); no 4-layer enforcement → LLM cost unbounded for non-covered paths<br>• No pre-flight cost estimation<br>• No hard per-tenant cost cap<br>• No per-tenant storage quota<br>• No showback mechanism<br>• No budget alert<br>• MCP tool costs NOT tracked (external API costs invisible)<br>• Mongo collections unbounded (no TTL) = storage cost growth                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | -                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                                   | TBD   | TBD        | TBD  | TBD        | • No per-tenant cost attribution in Langfuse<br>• No cold storage tier (all data in hot storage)                                                                                                                                |
-| 10  | **Sustainability** - Critical                                                | • Cloud-native capable in theory (containerized, stateless)<br>• License compliance OK (402 Python + 993 npm + 33 Docker all approved)<br>• Python 3.13 slim base images<br>• No Region/Data-Residency strategy<br>• No carbon footprint metrics<br>• No energy consumption tracking<br>• No sustainability reporting<br>• LLM calls not optimized (no aggressive caching, batching, prompt compression)<br>• No hardware lifecycle management<br>• No efficient algorithm benchmarking (HNSW vs DISKANN)<br>• Compute-heavy LLM calls not scheduled for off-peak                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | -                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                                   | TBD   | TBD        | TBD  | TBD        | -                                                                                                                                                                                                                               |
+| #   | Pillar - Status                                                              | Core | B\*D | C\*C | Ig\*s | Dem\*scope | W\*P | F\*H | Balmer-E\* | Cross-cutting |
+| --- | ---------------------------------------------------------------------------- | ---- | ---- | ---- | ----- | ---------- | ---- | ---- | ---------- | ------------- |
+| 1   | **Multi-Tenancy & Customer Isolation** - Critical                            | • NATS subjects lack hierarchy `aihub.tenant.{id}.*`<br>• Milvus collections not namespaced per-tenant<br>• MongoDB entities lack required `tenant_id` field<br>• Valkey keys lack per-tenant prefix<br>• Neo4j graphs single, not namespaced<br>• No tenant provisioning workflow / automation API<br>• No per-tenant feature flags<br>• No per-tenant resource quotas (rate limit, storage, LLM budget)<br>• Tenant exists only at Keycloak layer (groups `/tenants/{id}`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | -                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                                   | TBD | Single-tenant deploy; 4-variant agent split (public/private), not true multi-tenancy | Single-tenant deploy; inherits core gaps | Single-tenant deploy; Pulumi has no `tenants/` deploy unit | TBD | • Each customer = separate Docker stack<br>• Cannot run shared multi-tenant SaaS<br>• Operational cost grows linearly with customers<br>• No cross-tenant isolation test in CI |
+| 2   | **SDK Versioning & Extension Contract** - Gap                                | • No public SDK release (PyPI/internal registry), only git+ssh<br>• No policy on breaking change, deprecation window<br>• No CHANGELOG categorization<br>• No downstream CI integration test with customers<br>• No lint rule blocking imports from internal modules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | • Drift 11 minor versions (v0.279.2 vs v0.290.4)<br>• Internal import violation `pipelines/snk_enrichment.py:2`<br>• Patterns not extracted to core (`resolve_selection()`, HITL helpers)                                                             | • Drift 16 minor versions (v0.274.3 vs v0.290.4)<br>• Internal import violation `lib/common/types/RetrievalAgentInTheLoop.py:1-4`<br>• Deep imports in `agents/chat_agent/chat_agent/ChatAgent.py` to `swiss_ai_hub.core.generative_ai.{chat_history,guards}` + `swiss_ai_hub.core.i18n.locale_handler`<br>• Custom `switch_dependencies.py` instead of standard uv workflow<br>• Dual lock files `poetry.lock` (84KB) + `uv.lock`<br>• Multi-agent orchestrator and Jira/Confluence/SharePoint connectors not extracted | TBD | • Drift 44 minor (v0.246.4*)<br>• *SDK pin not found in repo `pyproject.toml`<br>• Poetry + custom `switch_dependencies.py` | • Drift 35 minor (v0.255.6)<br>• Image-only via `CORE_VERSION` env (no SDK code) | • Drift 104 minor (v0.186.0) — **largest**<br>• **Monkey-patches LlamaIndex** for GPT-5 (`register_openai_models.py`) | TBD | -                                                                                                                                                                                                                               |
+| 3   | **Security & Compliance** - Partial                                          | **Strengths**: 5 auth handlers (Keycloak/Token/Bearer/OAuth2/OpenWebUI) with JWKS 6h cache; hierarchical permission template with wildcards; AccessChecker tenant-ceiling + BDD tests; two-stage access control tested.<br>**Gaps**:<br>• UsageLimits partially wired (agent endpoints + OpenAI route only); no 4-layer enforcement or hard cap<br>• No `AuditLogEntity` (violates GDPR Art. 30, ISO 27001 A.12.4, SOC2)<br>• Event payloads not signed (JetStream unsigned JSON)<br>• NATS token-only auth, no mTLS; MongoDB/Redis connection string<br>• Presidio claim ≠ reality (code uses fragile LLM-based guard)<br>• MCP tool args bypass LiteLLM → Presidio guards bypassed 100%<br>• File upload trusts mime-type, no content sniffing<br>• OpenWebUI renders model list bypassing RBAC<br>• Docker volume not encrypted at rest<br>• No rate limiting per user/tenant at API<br>• No SAST / dep vuln scan / SBOM / image signing / container vuln scan                                                                                                                                                                                                                  | • Cohere reranking (US/Canada vendor)<br>• Hardcoded customer-specific config (SNK_ANCHOR, BASE_PATH)<br>• No secrets rotation policy                                                                                                                  | • Service account shared keys for Jira/SharePoint/Confluence (violates least-privilege)<br>• SharePoint Azure AD app-only `Sites.Read.All` tenant-wide<br>• Hardcoded Jira IDs (URL, Service Desk, Request Type, Project)<br>• Azure AD B2C federation instead of pure Keycloak (vendor lock-in)                                                    | TBD | • Azure AD<br>• Presidio containers present in compose; LiteLLM Presidio guard config not verified<br>• Mixed sovereignty (Azure SUI + local vLLM) | • **TLS private key committed in git** (`wpe.ai-agents.ch+1-key.pem` tracked)<br>• Azure AD<br>• Inherits core Presidio config (mask + block, `default_on: false`) | • Azure AD (`AUTH_AZURE_AD_*`)<br>• LlamaIndex monkey-patch modifies third-party globals at import time<br>• Pulumi state in single Azure storage account (SPOF) | TBD | • Document ACL not inherited from Jira/SharePoint/Confluence into Milvus<br>• Service account ingests everything, users query everything (cross-user leak)<br>• Presidio is DE-only, Swiss multilingual FR/IT/EN PII not masked |
+| 4   | **Reliability & Data Integrity** - Critical (Gen 2 partial fix)              | • No DB migration framework (schemas created implicitly by Pydantic + MongoEngine at startup)<br>• Cross-store consistency not guaranteed (NATS + Mongo + Valkey)<br>• No documented RTO/RPO<br>• No automated DR test / restore drill<br>• Backup encryption at rest unclear for Gen 1<br>• Milvus has no upsert-by-id → re-ingest = duplicate vectors<br>• Agent config schema evolution has no versioning<br>• No agent versioning for in-flight runs<br>• No run / delegation timeout<br>• No circuit breaker for external deps (LiteLLM, Keycloak, Milvus cascade)<br>• No DLQ for JetStream poison messages<br>• No HA architecture (PostgreSQL/NATS/Valkey/Milvus/Keycloak/etcd all single-instance)<br>• **Gen 2 partial fix**: Ansible Pull auto-reconciles container drift; Restic backup to OpenStack Swift container (off-host)<br>• Still missing: cross-provider replication, HA stateful services, no automated DR drill                                                                                                                                                                                                                                            | • **Gen 1 fatal**: Backup destination on same SeaweedFS, same VM → VM dies = total loss<br>• No off-site replication<br>• Production 3.9x storage multiplier (1 TB → 5.1 TB)<br>• Not yet migrated to Gen 2 (Restic→Swift)                             | • **Gen 1 fatal**: Backup destination on same Azure VM<br>• Jira webhook not idempotent (`JiraWebhookController`): same event 2x = 2 agent runs<br>• External services cascade (Jira/Confluence/SharePoint/Azure outage)<br>• Not yet migrated to Gen 2 (Restic→Swift)                                                                              | TBD | • **Gen 1 fatal**: MinIO backup same VM<br>• Manual SSH+screen migration workflow<br>• No off-site replication | • No off-site backup in repo<br>• `VOLUME_ROOT:-./.docker-volumes` defaults to local relative dir in prod | • No backup workload visible in Pulumi `stores/`<br>• Pulumi state SPOF (single Azure storage account) | TBD | • Gen 2 Restic→Swift is off-host but **same cloud provider** (Infomaniak) - Infomaniak region outage = loses both primary and backup<br>• No cross-provider replication yet |
+| 5   | **Operational Excellence** - Partial (improved with Gen 2)                   | **Strengths**: Full CI/CD (lint-pr, semantic-pr, build-\* per package, deploy-docs, auto-tag); pre-commit hooks; 47 ADRs; Docker Compose Jinja2 templates; **Gen 2 Ansible Pull pattern** (aihub-playbook every 15min auto-reconcile); **customer onboarding automation** (`setup-aihub.sh`); **Ansible Vault encrypted secrets** with auto-gen via `vault-vars-routing.yml`; **Traefik + Let's Encrypt ACME** automated SSL; **env vars drift detection CI** (`check_env_drift.py` nightly).<br>**Gaps**:<br>• No Operations Guide / Runbook for incident response<br>• No Incident Response Process (severity, escalation)<br>• No Upgrade Procedure documented<br>• No K8s/Helm chart for production<br>• Health checks don't distinguish liveness vs readiness<br>• arc42 ch.11 (Risks) needs update with new findings<br>• CLAUDE.md has false claims (Presidio integration)<br>• GDPR docs have false claims (right to erasure, audit logs immutable)<br>• Ansible Pull 15-min cadence too slow for hot-fix<br>• GitHub is a deploy SPOF (no local mirror)<br>• 3-repo version compatibility has no matrix / CI gate<br>• Deploy key rotation policy implicit, no automation | • Gen 1 deployment (Azure manual, not yet Gen 2)<br>• Own CI (build-agents, build-pipelines, auto-tag)<br>• No own arc42 docs (12 chapters required)<br>• No own ADRs (8+ key decisions)<br>• 6 docker-compose files separation rationale undocumented | • Gen 1 deployment (Azure VM + shell scripts, not yet Gen 2)<br>• Own CI (build-agents, build-pipelines, build-api, lint-pr)<br>• No own arc42 docs (12 chapters required)<br>• No own ADRs (13+ key decisions)<br>• Azure IaC `.iac/scripts/` shell scripts instead of Pulumi<br>• Custom API deployment monitoring undocumented                   | TBD | • Gen 1; **Pulumi README-only, IaC code NOT committed** in repo<br>• Own CI (build-agents, build-api-and-bot, build-dagster)<br>• No own arc42 / ADRs | • Gen 1 manual VM (copy-paste docker-compose)<br>• No IaC, no CI for deploy<br>• No own arc42 / ADRs | • Gen 1 with **Pulumi committed (10 deploy_units — best IaC of the new 3)**<br>• Own CI for builds<br>• No own arc42 / ADRs | TBD | • No formal alerting infrastructure (only Slack on Ansible Pull failure)<br>• Customer documentation gate before go-production undefined<br>• B*D/C*C migration path from Gen 1 → Gen 2 missing |
+| 6   | **Performance & Scalability** - Critical                                     | • Single-server ceiling (Docker Compose only, no K8s)<br>• Milvus single-node, HNSW memory wall (122 GB RAM for 10M × 3072d × 4B)<br>• PostgreSQL single instance (no replica, no failover)<br>• SeaweedFS single master/volume/filer (no HA, replication="000")<br>• NATS single node, `max_memory_store: 512MB`, `max_file_store: 10GB` (dev config)<br>• Valkey single instance (SPOF)<br>• Pipeline ops use `in_process_executor` (single-thread)<br>• Dagster dynamic partition explosion risk (1 partition per file)<br>• Embedding batch size not tuned (recursive bisection fallback)<br>• LiteLLM throughput limit undocumented<br>• Tenant membership not cached (Keycloak call per request)<br>• GPU pinned to device 0, multi-GPU not utilized<br>• No resource limits in docker-compose                                                                                                                                                                                                                                                                                                                                                                               | • Production sizing (4/2026): 16 CPU + 64 GiB RAM + 1.9 TB disk<br>• 1.9 TB disk insufficient for 2+ shared customers                                                                                                                                  | -                                                                                                                                                                                                                                                                                                                                                   | TBD | • vLLM GPU containers (Gemma-3 12b/27b)<br>• Hash-partitioned Milvus (1000 partitions for personas) | • Standard core single-VM<br>• No custom scaling | • Azure AI Search (managed)<br>• Azure Data Lake (managed) | TBD | • No Load Test Baseline (k6, Locust)<br>• No Performance Baseline document<br>• No Horizontal Scaling Guide |
+| 7   | **Observability** - Traces strong, metrics weak (improved with Gen 2 SigNoz) | **Strengths**: Comprehensive OTEL (NATS/Mongo/Redis/Milvus/HTTP/asyncio); `SmartTracer` + `@trace_fn`; trace context cross-service via NATS headers; Langfuse LLM observability (prompt/response, cost); Docker healthchecks; HealthController; **Gen 2 SigNoz OTEL collector role** (host metrics, OTLP traces, journald log collection); **Slack failure notifications** from Ansible Pull.<br>**Gaps**:<br>• Bot scope (`packages/bot`) lacks OTEL → trace broken at bot boundary<br>• No business metrics (agent_runs, HITL escalations, ingestion rate, RAG latency)<br>• No formal SLO/SLI<br>• No Prometheus AlertManager with per-service severity rules<br>• No Grafana dashboards<br>• No on-call routing (PagerDuty/OpsGenie)<br>• Logs unstructured, default WARNING level<br>• No centralized log aggregation (self-hosted ELK/Loki)<br>• No per-tenant cost attribution in Langfuse<br>• No synthetic monitoring<br>• **SigNoz Cloud region "eu"** - observability data leaves tenant infra; sovereignty implication unclear<br>• SigNoz only on Gen 2; Gen 1 (B*D/C*C) doesn't have it                                                                              | • Gen 1 - no SigNoz<br>• Business-level metrics missing                                                                                                                                                                                                | • Gen 1 - no SigNoz<br>• Business-level metrics missing<br>• Custom API endpoints lack monitoring                                                                                                                                                                                                                                                   | TBD | • Phoenix v10.0.4 (pre-Langfuse, ADR `2026_02_10`)<br>• LiteLLM v1.77.7 (older) | • OTEL → SigNoz Cloud "EU"<br>• Phoenix v10.0.4 | • Phoenix v10.0.4 (pre-Langfuse)<br>• OTEL configured | TBD | -                                                                                                                                                                                                                               |
+| 8   | **Quality Assurance** - Gap                                                  | **Strengths**: ~69 test files in `packages/core`, ~35 `packages/api`, ~33 `packages/agent`; BDD via pytest-bdd; integration tests with real NATS (`SimulatedAgentApiTestRunner`); E2E for key flows.<br>**Gaps**:<br>• No Load test in CI<br>• No Chaos engineering<br>• No coverage threshold enforcement (no 80% gate)<br>• No SAST in CI<br>• No dependency audit (pip-audit, trivy)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | • Test coverage: 59 lines total (`tests/test_snk_enrichment.py`)<br>• 9 parametrized tests for 1 utility function only<br>• Agents and pipelines have no tests                                                                                         | • Test coverage minimal — 3 files / 788 lines in `agents/log_analysis_agent/log_analysis_agent/tests/` only<br>• `chat_agent`, `jira_issue_agent`, `retrieval_orchestrator_agent` + 6 pipelines + custom API + `lib/common` still untested                                                                                                                                                                                                                                  | TBD | Test coverage **ZERO** (no `test_*.py`, no `.feature`) | No tests (deploy-only repo, no smoke validation) | 5 `test_*.py` + 5 BDD `.feature` for 3 agents + 2 pipelines | TBD | • No integration test between core release and customer projects<br>• No E2E test for multi-tenant isolation                                                                                                                    |
+| 9   | **Cost Optimization** - Critical                                             | • LLM cost tracking via `LLMCostEvent` (per-model, per-token rates)<br>• Per-agent run cost attribution via Langfuse<br>• S3 file expiration 7 days (`FILE_EXPIRATION_DAYS = 7`)<br>• Backup retention configured<br>• `UsageLimits` partially wired (agent endpoints + OpenAI route only); no 4-layer enforcement → LLM cost unbounded for non-covered paths<br>• No pre-flight cost estimation<br>• No hard per-tenant cost cap<br>• No per-tenant storage quota<br>• No showback mechanism<br>• No budget alert<br>• MCP tool costs NOT tracked (external API costs invisible)<br>• Mongo collections unbounded (no TTL) = storage cost growth                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | -                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                                   | TBD | • LiteLLM cost tracking; vLLM per-token cost configured<br>• BBV Greece collaboration (offshore) | • Inherits core defaults<br>• No per-tenant cost attribution | • **Azure AI Search per-query cost** (additional vs Milvus self-host) | TBD | • No per-tenant cost attribution in Langfuse<br>• No cold storage tier (all data in hot storage)                                                                                                                                |
+| 10  | **Sustainability** - Critical                                                | • Cloud-native capable in theory (containerized, stateless)<br>• License compliance OK (402 Python + 993 npm + 33 Docker all approved)<br>• Python 3.13 slim base images<br>• No Region/Data-Residency strategy<br>• No carbon footprint metrics<br>• No energy consumption tracking<br>• No sustainability reporting<br>• LLM calls not optimized (no aggressive caching, batching, prompt compression)<br>• No hardware lifecycle management<br>• No efficient algorithm benchmarking (HNSW vs DISKANN)<br>• Compute-heavy LLM calls not scheduled for off-peak                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | -                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                                   | TBD | • Local GPU vLLM = on-prem energy<br>• No carbon metrics | • Azure-dependent (region renewables claim inherited)<br>• No metrics | • Azure SUI region<br>• No own metrics | TBD | -                                                                                                                                                                                                                               |
 
 ### 4.2. Business core values vs reality
 
-| Core value                         | Statement / Source                                                            | Core (Platform)                                                                                                                                                                                                                                                             | b\*d                                         | c\*c                                                                                         | Ig\*s | Dem\*scope | W\*P | Balmer-E\* |        Status        |
-| ---------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------- | ----- | ---------- | ---- | ---------- | :------------------: |
-| Swiss data sovereignty             | ADR `2026_02_24`: "All cloud inference must stay within Swiss infrastructure" | Declared via ADR, enforced via self-hosted local LLM or Swiss LLM Cloud                                                                                                                                                                                                     | 100% Azure OpenAI (Sweden region)            | 100% Azure AI Foundry (SUI+SWE) + Azure Document Intelligence                                | TBD   | TBD        | TBD  | TBD        |       VIOLATED       |
-| No vendor lock-in                  | Platform principle                                                            | OK (no lock-in in core)                                                                                                                                                                                                                                                     | Cohere reranking (US/Canada vendor)          | Lock-in to Azure across 5 layers (VM, Key Vault, AD B2C, OpenAI, Doc Intelligence) + Jina AI | TBD   | TBD        | TBD  | TBD        |       VIOLATED       |
-| Self-hosted, on-premise capable    | Marketing claim                                                               | Infrastructure self-hosted OK                                                                                                                                                                                                                                               | Infra self-hosted, LLM via Azure cloud       | Infra Azure VM, LLM Azure cloud                                                              | TBD   | TBD        | TBD  | TBD        |       PARTIAL        |
-| "Swiss Sovereign AI" marketing     | Public positioning                                                            | Infrastructure-level correct                                                                                                                                                                                                                                                | B\*D uses Azure LLM → claim scope misaligned | C\*C uses Azure LLM → claim scope misaligned                                                 | TBD   | TBD        | TBD  | TBD        | Needs wording review |
-| Open-source platform               | License declaration                                                           | OK (BSD/MIT/Apache verified)                                                                                                                                                                                                                                                | OK                                           | OK                                                                                           | TBD   | TBD        | TBD  | TBD        |          OK          |
-| Multi-tenant SaaS support          | ADRs 2026_03_30, 2026_02_20                                                   | Tenant only at Keycloak; data layer not namespaced                                                                                                                                                                                                                          | Single-tenant deployment                     | Single-tenant deployment                                                                     | TBD   | TBD        | TBD  | TBD        |      NOT READY       |
-| GDPR Art. 17 right to erasure      | Compliance docs claim "implemented"                                           | No user/tenant DELETE endpoint                                                                                                                                                                                                                                              | N/A                                          | N/A                                                                                          | TBD   | TBD        | TBD  | TBD        |     FALSE CLAIM      |
-| Audit log immutability             | GDPR docs claim "audit logs remain immutable"                                 | No `AuditLogEntity` in codebase                                                                                                                                                                                                                                             | N/A                                          | N/A                                                                                          | TBD   | TBD        | TBD  | TBD        |     FALSE CLAIM      |
-| Presidio PII protection            | CLAUDE.md claims integrated                                                   | Code uses fragile LLM-based guard, not Presidio                                                                                                                                                                                                                             | N/A                                          | N/A                                                                                          | TBD   | TBD        | TBD  | TBD        |     FALSE CLAIM      |
-| MCP secure tool execution          | Implied by MCP integration                                                    | Tool args bypass LiteLLM → Presidio bypassed 100%                                                                                                                                                                                                                           | N/A                                          | High risk given agent-heavy use case                                                         | TBD   | TBD        | TBD  | TBD        |      LEAK RISK       |
-| Document ACL respect               | Implied by RBAC architecture                                                  | Milvus has no ACL field, retrieval doesn't filter by user                                                                                                                                                                                                                   | N/A                                          | Service account ingests everything; cross-user data leak                                     | TBD   | TBD        | TBD  | TBD        |      LEAK RISK       |
-| Multi-language Swiss (DE/FR/IT/EN) | Platform i18n declared                                                        | Presidio hardcoded `de` across 10 LiteLLM config files in `infra/configs/litellm/`                                                                                                                                                                                          | i18n DE/EN/FR/IT translations present        | N/A                                                                                          | TBD   | TBD        | TBD  | TBD        |       PARTIAL        |
-| Cost protection per tenant         | Implied by UsageLimits class                                                  | `UsageLimits` partially wired (agent endpoints + OpenAI route via `Depends(use_usage_limits)`); missing 4-layer enforcement, pre-flight estimation, hard cap                                                                                                                | N/A                                          | N/A                                                                                          | TBD   | TBD        | TBD  | TBD        |       PARTIAL        |
-| Disaster recovery capability       | Backup service exists                                                         | Backup destination = same SeaweedFS instance on same VM                                                                                                                                                                                                                     | No off-site backup                           | No off-site backup                                                                           | TBD   | TBD        | TBD  | TBD        |        FATAL         |
-| Common enterprise AI patterns      | Agent framework capability                                                    | Conversational, RAG single+multi-source, document parsing, tool calling/MCP, HITL, multi-agent, voice STT/TTS, code execution, browser automation: working. Vision / predictive analytics / fine-tuned model serving: out of scope (see `adr_aihub_supported_use_cases.md`) | RAG agents working                           | Multi-agent orchestration working                                                            | TBD   | TBD        | TBD  | TBD        |          OK          |
+| Core value                         | Statement / Source                                                            | Core (Platform)                                                                                                                                                                                                                                                             | b\*d                                         | c\*c                                                                                         | Ig\*s | Dem\*scope | W\*P | F\*H | Balmer-E\* |        Status        |
+| ---------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------- | ----- | ---------- | ---- | ---- | ---------- | :------------------: |
+| Swiss data sovereignty             | ADR `2026_02_24`: "All cloud inference must stay within Swiss infrastructure" | Declared via ADR, enforced via self-hosted local LLM or Swiss LLM Cloud                                                                                                                                                                                                     | 100% Azure OpenAI (Sweden region)            | 100% Azure AI Foundry (SUI+SWE) + Azure Document Intelligence                                | TBD | Azure OpenAI SUI + local vLLM | Azure region not in repo (env-var only) | Azure OpenAI SUI + Azure AI Search | TBD |       VIOLATED       |
+| No vendor lock-in                  | Platform principle                                                            | OK (no lock-in in core)                                                                                                                                                                                                                                                     | Cohere reranking (US/Canada vendor)          | Lock-in to Azure across 5 layers (VM, Key Vault, AD B2C, OpenAI, Doc Intelligence) + Jina AI | TBD | Azure OpenAI + Entra + local vLLM stack | Heavy Azure (OpenAI + Entra) | Heaviest Azure (OpenAI + AI Search + AD + Storage state) | TBD |       VIOLATED       |
+| Self-hosted, on-premise capable    | Marketing claim                                                               | Infrastructure self-hosted OK                                                                                                                                                                                                                                               | Infra self-hosted, LLM via Azure cloud       | Infra Azure VM, LLM Azure cloud                                                              | TBD | Infra Azure VM, LLM mixed (Azure + local vLLM) | Azure VM + Azure LLM (region unverified) | Azure VM + Azure OpenAI + Azure AI Search | TBD |       PARTIAL        |
+| "Swiss Sovereign AI" marketing     | Public positioning                                                            | Infrastructure-level correct                                                                                                                                                                                                                                                | B\*D uses Azure LLM → claim scope misaligned | C\*C uses Azure LLM → claim scope misaligned                                                 | TBD | Local vLLM helps; Azure dependency persists | Azure region unknown — claim risk | Azure SUI defensible for LLM; AI Search adds dependency | TBD | Needs wording review |
+| Open-source platform               | License declaration                                                           | OK (BSD/MIT/Apache verified)                                                                                                                                                                                                                                                | OK                                           | OK                                                                                           | TBD | OK | OK (deploy-only) | OK | TBD |          OK          |
+| Multi-tenant SaaS support          | ADRs 2026_03_30, 2026_02_20                                                   | Tenant only at Keycloak; data layer not namespaced                                                                                                                                                                                                                          | Single-tenant deployment                     | Single-tenant deployment                                                                     | TBD | Single-tenant deployment | Single-tenant deployment | Single-tenant deployment | TBD |      NOT READY       |
+| GDPR Art. 17 right to erasure      | Compliance docs claim "implemented"                                           | No user/tenant DELETE endpoint                                                                                                                                                                                                                                              | N/A                                          | N/A                                                                                          | TBD | N/A (inherits core gap) | N/A (inherits core gap) | N/A (inherits core gap) | TBD |     FALSE CLAIM      |
+| Audit log immutability             | GDPR docs claim "audit logs remain immutable"                                 | No `AuditLogEntity` in codebase                                                                                                                                                                                                                                             | N/A                                          | N/A                                                                                          | TBD | N/A (inherits core gap) | N/A (inherits core gap) | N/A (inherits core gap) | TBD |     FALSE CLAIM      |
+| Presidio PII protection            | CLAUDE.md claims integrated                                                   | Code uses fragile LLM-based guard, not Presidio                                                                                                                                                                                                                             | N/A                                          | N/A                                                                                          | TBD | Containers in compose; LiteLLM guard config not verified | Core config in repo (mask + block, `default_on: false`) | Not verified (older core baseline) | TBD |     FALSE CLAIM      |
+| MCP secure tool execution          | Implied by MCP integration                                                    | Tool args bypass LiteLLM → Presidio bypassed 100%                                                                                                                                                                                                                           | N/A                                          | High risk given agent-heavy use case                                                         | TBD | N/A (inherits core gap) | N/A (inherits core gap) | N/A (inherits core gap) | TBD |      LEAK RISK       |
+| Document ACL respect               | Implied by RBAC architecture                                                  | Milvus has no ACL field, retrieval doesn't filter by user                                                                                                                                                                                                                   | N/A                                          | Service account ingests everything; cross-user data leak                                     | TBD | N/A (inherits core gap) | N/A (inherits core gap) | N/A (inherits core gap) | TBD |      LEAK RISK       |
+| Multi-language Swiss (DE/FR/IT/EN) | Platform i18n declared                                                        | Presidio hardcoded `de` across 10 LiteLLM config files in `infra/configs/litellm/`                                                                                                                                                                                          | i18n DE/EN/FR/IT translations present        | N/A                                                                                          | TBD | DE primary (Swiss `allowed_plz.json`) | Inherits core (DE/EN/FR/IT) | DE primary (TARDOC/TARMED Swiss medical) | TBD |       PARTIAL        |
+| Cost protection per tenant         | Implied by UsageLimits class                                                  | `UsageLimits` partially wired (agent endpoints + OpenAI route via `Depends(use_usage_limits)`); missing 4-layer enforcement, pre-flight estimation, hard cap                                                                                                                | N/A                                          | N/A                                                                                          | TBD | N/A (single-tenant) | N/A (single-tenant) | N/A (single-tenant) | TBD |       PARTIAL        |
+| Disaster recovery capability       | Backup service exists                                                         | Backup destination = same SeaweedFS instance on same VM                                                                                                                                                                                                                     | No off-site backup                           | No off-site backup                                                                           | TBD | FATAL (MinIO same VM) | Not in repo | Not in repo (no backup workload in Pulumi) | TBD |        FATAL         |
+| Common enterprise AI patterns      | Agent framework capability                                                    | Conversational, RAG single+multi-source, document parsing, tool calling/MCP, HITL, multi-agent, voice STT/TTS, code execution, browser automation: working. Vision / predictive analytics / fine-tuned model serving: out of scope (see `adr_aihub_supported_use_cases.md`) | RAG agents working                           | Multi-agent orchestration working                                                            | TBD | Personas + hash-partitioned RAG | Standard core only | 3-agent routing + BITL events | TBD |          OK          |
 
 ______________________________________________________________________
 
@@ -788,7 +928,7 @@ scope.
 **SDK version drift**
 
 - _Concern_:
-  - Drift of 10 minor versions (v0.279.2 vs core v0.289.10)
+  - Drift of 11 minor versions (v0.279.2 vs core v0.290.4)
   - Internal import violation `pipelines/snk_enrichment.py:2`
   - Patterns not yet extracted to core (`resolve_selection()`, HITL helpers)
 - _Direction_:
@@ -884,8 +1024,9 @@ scope.
 **SDK version drift (larger than B\*D)**
 
 - _Concern_:
-  - Drift of 15 minor versions (v0.274.3 vs core v0.289.10)
+  - Drift of 16 minor versions (v0.274.3 vs core v0.290.4)
   - Internal import violation `lib/common/types/RetrievalAgentInTheLoop.py:1-4`
+  - Deep imports in `agents/chat_agent/chat_agent/ChatAgent.py` to `swiss_ai_hub.core.generative_ai.{chat_history,guards}` + `swiss_ai_hub.core.i18n.locale_handler` (see proposed `adr_038`)
   - Custom tooling `switch_dependencies.py` instead of standard uv workflow
   - Dual lock files (poetry.lock 84KB plus active uv.lock)
 - _Direction_:
@@ -1046,25 +1187,321 @@ scope.
   document ACL inheritance; custom API monitoring; DR plan; test coverage plan; large data ingestion strategy; cost
   monitoring Azure Foundry+DI
 
-### 5.4. Other customer projects (placeholders pending input)
+### 5.4. aihub-Dem\*scope
 
-The following customer projects are in scope for this review but their deployment, version, components, data sources,
-sovereignty status, and test coverage details have not been provided. Each will have a structure similar to §5.2 B*D /
-§5.3 C*C once information is available.
+Evidence base: `aihub-demoscope` repo HEAD `abe968f 2026-01-13`. Linked priority items: §3.4.
+
+#### Concerns
+
+**SDK version drift (44 minors)**
+
+- _Concern_:
+  - Drift of 44 minor versions (v0.246.4* vs core v0.290.4) — 4.5+ months of patches missed (*SDK pin not present in repo `pyproject.toml`; figure carried over from prior snapshot)
+  - Coordinated upgrade across 4 deployed agent variants (public/private of persona + multi_personas)
+- _Direction_:
+  - Confirm actual SDK pin from deploy manifests / CI logs first
+  - SDK upgrade plan with security delta audit covering 44 minors
+  - CI gate blocking drift > N minors
+
+**Backup destination on the same VM**
+
+- _Concern_:
+  - MinIO backup co-located with Milvus/Mongo on the same host
+  - VM failure = total loss; violates 3-2-1 rule
+  - Recovery currently relies on ad-hoc `backup_updater_script.py`
+- _Direction_:
+  - Emergency cron sync to Swiss off-site (Infomaniak / Exoscale / Hetzner)
+  - Replace ad-hoc script with official `milvus-backup` to off-host bucket
+
+**Pulumi mentioned in README but IaC code NOT committed**
+
+- _Concern_:
+  - README documents Pulumi stack initialisation, but no `.iac/` folder exists in the repo
+  - Deployment is undocumented and irreproducible from this repo alone
+- _Direction_:
+  - Commit the actual Pulumi code or remove the README sections
+  - Pick one IaC approach (Pulumi vs Terraform) and document end-to-end deployment
+
+**Test coverage ZERO**
+
+- _Concern_:
+  - No `test_*.py`, no `.feature` files for 2 agents + 1 pipeline
+  - High regression risk on the upcoming 43-minor SDK upgrade
+- _Direction_:
+  - Baseline smoke test per agent + pipeline
+  - BDD `.feature` for hash-partitioned questions flow
+  - Integration test against staging Milvus
+
+**Manual SSH+screen+scp migration**
+
+- _Concern_:
+  - `scp migrate_questions.py demoscope:aihub/scripts/...` + `screen -r migration` workflow
+  - Progress tracked in `migration_log.json` on the VM (not in DB)
+  - Fragile, no audit trail
+- _Direction_:
+  - Replace with Dagster job (preferred) or k8s Job
+  - Track migration progress in DB or Dagster runs
+
+**Hash-partitioned Milvus design duplicated in 3 places**
+
+- _Concern_:
+  - Same hash function in `lib/common/partition_utils.py`, `persona_agent`, and migration script
+  - Drift risk: if any one diverges, all queries miss vectors
+- _Direction_:
+  - Single source of truth (already partially in `lib/common/partition_utils.py`)
+  - CI test asserting agent + pipeline + migration use the same hash
+
+**4 agent variants deployed (public/private of 2 base agents)**
+
+- _Concern_:
+  - persona_agent_public / persona_agent_private / multi_personas_agent_public / multi_personas_agent_private
+  - Operational surface 2× larger; rationale not documented
+- _Direction_:
+  - ADR documenting public/private split rationale
+  - Verify 4 instances run the same code or merge into 1 binary with config flag
+
+**Stack divergence from core (Mongo + Redis + Phoenix pre-Langfuse)**
+
+- _Concern_:
+  - Uses `mongo:8.0.9` + `redis:8.0.1` + `phoenix:version-10.0.4` + `litellm:v1.77.7`
+  - Core has migrated to FerretDB + Valkey + Langfuse (ADR `2026_02_10`)
+  - Tied to the 43-minor SDK drift
+- _Direction_:
+  - ADR documenting divergence rationale (or migration plan)
+  - Check if Demoscope-specific Mongo features (BSON types, transactions) prevent migration
+
+**Mixed sovereignty (Azure OpenAI SUI + local vLLM)**
+
+- _Concern_:
+  - `demoscopeaihub-oai-sui.openai.azure.com` (Azure Switzerland) for some routes
+  - Local vLLM (Gemma-3 12b/27b, gte-Qwen2, bge-reranker) for others
+  - Mixed position not documented
+- _Direction_:
+  - ADR documenting partial-sovereignty position
+  - Clarify which workloads route to Azure SUI vs local vLLM
+  - Tied to Core sovereignty path decision (Option A/B/C)
+
+#### Documentation deliverables
+
+- arc42 12 chapters for Dem\*scope
+- C4 Level 1 (System Context) + C4 Level 2 (Container): 2 agent packages (4 deployed variants) + 1 pipeline + custom API
+- ADRs answering 9 design questions: stack divergence (Mongo/Redis), hash partition (1000 partitions on `persona_id`),
+  4-variant public/private split, sovereignty position (Azure SUI + local vLLM), MinIO same-VM backup, Phoenix →
+  Langfuse migration, IaC approach (commit Pulumi or pick Terraform), test strategy, agent-config evolution
+
+### 5.5. aihub-W\*P
+
+Evidence base: `aihub-wpe` repo HEAD `c4b1527 2025-12-18`. `.env.prod` is sensitive-file-guarded; only env-var
+names were inspected, not values. Linked priority items: §3.5.
+
+#### Concerns
+
+**TLS private key committed to git**
+
+- _Concern_:
+  - `wpe.ai-agents.ch+1-key.pem` and `wpe.ai-agents.ch+1.pem` are tracked in git (only `.env` is in `.gitignore`)
+  - Production-domain cert + matching private key visible to anyone with read access on the repo
+  - Even if cert is dev/mkcert, the practice is dangerous
+- _Direction_:
+  - Rotate cert + key **immediately** (re-issue via Traefik + Let's Encrypt)
+  - Add `*.pem`, `*-key.pem`, `secrets/` to `.gitignore`
+  - Rewrite git history (BFG / `git filter-repo`) to purge the key
+  - Audit who pulled the repo since the key was committed
+
+**Manual VM deployment via copy-paste**
+
+- _Concern_:
+  - README workflow: `cp docker-compose.latest.yml /opt/docker/config/bbv/docker-compose.latest.yml`
+  - No IaC, no rollback, no audit trail, no drift detection
+  - Sysadmin `.env` lives in `/opt/bbv/.env` (out of repo)
+- _Direction_:
+  - Minimum: reproducible deploy script + checksums
+  - Better: migrate to Gen 2 (Ansible Pull) or Gen 3 (`aihub-k8s`)
+
+**LLM region not in repo (sovereignty unverified)**
+
+- _Concern_:
+  - `AZURE_OPENAI_BASE_URL` only in `.env.prod` (gitignored, sensitive-guarded)
+  - Compliance status cannot be reviewed from repo alone
+- _Direction_:
+  - Commit a non-secret `litellm-region.md` or `.env.example` declaring Azure region
+  - ADR aligning with Core sovereignty path
+
+**SDK drift 35 minors + `${CORE_VERSION:-latest}` fallback**
+
+- _Concern_:
+  - `.env.prod` pins `CORE_VERSION="v0.255.6"`, but `docker-compose.latest.yml` falls back to `latest` if env var missing
+  - Reproducible builds require explicit pinning
+- _Direction_:
+  - Remove `:-latest` default; fail-fast if `CORE_VERSION` unset
+  - SDK upgrade plan with security delta audit (35 minors)
+  - CI gate blocking drift > N minors
+  - Same fallback pattern exists in `aihub-k8s` Helm chart — see proposed `adr_040`
+
+**`VOLUME_ROOT:-./.docker-volumes` defaults to relative dir**
+
+- _Concern_:
+  - In production this defaults to a path relative to the current working directory
+  - Snapshot/backup paths depend on operator's `pwd` when running `docker compose`
+- _Direction_:
+  - Force explicit `VOLUME_ROOT` (e.g. `/var/lib/aihub`)
+  - Document snapshot strategy
+
+**Off-site backup not in repo**
+
+- _Concern_:
+  - No Restic / Swift / cross-region sync configuration visible in repo
+  - Unknown if backup exists out-of-repo
+- _Direction_:
+  - Add backup config to repo (cron + Restic to Swiss off-site)
+  - Follow 3-2-1; document RTO/RPO
+
+**No own arc42 + ADRs + no smoke tests**
+
+- _Concern_:
+  - Deployment-only repo with no design docs explaining choices
+  - No post-deploy validation script
+- _Direction_:
+  - Minimal arc42 (context + deployment + crosscutting)
+  - ADRs for: manual VM choice, identity provider, LLM region, sovereignty position
+  - Post-deploy smoke test (curl health endpoints, OAuth round-trip, LiteLLM ping)
+
+#### Documentation deliverables
+
+- arc42 3 chapters for W\*P (Context + Deployment + Crosscutting concepts)
+- C4 Level 1 + brief C4 Level 2 (5 ingress hosts via Traefik + 30 containers)
+- ADRs answering 6 design questions: TLS key in git (rotation + history rewrite), manual VM deployment,
+  identity provider (Azure AD / Entra), LLM region + sovereignty, no own code rationale, backup strategy
+- Post-deploy smoke test script (committed to repo)
+
+### 5.6. aihub-F\*H
+
+Evidence base: `aihub-fmh` repo HEAD `5509d39 2026-04-07`. Linked priority items: §3.6.
+
+#### Concerns
+
+**SDK version drift 104 minors (largest of all customers)**
+
+- _Concern_:
+  - Drift v0.186.0 vs core v0.290.4 = 104 minor versions
+  - 10+ months of security patches missed
+  - Cumulative breaking changes likely require multi-step upgrade
+- _Direction_:
+  - Incremental upgrade plan: v0.186 → v0.220 → v0.260 → v0.290
+  - Security delta audit per step
+  - CI gate blocking drift > N minors
+
+**LlamaIndex monkey-patch for GPT-5**
+
+- _Concern_:
+  - `lib/common/register_openai_models.py` modifies third-party globals
+    (`llama_index.llms.openai.utils.ALL_AVAILABLE_MODELS` and `CHAT_MODELS`) at import time
+  - Adds `gpt-5-mini` and `gpt-5-nano` because pinned `llama-index-llms-openai ^0.3.x` doesn't know them
+  - Supply-chain hygiene concern: behaviour depends on import order; breaks if upstream library changes
+- _Direction_:
+  - Open PR to `aihub-core` to add first-class GPT-5 model registry
+  - SDK upgrade drops this patch automatically
+  - Document workaround in ADR until removed
+
+**Azure AI Search instead of Milvus (stack divergence)**
+
+- _Concern_:
+  - F\*H uses `mongo_aisearch_storage_context_resources` (Azure AI Search) instead of core Milvus
+  - Vendor lock-in: indexer + retrieval coupled to Azure SDK
+  - Double inference cost (AI Search query + LLM call)
+  - Matches §3.3 C\*C "Azure stack triple redundancy" pattern
+- _Direction_:
+  - ADR justifying Azure AI Search vs core Milvus
+  - Migration plan to Milvus, or formal acceptance of divergence with cost analysis
+
+**Backup status not in repo**
+
+- _Concern_:
+  - Pulumi `stores/` deploys infrastructure but no backup workload visible
+  - Azure backup policy on `Storage Account` and Cosmos/Mongo not verified from repo
+  - Cross-region replication for TARDOC/TARMED handbook data unknown
+- _Direction_:
+  - Verify Azure backup policy + cross-region replication
+  - Restore drill with documented RTO/RPO
+  - If backup exists out-of-Pulumi, document where
+
+**Stack divergence (Mongo + Redis + Phoenix pre-Langfuse)**
+
+- _Concern_:
+  - Same divergence pattern as Dem\*scope (older core baseline at v0.186.0)
+  - Tied to SDK upgrade
+- _Direction_:
+  - Plan migration Phoenix → Langfuse (ADR `2026_02_10`)
+  - Plan MongoDB → FerretDB
+  - Tied to SDK upgrade
+
+**Minimal test coverage (5 + 5 BDD)**
+
+- _Concern_:
+  - Only 5 `test_*.py` + 5 BDD `.feature` for 3 agents + 2 pipelines
+  - Coverage gap on a critical TARMED billing routing flow
+- _Direction_:
+  - Coverage threshold 60% for new code
+  - BDD `.feature` for the 3-agent routing flow (routing → handbook + rules)
+  - Integration test against TARMED test fixtures
+
+**Azure vendor lock-in (OpenAI + AI Search + AD + Storage state)**
+
+- _Concern_:
+  - Azure OpenAI Switzerland North + Azure AI Search + Azure AD + Pulumi state in Azure storage
+  - 4-layer Azure dependency; cross-cloud failover impossible
+  - Pulumi state SPOF (single Azure storage account)
+- _Direction_:
+  - ADR documenting Azure choice rationale (TARDOC/TARMED is Swiss-only data → Switzerland North defensible)
+  - Document Pulumi state account name/region in repo; plan state backup
+  - Evaluate Keycloak federation as identity alternative
+
+**MS Bot Framework + dev tunnel workflow**
+
+- _Concern_:
+  - README references `devtunnel` for local bot dev; risk that prod follows the dev pattern
+  - `agents/playground/bot_emulator/fmh-local.bot` referenced from prod docs
+- _Direction_:
+  - Document the MS Teams integration deployment path explicitly
+  - Remove emulator references from prod docs
+  - Ensure prod doesn't depend on `devtunnel`
+
+**Hardcoded handbook namespace `handbook_02_2026`**
+
+- _Concern_:
+  - Pipeline `handbook_ingestion/__init__.py` hardcodes `CONTAINER_NAME`, `DIRECTORY_NAME`, `NAMESPACE_NAME`,
+    `VECTOR_STORE_NAME`, `DOCUMENT_STORE_NAME`
+  - New monthly snapshots require code change
+- _Direction_:
+  - Pydantic Settings from env
+  - Allow multiple snapshots in parallel
+  - Document the `handbook_MM_YYYY` versioning convention
+
+#### Documentation deliverables
+
+- arc42 12 chapters for F\*H
+- C4 Level 1 + C4 Level 2 (3 agents + 2 pipelines + custom API + bot + evaluation framework)
+- ADRs answering 9 design questions: Azure AI Search vs Milvus, GPT-5 monkey-patch (workaround + removal path),
+  3-agent routing design (handbook + rules + routing), TARDOC/TARMED data ingestion, MS Bot Framework choice,
+  identity (Azure AD), Pulumi state SPOF, evaluation framework rationale, BITL events (DignityCheck /
+  RecognitionCheck)
+
+### 5.7. Other customer projects (placeholders pending input)
+
+Remaining customers with no information available yet. Each will get its own §5 subsection (similar to §5.2-§5.6)
+once details are provided.
 
 | Customer         | Status placeholder        |
 | ---------------- | ------------------------- |
 | aihub-Ig\*s      | TBD - awaiting team input |
-| aihub-W\*P       | TBD - awaiting team input |
-| aihub-Dem\*scope | TBD - awaiting team input |
 | aihub-Balmer-E\* | TBD - awaiting team input |
 
 **Per-customer info to provide** (each customer):
 
 - Status (production date / pilot / onboarding)
 - Core version + drift in minor versions
-- Components (number of agents / pipelines / custom APIs)
-- Deployment generation (Gen 1 Azure manual / Gen 2 Infomaniak Ansible Pull / other)
+- Components (number of agents / pipelines / custom APIs / bots)
+- Deployment generation (Gen 1 Azure manual / Gen 2 Infomaniak Ansible Pull / Gen 3 `aihub-k8s` / other)
 - Data sources (SharePoint / Jira / SMB / custom / etc.)
 - LLM provider + sovereignty annotation
 - Identity provider (Keycloak / Azure AD / SaaS)
@@ -1072,12 +1509,9 @@ sovereignty status, and test coverage details have not been provided. Each will 
 - Own arc42 + ADRs available?
 - Test coverage estimate
 - Key concerns / blockers specific to the customer
-- Migration plan Gen 1 → Gen 2 (if applicable)
+- Migration plan Gen 1 → Gen 2 → Gen 3 (if applicable)
 
-When information is available, each customer will expand into its own section similar to B*D/C*C: Concerns (categorized)
-\+ Documentation deliverables.
-
-### 5.5. Cross-cutting (Infrastructure, Process, Governance)
+### 5.8. Cross-cutting (Infrastructure, Process, Governance)
 
 #### Concerns
 
@@ -1408,7 +1842,10 @@ ______________________________________________________________________
 - **Backup Tier 1 emergency mitigation**: cron sync to Swiss-sovereign off-site target (Infomaniak/Exoscale CH)
 - **Wire UsageLimits middleware**: block LLM cost runaway risk
 - **Decide `packages/process` fate**: delete or activate
-- **Security delta audit** from v0.274.3 → v0.289.10, force-upgrade customers if security patches exist
+- **Security delta audit** from each customer's pinned version (B*D v0.279.2, C*C v0.274.3, W*P v0.255.6, Dem*scope v0.246.4*, F*H v0.186.0) → current core v0.290.4, force-upgrade customers if security patches exist (*Demoscope SDK pin unverified from repo, see footnote in §Component versions)
+- **Dem\*scope remediate-vs-rebuild**: decide whether to upgrade the very-old pin in place (agent crashes on start) or rebuild on the current core generation; and **formally accept the customer-owned backup / key-renewal risk** (RACI sign-off)
+- **F\*H answer quality**: approve the RAG/vector re-design for structured data and the AI-Search-vs-Milvus decision (`adr_039`, `adr_044`)
+- **Adopt standing gates**: the RAG/vector-design gate (`adr_044`) and a continuous component-update strategy (`adr_043`)
 
 ### 6.2. Strategic priorities
 
@@ -1421,6 +1858,8 @@ ______________________________________________________________________
 - **Off-site backup full**: Tier 2 configurable target + Tier 3 Dagster cross-region replication
 - **Observability stack**: Prometheus + AlertManager + dashboards + SLI/SLO
 - **Third-party penetration test** after security hardening is complete
+- **Component replaceability / continuous-update strategy**: ports & adapters for the swappable building blocks (document parser, vector store, OCR — LLM is already provider-agnostic via LiteLLM) + Renovate + eval-gated upgrades + a named fallback for commercial/EOL libraries. Generalises the MinerU→Docling case (`adr_042`, `adr_043`)
+- **Reduce per-customer upgrade pain**: the single-tenant-per-deployment model makes every customer upgrade bespoke and expensive — the multi-tenant data layer + a formal SDK versioning policy are the structural fix
 
 ### 6.3. Documentation deliverables (team owners required)
 
@@ -1437,6 +1876,8 @@ ______________________________________________________________________
 - **ADR compliance gate** in development workflow (major decision = required ADR)
 - **Documentation drift detection** in CI (catch claims that don't match code)
 - **Pattern extraction roadmap**: customer patterns → core (multi-agent orchestrator, industry connectors)
+- **Design/analysis gate before implementation**: require a short design artefact — especially vector-DB chunking/schema/index tuning + an eval plan — before coding. This process gap is the root cause of the F\*H/Dem\*scope/W\*P quality & performance issues (`adr_044`)
+- **Load-test baselines**: establish per-project + core baselines (Locust) and run them on a cadence; prerequisite for SLI/SLO and for diagnosing the W\*P performance complaint (`adr_046`)
 
 ______________________________________________________________________
 
@@ -1511,6 +1952,44 @@ This document references the following frameworks, standards, and regulations:
 - **Presidio (Microsoft PII detection)**: https://microsoft.github.io/presidio/
 - **LiteLLM (LLM gateway)**: https://docs.litellm.ai/
 - **tree-sitter (AST parser)**: https://tree-sitter.github.io/tree-sitter/
+
+### Gen 3 Kubernetes deployment stack (aihub-k8s)
+
+- **Kubernetes**: https://kubernetes.io/docs/
+- **Helm 3** (chart packaging): https://helm.sh/docs/
+- **Terraform** (multi-cloud IaC): https://developer.hashicorp.com/terraform/docs
+- **Azure AKS** (managed Kubernetes): https://learn.microsoft.com/en-us/azure/aks/
+- **OpenStack Magnum** (Container Infra; used on Stoney cloud):
+  https://docs.openstack.org/magnum/latest/
+- **CloudNativePG** (PostgreSQL operator): https://cloudnative-pg.io/documentation/current/
+- **Keycloak Operator**: https://www.keycloak.org/operator/installation
+- **cert-manager** (TLS certificate automation in K8s): https://cert-manager.io/docs/
+- **NGINX Ingress Controller**: https://kubernetes.github.io/ingress-nginx/
+- **External Secrets Operator**: https://external-secrets.io/latest/
+- **SeaweedFS Helm chart**: https://github.com/seaweedfs/seaweedfs/tree/master/k8s/charts
+- **Milvus Helm chart (Zilliztech)**: https://github.com/zilliztech/milvus-helm
+
+### Customer-specific technologies (referenced in §3.4-§3.6)
+
+- **Azure AI Search** (F\*H vector backend; alternative to Milvus):
+  https://learn.microsoft.com/en-us/azure/search/
+- **Azure Data Lake Storage Gen2** (F\*H source storage):
+  https://learn.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-introduction
+- **Microsoft Bot Framework** (F\*H bot integration):
+  https://learn.microsoft.com/en-us/azure/bot-service/
+- **TARDOC** (Swiss outpatient tariff): https://www.tarmed-suisse.ch/tardoc.html
+- **TARMED** (Swiss medical billing tariff, predecessor): https://www.tarmed-suisse.ch/
+- **vLLM** (high-throughput LLM serving; Dem\*scope local stack):
+  https://docs.vllm.ai/en/latest/
+- **LlamaIndex** (RAG framework; F\*H monkey-patches it for GPT-5):
+  https://docs.llamaindex.ai/
+- **Pulumi** (IaC framework; ADR `2024_12_18`; F\*H committed code; Dem\*scope README-only):
+  https://www.pulumi.com/docs/
+- **mkcert** (locally-trusted dev certs; relevant to W\*P `wpe.ai-agents.ch+1*.pem` audit):
+  https://github.com/FiloSottile/mkcert
+- **BFG Repo-Cleaner** (history rewrite to purge committed secrets; relevant to W\*P §3.5 item #1):
+  https://rtyley.github.io/bfg-repo-cleaner/
+- **git-filter-repo** (alternative history rewrite tool): https://github.com/newren/git-filter-repo
 
 ### Gen 2 deployment stack
 

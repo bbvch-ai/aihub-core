@@ -5,7 +5,7 @@ scoping, audit readiness
 
 ## Context
 
-The architecture review document (§1 Tóm tắt and §3.2 Business core values vs reality) historically claimed that the
+The architecture review document (§1 Summary and §4.2 Business core values vs reality) historically claimed that the
 aihub agent framework covers "9 of 10 enterprise AI use cases". This claim is:
 
 1. **Not traceable** to any canonical industry taxonomy (McKinsey / Gartner / BCG / Anthropic patterns).
@@ -117,8 +117,8 @@ coverage status and links to evidence in the codebase.
 
 ## References
 
-- [Architecture Review Overview §1 Tóm tắt](../01_architecture_review_overview.vi.md#1-t%C3%B3m-t%E1%BA%AFt)
-- [Architecture Review Overview §3.2 Business core values vs thực tế](../01_architecture_review_overview.vi.md#32-business-core-values-vs-th%E1%BB%B1c-t%E1%BA%BF)
+- [Architecture Review Overview §1 Summary](../01_architecture_review_overview.en.md#1-summary)
+- [Architecture Review Overview §4.2 Business core values vs reality](../01_architecture_review_overview.en.md#42-business-core-values-vs-reality)
 - ADR `2026_02_09` — MinerU standardization
 - ADR `adr_019_mcp_secure_executor.md` — MCP security
 - ADR `adr_020_document_acl_inheritance.md` — RAG ACL

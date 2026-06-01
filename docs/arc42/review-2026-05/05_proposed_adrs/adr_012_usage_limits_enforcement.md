@@ -1,56 +1,56 @@
-# LLM Cost Cap và UsageLimits Enforcement
+# LLM Cost Cap and UsageLimits Enforcement
 
-**Status**: Proposed **Severity**: P0 (LLM cost runaway risk, multi-tenant SaaS block) **Drives**: DTC-1 trong
+**Status**: Proposed **Severity**: P0 (LLM cost runaway risk, multi-tenant SaaS block) **Drives**: DTC-1 in
 [Details §17.5 Denial of Service](../02_architecture_review_details.md#175-denial-of-service),
 [§22.5 Cost Optimization](../02_architecture_review_details.md#225-cost-optimization)
 
 ## Context
 
-`UsageLimits` class tồn tại trong codebase (`packages/core/swiss_ai_hub/core/auth/usage/usage_limits.py:181-208`) nhưng
-**không được wire vào middleware nào**.
+The `UsageLimits` class exists in the codebase (`packages/core/swiss_ai_hub/core/auth/usage/usage_limits.py:181-208`)
+but is **not wired into any middleware**.
 
-Cụ thể:
+Specifically:
 
-- `UsageLimits.check_and_raise()` method exists, increment counter trong Redis, raise HTTPException 429 nếu exceeded.
-- `RoleUsageLimit` model define pattern matching (`agent.>`, `llm.*`), limit (request count), period.
-- Code path tồn tại NHƯNG: không có controller, middleware, hoặc decorator nào gọi `check_and_raise()` trước khi process
+- `UsageLimits.check_and_raise()` method exists, increments a counter in Redis, raises HTTPException 429 if exceeded.
+- `RoleUsageLimit` model defines pattern matching (`agent.>`, `llm.*`), limit (request count), period.
+- The code path exists BUT: no controller, middleware, or decorator calls `check_and_raise()` before processing the
   request.
 
-Hậu quả:
+Consequences:
 
-- LLM calls qua LiteLLM proxy: unbounded.
-- Một tenant abuse có thể đốt entire LLM budget của platform.
-- `LLMCostEvent` track sau call (reactive), không pre-check.
-- `OpenaiCompletionHandler`, `AgentCompletionHandler` không check budget trước khi gọi LLM.
-- Không có per-tenant hard cost cap.
-- Không có pre-flight cost estimation cho agent run.
+- LLM calls via the LiteLLM proxy: unbounded.
+- A single abusive tenant can burn the platform's entire LLM budget.
+- `LLMCostEvent` tracks after the call (reactive), no pre-check.
+- `OpenaiCompletionHandler`, `AgentCompletionHandler` do not check budget before calling the LLM.
+- No per-tenant hard cost cap.
+- No pre-flight cost estimation for an agent run.
 
-Scenarios attacker / accident:
+Attacker / accident scenarios:
 
-1. Attacker craft adversarial prompt loop (AITL recursion không có depth limit, xem BR-1).
-2. Application bug send 10000 requests/phút accidentally.
-3. Customer dev test trên prod credentials với high-cost model (gpt-4o).
-4. Compromised API key.
+1. An attacker crafts an adversarial prompt loop (AITL recursion has no depth limit, see BR-1).
+2. An application bug accidentally sends 10000 requests/min.
+3. A customer dev tests on prod credentials with a high-cost model (gpt-4o).
+4. A compromised API key.
 
-Cost calculation: 1 request to GPT-5 tier = ~$0.01-0.05. 1000 requests/phút × 60 min × 24h = 1.4M requests/day × $0.03
-average = **\$42,000/day spend** từ 1 tenant. Không có hard stop.
+Cost calculation: 1 request to GPT-5 tier = ~$0.01-0.05. 1000 requests/min × 60 min × 24h = 1.4M requests/day × $0.03
+average = **\$42,000/day spend** from one tenant. No hard stop.
 
-Hơn nữa: MCP tool calls (`packages/agent/swiss_ai_hub/agent/mcp/mcp_tool_schemas.py:68`) gọi external MCP servers, có
-thể tốn cost (data API, search API, etc.) mà KHÔNG được track trong `LLMCostEvent`.
+Moreover: MCP tool calls (`packages/agent/swiss_ai_hub/agent/mcp/mcp_tool_schemas.py:68`) call external MCP servers and
+can incur cost (data API, search API, etc.) that is NOT tracked in `LLMCostEvent`.
 
 ## Decision Drivers
 
 - **Cost protection**: Hard cap per tenant, per run, per period.
-- **Multi-tenant fairness**: 1 tenant không thể kill platform budget.
-- **Transparency**: Customer thấy spend của riêng họ (showback).
-- **Pre-flight estimation**: Reject expensive operations trước khi sink cost.
-- **Performance**: Enforcement không add high latency vào hot path.
-- **Flexibility**: Different tenants có different limits (free tier, paid tier, enterprise).
-- **Auditability**: Log every quota exceed event cho forensics.
+- **Multi-tenant fairness**: one tenant cannot kill the platform budget.
+- **Transparency**: customers see their own spend (showback).
+- **Pre-flight estimation**: reject expensive operations before sinking cost.
+- **Performance**: enforcement does not add high latency to the hot path.
+- **Flexibility**: different tenants have different limits (free tier, paid tier, enterprise).
+- **Auditability**: log every quota-exceeded event for forensics.
 
 ## Decision
 
-Wire `UsageLimits` vào middleware và service layer. Add pre-flight cost estimation. Implement hard cap per tenant.
+Wire `UsageLimits` into middleware and the service layer. Add pre-flight cost estimation. Implement a hard cap per tenant.
 
 ### Layer 1: Request-level rate limiting (middleware)
 
@@ -136,7 +136,7 @@ class BudgetAwareLiteLLMService(LiteLLMService):
         return response
 ```
 
-### Layer 3: AITL recursion limit (links với ADR-NEW-022)
+### Layer 3: AITL recursion limit (links to ADR-NEW-022)
 
 ```python
 class RunContext:
@@ -200,13 +200,14 @@ class TenantBudgetEntity(Document):
     alert_webhook = StringField()
 ```
 
-### Alerting integration (links với ADR-NEW-032)
+### Alerting integration (links to ADR-NEW-032)
 
-Khi tenant reach warning threshold, emit alert qua AlertManager. Khi reach hard cap, raise 429 và notify admin email.
+When a tenant reaches the warning threshold, emit an alert via AlertManager. When it reaches the hard cap, raise 429 and
+notify the admin email.
 
 ### Customer dashboard (showback)
 
-UI hiển thị:
+The UI displays:
 
 - Current day/week/month spend per tenant
 - Per-model breakdown
@@ -221,20 +222,20 @@ UI hiển thị:
 ### Positive
 
 - LLM cost predictable per tenant.
-- 1 tenant abuse không kill platform budget.
-- Customer transparent về spend (showback).
-- Pre-flight estimation prevent sink cost.
+- A single abusive tenant does not kill the platform budget.
+- Customers are transparent about their spend (showback).
+- Pre-flight estimation prevents sunk cost.
 - MCP tool costs visible.
-- Compliance auditor có evidence cost controls.
+- Compliance auditor has evidence of cost controls.
 - Multi-tenant SaaS feasible.
 
 ### Negative
 
-- Latency increase: ~5-20ms per request cho rate limit check (mitigated bằng Redis cache).
-- Pre-flight estimation accuracy không 100% (token counting heuristic).
-- Tenant budget configuration overhead (admin set per tenant).
-- Customers cần training về quota system.
-- False positives: legitimate spike trigger 429 (cần buffer / burst allowance).
+- Latency increase: ~5-20ms per request for the rate-limit check (mitigated by Redis cache).
+- Pre-flight estimation accuracy is not 100% (token-counting heuristic).
+- Tenant budget configuration overhead (admin sets it per tenant).
+- Customers need training on the quota system.
+- False positives: a legitimate spike triggers 429 (needs buffer / burst allowance).
 
 ### Implementation notes
 
@@ -242,10 +243,10 @@ UI hiển thị:
 - Sprint 2: Layer 2 LiteLLM budget service.
 - Sprint 3: Layer 3 AITL limits (cross-ref ADR-NEW-022).
 - Sprint 4: Layer 4 MCP tool cost tracking (cross-ref ADR-NEW-019).
-- Sprint 5: TenantBudgetEntity + admin UI cho budget config.
+- Sprint 5: TenantBudgetEntity + admin UI for budget config.
 - Sprint 6: Customer dashboard (showback).
 
-Burst allowance pattern: 2x base rate cho 1 minute, sau đó throttle về base. Implement qua token bucket trong Redis.
+Burst allowance pattern: 2x base rate for 1 minute, then throttle back to base. Implement via a token bucket in Redis.
 
 ## References
 

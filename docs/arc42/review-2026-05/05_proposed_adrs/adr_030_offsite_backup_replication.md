@@ -1,69 +1,69 @@
-# Off-site Backup Replication và 3-2-1 Compliance
+# Off-site Backup Replication and 3-2-1 Compliance
 
-**Status**: Proposed **Severity**: P0 (catastrophic disaster scenario, business continuity block) **Drives**: DR-1 trong
+**Status**: Proposed **Severity**: P0 (catastrophic disaster scenario, business continuity block) **Drives**: DR-1 in
 [Details §21.1 Backup Disaster Recovery](../02_architecture_review_details.md#211-backup-disaster-recovery-fatal-flaw)
 
 ## Context
 
-Review 2026-05 phát hiện disaster recovery flaw fatal: **Backup destination và primary data đều nằm trên CÙNG SeaweedFS
-instance trên CÙNG VM**.
+Review 2026-05 found a fatal disaster-recovery flaw: **the backup destination and primary data both sit on the SAME
+SeaweedFS instance on the SAME VM**.
 
-Bằng chứng:
+Evidence:
 
-| Evidence                                   | File:Line                                                                                                  |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Backup S3 endpoint hardcoded SeaweedFS     | `packages/backup/swiss_ai_hub/backup/settings.py:54`: `AWS_ENDPOINT_URL: str = "http://seaweedfs-s3:9000"` |
-| Backup bucket cùng instance                | `packages/backup/swiss_ai_hub/backup/settings.py:55`: `S3_BUCKET: str = "backups"`                         |
-| Milvus backup source và dest cùng instance | `packages/backup/milvus-backup.yaml:15-31`: Source `seaweedfs-s3`, Dest `seaweedfs-s3`                     |
-| SeaweedFS no replication                   | `infra/docker-compose.dev.yml`: `replication="000"`                                                        |
-| SeaweedFS topology single-node             | 1 master + 1 volume server + 1 filer (no HA)                                                               |
-| README confirm                             | `packages/backup/README.md:13`: "Daily backup ... to S3 (SeaweedFS)"                                       |
+| Evidence                                    | File:Line                                                                                                  |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Backup S3 endpoint hardcoded SeaweedFS      | `packages/backup/swiss_ai_hub/backup/settings.py:54`: `AWS_ENDPOINT_URL: str = "http://seaweedfs-s3:9000"` |
+| Backup bucket on same instance              | `packages/backup/swiss_ai_hub/backup/settings.py:55`: `S3_BUCKET: str = "backups"`                         |
+| Milvus backup source and dest same instance | `packages/backup/milvus-backup.yaml:15-31`: Source `seaweedfs-s3`, Dest `seaweedfs-s3`                     |
+| SeaweedFS no replication                    | `infra/docker-compose.dev.yml`: `replication="000"`                                                        |
+| SeaweedFS topology single-node              | 1 master + 1 volume server + 1 filer (no HA)                                                               |
+| README confirms                             | `packages/backup/README.md:13`: "Daily backup ... to S3 (SeaweedFS)"                                       |
 
 Disaster scenario (100% applicable):
 
 ```
-VM bị compromise / disk failure / power outage / human error / ransomware
-    SeaweedFS volume (chứa primary data: documents, Milvus vectors,
-                      Mongo dumps, backup tarballs) bị mất hoặc corrupt
-    KHÔNG CÓ RESTORE PATH
-    Primary data và Backup chết cùng nhau
+VM compromise / disk failure / power outage / human error / ransomware
+    SeaweedFS volume (holds primary data: documents, Milvus vectors,
+                      Mongo dumps, backup tarballs) is lost or corrupt
+    NO RESTORE PATH
+    Primary data and backups die together
 ```
 
-So sánh với industry standard 3-2-1 backup rule:
+Compared to the industry-standard 3-2-1 backup rule:
 
-| Rule                  | Best practice                      | Swiss AI Hub hiện tại                                               |
+| Rule                  | Best practice                      | Swiss AI Hub today                                                  |
 | --------------------- | ---------------------------------- | ------------------------------------------------------------------- |
 | **3** copies of data  | Primary + 2 backups                | 1 copy (primary), 1 backup ON SAME storage = effectively **1 copy** |
 | **2** different media | Disk + tape/cloud/different region | Only 1 medium (same SeaweedFS volume)                               |
 | **1** off-site copy   | Geographic separation              | **0 off-site copies**                                               |
 
-Vi phạm 3/3 rules.
+Violates 3/3 rules.
 
 Existing risks doc admit (`docs/arc42/chapters/11_risks_and_technical_debt.md:20-32`):
 
 > "Off-site replication via SeaweedFS are both tracked as P0 items and are in progress... Off-site replication and
 > application-consistent cross-store snapshots remain open."
 
-Platform team biết, nhưng chưa ship sau nhiều tháng.
+The platform team knows, but hasn't shipped after several months.
 
 ## Decision Drivers
 
-- **Business continuity**: Recover từ hardware failure, ransomware, datacenter outage.
+- **Business continuity**: Recover from hardware failure, ransomware, datacenter outage.
 - **RPO (Recovery Point Objective)**: Acceptable data loss window (target 24h initially).
 - **RTO (Recovery Time Objective)**: Acceptable downtime (target 4h initially).
-- **Sovereignty**: Off-site target phải Swiss-jurisdiction nếu data sovereignty mandate.
-- **Cost**: Cross-region replication có cost (egress bandwidth, storage).
-- **Operational simplicity**: Automate, không phụ thuộc manual ops.
-- **Verifiability**: Periodic restore drill để confirm backups usable.
-- **Encryption**: Backup data encrypted at rest và in transit.
+- **Sovereignty**: Off-site target must be Swiss-jurisdiction if there is a data-sovereignty mandate.
+- **Cost**: Cross-region replication has cost (egress bandwidth, storage).
+- **Operational simplicity**: Automate; no dependence on manual ops.
+- **Verifiability**: Periodic restore drill to confirm backups are usable.
+- **Encryption**: Backup data encrypted at rest and in transit.
 
 ## Decision
 
 3-tier implementation, deploy incrementally.
 
-### Tier 1: Emergency mitigation (1-2 ngày, deploy immediately)
+### Tier 1: Emergency mitigation (1-2 days, deploy immediately)
 
-Push backups ra off-site target qua cron job trên host (bên ngoài Docker stack).
+Push backups to an off-site target via a cron job on the host (outside the Docker stack).
 
 ```bash
 # /etc/cron.daily/aihub-offsite-sync
@@ -74,10 +74,10 @@ REGION="${AIHUB_REGION:-ch-central-1}"
 OFFSITE_ENDPOINT="${OFFSITE_S3_ENDPOINT:-https://s3.exoscale.ch}"
 OFFSITE_BUCKET="${OFFSITE_S3_BUCKET:-aihub-offsite-backup}"
 
-# Wait cho daily backup hoàn thành (Dagster job finishes ~3 AM Europe/Zurich)
-sleep 7200  # 2 hours buffer sau 1 AM daily backup
+# Wait for the daily backup to finish (Dagster job finishes ~3 AM Europe/Zurich)
+sleep 7200  # 2 hours buffer after 1 AM daily backup
 
-# Sync với encryption
+# Sync with encryption
 docker exec backup-dagster bash -c "
   aws s3 sync s3://backups/ s3://${OFFSITE_BUCKET}/ \
     --endpoint-url ${OFFSITE_ENDPOINT} \
@@ -105,11 +105,11 @@ docker exec backup-dagster bash -c "
 | **Bare-metal secondary VM**    | Customer-controlled          | Full sovereignty                  | Higher ops effort    |
 | **OVHcloud Object Storage**    | EU regions                   | EU sovereign                      | French law applies   |
 
-Recommended: Infomaniak hoặc Exoscale cho Swiss sovereignty.
+Recommended: Infomaniak or Exoscale for Swiss sovereignty.
 
 ### Tier 2: Configurable backup target (1 sprint)
 
-Refactor `BackupSettings` để support separate target endpoint:
+Refactor `BackupSettings` to support a separate target endpoint:
 
 ```python
 # packages/backup/swiss_ai_hub/backup/settings.py
@@ -121,7 +121,7 @@ class BackupSettings(BaseSettings):
     S3_STORAGE_SECRET_KEY: SecretStr
 
     # NEW: Off-site target (separate endpoint)
-    BACKUP_OFFSITE_ENDPOINT_URL: str = ""  # Empty disable
+    BACKUP_OFFSITE_ENDPOINT_URL: str = ""  # Empty disables
     BACKUP_OFFSITE_BUCKET: str = ""
     BACKUP_OFFSITE_ACCESS_KEY: str = ""
     BACKUP_OFFSITE_SECRET_KEY: SecretStr = SecretStr("")
@@ -131,12 +131,12 @@ class BackupSettings(BaseSettings):
 
     # NEW: Replication policy
     BACKUP_REPLICATE_ENABLED: bool = False
-    BACKUP_REPLICATE_DELAY_HOURS: int = 1  # Wait sau primary backup
+    BACKUP_REPLICATE_DELAY_HOURS: int = 1  # Wait after primary backup
     BACKUP_REPLICATE_RETENTION_DAYS: int = 90  # Cold storage retention
     BACKUP_REPLICATE_PARALLEL_TRANSFERS: int = 4
 ```
 
-Startup validation warns nếu offsite disabled cho production:
+Startup validation warns if offsite is disabled for production:
 
 ```python
 @model_validator
@@ -151,14 +151,14 @@ def warn_no_offsite(self):
 
 ### Tier 3: Cross-region Dagster job (1-2 sprints)
 
-Thay shell script bằng proper Dagster asset cho observability + retries.
+Replace the shell script with a proper Dagster asset for observability + retries.
 
 ```python
 # packages/backup/swiss_ai_hub/backup/dagster/assets/offsite_replication.py
 @asset(
     name="offsite_replication",
-    description="Replicate primary backup S3 sang off-site target.",
-    deps=["backup_finalize"],  # Run sau backup hoàn tất
+    description="Replicate primary backup S3 to off-site target.",
+    deps=["backup_finalize"],  # Run after backup completes
     automation_condition=AutomationCondition.eager(),
     retry_policy=RetryPolicy(max_retries=3, delay=300, backoff=Backoff.EXPONENTIAL),
 )
@@ -169,14 +169,14 @@ async def offsite_replication(
     offsite_s3: OffsiteS3Manager,
 ) -> OffsiteReplicationResult:
     """
-    Replicate today's backup sang off-site target.
+    Replicate today's backup to the off-site target.
 
     Steps:
-    1. List objects trong primary bucket cho today's partition.
-    2. Stream-copy mỗi object sang offsite với encryption.
+    1. List objects in the primary bucket for today's partition.
+    2. Stream-copy each object to offsite with encryption.
     3. Verify checksums match (SHA-256).
     4. Apply retention policy (delete old offsite backups).
-    5. Emit metric cho monitoring.
+    5. Emit metric for monitoring.
     """
     today = datetime.utcnow().date()
     primary_prefix = f"daily/{today.isoformat()}/"
@@ -235,11 +235,11 @@ def daily_offsite_replication_schedule():
 
 ### Tier 4 (future): Cross-region with continuous replication
 
-Cho SaaS scale, consider:
+For SaaS scale, consider:
 
 - SeaweedFS async replication (built-in cross-region).
-- Real-time event streaming sang offsite (NATS → offsite NATS).
-- Read-replica cho disaster failover.
+- Real-time event streaming to offsite (NATS → offsite NATS).
+- Read-replica for disaster failover.
 
 ### DR Drill (monthly)
 
@@ -247,12 +247,12 @@ Document procedure:
 
 1. Pick random offsite backup.
 2. Spin up isolated test VM.
-3. Restore PostgreSQL, Mongo, Milvus, Valkey, NATS từ offsite.
+3. Restore PostgreSQL, Mongo, Milvus, Valkey, NATS from offsite.
 4. Verify data integrity (sample queries).
 5. Document restore time → update RTO baseline.
 6. Document data loss → update RPO baseline.
 
-### Monitoring và alerting
+### Monitoring and alerting
 
 Cross-ref ADR-NEW-032 (AlertManager). Critical alerts:
 
@@ -281,40 +281,40 @@ Cross-ref ADR-NEW-032 (AlertManager). Critical alerts:
 ### Positive
 
 - 3-2-1 backup rule compliance.
-- Disaster recovery khả thi (hardware failure, ransomware, datacenter outage).
-- Sovereignty maintained (off-site target Swiss jurisdiction).
-- RTO/RPO measurable và verifiable qua monthly drill.
-- Encryption end-to-end (transit và rest).
-- Audit trail cho mọi replication operation.
+- Disaster recovery feasible (hardware failure, ransomware, datacenter outage).
+- Sovereignty maintained (off-site target in Swiss jurisdiction).
+- RTO/RPO measurable and verifiable via the monthly drill.
+- Encryption end-to-end (transit and rest).
+- Audit trail for every replication operation.
 
 ### Negative
 
 - Cost: Off-site storage + egress bandwidth (~\$50-200/month per TB depending provider).
-- Network bandwidth utilization: backup sync time depends on data size (10 TB backup ~ 2-8 hours qua 100 Mbps).
+- Network bandwidth utilization: backup sync time depends on data size (10 TB backup ~ 2-8 hours over 100 Mbps).
 - Initial setup: KMS keys, IAM roles, network config.
-- Stale ACL window: between primary và offsite (acceptable RPO 24h).
-- Restore time tăng: pulling từ offsite slower than local SeaweedFS.
+- Stale window: between primary and offsite (acceptable RPO 24h).
+- Restore time increases: pulling from offsite is slower than local SeaweedFS.
 
 ### Implementation timeline
 
-- **Week 1**: Tier 1 cron script deploy ngay (emergency mitigation cho production).
-- **Sprint 1 (week 2-3)**: Tier 2 configurable target trong code.
-- **Sprint 2 (week 4-5)**: Tier 3 Dagster job với observability.
+- **Week 1**: Tier 1 cron script deployed now (emergency mitigation for production).
+- **Sprint 1 (week 2-3)**: Tier 2 configurable target in code.
+- **Sprint 2 (week 4-5)**: Tier 3 Dagster job with observability.
 - **Sprint 3 (week 6-7)**: Monitoring + alerting + first DR drill.
 - **Quarterly**: DR drill documented.
 
 ### Customer notification
 
-Trước rollout:
+Before rollout:
 
-- Notify customers về data flow change (off-site target).
-- Update GDPR transfer assessment nếu off-site có cross-border element.
-- Add to DPA (Data Processing Agreement) nếu third-party provider.
+- Notify customers about the data-flow change (off-site target).
+- Update the GDPR transfer assessment if the off-site has a cross-border element.
+- Add to the DPA (Data Processing Agreement) if a third-party provider is used.
 
 ## References
 
 - [Details §21.1 Backup Disaster Recovery](../02_architecture_review_details.md#211-backup-disaster-recovery-fatal-flaw):
-  Full evidence và disaster scenario.
+  Full evidence and disaster scenario.
 - [Existing risks doc](../../chapters/11_risks_and_technical_debt.md): Lines 20-32 admit gap.
 - 3-2-1 Backup Rule: Industry standard.
 - Infomaniak Public Cloud: https://www.infomaniak.com/en/hosting/public-cloud

@@ -1,80 +1,80 @@
-# MCP Secure Executor và Tool Authorization
+# MCP Secure Executor and Tool Authorization
 
-**Status**: Proposed **Severity**: P0+ (PII data leak via external MCP servers) **Drives**: §19.2 Concern B trong
+**Status**: Proposed **Severity**: P0+ (PII data leak via external MCP servers) **Drives**: §19.2 Concern B in
 [Details §19.2 MCP Tool Call PII Bypass](../02_architecture_review_details.md#192-concern-b-mcp-tool-call-pii-bypass-critical)
 
 ## Context
 
-MCP (Model Context Protocol) cho phép agent gọi tools external (Jira API, Confluence search, custom internal APIs,
-etc.). Platform integrate qua `packages/agent/swiss_ai_hub/agent/mcp/`.
+MCP (Model Context Protocol) lets an agent call external tools (Jira API, Confluence search, custom internal APIs,
+etc.). The platform integrates via `packages/agent/swiss_ai_hub/agent/mcp/`.
 
-Review 2026-05 phát hiện security gap critical:
+Review 2026-05 found a critical security gap:
 
 **MCP tool calls bypass Presidio guards 100%**:
 
-Data flow vi phạm:
+Violating data flow:
 
 ```
-User message với PII
+User message with PII
     ↓
-LiteLLM proxy với Presidio mask guard (PII masked trước khi đến LLM)
+LiteLLM proxy with Presidio mask guard (PII masked before reaching the LLM)
     ↓
-LLM context (masked) → LLM generates tool call với arguments
+LLM context (masked) → LLM generates tool call with arguments
     ↓
-LLM có thể "rebuild" PII references trong tool arguments (vì biết context business)
+LLM can "rebuild" PII references in tool arguments (because it knows the business context)
     ↓
-mcp_client.call_tool(name, arguments) trực tiếp gọi MCP server
-    ↓ (KHÔNG qua LiteLLM proxy, KHÔNG qua Presidio)
-External MCP server nhận arguments UNMASKED
+mcp_client.call_tool(name, arguments) calls the MCP server directly
+    ↓ (NOT through LiteLLM proxy, NOT through Presidio)
+External MCP server receives UNMASKED arguments
     ↓
-PII leaked ra external server (out of platform control)
+PII leaked to external server (out of platform control)
 ```
 
-Bằng chứng:
+Evidence:
 
-- `packages/agent/.../mcp_react_agent/mcp_react_agent.py:175-180`: Tool execute logic gọi trực tiếp
+- `packages/agent/.../mcp_react_agent/mcp_react_agent.py:175-180`: Tool execution logic directly calls
   `mcp_client.call_tool(tool_name, arguments)`.
-- `packages/agent/swiss_ai_hub/agent/mcp/mcp_tool_schemas.py:68`: `await mcp_client.call_tool(tool_name, arguments)` với
-  arguments là JSON dict từ LLM, unfiltered.
-- `packages/core/swiss_ai_hub/core/infrastructure/litellm/lite_llm_base.py:62-74`: LiteLLM proxy chỉ wrap LLM completion
-  calls, không wrap MCP tool calls.
-- `packages/core/swiss_ai_hub/core/mcp/mcp_client_config.py:13-55`: McpClientConfig chỉ có `name`, `url`, `api_key`,
-  `headers`, `timeout`. KHÔNG có authorization config, role mapping, tenant scoping.
+- `packages/agent/swiss_ai_hub/agent/mcp/mcp_tool_schemas.py:68`: `await mcp_client.call_tool(tool_name, arguments)` with
+  arguments being a JSON dict from the LLM, unfiltered.
+- `packages/core/swiss_ai_hub/core/infrastructure/litellm/lite_llm_base.py:62-74`: the LiteLLM proxy only wraps LLM
+  completion calls, not MCP tool calls.
+- `packages/core/swiss_ai_hub/core/mcp/mcp_client_config.py:13-55`: McpClientConfig only has `name`, `url`, `api_key`,
+  `headers`, `timeout`. NO authorization config, role mapping, or tenant scoping.
 
 **Tool authorization missing**:
 
-- Mỗi user authenticate có thể gọi tất cả tools mà MCP server expose.
-- Không có per-tenant tool authorization.
-- Không có per-user permission check trước khi gọi tool.
-- Tool discovery (`mcp_client.list_tools()`) returns full list cho mọi user.
+- Every authenticated user can call all tools the MCP server exposes.
+- No per-tenant tool authorization.
+- No per-user permission check before calling a tool.
+- Tool discovery (`mcp_client.list_tools()`) returns the full list to every user.
 
-**Scenario cụ thể**:
+**Concrete scenario**:
 
 ```
-User: "Tôi cần tìm khách hàng John Smith email john@bbv.ch số AHV 756.1234.5678.90"
+User: "I need to find customer John Smith, email john@bbv.ch, AHV 756.1234.5678.90"
 
 1. LiteLLM Presidio mask:
-   "Tôi cần tìm khách hàng <PERSON> email <EMAIL> số AHV <AHV>"
+   "I need to find customer <PERSON>, email <EMAIL>, AHV <AHV>"
 
-2. LLM thấy masked input nhưng context đủ để generate:
+2. The LLM sees masked input but has enough context to generate:
    tool_call = {
        "name": "search_customer_db",
        "arguments": {
-           "name": "John Smith",          ← LLM "remember" original
-           "email": "john@bbv.ch",         ← LLM "rebuild" from context
+           "name": "John Smith",          ← LLM "remembers" original
+           "email": "john@bbv.ch",         ← LLM "rebuilds" from context
            "ahv": "756.1234.5678.90"
        }
    }
 
-3. mcp_client.call_tool() gửi thẳng → MCP server external
-4. PII bị leak ra third-party
+3. mcp_client.call_tool() sends straight → external MCP server
+4. PII leaked to third-party
 ```
 
 Compliance impact:
 
 - GDPR Art. 32 (security of processing) violation.
-- GDPR Art. 28 (processor obligations): nếu MCP server là third-party processor, cần DPA.
-- US Cloud Act risk nếu MCP server hosted US.
+- GDPR Art. 28 (processor obligations): if the MCP server is a third-party processor, a DPA is needed.
+- US Cloud Act risk if the MCP server is hosted in the US.
 - Healthcare HIPAA-equiv: patient data leak.
 
 ## Decision Drivers
@@ -82,14 +82,14 @@ Compliance impact:
 - **Privacy compliance**: GDPR, revDSG, sectoral regulations.
 - **Defense in depth**: PII sanitization at every external boundary.
 - **Authorization**: Least-privilege per user, per tenant, per tool.
-- **Auditability**: Log every tool call cho forensics.
-- **Performance**: Sanitization không add significant latency.
-- **Flexibility**: Different tenants có different tool allowlists.
-- **Backward compatibility**: Existing MCP agents (MCP_ReactAgent) phải work.
+- **Auditability**: Log every tool call for forensics.
+- **Performance**: Sanitization does not add significant latency.
+- **Flexibility**: Different tenants have different tool allowlists.
+- **Backward compatibility**: Existing MCP agents (MCP_ReactAgent) must still work.
 
 ## Decision
 
-Implement `SecureMCPExecutor` wrapping `mcp_client.call_tool()`. Wire qua agent dispatcher cho mọi MCP call.
+Implement `SecureMCPExecutor` wrapping `mcp_client.call_tool()`. Wire it through the agent dispatcher for every MCP call.
 
 ### Class design
 
@@ -120,11 +120,11 @@ class MCPCallResult:
 
 class SecureMCPExecutor:
     """
-    Wraps MCP tool calls với:
+    Wraps MCP tool calls with:
     - Tool authorization check (per user, per tenant, per tool).
-    - Recursive PII sanitization của arguments (Presidio).
-    - Audit logging trước và sau call.
-    - Response sanitization trước khi return cho LLM.
+    - Recursive PII sanitization of arguments (Presidio).
+    - Audit logging before and after the call.
+    - Response sanitization before returning to the LLM.
     - Tool-level cost tracking.
     """
 
@@ -172,7 +172,7 @@ class SecureMCPExecutor:
                 f"User {self.user.user_id} not authorized for tool {tool_name}"
             )
 
-        # Step 2: Recursive sanitization của arguments
+        # Step 2: Recursive sanitization of arguments
         sanitized_args, args_entities = self._sanitize_recursive(arguments)
         detected_entities.extend(args_entities)
 
@@ -185,7 +185,7 @@ class SecureMCPExecutor:
             time.monotonic() - start,
         )
 
-        # Step 4: Execute với sanitized args
+        # Step 4: Execute with sanitized args
         try:
             raw_result = await self.mcp_client.call_tool(tool_name, sanitized_args)
         except Exception as e:
@@ -199,7 +199,7 @@ class SecureMCPExecutor:
             )
             raise MCPCallError(f"Tool {tool_name} failed: {e}") from e
 
-        # Step 5: Sanitize response trước khi return cho LLM
+        # Step 5: Sanitize response before returning to the LLM
         sanitized_result, response_entities = self._sanitize_recursive(raw_result)
         detected_entities.extend(response_entities)
 
@@ -287,7 +287,7 @@ class SecureMCPExecutor:
         )
 ```
 
-### Integration vào MCP_ReactAgent
+### Integration into MCP_ReactAgent
 
 ```python
 # packages/agent/swiss_ai_hub/agent/agents/mcp_react_agent/mcp_react_agent.py
@@ -311,7 +311,7 @@ result = mcp_result.result
 
 ### Tool authorization configuration
 
-Tenant admin có thể configure tool allowlist trong UI:
+A tenant admin can configure the tool allowlist in the UI:
 
 ```python
 class TenantToolAuthorizationEntity(Document):
@@ -326,11 +326,11 @@ class TenantToolAuthorizationEntity(Document):
     max_calls_per_day = IntField(default=1000)
 ```
 
-`AccessChecker.has_access()` query entity này khi check permission `aihub.user.{tenant}.mcp.{tool}`.
+`AccessChecker.has_access()` queries this entity when checking the permission `aihub.user.{tenant}.mcp.{tool}`.
 
 ### Tool discovery filtering
 
-`MCP_ReactAgent.init_step` discovery tools, nhưng filter chỉ những tools user có access:
+`MCP_ReactAgent.init_step` discovers tools, but filters to only the tools the user has access to:
 
 ```python
 all_tools = await mcp_client.list_tools()
@@ -341,12 +341,12 @@ authorized_tools = [
         f"aihub.user.{tenant_id}.mcp.{t.name}",
     )
 ]
-# Inject only authorized tools vào LLM system prompt
+# Inject only authorized tools into the LLM system prompt
 ```
 
 ### Custom Swiss PII recognizers
 
-Add custom Presidio recognizers cho Swiss-specific entities:
+Add custom Presidio recognizers for Swiss-specific entities:
 
 ```python
 # packages/core/.../presidio/swiss_recognizers.py
@@ -370,28 +370,28 @@ class SwissPhoneRecognizer(PatternRecognizer):
 
 ### Positive
 
-- PII không bị leak ra external MCP servers.
+- PII is not leaked to external MCP servers.
 - GDPR Art. 32 compliance.
 - Per-tenant, per-user, per-tool authorization (least-privilege).
-- Audit trail cho mọi tool call.
-- Cost tracking per tool (links với ADR-NEW-012).
-- Swiss PII detection (AHV, CHE-UID, Swiss phone) cho regulated industries.
-- Tool discovery filtered per user permission (existence không bị leak).
+- Audit trail for every tool call.
+- Cost tracking per tool (links to ADR-NEW-012).
+- Swiss PII detection (AHV, CHE-UID, Swiss phone) for regulated industries.
+- Tool discovery filtered per user permission (existence not leaked).
 
 ### Negative
 
-- Latency tăng: ~50-200ms per tool call cho Presidio analysis + audit write (mitigated async audit).
-- Initial setup overhead: define tool allowlist per tenant.
-- False positives: Presidio detect non-PII as PII (cần fine-tune).
-- Backward compatibility: existing MCP_ReactAgent code path cần refactor.
-- Storage growth từ audit logs (estimated 1-5 KB per call).
+- Latency increases: ~50-200ms per tool call for Presidio analysis + audit write (mitigated by async audit).
+- Initial setup overhead: define the tool allowlist per tenant.
+- False positives: Presidio detects non-PII as PII (needs fine-tuning).
+- Backward compatibility: the existing MCP_ReactAgent code path needs refactoring.
+- Storage growth from audit logs (estimated 1-5 KB per call).
 
 ### Performance optimization
 
 - Presidio analyzer cache (per process, share across requests).
 - Audit write async (background task).
 - Authorization check cached (per user, TTL 60s).
-- Skip sanitization cho tools marked "internal-trusted" (admin opt-in).
+- Skip sanitization for tools marked "internal-trusted" (admin opt-in).
 
 ### Implementation notes
 
@@ -402,13 +402,13 @@ class SwissPhoneRecognizer(PatternRecognizer):
 - Sprint 5: Swiss custom PII recognizers + per-language routing (ADR-NEW-018).
 - Sprint 6: Cost tracking integration (ADR-NEW-012).
 
-Backward compat: SecureMCPExecutor wrap existing `mcp_client.call_tool()`. Existing code chỉ cần inject executor. Không
-phải breaking change cho agent base API.
+Backward compat: SecureMCPExecutor wraps the existing `mcp_client.call_tool()`. Existing code only needs to inject the
+executor. Not a breaking change for the agent base API.
 
 ## References
 
 - [Details §19.2 MCP Tool Call PII Bypass](../02_architecture_review_details.md#192-concern-b-mcp-tool-call-pii-bypass-critical):
-  Full evidence và scenario.
+  Full evidence and scenario.
 - ADR-NEW-011 [Audit Log Entity](adr_011_audit_log_entity.md): Logging infrastructure.
 - ADR-NEW-012 [UsageLimits Enforcement](adr_012_usage_limits_enforcement.md): Cost tracking.
 - ADR-NEW-018 (Per-language Presidio Routing): Multi-language PII detection.

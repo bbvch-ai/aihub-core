@@ -9,12 +9,18 @@
 - `aihub-core` - platform application stack
 - **Customer deployments**:
   - `aihub-b*d`, `aihub-c*c` - Gen 1 (Azure VM + shell scripts), đã production
-  - `aihub-Ig*s`, `aihub-Dem*scope`, `aihub-W*P`, `aihub-Balmer-E*` - TBD (deployment generation, version, status
-    pending team input)
+  - `aihub-Dem*scope`, `aihub-W*P`, `aihub-F*H` - Gen 1 (Azure / manual VM), đã production
+  - `aihub-Ig*s`, `aihub-Balmer-E*` - TBD (deployment generation, version, status pending team input)
 - **Infrastructure repos (Gen 2)**:
   - `aihub-playbook` - Ansible Pull infrastructure-as-code (every 15-min reconcile)
   - `aihub-ops` - VM provisioning automation cho OpenStack (cloud-init + setup script)
   - `aihub-{customer_id}` - per-customer encrypted secrets + custom config repos (template pattern)
+- **Kubernetes deployment (Gen 3, mới nổi)**:
+  - `aihub-k8s` - Terraform (Azure AKS + Stoney OpenStack Magnum) + 2 Helm chart
+    (`aihub-common`, `aihub-tenant`) cho **multi-tenancy theo namespace** và scale-out theo chiều ngang. Cả hai
+    chart khai báo `appVersion: "0.1.0"` và pull image qua `${CORE_VERSION:-latest}` — chart **không** pin
+    aihub-core version cụ thể; phiên bản core đang chạy là giá trị `CORE_VERSION` lúc apply. Các tenant
+    `tenant1`, `jointcreate`, `postgres-test` chỉ là test/sample - chưa có customer production migrate sang.
 
 Cấu trúc extensible cho customer projects bổ sung.
 
@@ -37,24 +43,40 @@ Cấu trúc extensible cho customer projects bổ sung.
 
 ## Phiên bản các thành phần
 
-| Thành phần                  | Version        | Ghi chú                                                                              |
-| --------------------------- | -------------- | ------------------------------------------------------------------------------------ |
-| aihub-core (HEAD on `main`) | v0.289.10      | Application stack - Latest dev                                                       |
-| aihub-b\*d dùng core        | v0.279.2       | Customer Gen 1 - Azure VM + shell scripts, đi sau core 10 minor                      |
-| aihub-c\*c dùng core        | v0.274.3       | Customer Gen 1 - Azure VM + shell scripts, đi sau core 15 minor, đi sau b\*d 5 minor |
-| aihub-Ig\*s                 | TBD            | Customer - chi tiết version + deployment gen pending                                 |
-| aihub-W\*P                  | TBD            | Customer - chi tiết version + deployment gen pending                                 |
-| aihub-Dem\*scope            | TBD            | Customer - chi tiết version + deployment gen pending                                 |
-| aihub-Balmer-E\*            | TBD            | Customer - chi tiết version + deployment gen pending                                 |
-| aihub-playbook              | HEAD on `main` | Infra Gen 2 - Ansible Pull (every 15 min), 3-repo coordination                       |
-| aihub-ops                   | HEAD on `main` | VM provisioning automation (OpenStack Infomaniak)                                    |
-| aihub-\{customer_id}        | per-customer   | Encrypted Ansible Vault + custom config (template repo pattern)                      |
+| Thành phần                  | Version        | Ghi chú                                                                                                                                                                                                          |
+| --------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| aihub-core (HEAD on `main`) | v0.290.4       | Application stack - Latest dev (`pyproject.toml:3`); 47 ADR trong `docs/arc42/decisions/`                                                                                                                          |
+| aihub-b\*d dùng core        | v0.279.2       | Customer Gen 1 - Azure VM + shell scripts, đi sau core 11 minor                                                                                                                                                    |
+| aihub-c\*c dùng core        | v0.274.3       | Customer Gen 1 - Azure VM + shell scripts, đi sau core 16 minor, đi sau b\*d 5 minor                                                                                                                               |
+| aihub-Ig\*s                 | TBD            | Customer - chi tiết version + deployment gen pending                                                                                                                                                               |
+| aihub-W\*P                  | v0.255.6       | Customer Gen 1 - manual VM (docker-compose copy-paste), đi sau core 35 minor                                                                                                                                       |
+| aihub-Dem\*scope            | v0.246.4 [^1]  | Customer Gen 1 - Azure VM (Pulumi theo README; IaC code không có trong repo), 44 sau                                                                                                                              |
+| aihub-F\*H                  | v0.186.0       | Customer Gen 1 - Azure VM (Pulumi đã commit trong `.iac/iac_azure/`), 104 sau                                                                                                                                      |
+| aihub-Balmer-E\*            | TBD            | Customer - chi tiết version + deployment gen pending                                                                                                                                                               |
+| aihub-playbook              | HEAD on `main` | Infra Gen 2 - Ansible Pull (every 15 min), 3-repo coordination; **7 role** (`docker_runtime`, `traefik_proxy`, `signoz`, `aihub_application`, `os_backups`, `custom_vars_sync`, `restore_os_backup`)                |
+| aihub-ops                   | HEAD on `main` | VM provisioning automation (OpenStack Infomaniak)                                                                                                                                                                  |
+| aihub-\{customer_id}        | per-customer   | Encrypted Ansible Vault + custom config (template repo pattern)                                                                                                                                                    |
+| aihub-k8s                   | HEAD on `main` (Helm chart `appVersion 0.1.0`; image qua `${CORE_VERSION:-latest}` — chart KHÔNG pin core version) | Infra Gen 3 - Terraform (Azure AKS + Stoney OpenStack Magnum) + Helm (`aihub-common` + `aihub-tenant`); namespace-per-tenant; phiên bản core deploy là giá trị operator set lúc apply |
+
+[^1]: SDK pin của Demoscope không có trong `aihub-demoscope/pyproject.toml`; không có git dependency `swiss-ai-hub-*`
+và docker-compose image không tag version. Số `v0.246.4` được carry over từ snapshot review trước, chờ xác nhận
+operational (CI logs / deploy manifests).
 
 Cảnh báo:
 
-- 2 existing customers (B*D/C*C) chạy 2 phiên bản SDK khác nhau, đều cũ hơn core. Không có policy ép upgrade.
+- Cả 5 Gen 1 customer (B*D/C*C/W*P/Dem*scope/F*H) chạy SDK version khác nhau, tất cả đều cũ hơn core. Không có policy
+  ép upgrade. Khoảng drift: 11 → 104 minor (F*H ở v0.186.0 là drift lớn nhất, đi sau core 104 minor).
 - Security patches trên `main` không tự lan xuống Gen 1 customers; Gen 2 (Ansible Pull) auto-deploy trong 15 min.
-- B*D/C*C migration path từ Gen 1 (Azure manual) sang Gen 2 (Infomaniak OpenStack + Ansible) chưa documented.
+- Migration path Gen 1 → Gen 2 (Azure manual → Infomaniak OpenStack + Ansible) chưa documented cho bất kỳ B*D / C*C /
+  W*P / Dem*scope / F*H nào.
+- **Gen 3 (`aihub-k8s`) đã đóng một phần gap "No K8s migration path"** nêu ở §3.1 Item #20: Helm chart, Terraform cho
+  2 cloud (Azure AKS + Stoney OpenStack Magnum), CloudNativePG + Keycloak Operator + cert-manager + NGINX Ingress đã
+  được commit. **Tuy nhiên**: chưa có customer production nào trên path này (mới chỉ có tenant `tenant1`,
+  `jointcreate`, `postgres-test` ở dạng test); Stoney Magnum có limitation đã ghi nhận là `node_count` không update
+  được sau khi tạo cluster; Milvus mặc định chạy standalone (cluster scale-out mode có document nhưng optional);
+  cách Keycloak Operator watch cross-namespace được chính tài liệu gọi là "community workaround, not a first-class
+  Keycloak support statement"; **và chart không pin aihub-core version cụ thể** — chỉ pull image tag mà
+  `CORE_VERSION` resolve tới (xem proposed `adr_040`).
 
 ______________________________________________________________________
 
@@ -63,7 +85,8 @@ ______________________________________________________________________
 1. [Tóm tắt](#1-t%C3%B3m-t%E1%BA%AFt)
 2. [Sơ đồ hệ sinh thái](#2-s%C6%A1-%C4%91%E1%BB%93-h%E1%BB%87-sinh-th%C3%A1i)
 3. [Priority items cho go-live (CRITICAL + HIGH)](#3-priority-items-cho-go-live-critical--high) 3.1.
-   [aihub-core (Platform)](#31-aihub-core-platform) 3.2. [aihub-b\*d](#32-aihub-bd) 3.3. [aihub-c\*c](#33-aihub-cc)
+   [aihub-core (Platform)](#31-aihub-core-platform) 3.2. [aihub-b\*d](#32-aihub-bd) 3.3. [aihub-c\*c](#33-aihub-cc) 3.4.
+   [aihub-Dem\*scope](#34-aihub-demscope) 3.5. [aihub-W\*P](#35-aihub-wp) 3.6. [aihub-F\*H](#36-aihub-fh)
 4. [Đánh giá](#4-%C4%91%C3%A1nh-gi%C3%A1) 4.1. [Theo khung 10 pillars](#41-theo-khung-10-pillars) 4.2.
    [Business core values vs thực tế](#42-business-core-values-vs-th%E1%BB%B1c-t%E1%BA%BF)
 5. [Concerns và Documentation Backlog](#5-concerns-v%C3%A0-documentation-backlog)
@@ -78,19 +101,19 @@ khi đi vào chi tiết §3 đến §6.
 
 | Strengths                                                                                                                                                                                                         | Weaknesses                                                                                                                                                           |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Event-driven architecture (NATS JetStream cộng Swiss AI Agent Protocol)                                                                                                                                           | Sovereignty violation - B*D/C*C dùng Azure OpenAI/Foundry, vi phạm ADR `2026_02_24`                                                                                  |
-| 45 ADRs document major decisions                                                                                                                                                                                  | Gen 1 customer backup destination cùng VM (vi phạm [3-2-1 rule](https://www.cisa.gov/news-events/news/data-backup-options)); Gen 2 partial fix qua Restic→Swift      |
+| Event-driven architecture (NATS JetStream cộng Swiss AI Agent Protocol)                                                                                                                                           | Sovereignty violation xuyên qua customers - B*D Azure Sweden, C*C Azure Foundry SUI+SWE, F*H Azure SUI + Azure AI Search; W*P region chưa verified (chỉ env-var); Dem*scope partial (Azure SUI + local vLLM). Chỉ Dem*scope có dấu hiệu sovereign-LLM |
+| 47 ADRs document major decisions (trong `docs/arc42/decisions/`)                                                                                                                                                  | Gen 1 customer backup destination cùng VM (vi phạm [3-2-1 rule](https://www.cisa.gov/news-events/news/data-backup-options)); Gen 2 partial fix qua Restic→Swift      |
 | OpenTelemetry observability stack (traces cross-service)                                                                                                                                                          | No HA architecture - mọi stateful service single-instance (PostgreSQL/NATS/Valkey/Milvus/Keycloak/etcd)                                                              |
 | Agent framework support common enterprise AI patterns (conversational, RAG single+multi-source, document parsing, tool calling/MCP, HITL, multi-agent, voice STT/TTS, code execution sandbox, browser automation) | AI use case scope chưa documented trong ADR, claim coverage không defensible cho audit; vision / predictive analytics / fine-tuning out of scope nhưng chưa explicit |
 | CI/CD đầy đủ (lint, semantic-pr, build per package)                                                                                                                                                               | UsageLimits class defined nhưng không enforce → LLM cost runaway risk                                                                                                |
 | Hierarchical permission template cộng AccessChecker tenant-ceiling (BDD tested)                                                                                                                                   | AuditLogEntity missing, GDPR right-to-erasure không implementable, false docs claims                                                                                 |
-| LiteLLM gateway abstract LLM provider (swap dễ)                                                                                                                                                                   | Customer SDK drift lớn - B*D 10 minors, C*C 15 minors, no versioning policy                                                                                          |
+| LiteLLM gateway abstract LLM provider (swap dễ)                                                                                                                                                                   | Customer SDK drift trên **5 production customers**: B*D 11, C*C 16, W*P 35, Dem*scope 44, F*H 104 minor sau core - không có versioning policy hay CI gate                                                  |
 | Dagster pipeline orchestration với asset lineage                                                                                                                                                                  | No customer-facing SLA, no alerting infra; chỉ có Slack notification on Ansible Pull failure                                                                         |
-| License compliance OK (402 Python + 993 npm + 33 Docker images approved)                                                                                                                                          | Single-server ceiling (Docker Compose only, no K8s, no horizontal scale)                                                                                             |
-| 45 ADRs cộng existing arc42 chapters cho platform                                                                                                                                                                 | Customer docs gap - B*D/C*C không có arc42 cộng ADRs riêng                                                                                                           |
+| License compliance OK (402 Python + 993 npm + 33 Docker images approved)                                                                                                                                          | Single-server ceiling cho Gen 1 / Gen 2 (chỉ Docker Compose) - được giảm nhẹ một phần bởi **Gen 3 `aihub-k8s`** mới nổi (Helm + Terraform, namespace-per-tenant), nhưng chưa có prod customer migrate sang |
+| 47 ADRs cộng existing arc42 chapters cho platform                                                                                                                                                                 | Customer docs gap - **không có customer nào (B*D / C*C / W*P / Dem*scope / F*H) có arc42 hoặc ADRs riêng** (5 customer, 0 docs)                                              |
 | Hierarchical scoping protocol (Thread → Display → Run)                                                                                                                                                            | Connector framework thiếu - mỗi customer tự build (O(N×M) onboarding cost)                                                                                           |
 | Multi-language i18n cho UI (DE/EN/FR/IT)                                                                                                                                                                          | Presidio chỉ DE, multilingual PII gap cho Swiss FR/IT/EN                                                                                                             |
-| **Gen 2 deployment: Ansible Pull self-configuring VMs (15-min auto-reconcile)**                                                                                                                                   | B*D/C*C vẫn Gen 1 (Azure manual) - chưa có migration plan sang Gen 2                                                                                                 |
+| **Gen 2 deployment: Ansible Pull self-configuring VMs (15-min auto-reconcile)**                                                                                                                                   | **Cả 5 customer đều vẫn Gen 1** (Azure manual hoặc copy-paste VM) - chưa có migration plan sang Gen 2 hay Gen 3 (`aihub-k8s`) cho bất kỳ customer nào                |
 | **Infomaniak OpenStack - Swiss-sovereign cloud cho Gen 2**                                                                                                                                                        | Restic → Swift cùng cloud provider Infomaniak; chưa cross-provider replication                                                                                       |
 | **3-repo coordination pattern (playbook/core/customer) - separation of concerns**                                                                                                                                 | 3-repo version compatibility chưa có matrix / CI gate test combos                                                                                                    |
 | **Customer onboarding template (`setup-aihub.sh`)** automated VM provisioning                                                                                                                                     | Ansible Pull 15-min cadence chậm cho hot-fix; GitHub dependency = deploy SPOF                                                                                        |
@@ -100,9 +123,16 @@ khi đi vào chi tiết §3 đến §6.
 | **Env vars drift detection CI** (`check_env_drift.py` nightly)                                                                                                                                                    | Drift check chỉ cho env vars, không cover docs claims                                                                                                                |
 | Langfuse cost tracking per LLM call                                                                                                                                                                               | No per-tenant cost attribution → showback impossible                                                                                                                 |
 | Open-source self-hosted positioning                                                                                                                                                                               | Open-source dependency lock-in (parser/embedding/reranker/vector store chưa abstraction)                                                                             |
-| BDD test integration với real NATS                                                                                                                                                                                | Test coverage zero ở C*C, 59 lines ở B*D                                                                                                                             |
+| BDD test integration với real NATS                                                                                                                                                                                | Test coverage qua 5 customer: **ZERO ở Dem*scope, W*P**; **C*C có 3 file / 788 dòng nhưng chỉ trong `log_analysis_agent`** (3 agent khác + 6 pipeline + custom API + `lib/common` chưa test); 58 dòng ở B*D; 5 `test_*.py` + 5 BDD `.feature` ở F*H |
 | Trace context propagate qua NATS message headers                                                                                                                                                                  | Bot scope không OTEL → trace gãy ở bot boundary                                                                                                                      |
-| Pulumi IaC defined cho core (superseded by Ansible Pull cho Gen 2)                                                                                                                                                | No K8s migration path (no Helm chart, no StatefulSets)                                                                                                               |
+| Pulumi IaC defined cho core (superseded by Ansible Pull cho Gen 2); **Gen 3 `aihub-k8s` bổ sung Terraform + Helm + CloudNativePG + Keycloak Operator cho AKS / Stoney Magnum** | K8s path đã commit nhưng chưa được prove ở production; Pulumi code vẫn không có trong `aihub-core`; chưa có ADR nào adopt `aihub-k8s` là Gen 3 official path; **Helm chart KHÔNG pin core version** (`appVersion: "0.1.0"`, image qua `${CORE_VERSION:-latest}`) — xem proposed `adr_040` |
+| **F\*H đã commit Pulumi IaC** (10 deploy units: agents / ai / api / bot / dagster / nats / network / openwebui / phoenix / stores) - IaC tốt nhất trong 3 customer mới                                                                                                                                                | **Dem\*scope nêu Pulumi trong README nhưng code `.iac/` KHÔNG commit** lên repo; W\*P không có IaC nào cả (thủ công `cp docker-compose.latest.yml /opt/docker/config/bbv/`)                            |
+| **`aihub-k8s` lần đầu mang lại multi-tenancy thực sự** - namespace-per-tenant, realm-per-tenant (Keycloak), DB-per-tenant (CNPG), Milvus DB-per-tenant, bucket-prefix-per-tenant (SeaweedFS)                                                                                                                       | F\*H **monkey-patch LlamaIndex** ở import time (`lib/common/register_openai_models.py` chỉnh third-party globals để register tên GPT-5); hành vi phụ thuộc import order; sẽ rơi khi SDK upgrade        |
+| **Chart `aihub-k8s` pull qua `${CORE_VERSION:-latest}`** — operator có thể đặt khớp HEAD core hiện tại `v0.290.4` (drift cực thấp nếu pin một version mới); chưa có policy chart-level pin (xem proposed `adr_040`)                                                                                              | F\*H dùng **Azure AI Search thay vì Milvus** - vendor lock-in + double inference cost (AI Search query + LLM call); cùng pattern với §3.3 C*C "Azure stack triple redundancy" (xem proposed `adr_039`) |
+| Dem\*scope chạy **local vLLM** (Gemma-3 12b/27b + gte-Qwen2 embedding + bge-reranker) - customer duy nhất có sovereign-LLM stack một phần                                                                                                                                                                              | **W\*P TLS private key được commit lên git** (`wpe.ai-agents.ch+1-key.pem` đang track cùng cert tên production-domain); chỉ `.env` được đặt trong `.gitignore`                                          |
+| F\*H có **evaluation framework** riêng (`evaluation/` với own evaluator + testset + Excel test catalogue)                                                                                                                                                                                                              | Stack divergence: Dem\*scope và F\*H vẫn dùng **MongoDB + Redis + Phoenix v10.0.4** (pre-Langfuse ADR `2026_02_10`), khác với core hiện tại dùng FerretDB + Valkey + Langfuse                          |
+| **C4 model** đã có (`03_c4_diagrams.md`): L1 + 3×L2 + 4×L3 + 5 sequence + deployment + multi-customer topology, cover Platform + B*D + C*C; thêm per-customer C4 cho Platform / B*D / C*C / Dem*scope / W*P / F*H trong folder `c4/`                                                                                | **C4 chưa có cho Dem*scope / W*P / F*H** trước đó (3/5 prod customer) — được lấp bởi folder `c4/` mới trong review này                                                                                |
+| C*C `log_analysis_agent` có test suite riêng (3 file / 788 dòng, gồm integration + extract logs)                                                                                                                                                                                                                       | C*C deep-import violation: `agents/chat_agent/chat_agent/ChatAgent.py` reach `swiss_ai_hub.core.generative_ai.{chat_history,guards}` và `swiss_ai_hub.core.i18n.locale_handler` (bypass public API) — xem proposed `adr_038` |
 
 **Next steps**
 
@@ -118,14 +148,14 @@ ______________________________________________________________________
 
 ```mermaid
 flowchart TB
-    subgraph CORE["Swiss AI Hub Core (aihub-core v0.289.10)"]
+    subgraph CORE["Swiss AI Hub Core (aihub-core v0.290.4)"]
         direction TB
         CorePkgs["packages/<br/>core • agent • api • pipeline<br/>bot • backup • web • process"]
-        CoreADR["45 ADRs"]
+        CoreADR["47 ADRs"]
         CoreInfra["30+ containers<br/>per deployment"]
     end
 
-    subgraph B*D["aihub-b*d v0.279.2 (drift 10 minor)"]
+    subgraph B*D["aihub-b*d v0.279.2 (drift 11 minor)"]
         direction TB
         B*DAgents["Agents (3)<br/>b*d · expert_rag · expert_asking"]
         B*DPipes["Pipelines (4)<br/>customers × 2-stage<br/>suppliers × 2-stage"]
@@ -133,7 +163,7 @@ flowchart TB
         B*DExt["External: Azure OpenAI (Sweden)<br/>Cohere reranking<br/>SMB share"]
     end
 
-    subgraph C*C["aihub-c*c v0.274.3 (drift 15 minor)"]
+    subgraph C*C["aihub-c*c v0.274.3 (drift 16 minor)"]
         direction TB
         C*CAgents["Agents (4)<br/>chat · jira · log<br/>retrieval_orchestrator"]
         C*CPipes["Pipelines (6)<br/>jira/confluence/sharepoint<br/>× 2-stage"]
@@ -142,18 +172,55 @@ flowchart TB
         C*CExt["External: Azure Foundry SUI+SWE<br/>Azure Doc Intelligence<br/>Azure AD B2C · Key Vault · VM<br/>Jira · Confluence · SharePoint"]
     end
 
-    Future["Other customers (TBD info):<br/>Ig*s · Dem*scope · W*P · Balmer-E*<br/>(deployment gen + components pending)"]
+    subgraph DEMOSCOPE["aihub-Dem*scope v0.246.4* (drift 44 minor, *SDK pin chưa verify)"]
+        direction TB
+        DemoAgents["Agents (2 pkg / 4 deployed)<br/>persona_agent · multi_personas_agent<br/>(mỗi cái có public + private variant)"]
+        DemoPipes["Pipelines (1)<br/>personas (imputation + insertion jobs)"]
+        DemoAPI["Custom API (mount core controllers)"]
+        DemoLib["lib/common/<br/>events · ops · schemas · persistence"]
+        DemoExt["External: Azure OpenAI SUI<br/>+ local vLLM (Gemma-3 12b/27b)<br/>+ gte-Qwen2 embed · bge-rerank<br/>Azure AD · MongoDB · Milvus"]
+    end
+
+    subgraph WPE["aihub-W*P v0.255.6 (drift 35 minor)"]
+        direction TB
+        WPEDeploy["Deployment thuần<br/>(không có custom agents / pipelines / API)<br/>dùng core llm_wrapping_agent + rag_agent<br/>dùng core default_rag_pipeline"]
+        WPECfg["Configs: LiteLLM, Milvus, Postgres,<br/>SeaweedFS, OTEL→SigNoz<br/>manual VM deploy (docker-compose copy)"]
+        WPEExt["External: Azure OpenAI (region qua env)<br/>Azure AD / Entra (Microsoft v2.0)"]
+    end
+
+    subgraph FMH["aihub-F*H v0.186.0 (drift 104 minor)"]
+        direction TB
+        FMHAgents["Agents (3)<br/>handbook_agent · rules_agent · routing_agent"]
+        FMHPipes["Pipelines (2)<br/>handbook_ingestion · position_ingestion<br/>(TARDOC / TARMED data)"]
+        FMHAPI["Custom API + Bot (MS Bot Framework)"]
+        FMHEval["evaluation/ framework<br/>own evaluators · testsets"]
+        FMHExt["External: Azure OpenAI SUI<br/>(`*-openai-sui`) + Azure AI Search<br/>(KHÔNG dùng Milvus) · Azure Data Lake<br/>Azure AD · TARDOC/TARMED"]
+    end
+
+    Future["Other customers (TBD info):<br/>Ig*s · Balmer-E*<br/>(deployment gen + components pending)"]
 
     subgraph INFRA["Infrastructure Repos (Gen 2)"]
         direction TB
-        Playbook["aihub-playbook<br/>Ansible Pull (every 15min)<br/>docker_runtime · traefik_proxy<br/>signoz · aihub_application<br/>os_backups (Restic→Swift)"]
+        Playbook["aihub-playbook<br/>Ansible Pull (every 15min)<br/>7 role: docker_runtime · traefik_proxy<br/>signoz · aihub_application<br/>os_backups (Restic→Swift) · custom_vars_sync<br/>restore_os_backup"]
         Ops["aihub-ops<br/>OpenStack VM provisioning<br/>setup-aihub.sh · cloud-init<br/>vault-vars-routing.yml<br/>nightly drift check"]
         CustomerRepo["aihub-{customer_id}<br/>Ansible Vault (encrypted)<br/>Custom config + secrets"]
     end
 
+    subgraph K8S["aihub-k8s (Gen 3, mới nổi) — chart appVersion 0.1.0; pull qua ${CORE_VERSION:-latest}"]
+        direction TB
+        K8STerraform["Terraform<br/>Azure AKS (Switzerland North, OIDC + workload identity)<br/>+ Stoney OpenStack Magnum (Flannel, Cinder, floating IP)<br/>1 `deploy.sh` cho cả 2 cloud"]
+        K8SCommon["Helm chart: `aihub-common`<br/>CloudNativePG (PostgreSQL 17 + pgvector)<br/>Keycloak Operator (1 instance, **realm per tenant**)<br/>SeaweedFS (shared, **bucket prefix per tenant**)<br/>Milvus (standalone; **DB per tenant**; scale-out optional)<br/>FerretDB · Langfuse · LiteLLM · MinerU · SearXNG"]
+        K8STenant["Helm chart: `aihub-tenant`<br/>**namespace `tenant-<name>`** · subdomain `<name>.k8s.ai-agents.ch`<br/>~27 service (api · web · openwebui · dagster · bot ·<br/>NATS · Redis · Neo4j · Phoenix · Jupyter · Playwright ·<br/>Presidio · rclone · 9 agent · 2 RAG pipeline)<br/>NGINX Ingress + cert-manager (Let's Encrypt)"]
+        K8STenants["Chỉ test tenant (chưa có prod customer):<br/>tenant1 · jointcreate · postgres-test"]
+    end
+
     CORE -.->|git tag<br/>v0.279.2| B*D
     CORE -.->|git tag<br/>v0.274.3| C*C
+    CORE -.->|git tag<br/>v0.246.4| DEMOSCOPE
+    CORE -.->|git tag<br/>v0.255.6| WPE
+    CORE -.->|git tag<br/>v0.186.0| FMH
     CORE -.->|git tag<br/>vX.Y.Z| Future
+    CORE -.->|image pull qua<br/>${CORE_VERSION}| K8S
 
     Playbook -->|pulls every 15min| Future
     Ops -.->|provisions VM| Future
@@ -162,8 +229,12 @@ flowchart TB
     style CORE fill:#e8f0ff
     style B*D fill:#fff4e8
     style C*C fill:#fff4e8
+    style DEMOSCOPE fill:#fff4e8
+    style WPE fill:#fff4e8
+    style FMH fill:#fff4e8
     style Future stroke-dasharray: 5 5,stroke:#888,fill:#f5f5f5
     style INFRA fill:#e8ffe8
+    style K8S fill:#f0e8ff
 ```
 
 **Customer Registry** (extend khi có customer mới)
@@ -174,11 +245,12 @@ OpenStack Infomaniak + Ansible Pull (aihub-playbook/aihub-ops).
 
 | Customer              | Status            | Core ver (drift)     | Components      | Deployment Gen                                          | Data sources                         | LLM Provider                                        | Identity                |        Off-site Backup         | Own arc42 + ADRs | Test coverage              |
 | --------------------- | ----------------- | -------------------- | --------------- | ------------------------------------------------------- | ------------------------------------ | --------------------------------------------------- | ----------------------- | :----------------------------: | :--------------: | -------------------------- |
-| aihub-b\*d            | Production 4/2026 | v0.279.2 (10 behind) | 3A / 4P / -     | **Gen 1** - On-prem (SMB share)                         | SMB share (customer + supplier docs) | Azure OpenAI Sweden - **sovereignty violated**      | Keycloak SaaS           |        Không (same VM)         |      Không       | Minimal (59 dòng / 1 util) |
-| aihub-c\*c            | Production        | v0.274.3 (15 behind) | 4A / 6P / 1 API | **Gen 1** - Azure VM (SUI+SWE)                          | Jira / Confluence / SharePoint       | Azure AI Foundry SUI+SWE - **sovereignty violated** | Keycloak + Azure AD B2C |        Không (same VM)         |      Không       | Zero                       |
+| aihub-b\*d            | Production 4/2026 | v0.279.2 (sau 11) | 3A / 4P / -     | **Gen 1** - On-prem (SMB share)                         | SMB share (customer + supplier docs) | Azure OpenAI Sweden - **sovereignty violated**      | Keycloak SaaS           |        Không (same VM)         |      Không       | Minimal (58 dòng / 1 util) |
+| aihub-c\*c            | Production        | v0.274.3 (sau 16) | 4A / 6P / 1 API | **Gen 1** - Azure VM (SUI+SWE)                          | Jira / Confluence / SharePoint       | Azure AI Foundry SUI+SWE - **sovereignty violated** | Keycloak + Azure AD B2C |        Không (same VM)         |      Không       | Minimal (3 file / 788 dòng trong `log_analysis_agent` only) |
 | aihub-Ig\*s           | TBD               | TBD                  | TBD             | TBD                                                     | TBD                                  | TBD                                                 |                         |                                |                  |                            |
-| aihub-W\*P            | TBD               | TBD                  | TBD             | TBD                                                     | TBD                                  | TBD                                                 |                         |                                |                  |                            |
-| aihub-Dem\*scope      | TBD               | TBD                  | TBD             | TBD                                                     | TBD                                  | TBD                                                 |                         |                                |                  |                            |
+| aihub-W\*P            | Production        | v0.255.6 (sau 35)    | - (deploy only) | **Gen 1** - manual VM (docker-compose copy-paste)       | OpenWebUI knowledge / RAG (Milvus + SeaweedFS, user upload) | Azure OpenAI (region không có trong repo - config qua env var) - **sovereignty chưa verified** | Azure AD / Entra ID (Microsoft v2.0) |    Không (không có trong repo)    |     Không     | N/A (không có custom code) |
+| aihub-Dem\*scope      | Production        | v0.246.4 (sau 44)[^1] | 2A / 1P / 1 API | **Gen 1** - Azure VM (Pulumi theo README; IaC code không có trong repo) | MongoDB persona data + Milvus (questions, personas) | Azure OpenAI Switzerland + local vLLM (Gemma-3-12b/27b, gte-Qwen2 embedding, bge-reranker) - **partial sovereignty** | Azure AD / Entra ID (login.microsoftonline.com) |     Không (MinIO cùng VM)      |     Không     | Số 0 (không có file test)  |
+| aihub-F\*H            | Production (commit gần nhất 4/2026) | v0.186.0 (sau 104) | 3A / 2P / 1 API / 1 bot | **Gen 1** - Azure (Pulumi đã commit: 10 deploy units) | Azure Data Lake Storage (TARDOC / TARMED: handbook + positions) | Azure OpenAI Switzerland North (`*-openai-sui`) + Azure AI Search (không phải Milvus) - **sovereignty Switzerland** | Azure AD (AUTH_AZURE_AD_*) |    Không (không có trong repo)    |     Không     | Minimal (5 test + 5 BDD)   |
 | aihub-Balmer-E\*      | TBD               | TBD                  | TBD             | TBD                                                     | TBD                                  | TBD                                                 |                         |                                |                  |                            |
 | Customer #N+ (future) | Template ready    | TBD                  | TBD             | **Gen 2** - OpenStack Infomaniak (Swiss) + Ansible Pull | TBD                                  | TBD                                                 | TBD                     | Restic → Swift (partial 3-2-1) | TBD via template | TBD                        |
 
@@ -186,7 +258,8 @@ ______________________________________________________________________
 
 ## 3. Priority items cho go-live (CRITICAL + HIGH)
 
-Section này highlight các items cần ưu tiên address để chuẩn bị go-live, group theo scope (Core / B*D / C*C). Severity:
+Section này highlight các items cần ưu tiên address để chuẩn bị go-live, group theo scope (Core / B*D / C*C /
+Dem*scope / W*P / F*H). Severity:
 
 - **CRITICAL**: block go-live, gây data loss / security breach / compliance violation / fatal scenario nếu không fix
 - **HIGH**: significant impact tới scale, reliability, hoặc compliance; cần address trước khi mở rộng customer base
@@ -223,7 +296,7 @@ thay vì list này.
 | 17  | Milvus single-node memory wall (122 GB cho 10M × 3072d)              |     HIGH     | Milvus cluster mode + DISKANN benchmark cho disk-backed index                                                                                                 |
 | 18  | No alerting infrastructure formal                                    |     HIGH     | Prometheus AlertManager + PagerDuty/OpsGenie on-call routing + per-service severity rules                                                                     |
 | 19  | No business metrics + SLI/SLO formal                                 |     HIGH     | Business metrics export (agent_runs, HITL escalations, RAG latency); formal SLI/SLO documented per service                                                    |
-| 20  | No K8s migration path                                                |     HIGH     | K8s migration plan với Helm chart + StatefulSets cho stateful services + HPA cho stateless                                                                    |
+| 20  | No K8s migration path **(đã đóng một phần: `aihub-k8s` Gen 3 đã có)**|     HIGH     | `aihub-k8s` đã có Terraform (AKS + Stoney Magnum) + Helm (`aihub-common` + `aihub-tenant`). Chart khai báo `appVersion: "0.1.0"` và pull image qua `${CORE_VERSION:-latest}` — chưa có chart-level pin (xem proposed `adr_040`). Còn lại: ADR adopt Gen 3 làm official path; chart-level core version pin policy; migrate ≥ 1 prod customer; validate cluster-mode Milvus + HPA; document Gen 1 → Gen 3 migration |
 | 21  | No load test baseline                                                |     HIGH     | Load test suite (k6/Locust) trong CI với baseline numbers per critical path                                                                                   |
 | 22  | Connector framework missing                                          |     HIGH     | `BaseSourceConnector` framework + 12 built-in connectors (SMB, S3, SharePoint, Confluence, Jira, GitHub, Notion, Drive, Box, Salesforce, IMAP)                |
 | 23  | Code RAG semantic-only (thiếu structural chunks)                     |     HIGH     | tree-sitter AST chunking + code-specific embedding (CodeBERT/UniXcoder) + hybrid index (vector + symbol + Neo4j call-graph)                                   |
@@ -242,7 +315,7 @@ thay vì list này.
 | 1   | Backup destination cùng VM (FATAL: VM dies = total loss)       | **CRITICAL** | Emergency cron sync ra Swiss-sovereign off-site (Infomaniak CH / Exoscale CH / Hetzner); long-term migrate Gen 2 (Restic→Swift)                                  |
 | 2   | Azure OpenAI (Sweden) sovereignty violation                    |     HIGH     | Tied tới Core sovereignty path decision (Option A/B/C); ADR document trade-off hoặc migration plan. Severity depends on customer compliance contract             |
 | 3   | Test coverage near-zero (59 dòng / 1 utility)                  |     HIGH     | Baseline test plan (smoke tests per agent / pipeline); integration test với staging data; coverage threshold 60% cho new code                                    |
-| 4   | SDK drift 10 minor versions (v0.279.2 vs v0.289.10)            |     HIGH     | SDK upgrade plan với security delta audit; extract reusable patterns (`resolve_selection`, HITL helpers) về core; CI gate block drift > N versions               |
+| 4   | SDK drift 11 minor versions (v0.279.2 vs v0.290.4)             |     HIGH     | SDK upgrade plan với security delta audit; extract reusable patterns (`resolve_selection`, HITL helpers) về core; CI gate block drift > N versions. **Near-latest pin — upgrade rủi ro thấp nhất trong các customer; làm trước như quick win (bump thẳng lên core tip)** |
 | 5   | Cohere reranking US/Canada vendor                              |     HIGH     | ADR document sovereignty trade-off hoặc migrate sang sovereign alternative (BGE local, Jina local)                                                               |
 | 6   | Storage multiplier 3.9x (1.9 TB insufficient cho 2+ customers) |     HIGH     | Data partitioning strategy (sharding / time-based / customer-based / cold storage); ADR document chiến lược                                                      |
 | 7   | Hardcoded customer config (SNK_ANCHOR, BASE_PATH SMB)          |     HIGH     | Pydantic Settings từ env per deployment; document config matrix                                                                                                  |
@@ -258,8 +331,8 @@ thay vì list này.
 | 1   | Backup destination cùng Azure VM (FATAL)                                       | **CRITICAL** | Tier 1 emergency cron sync ra Swiss off-site; plan migration Gen 2 với cross-region replication                                                                                                                                                                                                                                                                                                                          |
 | 2   | Azure AI Foundry + Azure DI sovereignty violation                              | **CRITICAL** | Standardize trên core stack (MinerU + LiteLLM gateway); migration roadmap DI → MinerU, Foundry → vLLM/Swiss LLM Cloud qua LiteLLM                                                                                                                                                                                                                                                                                        |
 | 3   | Per-user data access control thiếu (3 manifestations cùng root cause)          | **CRITICAL** | Holistic fix: (a) per-user OAuth delegated permissions cho Jira/SharePoint/Confluence thay service account shared keys; (b) move isolation xuống data layer (per-tenant Milvus collection, per-user ACL filter retrieval query, pre-filter chunks trước LLM context); (c) ACL inheritance vào Milvus metadata + retrieval-time filter; (d) user access matrix documented; audit log forensic. GDPR Art. 32/25 compliance |
-| 4   | Test coverage ZERO (4 agents + 6 pipelines + custom API + lib/common untested) |     HIGH     | Baseline test plan; smoke tests per component; integration test với staging Jira/Confluence/SharePoint                                                                                                                                                                                                                                                                                                                   |
-| 5   | SDK drift 15 minor versions (largest drift)                                    |     HIGH     | SDK upgrade với security delta audit; standardize uv workflow; deprecate poetry.lock; CI gate block drift                                                                                                                                                                                                                                                                                                                |
+| 4   | Test coverage minimal — 3 file / 788 dòng trong `log_analysis_agent` only; agent `chat / jira_issue / retrieval_orchestrator` + 6 pipeline + custom API + `lib/common` chưa test |     HIGH     | Mở rộng style coverage của `log_analysis_agent` ra tất cả component; smoke tests per agent; integration test với staging Jira/Confluence/SharePoint; coverage threshold 60% cho code mới                                                                                                                                                                                                                                |
+| 5   | SDK drift 16 minor versions                                                    |     HIGH     | SDK upgrade với security delta audit; standardize uv workflow; deprecate poetry.lock; CI gate block drift                                                                                                                                                                                                                                                                                                                |
 | 6   | SharePoint over-permissioned `Sites.Read.All` tenant-wide                      |     HIGH     | Scoped permission `Sites.Selected` per site; document access matrix per site (sub-aspect của item #3)                                                                                                                                                                                                                                                                                                                    |
 | 7   | Hardcoded Jira config (URL/IDs)                                                |     HIGH     | Pydantic Settings từ env per deployment                                                                                                                                                                                                                                                                                                                                                                                  |
 | 8   | Naming camouflage (gpt-oss-120b → azure/gpt-5-nano)                            |     HIGH     | Transparent naming convention (vd `azure-eu/gpt-5-nano`); ADR document trade-off                                                                                                                                                                                                                                                                                                                                         |
@@ -271,12 +344,76 @@ thay vì list này.
 | 14  | Internal import violation `lib/common/types/RetrievalAgentInTheLoop.py:1-4`    |     HIGH     | Fix import qua core public API; lint rule chặn                                                                                                                                                                                                                                                                                                                                                                           |
 | 15  | Dual lock files (poetry.lock 84KB + uv.lock)                                   |     HIGH     | Migrate to uv-only workflow; deprecate poetry.lock; standard uv commands                                                                                                                                                                                                                                                                                                                                                 |
 | 16  | No own arc42 + ADRs                                                            |     HIGH     | arc42 12 chapters skeleton + C4 L1/L2 + 13 ADRs trả lời design questions (Azure Foundry, DI vs MinerU, naming camouflage, service account, AD B2C, etc.)                                                                                                                                                                                                                                                                 |
+| 17  | Deep-import violations trong `ChatAgent.py` reach `swiss_ai_hub.core.generative_ai.{chat_history,guards}` và `swiss_ai_hub.core.i18n.locale_handler` — bypass public `__init__.py` API |     HIGH     | Refactor để import qua `from swiss_ai_hub.core import …` sau khi expose các symbol cần thiết ra public interface; thêm ruff/lint rule chặn deep import vượt scope boundary; CI gate (xem proposed `adr_038`) |
+| 18  | MongoDB tenant-entry schema đã đổi giữa version pin và core hiện tại → cần migration trước khi upgrade SDK (rủi ro upgrade lớn nhất của C\*C) | **CRITICAL** | Dựa trên DB migration framework (ADR-NEW-003); viết migration forward + rollback; reconcile tenant docs với Keycloak (source of truth); dry-run trên bản restore trong maintenance window (xem proposed `adr_045`) |
+
+### 3.4. aihub-Dem\*scope
+
+Cơ sở evidence: code, configs, scripts, README trong repo `aihub-demoscope` (HEAD commit `abe968f 2026-01-13`).
+
+| #   | Item                                                                                  |   Severity   | Recommendation actions                                                                                                                                                                                                                |
+| --- | ------------------------------------------------------------------------------------- | :----------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | SDK drift 44 minor versions (v0.246.4* vs v0.290.4) - đi sau 4.5+ tháng (*SDK pin không có trong `pyproject.toml`) | **CRITICAL** | Xác nhận SDK pin thực tế từ deploy manifests / CI logs trước; lập SDK upgrade plan + security delta audit (cover 44 minor fixes); CI gate chặn drift > N minor; coordinate breaking-change migration |
+| 2   | Backup destination cùng VM (MinIO cùng host với Milvus / Mongo)                       | **CRITICAL** | Emergency cron sync sang Swiss off-site (Infomaniak / Exoscale / Hetzner); thay `backup_updater_script.py` ad-hoc bằng `milvus-backup` chính thức tới off-host bucket; restore drill có document                                      |
+| 3   | Pulumi nêu trong README nhưng **IaC code không committed** (không có folder `.iac/`)  | **CRITICAL** | Commit Pulumi code thật hoặc xoá phần README đó; chọn 1 IaC approach (Pulumi vs Terraform); document quy trình deploy thực tế - hiện không reproducible từ repo                                                                       |
+| 4   | Test coverage ZERO (không có `test_*.py`, không có `.feature` cho 2 agent + 1 pipe)   |     HIGH     | Baseline test plan (smoke test cho mỗi agent + pipeline); BDD `.feature` cho luồng questions phân vùng theo hash; integration test với staging Milvus                                                                                 |
+| 5   | Migration production thủ công qua SSH + `screen` + `scp`                              |     HIGH     | Thay workflow `scp migrate_questions.py demoscope:aihub/scripts/...` + `screen -r migration` bằng Dagster job hoặc k8s Job; theo dõi migration trong DB, không phải `migration_log.json` trên VM                                      |
+| 6   | Hash-partition Milvus hardcode 3 nơi (drift risk)                                     |     HIGH     | Single source of truth (đã làm 1 phần ở `lib/common/partition_utils.py`); CI test khẳng định agent + pipeline + migration script dùng cùng 1 hash function                                                                            |
+| 7   | 4 agent variants deploy (persona / multi\_personas × public / private)                |     HIGH     | Document lý do split public/private trong ADR; verify 4 instance chạy cùng code hoặc merge thành 1 binary với config flag; giảm operational surface                                                                                   |
+| 8   | Stack divergence so với core: MongoDB + Redis thay vì FerretDB + Valkey               |     HIGH     | ADR document tại sao Demoscope diverge khỏi core stack; migration plan hoặc accept divergence; check Demoscope có dùng feature riêng của Mongo (BSON types, transactions) ngăn migration không                                        |
+| 9   | Phoenix v10.0.4 + LiteLLM v1.77.7 - pre-Langfuse (ADR `2026_02_10`) và LiteLLM cũ     |     HIGH     | Plan migration Phoenix → Langfuse theo ADR `2026_02_10`; bump LiteLLM lên stable hiện tại (v1.79+) cho security patches                                                                                                               |
+| 10  | Sovereignty hỗn hợp: Azure OpenAI SUI + local vLLM (Gemma-3, gte-Qwen2, bge-reranker) |     HIGH     | Document vị trí partial-sovereignty trong ADR; làm rõ workload nào route Azure SUI vs local vLLM; gắn với Core sovereignty path (Option A/B/C)                                                                                        |
+| 11  | Không có own arc42 + ADRs                                                             |     HIGH     | arc42 12 chapters + C4 L1/L2 + ADRs cho: stack divergence (Mongo/Redis), hash partition, 4-variant split, vị trí sovereignty, backup MinIO cùng VM, hash `persona_id` mod 1000                                                        |
+| 12  | Agent crash khi khởi động lúc upgrade SDK (pin rất cũ) | **CRITICAL** | Reproduce crash trên bản staging; quyết định remediate tại chỗ vs rebuild trên core generation hiện tại; sắp xếp sau khi đã có backup verified (PO roadmap Q4) |
+| 13  | Chưa thực sự build backup/restore (chỉ có `backup_updater_script.py` ad-hoc); không quản lý gia hạn token/key — khách hàng chính thức nhận trách nhiệm | **CRITICAL** | Ghi nhận là customer-accepted risk (RACI) có sign-off rõ ràng và document mức phơi nhiễm mất dữ liệu; vẫn cung cấp backup tối thiểu + runbook gia hạn key/token (xem `adr_030`) |
+| 14  | Vector giữ in-memory (chỉ chạy được vì máy có 200 GB RAM) — bức tường chi phí khi data tăng | **HIGH** | Lên kế hoạch chuyển sang Milvus disk-backed / DISKANN trước khi data tăng; thêm dự phóng dung lượng; chạy RAG/vector-design gate (xem proposed `adr_044`, `adr_046`) |
+
+### 3.5. aihub-W\*P
+
+Cơ sở evidence: docker-compose, configs, README trong repo `aihub-wpe` (HEAD commit `c4b1527 2025-12-18`). Lưu ý:
+`.env.prod` bị sensitive-file-guard chặn; chỉ đọc được **tên** env-var, không đọc được giá trị.
+
+| #   | Item                                                                                       |   Severity   | Recommendation actions                                                                                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------ | :----------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **TLS private key được commit vào git** (`wpe.ai-agents.ch+1-key.pem` đang track, chỉ `.env` được ignore) | **CRITICAL** | Rotate cert + key **ngay lập tức** (re-issue Let's Encrypt qua Traefik); add `*.pem`, `*-key.pem`, `secrets/` vào `.gitignore`; rewrite git history (BFG / `git filter-repo`) để xoá key; audit xem ai đã pull repo sau đó      |
+| 2   | Deploy VM thủ công bằng copy-paste (README: `cp docker-compose.latest.yml /opt/docker/config/bbv/`) | **CRITICAL** | Thêm minimum reproducible deploy: bash script + checksums, hoặc migrate sang Gen 2 (Ansible Pull) / Gen 3 (`aihub-k8s`); workflow hiện không có rollback, audit trail, drift detection                                          |
+| 3   | LLM region không có trong repo (Azure OpenAI base URL chỉ có dạng env-var) → **sovereignty chưa verified** |     HIGH     | Commit file non-secret `litellm-region.md` hoặc `.env.example` ghi rõ Azure region; ADR align với Core sovereignty path; lựa chọn cần tường minh, không vùi trong `/opt/bbv/.env` của sysadmin                                  |
+| 4   | SDK drift 35 minor versions (v0.255.6 vs v0.290.4)                                         |     HIGH     | Bump `CORE_VERSION` trong `.env.prod` kèm security delta review; CI gate chặn drift > N minor; pin theo tag, không fallback về `latest`                                                                                         |
+| 5   | `${CORE_VERSION:-latest}` fallback về `latest` khi env-var thiếu                           |     HIGH     | Xoá default `:-latest` - bắt buộc pin tường minh; deploy phải fail-fast nếu `CORE_VERSION` không set; reproducible build cần version cụ thể                                                                                     |
+| 6   | `VOLUME_ROOT:-./.docker-volumes` default về thư mục tương đối local trong production       |     HIGH     | Bắt buộc set `VOLUME_ROOT` (bỏ fallback `:-`); document production volume root (vd `/var/lib/aihub`) và chiến lược snapshot                                                                                                     |
+| 7   | Off-site backup không có trong repo (không thấy Restic / Swift / cross-region sync)        |     HIGH     | Thêm backup config vào repo (cron + Restic tới Swiss off-site); follow 3-2-1; document RTO/RPO; nếu backup tồn tại ngoài repo, document chỗ                                                                                     |
+| 8   | Không có own arc42 + ADRs - repo deploy-only không có design doc                           |     HIGH     | Minimal arc42 (context + deployment + crosscutting); ADRs cho: lựa chọn manual VM, identity provider, LLM region, vị trí sovereignty; giải thích vì sao WPE khác core defaults                                                  |
+| 9   | Không có tests bất kỳ (repo deploy-only nhưng không có script smoke / health validation)    |     HIGH     | Thêm post-deploy smoke test (curl health endpoint, OAuth round-trip, ping LiteLLM, login OpenWebUI); fail fast khi deploy hỏng                                                                                                  |
+| 10  | OTEL dùng SigNoz Cloud region "EU" - cùng caveat với core (sovereignty chưa rõ)            |     HIGH     | Kế thừa core ADR về SigNoz region khi có; document lựa chọn cục bộ trong WPE README                                                                                                                                             |
+| 11  | Khách hàng báo platform chậm — chưa rõ root cause, khách hàng không phản hồi | **HIGH** | Review trace Langfuse/OTEL + chạy load-test baseline (Locust) trên bản replica config/hardware để định vị bottleneck; điều tra BỊ BLOCK do chờ input/data từ khách hàng (xem proposed `adr_046`) |
+
+### 3.6. aihub-F\*H
+
+Cơ sở evidence: code, configs, Pulumi IaC, evaluation framework, README trong repo `aihub-fmh` (HEAD commit
+`5509d39 2026-04-07`).
+
+| #   | Item                                                                                       |   Severity   | Recommendation actions                                                                                                                                                                                                                            |
+| --- | ------------------------------------------------------------------------------------------ | :----------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | SDK drift 104 minor versions (v0.186.0 vs v0.290.4) - **lớn nhất trong tất cả customers** | **CRITICAL** | Lập multi-step SDK upgrade plan + security delta audit (104 minor = 10+ tháng patches bị miss); upgrade từng bước v0.186 → v0.220 → v0.260 → v0.290; CI gate chặn drift > N minor                                                              |
+| 2   | **Monkey-patch** LlamaIndex cho GPT-5 (`lib/common/register_openai_models.py` chỉnh global của third-party module ở import time) | **CRITICAL** | Thay bằng support chính thức trong core (PR lên `aihub-core` thêm GPT-5 model registry); SDK upgrade sẽ tự loại bỏ patch này; document workaround trong ADR cho đến khi xoá                                                                    |
+| 3   | Azure AI Search **thay vì** Milvus - stack divergence so với core                          | **CRITICAL** | ADR giải trình Azure AI Search vs Milvus của core (vendor lock-in, double inference cost, sovereignty); migration plan về Milvus hoặc accept divergence + cost analysis; trùng pattern với §3.3 C\*C "Azure stack triple redundancy"            |
+| 4   | Backup status không có trong repo (Pulumi `stores/` deploy infra nhưng không thấy backup workload) | **CRITICAL** | Verify Azure backup policy trên `Storage Account` + `CosmosDB`/Mongo; cross-region replication cho TARDOC/TARMED handbook data; restore drill có document; nếu backup tồn tại ngoài Pulumi, document chỗ                                       |
+| 5   | Stack divergence so với core: MongoDB + Redis + Phoenix (pre-Langfuse) - giống Dem\*scope  |     HIGH     | Plan migration Phoenix → Langfuse (ADR `2026_02_10`); plan MongoDB → FerretDB; gắn với SDK upgrade #1                                                                                                                                           |
+| 6   | Test coverage tối thiểu (5 `test_*.py` + 5 BDD `.feature` cho 3 agent + 2 pipeline)        |     HIGH     | Coverage threshold 60% cho code mới; BDD feature cho luồng routing 3-agent (routing → handbook + rules); integration test với TARMED test fixtures                                                                                              |
+| 7   | Azure OpenAI Switzerland North + Azure AD - vendor lock-in (giống C\*C)                    |     HIGH     | ADR document lý do chọn Azure (TARDOC/TARMED là dữ liệu chỉ Swiss, nên Switzerland North defensible); evaluate Keycloak federation làm identity alternative                                                                                     |
+| 8   | Bot dùng MS Bot Framework + dev tunnel - rủi ro dev/prod parity                            |     HIGH     | Document deployment path cho MS Teams integration; xoá reference `agents/playground/bot_emulator/` khỏi prod docs; đảm bảo prod không phụ thuộc vào workflow `devtunnel`                                                                        |
+| 9   | Pulumi state trong **Azure storage account** - phụ thuộc single-cloud                      |     HIGH     | Document Pulumi state account name / region trong repo (không chỉ credentials); plan state backup; nếu Azure account compromise, deployment không recover được                                                                                  |
+| 10  | Không có own arc42 + ADRs - có IaC + evaluation framework tốt nhưng không có design docs   |     HIGH     | arc42 12 chapters + C4 L1/L2 + ADRs cho: Azure AI Search vs Milvus (#3), GPT-5 monkey-patch (#2), thiết kế 3-agent routing, ingestion TARDOC/TARMED, lý do chọn MS Bot Framework                                                                |
+| 11  | Hardcode handbook namespace (`handbook_02_2026`) trong pipeline `__init__.py`              |     HIGH     | Pydantic Settings từ env; cho phép nhiều snapshot song song; document convention versioning (`handbook_MM_YYYY`)                                                                                                                                |
+| 12  | Khách hàng không hài lòng về chất lượng câu trả lời — dữ liệu cấu trúc TARDOC/TARMED chưa được ingest theo vector schema được thiết kế; không có chiến lược testing/eval cho RAG (framework `evaluation/` có nhưng không dùng) | **CRITICAL** | Chạy RAG/vector-design gate (xem proposed `adr_044`): chunking theo field + metadata schema cho dữ liệu cấu trúc; wire eval harness trên framework `evaluation/` sẵn có + Langfuse datasets; baseline rồi tune; gắn với quyết định AI-Search-vs-Milvus (`adr_039`) |
 
 ______________________________________________________________________
 
 ## 4. Đánh giá
 
-Đánh giá theo 2 perspectives song song.
+Đánh giá theo 2 perspectives song song. Phạm vi giờ bao gồm **5 Gen 1 production customers** (B*D / C*C / Dem*scope /
+W*P / F*H); priority items theo từng customer được liệt kê chi tiết tại **§3.4 (Dem\*scope)**, **§3.5 (W\*P)**,
+**§3.6 (F\*H)**. Ig*s và Balmer-E* vẫn TBD chờ thông tin từ team.
 
 ### 4.1. Theo khung 10 pillars
 
@@ -284,38 +421,38 @@ ______________________________________________________________________
 thêm các trụ cột đặc thù cho platform multi-customer (Multi-Tenancy, SDK Versioning, Observability, Quality Assurance).
 Mỗi cell liệt kê findings của scope đó. Cell `-` nghĩa là scope không có finding riêng.
 
-| #   | Pillar - Status                                                          | Core                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | B\*D                                                                                                                                                                                                                                                                   | C\*C                                                                                                                                                                                                                                                                                                                                          | Ig\*s | Dem\*scope | W\*P | Balmer-E\* | Cross-cutting                                                                                                                                                                                                              |
-| --- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------- | ---- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Multi-Tenancy & Customer Isolation** - Critical                        | • NATS subjects không hierarchy `aihub.tenant.{id}.*`<br>• Milvus collections không namespace per-tenant<br>• MongoDB entities không có `tenant_id` field bắt buộc<br>• Valkey keys không có per-tenant prefix<br>• Neo4j graphs không namespace<br>• Không có tenant provisioning workflow / automation API<br>• Không có per-tenant feature flags<br>• Không có per-tenant resource quotas (rate limit, storage, LLM budget)<br>• Tenant chỉ tồn tại ở Keycloak layer (groups `/tenants/{id}`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | -                                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                             | TBD   | TBD        | TBD  | TBD        | • Mỗi customer = 1 Docker stack riêng biệt<br>• Không thể chạy shared SaaS multi-tenant<br>• Operational cost tuyến tính theo số customers<br>• Không có cross-tenant isolation test trong CI                              |
-| 2   | **SDK Versioning & Extension Contract** - Gap                            | • Không có public SDK release (PyPI/internal registry), chỉ git+ssh<br>• Không có policy về breaking change, deprecation window<br>• Không có CHANGELOG categorization<br>• Không có downstream CI integration test với customers<br>• Không có lint rule chặn import từ internal modules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | • Drift 10 minor versions (v0.279.2 vs v0.289.10)<br>• Internal import violation `pipelines/snk_enrichment.py:2`<br>• Patterns chưa extract về core (`resolve_selection()`, HITL helpers)                                                                              | • Drift 15 minor versions (v0.274.3 vs v0.289.10)<br>• Internal import violation `lib/common/types/RetrievalAgentInTheLoop.py:1-4`<br>• Custom `switch_dependencies.py` thay standard uv workflow<br>• Dual lock files `poetry.lock` (84KB) + `uv.lock`<br>• Multi-agent orchestrator, Jira/Confluence/SharePoint connectors chưa extract     | TBD   | TBD        | TBD  | TBD        | -                                                                                                                                                                                                                          |
-| 3   | **Security & Compliance** - Partial                                      | **Strengths**: 5 auth handlers (Keycloak/Token/Bearer/OAuth2/OpenWebUI) JWKS 6h cache; hierarchical permission template với wildcards; AccessChecker tenant-ceiling + BDD tests; two-stage access control tested.<br>**Gaps**:<br>• UsageLimits class defined nhưng KHÔNG wire vào middleware<br>• Không có `AuditLogEntity` (vi phạm GDPR Art. 30, ISO 27001 A.12.4, SOC2)<br>• Event payloads không signing (JetStream unsigned JSON)<br>• NATS token-only auth, no mTLS; MongoDB/Redis connection string<br>• Presidio claim ≠ thực tế (code dùng LLM-based fragile guard)<br>• MCP tool args bypass LiteLLM → Presidio guards bypass 100%<br>• File upload trust mime-type, no content sniffing<br>• OpenWebUI render model list bypass RBAC<br>• Docker volume chưa encrypt at rest<br>• No rate limiting per user/tenant ở API<br>• Không có SAST / dep vuln scan / SBOM / image signing / container vuln scan                                                                                                                                                                                                                                                                      | • Cohere reranking (US/Canada vendor)<br>• Hardcoded customer-specific config (SNK_ANCHOR, BASE_PATH)<br>• No secrets rotation policy                                                                                                                                  | • Service account shared key cho Jira/SharePoint/Confluence (vi phạm least-privilege)<br>• SharePoint Azure AD app-only `Sites.Read.All` tenant-wide<br>• Hardcoded Jira IDs (URL, Service Desk, Request Type, Project)<br>• Azure AD B2C federation thay pure Keycloak (vendor lock-in)                                                      | TBD   | TBD        | TBD  | TBD        | • Document ACL không inherit từ Jira/SharePoint/Confluence vào Milvus<br>• Service account ingest mọi thứ, user query được mọi document (cross-user leak)<br>• Presidio chỉ DE, Swiss multilingual FR/IT/EN PII không mask |
-| 4   | **Reliability & Data Integrity** - Critical (Gen 2 partial fix)          | • Không có DB migration framework (schemas tạo implicit bởi Pydantic + MongoEngine startup)<br>• Cross-store consistency không đảm bảo (NATS + Mongo + Valkey)<br>• Không có RTO/RPO documented<br>• Không có automated DR test / restore drill<br>• Backup encryption at rest chưa rõ cho Gen 1<br>• Milvus không upsert-by-id → re-ingest = duplicate vectors<br>• Agent config schema không versioning<br>• No agent versioning cho in-flight runs<br>• No run / delegation timeout<br>• No circuit breaker cho external deps (LiteLLM, Keycloak, Milvus cascade)<br>• No DLQ cho JetStream poison messages<br>• No HA architecture (PostgreSQL/NATS/Valkey/Milvus/Keycloak/etcd đều single-instance)<br>• **Gen 2 partial fix**: Ansible Pull tự re-reconcile khi container drift; Restic backup ra OpenStack Swift container (off-host)<br>• Vẫn thiếu: cross-provider replication, HA stateful services, no DR drill automated                                                                                                                                                                                                                                                      | • **Gen 1 fatal**: Backup destination SeaweedFS cùng VM → VM chết = mất cả<br>• No off-site replication<br>• Production 3.9x storage multiplier (1 TB → 5.1 TB)<br>• Chưa migration sang Gen 2 (Restic→Swift)                                                          | • **Gen 1 fatal**: Backup destination cùng Azure VM<br>• Jira webhook không idempotent (`JiraWebhookController`): cùng event 2x = 2 agent runs<br>• External services cascade (Jira/Confluence/SharePoint/Azure outage)<br>• Chưa migration sang Gen 2 (Restic→Swift)                                                                         | TBD   | TBD        | TBD  | TBD        | • Gen 2 Restic→Swift đạt off-host nhưng **cùng cloud provider** (Infomaniak) - Infomaniak region outage = mất cả primary cộng backup<br>• Cross-provider replication chưa có                                               |
-| 5   | **Operational Excellence** - Partial (improved with Gen 2)               | **Strengths**: CI/CD đầy đủ (lint-pr, semantic-pr, build-\* per package, deploy-docs, auto-tag); pre-commit hooks; 45 ADRs; Docker Compose Jinja2 templates; **Gen 2 Ansible Pull pattern** (aihub-playbook every 15min auto-reconcile); **customer onboarding automation** (`setup-aihub.sh`); **Ansible Vault encrypted secrets** với auto-gen via `vault-vars-routing.yml`; **Traefik + Let's Encrypt ACME** automated SSL; **env vars drift detection CI** (`check_env_drift.py` nightly).<br>**Gaps**:<br>• Không có Operations Guide / Runbook cho incident response<br>• Không có Incident Response Process (severity, escalation)<br>• Không có Upgrade Procedure documented<br>• Không có K8s/Helm chart cho production<br>• Health checks không tách liveness/readiness<br>• arc42 ch.11 (Risks) cần update với findings mới<br>• CLAUDE.md có false claims (Presidio integration)<br>• GDPR docs có false claims (right to erasure, audit logs immutable)<br>• Ansible Pull 15-min cadence chậm cho hot-fix<br>• GitHub là deploy SPOF (no local mirror)<br>• 3-repo version compatibility chưa có matrix / CI gate<br>• Deploy key rotation policy implicit, không automation | • Gen 1 deployment (Azure manual, chưa Gen 2)<br>• CI riêng (build-agents, build-pipelines, auto-tag)<br>• Không có arc42 docs riêng (12 chapters required)<br>• Không có ADRs riêng (8+ key decisions)<br>• 6 docker-compose files separation chưa document rationale | • Gen 1 deployment (Azure VM + shell scripts, chưa Gen 2)<br>• CI riêng (build-agents, build-pipelines, build-api, lint-pr)<br>• Không có arc42 docs riêng (12 chapters required)<br>• Không có ADRs riêng (13+ key decisions)<br>• Azure IaC `.iac/scripts/` shell scripts thay Pulumi<br>• Custom API deployment monitoring chưa documented | TBD   | TBD        | TBD  | TBD        | • Không có alerting infrastructure formal (chỉ Slack on Ansible Pull failure)<br>• Customer documentation gate trước go-production chưa định nghĩa<br>• B*D/C*C migration path Gen 1 → Gen 2 chưa có                       |
-| 6   | **Performance & Scalability** - Critical                                 | • Single-server ceiling (Docker Compose only, no K8s)<br>• Milvus single-node, HNSW memory wall (122 GB RAM cho 10M × 3072d × 4B)<br>• PostgreSQL single instance (no replica, no failover)<br>• SeaweedFS single master/volume/filer (no HA, replication="000")<br>• NATS single node, `max_memory_store: 512MB`, `max_file_store: 10GB` (dev config)<br>• Valkey single instance (SPOF)<br>• Pipeline ops dùng `in_process_executor` (single-thread)<br>• Dagster dynamic partition explosion risk (1 partition per file)<br>• Embedding batch size không tối ưu (recursive bisection fallback)<br>• LiteLLM throughput limit không documented<br>• Tenant membership không cache (Keycloak call per request)<br>• GPU pinned device 0, multi-GPU không tận dụng<br>• Không có resource limits trong docker-compose                                                                                                                                                                                                                                                                                                                                                                     | • Sizing production (4/2026): 16 CPU + 64 GiB RAM + 1.9 TB disk<br>• 1.9 TB disk insufficient cho 2+ customers shared                                                                                                                                                  | -                                                                                                                                                                                                                                                                                                                                             | TBD   | TBD        | TBD  | TBD        | • Không có Load Test Baseline (k6, Locust)<br>• Không có Performance Baseline document<br>• Không có Horizontal Scaling Guide                                                                                              |
-| 7   | **Observability** - Traces tốt, metrics yếu (improved with Gen 2 SigNoz) | **Strengths**: OTEL comprehensive (NATS/Mongo/Redis/Milvus/HTTP/asyncio); `SmartTracer` + `@trace_fn`; trace context cross-service qua NATS headers; Langfuse LLM observability (prompt/response, cost); Docker healthchecks; HealthController; **Gen 2 SigNoz OTEL collector role** (host metrics, OTLP traces, journald log collection); **Slack failure notifications** từ Ansible Pull.<br>**Gaps**:<br>• Bot scope (`packages/bot`) không OTEL → trace gãy ở bot boundary<br>• Không có business metrics (agent_runs, HITL escalations, ingestion rate, RAG latency)<br>• Không có SLO/SLI formal<br>• Không có Prometheus AlertManager với rules per service severity<br>• Không có Grafana dashboards<br>• Không có on-call routing (PagerDuty/OpsGenie)<br>• Logs unstructured, default WARNING level<br>• Không có log aggregation centralized (ELK/Loki tự host)<br>• Không có per-tenant cost attribution trong Langfuse<br>• Không có synthetic monitoring<br>• **SigNoz Cloud region "eu"** - data observability ra ngoài tenant infra; sovereignty implication chưa rõ<br>• SigNoz chỉ Gen 2; Gen 1 (B*D/C*C) không có                                                      | • Gen 1 - không SigNoz<br>• Business-level metrics chưa có                                                                                                                                                                                                             | • Gen 1 - không SigNoz<br>• Business-level metrics chưa có<br>• Custom API endpoints chưa monitoring                                                                                                                                                                                                                                          | TBD   | TBD        | TBD  | TBD        | -                                                                                                                                                                                                                          |
-| 8   | **Quality Assurance** - Gap                                              | **Strengths**: ~150 test files trong `packages/core`, 35+ `packages/api`, 30+ `packages/agent`; BDD qua pytest-bdd; integration tests với real NATS (`SimulatedAgentApiTestRunner`); E2E key flows.<br>**Gaps**:<br>• Không có Load test trong CI<br>• Không có Chaos engineering<br>• Không có coverage threshold (no 80% gate)<br>• Không có SAST trong CI<br>• Không có dependency audit (pip-audit, trivy)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | • Test coverage: 59 dòng total (`tests/test_snk_enrichment.py`)<br>• 9 parametrized tests cho 1 utility function only<br>• Agents và pipelines chưa có tests                                                                                                           | • Test coverage: ZERO<br>• Không có thư mục tests<br>• 4 agents + 6 pipelines + custom API + `lib/common` đều untested                                                                                                                                                                                                                        | TBD   | TBD        | TBD  | TBD        | • Không có integration test giữa core release và customer projects<br>• Không có E2E test cho multi-tenant isolation                                                                                                       |
-| 9   | **Cost Optimization** - Critical                                         | • LLM cost tracking via `LLMCostEvent` (per-model, per-token rates)<br>• Per-agent run cost attribution via Langfuse<br>• S3 file expiration 7 days (`FILE_EXPIRATION_DAYS = 7`)<br>• Backup retention configured<br>• `UsageLimits` defined NHƯNG KHÔNG wire vào middleware → LLM cost unbounded<br>• Không có Pre-flight Cost Estimation<br>• Không có Hard Per-tenant Cost Cap<br>• Không có Storage Quota per tenant<br>• Không có Showback Mechanism<br>• Không có Budget Alert<br>• MCP tool costs KHÔNG tracked (external API costs invisible)<br>• Mongo collections unbounded (no TTL) = storage cost growth                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | -                                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                             | TBD   | TBD        | TBD  | TBD        | • Không có per-tenant cost attribution Langfuse<br>• Không có cold storage tier (tất cả data ở hot storage)                                                                                                                |
-| 10  | **Sustainability** - Critical                                            | • Cloud-native capable in theory (containerized, stateless)<br>• License compliance OK (402 Python + 993 npm + 33 Docker all approved)<br>• Python 3.13 slim base images<br>• Không có Region/Data-Residency Strategy<br>• Không có Carbon Footprint Metrics<br>• Không có Energy Consumption Tracking<br>• Không có Sustainability Reporting<br>• LLM calls không optimize (no aggressive caching, batching, prompt compression)<br>• Không có Hardware Lifecycle Management<br>• Không có efficient algorithm benchmarking (HNSW vs DISKANN)<br>• Compute-heavy LLM calls không scheduling off-peak                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | -                                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                             | TBD   | TBD        | TBD  | TBD        | -                                                                                                                                                                                                                          |
+| #   | Pillar - Status                                                          | Core                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | B\*D                                                                                                                                                                                                                                                                   | C\*C                                                                                                                                                                                                                                                                                                                                          | Ig\*s | Dem\*scope | W\*P | F\*H | Balmer-E\* | Cross-cutting                                                                                                                                                                                                              |
+| --- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------- | ---- | ---- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Multi-Tenancy & Customer Isolation** - Critical                        | • NATS subjects không hierarchy `aihub.tenant.{id}.*`<br>• Milvus collections không namespace per-tenant<br>• MongoDB entities không có `tenant_id` field bắt buộc<br>• Valkey keys không có per-tenant prefix<br>• Neo4j graphs không namespace<br>• Không có tenant provisioning workflow / automation API<br>• Không có per-tenant feature flags<br>• Không có per-tenant resource quotas (rate limit, storage, LLM budget)<br>• Tenant chỉ tồn tại ở Keycloak layer (groups `/tenants/{id}`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | -                                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                             | TBD | Single-tenant deploy; 4-variant agent split (public/private), không phải multi-tenant thực sự | Single-tenant deploy; kế thừa gap của core | Single-tenant deploy; Pulumi không có deploy unit `tenants/` | TBD | • Mỗi customer = 1 Docker stack riêng biệt<br>• Không thể chạy shared SaaS multi-tenant<br>• Operational cost tuyến tính theo số customers<br>• Không có cross-tenant isolation test trong CI                              |
+| 2   | **SDK Versioning & Extension Contract** - Gap                            | • Không có public SDK release (PyPI/internal registry), chỉ git+ssh<br>• Không có policy về breaking change, deprecation window<br>• Không có CHANGELOG categorization<br>• Không có downstream CI integration test với customers<br>• Không có lint rule chặn import từ internal modules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | • Drift 11 minor versions (v0.279.2 vs v0.290.4)<br>• Internal import violation `pipelines/snk_enrichment.py:2`<br>• Patterns chưa extract về core (`resolve_selection()`, HITL helpers)                                                                              | • Drift 16 minor versions (v0.274.3 vs v0.290.4)<br>• Internal import violation `lib/common/types/RetrievalAgentInTheLoop.py:1-4`<br>• Deep imports trong `agents/chat_agent/chat_agent/ChatAgent.py` đến `swiss_ai_hub.core.generative_ai.{chat_history,guards}` + `swiss_ai_hub.core.i18n.locale_handler`<br>• Custom `switch_dependencies.py` thay standard uv workflow<br>• Dual lock files `poetry.lock` (84KB) + `uv.lock`<br>• Multi-agent orchestrator, Jira/Confluence/SharePoint connectors chưa extract     | TBD | • Drift 44 minor (v0.246.4*)<br>• *SDK pin không có trong repo `pyproject.toml`<br>• Poetry + custom `switch_dependencies.py` | • Drift 35 minor (v0.255.6)<br>• Chỉ image qua `CORE_VERSION` env (không có SDK code) | • Drift 104 minor (v0.186.0) — **lớn nhất**<br>• **Monkey-patch LlamaIndex** cho GPT-5 (`register_openai_models.py`) | TBD | -                                                                                                                                                                                                                          |
+| 3   | **Security & Compliance** - Partial                                      | **Strengths**: 5 auth handlers (Keycloak/Token/Bearer/OAuth2/OpenWebUI) JWKS 6h cache; hierarchical permission template với wildcards; AccessChecker tenant-ceiling + BDD tests; two-stage access control tested.<br>**Gaps**:<br>• UsageLimits class defined nhưng KHÔNG wire vào middleware<br>• Không có `AuditLogEntity` (vi phạm GDPR Art. 30, ISO 27001 A.12.4, SOC2)<br>• Event payloads không signing (JetStream unsigned JSON)<br>• NATS token-only auth, no mTLS; MongoDB/Redis connection string<br>• Presidio claim ≠ thực tế (code dùng LLM-based fragile guard)<br>• MCP tool args bypass LiteLLM → Presidio guards bypass 100%<br>• File upload trust mime-type, no content sniffing<br>• OpenWebUI render model list bypass RBAC<br>• Docker volume chưa encrypt at rest<br>• No rate limiting per user/tenant ở API<br>• Không có SAST / dep vuln scan / SBOM / image signing / container vuln scan                                                                                                                                                                                                                                                                      | • Cohere reranking (US/Canada vendor)<br>• Hardcoded customer-specific config (SNK_ANCHOR, BASE_PATH)<br>• No secrets rotation policy                                                                                                                                  | • Service account shared key cho Jira/SharePoint/Confluence (vi phạm least-privilege)<br>• SharePoint Azure AD app-only `Sites.Read.All` tenant-wide<br>• Hardcoded Jira IDs (URL, Service Desk, Request Type, Project)<br>• Azure AD B2C federation thay pure Keycloak (vendor lock-in)                                                      | TBD | • Azure AD<br>• Presidio containers có trong compose; LiteLLM Presidio guard config chưa verified<br>• Sovereignty hỗn hợp (Azure SUI + local vLLM) | • **TLS private key committed vào git** (`wpe.ai-agents.ch+1-key.pem` đang track)<br>• Azure AD<br>• Kế thừa core Presidio config (mask + block, `default_on: false`) | • Azure AD (`AUTH_AZURE_AD_*`)<br>• LlamaIndex monkey-patch chỉnh third-party globals ở import time<br>• Pulumi state trong 1 Azure storage account (SPOF) | TBD | • Document ACL không inherit từ Jira/SharePoint/Confluence vào Milvus<br>• Service account ingest mọi thứ, user query được mọi document (cross-user leak)<br>• Presidio chỉ DE, Swiss multilingual FR/IT/EN PII không mask |
+| 4   | **Reliability & Data Integrity** - Critical (Gen 2 partial fix)          | • Không có DB migration framework (schemas tạo implicit bởi Pydantic + MongoEngine startup)<br>• Cross-store consistency không đảm bảo (NATS + Mongo + Valkey)<br>• Không có RTO/RPO documented<br>• Không có automated DR test / restore drill<br>• Backup encryption at rest chưa rõ cho Gen 1<br>• Milvus không upsert-by-id → re-ingest = duplicate vectors<br>• Agent config schema không versioning<br>• No agent versioning cho in-flight runs<br>• No run / delegation timeout<br>• No circuit breaker cho external deps (LiteLLM, Keycloak, Milvus cascade)<br>• No DLQ cho JetStream poison messages<br>• No HA architecture (PostgreSQL/NATS/Valkey/Milvus/Keycloak/etcd đều single-instance)<br>• **Gen 2 partial fix**: Ansible Pull tự re-reconcile khi container drift; Restic backup ra OpenStack Swift container (off-host)<br>• Vẫn thiếu: cross-provider replication, HA stateful services, no DR drill automated                                                                                                                                                                                                                                                      | • **Gen 1 fatal**: Backup destination SeaweedFS cùng VM → VM chết = mất cả<br>• No off-site replication<br>• Production 3.9x storage multiplier (1 TB → 5.1 TB)<br>• Chưa migration sang Gen 2 (Restic→Swift)                                                          | • **Gen 1 fatal**: Backup destination cùng Azure VM<br>• Jira webhook không idempotent (`JiraWebhookController`): cùng event 2x = 2 agent runs<br>• External services cascade (Jira/Confluence/SharePoint/Azure outage)<br>• Chưa migration sang Gen 2 (Restic→Swift)                                                                         | TBD | • **Gen 1 fatal**: MinIO backup cùng VM<br>• Migration thủ công qua SSH + screen<br>• Không có off-site replication | • Không có off-site backup trong repo<br>• `VOLUME_ROOT:-./.docker-volumes` default về thư mục local tương đối trong prod | • Không thấy backup workload trong Pulumi `stores/`<br>• Pulumi state SPOF (1 Azure storage account) | TBD | • Gen 2 Restic→Swift đạt off-host nhưng **cùng cloud provider** (Infomaniak) - Infomaniak region outage = mất cả primary cộng backup<br>• Cross-provider replication chưa có                                               |
+| 5   | **Operational Excellence** - Partial (improved with Gen 2)               | **Strengths**: CI/CD đầy đủ (lint-pr, semantic-pr, build-\* per package, deploy-docs, auto-tag); pre-commit hooks; 47 ADRs; Docker Compose Jinja2 templates; **Gen 2 Ansible Pull pattern** (aihub-playbook every 15min auto-reconcile); **customer onboarding automation** (`setup-aihub.sh`); **Ansible Vault encrypted secrets** với auto-gen via `vault-vars-routing.yml`; **Traefik + Let's Encrypt ACME** automated SSL; **env vars drift detection CI** (`check_env_drift.py` nightly).<br>**Gaps**:<br>• Không có Operations Guide / Runbook cho incident response<br>• Không có Incident Response Process (severity, escalation)<br>• Không có Upgrade Procedure documented<br>• Không có K8s/Helm chart cho production<br>• Health checks không tách liveness/readiness<br>• arc42 ch.11 (Risks) cần update với findings mới<br>• CLAUDE.md có false claims (Presidio integration)<br>• GDPR docs có false claims (right to erasure, audit logs immutable)<br>• Ansible Pull 15-min cadence chậm cho hot-fix<br>• GitHub là deploy SPOF (no local mirror)<br>• 3-repo version compatibility chưa có matrix / CI gate<br>• Deploy key rotation policy implicit, không automation | • Gen 1 deployment (Azure manual, chưa Gen 2)<br>• CI riêng (build-agents, build-pipelines, auto-tag)<br>• Không có arc42 docs riêng (12 chapters required)<br>• Không có ADRs riêng (8+ key decisions)<br>• 6 docker-compose files separation chưa document rationale | • Gen 1 deployment (Azure VM + shell scripts, chưa Gen 2)<br>• CI riêng (build-agents, build-pipelines, build-api, lint-pr)<br>• Không có arc42 docs riêng (12 chapters required)<br>• Không có ADRs riêng (13+ key decisions)<br>• Azure IaC `.iac/scripts/` shell scripts thay Pulumi<br>• Custom API deployment monitoring chưa documented | TBD | • Gen 1; **Pulumi nêu trong README nhưng IaC code KHÔNG committed**<br>• Own CI (build-agents, build-api-and-bot, build-dagster)<br>• Không có own arc42 / ADRs | • Gen 1 manual VM (copy-paste docker-compose)<br>• Không IaC, không CI cho deploy<br>• Không có own arc42 / ADRs | • Gen 1 với **Pulumi đã commit (10 deploy_units — IaC tốt nhất trong 3 customer mới)**<br>• Own CI cho builds<br>• Không có own arc42 / ADRs | TBD | • Không có alerting infrastructure formal (chỉ Slack on Ansible Pull failure)<br>• Customer documentation gate trước go-production chưa định nghĩa<br>• B*D/C*C migration path Gen 1 → Gen 2 chưa có                       |
+| 6   | **Performance & Scalability** - Critical                                 | • Single-server ceiling (Docker Compose only, no K8s)<br>• Milvus single-node, HNSW memory wall (122 GB RAM cho 10M × 3072d × 4B)<br>• PostgreSQL single instance (no replica, no failover)<br>• SeaweedFS single master/volume/filer (no HA, replication="000")<br>• NATS single node, `max_memory_store: 512MB`, `max_file_store: 10GB` (dev config)<br>• Valkey single instance (SPOF)<br>• Pipeline ops dùng `in_process_executor` (single-thread)<br>• Dagster dynamic partition explosion risk (1 partition per file)<br>• Embedding batch size không tối ưu (recursive bisection fallback)<br>• LiteLLM throughput limit không documented<br>• Tenant membership không cache (Keycloak call per request)<br>• GPU pinned device 0, multi-GPU không tận dụng<br>• Không có resource limits trong docker-compose                                                                                                                                                                                                                                                                                                                                                                     | • Sizing production (4/2026): 16 CPU + 64 GiB RAM + 1.9 TB disk<br>• 1.9 TB disk insufficient cho 2+ customers shared                                                                                                                                                  | -                                                                                                                                                                                                                                                                                                                                             | TBD | • vLLM GPU containers (Gemma-3 12b/27b)<br>• Hash-partition Milvus (1000 partition cho personas) | • Single-VM core chuẩn<br>• Không custom scaling | • Azure AI Search (managed)<br>• Azure Data Lake (managed) | TBD | • Không có Load Test Baseline (k6, Locust)<br>• Không có Performance Baseline document<br>• Không có Horizontal Scaling Guide                                                                                              |
+| 7   | **Observability** - Traces tốt, metrics yếu (improved with Gen 2 SigNoz) | **Strengths**: OTEL comprehensive (NATS/Mongo/Redis/Milvus/HTTP/asyncio); `SmartTracer` + `@trace_fn`; trace context cross-service qua NATS headers; Langfuse LLM observability (prompt/response, cost); Docker healthchecks; HealthController; **Gen 2 SigNoz OTEL collector role** (host metrics, OTLP traces, journald log collection); **Slack failure notifications** từ Ansible Pull.<br>**Gaps**:<br>• Bot scope (`packages/bot`) không OTEL → trace gãy ở bot boundary<br>• Không có business metrics (agent_runs, HITL escalations, ingestion rate, RAG latency)<br>• Không có SLO/SLI formal<br>• Không có Prometheus AlertManager với rules per service severity<br>• Không có Grafana dashboards<br>• Không có on-call routing (PagerDuty/OpsGenie)<br>• Logs unstructured, default WARNING level<br>• Không có log aggregation centralized (ELK/Loki tự host)<br>• Không có per-tenant cost attribution trong Langfuse<br>• Không có synthetic monitoring<br>• **SigNoz Cloud region "eu"** - data observability ra ngoài tenant infra; sovereignty implication chưa rõ<br>• SigNoz chỉ Gen 2; Gen 1 (B*D/C*C) không có                                                      | • Gen 1 - không SigNoz<br>• Business-level metrics chưa có                                                                                                                                                                                                             | • Gen 1 - không SigNoz<br>• Business-level metrics chưa có<br>• Custom API endpoints chưa monitoring                                                                                                                                                                                                                                          | TBD | • Phoenix v10.0.4 (pre-Langfuse, ADR `2026_02_10`)<br>• LiteLLM v1.77.7 (cũ) | • OTEL → SigNoz Cloud "EU"<br>• Phoenix v10.0.4 | • Phoenix v10.0.4 (pre-Langfuse)<br>• OTEL configured | TBD | -                                                                                                                                                                                                                          |
+| 8   | **Quality Assurance** - Gap                                              | **Strengths**: ~150 test files trong `packages/core`, 35+ `packages/api`, 30+ `packages/agent`; BDD qua pytest-bdd; integration tests với real NATS (`SimulatedAgentApiTestRunner`); E2E key flows.<br>**Gaps**:<br>• Không có Load test trong CI<br>• Không có Chaos engineering<br>• Không có coverage threshold (no 80% gate)<br>• Không có SAST trong CI<br>• Không có dependency audit (pip-audit, trivy)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | • Test coverage: 58 dòng total (`tests/test_snk_enrichment.py`)<br>• 9 parametrized tests cho 1 utility function only<br>• Agents và pipelines chưa có tests                                                                                                           | • Test coverage minimal — 3 file / 788 dòng trong `agents/log_analysis_agent/log_analysis_agent/tests/` only<br>• `chat_agent`, `jira_issue_agent`, `retrieval_orchestrator_agent` + 6 pipeline + custom API + `lib/common` vẫn chưa test                                                                                                                                                                                                                        | TBD | Test coverage **ZERO** (không `test_*.py`, không `.feature`) | Không có tests (repo deploy-only, không có smoke validation) | 5 `test_*.py` + 5 BDD `.feature` cho 3 agent + 2 pipeline | TBD | • Không có integration test giữa core release và customer projects<br>• Không có E2E test cho multi-tenant isolation                                                                                                       |
+| 9   | **Cost Optimization** - Critical                                         | • LLM cost tracking via `LLMCostEvent` (per-model, per-token rates)<br>• Per-agent run cost attribution via Langfuse<br>• S3 file expiration 7 days (`FILE_EXPIRATION_DAYS = 7`)<br>• Backup retention configured<br>• `UsageLimits` defined NHƯNG KHÔNG wire vào middleware → LLM cost unbounded<br>• Không có Pre-flight Cost Estimation<br>• Không có Hard Per-tenant Cost Cap<br>• Không có Storage Quota per tenant<br>• Không có Showback Mechanism<br>• Không có Budget Alert<br>• MCP tool costs KHÔNG tracked (external API costs invisible)<br>• Mongo collections unbounded (no TTL) = storage cost growth                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | -                                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                             | TBD | • LiteLLM cost tracking; vLLM per-token cost đã configure<br>• Hợp tác BBV Greece (offshore) | • Kế thừa core defaults<br>• Không per-tenant cost attribution | • **Azure AI Search per-query cost** (chi phí thêm so với Milvus self-host) | TBD | • Không có per-tenant cost attribution Langfuse<br>• Không có cold storage tier (tất cả data ở hot storage)                                                                                                                |
+| 10  | **Sustainability** - Critical                                            | • Cloud-native capable in theory (containerized, stateless)<br>• License compliance OK (402 Python + 993 npm + 33 Docker all approved)<br>• Python 3.13 slim base images<br>• Không có Region/Data-Residency Strategy<br>• Không có Carbon Footprint Metrics<br>• Không có Energy Consumption Tracking<br>• Không có Sustainability Reporting<br>• LLM calls không optimize (no aggressive caching, batching, prompt compression)<br>• Không có Hardware Lifecycle Management<br>• Không có efficient algorithm benchmarking (HNSW vs DISKANN)<br>• Compute-heavy LLM calls không scheduling off-peak                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | -                                                                                                                                                                                                                                                                      | -                                                                                                                                                                                                                                                                                                                                             | TBD | • Local GPU vLLM = năng lượng on-prem<br>• Không có carbon metrics | • Phụ thuộc Azure (kế thừa claim renewables theo region)<br>• Không metrics | • Region Azure SUI<br>• Không có own metrics | TBD | -                                                                                                                                                                                                                          |
 
 ### 4.2. Business core values vs thực tế
 
-| Core value                         | Statement / Source                                                            | Core (Platform)                                                                                                                                                                                                                                                             | b\*d                                         | c\*c                                                                               | Ig\*s | Dem\*scope | W\*P | Balmer-E\* |       Status       |
-| ---------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- | ----- | ---------- | ---- | ---------- | :----------------: |
-| Swiss data sovereignty             | ADR `2026_02_24`: "All cloud inference must stay within Swiss infrastructure" | Declared via ADR, enforce qua self-hosted local LLM hoặc Swiss LLM Cloud                                                                                                                                                                                                    | 100% Azure OpenAI (Sweden region)            | 100% Azure AI Foundry (SUI+SWE) + Azure Document Intelligence                      | TBD   | TBD        | TBD  | TBD        |      VIOLATED      |
-| No vendor lock-in                  | Platform principle                                                            | OK (no lock-in trong core)                                                                                                                                                                                                                                                  | Cohere reranking (US/Canada vendor)          | Lock-in Azure ở 5 tầng (VM, Key Vault, AD B2C, OpenAI, Doc Intelligence) + Jina AI | TBD   | TBD        | TBD  | TBD        |      VIOLATED      |
-| Self-hosted, on-premise capable    | Marketing claim                                                               | Infrastructure self-hosted OK                                                                                                                                                                                                                                               | Infra self-hosted, LLM Azure cloud           | Infra Azure VM, LLM Azure cloud                                                    | TBD   | TBD        | TBD  | TBD        |      PARTIAL       |
-| "Swiss Sovereign AI" marketing     | Public positioning                                                            | Infrastructure-level đúng                                                                                                                                                                                                                                                   | B\*D dùng Azure LLM → claim chưa align scope | C\*C dùng Azure LLM → claim chưa align scope                                       | TBD   | TBD        | TBD  | TBD        | Cần review wording |
-| Open-source platform               | License declaration                                                           | OK (BSD/MIT/Apache verified)                                                                                                                                                                                                                                                | OK                                           | OK                                                                                 | TBD   | TBD        | TBD  | TBD        |         OK         |
-| Multi-tenant SaaS support          | ADRs 2026_03_30, 2026_02_20                                                   | Tenant chỉ ở Keycloak; data layer không namespace                                                                                                                                                                                                                           | Single-tenant deployment                     | Single-tenant deployment                                                           | TBD   | TBD        | TBD  | TBD        |     NOT READY      |
-| GDPR Art. 17 right to erasure      | Compliance docs claim "implemented"                                           | Không có user/tenant DELETE endpoint                                                                                                                                                                                                                                        | N/A                                          | N/A                                                                                | TBD   | TBD        | TBD  | TBD        |    FALSE CLAIM     |
-| Audit log immutability             | GDPR docs claim "audit logs remain immutable"                                 | Không có `AuditLogEntity` trong codebase                                                                                                                                                                                                                                    | N/A                                          | N/A                                                                                | TBD   | TBD        | TBD  | TBD        |    FALSE CLAIM     |
-| Presidio PII protection            | CLAUDE.md claims integrated                                                   | Code dùng LLM-based fragile guard, không phải Presidio                                                                                                                                                                                                                      | N/A                                          | N/A                                                                                | TBD   | TBD        | TBD  | TBD        |    FALSE CLAIM     |
-| MCP secure tool execution          | Implied by MCP integration                                                    | Tool args bypass LiteLLM → Presidio bypass 100%                                                                                                                                                                                                                             | N/A                                          | Risk cao do agent-heavy use case                                                   | TBD   | TBD        | TBD  | TBD        |     LEAK RISK      |
-| Document ACL respect               | Implied by RBAC architecture                                                  | Milvus không có ACL field, retrieval không filter user                                                                                                                                                                                                                      | N/A                                          | Service account ingest mọi thứ; cross-user query data leak                         | TBD   | TBD        | TBD  | TBD        |     LEAK RISK      |
-| Multi-language Swiss (DE/FR/IT/EN) | Platform i18n declared                                                        | Presidio hardcode `de` ở 16 cấu hình files                                                                                                                                                                                                                                  | i18n DE/EN/FR/IT translations có             | N/A                                                                                | TBD   | TBD        | TBD  | TBD        |      PARTIAL       |
-| Cost protection per tenant         | Implied by UsageLimits class                                                  | `UsageLimits` defined nhưng KHÔNG wire vào middleware                                                                                                                                                                                                                       | N/A                                          | N/A                                                                                | TBD   | TBD        | TBD  | TBD        |    NOT ENFORCED    |
-| Disaster recovery capability       | Backup service tồn tại                                                        | Backup destination = cùng SeaweedFS instance trên cùng VM                                                                                                                                                                                                                   | No off-site backup                           | No off-site backup                                                                 | TBD   | TBD        | TBD  | TBD        |       FATAL        |
-| Common enterprise AI patterns      | Agent framework capability                                                    | Conversational, RAG single+multi-source, document parsing, tool calling/MCP, HITL, multi-agent, voice STT/TTS, code execution, browser automation: working. Vision / predictive analytics / fine-tuned model serving: out of scope (xem `adr_aihub_supported_use_cases.md`) | RAG agents working                           | Multi-agent orchestration working                                                  | TBD   | TBD        | TBD  | TBD        |         OK         |
+| Core value                         | Statement / Source                                                            | Core (Platform)                                                                                                                                                                                                                                                             | b\*d                                         | c\*c                                                                               | Ig\*s | Dem\*scope | W\*P | F\*H | Balmer-E\* |       Status       |
+| ---------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- | ----- | ---------- | ---- | ---- | ---------- | :----------------: |
+| Swiss data sovereignty             | ADR `2026_02_24`: "All cloud inference must stay within Swiss infrastructure" | Declared via ADR, enforce qua self-hosted local LLM hoặc Swiss LLM Cloud                                                                                                                                                                                                    | 100% Azure OpenAI (Sweden region)            | 100% Azure AI Foundry (SUI+SWE) + Azure Document Intelligence                      | TBD | Azure OpenAI SUI + local vLLM | Azure region không có trong repo (chỉ env-var) | Azure OpenAI SUI + Azure AI Search | TBD |      VIOLATED      |
+| No vendor lock-in                  | Platform principle                                                            | OK (no lock-in trong core)                                                                                                                                                                                                                                                  | Cohere reranking (US/Canada vendor)          | Lock-in Azure ở 5 tầng (VM, Key Vault, AD B2C, OpenAI, Doc Intelligence) + Jina AI | TBD | Azure OpenAI + Entra + stack vLLM cục bộ | Azure nặng (OpenAI + Entra) | Azure nặng nhất (OpenAI + AI Search + AD + Storage state) | TBD |      VIOLATED      |
+| Self-hosted, on-premise capable    | Marketing claim                                                               | Infrastructure self-hosted OK                                                                                                                                                                                                                                               | Infra self-hosted, LLM Azure cloud           | Infra Azure VM, LLM Azure cloud                                                    | TBD | Infra Azure VM, LLM hỗn hợp (Azure + local vLLM) | Azure VM + Azure LLM (region chưa verified) | Azure VM + Azure OpenAI + Azure AI Search | TBD |      PARTIAL       |
+| "Swiss Sovereign AI" marketing     | Public positioning                                                            | Infrastructure-level đúng                                                                                                                                                                                                                                                   | B\*D dùng Azure LLM → claim chưa align scope | C\*C dùng Azure LLM → claim chưa align scope                                       | TBD | Local vLLM hỗ trợ; phụ thuộc Azure vẫn còn | Azure region chưa rõ — rủi ro claim | Azure SUI defensible cho LLM; AI Search tăng phụ thuộc | TBD | Cần review wording |
+| Open-source platform               | License declaration                                                           | OK (BSD/MIT/Apache verified)                                                                                                                                                                                                                                                | OK                                           | OK                                                                                 | TBD | OK | OK (deploy-only) | OK | TBD |         OK         |
+| Multi-tenant SaaS support          | ADRs 2026_03_30, 2026_02_20                                                   | Tenant chỉ ở Keycloak; data layer không namespace                                                                                                                                                                                                                           | Single-tenant deployment                     | Single-tenant deployment                                                           | TBD | Triển khai single-tenant | Triển khai single-tenant | Triển khai single-tenant | TBD |     NOT READY      |
+| GDPR Art. 17 right to erasure      | Compliance docs claim "implemented"                                           | Không có user/tenant DELETE endpoint                                                                                                                                                                                                                                        | N/A                                          | N/A                                                                                | TBD | N/A (kế thừa gap core) | N/A (kế thừa gap core) | N/A (kế thừa gap core) | TBD |    FALSE CLAIM     |
+| Audit log immutability             | GDPR docs claim "audit logs remain immutable"                                 | Không có `AuditLogEntity` trong codebase                                                                                                                                                                                                                                    | N/A                                          | N/A                                                                                | TBD | N/A (kế thừa gap core) | N/A (kế thừa gap core) | N/A (kế thừa gap core) | TBD |    FALSE CLAIM     |
+| Presidio PII protection            | CLAUDE.md claims integrated                                                   | Code dùng LLM-based fragile guard, không phải Presidio                                                                                                                                                                                                                      | N/A                                          | N/A                                                                                | TBD | Containers có trong compose; LiteLLM guard config chưa verified | Core config trong repo (mask + block, `default_on: false`) | Chưa verified (older core baseline) | TBD |    FALSE CLAIM     |
+| MCP secure tool execution          | Implied by MCP integration                                                    | Tool args bypass LiteLLM → Presidio bypass 100%                                                                                                                                                                                                                             | N/A                                          | Risk cao do agent-heavy use case                                                   | TBD | N/A (kế thừa gap core) | N/A (kế thừa gap core) | N/A (kế thừa gap core) | TBD |     LEAK RISK      |
+| Document ACL respect               | Implied by RBAC architecture                                                  | Milvus không có ACL field, retrieval không filter user                                                                                                                                                                                                                      | N/A                                          | Service account ingest mọi thứ; cross-user query data leak                         | TBD | N/A (kế thừa gap core) | N/A (kế thừa gap core) | N/A (kế thừa gap core) | TBD |     LEAK RISK      |
+| Multi-language Swiss (DE/FR/IT/EN) | Platform i18n declared                                                        | Presidio hardcode `de` ở 16 cấu hình files                                                                                                                                                                                                                                  | i18n DE/EN/FR/IT translations có             | N/A                                                                                | TBD | DE primary (Swiss `allowed_plz.json`) | Kế thừa core (DE/EN/FR/IT) | DE primary (TARDOC/TARMED Swiss medical) | TBD |      PARTIAL       |
+| Cost protection per tenant         | Implied by UsageLimits class                                                  | `UsageLimits` defined nhưng KHÔNG wire vào middleware                                                                                                                                                                                                                       | N/A                                          | N/A                                                                                | TBD | N/A (single-tenant) | N/A (single-tenant) | N/A (single-tenant) | TBD |    NOT ENFORCED    |
+| Disaster recovery capability       | Backup service tồn tại                                                        | Backup destination = cùng SeaweedFS instance trên cùng VM                                                                                                                                                                                                                   | No off-site backup                           | No off-site backup                                                                 | TBD | FATAL (MinIO cùng VM) | Không có trong repo | Không có trong repo (Pulumi không có backup workload) | TBD |       FATAL        |
+| Common enterprise AI patterns      | Agent framework capability                                                    | Conversational, RAG single+multi-source, document parsing, tool calling/MCP, HITL, multi-agent, voice STT/TTS, code execution, browser automation: working. Vision / predictive analytics / fine-tuned model serving: out of scope (xem `adr_aihub_supported_use_cases.md`) | RAG agents working                           | Multi-agent orchestration working                                                  | TBD | Personas + RAG hash-partitioned | Chỉ standard core | 3-agent routing + BITL events | TBD |         OK         |
 
 ______________________________________________________________________
 
@@ -777,7 +914,7 @@ cuối mỗi scope.
 **SDK version drift**
 
 - _Concern_:
-  - Drift 10 minor versions (v0.279.2 vs core v0.289.10)
+  - Drift 11 minor versions (v0.279.2 vs core v0.290.4)
   - Internal import violation `pipelines/snk_enrichment.py:2`
   - Patterns chưa extract về core (`resolve_selection()`, HITL helpers)
 - _Direction_:
@@ -818,7 +955,7 @@ cuối mỗi scope.
 **No test coverage on agents/pipelines**
 
 - _Concern_:
-  - Test coverage = 59 lines (1 utility function)
+  - Test coverage = 58 lines (1 utility function)
   - 3 agents cộng 4 pipelines hoàn toàn untested
   - Regression risk cao khi upgrade
 - _Direction_:
@@ -873,7 +1010,8 @@ cuối mỗi scope.
 **SDK version drift (lớn hơn B\*D)**
 
 - _Concern_:
-  - Drift 15 minor versions (v0.274.3 vs core v0.289.10)
+  - Drift 16 minor versions (v0.274.3 vs core v0.290.4)
+  - Deep imports trong `agents/chat_agent/chat_agent/ChatAgent.py` đến `swiss_ai_hub.core.generative_ai.{chat_history,guards}` + `swiss_ai_hub.core.i18n.locale_handler` (xem proposed `adr_038`)
   - Internal import violation `lib/common/types/RetrievalAgentInTheLoop.py:1-4`
   - Custom tooling `switch_dependencies.py` thay standard uv workflow
   - Dual lock files (poetry.lock 84KB cộng uv.lock active)
@@ -1035,38 +1173,329 @@ cuối mỗi scope.
   document ACL inheritance; custom API monitoring; DR plan; test coverage plan; large data ingestion strategy; cost
   monitoring Azure Foundry+DI
 
-### 5.4. Other customer projects (placeholders pending input)
+### 5.4. aihub-Dem\*scope
 
-Các customer projects sau đang trong scope review nhưng chi tiết deployment, version, components, data sources,
-sovereignty status, test coverage chưa được cung cấp. Mỗi customer sẽ có structure tương tự §5.2 B*D / §5.3 C*C khi info
-available.
+Cơ sở evidence: repo `aihub-demoscope` HEAD `abe968f 2026-01-13`. Priority items liên kết: §3.4.
+
+#### Concerns
+
+**SDK drift 44 minor**
+
+- _Concern_:
+  - Drift 44 minor version (v0.246.4* vs core v0.290.4) — 4.5+ tháng patches bị bỏ (*SDK pin không có trong repo `pyproject.toml`; số liệu carry over từ snapshot trước)
+  - Phải coordinate upgrade qua 4 variant agent (public/private của persona + multi_personas)
+- _Direction_:
+  - SDK upgrade plan + security delta audit qua 44 minor
+  - CI gate chặn drift > N minor
+
+**Backup destination cùng VM**
+
+- _Concern_:
+  - MinIO backup nằm cùng host với Milvus/Mongo
+  - VM hỏng = mất toàn bộ; vi phạm 3-2-1
+  - Recovery hiện phụ thuộc `backup_updater_script.py` ad-hoc
+- _Direction_:
+  - Emergency cron sync sang Swiss off-site (Infomaniak / Exoscale / Hetzner)
+  - Thay script ad-hoc bằng `milvus-backup` chính thức tới off-host bucket
+
+**Pulumi nêu trong README nhưng IaC code KHÔNG commit**
+
+- _Concern_:
+  - README có viết Pulumi stack init nhưng repo không có folder `.iac/`
+  - Deployment không document được, không reproducible từ repo này
+- _Direction_:
+  - Commit code Pulumi thật hoặc xoá phần README đó
+  - Chọn 1 IaC approach (Pulumi vs Terraform) và document end-to-end deployment
+
+**Test coverage ZERO**
+
+- _Concern_:
+  - Không có `test_*.py`, không có `.feature` cho 2 agent + 1 pipeline
+  - Rủi ro regression cao khi upgrade SDK 44 minor sắp tới
+- _Direction_:
+  - Smoke test baseline cho mỗi agent + pipeline
+  - BDD `.feature` cho luồng questions phân vùng theo hash
+  - Integration test với staging Milvus
+
+**Migration thủ công qua SSH+screen+scp**
+
+- _Concern_:
+  - Workflow `scp migrate_questions.py demoscope:aihub/scripts/...` + `screen -r migration`
+  - Tiến độ track qua `migration_log.json` trên VM (không qua DB)
+  - Fragile, không audit trail
+- _Direction_:
+  - Thay bằng Dagster job (ưu tiên) hoặc k8s Job
+  - Track tiến độ migration qua DB hoặc Dagster runs
+
+**Thiết kế hash-partition Milvus duplicate ở 3 nơi**
+
+- _Concern_:
+  - Cùng 1 hash function ở `lib/common/partition_utils.py`, `persona_agent`, và script migration
+  - Rủi ro drift: nếu 1 chỗ lệch, mọi query đều miss vector
+- _Direction_:
+  - Single source of truth (đã làm 1 phần ở `lib/common/partition_utils.py`)
+  - CI test khẳng định agent + pipeline + migration dùng cùng hash
+
+**4 agent variants deploy (public/private của 2 agent gốc)**
+
+- _Concern_:
+  - persona_agent_public / persona_agent_private / multi_personas_agent_public / multi_personas_agent_private
+  - Operational surface gấp 2; lý do split chưa document
+- _Direction_:
+  - ADR document lý do split public/private
+  - Verify 4 instance chạy cùng code hoặc merge thành 1 binary với config flag
+
+**Stack divergence so với core (Mongo + Redis + Phoenix pre-Langfuse)**
+
+- _Concern_:
+  - Dùng `mongo:8.0.9` + `redis:8.0.1` + `phoenix:version-10.0.4` + `litellm:v1.77.7`
+  - Core đã migrate sang FerretDB + Valkey + Langfuse (ADR `2026_02_10`)
+  - Gắn với SDK drift 44 minor
+- _Direction_:
+  - ADR document lý do divergence (hoặc migration plan)
+  - Check nếu Demoscope có dùng tính năng riêng của Mongo (BSON types, transactions) ngăn migration
+
+**Sovereignty hỗn hợp (Azure OpenAI SUI + local vLLM)**
+
+- _Concern_:
+  - `demoscopeaihub-oai-sui.openai.azure.com` (Azure Switzerland) cho 1 số route
+  - Local vLLM (Gemma-3 12b/27b, gte-Qwen2, bge-reranker) cho route khác
+  - Vị trí hỗn hợp chưa document
+- _Direction_:
+  - ADR document vị trí partial-sovereignty
+  - Làm rõ workload nào route Azure SUI vs local vLLM
+  - Gắn với Core sovereignty path (Option A/B/C)
+
+#### Documentation deliverables
+
+- arc42 12 chương cho Dem\*scope
+- C4 Level 1 (System Context) + C4 Level 2 (Container): 2 agent package (4 variant deploy) + 1 pipeline + custom API
+- ADRs trả lời 9 design questions: stack divergence (Mongo/Redis), hash partition (1000 partition trên `persona_id`),
+  split public/private 4-variant, vị trí sovereignty (Azure SUI + local vLLM), backup MinIO cùng VM, migration
+  Phoenix → Langfuse, IaC approach (commit Pulumi hoặc chọn Terraform), test strategy, agent-config evolution
+
+### 5.5. aihub-W\*P
+
+Cơ sở evidence: repo `aihub-wpe` HEAD `c4b1527 2025-12-18`. `.env.prod` bị sensitive-file-guard chặn; chỉ đọc được
+**tên** env-var, không đọc được giá trị. Priority items liên kết: §3.5.
+
+#### Concerns
+
+**TLS private key committed vào git**
+
+- _Concern_:
+  - `wpe.ai-agents.ch+1-key.pem` và `wpe.ai-agents.ch+1.pem` đang track trong git (chỉ `.env` có trong `.gitignore`)
+  - Cert tên production-domain + private key tương ứng visible cho bất kỳ ai có read access repo
+  - Dù là dev/mkcert cert thì pattern này vẫn nguy hiểm
+- _Direction_:
+  - Rotate cert + key **ngay lập tức** (re-issue qua Traefik + Let's Encrypt)
+  - Add `*.pem`, `*-key.pem`, `secrets/` vào `.gitignore`
+  - Rewrite git history (BFG / `git filter-repo`) để xoá key
+  - Audit xem ai đã pull repo sau khi key được commit
+
+**Deploy VM thủ công bằng copy-paste**
+
+- _Concern_:
+  - Workflow README: `cp docker-compose.latest.yml /opt/docker/config/bbv/docker-compose.latest.yml`
+  - Không IaC, không rollback, không audit trail, không drift detection
+  - `.env` của sysadmin nằm trong `/opt/bbv/.env` (ngoài repo)
+- _Direction_:
+  - Minimum: deploy script reproducible + checksums
+  - Tốt hơn: migrate sang Gen 2 (Ansible Pull) hoặc Gen 3 (`aihub-k8s`)
+
+**LLM region không có trong repo (sovereignty chưa verified)**
+
+- _Concern_:
+  - `AZURE_OPENAI_BASE_URL` chỉ có trong `.env.prod` (gitignore, sensitive-guarded)
+  - Compliance status không review được từ repo
+- _Direction_:
+  - Commit file non-secret `litellm-region.md` hoặc `.env.example` ghi rõ Azure region
+  - ADR align với Core sovereignty path
+
+**SDK drift 35 minor + fallback `${CORE_VERSION:-latest}`**
+
+- _Concern_:
+  - `.env.prod` pin `CORE_VERSION="v0.255.6"`, nhưng `docker-compose.latest.yml` fallback `latest` nếu env thiếu
+  - Reproducible build cần pin tường minh
+- _Direction_:
+  - Bỏ default `:-latest`; fail-fast nếu `CORE_VERSION` không set
+  - SDK upgrade plan + security delta audit (35 minor)
+  - Pattern fallback tương tự cũng tồn tại trong Helm chart `aihub-k8s` — xem proposed `adr_040`
+  - CI gate chặn drift > N minor
+
+**`VOLUME_ROOT:-./.docker-volumes` default về thư mục tương đối**
+
+- _Concern_:
+  - Trong production, default về path tương đối với working directory hiện tại
+  - Đường dẫn snapshot/backup phụ thuộc vào `pwd` của operator khi chạy `docker compose`
+- _Direction_:
+  - Bắt buộc set tường minh `VOLUME_ROOT` (vd `/var/lib/aihub`)
+  - Document chiến lược snapshot
+
+**Off-site backup không có trong repo**
+
+- _Concern_:
+  - Không thấy config Restic / Swift / cross-region sync trong repo
+  - Không rõ backup tồn tại ngoài repo hay không
+- _Direction_:
+  - Thêm backup config vào repo (cron + Restic tới Swiss off-site)
+  - Tuân theo 3-2-1; document RTO/RPO
+
+**Không có own arc42 + ADRs + không có smoke tests**
+
+- _Concern_:
+  - Repo deploy-only không có design doc giải thích các lựa chọn
+  - Không có script validate sau deploy
+- _Direction_:
+  - arc42 tối thiểu (context + deployment + crosscutting)
+  - ADRs cho: lựa chọn manual VM, identity provider, LLM region, vị trí sovereignty
+  - Smoke test sau deploy (curl health endpoint, OAuth round-trip, LiteLLM ping)
+
+#### Documentation deliverables
+
+- arc42 3 chương cho W\*P (Context + Deployment + Crosscutting concepts)
+- C4 Level 1 + C4 Level 2 ngắn gọn (5 ingress host qua Traefik + 30 container)
+- ADRs trả lời 6 design questions: TLS key trong git (rotation + history rewrite), manual VM deployment,
+  identity provider (Azure AD / Entra), LLM region + sovereignty, lý do không có own code, chiến lược backup
+- Smoke test script sau deploy (commit vào repo)
+
+### 5.6. aihub-F\*H
+
+Cơ sở evidence: repo `aihub-fmh` HEAD `5509d39 2026-04-07`. Priority items liên kết: §3.6.
+
+#### Concerns
+
+**SDK drift 104 minor (lớn nhất trong tất cả customer)**
+
+- _Concern_:
+  - Drift v0.186.0 vs core v0.290.4 = 104 minor
+  - 10+ tháng security patches bị miss
+  - Breaking changes tích lũy nhiều, cần upgrade nhiều bước
+- _Direction_:
+  - Upgrade plan từng bước: v0.186 → v0.220 → v0.260 → v0.290
+  - Security delta audit mỗi bước
+  - CI gate chặn drift > N minor
+
+**Monkey-patch LlamaIndex cho GPT-5**
+
+- _Concern_:
+  - `lib/common/register_openai_models.py` chỉnh third-party globals
+    (`llama_index.llms.openai.utils.ALL_AVAILABLE_MODELS` và `CHAT_MODELS`) ở import time
+  - Add `gpt-5-mini` và `gpt-5-nano` vì pinned `llama-index-llms-openai ^0.3.x` chưa biết
+  - Vấn đề supply-chain hygiene: behaviour phụ thuộc import order; hỏng nếu upstream library thay đổi
+- _Direction_:
+  - Open PR lên `aihub-core` thêm GPT-5 model registry chính thức
+  - SDK upgrade sẽ tự loại bỏ patch này
+  - Document workaround trong ADR cho đến khi xoá
+
+**Azure AI Search thay vì Milvus (stack divergence)**
+
+- _Concern_:
+  - F\*H dùng `mongo_aisearch_storage_context_resources` (Azure AI Search) thay vì Milvus của core
+  - Vendor lock-in: indexer + retrieval gắn với Azure SDK
+  - Double inference cost (AI Search query + LLM call)
+  - Trùng pattern §3.3 C\*C "Azure stack triple redundancy"
+- _Direction_:
+  - ADR giải trình Azure AI Search vs Milvus của core
+  - Migration plan về Milvus, hoặc accept divergence + cost analysis chính thức
+
+**Backup status không có trong repo**
+
+- _Concern_:
+  - Pulumi `stores/` deploy infrastructure nhưng không thấy backup workload
+  - Azure backup policy trên `Storage Account` và Cosmos/Mongo chưa verify được từ repo
+  - Cross-region replication cho TARDOC/TARMED handbook data chưa rõ
+- _Direction_:
+  - Verify Azure backup policy + cross-region replication
+  - Restore drill có document RTO/RPO
+  - Nếu backup tồn tại ngoài Pulumi, document chỗ
+
+**Stack divergence (Mongo + Redis + Phoenix pre-Langfuse)**
+
+- _Concern_:
+  - Cùng pattern divergence như Dem\*scope (core baseline cũ ở v0.186.0)
+  - Gắn với SDK upgrade
+- _Direction_:
+  - Plan migration Phoenix → Langfuse (ADR `2026_02_10`)
+  - Plan MongoDB → FerretDB
+  - Gắn với SDK upgrade
+
+**Test coverage tối thiểu (5 + 5 BDD)**
+
+- _Concern_:
+  - Chỉ 5 `test_*.py` + 5 BDD `.feature` cho 3 agent + 2 pipeline
+  - Coverage gap trong luồng routing TARMED billing quan trọng
+- _Direction_:
+  - Coverage threshold 60% cho code mới
+  - BDD `.feature` cho luồng routing 3-agent (routing → handbook + rules)
+  - Integration test với TARMED test fixtures
+
+**Azure vendor lock-in (OpenAI + AI Search + AD + Storage state)**
+
+- _Concern_:
+  - Azure OpenAI Switzerland North + Azure AI Search + Azure AD + Pulumi state trong Azure storage
+  - 4 lớp phụ thuộc Azure; cross-cloud failover không khả thi
+  - Pulumi state SPOF (1 Azure storage account)
+- _Direction_:
+  - ADR document lý do chọn Azure (TARDOC/TARMED là dữ liệu chỉ Swiss → Switzerland North defensible)
+  - Document Pulumi state account name/region trong repo; plan state backup
+  - Evaluate Keycloak federation làm identity alternative
+
+**MS Bot Framework + dev tunnel workflow**
+
+- _Concern_:
+  - README reference `devtunnel` cho local bot dev; rủi ro prod follow dev pattern
+  - `agents/playground/bot_emulator/fmh-local.bot` được reference từ prod docs
+- _Direction_:
+  - Document path deployment cho MS Teams integration tường minh
+  - Xoá reference emulator khỏi prod docs
+  - Đảm bảo prod không phụ thuộc `devtunnel`
+
+**Hardcode handbook namespace `handbook_02_2026`**
+
+- _Concern_:
+  - Pipeline `handbook_ingestion/__init__.py` hardcode `CONTAINER_NAME`, `DIRECTORY_NAME`, `NAMESPACE_NAME`,
+    `VECTOR_STORE_NAME`, `DOCUMENT_STORE_NAME`
+  - Snapshot tháng mới yêu cầu code change
+- _Direction_:
+  - Pydantic Settings từ env
+  - Cho phép nhiều snapshot song song
+  - Document convention versioning `handbook_MM_YYYY`
+
+#### Documentation deliverables
+
+- arc42 12 chương cho F\*H
+- C4 Level 1 + C4 Level 2 (3 agent + 2 pipeline + custom API + bot + evaluation framework)
+- ADRs trả lời 9 design questions: Azure AI Search vs Milvus, monkey-patch GPT-5 (workaround + removal path),
+  thiết kế routing 3-agent (handbook + rules + routing), ingestion TARDOC/TARMED data, lựa chọn MS Bot Framework,
+  identity (Azure AD), Pulumi state SPOF, lý do evaluation framework, BITL events (DignityCheck /
+  RecognitionCheck)
+
+### 5.7. Other customer projects (placeholders pending input)
+
+Các customer còn lại chưa có thông tin. Mỗi customer sẽ có §5 subsection riêng (tương tự §5.2-§5.6) khi có chi tiết.
 
 | Customer         | Status placeholder        |
 | ---------------- | ------------------------- |
 | aihub-Ig\*s      | TBD - awaiting team input |
-| aihub-W\*P       | TBD - awaiting team input |
-| aihub-Dem\*scope | TBD - awaiting team input |
 | aihub-Balmer-E\* | TBD - awaiting team input |
 
 **Per-customer info cần cung cấp** (mỗi customer):
 
 - Status (production date / pilot / onboarding)
 - Core version + drift số minor versions
-- Components (số agents / pipelines / custom APIs)
-- Deployment generation (Gen 1 Azure manual / Gen 2 Infomaniak Ansible Pull / khác)
+- Components (số agent / pipeline / custom API / bot)
+- Deployment generation (Gen 1 Azure manual / Gen 2 Infomaniak Ansible Pull / Gen 3 `aihub-k8s` / khác)
 - Data sources (SharePoint / Jira / SMB / custom / etc.)
 - LLM provider + sovereignty annotation
 - Identity provider (Keycloak / Azure AD / SaaS)
 - Off-site backup status
 - Own arc42 + ADRs available?
 - Test coverage estimate
-- Key concerns / blockers specific to customer
-- Migration plan Gen 1 → Gen 2 (nếu applicable)
+- Concerns / blockers chính của customer
+- Migration plan Gen 1 → Gen 2 → Gen 3 (nếu applicable)
 
-Khi info available, mỗi customer sẽ expand thành section riêng tương tự B*D/C*C: Concerns (categorized) + Documentation
-deliverables.
-
-### 5.5. Cross-cutting (Infrastructure, Process, Governance)
+### 5.8. Cross-cutting (Infrastructure, Process, Governance)
 
 #### Concerns
 
@@ -1391,7 +1820,10 @@ ______________________________________________________________________
 - **Backup Tier 1 emergency mitigation**: cron sync ra Swiss-sovereign off-site target (Infomaniak/Exoscale CH)
 - **Wire UsageLimits middleware**: block LLM cost runaway risk
 - **Quyết định fate `packages/process`**: delete hoặc activate
-- **Audit security delta** từ v0.274.3 → v0.289.10, force-upgrade customers nếu có security patches
+- **Audit security delta** từ phiên bản pin của từng customer (B*D v0.279.2, C*C v0.274.3, W*P v0.255.6, Dem*scope v0.246.4*, F*H v0.186.0) → core hiện tại v0.290.4, force-upgrade customers nếu có security patches (*Demoscope SDK pin chưa verify được từ repo, xem footnote ở §Phiên bản các thành phần)
+- **Dem\*scope remediate-vs-rebuild**: quyết định upgrade pin rất cũ tại chỗ (agent crash khi khởi động) hay rebuild trên core generation hiện tại; và **chính thức chấp nhận rủi ro backup / gia hạn key do khách hàng sở hữu** (RACI sign-off)
+- **F\*H answer quality**: phê duyệt re-design RAG/vector cho dữ liệu cấu trúc và quyết định AI-Search-vs-Milvus (`adr_039`, `adr_044`)
+- **Adopt standing gates**: RAG/vector-design gate (`adr_044`) và continuous component-update strategy (`adr_043`)
 
 ### 6.2. Strategic priorities
 
@@ -1404,6 +1836,8 @@ ______________________________________________________________________
 - **Off-site backup full**: Tier 2 configurable target + Tier 3 Dagster cross-region replication
 - **Observability stack**: Prometheus + AlertManager + dashboards + SLI/SLO
 - **Penetration test bên thứ 3** sau khi security hardening done
+- **Component replaceability / continuous-update strategy**: ports & adapters cho các building block có thể swap (document parser, vector store, OCR — LLM đã provider-agnostic qua LiteLLM) + Renovate + eval-gated upgrades + fallback có tên cho lib commercial/EOL. Tổng quát hoá case MinerU→Docling (`adr_042`, `adr_043`)
+- **Giảm upgrade pain mỗi customer**: mô hình single-tenant-per-deployment khiến mỗi lần upgrade customer là bespoke và đắt — multi-tenant data layer + SDK versioning policy chính thức là fix mang tính cấu trúc
 
 ### 6.3. Documentation deliverables (cần team owner)
 
@@ -1420,6 +1854,8 @@ ______________________________________________________________________
 - **ADR compliance gate** trong development workflow (major decision = required ADR)
 - **Documentation drift detection** trong CI (catch claims không match code)
 - **Pattern extraction roadmap**: customer patterns → core (multi-agent orchestrator, industry connectors)
+- **Design/analysis gate trước implementation**: yêu cầu một design artefact ngắn — đặc biệt vector-DB chunking/schema/index tuning + eval plan — trước khi code. Khoảng trống quy trình này là root cause của các vấn đề chất lượng & performance ở F\*H/Dem\*scope/W\*P (`adr_044`)
+- **Load-test baselines**: thiết lập baseline cho từng project + core (Locust) và chạy định kỳ; tiền đề cho SLI/SLO và để chẩn đoán complaint performance của W\*P (`adr_046`)
 
 ______________________________________________________________________
 
@@ -1494,6 +1930,44 @@ Document này reference các framework, standard, regulation sau:
 - **Presidio (Microsoft PII detection)**: https://microsoft.github.io/presidio/
 - **LiteLLM (LLM gateway)**: https://docs.litellm.ai/
 - **tree-sitter (AST parser)**: https://tree-sitter.github.io/tree-sitter/
+
+### Gen 3 Kubernetes deployment stack (aihub-k8s)
+
+- **Kubernetes**: https://kubernetes.io/docs/
+- **Helm 3** (chart packaging): https://helm.sh/docs/
+- **Terraform** (multi-cloud IaC): https://developer.hashicorp.com/terraform/docs
+- **Azure AKS** (managed Kubernetes): https://learn.microsoft.com/en-us/azure/aks/
+- **OpenStack Magnum** (Container Infra; dùng trên Stoney cloud):
+  https://docs.openstack.org/magnum/latest/
+- **CloudNativePG** (PostgreSQL operator): https://cloudnative-pg.io/documentation/current/
+- **Keycloak Operator**: https://www.keycloak.org/operator/installation
+- **cert-manager** (TLS certificate automation trong K8s): https://cert-manager.io/docs/
+- **NGINX Ingress Controller**: https://kubernetes.github.io/ingress-nginx/
+- **External Secrets Operator**: https://external-secrets.io/latest/
+- **SeaweedFS Helm chart**: https://github.com/seaweedfs/seaweedfs/tree/master/k8s/charts
+- **Milvus Helm chart (Zilliztech)**: https://github.com/zilliztech/milvus-helm
+
+### Công nghệ riêng cho customer (referenced in §3.4-§3.6)
+
+- **Azure AI Search** (F\*H vector backend; thay thế Milvus):
+  https://learn.microsoft.com/en-us/azure/search/
+- **Azure Data Lake Storage Gen2** (F\*H source storage):
+  https://learn.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-introduction
+- **Microsoft Bot Framework** (F\*H bot integration):
+  https://learn.microsoft.com/en-us/azure/bot-service/
+- **TARDOC** (biểu phí ngoại trú Swiss): https://www.tarmed-suisse.ch/tardoc.html
+- **TARMED** (biểu phí billing y tế Swiss, tiền nhiệm): https://www.tarmed-suisse.ch/
+- **vLLM** (LLM serving high-throughput; stack local của Dem\*scope):
+  https://docs.vllm.ai/en/latest/
+- **LlamaIndex** (RAG framework; F\*H monkey-patch để hỗ trợ GPT-5):
+  https://docs.llamaindex.ai/
+- **Pulumi** (IaC framework; ADR `2024_12_18`; F\*H đã commit code; Dem\*scope chỉ có trong README):
+  https://www.pulumi.com/docs/
+- **mkcert** (dev certs locally-trusted; liên quan tới audit `wpe.ai-agents.ch+1*.pem` của W\*P):
+  https://github.com/FiloSottile/mkcert
+- **BFG Repo-Cleaner** (rewrite history để xoá secret đã commit; liên quan W\*P §3.5 item #1):
+  https://rtyley.github.io/bfg-repo-cleaner/
+- **git-filter-repo** (tool rewrite history thay thế): https://github.com/newren/git-filter-repo
 
 ### Gen 2 deployment stack
 

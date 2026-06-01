@@ -18,12 +18,16 @@ Details ở phần "Mapping Overview ↔ Details" bên dưới.
 
 | Thành phần                  | Version   | Ghi chú                                  |
 | --------------------------- | --------- | ---------------------------------------- |
-| aihub-core (HEAD on `main`) | v0.289.10 | Latest dev                               |
-| aihub-bmd dùng core         | v0.279.2  | Đi sau core 10 minor                     |
-| aihub-ctc dùng core         | v0.274.3  | Đi sau core 15 minor, đi sau bmd 5 minor |
+| aihub-core (HEAD on `main`) | v0.290.4  | Latest dev (47 ADRs)                     |
+| aihub-bmd dùng core         | v0.279.2  | Đi sau core 11 minor                     |
+| aihub-ctc dùng core         | v0.274.3  | Đi sau core 16 minor, đi sau bmd 5 minor |
+| aihub-demoscope dùng core   | v0.246.4* | Đi sau core 44 minor (*pin chưa verify)  |
+| aihub-wpe dùng core         | v0.255.6  | Đi sau core 35 minor                     |
+| aihub-fmh dùng core         | v0.186.0  | Đi sau core 104 minor — lớn nhất         |
 
-Cảnh báo: Hai khách hàng đang chạy hai phiên bản SDK khác nhau, đều cũ hơn core. Không có policy hoặc automation đảm bảo
-cập nhật. Bất kỳ security patch nào trên `main` đều không tự động lan xuống customers.
+Cảnh báo: 5 khách hàng đang chạy 5 phiên bản SDK khác nhau, đều cũ hơn core. Không có policy hoặc automation đảm bảo
+cập nhật. Bất kỳ security patch nào trên `main` đều không tự động lan xuống customers. Chi tiết xem
+[`01_architecture_review_overview.vi.md`](01_architecture_review_overview.vi.md) §Phiên bản các thành phần.
 
 ______________________________________________________________________
 
@@ -52,7 +56,7 @@ ______________________________________________________________________
 21. [Backup DR + Alerting + Resilience (3 concerns)](#21-backup-dr--alerting--resilience-3-concerns)
 22. [Well-Architected Framework Mapping (Detailed Status)](#22-well-architected-framework-mapping-detailed-status)
 23. [Roadmap đề xuất](#23-roadmap-%C4%91%E1%BB%81-xu%E1%BA%A5t)
-24. [Proposed ADRs (36 total)](#24-proposed-adrs-36-total)
+24. [Proposed ADRs (40 total)](#24-proposed-adrs-36-total)
 25. [Kết luận](#25-k%E1%BA%BFt-lu%E1%BA%ADn)
 
 **Companion documents**
@@ -348,7 +352,7 @@ ______________________________________________________________________
 
 ### 5.1. Thực trạng
 
-Core dùng semantic versioning qua Git tag (`v0.289.10`). Customers reference core qua `[tool.uv.sources]` với
+Core dùng semantic versioning qua Git tag (`v0.290.4` hiện tại). Customers reference core qua `[tool.uv.sources]` với
 `tag = "vX.Y.Z"`. Không có public SDK release trên PyPI hoặc internal registry, chỉ là git+ssh. Không có policy về
 breaking change, deprecation, hoặc upgrade window.
 
@@ -381,8 +385,9 @@ Vi phạm import được phát hiện:
 
 Lập tức:
 
-- Audit security delta từ v0.274.3 lên v0.289.10
-- Bắt buộc bmd và ctc upgrade lên cùng version core
+- Audit security delta từ phiên bản pin của từng customer (v0.279.2 / v0.274.3 / v0.255.6 / v0.246.4* / v0.186.0)
+  lên core hiện tại v0.290.4
+- Bắt buộc bmd / ctc / wpe / demoscope / fmh upgrade lên cùng version core
 - Xoá `poetry.lock` của ctc
 
 Tháng tới:
@@ -2449,7 +2454,7 @@ Theme: Khoá tất cả P0, chuẩn hoá version, cứng hoá hợp đồng SDK,
 | 1     | Sovereignty stakeholder decision Option A/B/C                                                              |
 | 1     | DTC-1: Wire UsageLimits middleware                                                                         |
 | 1     | DTC-8: Quyết định fate `packages/process`                                                                  |
-| 1-2   | Security audit từ v0.274.3 lên v0.289.10                                                                   |
+| 1-2   | Security audit từ phiên bản pin của mỗi customer lên core v0.290.4                                          |
 | 1-2   | Xoá `poetry.lock` ở ctc                                                                                    |
 | 1-2   | G3.1: Content sniffing upload                                                                              |
 | 2     | G3.3: LUKS encryption deployment guide                                                                     |
@@ -2522,7 +2527,9 @@ Theme: Khoá tất cả P0, chuẩn hoá version, cứng hoá hợp đồng SDK,
 
 ______________________________________________________________________
 
-## 24. Proposed ADRs (36 total)
+## 24. Proposed ADRs (40 total)
+
+> Updated 2026-05-28: 36 original entries + 4 added from review refresh (ADR-NEW-038 through ADR-NEW-041).
 
 | #           | Title                                                          | Drives           |
 | ----------- | -------------------------------------------------------------- | ---------------- |
@@ -2563,6 +2570,10 @@ ______________________________________________________________________
 | ADR-NEW-034 | Circuit Breaker for External Dependencies                      | §21.3            |
 | ADR-NEW-035 | Per-tenant Bulkhead Isolation                                  | §21.3            |
 | ADR-NEW-036 | Graceful Degradation for RAG/LLM Failures                      | §21.3            |
+| ADR-NEW-038 | SDK Import Discipline (public API only)                        | §3.2 #10, §3.3 #17 |
+| ADR-NEW-039 | F*H: Azure AI Search vs core Milvus                            | §3.6 #3          |
+| ADR-NEW-040 | aihub-k8s Helm chart core-version pin policy                   | §3.1 #20, §3.5 #5 |
+| ADR-NEW-041 | W*P TLS key in git — remediation procedure                     | §3.5 #1          |
 
 ______________________________________________________________________
 
@@ -2570,7 +2581,7 @@ ______________________________________________________________________
 
 ### 25.1. Đánh giá tổng thể
 
-Swiss AI Hub là một platform kỹ thuật trưởng thành: event-driven architecture rõ ràng, 45 ADRs document tốt,
+Swiss AI Hub là một platform kỹ thuật trưởng thành: event-driven architecture rõ ràng, 47 ADRs document tốt,
 observability stack đủ mạnh (OTEL và Langfuse), backup service tự động hoá, agent framework matured với 9 trên 10 use
 cases supported. Hai customer deployments (bmd, ctc) chứng minh SDK đủ flexible cho hai use cases rất khác nhau.
 

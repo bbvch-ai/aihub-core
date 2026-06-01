@@ -1,42 +1,42 @@
-# Document ACL Inheritance trong Vector DB
+# Document ACL Inheritance in the Vector DB
 
-**Status**: Proposed **Severity**: P0+ (cross-user data leak via RAG) **Drives**: §19.3 Concern C trong
+**Status**: Proposed **Severity**: P0+ (cross-user data leak via RAG) **Drives**: §19.3 Concern C in
 [Details §19.3 Document ACL Inheritance](../02_architecture_review_details.md#193-concern-c-document-acl-inheritance-critical-data-leak)
 
 ## Context
 
-Review 2026-05 phát hiện gap critical: ACL (Access Control List) của source documents (Jira, SharePoint, Confluence)
-**không** được propagate vào Milvus vector store khi ingest. Hậu quả: bất kỳ user nào với access vào RAG agent đều có
-thể query và đọc content của mọi document, kể cả documents họ không có quyền đọc ở source.
+Review 2026-05 found a critical gap: the ACL (Access Control List) of source documents (Jira, SharePoint, Confluence) is
+**not** propagated into the Milvus vector store at ingest time. Consequence: any user with access to the RAG agent can
+query and read the content of every document, including documents they have no read permission for at the source.
 
-Scenario user mô tả, confirmed:
+Scenario described by the user, confirmed:
 
 ```
-1. SharePoint folder "HR-Confidential" có ACL = {hr_admin_group only}
-2. Pipeline ingest dùng service account với Sites.Read.All
-   → Service account đọc được folder này (super-admin level)
-3. Pipeline parse documents, generate embeddings, insert vào Milvus
-   → Milvus collection "sharepoint" KHÔNG có ACL metadata
-4. User Alice (không thuộc hr_admin_group) hỏi qua RAG: "Tổng lương Q1 2026"
+1. SharePoint folder "HR-Confidential" has ACL = {hr_admin_group only}
+2. Ingest pipeline uses a service account with Sites.Read.All
+   → the service account can read this folder (super-admin level)
+3. Pipeline parses documents, generates embeddings, inserts into Milvus
+   → the Milvus collection "sharepoint" has NO ACL metadata
+4. User Alice (not in hr_admin_group) asks via RAG: "Total Q1 2026 salary"
 5. ChatAgent → RetrievalOrchestrator → retrieve_nodes(namespace="sharepoint")
-   → Trả về vectors từ HR-Confidential folder
-6. Alice đọc được data confidential mà cô không có quyền access ở SharePoint
+   → returns vectors from the HR-Confidential folder
+6. Alice reads confidential data she has no access to in SharePoint
 ```
 
-Bằng chứng từng layer:
+Evidence per layer:
 
 | Layer                 | File                                                                          | Finding                                                                            |
 | --------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Jira fetch            | `pipelines/jira_to_data_lake/resources/JiraResource.py:38`                    | Service account auth, JQL chỉ filter `project={key}`, không capture security level |
-| Jira model            | `lib/common/types/JiraIssue.py:1-72`                                          | Không có field: security_level, project_role, creator, assignee                    |
-| Jira metadata extract | `pipelines/jira_to_data_lake/ops/extract_metadata_from_jira_issue.py:1-35`    | Không có acl, owner                                                                |
-| Confluence fetch      | `pipelines/confluence_to_data_lake/resources/ConfluenceResource.py:21`        | Service account, không filter page restrictions                                    |
-| Confluence model      | `pipelines/confluence_to_data_lake/types/ConfluencePage.py:1-22`              | Không có space_permissions, page_restrictions                                      |
-| SharePoint fetch      | `packages/core/.../sharepoint/share_point_settings.py:1-23`                   | Azure AD app-only Sites.Read.All, không parse folder ACL                           |
-| Milvus schema         | `packages/core/.../persistence/rag/vectors/node_metadata.py:1-116`            | KHÔNG có ACL, permissions, owner, viewable_by fields                               |
-| RAG retrieve          | `packages/core/.../generative_ai/retrieval/retrieve_nodes.py:40-41`           | Filter chỉ NAMESPACE và TYPE, không filter user permissions                        |
-| CTC orchestrator      | `agents/retrieval_orchestrator_agent/.../RetrievalOrchestratorAgent.py:59-72` | Không pass user context vào retrieval                                              |
-| CTC chat agent        | `agents/chat_agent/chat_agent/ChatAgent.py:9-12`                              | Không truyền user identity vào retrieval                                           |
+| Jira fetch            | `pipelines/jira_to_data_lake/resources/JiraResource.py:38`                    | Service account auth; JQL only filters `project={key}`, no security level     |
+| Jira model            | `lib/common/types/JiraIssue.py:1-72`                                          | No fields: security_level, project_role, creator, assignee                    |
+| Jira metadata extract | `pipelines/jira_to_data_lake/ops/extract_metadata_from_jira_issue.py:1-35`    | No acl, owner                                                                 |
+| Confluence fetch      | `pipelines/confluence_to_data_lake/resources/ConfluenceResource.py:21`        | Service account; does not filter page restrictions                            |
+| Confluence model      | `pipelines/confluence_to_data_lake/types/ConfluencePage.py:1-22`              | No space_permissions, page_restrictions                                       |
+| SharePoint fetch      | `packages/core/.../sharepoint/share_point_settings.py:1-23`                   | Azure AD app-only Sites.Read.All; does not parse folder ACL                   |
+| Milvus schema         | `packages/core/.../persistence/rag/vectors/node_metadata.py:1-116`            | NO ACL, permissions, owner, viewable_by fields                                |
+| RAG retrieve          | `packages/core/.../generative_ai/retrieval/retrieve_nodes.py:40-41`           | Filters only NAMESPACE and TYPE, not user permissions                         |
+| CTC orchestrator      | `agents/retrieval_orchestrator_agent/.../RetrievalOrchestratorAgent.py:59-72` | Does not pass user context into retrieval                                     |
+| CTC chat agent        | `agents/chat_agent/chat_agent/ChatAgent.py:9-12`                              | Does not pass user identity into retrieval                                    |
 
 Compliance impact:
 
@@ -46,22 +46,22 @@ Compliance impact:
 - Banking FINMA, Healthcare: block.
 - Auditor question "show me access control on knowledge base": cannot demonstrate.
 
-Root cause: Service account shared key (xem ADR-NEW-021) ingest mọi thứ regardless of source ACL. Fix ACL inheritance
-trong vector store là first line of defense, fix service account auth là second line.
+Root cause: the service account shared key (see ADR-NEW-021) ingests everything regardless of source ACL. Fixing ACL
+inheritance in the vector store is the first line of defense; fixing service-account auth is the second line.
 
 ## Decision Drivers
 
-- **Privacy**: User chỉ access data họ có quyền ở source.
+- **Privacy**: A user only accesses data they have permission for at the source.
 - **Compliance**: GDPR Art. 32, ISO 27001 A.9.4, banking, healthcare.
-- **Performance**: Filter at vector DB level, không re-fetch source per query.
-- **Source-agnostic**: Pattern work cho Jira, SharePoint, Confluence, future sources.
-- **Auditability**: Log mọi access deny cho forensics.
-- **Stale ACL window**: Acceptable trade-off (daily refresh OK cho most use cases).
-- **Backward compat**: Existing Milvus collections cần migration path.
+- **Performance**: Filter at the vector-DB level, don't re-fetch the source per query.
+- **Source-agnostic**: The pattern works for Jira, SharePoint, Confluence, and future sources.
+- **Auditability**: Log every access-deny for forensics.
+- **Stale ACL window**: Acceptable trade-off (daily refresh is OK for most use cases).
+- **Backward compat**: Existing Milvus collections need a migration path.
 
 ## Decision
 
-Implement ACL metadata field trong Milvus, capture source ACL khi ingest, filter at retrieval time.
+Implement an ACL metadata field in Milvus, capture the source ACL at ingest, and filter at retrieval time.
 
 ### Phase 1: Milvus metadata schema extension
 
@@ -78,12 +78,12 @@ HASH = "hash"
 ACL = "acl"  # list[str] of principals (user IDs, group IDs, role IDs)
 ACL_TYPE = "acl_type"  # "explicit" | "inherited" | "world_readable"
 SOURCE_ITEM_ID = "source_item_id"  # Original ID in source system (audit)
-INGESTED_BY = "ingested_by"  # Service account ID used cho ingest
-ACL_LAST_SYNC = "acl_last_sync"  # Timestamp ACL captured (cho staleness check)
+INGESTED_BY = "ingested_by"  # Service account ID used for ingest
+ACL_LAST_SYNC = "acl_last_sync"  # Timestamp the ACL was captured (for staleness check)
 ```
 
-Milvus VARCHAR field cho ACL stores comma-separated principals hoặc JSON array (depends on Milvus version capability).
-Milvus 2.4+ support array fields với INVERTED index.
+A Milvus VARCHAR field for ACL stores comma-separated principals or a JSON array (depends on Milvus version capability).
+Milvus 2.4+ supports array fields with an INVERTED index.
 
 ### Phase 2: ACL capture per source connector
 
@@ -121,7 +121,7 @@ async def fetch_confluence_acl(page_id: str, confluence_client) -> list[str]:
 
     acl: list[str] = []
     if restrictions.is_unrestricted:
-        # Inherit từ space
+        # Inherit from space
         page = await confluence_client.get_page(page_id)
         acl.append(f"confluence_space:{page.space_key}:read")
     else:
@@ -190,7 +190,7 @@ async def retrieve_nodes(
     additional_filters: list[MetadataFilterPair] | None = None,
     top_k: int = 10,
 ) -> list[Node]:
-    # Compute user's principals từ Keycloak groups + roles + identity links
+    # Compute the user's principals from Keycloak groups + roles + identity links
     user_principals = await principal_resolver.resolve(user.user_id, tenant_id)
     # Returns: [
     #   "user:alice@bbv.ch",
@@ -239,7 +239,7 @@ async def retrieve_nodes(
     return nodes
 ```
 
-### Phase 5: Update agents để truyền user context
+### Phase 5: Update agents to pass user context
 
 ```python
 # agents/chat_agent/chat_agent/ChatAgent.py
@@ -259,7 +259,7 @@ event = RetrievalAgentInTheLoopRequestEvent(
 )
 async def daily_acl_sync(context, source_type: str):
     """
-    Re-sync ACL từ source system cho mọi documents đã ingest.
+    Re-sync ACL from the source system for every ingested document.
     Detect: source-side permission change → update Milvus metadata.
     """
     for document in milvus.scan(namespace=source_type):
@@ -285,7 +285,7 @@ async def daily_acl_sync(context, source_type: str):
 class PrincipalResolver:
     """
     Map UserIdentity → list of principals matching source-system formats.
-    Handles identity linking (one user có multiple identities across systems).
+    Handles identity linking (one user has multiple identities across systems).
     """
     async def resolve(self, user_id: str, tenant_id: str) -> list[str]:
         principals = ["world_readable"]  # Always include public docs
@@ -321,11 +321,11 @@ class PrincipalResolver:
 
 ### Positive
 
-- User chỉ query được documents họ có quyền ở source.
+- A user can only query documents they have permission for at the source.
 - GDPR Art. 32, ISO 27001 A.9.4 compliance.
-- Cross-user data leak risk eliminated cho RAG.
-- Audit log mỗi access deny.
-- Source-agnostic pattern, extensible cho new sources.
+- Cross-user data-leak risk eliminated for RAG.
+- Audit log on every access-deny.
+- Source-agnostic pattern, extensible to new sources.
 - Enterprise customers (banking, healthcare) feasible.
 
 ### Negative
@@ -333,37 +333,37 @@ class PrincipalResolver:
 - Performance: Milvus filter increases query latency (estimated +5-50ms, depends on selectivity).
 - Storage overhead: ACL metadata adds ~100-500 bytes per document (~5% increase total).
 - Source ACL fetch overhead: N API calls per ingest (Confluence N+1 problem mitigation needed).
-- Stale ACL window: between daily syncs, source-side permission revoke không reflect immediately.
-- Migration: existing Milvus collections cần backfill ACL (one-time job).
-- Identity linking complexity: Keycloak federated identities phải configured đúng.
-- SharePoint complexity: nested group membership, inherited permissions từ parent folder.
+- Stale ACL window: between daily syncs, a source-side permission revoke is not reflected immediately.
+- Migration: existing Milvus collections need an ACL backfill (one-time job).
+- Identity-linking complexity: Keycloak federated identities must be configured correctly.
+- SharePoint complexity: nested group membership, inherited permissions from the parent folder.
 
-### Mitigation cho concerns
+### Mitigation for concerns
 
-- **Performance**: Pre-compute user principals khi login, cache 1 hour Redis. Index ACL field in Milvus với INVERTED
-  type.
+- **Performance**: Pre-compute user principals at login, cache 1 hour in Redis. Index the ACL field in Milvus with an
+  INVERTED type.
 - **Confluence N+1**: Bulk fetch restrictions API (`/wiki/rest/api/content/{ids}/restriction`).
-- **Stale ACL**: Sync daily mặc định, customer có thể configure hourly cho high-security namespaces.
-- **Migration**: Backfill job mark old documents `world_readable` initially, admin re-ingest critical namespaces.
-- **Defense in depth**: Pair với ADR-NEW-021 (per-user OAuth) để minimize service account scope.
+- **Stale ACL**: Sync daily by default; a customer can configure hourly for high-security namespaces.
+- **Migration**: A backfill job marks old documents `world_readable` initially; admins re-ingest critical namespaces.
+- **Defense in depth**: Pair with ADR-NEW-021 (per-user OAuth) to minimize service-account scope.
 
 ### Implementation notes
 
-- Sprint 1: Phase 1 (schema) + Phase 4 (retrieval filter với `world_readable` default).
-- Sprint 2: Phase 2 + 3 cho Jira connector.
-- Sprint 3: Phase 2 + 3 cho Confluence connector.
-- Sprint 4: Phase 2 + 3 cho SharePoint connector.
+- Sprint 1: Phase 1 (schema) + Phase 4 (retrieval filter with `world_readable` default).
+- Sprint 2: Phase 2 + 3 for the Jira connector.
+- Sprint 3: Phase 2 + 3 for the Confluence connector.
+- Sprint 4: Phase 2 + 3 for the SharePoint connector.
 - Sprint 5: Phase 5 update agents.
 - Sprint 6: Phase 6 daily sync + Principal Resolver.
 - Sprint 7: Backfill existing data.
 
-Migration strategy: New collections enable ACL filter immediately. Old collections marked `world_readable` (existing
-behavior) cho non-breaking change. Admin trigger re-ingest critical namespaces với ACL capture.
+Migration strategy: New collections enable the ACL filter immediately. Old collections are marked `world_readable`
+(existing behavior) for a non-breaking change. Admins trigger re-ingest of critical namespaces with ACL capture.
 
 ## References
 
 - [Details §19.3 Document ACL Inheritance](../02_architecture_review_details.md#193-concern-c-document-acl-inheritance-critical-data-leak):
-  Full evidence và scenario.
+  Full evidence and scenario.
 - ADR-NEW-021 (Source-System Authentication Strategy): Service account vs per-user OAuth - root cause fix.
 - ADR-NEW-011 [Audit Log Entity](adr_011_audit_log_entity.md): Logging access deny events.
 - Milvus 2.4 array field documentation: https://milvus.io/docs/array_data_type.md

@@ -1,38 +1,38 @@
-# Audit Log Entity và Compliance
+# Audit Log Entity and Compliance
 
 **Status**: Proposed **Severity**: P0 (compliance fail, GDPR Art. 30, SOC2, ISO 27001 block) **Drives**: DTC-2 (no audit
-log entity), BR-4 (false GDPR docs claim) trong
+log entity), BR-4 (false GDPR docs claim) in
 [Details §17.3 Repudiation](../02_architecture_review_details.md#173-repudiation),
 [§20.2.3 False docs claim](../02_architecture_review_details.md#202-data-lifecycle--gdpr-reality-5-sub-concerns)
 
 ## Context
 
-Review 2026-05 phát hiện 2 facts mâu thuẫn:
+Review 2026-05 found 2 contradictory facts:
 
-**Fact 1**: GDPR compliance documentation (`docs/docs/2_platform/21_compliance/2_gdpr/index.en.md`) tuyên bố:
+**Fact 1**: GDPR compliance documentation (`docs/docs/2_platform/21_compliance/2_gdpr/index.en.md`) states:
 
 > "Audit logs remain immutable" (Right to rectification section) "The platform provides audit trails, source
 > attribution, and Langfuse tracing for transparency" "comprehensive audit logging, documentation capabilities, and
 > traceability features"
 
-**Fact 2**: Codebase audit trên `packages/core/swiss_ai_hub/core/persistence/` không tìm thấy:
+**Fact 2**: A codebase audit of `packages/core/swiss_ai_hub/core/persistence/` found none of:
 
-- `AuditLogEntity` MongoEngine Document class
-- Audit log collection `audit_logs` hoặc tương đương trong MongoDB schema
-- Middleware hoặc interceptor capture mutations với user identity
-- Audit log retention policy implementation
-- API endpoints để query audit logs
+- An `AuditLogEntity` MongoEngine Document class
+- An audit log collection `audit_logs` or equivalent in the MongoDB schema
+- Middleware or an interceptor capturing mutations with user identity
+- An audit log retention policy implementation
+- API endpoints to query audit logs
 
-`BaseDispatcher` (`packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`) execute steps mà không log who
-triggered, when, with what input. OpenTelemetry traces có trace ID nhưng không bind user identity per-span một cách
-persistent.
+`BaseDispatcher` (`packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`) executes steps without logging who
+triggered them, when, or with what input. OpenTelemetry traces have a trace ID but do not persistently bind user
+identity per span.
 
-Existing events (PersistedAgentEventEntity, PersistedProcessEventEntity) là workflow events, không phải audit log
-entries. Hơn nữa các events này có thể bị xoá hoặc modify (no write-once enforcement).
+Existing events (PersistedAgentEventEntity, PersistedProcessEventEntity) are workflow events, not audit log entries.
+Moreover, these events can be deleted or modified (no write-once enforcement).
 
 Implications:
 
-- **GDPR Art. 30** (Records of processing activities): không có records để comply.
+- **GDPR Art. 30** (Records of processing activities): no records to comply with.
 - **ISO 27001 A.12.4** (Logging and monitoring): non-conformant.
 - **SOC 2 CC7.2** (System monitoring): audit trail missing.
 - **Banking FINMA**: cannot demonstrate access controls.
@@ -40,22 +40,22 @@ Implications:
 - **Internal**: cannot answer "who deleted this tenant?", "who changed this agent config?", "who accessed this user
   data?"
 
-Đặc biệt nghiêm trọng: docs claim "immutable audit logs" while entity không tồn tại. Đây là false claim trước audit
-reviewer.
+Particularly serious: the docs claim "immutable audit logs" while the entity does not exist. This is a false claim in
+front of an audit reviewer.
 
 ## Decision Drivers
 
 - **Compliance**: GDPR Art. 30, ISO 27001 A.12.4, SOC 2 CC7.2, FINMA, HIPAA-equiv.
-- **Trust**: Match docs claim với reality.
-- **Forensics**: Trace incident root cause khi có security event.
-- **Customer transparency**: Tenant admin có thể query audit log của tenant mình.
-- **Performance**: Audit logging không block hot path requests.
-- **Storage cost**: Audit logs có thể grow nhanh, cần retention policy.
-- **Immutability**: Auditor expectation là logs cannot be modified hoặc deleted.
+- **Trust**: Match the docs claim with reality.
+- **Forensics**: Trace incident root cause when a security event occurs.
+- **Customer transparency**: A tenant admin can query their own tenant's audit log.
+- **Performance**: Audit logging does not block hot-path requests.
+- **Storage cost**: Audit logs can grow quickly; a retention policy is needed.
+- **Immutability**: Auditor expectation is that logs cannot be modified or deleted.
 
 ## Decision
 
-Implement `AuditLogEntity` với write-once semantics và proper retention.
+Implement `AuditLogEntity` with write-once semantics and proper retention.
 
 ### Entity schema
 
@@ -174,8 +174,8 @@ async def audit_log_middleware(request: Request, call_next):
 
 ### Service layer integration
 
-State-changing operations trong service classes phải emit audit entry trực tiếp (vì middleware không capture business
-logic context):
+State-changing operations in service classes must emit the audit entry directly (because middleware does not capture
+business-logic context):
 
 ```python
 class TenantAdminService:
@@ -200,19 +200,19 @@ class TenantAdminService:
 
 ### MongoDB write-once enforcement
 
-Application code không thể guarantee immutability nếu attacker có DB access. Để hardening:
+Application code cannot guarantee immutability if an attacker has DB access. To harden:
 
-- MongoDB role `audit_writer` chỉ có `insert` permission trên collection `audit_logs`, không có `update`, `delete`,
+- The MongoDB role `audit_writer` has only `insert` permission on the `audit_logs` collection — no `update`, `delete`,
   `replace`.
-- Application connection dùng credentials với role `audit_writer` cho audit operations.
-- Backup audit_logs cross-region với immutable storage (S3 Object Lock equivalent).
+- The application connection uses credentials with the `audit_writer` role for audit operations.
+- Back up audit_logs cross-region with immutable storage (S3 Object Lock equivalent).
 
 ### Retention
 
-Default 7 years (đủ cho hầu hết regulatory requirements). Customizable per tenant via TTL index. Khi xoá phải go qua
-admin process documented, không phải code path.
+Default 7 years (enough for most regulatory requirements). Customizable per tenant via TTL index. Deletion must go
+through a documented admin process, not a code path.
 
-### API endpoint cho query
+### API endpoint for query
 
 ```python
 # packages/api/swiss_ai_hub/api/routes/audit/audit_controller.py
@@ -237,45 +237,45 @@ class AuditController(TenantScopedController):
 
 ### Performance considerations
 
-- Audit write asynchronous (background task) cho hot path requests.
-- Indexes on `(tenant_id, timestamp)` cho per-tenant queries fast.
-- Batch insert nếu high-throughput scenarios.
-- Sharding by tenant_id khi multi-tenant SaaS (sau khi G1.1 tenant isolation done).
+- Audit writes are asynchronous (background task) for hot-path requests.
+- Indexes on `(tenant_id, timestamp)` make per-tenant queries fast.
+- Batch insert for high-throughput scenarios.
+- Shard by tenant_id for multi-tenant SaaS (after G1.1 tenant isolation is done).
 
 ## Consequences
 
 ### Positive
 
 - GDPR Art. 30, ISO 27001 A.12.4, SOC 2 CC7.2 compliance achievable.
-- Auditor request "show me who accessed X" có answer.
-- Incident forensics có data.
-- Match docs claim với reality (fix BR-4 false claim).
-- Tenant admin có dashboard audit log của tenant mình.
-- Cross-correlate với OpenTelemetry traces qua `trace_id`.
+- An auditor request "show me who accessed X" has an answer.
+- Incident forensics has data.
+- Matches the docs claim with reality (fixes BR-4 false claim).
+- A tenant admin has a dashboard for their own tenant's audit log.
+- Cross-correlate with OpenTelemetry traces via `trace_id`.
 
 ### Negative
 
 - Storage growth: ~1KB per entry × 10000 actions/day × 7 years = ~25 GB per tenant (manageable).
-- Slight latency increase cho state-changing requests (mitigated by async write).
-- Need new MongoDB role và connection management.
-- Initial backfill cho legacy data impossible (chỉ có audit từ thời điểm deploy).
-- Customers cần được notify về what's logged (GDPR transparency).
+- Slight latency increase for state-changing requests (mitigated by async write).
+- Needs a new MongoDB role and connection management.
+- Initial backfill for legacy data is impossible (audit exists only from deploy time onward).
+- Customers need to be notified about what's logged (GDPR transparency).
 
 ### Implementation notes
 
-- Phase 1 (sprint 1): Entity + middleware + service layer integration cho core controllers.
+- Phase 1 (sprint 1): Entity + middleware + service-layer integration for core controllers.
 - Phase 2 (sprint 2): MongoDB role hardening, write-once verification.
-- Phase 3 (sprint 3): Tenant admin UI cho audit query, retention policy per tenant.
+- Phase 3 (sprint 3): Tenant admin UI for audit query, retention policy per tenant.
 - Phase 4 (sprint 4): Cross-region backup immutable storage.
 
-Sau khi accept ADR này, update GDPR docs (`docs/docs/2_platform/21_compliance/2_gdpr/index.en.md`) khi implementation
-done. Update CLAUDE.md.
+After accepting this ADR, update the GDPR docs (`docs/docs/2_platform/21_compliance/2_gdpr/index.en.md`) when
+implementation is done. Update CLAUDE.md.
 
 ## References
 
 - [Details §17.3 Repudiation](../02_architecture_review_details.md#173-repudiation): STRIDE analysis missing audit log.
 - [Details §20.2.3 False docs claim](../02_architecture_review_details.md#202-data-lifecycle--gdpr-reality-5-sub-concerns):
-  Docs say "audit logs immutable" but entity không tồn tại.
+  Docs say "audit logs immutable" but the entity does not exist.
 - ISO 27001 A.12.4 Logging and Monitoring.
 - GDPR Art. 30 Records of Processing Activities.
 - SOC 2 CC7.2 System Monitoring.
