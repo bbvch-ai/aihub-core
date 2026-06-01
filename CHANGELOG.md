@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.290.8] - 2026-06-01 - Introducing a Mixed-License Model and Enhanced Contribution Guidelines
+
+### Added
+
+- 📄 **New `NOTICE` File:** Introduced a new `NOTICE` file to formally outline the project's mixed-license model,
+  providing clear attribution and a detailed license breakdown for different components.
+- 👨‍💻 **Author Information for Web Package:** Explicitly added the author (`bbv Software Services AG`) to the
+  `packages/web/package.json` metadata.
+
+### Changed
+
+- ⚖️ **Revised Project Licensing Model:** The project now operates under a mixed-license model; `packages/web` and
+  `packages/backup` are explicitly licensed under AGPL-3.0-or-later, while most other packages remain Apache-2.0 and
+  `sysadmin-*` packages are proprietary.
+- 📝 **Updated Contribution Guidelines:** The `CONTRIBUTING.md` file has been significantly updated to reflect the new
+  mixed-license model, detailing that contributions are subject to the target package's license and requiring
+  contributors to sign a Contributor License Agreement (CLA).
+- 📅 **Extended Copyright Information:** Updated the root `LICENSE` file and relevant package `README.md` files to extend
+  the copyright period to `2026` and specify `bbv Software Services AG` as the copyright holder.
+- 🔗 **Enhanced License Documentation:** `CLAUDE.md`, `LICENSES.md`, `packages/backup/README.md`, and
+  `packages/web/README.md` have been updated to accurately reflect and reference the detailed per-package licensing
+  matrix and the new `NOTICE` file, ensuring greater transparency.
+
+______________________________________________________________________
+
 ## [v0.290.7] - 2026-05-29 - Introducing API Token Management and Documentation
 
 ### Added
