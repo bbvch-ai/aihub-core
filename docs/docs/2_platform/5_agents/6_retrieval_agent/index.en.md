@@ -53,15 +53,15 @@ answers.
 
 Compared to the Document Intelligence Assistant, the Retrieval Agent omits everything that isn't retrieval:
 
-| Capability | Document Intelligence Assistant | Retrieval Agent |
-| ---------- | :-----------------------------: | :-------------: |
-| Searches your knowledge base | ✅ | ✅ |
-| Reranking | ✅ (optional) | ❌ |
-| Generates an answer with an LLM | ✅ | ❌ |
-| Citations in a written reply | ✅ | ❌ (returns sources as data) |
-| Context-sufficiency guard / multi-hop | ✅ (optional) | ❌ |
-| Suitability guard | ✅ (optional) | ❌ |
-| User & organization memory | ✅ (optional) | ❌ |
+| Capability                            | Document Intelligence Assistant |       Retrieval Agent        |
+| ------------------------------------- | :-----------------------------: | :--------------------------: |
+| Searches your knowledge base          |               ✅                |              ✅              |
+| Reranking                             |          ✅ (optional)          |              ❌              |
+| Generates an answer with an LLM       |               ✅                |              ❌              |
+| Citations in a written reply          |               ✅                | ❌ (returns sources as data) |
+| Context-sufficiency guard / multi-hop |          ✅ (optional)          |              ❌              |
+| Suitability guard                     |          ✅ (optional)          |              ❌              |
+| User & organization memory            |          ✅ (optional)          |              ❌              |
 
 This is what makes its configuration so small: there is no chat model, no temperature, no reranking, no guards, and no
 memory to configure — only the knowledge source.
@@ -81,32 +81,32 @@ Only the **profile identity** and a single **knowledge source** are required.
 
 ### Profile identity
 
-| Field           | Type                | Required | Description                                                                  |
-| --------------- | ------------------- | -------- | ---------------------------------------------------------------------------- |
+| Field           | Type                | Required | Description                                                                   |
+| --------------- | ------------------- | -------- | ----------------------------------------------------------------------------- |
 | **Agent ID**    | Text                | Yes      | Unique, URL-safe identifier. Lowercase letters, digits, underscores, hyphens. |
-| **Name**        | Text (per language) | Yes      | Display name.                                                                |
-| **Description** | Text (per language) | Yes      | Short explanation of what this profile retrieves from.                       |
-| **Icon**        | Icon picker         | No       | Visual identifier.                                                           |
+| **Name**        | Text (per language) | Yes      | Display name.                                                                 |
+| **Description** | Text (per language) | Yes      | Short explanation of what this profile retrieves from.                        |
+| **Icon**        | Icon picker         | No       | Visual identifier.                                                            |
 
 ### Knowledge source
 
 The single knowledge base this agent searches. (The Document Intelligence Assistant allows several; the Retrieval Agent
 takes exactly one.)
 
-| Field                    | Type                  | Default   | Description                                                                                            |
-| ------------------------ | --------------------- | --------- | ----------------------------------------------------------------------------------------------------- |
-| **Embedding model**      | Model picker          | —         | Must match the model used to index this knowledge base. Required.                                     |
-| **Vector store**         | Knowledge-base picker | —         | The collection (and optional namespaces) to search. Required.                                         |
-| **Retrieve K**           | Number                | `5`       | How many passages to fetch. Range 1–100.                                                              |
-| **Query mode**           | Choice                | `default` | Search strategy: `default` (semantic), `hybrid` (semantic + keyword), or `sparse` (keyword).          |
-| **Node types**           | Multi-select          | `content` | Retrieve document **content**, parent **summary** nodes, or both. At least one required.              |
-| **Retrieve previous/next** | Optional group      | Off       | Also pull the chunks immediately before/after each hit, preserving surrounding context.               |
-| **Retrieve summaries**   | Optional group        | Off       | Also pull parent-level summary nodes.                                                                  |
+| Field                      | Type                  | Default   | Description                                                                                  |
+| -------------------------- | --------------------- | --------- | -------------------------------------------------------------------------------------------- |
+| **Embedding model**        | Model picker          | —         | Must match the model used to index this knowledge base. Required.                            |
+| **Vector store**           | Knowledge-base picker | —         | The collection (and optional namespaces) to search. Required.                                |
+| **Retrieve K**             | Number                | `5`       | How many passages to fetch. Range 1–100.                                                     |
+| **Query mode**             | Choice                | `default` | Search strategy: `default` (semantic), `hybrid` (semantic + keyword), or `sparse` (keyword). |
+| **Node types**             | Multi-select          | `content` | Retrieve document **content**, parent **summary** nodes, or both. At least one required.     |
+| **Retrieve previous/next** | Optional group        | Off       | Also pull the chunks immediately before/after each hit, preserving surrounding context.      |
+| **Retrieve summaries**     | Optional group        | Off       | Also pull parent-level summary nodes.                                                        |
 
 ### Output formatting
 
-| Field              | Type      | Default              | Description                                                                                              |
-| ------------------ | --------- | -------------------- | -------------------------------------------------------------------------------------------------------- |
+| Field              | Type      | Default              | Description                                                                                                                             |
+| ------------------ | --------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | **Context prompt** | Long text | *(default combiner)* | Optional template controlling how the retrieved passages are formatted into the returned context block. Leave empty to use the default. |
 
 ## Best practices

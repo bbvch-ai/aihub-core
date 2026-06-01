@@ -80,9 +80,9 @@ is generated.
 
 ## Before you start: prerequisites
 
-1. **A configured RAG agent profile.** This is the single most important prerequisite. The Document Navigation
-   Assistant delegates every answer to a [Document Intelligence Assistant](../5_document_intelligence_assistant/)
-   profile, so that profile must already exist and work. Set it up and test it first.
+1. **A configured RAG agent profile.** This is the single most important prerequisite. The Document Navigation Assistant
+   delegates every answer to a [Document Intelligence Assistant](../5_document_intelligence_assistant/) profile, so that
+   profile must already exist and work. Set it up and test it first.
 2. **Knowledge bases organized into namespaces.** There must be more than one namespace to choose between for routing to
    be meaningful. Namespaces are defined when documents are ingested by the [data pipelines](../../6_pipelines/).
 3. **A chat model** for the routing language model, available through your platform's LiteLLM configuration.
@@ -100,40 +100,40 @@ The agent is delivered as a **blueprint** from which you create configured **pro
 5. **Select the RAG agent to delegate to.** Pick the Document Intelligence Assistant profile that will do the actual
    searching and answering.
 6. **Optionally customize** the approval message shown to users and how much conversation history the router keeps.
-7. **Save and test.** Ask questions that should land in different namespaces and confirm the routing and approval
-   behave as expected.
+7. **Save and test.** Ask questions that should land in different namespaces and confirm the routing and approval behave
+   as expected.
 
 ## Configuration reference
 
 ### Profile identity
 
-| Field           | Type                | Required | Description                                                                  |
-| --------------- | ------------------- | -------- | ---------------------------------------------------------------------------- |
+| Field           | Type                | Required | Description                                                                   |
+| --------------- | ------------------- | -------- | ----------------------------------------------------------------------------- |
 | **Agent ID**    | Text                | Yes      | Unique, URL-safe identifier. Lowercase letters, digits, underscores, hyphens. |
-| **Name**        | Text (per language) | Yes      | Display name shown to users.                                                 |
-| **Description** | Text (per language) | Yes      | Short explanation shown in the assistant picker.                             |
-| **Icon**        | Icon picker         | No       | Visual identifier.                                                           |
+| **Name**        | Text (per language) | Yes      | Display name shown to users.                                                  |
+| **Description** | Text (per language) | Yes      | Short explanation shown in the assistant picker.                              |
+| **Icon**        | Icon picker         | No       | Visual identifier.                                                            |
 
 ### Routing
 
 These settings control how the assistant decides where to search and where it sends the question.
 
-| Field                  | Type                  | Default | Required | Description                                                                                                              |
-| ---------------------- | --------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Model**              | Model picker          | —       | Yes      | The chat model used to work out which namespaces a question belongs to.                                                  |
-| **Knowledge Databases** | Knowledge-base picker | —       | Yes      | The knowledge bases the assistant may route between. Their namespaces are the options it chooses from. At least one.     |
-| **RAG Agent**          | Agent picker          | —       | Yes      | The [Document Intelligence Assistant](../5_document_intelligence_assistant/) profile that questions are delegated to. The picker lists agents that accept RAG-style requests. |
+| Field                   | Type                  | Default | Required | Description                                                                                                                                                                   |
+| ----------------------- | --------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Model**               | Model picker          | —       | Yes      | The chat model used to work out which namespaces a question belongs to.                                                                                                       |
+| **Knowledge Databases** | Knowledge-base picker | —       | Yes      | The knowledge bases the assistant may route between. Their namespaces are the options it chooses from. At least one.                                                          |
+| **RAG Agent**           | Agent picker          | —       | Yes      | The [Document Intelligence Assistant](../5_document_intelligence_assistant/) profile that questions are delegated to. The picker lists agents that accept RAG-style requests. |
 
 The **Model** picker also exposes the standard language-model parameters (temperature, timeout, and the log-probability
-options) described on the [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) page; a
-low temperature is best, since routing should be consistent.
+options) described on the [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) page;
+a low temperature is best, since routing should be consistent.
 
 ### Conversation behaviour
 
-| Field                       | Type      | Default              | Description                                                                                                                                    |
-| --------------------------- | --------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Max history entries**     | Number    | `20`                 | How many recent conversation turns the router keeps while working out the right sources. The original question is always kept. Minimum 4, maximum 100. |
-| **Approval message template** | Long text | *(default provided)* | The message shown when asking the user to approve the chosen sources. Use the `{namespaces}` placeholder where the proposed list should appear. |
+| Field                         | Type      | Default              | Description                                                                                                                                            |
+| ----------------------------- | --------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Max history entries**       | Number    | `20`                 | How many recent conversation turns the router keeps while working out the right sources. The original question is always kept. Minimum 4, maximum 100. |
+| **Approval message template** | Long text | *(default provided)* | The message shown when asking the user to approve the chosen sources. Use the `{namespaces}` placeholder where the proposed list should appear.        |
 
 ## Best practices
 

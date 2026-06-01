@@ -1,152 +1,174 @@
 ---
-title: Agent befragt Experten
-source_sha: 8b1ba7dd2ba0cd24f9d49dd50917b6ae02a11446c324c2d37d86202ebb7874e2
+title: Expert Coordinator Agent
+description: Leitet eine Frage an einen menschlichen Experten auf Slack oder Teams weiter, überprüft die Antwort und speichert sie als organisatorisches Wissen.
+source_sha: 5b494da8b2a757e9b6b4145572a86afac485c770ec82cc0ec715b21fb3ff8342
 ---
 
-# Agent befragt Experten
+# Expert Coordinator Agent
 
-Wenn ein RAG-Agent eine Frage aus seiner Wissensbasis nicht beantworten kann, kann er die Anfrage an menschliche
-Experten eskalieren. Die Expert Agents implementieren diesen Eskalations-Workflow durch zwei spezialisierte Agents, die
-zusammenarbeiten.
+Der **Expert Coordinator Agent** (der Experten-fragende Agent) ist die Brücke zwischen Ihren KI-Agents und Ihren
+menschlichen Experten. Wenn eine Frage nicht automatisch beantwortet werden kann, postet dieser Agent sie in einen dafür
+vorgesehenen Expertenkanal auf **Microsoft Teams oder Slack**, wartet auf eine Antwort einer Person, überprüft, ob die
+Antwort die Frage tatsächlich beantwortet (und fragt bei Bedarf nach), und speichert die Antwort dann im
+**Organisationsgedächtnis**, damit sie beim nächsten Mal automatisch wiederverwendet werden kann.
 
-## Architektur des Agentenpaars
+Normalerweise ist er nicht etwas, womit Endbenutzer direkt chatten. Stattdessen arbeitet er im Hintergrund — meistens
+wird er vom [Company Knowledge Agent](/de/docs/10_company_knowledge_agent/) aufgerufen, wenn dieser Agent keine
+dokumentierten Antworten mehr findet. Sein Wert liegt in der **Wissenserfassung**: Jede Expertenkonsultation verwandelt
+eine einmalige menschliche Antwort in wiederverwendbares organisatorisches Wissen.
 
-Das System verwendet zwei Agents:
-
-Der **Expert RAG Agent** interagiert mit Benutzern. Er durchsucht seine Wissensbasis nach Antworten. Wenn die
-Informationen unzureichend sind, informiert er den Benutzer und bittet um Erlaubnis, die Frage an einen menschlichen
-Experten zu eskalieren.
-
-Der **Expert Asking Agent** verwaltet den Konsultationsprozess. Er postet Fragen an Experten über Microsoft Teams oder
-Slack, erfasst deren Antworten und speichert die Antworten in der Wissensbasis für zukünftige Anfragen.
-
-## Workflow
+## Was er tut
 
 ```mermaid
-sequenceDiagram
-    participant User
-    participant RAGAgent as Expert RAG Agent
-    participant KnowledgeBase as Knowledge Base
-    participant AskingAgent as Expert Asking Agent
-    participant Channel as Teams/Slack
-    participant HumanExpert as Human Expert
-
-    User->>+RAGAgent: Asks a complex question
-    RAGAgent->>+KnowledgeBase: Searches for relevant context
-    KnowledgeBase-->>-RAGAgent: Returns insufficient/no context
-
-    RAGAgent-->>User: "I don't know. May I ask an expert?"
-    User->>+RAGAgent: "Yes, please."
-
-    RAGAgent->>+AskingAgent: Delegates question (Agent-in-the-Loop)
-    Note right of AskingAgent: Manages the human interaction
-
-    AskingAgent->>+Channel: Posts question to expert channel
-    Channel->>+HumanExpert: Notifies expert of the question
-
-    HumanExpert->>+Channel: Provides answer in thread
-    Channel-->>-AskingAgent: Forwards expert's response
-
-    Note over AskingAgent: Evaluates response for completeness.<br/>(Optional: Asks follow-up questions if needed)
-
-    AskingAgent->>+KnowledgeBase: Saves expert's answer as a new<br/>knowledge snippet for future use
-    KnowledgeBase-->>-AskingAgent: Confirms knowledge is stored
-
-    AskingAgent-->>-RAGAgent: Returns the final, verified answer
-    RAGAgent-->>-User: Delivers the expert's answer
+flowchart LR
+    A[Zu stellende Frage] --> B[Im<br/>Expertenkanal<br/>posten]
+    B --> C[Ein Mensch antwortet<br/>auf Slack/Teams]
+    C --> D{Antwort gut<br/>genug?}
+    D -- Nein --> E[Eine<br/>Nachfrage<br/>stellen]
+    E --> B
+    D -- Ja --> F[Im Organisations-<br/>gedächtnis speichern<br/>& zurückgeben]
 ```
 
-Das Sequenzdiagramm zeigt den vollständigen Konsultations-Workflow.
+1. **Im Expertenkanal posten.** Der Agent sendet die Frage an den konfigurierten Teams- oder Slack-Kanal, in dem Ihre
+   Experten anwesend sind.
+2. **Auf eine menschliche Antwort warten.** Eine Person antwortet in diesem Kanal, in ihrem normalen Workflow – keine
+   spezielle Software muss erlernt werden.
+3. **Die Antwort überprüfen.** Ein Sprachmodell beurteilt, ob die Antwort die Frage tatsächlich beantwortet oder ob der
+   Experte abgelehnt/nur teilweise geantwortet hat.
+4. **Bei Bedarf nachfragen.** Wenn die Antwort unzureichend ist, formuliert der Agent eine gezielte Nachfrage und postet
+   diese erneut in den Kanal – dies wird bis zu einer konfigurierbaren Anzahl von Runden wiederholt.
+5. **Speichern und zurückgeben.** Sobald die Antwort ausreichend ist, speichert der Agent das Frage-Antwort-Paar im
+   Organisationsgedächtnis und gibt die Antwort an den Fragesteller zurück (typischerweise den Company Knowledge Agent,
+   der sie an den Benutzer weiterleitet).
 
-Der Benutzer stellt dem Expert RAG Agenten eine Frage. Der Agent durchsucht die Wissensbasis. Wenn die Suche
-unzureichende Informationen liefert, informiert der Agent den Benutzer und bittet um Erlaubnis, einen Experten zu
-konsultieren.
-
-Mit Zustimmung des Benutzers delegiert der RAG Agent an den Expert Asking Agent unter Verwendung des
-Agent-in-the-Loop-Musters. Der Asking Agent postet die Frage in einen konfigurierten Teams- oder Slack-Kanal und
-benachrichtigt den benannten Experten.
-
-Der Experte gibt eine Antwort im Kanal-Thread. Der Asking Agent kann die Vollständigkeit der Antwort bewerten und bei
-Bedarf Nachfragen stellen. Sobald er zufrieden ist, speichert er die Antwort in der Wissensbasis und gibt die Antwort an
-den RAG Agenten zurück, der sie dem Benutzer übermittelt.
-
-Zukünftige Anfragen zum gleichen Thema rufen die gespeicherte Expertenantwort aus der Wissensbasis ab, ohne eine weitere
-Konsultation zu erfordern.
+::: tip Das ist "Bot-in-the-Loop"
+Während andere Agents für den *Endbenutzer* pausieren (Human-in-the-Loop), pausiert der Expert Coordinator für einen
+*anderen Menschen* — einen Fachexperten, der über einen Chatkanal erreicht wird. Der ursprüngliche Benutzer wartet nicht
+im Chat; ihm wird mitgeteilt, dass die Frage weitergeleitet wurde und beantwortet wird, sobald ein Experte antwortet.
+:::
 
 ## Wissenserfassung
 
-Jede Expertenkonsultation erweitert die Wissensbasis. Experten beantworten Fragen einmal, und ihre Antworten werden für
-alle Benutzer durchsuchbar. Dies wandelt implizites Wissen in dokumentierte Informationen um, ohne dass Experten
-zusätzliche Tools über ihren bestehenden Teams- oder Slack-Arbeitsbereich hinaus verwenden müssen.
+Der Grund, diesen Agent anstelle einer E-Mail an einen Experten zu verwenden, ist, dass **jede Antwort erfasst wird**.
+Wenn ein Experte einmal antwortet, werden die Frage und Antwort ins Organisationsgedächtnis geschrieben und sind für
+jeden durchsuchbar. Das nächste Mal, wenn dasselbe Thema aufkommt, kann der
+[Company Knowledge Agent](/de/docs/10_company_knowledge_agent/) es aus diesem gespeicherten Wissen beantworten, ohne den
+Experten erneut zu belästigen — so summiert sich der Aufwand des Experten mit der Zeit, anstatt in einem Chat-Thread
+verloren zu gehen.
 
-Der Asking Agent kann unvollständige Antworten erkennen und Nachfragen generieren, um sicherzustellen, dass das erfasste
-Wissen für zukünftige Abrufe ausreichend umfassend ist.
+## Typische Szenarien
 
-## Konfiguration
+- **Eskalation an das Engineering.** Ein Company Knowledge Agent findet keine dokumentierte Antwort zu einem internen
+  System, daher konsultiert er den Teams-Kanal des Engineering-Teams; die Antwort wird für zukünftige Fragen erfasst.
+- **Spezialisten-Desk.** Eine kleine Gruppe von Fachexperten bearbeitet die wirklich neuen Fragen, während die KI alles
+  bereits Dokumentierte handhabt.
+- **Aufbau der Wissensdatenbank aus Konversationen.** Im Laufe der Zeit sammeln sich Expertenantworten im
+  Organisationsgedächtnis an, wodurch die Notwendigkeit menschlicher Beteiligung stetig reduziert wird.
 
-Der Expert Asking Agent erfordert eine Kanal-Konfiguration, um mit menschlichen Experten zu kommunizieren. Konfigurieren
-Sie die folgenden Umgebungsvariablen in Ihrer `.env`-Datei:
+## Bevor Sie beginnen: Voraussetzungen
 
-### Auswahl des Kanaltyps
+1. **Ein verbundener Teams- oder Slack-Bot.** Der Agent erreicht Experten über einen Bot, der auf Ihrer
+   Kollaborationsplattform registriert ist. Diese Bot-Verbindung muss zuerst eingerichtet werden — siehe
+   [Slack & Teams Integrationseinrichtung](/de/docs/17_slack_teams_integrations/1_setup/). Sie benötigen die Kanal- und
+   Bot-Identifikatoren aus dieser Einrichtung, um die unten stehende Konfiguration auszufüllen.
+2. **Ein Expertenkanal.** Ein Teams- oder Slack-Kanal, in dem Ihre Experten anwesend und bereit sind, Fragen zu
+   beantworten.
+3. **Ein Chat-Modell** zum Überprüfen von Antworten und zum Verfassen von Nachfragen, verfügbar über Ihre
+   LiteLLM-Konfiguration.
 
-```bash
-# Channel type: "teams" or "slack"
-EXPERT_ASKING_CHANNEL_TYPE="teams"
-```
+## Einrichtung
 
-### Microsoft Teams Konfiguration
+Der Agent wird als **Blueprint** (Vorlage) bereitgestellt, aus dem Sie konfigurierte **Profile** erstellen — siehe
+[Blueprints & Profile](/de/docs/2_blueprints_and_profiles/). Mit den erfüllten Voraussetzungen:
 
-Erforderlich, wenn `EXPERT_ASKING_CHANNEL_TYPE="teams"`:
+1. **Öffnen Sie den Blueprint** unter **Admin > Agents > Blueprints** und wählen Sie **Expert Coordinator Agent** aus.
+2. **Erstellen Sie ein Profil** mit einer **Agent-ID**, einem **Namen**, einer **Beschreibung** und einem **Icon**.
+3. **Wählen Sie den Kanal** (Teams oder Slack) und tragen Sie dessen Identifikatoren ein (siehe Konfigurationsreferenz).
+4. **Legen Sie das Ziel für das Organisationsgedächtnis fest**, damit erfasste Antworten dort gespeichert werden, wo
+   Ihre Wissens-Agents sie lesen können.
+5. **Wählen Sie das Chat-Modell** und passen Sie, falls gewünscht, die Anzahl der erlaubten Nachfrage-Runden an.
+6. **Speichern.** Das Profil kann nun von einem Company Knowledge Agent angesprochen (oder direkt aufgerufen) werden.
 
-```bash
-# Teams channel ID (format: 19:xxxxx@thread.tacv2)
-TEAMS_CHANNEL_ID="19:your-channel-id@thread.tacv2"
+::: warning Die Kanalkonfiguration befindet sich im Formular, nicht in Umgebungsvariablen
+In früheren Versionen wurde der Kanal über Umgebungsvariablen (`EXPERT_ASKING_CHANNEL_TYPE`, `TEAMS_CHANNEL_ID`,
+`SLACK_CHANNEL_ID`, …) festgelegt. Das ist nicht mehr der Fall — **alle Kanaleinstellungen sind jetzt Teil des
+Konfigurationsformulars des Agents** und werden pro Profil in der Admin-Benutzeroberfläche bearbeitet. Wenn Sie
+andernorts Referenzen auf diese Umgebungsvariablen finden, betrachten Sie diese als veraltet.
+:::
 
-# Azure AD tenant ID (UUID format)
-TEAMS_TENANT_ID="00000000-0000-0000-0000-000000000000"
+## Konfigurationsreferenz
 
-# Bot application ID from Azure Bot Service (UUID format)
-TEAMS_BOT_ID="00000000-0000-0000-0000-000000000000"
-```
+### Profilidentität
 
-Um diese Werte zu finden:
+| Feld             | Typ                | Erforderlich | Beschreibung                                                                           |
+| :--------------- | :----------------- | :----------- | :------------------------------------------------------------------------------------- |
+| **Agent-ID**     | Text               | Ja           | Eindeutige, URL-sichere Kennung. Kleinbuchstaben, Ziffern, Unterstriche, Bindestriche. |
+| **Name**         | Text (pro Sprache) | Ja           | Anzeigename.                                                                           |
+| **Beschreibung** | Text (pro Sprache) | Ja           | Kurze Erklärung, wofür dieses Expertenprofil dient.                                    |
+| **Icon**         | Icon-Auswahl       | Nein         | Visueller Identifikator.                                                               |
 
-- **TEAMS_CHANNEL_ID**: Klicken Sie in Teams mit der rechten Maustaste auf den Kanal und wählen Sie "Link zum Kanal
-  abrufen". Die Kanal-ID befindet sich in der URL.
-- **TEAMS_TENANT_ID**: Verfügbar im Azure-Portal unter Azure Active Directory > Übersicht.
-- **TEAMS_BOT_ID**: Die Anwendungs-ID Ihrer Azure Bot Service-Registrierung.
+### Expertenkanal
 
-### Slack Konfiguration
+Wählen Sie die Plattform aus und füllen Sie dann die Felder dieser Plattform aus. Die Identifikatoren stammen aus Ihrer
+[Bot-Integrations-Einrichtung](/de/docs/17_slack_teams_integrations/1_setup/).
 
-Erforderlich, wenn `EXPERT_ASKING_CHANNEL_TYPE="slack"`:
+| Feld         | Typ     | Standard | Beschreibung                                                                |
+| :----------- | :------ | :------- | :-------------------------------------------------------------------------- |
+| **Kanaltyp** | Auswahl | `teams`  | Welche Plattform verwendet werden soll: **Microsoft Teams** oder **Slack**. |
 
-```bash
-# Slack channel ID (format: C followed by alphanumeric characters)
-SLACK_CHANNEL_ID="C00000000"
+**Wenn der Kanaltyp Microsoft Teams ist:**
 
-# Bot Framework service URL for Slack
-SLACK_SERVICE_URL="https://slack.botframework.com"
-```
+| Feld             | Typ  | Erforderlich | Beschreibung                                         |
+| :--------------- | :--- | :----------- | :--------------------------------------------------- |
+| **Kanal-ID**     | Text | Ja           | Die Teams-Kanal-ID (Format wie `19:…@thread.tacv2`). |
+| **Mandanten-ID** | Text | Ja           | Ihre Azure AD Mandanten-ID (eine UUID).              |
+| **Bot-ID**       | Text | Ja           | Die Anwendungs-ID des Teams-Bots (eine UUID).        |
 
-Um diese Werte zu finden:
+**Wenn der Kanaltyp Slack ist:**
 
-- **SLACK_CHANNEL_ID**: Klicken Sie in Slack mit der rechten Maustaste auf den Kanalnamen und wählen Sie "Link
-  kopieren". Die Kanal-ID ist der letzte Teil der URL (beginnt mit "C").
-- **SLACK_SERVICE_URL**: Verwenden Sie `https://slack.botframework.com` für globale oder
-  `https://europe.slack.botframework.com` für EU-Datenresidenz.
+| Feld            | Typ  | Standard                         | Beschreibung                                                                                                                 |
+| :-------------- | :--- | :------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **Kanal-ID**    | Text | —                                | Die Slack-Kanal-ID (beginnt mit `C`).                                                                                        |
+| **Service-URL** | Text | `https://slack.botframework.com` | Bot Framework Service-URL. Verwenden Sie den EU-Endpunkt (`https://europe.slack.botframework.com`) für die EU-Datenresidenz. |
 
-## Deployment
+### Nachfrageverhalten
 
-Sowohl der Expert RAG Agent als auch der Expert Asking Agent werden als Docker-Container deployed. Sie sind in der
-Standard-Docker-Compose-Konfiguration enthalten und werden automatisch durch die CI-Pipeline gebaut.
+| Feld               | Typ  | Standard | Beschreibung                                                                                                  |
+| :----------------- | :--- | :------- | :------------------------------------------------------------------------------------------------------------ |
+| **Max. Schleifen** | Zahl | `3`      | Wie oft der Agent eine Nachfrage stellen darf, wenn die Antwort des Experten unvollständig ist. Bereich 1–10. |
 
-Zum Deployment:
+### Sprachmodell
 
-1. Konfigurieren Sie die Umgebungsvariablen in Ihrer `.env`-Datei
-2. Starten Sie die Services mit Docker Compose:
+| Feld                                                                                      | Typ           | Standard | Beschreibung                                                                                                                                    |
+| :---------------------------------------------------------------------------------------- | :------------ | :------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Modell**                                                                                | Modellauswahl | —        | Das Chat-Modell, das verwendet wird, um die Vollständigkeit der Antwort zu beurteilen und Nachfragen zu verfassen. Erforderlich.                |
+| **Temperatur**                                                                            | Zahl          | `0.0`    | Niedrig halten — dies ist eine Beurteilungs-/Extraktionsaufgabe, keine kreative. Bereich 0.0–2.0.                                               |
+| **Log-Wahrscheinlichkeiten zurückgeben** / **Top Log-Wahrscheinlichkeiten** / **Timeout** | —             | —        | Standard-Sprachmodelloptionen, wie auf der Seite [Document Intelligence Assistant](/de/docs/5_document_intelligence_assistant/#language-model). |
 
-```bash
-docker compose up -d expert_rag_agent expert_asking_agent
-```
+### Organisationsgedächtnis
 
-Die Agents verbinden sich mit NATS für die Ereigniskommunikation und mit Redis für das Zustandsmanagement.
+Wo erfasste Expertenantworten geschrieben werden. Gelesen von Wissens-Agents (wie dem Company Knowledge Agent), damit
+Antworten automatisch wiederverwendet werden.
+
+| Feld                              | Typ         | Standard                                          | Beschreibung                                                                                                                                             |
+| :-------------------------------- | :---------- | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mandanten-ID**                  | Text        | Plattform-Standard                                | In den gemeinsam genutzten Speicher welches Mandanten geschrieben werden soll.                                                                           |
+| **Erlaubte Namespaces**           | Liste       | *(leer)*                                          | Positivliste von Namespaces. Leer bedeutet uneingeschränkt. Validiert auch das Schreibziel.                                                              |
+| **Standard-Namespace**            | Text        | Plattform-Standard                                | Der Namespace, in den Antworten geschrieben werden, wenn eine Anfrage keinen angibt. Muss in der Positivliste enthalten sein, falls eine festgelegt ist. |
+| **Organisationsgedächtnisformat** | Langer Text | `Question: {question}\n\nExpert Answer: {answer}` | Vorlage für das gespeicherte Snippet. Verwenden Sie die Platzhalter `{question}` und `{answer}`.                                                         |
+
+## Bewährte Praktiken
+
+**Echte Experten in den Kanal einbinden.** Der Agent ist nur so gut wie die antwortenden Personen. Wählen Sie einen
+Kanal, in dem kompetente Kollegen anwesend und bereit sind zu helfen.
+
+**Den Namespace konsistent mit Ihren Wissens-Agents halten.** Damit erfasste Antworten wiederverwendet werden können,
+schreiben Sie sie in einen Namespace, aus dem der [Company Knowledge Agent](/de/docs/10_company_knowledge_agent/) (oder
+ein RAG-Agent) tatsächlich liest.
+
+**Das Nachfragelimit an die Geduld Ihrer Experten anpassen.** Zwei oder drei Runden sind in der Regel ausreichend; zu
+viele können sich wie ein Verhör für den antwortenden Menschen anfühlen.
+
+**Koppeln Sie ihn mit einem Company Knowledge Agent.** Allein leitet dieser Agent nur Fragen weiter. Seine wahre Stärke
+kommt daher, dass er das Eskalationsziel eines [Company Knowledge Agent](/de/docs/10_company_knowledge_agent/) ist, der
+ihn nur konsultiert, wenn seine eigenen Dokumente nicht ausreichen.

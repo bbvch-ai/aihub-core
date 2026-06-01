@@ -17,8 +17,8 @@ model to run on* — all without writing any code.
 ::: tip When to reach for this agent
 Use the Instructed Assistant when the task only needs the model's own reasoning and language skills — drafting,
 rewriting, summarising pasted text, brainstorming, translation, or answering general questions. If the assistant needs
-to look things up in your company's documents, use the [Document Intelligence Assistant](../5_document_intelligence_assistant/)
-instead.
+to look things up in your company's documents, use the
+[Document Intelligence Assistant](../5_document_intelligence_assistant/) instead.
 :::
 
 ## What it does
@@ -48,8 +48,8 @@ It helps to be explicit about the boundaries, because the name "assistant" can s
 - **No knowledge base.** It never searches your documents. If you ask it about an internal policy, it will answer from
   the model's general training, not from your files. For grounded, cited answers, use the
   [Document Intelligence Assistant](../5_document_intelligence_assistant/).
-- **No tools or actions.** It cannot create tickets, send messages, or call external systems. For that, use the
-  MCP Tool Agent.
+- **No tools or actions.** It cannot create tickets, send messages, or call external systems. For that, use the MCP Tool
+  Agent.
 - **No human escalation.** It will not hand a question off to a colleague. For that, see the
   [Expert Coordinator Agent](../9_expert_coordinator_agent/).
 - **No "training" on your data.** Like every agent on the platform, it is not fine-tuned on your content. Its behaviour
@@ -82,8 +82,8 @@ create one or more **profiles** (your configured, named instances). If you are n
 4. **Choose the model.** Pick a chat model from the dropdown. The available options come from your platform's LiteLLM
    configuration. Match the model to the task: a smaller, cheaper model is fine for rewriting and translation; a larger
    one helps for nuanced reasoning.
-5. **Tune the parameters (optional).** Adjust temperature, the input-token budget, and the timeout if the defaults
-   don't suit your use case. The defaults are sensible for most assistants.
+5. **Tune the parameters (optional).** Adjust temperature, the input-token budget, and the timeout if the defaults don't
+   suit your use case. The defaults are sensible for most assistants.
 6. **Save.** The profile is available immediately to any user with permission to use it.
 
 ::: tip There is nothing else to set up
@@ -101,21 +101,21 @@ behaviour, and the language-model settings.
 
 These fields exist on every agent blueprint and define how the profile appears in the UI.
 
-| Field           | Type            | Required | Description                                                                                          |
-| --------------- | --------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| **Agent ID**    | Text            | Yes      | Unique, URL-safe identifier for this profile. Lowercase letters, digits, underscores, hyphens only.  |
-| **Name**        | Text (per language) | Yes  | Display name shown to users. Can be set per language (de, en, fr, it).                               |
-| **Description** | Text (per language) | Yes  | Short explanation of what this profile is for. Shown in the assistant picker.                        |
-| **Icon**        | Icon picker     | No       | Visual identifier. Defaults to a generic robot icon.                                                 |
+| Field           | Type                | Required | Description                                                                                         |
+| --------------- | ------------------- | -------- | --------------------------------------------------------------------------------------------------- |
+| **Agent ID**    | Text                | Yes      | Unique, URL-safe identifier for this profile. Lowercase letters, digits, underscores, hyphens only. |
+| **Name**        | Text (per language) | Yes      | Display name shown to users. Can be set per language (de, en, fr, it).                              |
+| **Description** | Text (per language) | Yes      | Short explanation of what this profile is for. Shown in the assistant picker.                       |
+| **Icon**        | Icon picker         | No       | Visual identifier. Defaults to a generic robot icon.                                                |
 
 ### Behaviour
 
 These fields control how the assistant treats each conversation.
 
-| Field                    | Type      | Default     | Description                                                                                                                                                                 |
-| ------------------------ | --------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **System Prompt**        | Long text | *(empty)*   | The plain-text instructions that define the assistant's role, tone, and rules. Inserted at the start of every conversation. This is the single most important setting.      |
-| **Maximum Input Tokens** | Number    | `100000`    | The size of the input budget. The conversation (system prompt + chat history + new message) is trimmed to fit. Lower values cut cost and keep the model focused on recent turns; higher values preserve more history. Range: 1,000–200,000. |
+| Field                    | Type      | Default   | Description                                                                                                                                                                                                                                 |
+| ------------------------ | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **System Prompt**        | Long text | *(empty)* | The plain-text instructions that define the assistant's role, tone, and rules. Inserted at the start of every conversation. This is the single most important setting.                                                                      |
+| **Maximum Input Tokens** | Number    | `100000`  | The size of the input budget. The conversation (system prompt + chat history + new message) is trimmed to fit. Lower values cut cost and keep the model focused on recent turns; higher values preserve more history. Range: 1,000–200,000. |
 
 ::: warning Match the input budget to your model
 **Maximum Input Tokens** must stay within the chosen model's actual context window. Setting it higher than the model
@@ -127,18 +127,19 @@ default.
 
 These settings live under the model section of the form. They select the model and control how it generates text.
 
-| Field           | Type       | Default | Description                                                                                                                                            |
-| --------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Model**       | Model picker | —     | Which chat model the assistant runs on. Options come from your LiteLLM configuration. Required.                                                         |
-| **Temperature** | Number     | `0.0`   | Controls randomness. `0.0` gives focused, repeatable answers (best for translation, extraction, factual replies). Higher values (up to `2.0`) give more varied, creative output. |
-| **Return Log Probabilities** | Toggle | Off | Whether the model returns token-level probabilities. An advanced/diagnostic option; leave off unless you specifically need confidence scores. |
-| **Top Log Probabilities**    | Number | `0` | How many of the most likely alternative tokens to return per position. Only applies when log probabilities are enabled. Range: 0–20.            |
-| **Timeout**     | Number (seconds) | `600` | How long to wait for the model before giving up. Increase only if you use a slow model with very long outputs.                                  |
+| Field                        | Type             | Default | Description                                                                                                                                                                      |
+| ---------------------------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Model**                    | Model picker     | —       | Which chat model the assistant runs on. Options come from your LiteLLM configuration. Required.                                                                                  |
+| **Temperature**              | Number           | `0.0`   | Controls randomness. `0.0` gives focused, repeatable answers (best for translation, extraction, factual replies). Higher values (up to `2.0`) give more varied, creative output. |
+| **Return Log Probabilities** | Toggle           | Off     | Whether the model returns token-level probabilities. An advanced/diagnostic option; leave off unless you specifically need confidence scores.                                    |
+| **Top Log Probabilities**    | Number           | `0`     | How many of the most likely alternative tokens to return per position. Only applies when log probabilities are enabled. Range: 0–20.                                             |
+| **Timeout**                  | Number (seconds) | `600`   | How long to wait for the model before giving up. Increase only if you use a slow model with very long outputs.                                                                   |
 
 ::: details How the settings combine at runtime
-When a message arrives, the assistant builds the conversation as `[ system messages → your system prompt → chat history
-→ new user message ]`, trims it to **Maximum Input Tokens**, then calls the selected **Model** with the configured
-**Temperature**, **Timeout**, and log-probability options. The reply streams straight back to the chat UI.
+When a message arrives, the assistant builds the conversation as
+`[ system messages → your system prompt → chat history → new user message ]`, trims it to **Maximum Input Tokens**, then
+calls the selected **Model** with the configured **Temperature**, **Timeout**, and log-probability options. The reply
+streams straight back to the chat UI.
 :::
 
 ## Best practices

@@ -5,11 +5,12 @@ description: A document-answering assistant that falls back to a human expert (w
 
 # Company Knowledge Agent
 
-The **Company Knowledge Agent** (the expert-RAG agent) is the [Document Intelligence Assistant](../5_document_intelligence_assistant/)
-with a human safety net. It answers questions from your documents exactly like the Document Intelligence Assistant —
-and when it can't find a good enough answer, instead of giving up it offers to **ask a human expert**. With the user's
-permission, it hands the question to an [Expert Coordinator Agent](../9_expert_coordinator_agent/), which reaches a
-person on Slack or Teams, and then answers the user using the expert's reply.
+The **Company Knowledge Agent** (the expert-RAG agent) is the
+[Document Intelligence Assistant](../5_document_intelligence_assistant/) with a human safety net. It answers questions
+from your documents exactly like the Document Intelligence Assistant — and when it can't find a good enough answer,
+instead of giving up it offers to **ask a human expert**. With the user's permission, it hands the question to an
+[Expert Coordinator Agent](../9_expert_coordinator_agent/), which reaches a person on Slack or Teams, and then answers
+the user using the expert's reply.
 
 It combines two strengths: the speed and scale of document-based answers, and the reliability of a human for the
 questions your documents don't cover yet. And because expert answers are captured into organization memory, the agent
@@ -68,8 +69,9 @@ escalation transparent: the user always approves before a colleague is contacted
 This agent sits on top of two others, so both of their setups must be in place first:
 
 1. **Everything the Document Intelligence Assistant needs.** A populated knowledge base, a matching embedding model, and
-   a chat model — see that agent's [prerequisites](../5_document_intelligence_assistant/#before-you-start-prerequisites).
-   The Company Knowledge Agent shares all of the same retrieval configuration.
+   a chat model — see that agent's
+   [prerequisites](../5_document_intelligence_assistant/#before-you-start-prerequisites). The Company Knowledge Agent
+   shares all of the same retrieval configuration.
 2. **A configured Expert Coordinator Agent profile.** The escalation target must already exist and work, including its
    connected Teams/Slack bot. Set up and test the [Expert Coordinator Agent](../9_expert_coordinator_agent/) first — the
    Company Knowledge Agent is useless without one to delegate to.
@@ -85,8 +87,8 @@ The agent is delivered as a **blueprint** from which you create configured **pro
    knowledge source, and any reranking, guards, prompts, and memory you want.
 3. **Turn on the context-sufficiency guard.** Expert escalation is triggered by the sufficiency check deciding the
    context isn't enough — so this guard should be enabled, or the agent will rarely escalate.
-4. **Select the Expert Agent.** Choose the [Expert Coordinator Agent](../9_expert_coordinator_agent/) profile to escalate
-   to. This is the one setting unique to this agent.
+4. **Select the Expert Agent.** Choose the [Expert Coordinator Agent](../9_expert_coordinator_agent/) profile to
+   escalate to. This is the one setting unique to this agent.
 5. **Save and test** with a question your documents *can* answer (expect a normal cited answer) and one they *can't*
    (expect the consent prompt and escalation).
 
@@ -101,14 +103,15 @@ On top of that, it adds a single new setting for escalation:
 
 ### Expert escalation
 
-| Field            | Type         | Required | Description                                                                                                                       |
-| ---------------- | ------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Field            | Type         | Required | Description                                                                                                                                                                                  |
+| ---------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Expert Agent** | Agent picker | Yes      | The [Expert Coordinator Agent](../9_expert_coordinator_agent/) profile to consult when the documents don't have a sufficient answer. The picker lists agents that can take expert questions. |
 
 ::: warning Enable the context-sufficiency guard
-Escalation only happens when the [context-sufficiency guard](../5_document_intelligence_assistant/#context-sufficiency-guard-optional)
-decides the retrieved context isn't enough. If that guard is left off, the agent will almost always answer from
-documents alone and never reach the expert path — defeating the purpose of this blueprint.
+Escalation only happens when the
+[context-sufficiency guard](../5_document_intelligence_assistant/#context-sufficiency-guard-optional) decides the
+retrieved context isn't enough. If that guard is left off, the agent will almost always answer from documents alone and
+never reach the expert path — defeating the purpose of this blueprint.
 :::
 
 ## Best practices
@@ -119,9 +122,9 @@ Document Intelligence setup answers well, and your Expert Coordinator reaches a 
 **Enable the sufficiency guard and tune it.** It's the trigger for escalation. Too lenient and the agent guesses instead
 of asking; too strict and it escalates trivial questions. Test with real questions and adjust.
 
-**Point escalation and memory at the same namespace.** For captured expert answers to come back as document-free
-answers later, the Expert Coordinator must write to a namespace this agent's organization memory reads from. Keep them
-aligned so the knowledge base genuinely grows from each consultation.
+**Point escalation and memory at the same namespace.** For captured expert answers to come back as document-free answers
+later, the Expert Coordinator must write to a namespace this agent's organization memory reads from. Keep them aligned
+so the knowledge base genuinely grows from each consultation.
 
 **Set expectations in the system prompt.** Since some answers will arrive only after a human replies, make sure the
 assistant's wording (and your users' expectations) account for the "I've forwarded this to an expert" path.

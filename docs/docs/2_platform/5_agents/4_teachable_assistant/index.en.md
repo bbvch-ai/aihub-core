@@ -16,8 +16,8 @@ also follows demonstrated examples — which is often far easier than describing
 
 ::: tip When to reach for this agent
 Use the Teachable Assistant when the *style or shape* of the answer matters and is easier to show than to explain —
-classifying messages into fixed categories, replying in a strict format, matching a support tone of voice, or
-extracting fields from text. If you only need free-form help with no particular format, the
+classifying messages into fixed categories, replying in a strict format, matching a support tone of voice, or extracting
+fields from text. If you only need free-form help with no particular format, the
 [Instructed Assistant](../3_instructed_assistant/) is simpler. If answers must come from your documents, use the
 [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 :::
@@ -101,50 +101,50 @@ The form has four parts: the profile identity, the system prompt and examples, t
 
 ### Profile identity
 
-| Field           | Type                | Required | Description                                                                                                       |
-| --------------- | ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Agent ID**    | Text                | Yes      | Unique, URL-safe identifier. Lowercase letters, digits, underscores, hyphens.                                     |
-| **Name**        | Text (per language) | Yes      | Display name shown to users.                                                                                       |
+| Field           | Type                | Required | Description                                                                                                                         |
+| --------------- | ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Agent ID**    | Text                | Yes      | Unique, URL-safe identifier. Lowercase letters, digits, underscores, hyphens.                                                       |
+| **Name**        | Text (per language) | Yes      | Display name shown to users.                                                                                                        |
 | **Description** | Text (per language) | Yes      | **Doubles as the suitability test.** Describe precisely what this assistant is for — the guard uses it to decide whether to answer. |
-| **Icon**        | Icon picker         | No       | Visual identifier. Defaults to a book icon.                                                                       |
+| **Icon**        | Icon picker         | No       | Visual identifier. Defaults to a book icon.                                                                                         |
 
 ### Teaching the assistant
 
 These fields define what the assistant learns from.
 
-| Field             | Type                 | Default   | Description                                                                                                                                  |
-| ----------------- | -------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **System Prompt** | Long text            | *(empty)* | A short instruction describing the task, used alongside the examples.                                                                        |
-| **Few-Shot Examples** | List of pairs    | *(empty)* | The example exchanges that teach the assistant. Each entry has a **user** input and the desired **agent** response. Both can be per-language. |
+| Field                 | Type          | Default   | Description                                                                                                                                   |
+| --------------------- | ------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **System Prompt**     | Long text     | *(empty)* | A short instruction describing the task, used alongside the examples.                                                                         |
+| **Few-Shot Examples** | List of pairs | *(empty)* | The example exchanges that teach the assistant. Each entry has a **user** input and the desired **agent** response. Both can be per-language. |
 
 Each example is one pair:
 
-| Field     | Type                | Description                                              |
-| --------- | ------------------- | -------------------------------------------------------- |
-| **User**  | Text (per language) | An example of what a user might say.                     |
+| Field     | Type                | Description                                                 |
+| --------- | ------------------- | ----------------------------------------------------------- |
+| **User**  | Text (per language) | An example of what a user might say.                        |
 | **Agent** | Text (per language) | The response you want the assistant to give for that input. |
 
 ### Input budget
 
-| Field                    | Type   | Default  | Description                                                                                                                      |
-| ------------------------ | ------ | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **Max Input Tokens**     | Number | `100000` | Size of the input budget; the conversation is trimmed to fit. Range 1,000–200,000. Keep it within the chosen model's context window. |
+| Field                | Type   | Default  | Description                                                                                                                          |
+| -------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Max Input Tokens** | Number | `100000` | Size of the input budget; the conversation is trimmed to fit. Range 1,000–200,000. Keep it within the chosen model's context window. |
 
 ### Language model
 
-| Field           | Type         | Default | Description                                                                                                       |
-| --------------- | ------------ | ------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Model**       | Model picker | —       | Which chat model the assistant runs on. Options come from your LiteLLM configuration. Required.                   |
-| **Temperature** | Number       | `0.0`   | Randomness. Keep low (`0.0`–`0.3`) for classification and strict formatting; raise only for creative tasks. Range 0.0–2.0. |
-| **Return Log Probabilities** | Toggle | Off | Advanced/diagnostic option for token-level confidence scores. Leave off unless needed.                     |
-| **Top Log Probabilities**    | Number | `0` | How many alternative tokens to report per position; only applies when log probabilities are enabled. Range 0–20. |
-| **Timeout**     | Number (seconds) | `600` | How long to wait for the model before giving up.                                                              |
+| Field                        | Type             | Default | Description                                                                                                                |
+| ---------------------------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Model**                    | Model picker     | —       | Which chat model the assistant runs on. Options come from your LiteLLM configuration. Required.                            |
+| **Temperature**              | Number           | `0.0`   | Randomness. Keep low (`0.0`–`0.3`) for classification and strict formatting; raise only for creative tasks. Range 0.0–2.0. |
+| **Return Log Probabilities** | Toggle           | Off     | Advanced/diagnostic option for token-level confidence scores. Leave off unless needed.                                     |
+| **Top Log Probabilities**    | Number           | `0`     | How many alternative tokens to report per position; only applies when log probabilities are enabled. Range 0–20.           |
+| **Timeout**                  | Number (seconds) | `600`   | How long to wait for the model before giving up.                                                                           |
 
 ::: details How the settings combine at runtime
 A message is trimmed to **Max Input Tokens**, checked against the **Description** by the suitability guard, and (if
-accepted) condensed into a standalone question. The assistant then builds the context as `[ system prompt → your
-example pairs → condensed question ]` and calls the selected **Model** with the configured **Temperature**, **Timeout**,
-and log-probability options, streaming the reply to the chat UI.
+accepted) condensed into a standalone question. The assistant then builds the context as
+`[ system prompt → your example pairs → condensed question ]` and calls the selected **Model** with the configured
+**Temperature**, **Timeout**, and log-probability options, streaming the reply to the chat UI.
 :::
 
 ## Best practices

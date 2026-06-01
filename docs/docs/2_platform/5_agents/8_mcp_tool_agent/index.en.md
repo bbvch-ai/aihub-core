@@ -93,41 +93,41 @@ The agent is delivered as a **blueprint** from which you create configured **pro
 
 ### Profile identity
 
-| Field           | Type                | Required | Description                                                                  |
-| --------------- | ------------------- | -------- | ---------------------------------------------------------------------------- |
+| Field           | Type                | Required | Description                                                                   |
+| --------------- | ------------------- | -------- | ----------------------------------------------------------------------------- |
 | **Agent ID**    | Text                | Yes      | Unique, URL-safe identifier. Lowercase letters, digits, underscores, hyphens. |
-| **Name**        | Text (per language) | Yes      | Display name.                                                                |
-| **Description** | Text (per language) | Yes      | Short explanation of what this profile does.                                 |
-| **Icon**        | Icon picker         | No       | Visual identifier. Defaults to a plug icon.                                  |
+| **Name**        | Text (per language) | Yes      | Display name.                                                                 |
+| **Description** | Text (per language) | Yes      | Short explanation of what this profile does.                                  |
+| **Icon**        | Icon picker         | No       | Visual identifier. Defaults to a plug icon.                                   |
 
 ### MCP server connection
 
 How the agent reaches the external tool server.
 
-| Field         | Type     | Default     | Description                                                                                                          |
-| ------------- | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Name**      | Text     | —           | A logical name for this connection. Required.                                                                        |
-| **URL**       | Text     | —           | The MCP server's URL. The transport is inferred automatically. Required.                                             |
-| **Auth mode** | Choice   | `api_key`   | How to authenticate (see below).                                                                                     |
-| **API key**   | Password | *(empty)*   | The static key, shown only when **Auth mode** is *API key*.                                                          |
-| **Timeout**   | Number (seconds) | `30` | How long to wait for the server before giving up. Range 1–300.                                                       |
+| Field         | Type             | Default   | Description                                                              |
+| ------------- | ---------------- | --------- | ------------------------------------------------------------------------ |
+| **Name**      | Text             | —         | A logical name for this connection. Required.                            |
+| **URL**       | Text             | —         | The MCP server's URL. The transport is inferred automatically. Required. |
+| **Auth mode** | Choice           | `api_key` | How to authenticate (see below).                                         |
+| **API key**   | Password         | *(empty)* | The static key, shown only when **Auth mode** is *API key*.              |
+| **Timeout**   | Number (seconds) | `30`      | How long to wait for the server before giving up. Range 1–300.           |
 
 **Auth modes:**
 
-| Mode | What it does | When to use |
-| ---- | ------------ | ----------- |
-| **None** | No credentials sent. | Open or network-trusted servers. |
-| **API key** | Sends a single static key for all requests. | The agent acts as one shared service account. |
+| Mode           | What it does                                            | When to use                                                                                                                                                 |
+| -------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **None**       | No credentials sent.                                    | Open or network-trusted servers.                                                                                                                            |
+| **API key**    | Sends a single static key for all requests.             | The agent acts as one shared service account.                                                                                                               |
 | **User token** | Forwards the requesting user's own token to the server. | When actions should be attributed to — and permitted per — the individual user, so the external system's audit trail and per-user permissions stay correct. |
 
 ### Reasoning
 
-| Field               | Type             | Default  | Description                                                                                                       |
-| ------------------- | ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Model**           | Model picker     | —        | The chat model that reasons and selects tools. Prefer a strong tool-calling model. Required.                      |
-| **System Prompt**   | Long text        | *(empty)* | Instructions for how the agent should behave and use the tools.                                                  |
-| **Max Iterations**  | Number           | `10`     | How many reason-act loops the agent may run before stopping gracefully. Range 1–100. Bounds runaway tool use.     |
-| **Max Input Tokens** | Number          | `128000` | The input budget; the conversation is trimmed to fit. Range 1,000–200,000.                                        |
+| Field                | Type         | Default   | Description                                                                                                   |
+| -------------------- | ------------ | --------- | ------------------------------------------------------------------------------------------------------------- |
+| **Model**            | Model picker | —         | The chat model that reasons and selects tools. Prefer a strong tool-calling model. Required.                  |
+| **System Prompt**    | Long text    | *(empty)* | Instructions for how the agent should behave and use the tools.                                               |
+| **Max Iterations**   | Number       | `10`      | How many reason-act loops the agent may run before stopping gracefully. Range 1–100. Bounds runaway tool use. |
+| **Max Input Tokens** | Number       | `128000`  | The input budget; the conversation is trimmed to fit. Range 1,000–200,000.                                    |
 
 The **Model** also exposes the standard parameters (temperature, timeout, log-probability options) described on the
 [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) page.
