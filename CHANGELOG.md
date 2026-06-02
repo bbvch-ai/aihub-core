@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.3] - 2026-06-02 - Stricter OAuth Role Defaults
+
+### Changed
+
+- 🔑 **Updated OAuth Allowed Roles Default:** The default `OAUTH_ALLOWED_ROLES` configuration for Open WebUI has been
+  updated across all deployment configurations. It now explicitly requires `AIHubAccess` and any configured admin roles
+  (`${OAUTH_ADMIN_ROLES_OPENWEBUI}`) instead of a wildcard (`*`), enhancing access control and improving the security
+  posture for OAuth integrations.
+
+______________________________________________________________________
+
 ## [v0.291.2] - 2026-06-02 - GitHub Actions Reliability Improvement
 
 ### Fixed
