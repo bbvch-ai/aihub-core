@@ -15,12 +15,12 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 5
     outputs:
+      backend_lint_folders: ${{ steps.detect.outputs.backend_lint_folders }}
+      frontend_folders: ${{ steps.detect.outputs.frontend_folders }}
       has_backend_lint: ${{ steps.detect.outputs.has_backend_lint }}
       has_frontend: ${{ steps.detect.outputs.has_frontend }}
       run_lint_actions: ${{ steps.detect.outputs.run_lint_actions }}
       run_license_check: ${{ steps.detect.outputs.run_license_check }}
-      backend_lint_folders: ${{ steps.matrix.outputs.backend_lint_folders }}
-      frontend_lint_folders: ${{ steps.matrix.outputs.frontend_lint_folders }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -32,17 +32,6 @@ jobs:
         with:
           base_sha: ${{ github.event.pull_request.base.sha }}
           force_all: ${{ github.event_name != 'pull_request' }}
-      - name: Build matrices
-        id: matrix
-        env:
-          BL: ${{ steps.detect.outputs.backend_lint_pkgs }}
-          FE: ${{ steps.detect.outputs.frontend_pkgs }}
-        run: |
-          set -euo pipefail
-          {
-            echo "backend_lint_folders=$(jq -cn --argjson a "$BL" '$a | map("packages/" + .)')"
-            echo "frontend_lint_folders=$(jq -cn --argjson a "$FE" '$a | map("packages/" + .)')"
-          } >> "$GITHUB_OUTPUT"
   lint-backend:
     name: Lint Backend
     needs: changes
@@ -52,9 +41,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        folder: ${{ fromJSON(needs.changes.outputs.backend_lint_folders) }}
+        folder:
+          - packages/agent
+          - packages/api
+          - packages/core
+          - packages/pipeline
+          - packages/bot
+          - packages/process
+          - packages/sysadmin-api
     steps:
       - name: Lint backend
+        if: ${{ contains(fromJSON(needs.changes.outputs.backend_lint_folders), matrix.folder) }}
         uses: bbvch-ai/aihub-core/.github/actions/lint_backend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -68,9 +65,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        folder: ${{ fromJSON(needs.changes.outputs.frontend_lint_folders) }}
+        folder: [packages/web, packages/sysadmin-web]
     steps:
       - name: Lint frontend
+        if: ${{ contains(fromJSON(needs.changes.outputs.frontend_folders), matrix.folder) }}
         uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

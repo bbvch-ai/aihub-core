@@ -1,7 +1,7 @@
 ---
 name: Detect changed scopes
 description: Determine which package scopes a PR touches, with fan-out for shared
-  code/deps/infra, so downstream jobs can build per-package dynamic matrices.
+  code/deps/infra, so workflow jobs can gate their matrix cells per package.
 inputs:
   base_sha:
     description: Base commit to diff against (PR base). Ignored when force_all is
@@ -13,23 +13,25 @@ inputs:
     required: false
     default: 'false'
 outputs:
-  backend_test_pkgs:
-    description: JSON array of backend package short-names to test.
-    value: ${{ steps.detect.outputs.backend_test_pkgs }}
-  backend_lint_pkgs:
-    description: JSON array of backend package short-names to lint.
-    value: ${{ steps.detect.outputs.backend_lint_pkgs }}
-  frontend_pkgs:
-    description: JSON array of frontend package short-names to lint.
-    value: ${{ steps.detect.outputs.frontend_pkgs }}
+  backend_test_modules:
+    description: JSON array of backend package folders to test (e.g. ["packages/api"]).
+    value: ${{ steps.detect.outputs.backend_test_modules }}
+  backend_lint_folders:
+    description: JSON array of backend package folders to lint.
+    value: ${{ steps.detect.outputs.backend_lint_folders }}
+  frontend_folders:
+    description: JSON array of frontend package folders to lint.
+    value: ${{ steps.detect.outputs.frontend_folders }}
+  backup:
+    value: ${{ steps.detect.outputs.backup }}
   has_backend_test:
     value: ${{ steps.detect.outputs.has_backend_test }}
   has_backend_lint:
     value: ${{ steps.detect.outputs.has_backend_lint }}
   has_frontend:
     value: ${{ steps.detect.outputs.has_frontend }}
-  backup:
-    value: ${{ steps.detect.outputs.backup }}
+  has_sonar:
+    value: ${{ steps.detect.outputs.has_sonar }}
   run_env_check:
     value: ${{ steps.detect.outputs.run_env_check }}
   run_lint_actions:
@@ -52,36 +54,45 @@ runs:
         else
           CHANGED="$(git diff --name-only "$BASE_SHA"...HEAD)"
         fi
-        m() { grep -qE "$1" <<<"$CHANGED"; }
-        RUN_ALL_BACKEND_TEST=false
-        m '^(packages/core/|pyproject\.toml$|uv\.lock$|infra/|Makefile$|\.github/actions/(test_backend|detect_changes)/|\.github/workflows/analyze-test-pr\.yml$)' && RUN_ALL_BACKEND_TEST=true
-        RUN_ALL_BACKEND_LINT=false
-        m '^(pyproject\.toml$|uv\.lock$|\.github/actions/(lint_backend|detect_changes)/|\.github/workflows/lint-pr\.yml$)' && RUN_ALL_BACKEND_LINT=true
-        RUN_ALL_FRONTEND=false
-        m '^(pnpm-lock\.yaml$|\.github/actions/(lint_frontend|detect_changes)/|\.github/workflows/lint-pr\.yml$)' && RUN_ALL_FRONTEND=true
+        changed() { grep -qE "$1" <<<"$CHANGED"; }
+
+        # Shared backend code/deps/infra/CI-actions => test ALL backend modules.
+        all_backend_test=false
+        changed '^(packages/core/|pyproject\.toml$|uv\.lock$|infra/|Makefile$|\.github/actions/(test_backend|detect_changes|sonarcloud_scan|pytest_coverage_comment)/|\.github/workflows/analyze-test-pr\.yml$)' && all_backend_test=true
+        # Lint is per-package independent; only shared lint tooling forces all.
+        all_backend_lint=false
+        changed '^(pyproject\.toml$|uv\.lock$|\.github/actions/(lint_backend|detect_changes)/|\.github/workflows/lint-pr\.yml$)' && all_backend_lint=true
+        all_frontend=false
+        changed '^(pnpm-lock\.yaml$|\.github/actions/(lint_frontend|detect_changes)/|\.github/workflows/lint-pr\.yml$)' && all_frontend=true
         BACKEND=(core api agent bot pipeline process sysadmin-api)
         FRONTEND=(web sysadmin-web)
-        arr() { printf '%s\n' "$@" | jq -R . | jq -cs 'map(select(length>0))'; }
-        bt=(); for p in "${BACKEND[@]}"; do { [ "$RUN_ALL_BACKEND_TEST" = true ] || m "^packages/${p}/"; } && bt+=("$p"); done
-        bl=(); for p in "${BACKEND[@]}"; do { [ "$RUN_ALL_BACKEND_LINT" = true ] || m "^packages/${p}/"; } && bl+=("$p"); done
+        # Emit a JSON array of "packages/<name>" for the selected short names.
+        folders() { printf 'packages/%s\n' "$@" | jq -R . | jq -cs 'map(select(. != "packages/"))'; }
+        bt=(); for p in "${BACKEND[@]}";  do { [ "$all_backend_test" = true ] || changed "^packages/${p}/"; } && bt+=("$p"); done
+        bl=(); for p in "${BACKEND[@]}";  do { [ "$all_backend_lint" = true ] || changed "^packages/${p}/"; } && bl+=("$p"); done
         fe=(); for p in "${FRONTEND[@]}"; do
-          if [ "$RUN_ALL_FRONTEND" = true ] || m "^packages/${p}/"; then fe+=("$p");
-          elif [ "$p" = sysadmin-web ] && m '^packages/web/'; then fe+=("$p"); fi
+          if [ "$all_frontend" = true ] || changed "^packages/${p}/"; then fe+=("$p")
+          elif [ "$p" = sysadmin-web ] && changed '^packages/web/'; then fe+=("$p")  # sysadmin-web extends web
+          fi
         done
-        BACKUP=false; m '^packages/backup/' && BACKUP=true
-        RUN_ENV_CHECK=false;     m '^(infra/|\.env|Makefile$|pyproject\.toml$|uv\.lock$)' && RUN_ENV_CHECK=true
-        RUN_LINT_ACTIONS=false;  m '^\.github/' && RUN_LINT_ACTIONS=true
-        RUN_LICENSE_CHECK=false; m '^(pyproject\.toml$|uv\.lock$|pnpm-lock\.yaml$|packages/[^/]+/pyproject\.toml$|packages/(web|sysadmin-web)/package\.json$)' && RUN_LICENSE_CHECK=true
-        BT=$(arr "${bt[@]:-}"); BL=$(arr "${bl[@]:-}"); FE=$(arr "${fe[@]:-}")
+        backup=false; changed '^packages/backup/' && backup=true
+        env_check=false;     changed '^(infra/|\.env|Makefile$|pyproject\.toml$|uv\.lock$)' && env_check=true
+        lint_actions=false;  changed '^\.github/' && lint_actions=true
+        license_check=false; changed '^(pyproject\.toml$|uv\.lock$|pnpm-lock\.yaml$|packages/[^/]+/pyproject\.toml$|packages/(web|sysadmin-web)/package\.json$)' && license_check=true
+        BT=$(folders "${bt[@]:-}"); BL=$(folders "${bl[@]:-}"); FE=$(folders "${fe[@]:-}")
+        has_test=$([ "$BT" != '[]' ] && echo true || echo false)
+        has_fe=$([ "$FE" != '[]' ] && echo true || echo false)
+        has_sonar=$([ "$has_test" = true ] || [ "$has_fe" = true ] || [ "$backup" = true ] && echo true || echo false)
         {
-          echo "backend_test_pkgs=$BT"
-          echo "backend_lint_pkgs=$BL"
-          echo "frontend_pkgs=$FE"
-          echo "has_backend_test=$([ "$BT" != '[]' ] && echo true || echo false)"
+          echo "backend_test_modules=$BT"
+          echo "backend_lint_folders=$BL"
+          echo "frontend_folders=$FE"
+          echo "backup=$backup"
+          echo "has_backend_test=$has_test"
           echo "has_backend_lint=$([ "$BL" != '[]' ] && echo true || echo false)"
-          echo "has_frontend=$([ "$FE" != '[]' ] && echo true || echo false)"
-          echo "backup=$BACKUP"
-          echo "run_env_check=$RUN_ENV_CHECK"
-          echo "run_lint_actions=$RUN_LINT_ACTIONS"
-          echo "run_license_check=$RUN_LICENSE_CHECK"
+          echo "has_frontend=$has_fe"
+          echo "has_sonar=$has_sonar"
+          echo "run_env_check=$env_check"
+          echo "run_lint_actions=$lint_actions"
+          echo "run_license_check=$license_check"
         } >> "$GITHUB_OUTPUT"
