@@ -45,6 +45,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts --filter @swiss-ai-hub/web...
       - name: Build the layer (nuxt generate)
         run: pnpm --filter @swiss-ai-hub/web run build
-      - name: Validate publishability (dry-run)
-        run: npm publish --dry-run
+      - name: Validate packaging
+        # pack (not publish --dry-run): no registry version-conflict check on PRs.
+        run: npm pack --dry-run
         working-directory: packages/web
