@@ -1,7 +1,7 @@
 [project]
 name = "swiss-ai-hub-api"
 version = "0.291.0"
-description = "api core"
+description = "Swiss AI Hub REST API, WebSocket gateway, and MCP server (FastAPI) for the Swiss AI Agent Protocol."
 requires-python = ">=3.13, <3.14"
 authors = [
     { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
@@ -11,9 +11,20 @@ authors = [
     { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
 license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
-    "swiss-ai-hub-core",
+    "swiss-ai-hub-core==0.291.0",
     "azure-identity>=1.19.0",
     "azure-mgmt-cosmosdb>=9.7.0",
     "azure-mgmt-resource>=23.2.0",
@@ -29,13 +40,20 @@ dependencies = [
     "audioop-lts>=0.2.1",
     "fastmcp>=2.11.2",
     "opentelemetry-instrumentation-fastapi>=0.60b1",
-    "jambo",
+    "starlette>=1.0.1",
+    "swiss-ai-hub-jambo>=0.5.0",
 ]
 
 [dependency-groups]
 dev = [
     "asgi-lifespan>=2.1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/bbvch-ai/aihub-core"
+Repository = "https://github.com/bbvch-ai/aihub-core"
+Documentation = "https://bbvch-ai.github.io/aihub-core/"
+Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]
 requires = ["uv_build>=0.10.4,<0.11.0"]
@@ -44,9 +62,6 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-root = ""
 module-name = "swiss_ai_hub.api"
-
-[tool.uv.sources]
-jambo = { git = "https://github.com/bbvch-ai/jambo.git" }
 
 [tool.ruff]
 line-length = 120

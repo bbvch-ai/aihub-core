@@ -1,7 +1,7 @@
 [project]
 name = "swiss-ai-hub-pipeline"
 version = "0.291.0"
-description = "pipeline core"
+description = "Swiss AI Hub Pipeline SDK: Dagster-based document ingestion, parsing, embedding, and vector storage for RAG."
 requires-python = ">=3.13, <3.14"
 authors = [
     { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
@@ -11,9 +11,19 @@ authors = [
     { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
 license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
-    "swiss-ai-hub-core",
+    "swiss-ai-hub-core==0.291.0",
     "dagster-webserver>=1.11.2",
     "dagster-postgres>=0.27.2",
     "dagster-azure>=0.27.2",
@@ -25,6 +35,12 @@ dependencies = [
 
 [dependency-groups]
 dev = []
+
+[project.urls]
+Homepage = "https://github.com/bbvch-ai/aihub-core"
+Repository = "https://github.com/bbvch-ai/aihub-core"
+Documentation = "https://bbvch-ai.github.io/aihub-core/"
+Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]
 requires = ["uv_build>=0.10.4,<0.11.0"]

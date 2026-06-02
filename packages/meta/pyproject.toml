@@ -1,7 +1,7 @@
 [project]
-name = "swiss-ai-hub-bot"
+name = "swiss-ai-hub"
 version = "0.291.0"
-description = "Swiss AI Hub Bot SDK: connect users to AI agents via MS Teams, Slack, and web chat."
+description = "Meta-package that installs the full Swiss AI Hub Python SDK (core, agent, api, bot, pipeline, process)."
 requires-python = ">=3.13, <3.14"
 authors = [
     { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
@@ -19,28 +19,16 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.13",
-    "Topic :: Communications :: Chat",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
     "swiss-ai-hub-core==0.291.0",
-    "azure-identity>=1.19.0",
-    "azure-mgmt-cosmosdb>=9.7.0",
-    "azure-mgmt-resource>=23.2.0",
-    "uvicorn>=0.34.0",
-    "httpx>=0.28.1",
-    "cryptography>=44.0.0",
-    "pyjwt>=2.10.1",
-    "microsoft-agents-hosting-core>=0.5.0",
-    "microsoft-agents-hosting-aiohttp>=0.5.0",
-    "microsoft-agents-activity>=0.5.0",
-    "microsoft-agents-authentication-msal>=0.5.0",
-    "gunicorn>=23.0.0",
-]
-
-[dependency-groups]
-dev = [
-    "asgi-lifespan>=2.1.0",
+    "swiss-ai-hub-agent==0.291.0",
+    "swiss-ai-hub-api==0.291.0",
+    "swiss-ai-hub-bot==0.291.0",
+    "swiss-ai-hub-pipeline==0.291.0",
+    "swiss-ai-hub-process==0.291.0",
 ]
 
 [project.urls]
@@ -55,7 +43,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-root = ""
-module-name = "swiss_ai_hub.bot"
+module-name = "swiss_ai_hub.meta"
 
 [tool.ruff]
 line-length = 120
@@ -63,26 +51,3 @@ target-version = 'py313'
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I"]
-
-[tool.black]
-line-length = 120
-target-version = ['py313']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.ty
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
-[tool.pytest.ini_options]
-markers = [
-    "flaky: Tests that are unreliable or timing-dependent (skipped in CI)",
-]
