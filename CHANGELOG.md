@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.2] - 2026-06-02 - GitHub Actions Reliability Improvement
+
+### Fixed
+
+- 🐛 **Corrected GitHub Actions `if` condition parsing:** Ensured proper evaluation of the `claude-code-review`
+  workflow's trigger conditions by explicitly wrapping the complex expression in `${{ ... }}`.
+
+______________________________________________________________________
+
 ## [v0.291.1] - 2026-06-02 - Improved Code Quality Checks with SonarCloud Action v6
 
 ### Changed
