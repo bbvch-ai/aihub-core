@@ -93,12 +93,59 @@ pnpm add @swiss-ai-hub/web
 Install the required peer dependencies:
 
 ```bash
-npm install primevue@4.5.4 vue@3.5.17
+npm install primevue@4.5.5 vue@3.5.17
 ```
 
-> **Why pin PrimeVue?** PrimeVue's theme system uses a global singleton. If your project and the layer resolve different
-> PrimeVue versions, you end up with two instances -- one generates the CSS variables, the other renders the components,
-> and you get unstyled buttons. Pinning to the same version ensures a single instance.
+### Required dependency overrides
+
+**Do not skip this step.** Without it your project ends up with two copies of Vue in `node_modules`, and the UI will
+either fail to build or render with broken behavior.
+
+Nuxt and several of its modules depend on their own (newer) copy of Vue, while this layer is built and tested against an
+exact Vue version. With nothing forcing them to agree, your install resolves **two different Vue versions** -- and
+therefore two copies of `@vue/runtime-core`, the package that owns Vue's runtime identity. Two Vue runtimes means two
+separate reactivity systems: `provide`/`inject` stops working across the boundary, component instance checks fail, and
+you get cryptic errors like _"Vue instance ... was created in a different application"_. The same single-instance
+requirement applies to PrimeVue, whose theme system relies on a global singleton (two instances → unstyled components).
+
+The fix is to force the whole dependency tree onto one Vue version using your package manager's override mechanism. Add
+this to your project's `package.json`:
+
+```jsonc
+// npm or yarn
+{
+  "overrides": {
+    "vue": "3.5.17",
+    "@vueuse/router": { "vue-router": "4.6.4" }
+  }
+}
+```
+
+```jsonc
+// pnpm
+{
+  "pnpm": {
+    "overrides": {
+      "vue": "3.5.17",
+      "@vueuse/router>vue-router": "4.6.4"
+    }
+  }
+}
+```
+
+Then reinstall from a clean state so the lockfile is regenerated, and confirm a single Vue instance:
+
+```bash
+rm -rf node_modules package-lock.json   # or pnpm-lock.yaml
+npm install
+npm ls @vue/runtime-core                # must print exactly one version: 3.5.17
+```
+
+> **Why these entries?** `vue` pins the framework runtime to a single instance shared by your app, the layer, and every
+> Nuxt module -- this is the one that actually breaks if omitted. The scoped `@vueuse/router > vue-router` entry
+> resolves a harmless peer-range mismatch (`@vueuse/router` expects vue-router 4, Nuxt's router is 5); it is scoped so
+> it only affects that one nested dependency and never the router Nuxt itself uses. The versions match the
+> [peer dependencies](#peer-dependencies) the layer is built and tested against.
 
 ## Quick start
 
@@ -110,6 +157,10 @@ cd my-aihub-frontend
 npm install
 ```
 
+Then install this package, its peer dependencies, and -- importantly -- add the
+[required dependency overrides](#required-dependency-overrides). Skipping the overrides leaves two copies of Vue in your
+tree and the app will not work.
+
 ### 2. Extend the layer
 
 Replace the generated `nuxt.config.ts` with:
@@ -119,8 +170,9 @@ Replace the generated `nuxt.config.ts` with:
 export default defineNuxtConfig({
   extends: ['@swiss-ai-hub/web'],
 
-  // These defaults match infra/docker-compose.dev.yml + `make run-api`.
-  // In production, override via NUXT_PUBLIC_* environment variables.
+  // These dev defaults match infra/docker-compose.dev.yml + `make run-api`.
+  // For production, leave these declared (the keys must exist) but blank, and
+  // inject values at runtime via /config.js -- see Runtime configuration below.
   runtimeConfig: {
     public: {
       env: 'dev',
@@ -354,12 +406,19 @@ ______________________________________________________________________
 npx nuxi generate
 ```
 
-This produces a fully static site in `.output/public/`. Runtime configuration values are baked in during build, but you
-can override them at runtime using `NUXT_PUBLIC_*` environment variables (Nuxt rewrites them on the client at startup).
+This produces a fully static SPA in `.output/public/` (the layer is client-only -- `ssr: false`). Because the output is
+static, there is **no Node server at runtime to read environment variables**. Instead, the layer ships a small
+runtime-config mechanism (see [Runtime configuration](#runtime-configuration)) so you build **one** image and configure
+it per environment at container start -- including which backend API it talks to.
 
 ### Dockerfile example
 
+This mirrors how Swiss AI Hub ships the admin UI: build the static site, serve it with nginx, and generate `/config.js`
+from a template at startup so the same image works in any environment.
+
 ```dockerfile
+# 1. Build the static SPA. ENV must be unset (or anything other than 'dev') so
+#    the layer emits the <script src="/config.js"> tag that loads runtime config.
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -367,31 +426,111 @@ RUN npm ci
 COPY . .
 RUN npx nuxi generate
 
+# 2. Serve with nginx; render /config.js from env vars on container start.
 FROM nginx:alpine
+RUN apk add --no-cache gettext   # provides envsubst
 COPY --from=build /app/.output/public /usr/share/nginx/html
+COPY config.template.js /usr/share/nginx/html/config.template.js
+CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.js > /usr/share/nginx/html/config.js && nginx -g 'daemon off;'"]
+```
+
+nginx must serve `/config.js` uncached and never fall back to `index.html` for it -- declare it **before** the SPA
+catch-all:
+
+```nginx
+location = /config.js {
+  add_header Cache-Control "no-store" always;
+  default_type application/javascript;
+  try_files $uri =404;
+}
+location / { try_files $uri /index.html; }
 ```
 
 ______________________________________________________________________
 
 ## Runtime configuration
 
-All configuration is provided through `runtimeConfig.public` in `nuxt.config.ts`. In production, override them via
-environment variables -- Nuxt automatically maps `NUXT_PUBLIC_*` variables to the corresponding config keys:
+The layer reads all runtime configuration from `runtimeConfig.public`, populated in **two phases**:
 
-| Config key          | Environment variable             | Default (dev)                                 | Description                          |
-| ------------------- | -------------------------------- | --------------------------------------------- | ------------------------------------ |
-| `env`               | `NUXT_PUBLIC_ENV`                | `dev`                                         | Environment identifier               |
-| `oidc.clientId`     | `NUXT_PUBLIC_OIDC_CLIENT_ID`     | `aihub-frontend`                              | OIDC client ID for Keycloak          |
-| `oidc.authorityUrl` | `NUXT_PUBLIC_OIDC_AUTHORITY_URL` | `http://localhost:8180/realms/aihub`          | Keycloak realm URL                   |
-| `webui.url`         | `NUXT_PUBLIC_WEBUI_URL`          | `http://localhost:8080`                       | Open-WebUI URL (chat link)           |
-| `ws.endpoint`       | `NUXT_PUBLIC_WS_ENDPOINT`        | `ws://localhost:8000/api/v1/active/events/ws` | WebSocket for real-time agent events |
+1. **Build-time defaults** -- whatever you put in `runtimeConfig.public` in your `nuxt.config.ts`. Used directly in dev,
+   baked into the static build.
+2. **Runtime overrides (production)** -- a `window.__AIHUB_CONFIG__` object loaded synchronously from `/config.js`
+   **before** the app boots. A plugin shipped in this layer (`plugins/0.runtime-config.client.ts`) maps it into
+   `runtimeConfig.public`. This is how a single static build is configured per environment without rebuilding.
+
+`/config.js` is rendered by `envsubst` from your `config.template.js` at container start (see the Dockerfile above). The
+layer injects the `<script src="/config.js">` tag automatically for any non-dev build, and the mapping plugin runs in
+every app that extends the layer -- so you only supply the template:
+
+```js
+// config.template.js -- envsubst replaces ${...} at container start.
+// Include only the keys your deployment needs; unset ones resolve to defaults.
+window.__AIHUB_CONFIG__ = {
+  API_BASE_URL: '${API_BASE_URL}',
+  OAUTH_CLIENT_ID: '${OAUTH_CLIENT_ID}',
+  OAUTH_AUTHORITY_URL: '${OAUTH_AUTHORITY_URL}',
+  WEBUI_URL: '${WEBUI_URL}',
+  WS_ENDPOINT: '${WS_ENDPOINT}',
+}
+```
+
+| `runtimeConfig.public` key | `window.__AIHUB_CONFIG__` key | Default                 | Description                                                        |
+| -------------------------- | ----------------------------- | ----------------------- | ------------------------------------------------------------------ |
+| `apiBaseUrl`               | `API_BASE_URL`                | `/api/v1` (same origin) | Backend API base URL -- see [below](#pointing-at-your-backend-api) |
+| `oidc.clientId`            | `OAUTH_CLIENT_ID`             | --                      | OIDC client ID (Keycloak)                                          |
+| `oidc.authorityUrl`        | `OAUTH_AUTHORITY_URL`         | --                      | OIDC authority / realm URL                                         |
+| `webui.url`                | `WEBUI_URL`                   | --                      | Open-WebUI URL (chat link)                                         |
+| `ws.endpoint`              | `WS_ENDPOINT`                 | --                      | WebSocket endpoint for real-time agent events                      |
+| `env`                      | --                            | --                      | Set to `dev` locally (uses build-time values, skips `/config.js`)  |
+
+> **Declare the groups you want populated.** The mapping plugin only writes into config groups your app already declared
+> in `runtimeConfig.public` (e.g. `oidc: {}`, `webui: {}`, `ws: {}`); in production set their build-time values to empty
+> strings and let `/config.js` fill them. `apiBaseUrl` is the exception -- it is always applied when `API_BASE_URL` is
+> present.
+
+### Pointing at your backend API
+
+The admin UI talks to the Swiss AI Hub backend through a single base URL, `runtimeConfig.public.apiBaseUrl`. It defaults
+to the **same origin** as the UI (`/api/v1`) -- the simplest setup: put the UI and the API behind one reverse proxy
+(what the platform's Traefik does) and no API configuration is needed at all.
+
+If your UI is served from a **different origin** than the API, set the base URL explicitly:
+
+- **Dev / build-time** -- set it in `nuxt.config.ts`, or (recommended for local dev) keep `/api/v1` and proxy it with
+  Nitro:
+
+  ```ts
+  export default defineNuxtConfig({
+    extends: ['@swiss-ai-hub/web'],
+    // Option A: point straight at the API origin
+    runtimeConfig: { public: { apiBaseUrl: 'https://aihub.example.com/api/v1' } },
+    // Option B (same-origin dev): keep /api/v1 and proxy it
+    nitro: { devProxy: { '/api/v1': { target: 'http://localhost:8000/api/v1', changeOrigin: true, ws: true } } },
+  })
+  ```
+
+- **Production (static image)** -- inject `API_BASE_URL` at container start via `config.template.js`. One image, any
+  backend:
+
+  ```bash
+  docker run -e API_BASE_URL=https://aihub.example.com/api/v1 my-aihub-frontend
+  ```
+
+> **Cross-origin caveats.** A different API origin must allow your UI's origin via CORS, and your Keycloak client must
+> list it as an allowed web/redirect origin. Same-origin (`/api/v1` behind one proxy) avoids both. Do **not** call
+> `client.setConfig({ baseURL: ... })` in your own `app.vue` unless you deliberately want to hard-override this
+> mechanism.
 
 ## Peer dependencies
 
-| Package    | Version  | Why                                                                                                                 |
-| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| `primevue` | `4.5.4`  | UI component library -- must be a single instance to avoid theme conflicts (see [installation note](#installation)) |
-| `vue`      | `3.5.17` | Framework runtime                                                                                                   |
+| Package    | Version  | Why                                                                                                                                    |
+| ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `primevue` | `4.5.5`  | UI component library -- must be a single instance to avoid theme-singleton conflicts (see [overrides](#required-dependency-overrides)) |
+| `vue`      | `3.5.17` | Framework runtime -- must be a single instance; enforce with the [required overrides](#required-dependency-overrides)                  |
+
+> These exact versions are what the layer is built and published against. They are declared as `peerDependencies`, so
+> your project must provide them, and the [overrides](#required-dependency-overrides) above ensure every transitive
+> dependency resolves to the same single copy.
 
 ## Tech stack
 
