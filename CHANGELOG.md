@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.1] - 2026-06-02 - Improved Code Quality Checks with SonarCloud Action v6
+
+### Changed
+
+- 🚀 **Updated SonarCloud Scan Action:** The GitHub Action for running SonarCloud code quality scans has been upgraded to
+  `v6.0.0`, enhancing reliability and ensuring compatibility with the latest SonarCloud features.
+- 📄 **Documentation Refresh:** Internal documentation (`CLAUDE.md`) was updated to reflect the new version of the
+  SonarCloud scan action used in CI/CD workflows.
+
+______________________________________________________________________
+
 ## [v0.291.0] - 2026-06-02 - 🚀 Web Package Stability, Deployment, and Publishing Overhaul
 
 ### Added
