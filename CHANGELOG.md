@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.4] - 2026-06-02 - Enhanced Prompt Reliability for Image Rendering
+
+### Fixed
+
+- 🐛 **Image Rendering in Prompts**: Resolved a Jinja `SecurityError` that occurred when attempting to render image URLs
+  (`pydantic.AnyUrl`) within RAG agent and guard context prompts. The rendering now correctly uses the `| string` filter
+  to safely convert URLs, ensuring images are displayed as intended across all supported languages.
+
+______________________________________________________________________
+
 ## [v0.291.3] - 2026-06-02 - Stricter OAuth Role Defaults
 
 ### Changed
