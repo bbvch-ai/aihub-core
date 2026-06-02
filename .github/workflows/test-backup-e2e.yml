@@ -8,7 +8,7 @@ on:
       - infra/deployment/templates/docker-compose.yml.j2
       - infra/deployment/compose-config.yml
   pull_request:
-    branches: [main, initiative/*]
+    branches: [main]
     paths:
       - packages/backup/**
       - infra/deployment/templates/docker-compose.yml.j2
