@@ -109,43 +109,45 @@ you get cryptic errors like _"Vue instance ... was created in a different applic
 requirement applies to PrimeVue, whose theme system relies on a global singleton (two instances → unstyled components).
 
 The fix is to force the whole dependency tree onto one Vue version using your package manager's override mechanism. Add
-this to your project's `package.json`:
+the **`vue`** override to your project's `package.json` — this is the one that actually breaks if omitted. Note the key
+differs per package manager (npm/pnpm use `overrides`, Yarn uses `resolutions`):
 
 ```jsonc
-// npm or yarn
-{
-  "overrides": {
-    "vue": "3.5.17",
-    "@vueuse/router": { "vue-router": "4.6.4" }
-  }
-}
+// npm
+{ "overrides": { "vue": "3.5.17" } }
+```
+
+```jsonc
+// Yarn
+{ "resolutions": { "vue": "3.5.17" } }
 ```
 
 ```jsonc
 // pnpm
-{
-  "pnpm": {
-    "overrides": {
-      "vue": "3.5.17",
-      "@vueuse/router>vue-router": "4.6.4"
-    }
-  }
-}
+{ "pnpm": { "overrides": { "vue": "3.5.17" } } }
 ```
 
 Then reinstall from a clean state so the lockfile is regenerated, and confirm a single Vue instance:
 
 ```bash
-rm -rf node_modules package-lock.json   # or pnpm-lock.yaml
+rm -rf node_modules package-lock.json   # or yarn.lock / pnpm-lock.yaml
 npm install
 npm ls @vue/runtime-core                # must print exactly one version: 3.5.17
 ```
 
-> **Why these entries?** `vue` pins the framework runtime to a single instance shared by your app, the layer, and every
-> Nuxt module -- this is the one that actually breaks if omitted. The scoped `@vueuse/router > vue-router` entry
-> resolves a harmless peer-range mismatch (`@vueuse/router` expects vue-router 4, Nuxt's router is 5); it is scoped so
-> it only affects that one nested dependency and never the router Nuxt itself uses. The versions match the
-> [peer dependencies](#peer-dependencies) the layer is built and tested against.
+The same single-instance requirement applies to **PrimeVue** (its theme system is a global singleton); pinning the
+`primevue` peer to one version is enough — it does not need an override.
+
+> **Optional — silence a `vue-router` peer warning.** `@vueuse/router` declares a `vue-router@^4` peer, but some
+> transitive dependencies may pull in `vue-router` 5.x, which can surface a peer-range warning on install. It is
+> harmless (the layer does not depend on that resolution), but if you want it gone, pin `vue-router` to `4.6.4` **scoped
+> to `@vueuse/router`** so it never affects the router Nuxt itself uses:
+>
+> ```jsonc
+> // npm:  "overrides":  { "@vueuse/router": { "vue-router": "4.6.4" } }
+> // Yarn: "resolutions": { "@vueuse/router/vue-router": "4.6.4" }
+> // pnpm: "pnpm": { "overrides": { "@vueuse/router>vue-router": "4.6.4" } }
+> ```
 
 ## Quick start
 
