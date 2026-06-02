@@ -33,20 +33,16 @@ export function getNestedValue(
   path: string,
 ): Record<string, unknown>[] {
   const parts = path.split('.')
-  let current: Record<string, unknown> = obj
+  let current: unknown = obj
 
   for (let i = 0; i < parts.length - 1; i++) {
-    const key = parts[i]
-    current[key] ??= {}
-    current = current[key] as Record<string, unknown>
+    if (!current || typeof current !== 'object') return []
+    current = (current as Record<string, unknown>)[parts[i]]
   }
 
-  const lastKey = parts[parts.length - 1]
-  if (!Array.isArray(current[lastKey])) {
-    current[lastKey] = []
-  }
-
-  return current[lastKey] as Record<string, unknown>[]
+  if (!current || typeof current !== 'object') return []
+  const value = (current as Record<string, unknown>)[parts[parts.length - 1]]
+  return Array.isArray(value) ? value as Record<string, unknown>[] : []
 }
 
 /**
@@ -642,12 +638,19 @@ export function seedFormDefaults(
         : {}
       result[name] = seedFormDefaults(groupValue, children)
     }
-    else if (formkitType === 'repeater' && Array.isArray(value)) {
-      result[name] = value.map(item =>
-        item && typeof item === 'object' && !Array.isArray(item)
-          ? seedFormDefaults(item as Record<string, unknown>, children)
-          : item,
-      )
+    else if (formkitType === 'repeater') {
+      if (Array.isArray(value)) {
+        result[name] = value.map(item =>
+          item && typeof item === 'object' && !Array.isArray(item)
+            ? seedFormDefaults(item as Record<string, unknown>, children)
+            : item,
+        )
+      }
+      // Materialise an empty array for untouched repeaters here (load time) rather
+      // than lazily inside the render-time `:model-value` getter, which must stay pure.
+      else if (value === undefined) {
+        result[name] = []
+      }
     }
     else if (!(name in result) && element.value !== undefined) {
       result[name] = element.value
