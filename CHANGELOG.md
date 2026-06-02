@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.0] - 2026-06-02 - 🚀 Web Package Stability, Deployment, and Publishing Overhaul
+
+### Added
+
+- 🚀 **Automated npm publishing workflow**: Introduced a dedicated GitHub Actions workflow (`publish-npm.yml`) to
+  streamline and automate the publishing of the `@swiss-ai-hub/web` package to npm, utilizing OIDC trusted publishing
+  for enhanced security.
+- 🧪 **Web package build and pack verification**: Added a new GitHub Actions workflow (`verify-web-package.yml`) to
+  automatically build and validate the packaging of `@swiss-ai-hub/web` on every pull request, ensuring package
+  integrity and publishability before merge.
+
+### Changed
+
+- ⚙️ **Streamlined CI/CD branch triggering**: Modified several core CI/CD workflows (`analyze-test-pr`, `lint-pr`,
+  `semantic-pr`, `test-backup-e2e`) to exclusively trigger on the `main` branch, simplifying branching strategy and
+  pipeline execution.
+- 📄 **Enhanced web package installation and dependency management documentation**: Significantly updated the
+  `packages/web/README.md` with detailed guidance on required dependency overrides (specifically for `vue` and
+  `primevue`) to prevent common runtime issues caused by multiple framework instances.
+- 🔄 **Redesigned runtime configuration for static builds**: Introduced a new, more robust runtime configuration
+  mechanism for the `@swiss-ai-hub/web` layer, moving away from `NUXT_PUBLIC_*` environment variables to a dynamic
+  `/config.js` file generated at container startup, offering greater deployment flexibility for static single-page
+  applications.
+- 🐳 **Updated Dockerfile and deployment examples**: Provided comprehensive and up-to-date Dockerfile and
+  `nuxt.config.ts` examples in the `packages/web/README.md` that reflect the new best practices for building, serving,
+  and configuring the static web package in production environments.
+- ✨ **Integrated FormKit PrimeVue**: Added `@sfxcode/formkit-primevue` as a new dependency within the `packages/web`
+  package, enhancing its form building capabilities with PrimeVue components.
+- ⬆️ **Updated PrimeVue peer dependency**: Bumped the recommended `primevue` peer dependency version to `4.5.5` to
+  ensure compatibility and leverage the latest updates for the UI component library.
+
+______________________________________________________________________
+
+## [v0.290.13] - 2026-06-02 - OAuth Default Role Access Update
+
+### Added
+
+- ✨ **Introduced `OAUTH_ALLOWED_ROLES` configuration:** Added the `OAUTH_ALLOWED_ROLES` environment variable, set to `*`
+  by default across Docker Compose configurations, to explicitly allow all roles from the OAuth provider, simplifying
+  initial setup for role-based access.
+
+______________________________________________________________________
+
+## [v0.290.12] - 2026-06-02 - Documentation Refinements and Link Consistency
+
+### Changed
+
+- 🔗 **Updated External README Links:** Transformed relative paths for licenses and contributing guidelines in the main
+  `README.md` to absolute GitHub URLs, ensuring links function correctly across all platforms.
+- 📄 **Minor Documentation Formatting:** Improved the display of the Dagster UI URL in the `packages/backup` README for
+  better readability.
+
+### Refactor
+
+- 🧹 **Standardized Internal Documentation Paths:** Performed a comprehensive review and adjustment of numerous relative
+  links throughout the German and English documentation, enhancing navigation and consistency within the platform guides
+  and SDK.
+- 📚 **Streamlined Authentication Documentation:** Removed outdated architectural decision record (ADR) links from
+  authentication-related documentation, simplifying the content and focusing on current implementation details.
+
+______________________________________________________________________
+
 ## [v0.290.11] - 2026-06-01 - Enhanced Documentation and Licensing Clarity
 
 ### Added

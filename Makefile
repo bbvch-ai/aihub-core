@@ -103,7 +103,7 @@ pr-ready:
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.290.13
+TAG ?= v0.291.0
 
 changelog:
 	@echo "Generating changelog"
