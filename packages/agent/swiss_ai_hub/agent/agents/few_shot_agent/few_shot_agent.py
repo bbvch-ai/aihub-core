@@ -7,10 +7,12 @@ from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityRejectEvent,
     LimitChatHistoryEvent,
     LLMStopEvent,
+    NotAMetaQuestionEvent,
     StopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
+    LLMConfig,
     agent_description_guard,
     condense_standalone_question,
     create_few_shot_messages,
@@ -25,7 +27,18 @@ from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_questio
 )
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
+from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
+
+
+@precondition()
+async def passed_meta_question_gate(
+    start_event: UserMessageEvent,
+    clear: NotAMetaQuestionEvent | None = None,
+) -> bool:
+    """Hold back the chat entry step until meta-question detection has cleared the message."""
+    return check_passed_meta_question_gate(start_event, clear)
 
 
 class FewShotAgent(Agent):
@@ -48,15 +61,21 @@ class FewShotAgent(Agent):
     )
     icon: ClassVar[str] = "mage:book"
 
+    def self_awareness_llm_config(self, agent_config: FewShotAgentConfig) -> LLMConfig:
+        """Opt into built-in self-awareness, classifying and answering meta questions with this agent's LLM."""
+        return agent_config.llm
+
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.name"),
         description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.description"),
         icon="mage:edit",
+        precondition=passed_meta_question_gate,
     )
     async def limit_chat_history_step(
         self,
         event: UserMessageEvent,
         agent_config: FewShotAgentConfig,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit

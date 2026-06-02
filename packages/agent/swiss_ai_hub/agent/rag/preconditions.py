@@ -2,13 +2,11 @@ from swiss_ai_hub.core.events.agent import (
     AddMemoryToChatHistoryEvent,
     AgentInTheLoop,
     ContextSufficientAcceptEvent,
-    NotAMetaQuestionEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     StoreUserMemoryEvent,
-    UserMessageEvent,
 )
 
 from swiss_ai_hub.agent.agents.expert_asking_agent.events.answer_stop_event import AnswerStopEvent
@@ -55,15 +53,6 @@ def check_context_ready_for_history_limit_with_expert(
     if isinstance(context_event, ExpertAnswerContextEvent):
         return True
     return context_sufficient_event is not None
-
-
-def check_passed_meta_question_gate(start_event: object, clear: NotAMetaQuestionEvent | None) -> bool:
-    """
-    Gate that holds back the normal entry steps until meta-question detection has cleared
-    a chat message. Only chat (`UserMessageEvent`) entries are gated; programmatic starts
-    (e.g. `RAGStartEvent`) skip detection entirely and proceed immediately.
-    """
-    return clear is not None or not isinstance(start_event, UserMessageEvent)
 
 
 def check_organization_memory_enabled(config: RAGAgentConfig) -> bool:

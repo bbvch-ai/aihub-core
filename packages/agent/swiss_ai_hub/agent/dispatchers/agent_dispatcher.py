@@ -395,7 +395,7 @@ class AgentDispatcher(BaseDispatcher):
             return step_configs[param.annotation]
 
         if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
-            if param.annotation != self.agent_config_type:
+            if not issubclass(self.agent_config_type, param.annotation):
                 raise ValueError(
                     f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
                     f"but got '{param.annotation.__name__}' for parameter '{param.name}'."

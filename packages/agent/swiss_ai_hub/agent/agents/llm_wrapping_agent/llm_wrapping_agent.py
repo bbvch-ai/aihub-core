@@ -2,13 +2,29 @@ from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.displayers import EventDisplayer
-from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent, LLMStopEvent, UserMessageEvent
-from swiss_ai_hub.core.generative_ai import limit_chat_history
+from swiss_ai_hub.core.events.agent import (
+    LimitChatHistoryEvent,
+    LLMStopEvent,
+    NotAMetaQuestionEvent,
+    UserMessageEvent,
+)
+from swiss_ai_hub.core.generative_ai import LLMConfig, limit_chat_history
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
+from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
+
+
+@precondition()
+async def passed_meta_question_gate(
+    start_event: UserMessageEvent,
+    clear: NotAMetaQuestionEvent | None = None,
+) -> bool:
+    """Hold back the chat entry step until meta-question detection has cleared the message."""
+    return check_passed_meta_question_gate(start_event, clear)
 
 
 class LLMWrappingAgent(Agent):
@@ -20,15 +36,21 @@ class LLMWrappingAgent(Agent):
     )
     icon: ClassVar[str] = "mage:message"
 
+    def self_awareness_llm_config(self, agent_config: LLMWrappingAgentConfig) -> LLMConfig:
+        """Opt into built-in self-awareness, classifying and answering meta questions with this agent's LLM."""
+        return agent_config.llm
+
     @step(
         name=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.limit_chat_history.name"),
         description=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.limit_chat_history.description"),
         icon="mage:edit",
+        precondition=passed_meta_question_gate,
     )
     async def limit_chat_history_step(
         self,
         event: UserMessageEvent,
         agent_config: LLMWrappingAgentConfig,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> LimitChatHistoryEvent:
         """Truncates incoming chat messages to fit within the configured token limit"""
         locale = event.locale

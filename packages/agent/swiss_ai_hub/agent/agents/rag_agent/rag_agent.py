@@ -9,8 +9,6 @@ from swiss_ai_hub.core.events.agent import (
     FewShotRejectEvent,
     LimitChatHistoryEvent,
     LLMEvent,
-    LLMStopEvent,
-    MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
@@ -51,7 +49,6 @@ from swiss_ai_hub.agent.rag.preconditions import (
     check_memory_added_to_chat_history,
     check_memory_ready_for_chat_history,
     check_organization_memory_enabled,
-    check_passed_meta_question_gate,
     check_ready_for_stop,
     check_reranking_complete_or_disabled,
     check_reranking_enabled,
@@ -70,7 +67,7 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_respond_with_llm,
     do_retrieve,
 )
-from swiss_ai_hub.agent.self_awareness.self_awareness_mixin import SelfAwarenessMixin
+from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
 )
@@ -164,7 +161,7 @@ async def ready_for_stop(
     return check_ready_for_stop(config, store_memory_event)
 
 
-class RAGAgent(SelfAwarenessMixin, Agent):
+class RAGAgent(Agent):
     """
     Implements a Retrieval-Augmented Generation (RAG) Agent.
 
@@ -189,38 +186,8 @@ class RAGAgent(SelfAwarenessMixin, Agent):
     icon: ClassVar[str] = "mage:file"
 
     def self_awareness_llm_config(self, agent_config: RAGAgentConfig) -> LLMConfig:
+        """Opt into built-in self-awareness, classifying and answering meta questions with this agent's LLM."""
         return agent_config.llm
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
-        icon="mdi:help-circle-outline",
-    )
-    async def detect_meta_question_step(
-        self,
-        event: UserMessageEvent,
-        agent_config: RAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
-        """Gate every chat message: classify it as a meta question or release the normal RAG pipeline."""
-        return await self.run_meta_question_detection(event.user_query, agent_config, displayer, t)
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
-        icon="mdi:account-voice",
-    )
-    async def answer_meta_question_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: RAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> LLMStopEvent:
-        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        return await self.run_meta_question_answer(event, user_message_event.messages, agent_config, displayer, t)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.name"),

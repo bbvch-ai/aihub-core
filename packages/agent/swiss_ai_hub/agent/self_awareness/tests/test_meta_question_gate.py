@@ -12,7 +12,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.rag.preconditions import check_passed_meta_question_gate
+from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 
 
 def _user_message() -> UserMessageEvent:

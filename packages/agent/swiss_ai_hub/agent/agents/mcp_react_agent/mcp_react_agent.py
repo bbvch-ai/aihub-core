@@ -2,8 +2,15 @@ from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.displayers import EventDisplayer
-from swiss_ai_hub.core.events.agent import LLMStopEvent, Message, StopEvent, ToolEvent, UserMessageEvent
-from swiss_ai_hub.core.generative_ai import limit_chat_history
+from swiss_ai_hub.core.events.agent import (
+    LLMStopEvent,
+    Message,
+    NotAMetaQuestionEvent,
+    StopEvent,
+    ToolEvent,
+    UserMessageEvent,
+)
+from swiss_ai_hub.core.generative_ai import LLMConfig, limit_chat_history
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -15,6 +22,7 @@ from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
 from swiss_ai_hub.agent.mcp.mcp_resource_schemas import fetch_static_resources, resource_read_tool_schema
 from swiss_ai_hub.agent.mcp.mcp_tool_schemas import execute_single_tool_call, to_openai_tool_schemas, to_tool_events
+from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -40,6 +48,15 @@ async def all_tool_calls_emitted(tool_events: list[ToolEvent], run_context: RunC
     return total > 0 and len(tool_events) == total
 
 
+@precondition()
+async def passed_meta_question_gate(
+    start_event: UserMessageEvent,
+    clear: NotAMetaQuestionEvent | None = None,
+) -> bool:
+    """Hold back the chat entry step until meta-question detection has cleared the message."""
+    return check_passed_meta_question_gate(start_event, clear)
+
+
 class McpReactAgent(Agent):
     """ReAct agent that discovers and calls tools on an external MCP server."""
 
@@ -49,10 +66,15 @@ class McpReactAgent(Agent):
     )
     icon: ClassVar[str] = "mage:plug"
 
+    def self_awareness_llm_config(self, agent_config: McpReactAgentConfig) -> LLMConfig:
+        """Opt into built-in self-awareness, classifying and answering meta questions with this agent's LLM."""
+        return agent_config.llm
+
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),
         description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.description"),
         icon="mage:search",
+        precondition=passed_meta_question_gate,
     )
     async def init_step(
         self,
@@ -60,6 +82,7 @@ class McpReactAgent(Agent):
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         run_context: RunContext,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> McpReasoningEvent:
         """Discover MCP tools and resources, seed conversation with system prompt, trigger first reasoning iteration."""
         user_token = await McpAuthResolver.resolve_user_token(run_context)

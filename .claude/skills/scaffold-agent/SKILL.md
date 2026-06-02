@@ -568,10 +568,14 @@ another agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly a
 **Rule of thumb**: If a step consumes it → `ControlEvent`. If only the UI needs it → `DisplayEvent`. If both →
 `ControlAndDisplayEvent`. Most custom agent events are `ControlEvent`.
 
-**Self-awareness pattern**: If the new agent should answer meta-questions about itself ("What can you do?", "Who are
-you?"), mix in `SelfAwarenessMixin` from `packages/agent/swiss_ai_hub/agent/self_awareness/self_awareness_mixin.py`.
-Implement `self_awareness_llm_config()` and add two thin `@step` methods delegating to `run_meta_question_detection`
-and `run_meta_question_answer`. Gate all normal entry steps on `_clear: NotAMetaQuestionEvent | None = None`. See
+**Self-awareness pattern**: Built-in detection/answer for meta-questions about the agent itself ("What can you do?",
+"Who are you?") is inherited from the base `Agent` (via `SelfAwarenessMixin`) but stays dormant until the blueprint opts
+in. For a conversational agent, opt in with two steps: (1) override
+`self_awareness_llm_config(self, agent_config) -> LLMConfig` to return the agent's LLM — this is the opt-in signal that
+activates the inherited `detect_meta_question_step` / `answer_meta_question_step`; (2) gate every raw `UserMessageEvent`
+entry step with `_clear: NotAMetaQuestionEvent | None = None` and combine its precondition with
+`check_passed_meta_question_gate`. Do NOT redefine the two `@step` methods — they are inherited. The compliance test
+`self_awareness/tests/test_self_awareness_base_class.py` fails if a self-aware agent leaves an entry step ungated. See
 `RAGAgent` for the reference implementation.
 
 ### The Stop Event Constraint

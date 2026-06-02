@@ -4,9 +4,14 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.workflow import extract_function_events
+from swiss_ai_hub.core.workflow import DispatchableWorkflow, extract_function_events
 
-from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.workflow.step_annotations import (
+    AGENT_MAX_EXECUTION_PER_RUN_ANNOTATION,
+    AGENT_PRECONDITION_FUNCTION_ANNOTATION,
+    AGENT_STEP_ANNOTATION,
+    AGENT_STOP_ON_ERROR_ANNOTATION,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,19 +63,19 @@ def step(
         )
 
         # Mark the function as a step and store extracted metadata
-        setattr(func, Agent.STEP_ANNOTATION, True)
-        setattr(func, Agent.PRECONDITION_FUNCTION_ANNOTATION, precondition)
-        setattr(func, Agent.INPUT_EVENTS_ANNOTATION, input_events)
-        setattr(func, Agent.OUTPUT_EVENTS_ANNOTATION, output_events)
-        setattr(func, Agent.INPUT_EVENT_MAPPING_ANNOTATION, input_event_mapping)
-        setattr(func, Agent.PARAMETER_OPTIONAL_MAP_ANNOTATION, parameter_optional_map)
-        setattr(func, Agent.SIZE_REQUIREMENT_ANNOTATION, size_requirements)
-        setattr(func, Agent.MAX_EXECUTION_PER_RUN_ANNOTATION, max_executions_per_run)
-        setattr(func, Agent.STOP_ON_ERROR_ANNOTATION, stop_on_error)
-        setattr(func, Agent.STEP_NAME_ANNOTATION, name)
-        setattr(func, Agent.STEP_DESCRIPTION_ANNOTATION, description)
-        setattr(func, Agent.STEP_ICON_ANNOTATION, icon)
-        setattr(func, Agent.SIGNATURE_ANNOTATION, inspect.signature(func))
+        setattr(func, AGENT_STEP_ANNOTATION, True)
+        setattr(func, AGENT_PRECONDITION_FUNCTION_ANNOTATION, precondition)
+        setattr(func, DispatchableWorkflow.INPUT_EVENTS_ANNOTATION, input_events)
+        setattr(func, DispatchableWorkflow.OUTPUT_EVENTS_ANNOTATION, output_events)
+        setattr(func, DispatchableWorkflow.INPUT_EVENT_MAPPING_ANNOTATION, input_event_mapping)
+        setattr(func, DispatchableWorkflow.PARAMETER_OPTIONAL_MAP_ANNOTATION, parameter_optional_map)
+        setattr(func, DispatchableWorkflow.SIZE_REQUIREMENT_ANNOTATION, size_requirements)
+        setattr(func, AGENT_MAX_EXECUTION_PER_RUN_ANNOTATION, max_executions_per_run)
+        setattr(func, AGENT_STOP_ON_ERROR_ANNOTATION, stop_on_error)
+        setattr(func, DispatchableWorkflow.STEP_NAME_ANNOTATION, name)
+        setattr(func, DispatchableWorkflow.STEP_DESCRIPTION_ANNOTATION, description)
+        setattr(func, DispatchableWorkflow.STEP_ICON_ANNOTATION, icon)
+        setattr(func, DispatchableWorkflow.SIGNATURE_ANNOTATION, inspect.signature(func))
 
         logger.debug(f"Decorated step: {func.__name__} with input events: {input_events}")
         logger.debug(f"Decorated step: {func.__name__} with input event mapping: {input_event_mapping}")

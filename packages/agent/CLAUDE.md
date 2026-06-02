@@ -113,6 +113,22 @@ class MyAgent(Agent):
 `Agent` (extends `DispatchableWorkflow`) provides introspection: `get_start_events()`, `get_stop_events()`,
 `get_hitl_request_events()`, `get_hitl_response_events()` — all cached classmethods that scan `@step()` signatures.
 
+### Built-in Self-Awareness (meta questions)
+
+`Agent` inherits `SelfAwarenessMixin`, so every blueprint has the built-in detection/answer steps for meta questions
+about the agent itself ("what can you do?", "why did you do X?"). They are **dormant by default** — `Agent.get_steps()`
+filters them out — and only activate when a blueprint **opts in by overriding `self_awareness_llm_config`** to return
+its `LLMConfig`. Non-adopting and non-conversational blueprints (e.g. `RetrievalAgent`) are completely unaffected.
+
+Opting in has two required parts (see ADR `2026_06_02_self_awareness_as_base_agent_capability` and `RAGAgent` as the
+reference):
+
+1. Override `self_awareness_llm_config(self, agent_config: MyConfig) -> LLMConfig` (this is the opt-in signal).
+2. **Gate every raw `UserMessageEvent` entry step**: add `_clear: NotAMetaQuestionEvent | None = None` and combine its
+   precondition with `check_passed_meta_question_gate(start_event, clear)`. Gating cannot be automated; a self-aware
+   blueprint that forgets it fails `self_awareness/tests/test_self_awareness_base_class.py` (the entry-step detection
+   would otherwise race the normal pipeline).
+
 ## The @step Decorator
 
 ```python
@@ -308,15 +324,15 @@ the relevant steps.
 
 ## Pre-Built Agents
 
-| Agent                       | Purpose                          | Key Pattern                                            |
-| --------------------------- | -------------------------------- | ------------------------------------------------------ |
-| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + SelfAwarenessMixin (meta-question gate) |
-| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                  |
-| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory       |
-| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop         |
-| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection         |
-| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate |
-| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context             |
+| Agent                       | Purpose                          | Key Pattern                                                                                         |
+| --------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) |
+| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                                                               |
+| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory                                                    |
+| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop                                                      |
+| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection                                                      |
+| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate                                              |
+| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context                                                          |
 
 Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.py` (entry point),
 `agents/{snake_name}/tests/` (BDD tests).
@@ -352,8 +368,11 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
 4. Create custom events inheriting `ControlEvent`/`StartEvent`/`StopEvent`
 5. Add i18n translations in `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`
 6. Create `app/my_agent/main.py` entry point with `AgentRunner`
-7. Write BDD tests with `AgentTestRunner`
-8. Run `make test`
+7. (Conversational agents) Opt into self-awareness: override `self_awareness_llm_config` and gate raw `UserMessageEvent`
+   entry steps with `_clear: NotAMetaQuestionEvent | None = None` + `check_passed_meta_question_gate` (see the Built-in
+   Self-Awareness section above)
+8. Write BDD tests with `AgentTestRunner`
+9. Run `make test`
 
 ## Essential Files
 
