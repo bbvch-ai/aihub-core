@@ -25,8 +25,10 @@ export interface CategorizedElements {
 export type FormElement = Record<string, unknown>
 
 /**
- * Gets a nested value from an object using a dot-separated path.
- * Creates intermediate objects if they don't exist.
+ * Reads a nested array from an object using a dot-separated path. Pure read: never
+ * mutates `obj` (it is called from a render-time `:model-value` getter, where a write
+ * into reactive form data would trigger a recursive render loop). Returns an empty array
+ * when any path segment is missing or the value is not an array.
  */
 export function getNestedValue(
   obj: Record<string, unknown>,
