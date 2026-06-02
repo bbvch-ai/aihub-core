@@ -43,7 +43,7 @@ export function getNestedValue(
   }
 
   if (!current || typeof current !== 'object') return []
-  const value = (current as Record<string, unknown>)[parts[parts.length - 1]]
+  const value = (current as Record<string, unknown>)[parts.at(-1)!]
   return Array.isArray(value) ? value as Record<string, unknown>[] : []
 }
 
