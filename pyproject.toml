@@ -19,8 +19,8 @@ dev = [
     "pytest-mock>=3.14.0",
     # Linting & formatting
     "black[jupyter]>=26.1.0",
-    "ty>=0.0.34",
-    "ruff>=0.15.12",
+    "ty>=0.0.39",
+    "ruff>=0.15.14",
     "toml-sort>=0.24.4",
     # Utilities
     "pip-licenses>=5.5.5",
