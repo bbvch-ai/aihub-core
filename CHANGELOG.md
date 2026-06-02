@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.5] - 2026-06-02 - Enhanced FormKit Data Handling for Stability
+
+### Changed
+
+- 🔄 **Refined `getNestedValue` utility:** The `getNestedValue` function has been refactored to operate as a pure
+  read-only function, specifically for retrieving nested arrays. This change prevents unintended mutations of form data
+  during render-time and mitigates potential recursive render loops in reactive contexts. It now strictly returns an
+  array or an empty array if the specified path does not lead to an array.
+
+### Fixed
+
+- 🛠️ **Improved Repeater Initialization:** FormKit repeater fields now correctly materialize as an empty array during
+  form loading if their default value is `undefined`. This proactive initialization ensures a consistent array structure
+  for repeaters, preventing unexpected behavior and improving stability in reactive render contexts.
+
+______________________________________________________________________
+
 ## [v0.291.4] - 2026-06-02 - Enhanced Prompt Reliability for Image Rendering
 
 ### Fixed
