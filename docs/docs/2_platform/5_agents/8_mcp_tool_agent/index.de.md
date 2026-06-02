@@ -20,7 +20,7 @@ erreicht ist.
 ::: tip Was ist MCP?
 Das **Model Context Protocol (MCP)** ist ein offener Standard, um Tools und Daten für KI-Agents bereitzustellen. Anstatt
 für jedes System eine kundenspezifische Integration zu erstellen, verweisen Sie den Agent auf einen MCP-Server, und er
-entdeckt automatisch, was dieser Server leisten kann. Siehe die [Agents-Übersicht](../#connecting-to-external-tools) für
+entdeckt automatisch, was dieser Server leisten kann. Siehe die [Agents-Übersicht](../#verbindung-zu-externen-tools) für
 die Sichtweise der Plattform auf die Verbindung von Agents mit externen Tools.
 :::
 
@@ -141,7 +141,7 @@ Wie der Agent den externen Tool-Server erreicht.
 | **Max. Eingabe-Tokens** | Zahl           | `128000` | Das Eingabebudget; die Konversation wird entsprechend gekürzt. Bereich 1.000–200.000.                                                        |
 
 Das **Modell** stellt auch die Standardparameter (Temperatur, Timeout, Log-Wahrscheinlichkeitsoptionen) bereit, die auf
-der Seite [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) beschrieben sind.
+der Seite [Document Intelligence Assistant](../5_document_intelligence_assistant/#sprachmodell) beschrieben sind.
 
 ## Best Practices
 

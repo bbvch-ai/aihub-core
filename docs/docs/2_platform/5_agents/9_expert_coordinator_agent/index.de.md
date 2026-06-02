@@ -143,7 +143,7 @@ Wählen Sie die Plattform aus und füllen Sie dann die Felder dieser Plattform a
 | :---------------------------------------------------------------------------------------- | :------------ | :------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Modell**                                                                                | Modellauswahl | —        | Das Chat-Modell, das verwendet wird, um die Vollständigkeit der Antwort zu beurteilen und Nachfragen zu verfassen. Erforderlich.          |
 | **Temperatur**                                                                            | Zahl          | `0.0`    | Niedrig halten — dies ist eine Beurteilungs-/Extraktionsaufgabe, keine kreative. Bereich 0.0–2.0.                                         |
-| **Log-Wahrscheinlichkeiten zurückgeben** / **Top Log-Wahrscheinlichkeiten** / **Timeout** | —             | —        | Standard-Sprachmodelloptionen, wie auf der Seite [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model). |
+| **Log-Wahrscheinlichkeiten zurückgeben** / **Top Log-Wahrscheinlichkeiten** / **Timeout** | —             | —        | Standard-Sprachmodelloptionen, wie auf der Seite [Document Intelligence Assistant](../5_document_intelligence_assistant/#sprachmodell). |
 
 ### Organisationsgedächtnis
 

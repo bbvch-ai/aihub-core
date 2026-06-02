@@ -83,7 +83,7 @@ async def stop_step(self, _: StoreUserMemoryEvent) -> StopEvent:
     return StopEvent()
 ```
 
-Siehe [Die Verletzung des "Dangling Stop"](../9_execution_model/#the-dangling-stop-violation) für die allgemeine Regel.
+Siehe [Die Verletzung des "Dangling Stop"](../9_execution_model/#die-dangling-stop-verletzung) für die allgemeine Regel.
 :::
 
 ### Vollständiges Beispiel
@@ -580,7 +580,7 @@ def check_storage_complete(
 Die Vorbedingung `check_memory_ready` blockiert den Schritt zur Historien-Erweiterung, bis alle aktivierten
 Speichertypen abgerufen wurden. Die Vorbedingung `check_storage_complete` blockiert den letzten Stop-Schritt, bis die
 Speicherung abgeschlossen ist (falls aktiviert). Dies verhindert die
-[optionale Parameterfalle](../9_execution_model/#the-optional-parameter-trap), bei der Schritte vorzeitig mit
+[optionale Parameterfalle](../9_execution_model/#die-falle-der-optionalen-parameter), bei der Schritte vorzeitig mit
 `None`-Werten ausgeführt werden.
 
 ## Observability
