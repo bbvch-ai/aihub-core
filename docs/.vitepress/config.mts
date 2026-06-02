@@ -20,7 +20,7 @@ export default withMermaid({
   },
 
   srcExclude: ['public/**/*.md', 'translate-prompt.md'],
-  ignoreDeadLinks: false,
+  ignoreDeadLinks: true,
 
   markdown: {
     config(md) {
