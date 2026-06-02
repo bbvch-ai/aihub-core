@@ -2,29 +2,57 @@
 name: Lint Code
 on:
   pull_request:
-    branches: [main, initiative/*]
+    branches: [main]
     types: [opened, edited, synchronize, reopened, ready_for_review]
 permissions:
   checks: write
   contents: read
   pull-requests: write
 jobs:
-  lint-backend:
-    name: Lint Backend
+  changes:
+    name: Detect changes
     runs-on: ubuntu-24.04-arm
     if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 5
+    outputs:
+      has_backend_lint: ${{ steps.detect.outputs.has_backend_lint }}
+      has_frontend: ${{ steps.detect.outputs.has_frontend }}
+      run_lint_actions: ${{ steps.detect.outputs.run_lint_actions }}
+      run_license_check: ${{ steps.detect.outputs.run_license_check }}
+      backend_lint_folders: ${{ steps.matrix.outputs.backend_lint_folders }}
+      frontend_lint_folders: ${{ steps.matrix.outputs.frontend_lint_folders }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Detect changed scopes
+        id: detect
+        uses: ./.github/actions/detect_changes
+        with:
+          base_sha: ${{ github.event.pull_request.base.sha }}
+          force_all: ${{ github.event_name != 'pull_request' }}
+      - name: Build matrices
+        id: matrix
+        env:
+          BL: ${{ steps.detect.outputs.backend_lint_pkgs }}
+          FE: ${{ steps.detect.outputs.frontend_pkgs }}
+        run: |
+          set -euo pipefail
+          {
+            echo "backend_lint_folders=$(jq -cn --argjson a "$BL" '$a | map("packages/" + .)')"
+            echo "frontend_lint_folders=$(jq -cn --argjson a "$FE" '$a | map("packages/" + .)')"
+          } >> "$GITHUB_OUTPUT"
+  lint-backend:
+    name: Lint Backend
+    needs: changes
+    if: ${{ needs.changes.outputs.has_backend_lint == 'true' }}
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        folder:
-          - packages/agent
-          - packages/api
-          - packages/core
-          - packages/pipeline
-          - packages/bot
-          - packages/process
-          - packages/sysadmin-api
+        folder: ${{ fromJSON(needs.changes.outputs.backend_lint_folders) }}
     steps:
       - name: Lint backend
         uses: bbvch-ai/aihub-core/.github/actions/lint_backend@main
@@ -33,13 +61,14 @@ jobs:
           working_directory: ${{ matrix.folder }}
   lint-frontend:
     name: Lint Frontend
+    needs: changes
+    if: ${{ needs.changes.outputs.has_frontend == 'true' }}
     runs-on: ubuntu-24.04-arm
-    if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        folder: [packages/web, packages/sysadmin-web]
+        folder: ${{ fromJSON(needs.changes.outputs.frontend_lint_folders) }}
     steps:
       - name: Lint frontend
         uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
@@ -49,8 +78,9 @@ jobs:
           lockfile: pnpm-lock.yaml
   lint-actions:
     name: Lint Actions
+    needs: changes
+    if: ${{ needs.changes.outputs.run_lint_actions == 'true' }}
     runs-on: ubuntu-24.04-arm
-    if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 10
     steps:
       - name: Checkout code
@@ -63,8 +93,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
   license-check:
     name: License Check
+    needs: changes
+    if: ${{ needs.changes.outputs.run_license_check == 'true' }}
     runs-on: ubuntu-24.04-arm
-    if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 15
     steps:
       - name: Checkout code
@@ -97,3 +128,25 @@ jobs:
         run: chmod +x ./generate-license.sh
       - name: Run license check
         run: make license-check
+  lint-gate:
+    name: Lint Gate
+    needs:
+      - changes
+      - lint-backend
+      - lint-frontend
+      - lint-actions
+      - license-check
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    steps:
+      - name: Verify no lint job failed
+        env:
+          RESULTS: ${{ join(needs.*.result, ',') }}
+        run: |-
+          echo "needs results: $RESULTS"
+          if echo "$RESULTS" | grep -qE '(^|,)(failure|cancelled)(,|$)'; then
+            echo "::error::A required Lint job failed."
+            exit 1
+          fi
+          echo "All gating jobs passed or were skipped."

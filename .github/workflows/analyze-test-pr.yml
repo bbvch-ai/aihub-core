@@ -4,17 +4,85 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, initiative/*]
+    branches: [main]
     types: [opened, edited, synchronize, reopened, ready_for_review]
 permissions:
   contents: write
   security-events: write
   packages: read
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-24.04-arm
+    if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 5
+    outputs:
+      has_backend_test: ${{ steps.detect.outputs.has_backend_test }}
+      run_env_check: ${{ steps.detect.outputs.run_env_check }}
+      test_matrix: ${{ steps.matrix.outputs.test_matrix }}
+      coverage_modules: ${{ steps.matrix.outputs.coverage_modules }}
+      sonar_matrix: ${{ steps.matrix.outputs.sonar_matrix }}
+      has_sonar: ${{ steps.matrix.outputs.has_sonar }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Detect changed scopes
+        id: detect
+        uses: ./.github/actions/detect_changes
+        with:
+          base_sha: ${{ github.event.pull_request.base.sha }}
+          force_all: ${{ github.event_name != 'pull_request' }}
+      - name: Build matrices
+        id: matrix
+        env:
+          BT: ${{ steps.detect.outputs.backend_test_pkgs }}
+          FE: ${{ steps.detect.outputs.frontend_pkgs }}
+          BACKUP: ${{ steps.detect.outputs.backup }}
+        run: |
+          set -euo pipefail
+          TEST_CONFIG='[
+            {"module":"packages/core","key":"core","runner":"ubuntu-latest","docker_compose_services":"postgres nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init etcd milvus-standalone neo4j keycloak"},
+            {"module":"packages/api","key":"api","runner":"ubuntu-latest","docker_compose_services":"postgres nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init etcd milvus-standalone neo4j"},
+            {"module":"packages/pipeline","key":"pipeline","runner":"ubuntu-latest","docker_compose_services":""},
+            {"module":"packages/agent","key":"agent","runner":"ubuntu-latest","docker_compose_services":"postgres clickhouse langfuse-worker langfuse-web otel-collector nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init etcd milvus-standalone neo4j"},
+            {"module":"packages/bot","key":"bot","runner":"ubuntu-latest","docker_compose_services":"nats valkey postgres-ferretdb ferretdb"},
+            {"module":"packages/process","key":"process","runner":"ubuntu-latest","docker_compose_services":"postgres nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init etcd milvus-standalone"},
+            {"module":"packages/sysadmin-api","key":"sysadmin-api","runner":"ubuntu-latest","docker_compose_services":"postgres-ferretdb ferretdb"}
+          ]'
+          SONAR_CONFIG='[
+            {"scope":"backend","key":"agent","folder":"packages/agent","sonar_project_key":"aihub-core_agents-core","report_coverage":"true"},
+            {"scope":"backend","key":"api","folder":"packages/api","sonar_project_key":"aihub-core_api-core","report_coverage":"true"},
+            {"scope":"backend","key":"core","folder":"packages/core","sonar_project_key":"aihub-core_lib-core","report_coverage":"true"},
+            {"scope":"backend","key":"pipeline","folder":"packages/pipeline","sonar_project_key":"aihub-core_pipelines-core","report_coverage":"true"},
+            {"scope":"backend","key":"bot","folder":"packages/bot","sonar_project_key":"aihub-core_bot-core","report_coverage":"true"},
+            {"scope":"backend","key":"process","folder":"packages/process","sonar_project_key":"aihub-core_process-core","report_coverage":"true"},
+            {"scope":"backend","key":"sysadmin-api","folder":"packages/sysadmin-api","sonar_project_key":"aihub-core_sysadmin-api","report_coverage":"true"},
+            {"scope":"frontend","key":"web","folder":"packages/web","sonar_project_key":"aihub-core_aihub-web","report_coverage":"false"},
+            {"scope":"frontend","key":"sysadmin-web","folder":"packages/sysadmin-web","sonar_project_key":"aihub-core_sysadmin-web","report_coverage":"false"},
+            {"scope":"backup","key":"backup","folder":"packages/backup","sonar_project_key":"aihub-core_backup-core","report_coverage":"false"}
+          ]'
+          TEST_MATRIX=$(jq -cn --argjson cfg "$TEST_CONFIG" --argjson a "$BT" '{include: ($cfg | map(select(.key as $k | $a | index($k))))}')
+          COVERAGE=$(jq -cn --argjson a "$BT" '$a | map("packages/" + .)')
+          SONAR_MATRIX=$(jq -cn --argjson cfg "$SONAR_CONFIG" --argjson bt "$BT" --argjson fe "$FE" --arg backup "$BACKUP" '
+            {include: ($cfg | map(select(
+              (.scope == "backend"  and (.key as $k | $bt | index($k))) or
+              (.scope == "frontend" and (.key as $k | $fe | index($k))) or
+              (.scope == "backup"   and $backup == "true")
+            )))}')
+          HAS_SONAR=$(echo "$SONAR_MATRIX" | jq -r '.include | length > 0')
+          {
+            echo "test_matrix=$TEST_MATRIX"
+            echo "coverage_modules=$COVERAGE"
+            echo "sonar_matrix=$SONAR_MATRIX"
+            echo "has_sonar=$HAS_SONAR"
+          } >> "$GITHUB_OUTPUT"
   test-modules:
     name: Test Modules
+    needs: changes
+    if: ${{ needs.changes.outputs.has_backend_test == 'true' }}
     runs-on: ${{ matrix.runner }}
-    if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 30
     permissions:
       id-token: write
@@ -25,38 +93,7 @@ jobs:
       packages: read
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - module: packages/core
-            runner: ubuntu-latest
-            docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
-              litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
-              seaweedfs-init etcd-init etcd milvus-standalone neo4j keycloak
-          - module: packages/api
-            runner: ubuntu-latest
-            docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
-              litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
-              seaweedfs-init etcd-init etcd milvus-standalone neo4j
-          - module: packages/pipeline
-            runner: ubuntu-latest
-            docker_compose_services: ''
-          - module: packages/agent
-            runner: ubuntu-latest
-            docker_compose_services: postgres clickhouse langfuse-worker langfuse-web
-              otel-collector nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master
-              seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init
-              etcd milvus-standalone neo4j
-          - module: packages/bot
-            runner: ubuntu-latest
-            docker_compose_services: nats valkey postgres-ferretdb ferretdb
-          - module: packages/process
-            runner: ubuntu-latest
-            docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
-              litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
-              seaweedfs-init etcd-init etcd milvus-standalone
-          - module: packages/sysadmin-api
-            runner: ubuntu-latest
-            docker_compose_services: postgres-ferretdb ferretdb
+      matrix: ${{ fromJSON(needs.changes.outputs.test_matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -81,8 +118,9 @@ jobs:
           regenerate_compose: 'true'
   env-check:
     name: Env / Compose Consistency
+    needs: changes
+    if: ${{ needs.changes.outputs.run_env_check == 'true' }}
     runs-on: ubuntu-24.04-arm
-    if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -103,9 +141,9 @@ jobs:
         run: make check-env
   pytest-coverage-comment:
     name: Pytest Coverage Comment
-    needs: test-modules
+    needs: [changes, test-modules]
     runs-on: ubuntu-slim
-    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    if: ${{ always() && github.event_name == 'pull_request' && needs.test-modules.result == 'success' }}
     timeout-minutes: 10
     permissions:
       contents: read
@@ -115,14 +153,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module:
-          - packages/core
-          - packages/api
-          - packages/agent
-          - packages/pipeline
-          - packages/bot
-          - packages/process
-          - packages/sysadmin-api
+        module: ${{ fromJSON(needs.changes.outputs.coverage_modules) }}
     steps:
       - name: Coverage comment
         uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main
@@ -130,47 +161,16 @@ jobs:
           working_directory: ${{ matrix.module }}
   sonarcloud-scan:
     name: SonarCloud Scan
+    needs: [changes, test-modules]
+    if: ${{ always() && needs.changes.outputs.has_sonar == 'true' && needs.test-modules.result != 'failure' && needs.test-modules.result != 'cancelled' }}
     runs-on: ubuntu-24.04-arm
-    needs: test-modules
-    if: ${{ !github.event.pull_request.draft }}
     timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - folder: packages/agent
-            sonar_project_key: aihub-core_agents-core
-            report_coverage: 'true'
-          - folder: packages/api
-            sonar_project_key: aihub-core_api-core
-            report_coverage: 'true'
-          - folder: packages/core
-            sonar_project_key: aihub-core_lib-core
-            report_coverage: 'true'
-          - folder: packages/pipeline
-            sonar_project_key: aihub-core_pipelines-core
-            report_coverage: 'true'
-          - folder: packages/bot
-            sonar_project_key: aihub-core_bot-core
-            report_coverage: 'true'
-          - folder: packages/process
-            sonar_project_key: aihub-core_process-core
-            report_coverage: 'true'
-          - folder: packages/web
-            sonar_project_key: aihub-core_aihub-web
-            report_coverage: 'false'
-          - folder: packages/sysadmin-api
-            sonar_project_key: aihub-core_sysadmin-api
-            report_coverage: 'true'
-          - folder: packages/sysadmin-web
-            sonar_project_key: aihub-core_sysadmin-web
-            report_coverage: 'false'
-          - folder: packages/backup
-            sonar_project_key: aihub-core_backup-core
-            report_coverage: 'false'
+      matrix: ${{ fromJSON(needs.changes.outputs.sonar_matrix) }}
     steps:
       - name: SonarCloud Scan
         uses: bbvch-ai/aihub-core/.github/actions/sonarcloud_scan@main
@@ -180,3 +180,25 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           report_coverage: ${{ matrix.report_coverage }}
+  test-gate:
+    name: Test Gate
+    needs:
+      - changes
+      - test-modules
+      - env-check
+      - pytest-coverage-comment
+      - sonarcloud-scan
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    steps:
+      - name: Verify no gating job failed
+        env:
+          RESULTS: ${{ join(needs.*.result, ',') }}
+        run: |-
+          echo "needs results: $RESULTS"
+          if echo "$RESULTS" | grep -qE '(^|,)(failure|cancelled)(,|$)'; then
+            echo "::error::A required Analyze & Test job failed."
+            exit 1
+          fi
+          echo "All gating jobs passed or were skipped."
