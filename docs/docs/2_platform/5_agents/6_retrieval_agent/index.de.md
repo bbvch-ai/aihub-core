@@ -6,7 +6,7 @@ source_sha: 4ba4a271a45fa5612dfb2e490864ff9b4ac7f8315973dbfdd4fc99b9e8241e0d
 
 # Retrieval Agent
 
-Der **Retrieval Agent** ist der [Document Intelligence Assistant](/de/docs/5_document_intelligence_assistant/) ohne den
+Der **Retrieval Agent** ist der [Document Intelligence Assistant](../5_document_intelligence_assistant/) ohne den
 Antwortschritt. Er führt die *Retrieval*-Hälfte von RAG aus – durchsucht Ihre Knowledge Base und gibt die relevantesten
 Dokumentenpassagen zurück – aber er **ruft niemals ein Sprachmodell auf und schreibt niemals eine Antwort**. Er gibt den
 Rohkontext (die gefundenen Passagen und deren Quellmetadaten) zur weiteren Verwendung zurück.
@@ -21,7 +21,7 @@ konversationelle Antwort – er nimmt eine Frage entgegen und gibt Kontext zurü
 **nicht in den Workflow anderer Agents integriert** (zum Beispiel delegiert der Document Navigation Assistant an einen
 vollständigen RAG-Agenten, nicht an diesen hier). Verwenden Sie ihn nur, wenn Sie Retrieval speziell von der
 Antwortgenerierung entkoppeln möchten. Wenn Sie einen Assistenten wünschen, der Fragen im Chat beantwortet, verwenden
-Sie den [Document Intelligence Assistant](/de/docs/5_document_intelligence_assistant/).
+Sie den [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 :::
 
 ## Was er tut
@@ -51,8 +51,8 @@ flowchart LR
   Antwortgenerierung an anderer Stelle stattfindet.
 
 Wenn Sie einfach fundierte, zitierte Antworten im Chat wünschen, ist dies der falsche Agent – verwenden Sie den
-[Document Intelligence Assistant](/de/docs/5_document_intelligence_assistant/), der denselben Retrieval-Schritt
-umschliesst und dann antwortet.
+[Document Intelligence Assistant](../5_document_intelligence_assistant/), der denselben Retrieval-Schritt umschliesst
+und dann antwortet.
 
 ## Was er bewusst weglässt
 
@@ -77,7 +77,7 @@ Der Retrieval Agent teilt die Daten-Voraussetzungen des Document Intelligence As
 Chat-Modell benötigt**, da er niemals Text generiert.
 
 1. **Eine gefüllte Knowledge Base.** Eine vektor-indexierte Sammlung Ihrer Dokumente muss bereits existieren, gefüllt
-   durch eine [Datenerfassungs-Pipeline](/de/docs/6_pipelines/). Der Agent liest nur, was die Pipeline indiziert hat.
+   durch eine [Datenerfassungs-Pipeline](../../6_pipelines/). Der Agent liest nur, was die Pipeline indiziert hat.
 2. **Ein Embedding-Modell**, das **mit dem zum Indizieren der Knowledge Base verwendeten Modell übereinstimmt** – eine
    Nichtübereinstimmung führt stillschweigend zum Fehlschlagen der Suche.
 

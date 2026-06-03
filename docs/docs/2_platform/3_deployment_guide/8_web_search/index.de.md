@@ -41,8 +41,8 @@ datenschutzorientiert mit einer Schweizer/europäischen Ausrichtung und bevorzug
 | Wikidata   | Non-Profit    | Strukturierter Wissensgraph                                           |
 | Wikipedia  | Non-Profit    | Enzyklopädische Suche                                                 |
 
-Die entsprechenden ausgehenden Hostnamen sind in den [Netzwerkanforderungen](/de/docs/7_network_requirements/)
-dokumentiert, damit Betreiber Egress-Firewall-Regeln konfigurieren können.
+Die entsprechenden ausgehenden Hostnamen sind in den [Netzwerkanforderungen](../7_network_requirements/) dokumentiert,
+damit Betreiber Egress-Firewall-Regeln konfigurieren können.
 
 ## Engines, die nicht aktiviert sind
 
@@ -95,8 +95,8 @@ zusätzliche Konfiguration wie API-Schlüssel. Das alleinige Hinzufügen zur `ke
 :::
 
 ::: tip
-Wann immer Sie die Engine-Liste ändern, aktualisieren Sie die Seite
-[Netzwerkanforderungen](/de/docs/7_network_requirements/), damit die Betreiber die neuen ausgehenden Hostnamen sehen.
+Wann immer Sie die Engine-Liste ändern, aktualisieren Sie die Seite [Netzwerkanforderungen](../7_network_requirements/),
+damit die Betreiber die neuen ausgehenden Hostnamen sehen.
 :::
 
 ## Websuche vollständig deaktivieren

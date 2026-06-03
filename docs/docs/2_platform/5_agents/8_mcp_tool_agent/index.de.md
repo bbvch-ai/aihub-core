@@ -20,9 +20,8 @@ erreicht ist.
 ::: tip Was ist MCP?
 Das **Model Context Protocol (MCP)** ist ein offener Standard, um Tools und Daten für KI-Agents bereitzustellen. Anstatt
 für jedes System eine kundenspezifische Integration zu erstellen, verweisen Sie den Agent auf einen MCP-Server, und er
-entdeckt automatisch, was dieser Server leisten kann. Siehe die
-[Agents-Übersicht](/de/docs/agents/#connecting-to-external-tools) für die Sichtweise der Plattform auf die Verbindung
-von Agents mit externen Tools.
+entdeckt automatisch, was dieser Server leisten kann. Siehe die [Agents-Übersicht](../#verbindung-zu-externen-tools) für
+die Sichtweise der Plattform auf die Verbindung von Agents mit externen Tools.
 :::
 
 ## Was es leistet
@@ -51,7 +50,7 @@ flowchart LR
 ## Was es *nicht* leistet
 
 - **Keine Wissensdatenbank / RAG.** Es durchsucht Ihre Dokumente nicht. Für fundierte Dokumentantworten verwenden Sie
-  den [Document Intelligence Assistant](/de/docs/agents/5_document_intelligence_assistant/).
+  den [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 - **Keine Eskalation an Menschen.** Es übergibt nicht an einen Kollegen – seine „Hände“ sind die Tools auf dem
   MCP-Server.
 - **Es ist nur so leistungsfähig wie der Server, mit dem es sich verbindet.** Die Tools, ihr Verhalten und ihre
@@ -87,7 +86,7 @@ Anmeldeinformationen entsprechend an.
 ## Einrichtung
 
 Der Agent wird als **Blueprint** geliefert, aus dem Sie konfigurierte **Profile** erstellen – siehe
-[Blueprints & Profile](/de/docs/agents/2_blueprints_and_profiles/). Mit den vorhandenen Voraussetzungen:
+[Blueprints & Profile](../2_blueprints_and_profiles/). Mit den vorhandenen Voraussetzungen:
 
 1. **Öffnen Sie den Blueprint** unter **Admin > Agents > Blueprints** und wählen Sie **MCP Tool Agent**.
 2. **Erstellen Sie ein Profil** mit einer **Agent ID**, einem **Namen**, einer **Beschreibung** und einem **Icon**.
@@ -142,8 +141,7 @@ Wie der Agent den externen Tool-Server erreicht.
 | **Max. Eingabe-Tokens** | Zahl           | `128000` | Das Eingabebudget; die Konversation wird entsprechend gekürzt. Bereich 1.000–200.000.                                                        |
 
 Das **Modell** stellt auch die Standardparameter (Temperatur, Timeout, Log-Wahrscheinlichkeitsoptionen) bereit, die auf
-der Seite [Document Intelligence Assistant](/de/docs/agents/5_document_intelligence_assistant/#language-model)
-beschrieben sind.
+der Seite [Document Intelligence Assistant](../5_document_intelligence_assistant/#sprachmodell) beschrieben sind.
 
 ## Best Practices
 

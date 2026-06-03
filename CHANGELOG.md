@@ -5,6 +5,126 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.5] - 2026-06-02 - Enhanced FormKit Data Handling for Stability
+
+### Changed
+
+- 🔄 **Refined `getNestedValue` utility:** The `getNestedValue` function has been refactored to operate as a pure
+  read-only function, specifically for retrieving nested arrays. This change prevents unintended mutations of form data
+  during render-time and mitigates potential recursive render loops in reactive contexts. It now strictly returns an
+  array or an empty array if the specified path does not lead to an array.
+
+### Fixed
+
+- 🛠️ **Improved Repeater Initialization:** FormKit repeater fields now correctly materialize as an empty array during
+  form loading if their default value is `undefined`. This proactive initialization ensures a consistent array structure
+  for repeaters, preventing unexpected behavior and improving stability in reactive render contexts.
+
+______________________________________________________________________
+
+## [v0.291.4] - 2026-06-02 - Enhanced Prompt Reliability for Image Rendering
+
+### Fixed
+
+- 🐛 **Image Rendering in Prompts**: Resolved a Jinja `SecurityError` that occurred when attempting to render image URLs
+  (`pydantic.AnyUrl`) within RAG agent and guard context prompts. The rendering now correctly uses the `| string` filter
+  to safely convert URLs, ensuring images are displayed as intended across all supported languages.
+
+______________________________________________________________________
+
+## [v0.291.3] - 2026-06-02 - Stricter OAuth Role Defaults
+
+### Changed
+
+- 🔑 **Updated OAuth Allowed Roles Default:** The default `OAUTH_ALLOWED_ROLES` configuration for Open WebUI has been
+  updated across all deployment configurations. It now explicitly requires `AIHubAccess` and any configured admin roles
+  (`${OAUTH_ADMIN_ROLES_OPENWEBUI}`) instead of a wildcard (`*`), enhancing access control and improving the security
+  posture for OAuth integrations.
+
+______________________________________________________________________
+
+## [v0.291.2] - 2026-06-02 - GitHub Actions Reliability Improvement
+
+### Fixed
+
+- 🐛 **Corrected GitHub Actions `if` condition parsing:** Ensured proper evaluation of the `claude-code-review`
+  workflow's trigger conditions by explicitly wrapping the complex expression in `${{ ... }}`.
+
+______________________________________________________________________
+
+## [v0.291.1] - 2026-06-02 - Improved Code Quality Checks with SonarCloud Action v6
+
+### Changed
+
+- 🚀 **Updated SonarCloud Scan Action:** The GitHub Action for running SonarCloud code quality scans has been upgraded to
+  `v6.0.0`, enhancing reliability and ensuring compatibility with the latest SonarCloud features.
+- 📄 **Documentation Refresh:** Internal documentation (`CLAUDE.md`) was updated to reflect the new version of the
+  SonarCloud scan action used in CI/CD workflows.
+
+______________________________________________________________________
+
+## [v0.291.0] - 2026-06-02 - 🚀 Web Package Stability, Deployment, and Publishing Overhaul
+
+### Added
+
+- 🚀 **Automated npm publishing workflow**: Introduced a dedicated GitHub Actions workflow (`publish-npm.yml`) to
+  streamline and automate the publishing of the `@swiss-ai-hub/web` package to npm, utilizing OIDC trusted publishing
+  for enhanced security.
+- 🧪 **Web package build and pack verification**: Added a new GitHub Actions workflow (`verify-web-package.yml`) to
+  automatically build and validate the packaging of `@swiss-ai-hub/web` on every pull request, ensuring package
+  integrity and publishability before merge.
+
+### Changed
+
+- ⚙️ **Streamlined CI/CD branch triggering**: Modified several core CI/CD workflows (`analyze-test-pr`, `lint-pr`,
+  `semantic-pr`, `test-backup-e2e`) to exclusively trigger on the `main` branch, simplifying branching strategy and
+  pipeline execution.
+- 📄 **Enhanced web package installation and dependency management documentation**: Significantly updated the
+  `packages/web/README.md` with detailed guidance on required dependency overrides (specifically for `vue` and
+  `primevue`) to prevent common runtime issues caused by multiple framework instances.
+- 🔄 **Redesigned runtime configuration for static builds**: Introduced a new, more robust runtime configuration
+  mechanism for the `@swiss-ai-hub/web` layer, moving away from `NUXT_PUBLIC_*` environment variables to a dynamic
+  `/config.js` file generated at container startup, offering greater deployment flexibility for static single-page
+  applications.
+- 🐳 **Updated Dockerfile and deployment examples**: Provided comprehensive and up-to-date Dockerfile and
+  `nuxt.config.ts` examples in the `packages/web/README.md` that reflect the new best practices for building, serving,
+  and configuring the static web package in production environments.
+- ✨ **Integrated FormKit PrimeVue**: Added `@sfxcode/formkit-primevue` as a new dependency within the `packages/web`
+  package, enhancing its form building capabilities with PrimeVue components.
+- ⬆️ **Updated PrimeVue peer dependency**: Bumped the recommended `primevue` peer dependency version to `4.5.5` to
+  ensure compatibility and leverage the latest updates for the UI component library.
+
+______________________________________________________________________
+
+## [v0.290.13] - 2026-06-02 - OAuth Default Role Access Update
+
+### Added
+
+- ✨ **Introduced `OAUTH_ALLOWED_ROLES` configuration:** Added the `OAUTH_ALLOWED_ROLES` environment variable, set to `*`
+  by default across Docker Compose configurations, to explicitly allow all roles from the OAuth provider, simplifying
+  initial setup for role-based access.
+
+______________________________________________________________________
+
+## [v0.290.12] - 2026-06-02 - Documentation Refinements and Link Consistency
+
+### Changed
+
+- 🔗 **Updated External README Links:** Transformed relative paths for licenses and contributing guidelines in the main
+  `README.md` to absolute GitHub URLs, ensuring links function correctly across all platforms.
+- 📄 **Minor Documentation Formatting:** Improved the display of the Dagster UI URL in the `packages/backup` README for
+  better readability.
+
+### Refactor
+
+- 🧹 **Standardized Internal Documentation Paths:** Performed a comprehensive review and adjustment of numerous relative
+  links throughout the German and English documentation, enhancing navigation and consistency within the platform guides
+  and SDK.
+- 📚 **Streamlined Authentication Documentation:** Removed outdated architectural decision record (ADR) links from
+  authentication-related documentation, simplifying the content and focusing on current implementation details.
+
+______________________________________________________________________
+
 ## [v0.290.11] - 2026-06-01 - Enhanced Documentation and Licensing Clarity
 
 ### Added
