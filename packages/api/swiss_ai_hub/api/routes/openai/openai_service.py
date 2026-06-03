@@ -401,6 +401,7 @@ class OpenaiService:
 
     @staticmethod
     async def _sse_event_generator(resources: StreamingResources) -> AsyncGenerator[str]:
+        streamed_any = False
         while True:
             if resources.stop_signal.is_set() and resources.chunk_queue.empty():
                 logger.debug("Stop streaming due to stop_event and empty queue")
@@ -408,6 +409,7 @@ class OpenaiService:
             try:
                 chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
                 yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
+                streamed_any = True
                 resources.chunk_queue.task_done()
             except TimeoutError:
                 continue
@@ -415,17 +417,27 @@ class OpenaiService:
                 break
 
         yield OpenaiService._build_chunk_sse(
-            content=OpenaiService._resolve_final_content(resources.stop_event),
+            content=OpenaiService._resolve_final_content(resources.stop_event, streamed_any=streamed_any),
             model="",
             finish_reason="stop",
         )
 
     @staticmethod
-    def _resolve_final_content(stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None) -> str:
+    def _resolve_final_content(
+        stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None,
+        streamed_any: bool = False,
+    ) -> str:
         if stop_event.is_hitl_request_event:
             return stop_event.question
         if stop_event.is_exception_event:
             return f"\n\n>[!CAUTION]\n>**Error:** {stop_event.message}\n"
+        # Safety net: a stop event that finishes streaming within a single step (e.g. the
+        # self-awareness answer's LLMStopEvent) can race its own ChunkEvents and have them dropped
+        # before they reach the client. When nothing streamed, recover the full answer from the stop
+        # event's output messages. Skipped once chunks streamed, to avoid duplicating the answer.
+        if not streamed_any:
+            output_messages = getattr(stop_event, "output_messages", None) or []
+            return output_messages[-1].content if output_messages else ""
         return ""
 
     @staticmethod
