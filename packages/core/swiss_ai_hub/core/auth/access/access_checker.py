@@ -4,6 +4,9 @@ from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
+_ADMIN_PREFIX = "aihub.admin."
+_USER_PREFIX = "aihub.user."
+
 
 class AccessChecker:
     """
@@ -43,13 +46,13 @@ class AccessChecker:
 
         # User access rules
         self.user_valid_access_rules = self._get_validated_access_rules(user_access_rules)
-        self.user_admin_access_rules = {r for r in self.user_valid_access_rules if r.startswith("aihub.admin.")}
-        self.user_user_access_rules = {r for r in self.user_valid_access_rules if r.startswith("aihub.user.")}
+        self.user_admin_access_rules = {r for r in self.user_valid_access_rules if r.startswith(_ADMIN_PREFIX)}
+        self.user_user_access_rules = {r for r in self.user_valid_access_rules if r.startswith(_USER_PREFIX)}
 
         # Tenant access rules (required - if empty, user has no access to anything)
         self.tenant_valid_access_rules = self._get_validated_access_rules(tenant_access_rules)
-        self.tenant_admin_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith("aihub.admin.")}
-        self.tenant_user_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith("aihub.user.")}
+        self.tenant_admin_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith(_ADMIN_PREFIX)}
+        self.tenant_user_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith(_USER_PREFIX)}
 
     @property
     def access_rules(self):
@@ -89,7 +92,7 @@ class AccessChecker:
     @staticmethod
     def validate_user_access_rule(access_rule: str) -> bool:
         """Ensures a users access_rules follows the strict format."""
-        if not access_rule.startswith(("aihub.user.", "aihub.admin.")):
+        if not access_rule.startswith((_USER_PREFIX, _ADMIN_PREFIX)):
             return False
         if not re.fullmatch(r"[a-zA-Z0-9\.\-\_\*\>]+", access_rule):
             return False
@@ -101,7 +104,7 @@ class AccessChecker:
     @staticmethod
     def validate_permission_template(template: str):
         """Ensures a permission template follows the strict format."""
-        if not template.startswith(("aihub.user.", "aihub.admin.")):
+        if not template.startswith((_USER_PREFIX, _ADMIN_PREFIX)):
             raise ValueError(
                 f"Invalid permission template: Must start with 'aihub.user.' or 'aihub.admin.'. Got: {template}"
             )
@@ -180,7 +183,7 @@ class AccessChecker:
             else self._access_rule_matches_concrete_permission
         )
 
-        admin_perm_to_check = permission_template.replace("aihub.user.", "aihub.admin.", 1)
+        admin_perm_to_check = permission_template.replace(_USER_PREFIX, _ADMIN_PREFIX, 1)
 
         # STAGE 1: Determine what level of access the TENANT has
         tenant_has_admin_access = False
@@ -193,7 +196,7 @@ class AccessChecker:
                 break
 
         # Check tenant user access (only if permission is user-level)
-        if permission_template.startswith("aihub.user."):
+        if permission_template.startswith(_USER_PREFIX):
             for access_rule in self.tenant_user_access_rules:
                 if match_func(access_rule, permission_template):
                     tenant_has_user_access = True
@@ -214,7 +217,7 @@ class AccessChecker:
                 break
 
         # Check user user access (only if permission is user-level)
-        if permission_template.startswith("aihub.user."):
+        if permission_template.startswith(_USER_PREFIX):
             for access_rule in self.user_user_access_rules:
                 if match_func(access_rule, permission_template):
                     user_has_user_access = True

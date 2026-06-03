@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.6] - 2026-06-03 - Core System Refinements and Performance Enhancements
+
+### Changed
+
+- 🚀 **Enhanced LLM Guard Performance:** Switched agent description and few-shot guards to use asynchronous structured
+  prediction, improving responsiveness and concurrency with Large Language Models.
+- ⚡️ **Improved Concurrency for Reranking Nodes:** Blocking reranking operations are now offloaded to a separate thread
+  using `asyncio.to_thread`, preventing event loop starvation and boosting application performance.
+- 📄 **Refined Error Logging:** Updated `MineruLoader` and Redis request hooks to use `logger.exception`, ensuring
+  comprehensive exception details are automatically included in logs for better debugging.
+- 🛠️ **Corrected OpenTelemetry HTTPX Instrumentation:** Ensured asynchronous HTTPX request and response hooks are
+  properly defined as coroutine functions, enabling full observability for async HTTP communications.
+
+### Refactor
+
+- 🧹 **Optimized Dispatcher Event Handling:** The `_build_event_kwargs` method in agent and process dispatchers, as well
+  as the base dispatcher, has been made synchronous, streamlining event argument construction.
+- 🔄 **Standardized Access Rule Prefixes:** Consolidated `aihub.admin` and `aihub.user` access rule prefixes into
+  dedicated constants, enhancing maintainability and clarity across authentication logic.
+- 🔑 **Centralized Authentication Error Messages:** Moved common error messages in the authentication handler to
+  constants, improving consistency and simplifying future updates.
+- ☁️ **Standardized S3 Service Error Messages:** Consolidated error messages for S3 anonymous file access service
+  operations into constants, improving consistency and maintainability.
+- ⚙️ **Refined SonarQube Configuration:** Added specific ignore rules to `sonar-project.properties` to suppress
+  `python:S1192` (duplicated string literals) warnings for known-good patterns, such as lazy imports and MongoDB query
+  syntax, reducing false positives in code quality scans.
+- 📝 **Improved RPC Success Attribute Handling:** Standardized the `rpc.success` attribute for NATS requester tracing
+  using a dedicated constant.
+- 📚 **Improved Test Mock Clarity:** Added `noqa` comments to asynchronous mock methods in authentication utilities and
+  Milvus vector store tests to explicitly state why they remain async for testing purposes, improving code clarity for
+  linters.
+- 🧹 **Minor Python Idiom Improvements:** Updated set creation from `set(generator_expression)` to `{comprehension}` in
+  `base_event` and `dispatchable_workflow` for more idiomatic Python.
+
+______________________________________________________________________
+
 ## [v0.291.5] - 2026-06-02 - Enhanced FormKit Data Handling for Stability
 
 ### Changed
