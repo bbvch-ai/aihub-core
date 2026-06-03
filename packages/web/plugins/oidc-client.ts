@@ -40,35 +40,23 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     $router.push(`/${locale}/auth/login`)
   })
 
-  auth.events.addSilentRenewError((error) => {
+  auth.events.addSilentRenewError(async (error) => {
     console.error('Silent renew error:', error)
-    // The refresh token is rejected (typically: Keycloak invalidated it).
-    // Without a working renew path, the SDK starts sending unauthenticated
-    // requests on the next navigation — surfacing as 401s downstream. Send
-    // the user to the login page now so they re-auth in place.
+    // The refresh token is rejected (typically: Keycloak invalidated it, e.g.
+    // after a dev-stack restart). Purge the dead session so the stale token
+    // can't poison the next app init, then send the user to login to re-auth.
+    // Without this, the SDK would keep sending unauthenticated requests on the
+    // next navigation — surfacing as 401s downstream.
+    await auth.removeUser()
     const locale = $i18n.locale.value
     $router.push(`/${locale}/auth/login`)
   })
 
-  // Check for user session on startup
-  try {
-    const user = await auth.getUser()
-    if (user && !user.expired) {
-      console.log('User already logged in')
-    }
-    else if (user?.expired) {
-      console.log('User session expired, attempting renewal')
-      try {
-        await auth.signinSilent()
-      }
-      catch (e) {
-        console.error('Failed to renew session:', e)
-      }
-    }
-  }
-  catch (e) {
-    console.error('Error checking initial user state:', e)
-  }
+  // Renewal of an expired session is owned by middleware/auth.global.ts, which
+  // runs on every navigation. The plugin deliberately does NOT renew here: an
+  // awaited signinSilent() at init would block app bootstrap and race the login
+  // callback's signinRedirectCallback(), leaving the first render stuck on a
+  // spinner when the stored refresh token is stale.
 
   return {
     provide: {

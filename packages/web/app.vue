@@ -3,6 +3,12 @@
     <NuxtPage />
     <Toast />
     <ConfirmDialog />
+    <div
+      v-if="homeResolving"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-surface-900"
+    >
+      <ProgressSpinner />
+    </div>
   </NuxtLayout>
 </template>
 
@@ -15,8 +21,23 @@ const { getToken } = useAuth()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 useNotificationPoller()
+
+// Full-screen spinner while the home route resolves the user's tenant context
+// and redirects (see middleware/home-redirect.ts). That redirect runs in the
+// navigation-guard pipeline, so the index page never mounts to show its own
+// spinner — this root-level overlay covers the wait. The middleware owns the
+// flag (it is the only thing that knows a home resolution is in flight); we
+// clear it once any navigation settles.
+const homeResolving = useState<boolean>('home-resolving', () => false)
+router.afterEach(() => {
+  homeResolving.value = false
+})
+router.onError(() => {
+  homeResolving.value = false
+})
 client.setConfig({
   baseURL: '/api/v1',
   auth: async () => {
