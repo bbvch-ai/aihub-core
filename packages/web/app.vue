@@ -25,12 +25,8 @@ const router = useRouter()
 const toast = useToast()
 useNotificationPoller()
 
-// Full-screen spinner while the home route resolves the user's tenant context
-// and redirects (see middleware/home-redirect.ts). That redirect runs in the
-// navigation-guard pipeline, so the index page never mounts to show its own
-// spinner — this root-level overlay covers the wait. The middleware owns the
-// flag (it is the only thing that knows a home resolution is in flight); we
-// clear it once any navigation settles.
+// Spinner shown while the home-redirect middleware resolves tenants; it runs
+// before any page mounts, so the page itself can't show it. Cleared on settle.
 const homeResolving = useState<boolean>('home-resolving', () => false)
 router.afterEach(() => {
   homeResolving.value = false

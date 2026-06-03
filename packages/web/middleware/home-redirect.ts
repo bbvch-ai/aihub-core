@@ -4,23 +4,10 @@ import { useLocalePath } from '#i18n'
 
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 
-/**
- * Resolves the logged-in user's tenant context and redirects off the index
- * route. Lives in a route middleware (not the page's setup/onMounted) on
- * purpose: on first login the index route is reached via an in-app
- * navigateTo('/') from the auth callback, and redirecting from a page component
- * fires a *separate* navigation that Vue Router drops while the arrival
- * navigation is still settling — leaving an endless spinner. Returning
- * navigateTo() from a middleware is handled inside the guard pipeline as a
- * redirect of the current navigation, so it is never dropped.
- *
- * Returns nothing when the user has no tenants, letting the page render its
- * "no tenant" message.
- */
+// Redirect runs in the guard pipeline, not the page: a page-component redirect
+// here can be dropped by an in-flight navigation.
 export default defineNuxtRouteMiddleware(async () => {
-  // Signal the root-level spinner overlay (app.vue) that a home resolution is in
-  // flight — the index page itself never mounts to show one. app.vue clears it
-  // once the navigation settles.
+  // Drives the root-level spinner overlay in app.vue while tenants resolve.
   useState<boolean>('home-resolving', () => false).value = true
 
   const localePath = useLocalePath()

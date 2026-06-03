@@ -12,9 +12,7 @@
 </template>
 
 <script setup lang="ts">
-// Tenant resolution + redirect happens in the `home-redirect` route middleware
-// (see middleware/home-redirect.ts). This page only renders when the user has
-// no tenants — otherwise the middleware redirects before it mounts.
+// Shown only when the user has no tenants; home-redirect middleware redirects otherwise.
 definePageMeta({ middleware: 'home-redirect' })
 
 const { t } = useI18n()

@@ -42,21 +42,15 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
 
   auth.events.addSilentRenewError(async (error) => {
     console.error('Silent renew error:', error)
-    // The refresh token is rejected (typically: Keycloak invalidated it, e.g.
-    // after a dev-stack restart). Purge the dead session so the stale token
-    // can't poison the next app init, then send the user to login to re-auth.
-    // Without this, the SDK would keep sending unauthenticated requests on the
-    // next navigation — surfacing as 401s downstream.
+    // Refresh token rejected (e.g. Keycloak invalidated it): drop the dead
+    // session before redirecting so it is not reused.
     await auth.removeUser()
     const locale = $i18n.locale.value
     $router.push(`/${locale}/auth/login`)
   })
 
-  // Renewal of an expired session is owned by middleware/auth.global.ts, which
-  // runs on every navigation. The plugin deliberately does NOT renew here: an
-  // awaited signinSilent() at init would block app bootstrap and race the login
-  // callback's signinRedirectCallback(), leaving the first render stuck on a
-  // spinner when the stored refresh token is stale.
+  // Session renewal is handled per-navigation by middleware/auth.global.ts;
+  // intentionally not done here (it would block app bootstrap).
 
   return {
     provide: {
