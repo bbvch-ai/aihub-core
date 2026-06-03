@@ -9359,7 +9359,7 @@ export type ModelInfoDto = {
    *
    * The mode of the model (e.g., 'chat', 'completion', 'embedding')
    */
-  mode: string;
+  mode?: string | null;
   /**
    * Max Input Tokens
    *

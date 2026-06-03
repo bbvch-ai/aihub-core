@@ -13893,7 +13893,14 @@ export const ModelDetailsSchema = {
 export const ModelInfoDTOSchema = {
   properties: {
     mode: {
-      type: "string",
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
       title: "Mode",
       description:
         "The mode of the model (e.g., 'chat', 'completion', 'embedding')",
@@ -14347,7 +14354,6 @@ export const ModelInfoDTOSchema = {
     },
   },
   type: "object",
-  required: ["mode"],
   title: "ModelInfoDTO",
 } as const;
 

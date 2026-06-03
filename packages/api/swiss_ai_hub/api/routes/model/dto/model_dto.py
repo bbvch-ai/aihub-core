@@ -1,6 +1,9 @@
+import logging
 from typing import Annotated
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError, computed_field, model_validator
+
+logger = logging.getLogger(__name__)
 
 
 class SearchContextCostPerQueryDTO(BaseModel):
@@ -18,7 +21,9 @@ class SearchContextCostPerQueryDTO(BaseModel):
 
 
 class ModelInfoDTO(BaseModel):
-    mode: Annotated[str, Field(description="The mode of the model (e.g., 'chat', 'completion', 'embedding')")]
+    mode: Annotated[
+        str | None, Field(None, description="The mode of the model (e.g., 'chat', 'completion', 'embedding')")
+    ]
     max_input_tokens: Annotated[
         int | None, Field(None, description="Maximum number of input tokens the model can handle")
     ]
@@ -106,6 +111,27 @@ class ModelInfoDTO(BaseModel):
     supported_openai_params: Annotated[
         list[str] | None, Field(None, description="List of supported OpenAI API parameters")
     ]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _keep_only_parseable_fields(cls, data: object) -> object:
+        """LiteLLM's model metadata is an external, versioned feed. Drop any field whose shape drifts so the model
+        still renders with everything else — only the drifted datapoint is lost until the DTO is updated."""
+        if not isinstance(data, dict):
+            return data
+
+        cleaned: dict[str, object] = {}
+        for name, field in cls.model_fields.items():
+            key = field.alias or name
+            if key not in data:
+                continue
+            try:
+                TypeAdapter(field.annotation).validate_python(data[key])
+            except ValidationError:
+                logger.warning("Dropping unexpected shape for model_info.%s", key)
+                continue
+            cleaned[key] = data[key]
+        return cleaned
 
 
 class ModelDTO(BaseModel):
