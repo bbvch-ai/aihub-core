@@ -37,7 +37,7 @@ config:
       \ fornisce informazioni cruciali rilevanti per il contesto dato.\n\nDi seguito\
       \ sono riportati i documenti pertinenti:\n\n<context_documents>\n{% for block\
       \ in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
-      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
       {% endif %}\n{% endfor %}\n</context_documents>\n\nIstruzione: Utilizzando le\
       \ informazioni dai documenti forniti, genera una risposta dettagliata e ben\
       \ strutturata\nalla domanda dell'utente.\n{% endchat %}\n"

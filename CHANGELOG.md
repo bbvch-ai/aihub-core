@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.5] - 2026-06-02 - Enhanced FormKit Data Handling for Stability
+
+### Changed
+
+- 🔄 **Refined `getNestedValue` utility:** The `getNestedValue` function has been refactored to operate as a pure
+  read-only function, specifically for retrieving nested arrays. This change prevents unintended mutations of form data
+  during render-time and mitigates potential recursive render loops in reactive contexts. It now strictly returns an
+  array or an empty array if the specified path does not lead to an array.
+
+### Fixed
+
+- 🛠️ **Improved Repeater Initialization:** FormKit repeater fields now correctly materialize as an empty array during
+  form loading if their default value is `undefined`. This proactive initialization ensures a consistent array structure
+  for repeaters, preventing unexpected behavior and improving stability in reactive render contexts.
+
+______________________________________________________________________
+
+## [v0.291.4] - 2026-06-02 - Enhanced Prompt Reliability for Image Rendering
+
+### Fixed
+
+- 🐛 **Image Rendering in Prompts**: Resolved a Jinja `SecurityError` that occurred when attempting to render image URLs
+  (`pydantic.AnyUrl`) within RAG agent and guard context prompts. The rendering now correctly uses the `| string` filter
+  to safely convert URLs, ensuring images are displayed as intended across all supported languages.
+
+______________________________________________________________________
+
+## [v0.291.3] - 2026-06-02 - Stricter OAuth Role Defaults
+
+### Changed
+
+- 🔑 **Updated OAuth Allowed Roles Default:** The default `OAUTH_ALLOWED_ROLES` configuration for Open WebUI has been
+  updated across all deployment configurations. It now explicitly requires `AIHubAccess` and any configured admin roles
+  (`${OAUTH_ADMIN_ROLES_OPENWEBUI}`) instead of a wildcard (`*`), enhancing access control and improving the security
+  posture for OAuth integrations.
+
+______________________________________________________________________
+
+## [v0.291.2] - 2026-06-02 - GitHub Actions Reliability Improvement
+
+### Fixed
+
+- 🐛 **Corrected GitHub Actions `if` condition parsing:** Ensured proper evaluation of the `claude-code-review`
+  workflow's trigger conditions by explicitly wrapping the complex expression in `${{ ... }}`.
+
+______________________________________________________________________
+
+## [v0.291.1] - 2026-06-02 - Improved Code Quality Checks with SonarCloud Action v6
+
+### Changed
+
+- 🚀 **Updated SonarCloud Scan Action:** The GitHub Action for running SonarCloud code quality scans has been upgraded to
+  `v6.0.0`, enhancing reliability and ensuring compatibility with the latest SonarCloud features.
+- 📄 **Documentation Refresh:** Internal documentation (`CLAUDE.md`) was updated to reflect the new version of the
+  SonarCloud scan action used in CI/CD workflows.
+
+______________________________________________________________________
+
 ## [v0.291.0] - 2026-06-02 - 🚀 Web Package Stability, Deployment, and Publishing Overhaul
 
 ### Added
