@@ -361,4 +361,4 @@ Frühere Versionen riefen Rollen aus Azure AD über die Microsoft Graph API ab. 
 - ❌ **Kein automatisches Abrufen von Profilbildern** vom Identity Provider
 
 Details finden Sie unter
-[ADR: Lokale Multi-Tenant-Rollenverwaltung](/de/arc42/decisions/2025_12_25_local_role_management).
+[ADR: Lokale Multi-Tenant-Rollenverwaltung](/arc42/decisions/2025_12_25_local_role_management.md).

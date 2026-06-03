@@ -190,14 +190,14 @@ Framework-Ereignisse aus `event_logs`, und der monatliche `postgres_repack_job` 
 der Festplatte frei. Beide sind gegenseitig exklusiv mit Backups über Dagsters Run-Coordinator-Tag-Concurrency.
 
 Das ist es, was den Postgres-Footprint einer 5 Jahre alten Deployment-Umgebung mit dem einer 3 Monate alten vergleichbar
-hält. Siehe [Backup und Wiederherstellung](/de/docs/4_backup_and_recovery/#continuous-postgres-maintenance) für
+hält. Siehe [Backup und Wiederherstellung](../4_backup_and_recovery/#continuous-postgres-maintenance) für
 Aufbewahrungsfenster und den `MAINTENANCE_DISABLED` Kill Switch.
 
 ______________________________________________________________________
 
 ## Verwandte Dokumentation
 
-- [Deployment-Optionen](/de/docs/1_deployment_options/) - Architektur pro Instanz
-- [Multi-Tenancy](/de/docs/16_multi_tenancy/) - Logische Trennung innerhalb von Instanzen
-- [Backup und Wiederherstellung](/de/docs/4_backup_and_recovery/) - Backup-Strategien
-- [Core-Komponenten](/de/docs/2_architecture/1_core_components/) - Komponentenabhängigkeiten
+- [Deployment-Optionen](../1_deployment_options/) - Architektur pro Instanz
+- [Multi-Tenancy](../../16_multi_tenancy/) - Logische Trennung innerhalb von Instanzen
+- [Backup und Wiederherstellung](../4_backup_and_recovery/) - Backup-Strategien
+- [Core-Komponenten](../../2_architecture/1_core_components/) - Komponentenabhängigkeiten

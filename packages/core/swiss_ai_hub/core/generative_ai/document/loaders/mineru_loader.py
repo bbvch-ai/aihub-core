@@ -232,7 +232,7 @@ class MineruLoader(BaseReader):
                 )
 
                 if response.status_code != 200:
-                    logger.error(
+                    logger.exception(
                         f"[MineruLoader] API request failed for {filename}: "
                         f"status={response.status_code}, response={response.text}"
                     )
@@ -243,10 +243,10 @@ class MineruLoader(BaseReader):
                 return MineruParseResponse.model_validate(response.json())
 
         except httpx.HTTPError as e:
-            logger.error(f"[MineruLoader] HTTP error for {filename}: {type(e).__name__}: {e}")
+            logger.exception(f"[MineruLoader] HTTP error for {filename}: {type(e).__name__}: {e}")
             raise MineruTransientError(f"HTTP error: {type(e).__name__}: {e}") from e
         except OSError as e:
-            logger.error(f"[MineruLoader] Network error for {filename}: {type(e).__name__}: {e}")
+            logger.exception(f"[MineruLoader] Network error for {filename}: {type(e).__name__}: {e}")
             raise MineruTransientError(f"Network error: {type(e).__name__}: {e}") from e
 
     async def _process_response(
@@ -268,7 +268,7 @@ class MineruLoader(BaseReader):
             file_result = result.results.get(filename, {})
 
         if not file_result:
-            logger.error(f"[MineruLoader] No result found for {filename}. Available keys: {result.results.keys()}")
+            logger.exception(f"[MineruLoader] No result found for {filename}. Available keys: {result.results.keys()}")
             raise ValueError(f"No result found for {filename} in MinerU response")
 
         md_content = file_result.get("md_content", "")

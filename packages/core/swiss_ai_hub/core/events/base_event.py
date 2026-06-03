@@ -102,7 +102,7 @@ class BaseEvent(BaseModel):
         parent_classes = get_parent_classes_until_base(cls, BaseEvent)
         class_dict = {cls.__name__: cls for cls in cls.__mro__ if cls.__name__ in parent_classes}
         sorted_parent_classes = sorted(
-            list(parent_classes), key=lambda name: get_inheritance_depth(class_dict[name], BaseEvent), reverse=True
+            parent_classes, key=lambda name: get_inheritance_depth(class_dict[name], BaseEvent), reverse=True
         )
 
         result.extend(sorted_parent_classes)
@@ -121,7 +121,7 @@ class BaseEvent(BaseModel):
         parent_classes = get_parent_classes_until_base(self.__class__, BaseEvent)
         class_dict = {cls.__name__: cls for cls in self.__class__.__mro__ if cls.__name__ in parent_classes}
         sorted_parent_classes = sorted(
-            list(parent_classes), key=lambda name: get_inheritance_depth(class_dict[name], BaseEvent), reverse=True
+            parent_classes, key=lambda name: get_inheritance_depth(class_dict[name], BaseEvent), reverse=True
         )
 
         result.extend(sorted_parent_classes)

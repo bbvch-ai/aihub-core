@@ -12,16 +12,16 @@ nach den relevantesten Passagen und stützt seine Antwort – mit Zitaten – au
 allgemeine Training des Sprachmodells zu verlassen. Er ist der leistungsfähigste und am besten konfigurierbare Agent auf
 der Plattform und derjenige, um den die meisten Unternehmens-Deployments aufgebaut sind.
 
-Im Gegensatz zum [Instruierten Assistenten](/de/docs/agents/3_instructed_assistant/) und
-[Lernfähigen Assistenten](/de/docs/agents/4_teachable_assistant/), die nur das eigene Wissen des Modells verwenden, kann
-dieser Agent Fragen zu *Ihren* Inhalten – Richtlinien, Handbüchern, Berichten, Projektdateien – beantworten und dem
-Benutzer genau mitteilen, aus welchen Dokumenten er die Informationen bezogen hat.
+Im Gegensatz zum [Instruierten Assistenten](../3_instructed_assistant/) und
+[Lernfähigen Assistenten](../4_teachable_assistant/), die nur das eigene Wissen des Modells verwenden, kann dieser Agent
+Fragen zu *Ihren* Inhalten – Richtlinien, Handbüchern, Berichten, Projektdateien – beantworten und dem Benutzer genau
+mitteilen, aus welchen Dokumenten er die Informationen bezogen hat.
 
 ::: tip Über das „Trainieren“ von Agents
 Der Swiss AI Hub fine-tuned oder trainiert keine Modelle mit Ihren Daten. Der Dokumenten-Intelligenz-Assistent bleibt
 aktuell, indem er zum Zeitpunkt der Abfrage aus Ihrer Wissensbasis *abruft*. Aktualisieren Sie ein Dokument, und der
 Agent verwendet die neue Version bei der nächsten Frage – kein erneutes Training, und Sie können immer sehen, welche
-Quellen er verwendet hat. Weitere Informationen finden Sie in der [Agents-Übersicht](/de/docs/agents/).
+Quellen er verwendet hat. Weitere Informationen finden Sie in der [Agents-Übersicht](../).
 :::
 
 ## Was er leistet
@@ -68,9 +68,9 @@ beschrieben.
   Dafür verwenden Sie den MCP Tool Agent.
 - **Keine menschliche Eskalation von sich aus.** Wenn Sie möchten, dass er bei Nichtbeantwortbarkeit auf einen
   menschlichen Experten zurückgreift, verwenden Sie den Company Knowledge Agent (die Expert-RAG-Variante). Siehe den
-  [Expert Coordinator Agent](/de/docs/agents/9_expert_coordinator_agent/).
+  [Expert Coordinator Agent](../9_expert_coordinator_agent/).
 - **Er nimmt keine Dokumente auf.** Das Füllen und Aktualisieren der Wissensbasis ist die Aufgabe einer
-  [Daten-Pipeline](/de/docs/6_pipelines/), nicht des Agents. Der Agent liest nur, was die Pipeline indiziert hat.
+  [Daten-Pipeline](../../6_pipelines/), nicht des Agents. Der Agent liest nur, was die Pipeline indiziert hat.
 
 ## Typische Szenarien
 
@@ -88,7 +88,7 @@ Infrastruktur ab, die **unabhängig vom Agent selbst** existieren muss. Richten 
 
 1. **Eine befüllte Wissensbasis.** Der Agent durchsucht vektorindizierte Sammlungen Ihrer Dokumente. Diese Sammlungen
    müssen bereits existieren und indizierten Inhalt enthalten. Das Erstellen und Befüllen erfolgt durch eine
-   [Datenerfassungs-Pipeline](/de/docs/6_pipelines/) – die Standard-Pipeline indiziert Dokumente, die über die UI
+   [Datenerfassungs-Pipeline](../../6_pipelines/) – die Standard-Pipeline indiziert Dokumente, die über die UI
    hochgeladen wurden, und benutzerdefinierte Pipelines können von Quellen wie SharePoint synchronisieren und den Index
    aktuell halten, wenn sich Dokumente ändern. **Keine Wissensbasis, nichts abzurufen.**
 2. **Ein Embedding-Modell.** Die Suche funktioniert, indem der Embedding (Vektor) der Frage mit den Embeddings Ihrer
@@ -110,7 +110,7 @@ Embedding-Modell verwenden, bevor Sie etwas anderes debuggen.
 ## Einrichtung
 
 Der Agent wird als **Blueprint** geliefert, aus dem Sie konfigurierte **Profile** erstellen – siehe
-[Blueprints & Profile](/de/docs/agents/2_blueprints_and_profiles/). Sind die Voraussetzungen erfüllt:
+[Blueprints & Profile](../2_blueprints_and_profiles/). Sind die Voraussetzungen erfüllt:
 
 1. **Öffnen Sie den Blueprint** unter **Admin > Agents > Blueprints** und wählen Sie
    **Dokumenten-Intelligenz-Assistent**.
@@ -212,8 +212,8 @@ oder Präferenzen) und diesen zur Personalisierung von Antworten zu verwenden. S
 ### Organisationsspeicher *(optional)*
 
 Ermöglicht es dem Assistenten, auf gemeinsames Wissen zurückzugreifen, das für die gesamte Organisation erfasst wurde
-(zum Beispiel Antworten, die vom [Expert Coordinator Agent](/de/docs/agents/9_expert_coordinator_agent/) gesammelt
-wurden). Deaktivieren Sie den Abschnitt „Organisationsspeicher“, um ihn zu deaktivieren.
+(zum Beispiel Antworten, die vom [Expert Coordinator Agent](../9_expert_coordinator_agent/) gesammelt wurden).
+Deaktivieren Sie den Abschnitt „Organisationsspeicher“, um ihn zu deaktivieren.
 
 | Feld                                 | Typ        | Standard          | Beschreibung                                                                                                                       |
 | :----------------------------------- | :--------- | :---------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
@@ -233,8 +233,8 @@ wurden). Deaktivieren Sie den Abschnitt „Organisationsspeicher“, um ihn zu d
 ## Best Practices
 
 **Stellen Sie zuerst die korrekte Wissensbasis sicher.** Die Qualität der Antworten ist durch die Qualität des
-Indizierten begrenzt. Stellen Sie sicher, dass die [Pipeline](/de/docs/6_pipelines/) die richtigen Dokumente aufnimmt
-und sie aktuell hält, bevor Sie den Agenten optimieren.
+Indizierten begrenzt. Stellen Sie sicher, dass die [Pipeline](../../6_pipelines/) die richtigen Dokumente aufnimmt und
+sie aktuell hält, bevor Sie den Agenten optimieren.
 
 **Gleichen Sie das Embedding-Modell mit dem Index ab.** Lesen Sie die Voraussetzungen nochmals – eine Diskrepanz führt
 stillschweigend zu Fehlern beim Abruf.

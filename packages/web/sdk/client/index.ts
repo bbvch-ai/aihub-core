@@ -838,6 +838,7 @@ export {
   type RouterEventWritable,
   type RunStatistics,
   type RunStatisticsWritable,
+  type SearchContextCostPerQueryDto,
   type SearchOrganizationMemoriesData,
   type SearchOrganizationMemoriesError,
   type SearchOrganizationMemoriesErrors,

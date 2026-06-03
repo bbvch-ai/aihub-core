@@ -93,9 +93,7 @@ initiates the OIDC Authorization Code Flow with `kc_idp_hint` set to the provide
 to the upstream identity provider without showing Keycloak's login theme.
 
 This approach eliminates any frontend configuration for identity providers — adding or removing an IdP is a
-Keycloak-only change. See
-[ADR: Dynamic Identity Provider Loading](../../../../arc42/decisions/2026_02_27_dynamic_identity_provider_loading.md)
-for the full rationale and implementation details.
+Keycloak-only change.
 
 ### Configuring Provider Icons
 
@@ -127,9 +125,7 @@ forwarding authenticated requests to the upstream service. Only users with the `
 services.
 
 Due to the split-horizon networking in Docker deployments (containers use internal hostnames, browsers use external
-URLs), OIDC discovery is skipped and endpoints are configured explicitly. See
-[ADR: Skip OIDC Discovery for OAuth2 Proxy](../../../../arc42/decisions/2026_02_26_skip_oidc_discovery_for_oauth2_proxy.md)
-for the technical rationale.
+URLs), OIDC discovery is skipped and endpoints are configured explicitly.
 
 ## Hardening: Keycloak Admin Console Access
 

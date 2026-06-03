@@ -13,7 +13,7 @@ bereitgestellt (deployed) werden, die optional Backend-LLM-Ressourcen gemeinsam 
 
 ::: info Multi-Tenancy vs. Multi-Instancing
 Dieses Kapitel beschreibt **Multi-Instancing** (mehrere isolierte Swiss AI Hub-Instanzen). Für **Multi-Tenancy**
-(mehrere organisatorische Grenzen innerhalb einer einzelnen Instanz) siehe [Multi-Tenancy](/de/docs/16_multi_tenancy/).
+(mehrere organisatorische Grenzen innerhalb einer einzelnen Instanz) siehe [Multi-Tenancy](../../16_multi_tenancy/).
 
 Beide Deployment-Modelle sind gültig und dienen unterschiedlichen Zwecken. Multi-Instancing bietet eine harte Isolation zwischen
 Organisationen, während Multi-Tenancy eine logische Trennung innerhalb einer gemeinsam genutzten Plattform-Instanz
@@ -94,7 +94,7 @@ erfordert.
 Selbst eine Fehlkonfiguration des Swiss AI Hubs kann keine Datenlecks zwischen Instanzen verursachen. Admins einer
 Instanz können eine andere Instanz ohne separaten Login weder konfigurieren noch darauf zugreifen.
 
-Für eine logische Trennung innerhalb einer gemeinsam genutzten Plattform verwenden Sie stattdessen [Multi-Tenancy](/de/docs/16_multi_tenancy/).
+Für eine logische Trennung innerhalb einer gemeinsam genutzten Plattform verwenden Sie stattdessen [Multi-Tenancy](../../16_multi_tenancy/).
 :::
 
 ### Geteiltes LLM-Backend
@@ -119,7 +119,7 @@ Daten können nicht zwischen Organisationen austreten. Das Setup erfüllt das Sc
 GDPR-Anforderungen an die Datenisolation und die Schweizer Sicherheitsstandards für den öffentlichen Sektor.
 
 ::: info Multi-Tenancy innerhalb von Instanzen
-Jede Instanz kann auch [Multi-Tenancy](/de/docs/16_multi_tenancy/) nutzen, um logische Grenzen für Abteilungen, Kunden
+Jede Instanz kann auch [Multi-Tenancy](../../16_multi_tenancy/) nutzen, um logische Grenzen für Abteilungen, Kunden
 oder Projekte innerhalb dieser Instanz zu schaffen. Multi-Tenancy bietet flexible Zugriffskontrolle bei gleichzeitiger
 Aufrechterhaltung einer harten Isolation zwischen den Instanzen.
 :::
@@ -278,13 +278,11 @@ ______________________________________________________________________
 
 ## Nächste Schritte
 
-- [Multi-Tenancy](/de/docs/16_multi_tenancy/) – Logische Trennung innerhalb einer einzelnen Instanz
-- [Produktionskonfiguration](/de/docs/deployments/2_production_configuration/) – Konfigurationsanleitung für
-  Produktions-Deployments
-- [Skalierungsüberlegungen](/de/docs/deployments/3_scaling_considerations/) – Skalierung von Instanzen
-- [Backup und Wiederherstellung](/de/docs/deployments/4_backup_and_recovery/) – Backup-Strategien für die
-  Pro-Instanz-Architektur
-- [Updates und Wartung](/de/docs/deployments/6_updates_and_maintenance/) – Verwaltung von Updates über mehrere Instanzen
+- [Multi-Tenancy](../../16_multi_tenancy/) – Logische Trennung innerhalb einer einzelnen Instanz
+- [Produktionskonfiguration](../2_production_configuration/) – Konfigurationsanleitung für Produktions-Deployments
+- [Skalierungsüberlegungen](../3_scaling_considerations/) – Skalierung von Instanzen
+- [Backup und Wiederherstellung](../4_backup_and_recovery/) – Backup-Strategien für die Pro-Instanz-Architektur
+- [Updates und Wartung](../6_updates_and_maintenance/) – Verwaltung von Updates über mehrere Instanzen
 
 ______________________________________________________________________
 
@@ -294,7 +292,7 @@ ______________________________________________________________________
 Nein. Jede Instanz verfügt über einen eigenen, isolierten Satz von Agents und Pipelines. Dieselben Agent-Definitionen
 (Code) können jedoch über mehrere Instanzen hinweg deployed werden. Anpassungen sind instanzspezifisch.
 
-Um Agents innerhalb einer Organisation zu teilen, verwenden Sie [Multi-Tenancy](/de/docs/16_multi_tenancy/), um logische
+Um Agents innerhalb einer Organisation zu teilen, verwenden Sie [Multi-Tenancy](../../16_multi_tenancy/), um logische
 Grenzen innerhalb einer einzelnen Instanz zu schaffen.
 :::
 
@@ -304,7 +302,7 @@ Jede verfügt über separate Datenbanken, Vektor-Stores und Applikationsserver. 
 Datenlecks zwischen Instanzen verursachen. Verwenden Sie dies, wenn Sie absolute Isolation benötigen (z.B. verschiedene
 juristische Einheiten, hochsensible Abteilungen).
 
-**Multi-Tenancy** ([Kapitel 15](/de/docs/16_multi_tenancy/)) bedeutet die Schaffung organisatorischer Grenzen innerhalb
+**Multi-Tenancy** ([Kapitel 15](../../16_multi_tenancy/)) bedeutet die Schaffung organisatorischer Grenzen innerhalb
 einer einzelnen Swiss AI Hub-Instanz. Mehrere Mandanten teilen sich die Infrastruktur, verfügen aber über eine logische
 Trennung durch Zugriffskontrolle. Verwenden Sie dies für Abteilungen, Projekte oder Kunden innerhalb derselben
 Organisation.
@@ -351,20 +349,19 @@ Mitigation: Deployen Sie LiteLLM mit hoher Verfügbarkeit (mehrere Replicas, Loa
 :::
 
 ::: details Wie verwalten Sie Updates über viele Instanzen hinweg?
-Siehe [Updates und Wartung](/de/docs/deployments/6_updates_and_maintenance/) für Strategien wie gestaffelte Rollouts
-(Pilot bis Produktion), Blue-Green Deployments, automatisierte Update-Orchestrierung (Ansible, Kubernetes Operators) und
+Siehe [Updates und Wartung](../6_updates_and_maintenance/) für Strategien wie gestaffelte Rollouts (Pilot bis
+Produktion), Blue-Green Deployments, automatisierte Update-Orchestrierung (Ansible, Kubernetes Operators) und
 instanzspezifische Update-Zeitpläne.
 :::
 
 ## Verwandte Dokumentation
 
-- [Multi-Tenancy](/de/docs/16_multi_tenancy/) – Schaffung organisatorischer Grenzen innerhalb einer Instanz
-- [Kernkomponenten](/de/docs/2_architecture/1_core_components/) – Swiss AI Hub Architektur
-- [Authentifizierung & Autorisierung](/de/docs/11_access_management/1_authentication_setup/) –
+- [Multi-Tenancy](../../16_multi_tenancy/) – Schaffung organisatorischer Grenzen innerhalb einer Instanz
+- [Kernkomponenten](../../2_architecture/1_core_components/) – Swiss AI Hub Architektur
+- [Authentifizierung & Autorisierung](../../11_access_management/1_authentication_setup/) –
   Authentifizierungskonfiguration
-- [Monitoring und Alerting](/de/docs/deployments/5_monitoring_and_alerting/) – Observability für
-  Multi-Instanz-Deployments
-- [Schweizer Datenschutz](/de/docs/21_compliance/3_dsg/) – revDSG-Compliance für den öffentlichen Sektor
+- [Monitoring und Alerting](../5_monitoring_and_alerting/) – Observability für Multi-Instanz-Deployments
+- [Schweizer Datenschutz](../../21_compliance/3_dsg/) – revDSG-Compliance für den öffentlichen Sektor
 
 ```
 ```
