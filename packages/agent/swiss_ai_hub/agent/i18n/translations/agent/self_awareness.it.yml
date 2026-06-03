@@ -8,6 +8,10 @@ steps:
     name: Rispondi a meta-domanda
     description: Risponde a una domanda sull'assistente utilizzando la propria configurazione
       e la definizione del flusso di lavoro.
+  stop:
+    name: Completa la meta-risposta
+    description: Completa l'esecuzione dopo che la risposta alla meta-domanda è stata
+      trasmessa completamente.
 thought:
   detecting: Sto verificando se questa è una domanda su di me
   answering: Sto rispondendo a una domanda su me stesso
@@ -29,6 +33,13 @@ detect:
     un'attività, rispondere a una domanda di dominio o elaborare contenuti — anche
     se contiene le parole "tu" o "fare" (es. "cosa posso fare con questo documento?"
     è un'attività normale).
+    In particolare, una domanda su un argomento, un luogo, una persona, un'entità o un
+    campo di conoscenza è un'attività NORMALE anche se formulata come "conosci X?", "cosa
+    sai di X?", "hai sentito parlare di X?" o "puoi parlarmi di X?" — cerca informazioni
+    su X, non sull'assistente stesso (es. "conosci la Terra?" è un'attività normale).
+    Una domanda sulle capacità riguarda le funzioni generali dell'assistente, non se
+    conosce un argomento specifico.
+    In caso di dubbio, classifica il messaggio come NON una meta-domanda.
     Classifica il seguente messaggio.
     Messaggio: {user_query}
 answer:

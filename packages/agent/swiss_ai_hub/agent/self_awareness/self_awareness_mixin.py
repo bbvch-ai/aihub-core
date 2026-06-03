@@ -3,6 +3,7 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LLMStopEvent,
+    MetaAnswerReadyEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     UserMessageEvent,
@@ -33,7 +34,9 @@ class SelfAwarenessMixin:
     the run's concrete config because its check is subclass-based.
     """
 
-    SELF_AWARENESS_STEP_NAMES: frozenset[str] = frozenset({"detect_meta_question_step", "answer_meta_question_step"})
+    SELF_AWARENESS_STEP_NAMES: frozenset[str] = frozenset(
+        {"detect_meta_question_step", "answer_meta_question_step", "stop_after_meta_answer_step"}
+    )
 
     def self_awareness_llm_config(self, agent_config: AgentConfig) -> LLMConfig:
         """
@@ -120,6 +123,20 @@ class SelfAwarenessMixin:
         agent_config: AgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> LLMStopEvent:
-        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        return await self.run_meta_question_answer(event, user_message_event.messages, agent_config, displayer, t)
+    ) -> MetaAnswerReadyEvent:
+        """
+        Stream a meta answer from the agent's own identity and workflow, then hand off to a separate
+        stop step. The terminal stop event must NOT be emitted here: emitting it back-to-back with the
+        answer's chunks lets it race them in the streaming layer and blanks the answer in the chat UI.
+        """
+        stop_event = await self.run_meta_question_answer(event, user_message_event.messages, agent_config, displayer, t)
+        return MetaAnswerReadyEvent(stop_event=stop_event)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.description"),
+        icon="mdi:flag-checkered",
+    )
+    async def stop_after_meta_answer_step(self, event: MetaAnswerReadyEvent) -> LLMStopEvent:
+        """Re-emit the streamed answer's stop event as the run's terminal event, a dispatch cycle later."""
+        return event.stop_event

@@ -47,7 +47,13 @@ async def do_answer_meta_question(
         workflow=workflow_summary,
         category=event.category,
     )
-    messages = merge_consecutive_messages([*chat_history, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)])
+    # Drop empty-content turns before prompting: a prior meta answer can be captured empty by the chat
+    # client (its chunks race the stop event), and most providers reject an empty assistant message with
+    # a 400 — which would otherwise blank out this answer too.
+    non_empty_history = [message for message in chat_history if str(message.content or "").strip()]
+    messages = merge_consecutive_messages(
+        [*non_empty_history, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)]
+    )
 
     async with llm_config.cost_reporting_llm(displayer) as llm:
         return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=True)

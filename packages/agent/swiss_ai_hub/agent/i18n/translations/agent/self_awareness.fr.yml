@@ -8,6 +8,10 @@ steps:
     name: Répondre à une méta-question
     description: Répond à une question sur l'assistant à partir de sa propre configuration
       et de la définition de son flux de travail.
+  stop:
+    name: Terminer la méta-réponse
+    description: Termine l'exécution une fois que la réponse à la méta-question a
+      fini d'être diffusée.
 thought:
   detecting: Je vérifie s'il s'agit d'une question à mon sujet
   answering: Je réponds à une question à mon sujet
@@ -30,6 +34,14 @@ detect:
     une tâche, de répondre à une question de domaine ou de traiter du contenu — même
     s'il contient les mots « vous » ou « faire » (par ex. « que puis-je faire avec
     ce document ? » est une tâche normale).
+    En particulier, une question sur un sujet, un lieu, une personne, une entité ou un
+    domaine de connaissance est une tâche NORMALE, même formulée comme « connaissez-vous
+    X ? », « que savez-vous sur X ? », « avez-vous entendu parler de X ? » ou « pouvez-vous
+    me parler de X ? » — elle cherche des informations sur X, et non sur l'assistant
+    lui-même (par ex. « connaissez-vous la Terre ? » est une tâche normale).
+    Une question de capacités porte sur les fonctions générales de l'assistant, et non
+    sur le fait qu'il connaisse un sujet particulier.
+    En cas de doute, classez le message comme N'ÉTANT PAS une méta-question.
     Classez le message suivant.
     Message : {user_query}
 answer:

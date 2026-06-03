@@ -64,6 +64,31 @@ async def test_answer_prompt_is_grounded_in_agent_identity_and_workflow(llm_conf
 
 
 @pytest.mark.asyncio
+async def test_answer_drops_empty_history_turns(llm_config, displayer, locale_handler):
+    """A prior meta answer captured empty by the chat client must not reach the LLM (providers 400 on
+    an empty assistant message), which would blank out this follow-up answer."""
+    event = MetaQuestionDetectedEvent(user_query="why did you do that?", category="behavior", reasoning="behavior")
+
+    await do_answer_meta_question(
+        event=event,
+        agent_name="Bot",
+        agent_description="A bot.",
+        workflow_summary="- Answer",
+        chat_history=[
+            ChatMessage(role=MessageRole.USER, content="what can you do?"),
+            ChatMessage(role=MessageRole.ASSISTANT, content=""),
+            ChatMessage(role=MessageRole.USER, content="why did you do that?"),
+        ],
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+    )
+
+    sent_messages = displayer.display_llm_stream.call_args.args[2]
+    assert all(str(m.content or "").strip() for m in sent_messages), "empty-content turns must be dropped"
+
+
+@pytest.mark.asyncio
 async def test_answer_terminates_as_stop_step(llm_config, displayer, locale_handler):
     event = MetaQuestionDetectedEvent(user_query="who are you?", category="identity", reasoning="identity")
 
