@@ -221,9 +221,19 @@ const advancedPricingItems = computed<Array<{ key: string, label: string, value:
     },
     { key: 'output_cost_per_image', label: t('models.modelDetails.imageCost'), value: info.output_cost_per_image },
     {
-      key: 'search_context_cost_per_query',
-      label: t('models.modelDetails.searchContextCost'),
-      value: info.search_context_cost_per_query,
+      key: 'search_context_cost_per_query_low',
+      label: t('models.modelDetails.searchContextCostLow'),
+      value: info.search_context_cost_per_query?.search_context_size_low,
+    },
+    {
+      key: 'search_context_cost_per_query_medium',
+      label: t('models.modelDetails.searchContextCostMedium'),
+      value: info.search_context_cost_per_query?.search_context_size_medium,
+    },
+    {
+      key: 'search_context_cost_per_query_high',
+      label: t('models.modelDetails.searchContextCostHigh'),
+      value: info.search_context_cost_per_query?.search_context_size_high,
     },
   ]
 
