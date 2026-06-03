@@ -47,7 +47,7 @@ HTTP-Autorisierungs-Header, die mit demselben JWKS-basierten Verifizierungsproze
 Die Autorisierung wird unabhängig von der Authentifizierung implementiert, wodurch eine konsistente Zugriffskontrolle
 ermöglicht wird, unabhängig davon, wie sich Benutzer authentifizieren. Die Plattform evaluiert Berechtigungen für jede
 API-Anfrage basierend auf den zugewiesenen Rollen des Benutzers und dem hierarchischen Berechtigungsmodell, das in den
-[Berechtigungen](/de/docs/11_access_management/2_permissions/) beschrieben ist.
+[Berechtigungen](../../11_access_management/2_permissions/) beschrieben ist.
 
 ### Integration von Unternehmens-Identitätsanbietern
 
@@ -82,7 +82,7 @@ der Benutzer zugreifen kann, basierend auf seinen zugewiesenen Rollen.
 **API-Level-Berechtigungsdurchsetzung:** Jeder API-Endpunkt deklariert seine erforderlichen Berechtigungen. Diese
 Berechtigungen werden automatisch überprüft, bevor die Endpunktlogik ausgeführt wird, wodurch sichergestellt wird, dass
 kein Ressourcenzugriff die Autorisierung umgeht. Die Berechtigungsevaluierung verwendet das hierarchische
-Berechtigungsmodell, das in den [Berechtigungen](/de/docs/11_access_management/2_permissions/) beschrieben ist.
+Berechtigungsmodell, das in den [Berechtigungen](../../11_access_management/2_permissions/) beschrieben ist.
 
 **Dynamische Autorisierung:** Für Operationen, die Laufzeit-Berechtigungsprüfungen erfordern, bietet die Plattform
 programmatischen Zugriff auf das Berechtigungsevaluierungssystem. Dies ermöglicht das Filtern von Ergebnismengen
@@ -103,9 +103,7 @@ Alias des Anbieters gesetzt ist, und leitet den Benutzer direkt zum vorgelagerte
 Keycloaks Login-Theme anzuzeigen.
 
 Dieser Ansatz eliminiert jegliche Frontend-Konfiguration für Identitätsanbieter – das Hinzufügen oder Entfernen eines
-IdP ist eine reine Keycloak-Änderung. Siehe
-[ADR: Dynamic Identity Provider Loading](../../../../arc42/decisions/2026_02_27_dynamic_identity_provider_loading.md)
-für die vollständige Begründung und Implementierungsdetails.
+IdP ist eine reine Keycloak-Änderung.
 
 ### Konfigurieren von Anbieter-Icons
 
@@ -139,9 +137,7 @@ authentifizierte Anfragen an den vorgelagerten Service weitergeleitet werden. Nu
 können auf diese Services zugreifen.
 
 Aufgrund des Split-Horizon-Netzwerks in Docker-Deployments (Container verwenden interne Hostnamen, Browser externe URLs)
-wird die OIDC-Erkennung übersprungen und Endpunkte werden explizit konfiguriert. Siehe
-[ADR: Skip OIDC Discovery for OAuth2 Proxy](../../../../arc42/decisions/2026_02_26_skip_oidc_discovery_for_oauth2_proxy.md)
-für die technische Begründung.
+wird die OIDC-Erkennung übersprungen und Endpunkte werden explizit konfiguriert.
 
 ## Hardening: Keycloak Admin-Konsolenzugriff
 
@@ -191,7 +187,7 @@ Traefik-Dashboard selbst einzuschränken, wenn es in Produktion aktiviert ist.
 
 Keycloak verwaltet Realm-Level-Rollen, die bestimmen, ob ein Benutzer auf die Plattform zugreifen darf. Diese Rollen
 sind grobe Zugangstore – fein granulare Berechtigungen werden lokal von der Plattform verwaltet (siehe
-[Berechtigungen](/de/docs/11_access_management/2_permissions/)).
+[Berechtigungen](../../11_access_management/2_permissions/)).
 
 | Rolle            | Zweck                                                                                                                |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------- |

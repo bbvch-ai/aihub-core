@@ -312,7 +312,7 @@ sieben Subdomains, die auf die IP-Adresse Ihres Servers zeigen.
 - Die VM muss ihre eigenen Domainnamen auflösen können (interne DNS-Auflösung)
 - Konfigurieren Sie die Nameserver korrekt, um OAuth-Authentifizierungs-Timeouts zu vermeiden
 
-Siehe [Netzwerkanforderungen](/de/docs/3_deployment_guide/7_network_requirements) für detaillierte DNS-Konfiguration und
+Siehe [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) für detaillierte DNS-Konfiguration und
 Fehlerbehebung.
 :::
 
@@ -377,8 +377,8 @@ ______________________________________________________________________
 
 ## Nächste Schritte
 
-Fahren Sie mit dem [Ein-Befehl-Deployment](/de/docs/2_deployment_guide/2_one_command_deployment) fort, um die Plattform
-mit den aufgezeichneten Konfigurationswerten zu deployen.
+Fahren Sie mit dem [Ein-Befehl-Deployment](../2_one_command_deployment/) fort, um die Plattform mit den aufgezeichneten
+Konfigurationswerten zu deployen.
 
 ```
 ```

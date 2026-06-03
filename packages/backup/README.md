@@ -6,7 +6,7 @@ instance (3 containers: gRPC code server, daemon, webserver) inside the Docker C
 Requires the Docker socket (`/var/run/docker.sock`) to discover and manage platform containers via the
 `com.docker.compose.project` label.
 
-Dagster UI: <http://localhost:3004>
+Dagster UI: `http://localhost:3004`
 
 ## What this package does
 

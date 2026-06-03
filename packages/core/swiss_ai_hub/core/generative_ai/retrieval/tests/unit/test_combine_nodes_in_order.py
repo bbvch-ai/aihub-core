@@ -56,7 +56,7 @@ def custom_prompt():
 {{ block.text }}
 {% endif %}
 {% if block.block_type == 'image' %}
-{{ block.url.__str__() | image}}
+{{ block.url | string | image}}
 {% endif %}
 {% endfor %}
         """
@@ -156,3 +156,33 @@ def _(the_result, docstring):
     expected = "\n".join(line.rstrip() for line in docstring.strip().splitlines())
     actual = "\n".join(line.rstrip() for line in the_result.blocks[0].text.strip().splitlines())
     assert actual == expected, f"\nExpected:\n{expected}\n\nBut got:\n{actual}\n"
+
+
+def test_image_block_renders_without_sandbox_security_error():
+    """Regression: the context prompt must render an image block whose ``url`` is a
+    pydantic ``AnyUrl`` without tripping the Jinja ``SandboxedEnvironment``.
+
+    The previous ``{{ block.url.__str__() | image }}`` raised
+    ``jinja2.exceptions.SecurityError: access to attribute '__str__' of 'AnyUrl'
+    object is unsafe`` because the sandbox forbids dunder access. ``| string``
+    converts via a trusted filter instead.
+    """
+    from llama_index.core.base.llms.types import ImageBlock
+    from llama_index.core.prompts import RichPromptTemplate
+    from pydantic import AnyUrl
+
+    template = (
+        '{% chat role="user" %}\n'
+        "{% for block in context_blocks %}\n"
+        "{% if block.block_type == 'image' %}\n"
+        "{{ block.url | string | image }}\n"
+        "{% endif %}\n"
+        "{% endfor %}\n"
+        "{% endchat %}"
+    )
+    image_block = ImageBlock(url="https://example.com/figure.jpg")
+    assert isinstance(image_block.url, AnyUrl)
+
+    messages = RichPromptTemplate(template_str=template).format_messages(context_blocks=[image_block])
+
+    assert messages
