@@ -184,10 +184,11 @@ Two realm roles take effect in the platform:
 | `AIHubAccess`   | Required for platform login. Users without this role are denied at the Keycloak login flow.                                                 |
 | `AIHubSysAdmin` | Platform administrator. Read from the token to grant admin access and gate the OAuth2-Proxy admin tools (Dagster, Attu, SeaweedFS, Backup). |
 
-::: info Roles that are mapped but currently inert
-The realm also defines `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper`, and the Azure IdP maps them — but the platform
-does not read them for authorization. Day-to-day permissions come from tenant-scoped roles managed inside the platform,
-not from these realm roles. Assign only `AIHubAccess` and `AIHubSysAdmin` to users.
+::: info Realm roles vs. platform roles
+The `aihub` realm defines only these two roles. Fine-grained, day-to-day permissions are handled separately by
+**tenant-scoped roles** managed inside the platform — these may share names such as `AIHubUser` or `AIHubAdmin` but are
+unrelated to Keycloak realm roles and are not derived from the IdP. Assign only `AIHubAccess` and `AIHubSysAdmin` in
+your identity provider.
 
 For the operator setup of the Azure app registration and role assignment, see
 [Identity Provider Setup](../../3_deployment_guide/10_identity_provider_setup/).
