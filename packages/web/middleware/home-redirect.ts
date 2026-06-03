@@ -7,8 +7,7 @@ const REDIRECT_KEY = 'aihub_redirect_after_login'
 // Redirect runs in the guard pipeline, not the page: a page-component redirect
 // here can be dropped by an in-flight navigation.
 export default defineNuxtRouteMiddleware(async () => {
-  // Drives the root-level spinner overlay in app.vue while tenants resolve.
-  useState<boolean>('home-resolving', () => false).value = true
+  useHomeResolving().value = true
 
   const localePath = useLocalePath()
 

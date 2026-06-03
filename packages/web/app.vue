@@ -21,19 +21,13 @@ const { getToken } = useAuth()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
-const router = useRouter()
 const toast = useToast()
 useNotificationPoller()
 
 // Spinner shown while the home-redirect middleware resolves tenants; it runs
-// before any page mounts, so the page itself can't show it. Cleared on settle.
-const homeResolving = useState<boolean>('home-resolving', () => false)
-router.afterEach(() => {
-  homeResolving.value = false
-})
-router.onError(() => {
-  homeResolving.value = false
-})
+// before any page mounts, so the page itself can't show it. The middleware sets
+// the flag, plugins/home-resolving clears it once navigation settles.
+const homeResolving = useHomeResolving()
 client.setConfig({
   baseURL: '/api/v1',
   auth: async () => {
