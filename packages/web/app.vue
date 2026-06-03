@@ -24,9 +24,8 @@ const route = useRoute()
 const toast = useToast()
 useNotificationPoller()
 
-// Spinner shown while the home-redirect middleware resolves tenants; it runs
-// before any page mounts, so the page itself can't show it. The middleware sets
-// the flag, plugins/home-resolving clears it once navigation settles.
+// Overlay lives at the root, not the page: the home-redirect middleware
+// redirects before any page mounts, so the page can't show it.
 const homeResolving = useHomeResolving()
 client.setConfig({
   baseURL: '/api/v1',

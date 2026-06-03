@@ -1,6 +1,5 @@
-// Clears the home-resolving spinner flag once a navigation settles. Lives in a
-// plugin, not app.vue: plugins register before the initial navigation, so this
-// also catches a full page load that lands on (and redirects off) the home route.
+// In a plugin, not app.vue, so afterEach registers before the initial navigation
+// — otherwise a full load landing on the home route never clears the flag.
 export default defineNuxtPlugin(() => {
   const router = useRouter()
   const homeResolving = useHomeResolving()
