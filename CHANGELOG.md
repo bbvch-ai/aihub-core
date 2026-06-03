@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.7] - 2026-06-03 - Enhanced Model Cost Reporting and API Robustness
+
+### Added
+
+- ✨ **Introduced Granular Search Context Cost Reporting:** Added a new data transfer object
+  (`SearchContextCostPerQueryDTO`) to capture and display search context costs broken down by low, medium, and high
+  context sizes, providing more detailed pricing information.
+- 🦾 **Enhanced API Robustness for Model Information:** Implemented a new data validation mechanism that gracefully
+  handles unexpected data shapes in external model metadata feeds by logging warnings and dropping malformed fields,
+  preventing parsing failures for the entire model information.
+
+### Changed
+
+- 📊 **Updated Model Details Panel:** The **Model Details Panel** now presents search context costs with a more granular
+  breakdown (low, medium, and high context sizes), offering clearer insights into model pricing.
+- 🌍 **Localized Search Context Cost Labels:** Updated internationalization files to include specific labels for low,
+  medium, and high search context costs in various languages (English, German, French, Italian).
+- 🔄 **Revised Model Information Schema:** Modified the **`ModelInfoDTO`** to incorporate the new granular
+  `SearchContextCostPerQueryDTO` for search context costs and made the `mode` field optional, reflecting more flexible
+  model metadata.
+
+______________________________________________________________________
+
 ## [v0.291.6] - 2026-06-03 - Core System Refinements and Performance Enhancements
 
 ### Changed
