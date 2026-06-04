@@ -6,8 +6,8 @@ block) **Drives**: SOV-1 in
 
 ## Context
 
-Swiss AI Hub declares Swiss data sovereignty as a core value via ADR
-`2026_02_24_swiss_sovereign_dual_mode_inference.md` (Feb 2026):
+Swiss AI Hub declares Swiss data sovereignty as a core value via ADR `2026_02_24_swiss_sovereign_dual_mode_inference.md`
+(Feb 2026):
 
 > "Swiss data sovereignty: All cloud inference must stay within Swiss infrastructure."
 >
@@ -41,8 +41,8 @@ goes through Microsoft.
 
 **aihub-demoscope** (`configs/litellm/...`):
 
-- Mixed sovereignty: Azure OpenAI Switzerland (`demoscopeaihub-oai-sui.openai.azure.com`) + local vLLM
-  (Gemma-3 12b/27b, gte-Qwen2 embedding, bge-reranker)
+- Mixed sovereignty: Azure OpenAI Switzerland (`demoscopeaihub-oai-sui.openai.azure.com`) + local vLLM (Gemma-3 12b/27b,
+  gte-Qwen2 embedding, bge-reranker)
 - Sovereign rate: partial — the only customer with on-prem inference for some workloads
 - The Azure vs vLLM workload split is not documented
 
@@ -156,7 +156,7 @@ surface.
 | Aspect                                    | Option A (self-hosted) | Option B (hybrid OK) | Option C (per-customer) |
 | ----------------------------------------- | :--------------------: | :------------------: | :---------------------: |
 | Marketing "Swiss Sovereign AI" defensible |       Yes (full)       |    No (downgrade)    |      Per-customer       |
-| Effort for the team                       |     L (1-3 months)     |    S (1-2 weeks)     |      M (1 month)        |
+| Effort for the team                       |     L (1-3 months)     |    S (1-2 weeks)     |       M (1 month)       |
 | Cost upfront                              |    High (hardware)     |         Low          |         Medium          |
 | Model quality                             |  Lower (open-weight)   |    Higher (GPT-5)    |          Mixed          |
 | Compliance enterprise (FINMA, HIPAA)      |          Yes           |          No          |  Yes (sovereign tier)   |

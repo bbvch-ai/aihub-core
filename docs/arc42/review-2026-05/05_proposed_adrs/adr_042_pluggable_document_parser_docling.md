@@ -1,7 +1,7 @@
 # Pluggable Document Parser (Open the Loader Registry, add Docling)
 
-**Status**: Proposed (2026-05-29) **Severity**: P1 (RAG quality, CPU stability, supplier risk)
-**Drives**: Overview §5.1 (strategic — replaceability), §5.8 (cross-cutting); pairs with
+**Status**: Proposed (2026-05-29) **Severity**: P1 (RAG quality, CPU stability, supplier risk) **Drives**: Overview §5.1
+(strategic — replaceability), §5.8 (cross-cutting); pairs with
 [`adr_043`](adr_043_continuous_component_update_strategy.md) (continuous component-update strategy)
 
 ## Context
@@ -18,17 +18,17 @@ class LoaderType(StrEnum):
     DOCUMENT_INTELLIGENCE = "document_intelligence"
 ```
 
-`MineruLoader` (`packages/core/.../document/loaders/mineru_loader.py`) talks to MinerU over HTTP using a `vlm-http-client`
-backend (VLM server), which keeps AGPL isolation but means MinerU's quality and stability depend on the VLM model and the
-hardware it runs on. **Verified field finding (review 2026-05)**: MinerU is **unstable on CPU-only deployments** — without
-a GPU the VLM backend is slow and flaky, and several customer environments have no GPU.
+`MineruLoader` (`packages/core/.../document/loaders/mineru_loader.py`) talks to MinerU over HTTP using a
+`vlm-http-client` backend (VLM server), which keeps AGPL isolation but means MinerU's quality and stability depend on
+the VLM model and the hardware it runs on. **Verified field finding (review 2026-05)**: MinerU is **unstable on CPU-only
+deployments** — without a GPU the VLM backend is slow and flaky, and several customer environments have no GPU.
 
 The replaceability problem, verified by reading the code:
 
 - The two built-in loaders **can** be swapped via config (`default_definitions(..., document_parser_loader_type=...)`),
   so MinerU ↔ Azure Document Intelligence is a configuration change.
-- But the loader set is a **closed enum baked into core**. Adding a new engine (e.g. **Docling**, which runs well on CPU)
-  requires a *core code change*: a new `DoclingLoader(BaseReader)` plus a new `LoaderType` value plus a branch in
+- But the loader set is a **closed enum baked into core**. Adding a new engine (e.g. **Docling**, which runs well on
+  CPU) requires a *core code change*: a new `DoclingLoader(BaseReader)` plus a new `LoaderType` value plus a branch in
   `DocumentParserResource._get_readers_map()`. A customer **cannot register their own parser** without forking core or
   hand-rolling a parallel resource (the resource docstring even tells them to "create a new resource").
 
@@ -95,4 +95,5 @@ enum is a recurring tax.
 - `packages/core/swiss_ai_hub/core/generative_ai/document/loaders/document_intelligence_loader.py` — Azure DI loader.
 - [Docling (OSS document parser)](https://github.com/DS4SD/docling).
 - Related: [`adr_043`](adr_043_continuous_component_update_strategy.md) (continuous component-update strategy),
-  [`adr_044`](adr_044_rag_vector_design_gate.md) (RAG/vector-design gate), ADR-NEW-028 (embedding versioning & migration).
+  [`adr_044`](adr_044_rag_vector_design_gate.md) (RAG/vector-design gate), ADR-NEW-028 (embedding versioning &
+  migration).

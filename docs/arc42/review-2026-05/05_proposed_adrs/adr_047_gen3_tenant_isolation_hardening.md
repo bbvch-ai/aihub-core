@@ -32,8 +32,8 @@ are genuine isolation. **But the isolation is logical, not hardened.** Verified 
    tenant can starve the cluster; no per-tenant resource or cost ceiling.
 4. **Shared single-instance data stores** (Postgres 1 cluster, FerretDB 1, Milvus standalone) serve all tenants → large
    blast radius; the Milvus "memory wall" is now a cluster-wide risk. HA is optional and off by default.
-5. **Semi-manual provisioning**: adding a tenant = edit `values.secrets.yaml` + redeploy `aihub-common` (creates db/user/
-   bucket/realm), then create agent instances in the UI. No self-service tenant provisioning API.
+5. **Semi-manual provisioning**: adding a tenant = edit `values.secrets.yaml` + redeploy `aihub-common` (creates
+   db/user/ bucket/realm), then create agent instances in the UI. No self-service tenant provisioning API.
 
 This is fine for trusted/internal tenants on one cluster, but not enterprise-grade for untrusted or regulated
 (banking/healthcare) tenants.

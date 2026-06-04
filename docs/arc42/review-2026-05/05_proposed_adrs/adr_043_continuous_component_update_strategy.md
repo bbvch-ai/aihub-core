@@ -1,7 +1,7 @@
 # Continuous Component-Update Strategy (Replaceable Building Blocks)
 
-**Status**: Proposed (2026-05-29) **Severity**: P1 (strategic — keeping pace with a fast-moving AI stack)
-**Drives**: Overview §5.1 (strategic), §6.2 (strategic priorities); generalises
+**Status**: Proposed (2026-05-29) **Severity**: P1 (strategic — keeping pace with a fast-moving AI stack) **Drives**:
+Overview §5.1 (strategic), §6.2 (strategic priorities); generalises
 [`adr_042`](adr_042_pluggable_document_parser_docling.md)
 
 ## Context
@@ -36,15 +36,16 @@ This ADR is intentionally high-level: it sets the *approach and the stack*, not 
 Adopt a four-part strategy. The "stack" named below is the recommendation; specifics are decided per component in
 follow-on ADRs.
 
-1. **Ports & Adapters for the swappable seams.** Define a thin abstract interface (a "port") for each building block that
-   the market churns: **document parser** (already `BaseReader`), **vector store**, **OCR**, **embedding/rerank/LLM**
-   (already covered by LiteLLM). Concrete engines are adapters behind the port, selected by config and **registerable by
-   customers** (the generalisation of [`adr_042`](adr_042_pluggable_document_parser_docling.md)). Follow the LiteLLM
-   precedent — it is the proof this works in this codebase.
+1. **Ports & Adapters for the swappable seams.** Define a thin abstract interface (a "port") for each building block
+   that the market churns: **document parser** (already `BaseReader`), **vector store**, **OCR**,
+   **embedding/rerank/LLM** (already covered by LiteLLM). Concrete engines are adapters behind the port, selected by
+   config and **registerable by customers** (the generalisation of
+   [`adr_042`](adr_042_pluggable_document_parser_docling.md)). Follow the LiteLLM precedent — it is the proof this works
+   in this codebase.
 
 2. **Automated dependency intake.** Run **Renovate** (or Dependabot) across core + customer repos: grouped, scheduled
-   PRs; pinned versions (CLAUDE.md already forbids floating ranges); changelogs surfaced in the PR. This turns "we are 104
-   minors behind" into a continuous trickle instead of a cliff.
+   PRs; pinned versions (CLAUDE.md already forbids floating ranges); changelogs surfaced in the PR. This turns "we are
+   104 minors behind" into a continuous trickle instead of a cliff.
 
 3. **Eval-gated adoption.** No swappable-component upgrade merges until it passes an **automated evaluation harness** in
    CI (extraction quality for parsers; retrieval/answer quality for embeddings/rerank/LLM; see
@@ -80,7 +81,8 @@ follow-on ADRs.
 ## References
 
 - `packages/core/swiss_ai_hub/core/infrastructure/litellm/` — the provider-agnostic precedent to generalise.
-- [`adr_042`](adr_042_pluggable_document_parser_docling.md) — the concrete first application (parser registry + Docling).
+- [`adr_042`](adr_042_pluggable_document_parser_docling.md) — the concrete first application (parser registry +
+  Docling).
 - [`adr_044`](adr_044_rag_vector_design_gate.md) — the eval gate this strategy depends on.
 - [Renovate](https://docs.renovatebot.com/) · [Dependabot](https://docs.github.com/code-security/dependabot).
 - Root `CLAUDE.md` — dependency rules (`uv add/remove`, pinned versions, no manual `pyproject.toml` edits).

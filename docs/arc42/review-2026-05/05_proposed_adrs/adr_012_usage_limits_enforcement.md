@@ -50,7 +50,8 @@ can incur cost (data API, search API, etc.) that is NOT tracked in `LLMCostEvent
 
 ## Decision
 
-Wire `UsageLimits` into middleware and the service layer. Add pre-flight cost estimation. Implement a hard cap per tenant.
+Wire `UsageLimits` into middleware and the service layer. Add pre-flight cost estimation. Implement a hard cap per
+tenant.
 
 ### Layer 1: Request-level rate limiting (middleware)
 

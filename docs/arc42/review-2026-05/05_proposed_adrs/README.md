@@ -9,31 +9,46 @@ This folder contains proposed ADRs from Architecture Review 2026-05 for the crit
 2026-05-28 review refresh: ADR-NEW-038 to ADR-NEW-041).
 
 **Added in the 2026-05-29 review refresh**: ADR-NEW-042 to ADR-NEW-046 (pluggable parser/Docling, continuous
-component-update strategy, RAG/vector-design gate, C\*C tenant-schema migration, load-test baselines). These items are
-**not yet reflected in Details §24** because the Details file is out of scope for this refresh; the corresponding phasing
-lives in [PO deck §7](../04_po_presentation_deck.md).
+component-update strategy, RAG/vector-design gate, C\*C tenant-schema migration, load-test baselines), ADR-NEW-047 (Gen
+3 tenant isolation hardening), and — from the **aihub-igs onboarding** — ADR-NEW-048 (remove dev fake-auth from the
+production bot), ADR-NEW-049 (IGS Phoenix → Langfuse observability reconciliation), and ADR-NEW-050 (observability
+completeness — core metrics producers, bot OTEL, host monitoring, alert rules as-code, SLI/SLO; the SigNoz pipeline is
+wired but the producers and operational layer are not), ADR-NEW-051 (continuous evaluation & performance-benchmark
+process — accuracy/quality + perf NFR gate), and ADR-NEW-052 (DevSecOps security testing — SAST/DAST, threat-model
+refresh, OWASP dependency-check, CVSS triage, CycloneDX SBOM), ADR-NEW-053 (quality-attribute-driven architecture —
+define NFR scenarios before deciding; the root cause of deferred multi-tenancy and forced data migration), and
+ADR-NEW-054 (secure code-execution sandbox — harden the Jupyter code interpreter). These items are **not yet reflected
+in Details §24** because the Details file is out of scope for this refresh; the corresponding phasing lives in
+[PO deck §7](../04_po_presentation_deck.md).
 
 ## ADRs already written in detail (priority P0)
 
-| #           | File                                                                               | Topic                                           | Drives             |
-| ----------- | ---------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------ |
-| ADR-NEW-000 | [`adr_000_sovereignty_compliance_path.md`](adr_000_sovereignty_compliance_path.md) | Sovereignty compliance path (Option A/B/C)      | §18 SOV-1          |
-| ADR-NEW-011 | [`adr_011_audit_log_entity.md`](adr_011_audit_log_entity.md)                       | Audit log entity and compliance                 | DTC-2, BR-4        |
-| ADR-NEW-012 | [`adr_012_usage_limits_enforcement.md`](adr_012_usage_limits_enforcement.md)       | LLM cost cap and UsageLimits enforcement        | DTC-1              |
-| ADR-NEW-019 | [`adr_019_mcp_secure_executor.md`](adr_019_mcp_secure_executor.md)                 | MCP secure executor and tool authorization      | §19.2              |
-| ADR-NEW-020 | [`adr_020_document_acl_inheritance.md`](adr_020_document_acl_inheritance.md)       | Document ACL inheritance in the vector DB       | §19.3              |
-| ADR-NEW-030 | [`adr_030_offsite_backup_replication.md`](adr_030_offsite_backup_replication.md)   | Off-site backup replication and 3-2-1 compliance | §21.1             |
-| ADR-NEW-037 | [`adr_037_aihub_supported_use_cases.md`](adr_037_aihub_supported_use_cases.md)     | Authoritative supported AI use cases            | §1 Strengths, §3.2 |
-| ADR-NEW-038 | [`adr_038_sdk_import_discipline.md`](adr_038_sdk_import_discipline.md)             | SDK import discipline — public API only         | §3.2 #10, §3.3 #17 |
-| ADR-NEW-039 | [`adr_039_fmh_azure_ai_search_vs_milvus.md`](adr_039_fmh_azure_ai_search_vs_milvus.md) | F*H: Azure AI Search vs core Milvus         | §3.6 #3            |
-| ADR-NEW-040 | [`adr_040_k8s_chart_core_version_pinning.md`](adr_040_k8s_chart_core_version_pinning.md) | aihub-k8s chart core-version pin policy   | §3.1 #20, §3.5 #5  |
-| ADR-NEW-041 | [`adr_041_tls_key_committed_remediation.md`](adr_041_tls_key_committed_remediation.md) | W*P TLS key in git — remediation procedure | §3.5 #1            |
-| ADR-NEW-042 | [`adr_042_pluggable_document_parser_docling.md`](adr_042_pluggable_document_parser_docling.md) | Pluggable document parser — open loader registry + Docling (MinerU CPU) | §5.1, §5.8 |
-| ADR-NEW-043 | [`adr_043_continuous_component_update_strategy.md`](adr_043_continuous_component_update_strategy.md) | Continuous component-update strategy (ports/adapters + Renovate + eval gate) | §5.1, §6.2 |
-| ADR-NEW-044 | [`adr_044_rag_vector_design_gate.md`](adr_044_rag_vector_design_gate.md) | RAG/vector-DB design gate (design before implement) | §5.4, §5.5, §5.6, §6.4 |
-| ADR-NEW-045 | [`adr_045_ctc_tenant_schema_migration.md`](adr_045_ctc_tenant_schema_migration.md) | C\*C MongoDB tenant-entry schema migration (upgrade blocker) | §3.3 #18, §5.3 |
-| ADR-NEW-046 | [`adr_046_load_test_baselines.md`](adr_046_load_test_baselines.md) | Load-test baselines (per project + core) | §3.5 #11, §5.8 |
-| ADR-NEW-047 | [`adr_047_gen3_tenant_isolation_hardening.md`](adr_047_gen3_tenant_isolation_hardening.md) | Gen 3 (aihub-k8s) tenant isolation hardening — NetworkPolicy, ResourceQuota, per-tenant Milvus credential, HA | ADR-NEW-002, c4/deployment_generations |
+| #           | File                                                                                                   | Topic                                                                                                               | Drives                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| ADR-NEW-000 | [`adr_000_sovereignty_compliance_path.md`](adr_000_sovereignty_compliance_path.md)                     | Sovereignty compliance path (Option A/B/C)                                                                          | §18 SOV-1                              |
+| ADR-NEW-011 | [`adr_011_audit_log_entity.md`](adr_011_audit_log_entity.md)                                           | Audit log entity and compliance                                                                                     | DTC-2, BR-4                            |
+| ADR-NEW-012 | [`adr_012_usage_limits_enforcement.md`](adr_012_usage_limits_enforcement.md)                           | LLM cost cap and UsageLimits enforcement                                                                            | DTC-1                                  |
+| ADR-NEW-019 | [`adr_019_mcp_secure_executor.md`](adr_019_mcp_secure_executor.md)                                     | MCP secure executor and tool authorization                                                                          | §19.2                                  |
+| ADR-NEW-020 | [`adr_020_document_acl_inheritance.md`](adr_020_document_acl_inheritance.md)                           | Document ACL inheritance in the vector DB                                                                           | §19.3                                  |
+| ADR-NEW-030 | [`adr_030_offsite_backup_replication.md`](adr_030_offsite_backup_replication.md)                       | Off-site backup replication and 3-2-1 compliance                                                                    | §21.1                                  |
+| ADR-NEW-037 | [`adr_037_aihub_supported_use_cases.md`](adr_037_aihub_supported_use_cases.md)                         | Authoritative supported AI use cases                                                                                | §1 Strengths, §3.2                     |
+| ADR-NEW-038 | [`adr_038_sdk_import_discipline.md`](adr_038_sdk_import_discipline.md)                                 | SDK import discipline — public API only                                                                             | §3.2 #10, §3.3 #17                     |
+| ADR-NEW-039 | [`adr_039_fmh_azure_ai_search_vs_milvus.md`](adr_039_fmh_azure_ai_search_vs_milvus.md)                 | F\*H: Azure AI Search vs core Milvus                                                                                | §3.6 #3                                |
+| ADR-NEW-040 | [`adr_040_k8s_chart_core_version_pinning.md`](adr_040_k8s_chart_core_version_pinning.md)               | aihub-k8s chart core-version pin policy                                                                             | §3.1 #20, §3.5 #5                      |
+| ADR-NEW-041 | [`adr_041_tls_key_committed_remediation.md`](adr_041_tls_key_committed_remediation.md)                 | W\*P TLS key in git — remediation procedure                                                                         | §3.5 #1                                |
+| ADR-NEW-042 | [`adr_042_pluggable_document_parser_docling.md`](adr_042_pluggable_document_parser_docling.md)         | Pluggable document parser — open loader registry + Docling (MinerU CPU)                                             | §5.1, §5.8                             |
+| ADR-NEW-043 | [`adr_043_continuous_component_update_strategy.md`](adr_043_continuous_component_update_strategy.md)   | Continuous component-update strategy (ports/adapters + Renovate + eval gate)                                        | §5.1, §6.2                             |
+| ADR-NEW-044 | [`adr_044_rag_vector_design_gate.md`](adr_044_rag_vector_design_gate.md)                               | RAG/vector-DB design gate (design before implement)                                                                 | §5.4, §5.5, §5.6, §6.4                 |
+| ADR-NEW-045 | [`adr_045_ctc_tenant_schema_migration.md`](adr_045_ctc_tenant_schema_migration.md)                     | C\*C MongoDB tenant-entry schema migration (upgrade blocker)                                                        | §3.3 #18, §5.3                         |
+| ADR-NEW-046 | [`adr_046_load_test_baselines.md`](adr_046_load_test_baselines.md)                                     | Load-test baselines (per project + core)                                                                            | §3.5 #11, §5.8                         |
+| ADR-NEW-047 | [`adr_047_gen3_tenant_isolation_hardening.md`](adr_047_gen3_tenant_isolation_hardening.md)             | Gen 3 (aihub-k8s) tenant isolation hardening — NetworkPolicy, ResourceQuota, per-tenant Milvus credential, HA       | ADR-NEW-002, c4/deployment_generations |
+| ADR-NEW-048 | [`adr_048_remove_dev_fake_auth_bot.md`](adr_048_remove_dev_fake_auth_bot.md)                           | Remove dev-only fake auth from production bot config (IGS)                                                          | §3.7 #1, c4/igs                        |
+| ADR-NEW-049 | [`adr_049_igs_phoenix_to_langfuse.md`](adr_049_igs_phoenix_to_langfuse.md)                             | IGS observability: reconcile Phoenix (compose) vs Langfuse (eval docs)                                              | §3.7 #4, c4/igs                        |
+| ADR-NEW-050 | [`adr_050_observability_completeness.md`](adr_050_observability_completeness.md)                       | Observability completeness — core metrics producers, bot OTEL, host monitoring, alert rules as-code, SLI/SLO        | §3.1 #18, §3.1 #19, §10                |
+| ADR-NEW-051 | [`adr_051_evaluation_and_benchmark_process.md`](adr_051_evaluation_and_benchmark_process.md)           | Continuous evaluation & performance benchmark process (accuracy + perf NFR gate)                                    | §3.1 #32, §3.6 #12, §3.5 #11           |
+| ADR-NEW-052 | [`adr_052_devsecops_security_testing.md`](adr_052_devsecops_security_testing.md)                       | DevSecOps security testing — SAST + DAST + threat-model refresh + OWASP dep-check + CVSS triage + CycloneDX SBOM    | §3.1 #34, §3.1 #15, §3.1 #30           |
+| ADR-NEW-053 | [`adr_053_quality_attribute_driven_architecture.md`](adr_053_quality_attribute_driven_architecture.md) | Quality-attribute-driven architecture — define NFR scenarios before deciding (root cause of deferred multi-tenancy) | §3.1 #35, §3.1 #3, §3.3 #18            |
+| ADR-NEW-054 | [`adr_054_secure_code_execution_sandbox.md`](adr_054_secure_code_execution_sandbox.md)                 | Secure code-execution sandbox — harden the Jupyter code interpreter (isolation, caps, network, per-user)            | §3.1 #36, §3.1 #12                     |
 
 ## ADRs not yet written in detail (30 remaining)
 

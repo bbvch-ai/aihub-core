@@ -4,7 +4,8 @@ Architecture review documentation for the Swiss AI Hub Platform (`aihub-core`) a
 (`aihub-bmd`, `aihub-ctc`).
 
 **Assessment version**: 3.6 on 2026-05-28 (refresh: v0.290.4 + 47 ADRs + 5 customer coverage + per-customer C4
-+ PO presentation deck).
+
+- PO presentation deck).
 
 ## Folder structure
 
@@ -30,9 +31,9 @@ Two options depending on available time:
 
 **Option 1 — Slide deck for a 1-1.5h session** (recommended for a leadership briefing):
 
-- [`04_po_presentation_deck.md`](04_po_presentation_deck.md) — Marp markdown, ~40 slides, 8 sections
-  (TL;DR → Project snapshot → CRITICAL risks → Per-customer status → Strategic items → Decisions needed →
-  Roadmap & resources → Recap). Export to PDF/PPTX via Marp CLI or VS Code Marp extension.
+- [`04_po_presentation_deck.md`](04_po_presentation_deck.md) — Marp markdown, ~40 slides, 8 sections (TL;DR → Project
+  snapshot → CRITICAL risks → Per-customer status → Strategic items → Decisions needed → Roadmap & resources → Recap).
+  Export to PDF/PPTX via Marp CLI or VS Code Marp extension.
 
 **Option 2 — Self-read Overview, ~30-45 min**:
 
@@ -68,8 +69,7 @@ Focus on: §22 WAF detailed status, §23 Proposed Roadmap, §24 Proposed 36 ADRs
 
 ### Dev team
 
-- [`02_architecture_review_details.md`](02_architecture_review_details.md): solution code skeletons in §15.3, §19,
-  §21.
+- [`02_architecture_review_details.md`](02_architecture_review_details.md): solution code skeletons in §15.3, §19, §21.
 - [`03_c4_diagrams.md`](03_c4_diagrams.md): component diagrams.
 
 ### Security engineer
@@ -132,12 +132,12 @@ Method detail in
 The assessment currently covers:
 
 - 1 platform: `aihub-core` v0.290.4 (47 ADRs).
-- 5 production customers: `aihub-bmd` v0.279.2, `aihub-ctc` v0.274.3, `aihub-demoscope` v0.246.4*,
-  `aihub-wpe` v0.255.6, `aihub-fmh` v0.186.0.
+- 5 production customers: `aihub-bmd` v0.279.2, `aihub-ctc` v0.274.3, `aihub-demoscope` v0.246.4\*, `aihub-wpe`
+  v0.255.6, `aihub-fmh` v0.186.0.
 - 3 infrastructure repos (Gen 2): `aihub-playbook`, `aihub-ops`, `aihub-{customer_id}` (template).
 - 1 Kubernetes deployment (Gen 3, emerging): `aihub-k8s` — `appVersion: "0.1.0"`, images via `${CORE_VERSION}`.
 
-(*Demoscope SDK pin not in repo `pyproject.toml`; see footnote in Overview Component-versions table.)
+(\*Demoscope SDK pin not in repo `pyproject.toml`; see footnote in Overview Component-versions table.)
 
 The document is designed to be **extensible for additional customer projects** in future versions:
 
@@ -156,27 +156,27 @@ When onboarding a new customer (e.g. Customer #3):
 
 ## Deliverables status
 
-| Phase | Deliverable                                       |                                                     Status                                                      |
-| ----- | ------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------: |
-| 1     | Deep exploration 3 projects (parallel agents)     |                                                      Done                                                       |
-| 2     | Production-Readiness Assessment (Vietnamese)      |                                            Done (merged into Details)                                           |
-| 2b    | Deep technical concerns analysis                  |                                            Done (merged into Details)                                           |
-| 2c    | Security deep concerns (Presidio, MCP, RAG, auth) |                                               Done (Details §19)                                                |
-| 2d    | Brainstorm additional concerns                    |                                               Done (Details §20)                                                |
-| 2e    | Backup DR, Alerting, Resilience                   |                                               Done (Details §21)                                                |
-| 3     | C4 Model diagrams (Context/Container/Component)   |                                 Done ([`03_c4_diagrams.md`](03_c4_diagrams.md))                                 |
-| 4     | arc42 multi-customer view                         | Replaced by Overview §11 Documentation Backlog (customer-specific arc42 docs are a deliverable of customer teams) |
-| 5     | 36 Proposed ADRs (detailed)                       |       Planned (titles in Details §24, detailed ADRs to live in [`05_proposed_adrs/`](05_proposed_adrs/))        |
-| 6     | Executive Summary + Index page                    |                            Done (Overview is the Executive Summary, this README is the Index)                   |
-| 7     | Refresh 2026-05 customer update (5 ADRs, Level 0 diagrams, phasing) |                  Done (PO §7 + [`c4/`](c4/) + [`05_proposed_adrs/`](05_proposed_adrs/))                  |
+| Phase | Deliverable                                                         |                                                      Status                                                       |
+| ----- | ------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------: |
+| 1     | Deep exploration 3 projects (parallel agents)                       |                                                       Done                                                        |
+| 2     | Production-Readiness Assessment (Vietnamese)                        |                                            Done (merged into Details)                                             |
+| 2b    | Deep technical concerns analysis                                    |                                            Done (merged into Details)                                             |
+| 2c    | Security deep concerns (Presidio, MCP, RAG, auth)                   |                                                Done (Details §19)                                                 |
+| 2d    | Brainstorm additional concerns                                      |                                                Done (Details §20)                                                 |
+| 2e    | Backup DR, Alerting, Resilience                                     |                                                Done (Details §21)                                                 |
+| 3     | C4 Model diagrams (Context/Container/Component)                     |                                  Done ([`03_c4_diagrams.md`](03_c4_diagrams.md))                                  |
+| 4     | arc42 multi-customer view                                           | Replaced by Overview §11 Documentation Backlog (customer-specific arc42 docs are a deliverable of customer teams) |
+| 5     | 36 Proposed ADRs (detailed)                                         |        Planned (titles in Details §24, detailed ADRs to live in [`05_proposed_adrs/`](05_proposed_adrs/))         |
+| 6     | Executive Summary + Index page                                      |                        Done (Overview is the Executive Summary, this README is the Index)                         |
+| 7     | Refresh 2026-05 customer update (5 ADRs, Level 0 diagrams, phasing) |                      Done (PO §7 + [`c4/`](c4/) + [`05_proposed_adrs/`](05_proposed_adrs/))                       |
 
 ## Changelog versions
 
-- **v3.7** (current, 2026-05-29): Refresh from the customer update — added 5 new ADRs (042–046: pluggable parser/Docling,
-  continuous component-update strategy, RAG/vector-design gate, C\*C tenant-schema migration, load-test baselines); added
-  the "Level 0 — High-Level Solution Architecture" diagram for the 5 customers in [`c4/`](c4/); folded new findings into
-  the Overview §3/§6 (EN+VI) and the phasing into [PO deck §7](04_po_presentation_deck.md) (Q3/Q4). The Details file was
-  left unchanged (out of scope for this refresh).
+- **v3.7** (current, 2026-05-29): Refresh from the customer update — added 5 new ADRs (042–046: pluggable
+  parser/Docling, continuous component-update strategy, RAG/vector-design gate, C\*C tenant-schema migration, load-test
+  baselines); added the "Level 0 — High-Level Solution Architecture" diagram for the 5 customers in [`c4/`](c4/); folded
+  new findings into the Overview §3/§6 (EN+VI) and the phasing into [PO deck §7](04_po_presentation_deck.md) (Q3/Q4).
+  The Details file was left unchanged (out of scope for this refresh).
 - **v3.5**: Overview header cleanup, added §11 Documentation Backlog with 3 subsections (platform, bmd, ctc
   deliverables).
 - **v3.4**: Self-hosted local LLM recommendation (replacing Swiss LLM Cloud), removed the Roadmap from the Overview,

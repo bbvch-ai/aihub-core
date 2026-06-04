@@ -16,17 +16,17 @@ Details ở phần "Mapping Overview ↔ Details" bên dưới.
 
 ## Phiên bản các thành phần
 
-| Thành phần                  | Version   | Ghi chú                                  |
-| --------------------------- | --------- | ---------------------------------------- |
-| aihub-core (HEAD on `main`) | v0.290.4  | Latest dev (47 ADRs)                     |
-| aihub-bmd dùng core         | v0.279.2  | Đi sau core 11 minor                     |
-| aihub-ctc dùng core         | v0.274.3  | Đi sau core 16 minor, đi sau bmd 5 minor |
-| aihub-demoscope dùng core   | v0.246.4* | Đi sau core 44 minor (*pin chưa verify)  |
-| aihub-wpe dùng core         | v0.255.6  | Đi sau core 35 minor                     |
-| aihub-fmh dùng core         | v0.186.0  | Đi sau core 104 minor — lớn nhất         |
+| Thành phần                  | Version    | Ghi chú                                  |
+| --------------------------- | ---------- | ---------------------------------------- |
+| aihub-core (HEAD on `main`) | v0.290.4   | Latest dev (47 ADRs)                     |
+| aihub-bmd dùng core         | v0.279.2   | Đi sau core 11 minor                     |
+| aihub-ctc dùng core         | v0.274.3   | Đi sau core 16 minor, đi sau bmd 5 minor |
+| aihub-demoscope dùng core   | v0.246.4\* | Đi sau core 44 minor (\*pin chưa verify) |
+| aihub-wpe dùng core         | v0.255.6   | Đi sau core 35 minor                     |
+| aihub-fmh dùng core         | v0.186.0   | Đi sau core 104 minor — lớn nhất         |
 
-Cảnh báo: 5 khách hàng đang chạy 5 phiên bản SDK khác nhau, đều cũ hơn core. Không có policy hoặc automation đảm bảo
-cập nhật. Bất kỳ security patch nào trên `main` đều không tự động lan xuống customers. Chi tiết xem
+Cảnh báo: 5 khách hàng đang chạy 5 phiên bản SDK khác nhau, đều cũ hơn core. Không có policy hoặc automation đảm bảo cập
+nhật. Bất kỳ security patch nào trên `main` đều không tự động lan xuống customers. Chi tiết xem
 [`01_architecture_review_overview.vi.md`](01_architecture_review_overview.vi.md) §Phiên bản các thành phần.
 
 ______________________________________________________________________
@@ -385,8 +385,8 @@ Vi phạm import được phát hiện:
 
 Lập tức:
 
-- Audit security delta từ phiên bản pin của từng customer (v0.279.2 / v0.274.3 / v0.255.6 / v0.246.4* / v0.186.0)
-  lên core hiện tại v0.290.4
+- Audit security delta từ phiên bản pin của từng customer (v0.279.2 / v0.274.3 / v0.255.6 / v0.246.4\* / v0.186.0) lên
+  core hiện tại v0.290.4
 - Bắt buộc bmd / ctc / wpe / demoscope / fmh upgrade lên cùng version core
 - Xoá `poetry.lock` của ctc
 
@@ -2454,7 +2454,7 @@ Theme: Khoá tất cả P0, chuẩn hoá version, cứng hoá hợp đồng SDK,
 | 1     | Sovereignty stakeholder decision Option A/B/C                                                              |
 | 1     | DTC-1: Wire UsageLimits middleware                                                                         |
 | 1     | DTC-8: Quyết định fate `packages/process`                                                                  |
-| 1-2   | Security audit từ phiên bản pin của mỗi customer lên core v0.290.4                                          |
+| 1-2   | Security audit từ phiên bản pin của mỗi customer lên core v0.290.4                                         |
 | 1-2   | Xoá `poetry.lock` ở ctc                                                                                    |
 | 1-2   | G3.1: Content sniffing upload                                                                              |
 | 2     | G3.3: LUKS encryption deployment guide                                                                     |
@@ -2531,49 +2531,49 @@ ______________________________________________________________________
 
 > Updated 2026-05-28: 36 original entries + 4 added from review refresh (ADR-NEW-038 through ADR-NEW-041).
 
-| #           | Title                                                          | Drives           |
-| ----------- | -------------------------------------------------------------- | ---------------- |
-| ADR-NEW-000 | Sovereignty Compliance Path (Option A/B/C)                     | §18 SOV-1        |
-| ADR-NEW-001 | SDK Versioning và Deprecation Policy                           | G2.1, G2.4       |
-| ADR-NEW-002 | Tenant Data Isolation Strategy (NATS/Milvus/Mongo namespacing) | G1.1             |
-| ADR-NEW-003 | Database Migration Framework                                   | G4.1             |
-| ADR-NEW-004 | Customer Extension Configuration Schema                        | G1.2, G2.7, G3.6 |
-| ADR-NEW-005 | Secrets Management và Rotation                                 | G3.7             |
-| ADR-NEW-006 | SDK Public API Contract (import discipline)                    | G2.6             |
-| ADR-NEW-007 | Operations Guide và On-Call Playbook                           | G5.1, G5.2       |
-| ADR-NEW-008 | Tenant Provisioning Automation                                 | G1.3             |
-| ADR-NEW-009 | SDK Downstream Integration Testing                             | G2.5, G8.2       |
-| ADR-NEW-010 | SLI/SLO Definition for Production                              | G6.3, G7.2       |
-| ADR-NEW-011 | Audit Log Entity và Compliance                                 | DTC-2, BR-4      |
-| ADR-NEW-012 | LLM Cost Cap và UsageLimits Enforcement                        | DTC-1            |
-| ADR-NEW-013 | Process Package Fate (Delete/Experimental/Activate)            | DTC-8            |
-| ADR-NEW-014 | Pipeline Executor Strategy (Multiprocess)                      | DTC-6            |
-| ADR-NEW-015 | Milvus Cluster Mode và Index Selection                         | DTC-7            |
-| ADR-NEW-016 | Customer LiteLLM Config Compliance Gate                        | SOV-1 §18        |
-| ADR-NEW-017 | Update 2026_02_24 ADR with Reality Reconciliation              | SOV-1 §18        |
-| ADR-NEW-018 | Per-language Presidio Routing (DE/FR/IT/EN)                    | §19.1            |
-| ADR-NEW-019 | MCP Secure Executor và Tool Authorization                      | §19.2            |
-| ADR-NEW-020 | Document ACL Inheritance in Vector DB                          | §19.3            |
-| ADR-NEW-021 | Source-System Authentication Strategy (Option B/C)             | §19.4            |
-| ADR-NEW-022 | AITL Recursion Depth Limit và Loop Detection                   | §20.1.1          |
-| ADR-NEW-023 | Pre-flight Cost Estimation và Hard Cap                         | §20.1.2          |
-| ADR-NEW-024 | Citation Verification Guard                                    | §20.1.3          |
-| ADR-NEW-025 | Document Upload Pipeline Validation                            | §20.1.5, §20.2.4 |
-| ADR-NEW-026 | User và Tenant Deletion API (GDPR Art. 17)                     | §20.2.1          |
-| ADR-NEW-027 | MongoDB Collection TTL Strategy                                | §20.2.2          |
-| ADR-NEW-028 | Embedding Model Versioning và Migration                        | §20.2.5          |
-| ADR-NEW-029 | Container Supply Chain Security (SBOM và Cosign và Trivy)      | §20.3            |
-| ADR-NEW-030 | Off-site Backup Replication và 3-2-1 Compliance                | §21.1            |
-| ADR-NEW-031 | Configurable Backup Target Endpoint                            | §21.1            |
-| ADR-NEW-032 | Prometheus và AlertManager và On-call Routing                  | §21.2            |
-| ADR-NEW-033 | SLI/SLO Definitions và Business Metrics Emission               | §21.2            |
-| ADR-NEW-034 | Circuit Breaker for External Dependencies                      | §21.3            |
-| ADR-NEW-035 | Per-tenant Bulkhead Isolation                                  | §21.3            |
-| ADR-NEW-036 | Graceful Degradation for RAG/LLM Failures                      | §21.3            |
+| #           | Title                                                          | Drives             |
+| ----------- | -------------------------------------------------------------- | ------------------ |
+| ADR-NEW-000 | Sovereignty Compliance Path (Option A/B/C)                     | §18 SOV-1          |
+| ADR-NEW-001 | SDK Versioning và Deprecation Policy                           | G2.1, G2.4         |
+| ADR-NEW-002 | Tenant Data Isolation Strategy (NATS/Milvus/Mongo namespacing) | G1.1               |
+| ADR-NEW-003 | Database Migration Framework                                   | G4.1               |
+| ADR-NEW-004 | Customer Extension Configuration Schema                        | G1.2, G2.7, G3.6   |
+| ADR-NEW-005 | Secrets Management và Rotation                                 | G3.7               |
+| ADR-NEW-006 | SDK Public API Contract (import discipline)                    | G2.6               |
+| ADR-NEW-007 | Operations Guide và On-Call Playbook                           | G5.1, G5.2         |
+| ADR-NEW-008 | Tenant Provisioning Automation                                 | G1.3               |
+| ADR-NEW-009 | SDK Downstream Integration Testing                             | G2.5, G8.2         |
+| ADR-NEW-010 | SLI/SLO Definition for Production                              | G6.3, G7.2         |
+| ADR-NEW-011 | Audit Log Entity và Compliance                                 | DTC-2, BR-4        |
+| ADR-NEW-012 | LLM Cost Cap và UsageLimits Enforcement                        | DTC-1              |
+| ADR-NEW-013 | Process Package Fate (Delete/Experimental/Activate)            | DTC-8              |
+| ADR-NEW-014 | Pipeline Executor Strategy (Multiprocess)                      | DTC-6              |
+| ADR-NEW-015 | Milvus Cluster Mode và Index Selection                         | DTC-7              |
+| ADR-NEW-016 | Customer LiteLLM Config Compliance Gate                        | SOV-1 §18          |
+| ADR-NEW-017 | Update 2026_02_24 ADR with Reality Reconciliation              | SOV-1 §18          |
+| ADR-NEW-018 | Per-language Presidio Routing (DE/FR/IT/EN)                    | §19.1              |
+| ADR-NEW-019 | MCP Secure Executor và Tool Authorization                      | §19.2              |
+| ADR-NEW-020 | Document ACL Inheritance in Vector DB                          | §19.3              |
+| ADR-NEW-021 | Source-System Authentication Strategy (Option B/C)             | §19.4              |
+| ADR-NEW-022 | AITL Recursion Depth Limit và Loop Detection                   | §20.1.1            |
+| ADR-NEW-023 | Pre-flight Cost Estimation và Hard Cap                         | §20.1.2            |
+| ADR-NEW-024 | Citation Verification Guard                                    | §20.1.3            |
+| ADR-NEW-025 | Document Upload Pipeline Validation                            | §20.1.5, §20.2.4   |
+| ADR-NEW-026 | User và Tenant Deletion API (GDPR Art. 17)                     | §20.2.1            |
+| ADR-NEW-027 | MongoDB Collection TTL Strategy                                | §20.2.2            |
+| ADR-NEW-028 | Embedding Model Versioning và Migration                        | §20.2.5            |
+| ADR-NEW-029 | Container Supply Chain Security (SBOM và Cosign và Trivy)      | §20.3              |
+| ADR-NEW-030 | Off-site Backup Replication và 3-2-1 Compliance                | §21.1              |
+| ADR-NEW-031 | Configurable Backup Target Endpoint                            | §21.1              |
+| ADR-NEW-032 | Prometheus và AlertManager và On-call Routing                  | §21.2              |
+| ADR-NEW-033 | SLI/SLO Definitions và Business Metrics Emission               | §21.2              |
+| ADR-NEW-034 | Circuit Breaker for External Dependencies                      | §21.3              |
+| ADR-NEW-035 | Per-tenant Bulkhead Isolation                                  | §21.3              |
+| ADR-NEW-036 | Graceful Degradation for RAG/LLM Failures                      | §21.3              |
 | ADR-NEW-038 | SDK Import Discipline (public API only)                        | §3.2 #10, §3.3 #17 |
-| ADR-NEW-039 | F*H: Azure AI Search vs core Milvus                            | §3.6 #3          |
-| ADR-NEW-040 | aihub-k8s Helm chart core-version pin policy                   | §3.1 #20, §3.5 #5 |
-| ADR-NEW-041 | W*P TLS key in git — remediation procedure                     | §3.5 #1          |
+| ADR-NEW-039 | F\*H: Azure AI Search vs core Milvus                           | §3.6 #3            |
+| ADR-NEW-040 | aihub-k8s Helm chart core-version pin policy                   | §3.1 #20, §3.5 #5  |
+| ADR-NEW-041 | W\*P TLS key in git — remediation procedure                    | §3.5 #1            |
 
 ______________________________________________________________________
 

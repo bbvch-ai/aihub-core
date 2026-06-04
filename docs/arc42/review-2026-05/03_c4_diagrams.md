@@ -1,9 +1,9 @@
 # C4 Model Diagrams — Swiss AI Hub Ecosystem
 
-**Method**: Simon Brown's C4 Model (4 levels of abstraction). **Scope**: Platform (aihub-core v0.290.4) + 5
-customer deployments (aihub-bmd, aihub-ctc, aihub-demoscope, aihub-wpe, aihub-fmh). This file covers Platform + bmd +
-ctc; detailed per-customer diagrams live in `c4/` (see [Cross-reference](#cross-reference-per-customer-c4-files) at the
-end of the file). **Format**: Mermaid (renders in VitePress, GitHub, IDE preview). **Companion documents**:
+**Method**: Simon Brown's C4 Model (4 levels of abstraction). **Scope**: Platform (aihub-core v0.290.4) + 5 customer
+deployments (aihub-bmd, aihub-ctc, aihub-demoscope, aihub-wpe, aihub-fmh). This file covers Platform + bmd + ctc;
+detailed per-customer diagrams live in `c4/` (see [Cross-reference](#cross-reference-per-customer-c4-files) at the end
+of the file). **Format**: Mermaid (renders in VitePress, GitHub, IDE preview). **Companion documents**:
 
 - [Architecture Review Overview](01_architecture_review_overview.en.md): Executive summary for stakeholders.
 - [Architecture Review Details](02_architecture_review_details.md): Technical deep-dive for the dev team.
@@ -611,7 +611,7 @@ graph LR
 | `AgentInTheLoopRequestEvent` | ❌ Not used    | RetrievalOrchestrator | ✅ Core pattern (underutilized) |
 | `HumanInTheLoopRequestEvent` | BMDAgent       | NamespaceSelection    |               ✅                |
 | `default_definitions()`      | 4 pipelines    | 6 pipelines           |         ✅ Core pattern         |
-| Custom events                | SNK events     | 10 event types        |        ⚠️ Repeated pattern       |
+| Custom events                | SNK events     | 10 event types        |       ⚠️ Repeated pattern       |
 | i18n LocaleString            | DE/EN/FR/IT    | (scope unclear)       |               ✅                |
 
 **Key insight**: CTC's `RetrievalOrchestratorAgent` uses core's `AgentInTheLoop` pattern correctly. The multi-agent
@@ -1034,6 +1034,10 @@ flowchart TB
         FMH_All[Stack 30+ containers + bot<br/>Azure OpenAI SUI + Azure AI Search<br/>Pulumi committed (10 deploy units)<br/>LlamaIndex monkey-patch]
     end
 
+    subgraph customer_igs["aihub-igs (Gen 2 pilot, images :latest)"]
+        IGS_All[Deploy-only ~30 containers<br/>Azure OpenAI + Swiss LLM Cloud<br/>FerretDB + Valkey + Docling core-aligned<br/>Gen 2 Ansible Pull · bot dev-auth + Phoenix/Langfuse drift]
+    end
+
     subgraph customer_n["Customer N (future)"]
         N_All[Entire stack repeated<br/>aihub-core v?.?.?<br/>1 host, 1 set DBs]
     end
@@ -1050,6 +1054,8 @@ flowchart TB
     customer_demoscope -->|partial LLM| AzOAI
     customer_wpe -->|LLM API| AzOAI
     customer_fmh -->|LLM API| AzOAI
+    customer_igs -->|LLM API| AzOAI
+    customer_igs -->|sovereign LLM wired| SLC
     customer_n -->|LLM API| SLC
 
     customer_bmd -.->|OIDC| KCSaaS
@@ -1057,22 +1063,25 @@ flowchart TB
     customer_demoscope -.->|OAuth Azure| KCSaaS
     customer_wpe -.->|Azure AD| KCSaaS
     customer_fmh -.->|Azure AD| KCSaaS
+    customer_igs -.->|Azure AD / OIDC| KCSaaS
 
     customer_bmd -.->|git clone tag| Repo
     customer_ctc -.->|git clone tag| Repo
     customer_demoscope -.->|git clone tag*| Repo
     customer_wpe -.->|CORE_VERSION env| Repo
     customer_fmh -.->|git clone tag| Repo
+    customer_igs -.->|image pull :latest| Repo
 
     style customer_bmd fill:#e1f5ff
     style customer_ctc fill:#fff4e1
     style customer_demoscope fill:#e1ffe1
     style customer_wpe fill:#ffe1e1
     style customer_fmh fill:#f5e1ff
+    style customer_igs fill:#e1fff0,stroke:#3da35a,stroke-width:2px
     style customer_n stroke-dasharray: 5 5,fill:#f5f5f5
 ```
 
-> *Demoscope SDK pin cannot be verified from `pyproject.toml` (see footnote in the Overview Component-versions table).
+> \*Demoscope SDK pin cannot be verified from `pyproject.toml` (see footnote in the Overview Component-versions table).
 
 **Problems**:
 
@@ -1193,10 +1202,10 @@ C4Container
 - ✅ Grafana + AlertManager
 - ✅ Secrets Vault with rotation
 
-> **As-built note (Gen 3 / `aihub-k8s`)**: this view is the *target*. The shipped `aihub-k8s` charts diverge in two
-> ways verified from the repo: (1) **NATS, Redis and Neo4j are deployed per-tenant** (each `tenant-<name>` namespace runs
-> its own), not as a shared cluster with `aihub.tenant.{id}.*` subjects; (2) tenant isolation is **logical, not
-> hardened** — no NetworkPolicy, no ResourceQuota, and a **shared Milvus credential across tenants**. See
+> **As-built note (Gen 3 / `aihub-k8s`)**: this view is the *target*. The shipped `aihub-k8s` charts diverge in two ways
+> verified from the repo: (1) **NATS, Redis and Neo4j are deployed per-tenant** (each `tenant-<name>` namespace runs its
+> own), not as a shared cluster with `aihub.tenant.{id}.*` subjects; (2) tenant isolation is **logical, not hardened** —
+> no NetworkPolicy, no ResourceQuota, and a **shared Milvus credential across tenants**. See
 > [`c4/deployment_generations.md`](c4/deployment_generations.md) for the real split and
 > [`05_proposed_adrs/adr_047_gen3_tenant_isolation_hardening.md`](05_proposed_adrs/adr_047_gen3_tenant_isolation_hardening.md)
 > for the hardening plan.
@@ -1222,32 +1231,31 @@ ______________________________________________________________________
 
 ### Deliverables produced
 
-| #   | Diagram                        | Purpose                             |
-| --- | ------------------------------ | ----------------------------------- |
-| 1   | System Context                 | Actors + external systems           |
-| 2.1 | Platform Container             | All Swiss AI Hub containers         |
-| 2.2 | aihub-bmd Container            | Customer A consumes SDK             |
+| #   | Diagram                        | Purpose                              |
+| --- | ------------------------------ | ------------------------------------ |
+| 1   | System Context                 | Actors + external systems            |
+| 2.1 | Platform Container             | All Swiss AI Hub containers          |
+| 2.2 | aihub-bmd Container            | Customer A consumes SDK              |
 | 2.3 | aihub-ctc Container            | Customer B consumes SDK + custom API |
-| 3.1 | `packages/core` Components     | Shared infrastructure internals     |
-| 3.2 | `packages/agent` Components    | Agent framework internals           |
-| 3.3 | `packages/pipeline` Components | Pipeline internals                  |
-| 3.4 | Extension Points Mapping       | How a customer extends core         |
-| 4.1 | Dynamic: Agent Workflow        | Happy path end-to-end               |
-| 4.2 | Dynamic: Document Ingestion    | 2-stage pipeline with gaps marked   |
-| 4.3 | Dynamic: HITL Flow             | Human-in-the-loop                   |
-| 4.4 | Dynamic: Multi-Agent Collab    | CTC's orchestrator pattern          |
-| 4.5 | Dynamic: Failure (Poison Msg)  | Gap analysis I3                     |
-| 5.1 | Deployment: Current            | Single-host topology                |
-| 5.2 | Deployment: Network Zones      | 5 Docker networks                   |
-| 6.1 | Multi-Customer: Current        | Per-customer stack                  |
-| 6.2 | Multi-Customer: Target         | Shared SaaS vision                  |
-| 7.1 | Future: After H1+H2            | Target architecture 6 months        |
-| 7.2 | Future: Container delta        | Container progression table         |
+| 3.1 | `packages/core` Components     | Shared infrastructure internals      |
+| 3.2 | `packages/agent` Components    | Agent framework internals            |
+| 3.3 | `packages/pipeline` Components | Pipeline internals                   |
+| 3.4 | Extension Points Mapping       | How a customer extends core          |
+| 4.1 | Dynamic: Agent Workflow        | Happy path end-to-end                |
+| 4.2 | Dynamic: Document Ingestion    | 2-stage pipeline with gaps marked    |
+| 4.3 | Dynamic: HITL Flow             | Human-in-the-loop                    |
+| 4.4 | Dynamic: Multi-Agent Collab    | CTC's orchestrator pattern           |
+| 4.5 | Dynamic: Failure (Poison Msg)  | Gap analysis I3                      |
+| 5.1 | Deployment: Current            | Single-host topology                 |
+| 5.2 | Deployment: Network Zones      | 5 Docker networks                    |
+| 6.1 | Multi-Customer: Current        | Per-customer stack                   |
+| 6.2 | Multi-Customer: Target         | Shared SaaS vision                   |
+| 7.1 | Future: After H1+H2            | Target architecture 6 months         |
+| 7.2 | Future: Container delta        | Container progression table          |
 
 ### Link to the assessment
 
-Each diagram references gaps identified in
-[02_architecture_review_details.md](02_architecture_review_details.md):
+Each diagram references gaps identified in [02_architecture_review_details.md](02_architecture_review_details.md):
 
 - Container 2.1 highlights the stateful single instances (G6.x)
 - Component 3.1 marks DTC-1, DTC-4, I3, I5
@@ -1272,28 +1280,28 @@ All diagrams use Mermaid syntax. They render in:
 
 ______________________________________________________________________
 
-**Version**: 1.1 — 2026-05-28 (refresh: v0.290.4 + 47 ADRs + 5 customer coverage in the Multi-Customer Topology
-View) **Links**:
+**Version**: 1.1 — 2026-05-28 (refresh: v0.290.4 + 47 ADRs + 5 customer coverage in the Multi-Customer Topology View)
+**Links**:
 
 - [02_architecture_review_details.md](02_architecture_review_details.md) — Detailed architecture review
 - [05_proposed_adrs/](05_proposed_adrs/) — Proposed ADRs (40 total)
-- [c4/](c4/) — Per-customer C4 diagrams (Platform / B*D / C*C / Dem*scope / W*P / F*H)
+- [c4/](c4/) — Per-customer C4 diagrams (Platform / B*D / C*C / Dem*scope / W*P / F\*H)
 
 ______________________________________________________________________
 
 ## Cross-reference: Per-customer C4 files
 
-This file (`03_c4_diagrams.md`) is the cross-customer aggregate view. Per-customer detail lives in the
-[`c4/`](c4/) folder:
+This file (`03_c4_diagrams.md`) is the cross-customer aggregate view. Per-customer detail lives in the [`c4/`](c4/)
+folder:
 
-| File                            | Scope                                  |
-| ------------------------------- | -------------------------------------- |
-| [`c4/platform.md`](c4/platform.md) | aihub-core L1 + L2 (extracted from §1, §2.1) |
-| [`c4/bmd.md`](c4/bmd.md)           | aihub-bmd L1 + L2 (SMB, Azure Sweden + Cohere) |
-| [`c4/ctc.md`](c4/ctc.md)           | aihub-ctc L1 + L2 (Jira/Confluence/SharePoint, Azure Foundry, custom API) |
-| [`c4/demoscope.md`](c4/demoscope.md) | aihub-demoscope L1 + L2 (Azure SUI + local vLLM, MongoDB, MinIO) |
-| [`c4/wpe.md`](c4/wpe.md)           | aihub-wpe L1 + L2 (deploy-only, Azure OpenAI, TLS-key-in-git annotation) |
-| [`c4/fmh.md`](c4/fmh.md)           | aihub-fmh L1 + L2 (Azure SUI + Azure AI Search, Pulumi committed, bot, evaluation framework) |
+| File                                 | Scope                                                                                        |
+| ------------------------------------ | -------------------------------------------------------------------------------------------- |
+| [`c4/platform.md`](c4/platform.md)   | aihub-core L1 + L2 (extracted from §1, §2.1)                                                 |
+| [`c4/bmd.md`](c4/bmd.md)             | aihub-bmd L1 + L2 (SMB, Azure Sweden + Cohere)                                               |
+| [`c4/ctc.md`](c4/ctc.md)             | aihub-ctc L1 + L2 (Jira/Confluence/SharePoint, Azure Foundry, custom API)                    |
+| [`c4/demoscope.md`](c4/demoscope.md) | aihub-demoscope L1 + L2 (Azure SUI + local vLLM, MongoDB, MinIO)                             |
+| [`c4/wpe.md`](c4/wpe.md)             | aihub-wpe L1 + L2 (deploy-only, Azure OpenAI, TLS-key-in-git annotation)                     |
+| [`c4/fmh.md`](c4/fmh.md)             | aihub-fmh L1 + L2 (Azure SUI + Azure AI Search, Pulumi committed, bot, evaluation framework) |
 
-Deployment diagram + Multi-Customer Topology View remain in this file as the cross-customer reference. Each
-per-customer file links back here for the cross-customer view.
+Deployment diagram + Multi-Customer Topology View remain in this file as the cross-customer reference. Each per-customer
+file links back here for the cross-customer view.

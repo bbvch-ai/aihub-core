@@ -1,13 +1,13 @@
 # C4 — aihub-core (Platform)
 
-> Extracted from [`../03_c4_diagrams.md`](../03_c4_diagrams.md) §1 (System Context) + §2.1 (Container Diagram).
-> Kept in sync with the aggregate file. Snapshot: **aihub-core v0.290.4** (2026-05-28).
+> Extracted from [`../03_c4_diagrams.md`](../03_c4_diagrams.md) §1 (System Context) + §2.1 (Container Diagram). Kept in
+> sync with the aggregate file. Snapshot: **aihub-core v0.290.4** (2026-05-28).
 
 ## Level 0 — High-Level Solution Architecture
 
 Boundary-first view of the platform's own architecture, organised by its five Docker network zones. App services (blue),
-data/brokers (teal), LLM gateway/inference (orange), observability (green), external (grey), known gaps (red). This is the
-reference architecture every customer deployment inherits.
+data/brokers (teal), LLM gateway/inference (orange), observability (green), external (grey), known gaps (red). This is
+the reference architecture every customer deployment inherits.
 
 ```mermaid
 flowchart TB
@@ -154,8 +154,8 @@ C4Context
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
 
-**Trust boundary**: end users, tenant admins, sys admins, developers, Swiss AI Hub itself, and Keycloak sit inside
-the *internal/trusted* zone. Swiss LLM Cloud, Teams/Slack, SharePoint, Jira/Confluence, Azure Key Vault sit outside
+**Trust boundary**: end users, tenant admins, sys admins, developers, Swiss AI Hub itself, and Keycloak sit inside the
+*internal/trusted* zone. Swiss LLM Cloud, Teams/Slack, SharePoint, Jira/Confluence, Azure Key Vault sit outside
 *untrusted* with TLS termination at Traefik.
 
 **Visible gaps at this level**:
@@ -243,27 +243,28 @@ C4Container
 
 ### Container-vs-scaling-readiness
 
-| Container        | Stateless? | Horizontal scale ready? | Bottleneck                           |
-| ---------------- | :--------: | :---------------------: | ------------------------------------ |
-| Admin UI (Nuxt)  |     ✅     |           ✅            | Asset CDN needed                     |
-| OpenWebUI        |     ⚠️     |           ⚠️            | DB-backed sessions                   |
-| API Gateway      |     ✅     |           ✅            | Keycloak call per request            |
-| Agent Workers    |     ✅     |           ✅            | NATS consumer groups OK              |
-| Bot Service      |     ✅     |           ✅            | -                                    |
-| Pipeline Workers |     ❌     |           ❌            | `in_process_executor` (DTC-6)        |
-| Backup Service   |     ❌     |           N/A           | Singleton design OK                  |
-| LiteLLM Proxy    |     ✅     |           ✅            | Single instance currently            |
-| PostgreSQL       |     ❌     |           ❌            | Single instance                      |
-| FerretDB         |     ❌     |           ❌            | FerretDB doesn't shard               |
-| Milvus           |     ❌     |           ❌            | Single-node, HNSW wall               |
-| Neo4j            |     ❌     |           ⚠️            | Cluster mode feasible                |
-| Valkey           |     ❌     |           ❌            | Single instance                      |
-| NATS JetStream   |     ⚠️     |           ⚠️            | Single node currently                |
-| SeaweedFS        |     ❌     |           ⚠️            | `replication="000"` (no replicate)   |
+| Container        | Stateless? | Horizontal scale ready? | Bottleneck                         |
+| ---------------- | :--------: | :---------------------: | ---------------------------------- |
+| Admin UI (Nuxt)  |     ✅     |           ✅            | Asset CDN needed                   |
+| OpenWebUI        |     ⚠️     |           ⚠️            | DB-backed sessions                 |
+| API Gateway      |     ✅     |           ✅            | Keycloak call per request          |
+| Agent Workers    |     ✅     |           ✅            | NATS consumer groups OK            |
+| Bot Service      |     ✅     |           ✅            | -                                  |
+| Pipeline Workers |     ❌     |           ❌            | `in_process_executor` (DTC-6)      |
+| Backup Service   |     ❌     |           N/A           | Singleton design OK                |
+| LiteLLM Proxy    |     ✅     |           ✅            | Single instance currently          |
+| PostgreSQL       |     ❌     |           ❌            | Single instance                    |
+| FerretDB         |     ❌     |           ❌            | FerretDB doesn't shard             |
+| Milvus           |     ❌     |           ❌            | Single-node, HNSW wall             |
+| Neo4j            |     ❌     |           ⚠️            | Cluster mode feasible              |
+| Valkey           |     ❌     |           ❌            | Single instance                    |
+| NATS JetStream   |     ⚠️     |           ⚠️            | Single node currently              |
+| SeaweedFS        |     ❌     |           ⚠️            | `replication="000"` (no replicate) |
 
 ## Cross-reference
 
 - L3 component diagrams + dynamic sequences + deployment + cross-customer topology:
   [`../03_c4_diagrams.md`](../03_c4_diagrams.md).
-- Platform priority items: [`../01_architecture_review_overview.en.md#31-aihub-core-platform`](../01_architecture_review_overview.en.md).
+- Platform priority items:
+  [`../01_architecture_review_overview.en.md#31-aihub-core-platform`](../01_architecture_review_overview.en.md).
 - Proposed ADRs for the platform: [`../05_proposed_adrs/`](../05_proposed_adrs/).

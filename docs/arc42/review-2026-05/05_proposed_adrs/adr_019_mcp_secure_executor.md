@@ -34,8 +34,8 @@ Evidence:
 
 - `packages/agent/.../mcp_react_agent/mcp_react_agent.py:175-180`: Tool execution logic directly calls
   `mcp_client.call_tool(tool_name, arguments)`.
-- `packages/agent/swiss_ai_hub/agent/mcp/mcp_tool_schemas.py:68`: `await mcp_client.call_tool(tool_name, arguments)` with
-  arguments being a JSON dict from the LLM, unfiltered.
+- `packages/agent/swiss_ai_hub/agent/mcp/mcp_tool_schemas.py:68`: `await mcp_client.call_tool(tool_name, arguments)`
+  with arguments being a JSON dict from the LLM, unfiltered.
 - `packages/core/swiss_ai_hub/core/infrastructure/litellm/lite_llm_base.py:62-74`: the LiteLLM proxy only wraps LLM
   completion calls, not MCP tool calls.
 - `packages/core/swiss_ai_hub/core/mcp/mcp_client_config.py:13-55`: McpClientConfig only has `name`, `url`, `api_key`,
@@ -89,7 +89,8 @@ Compliance impact:
 
 ## Decision
 
-Implement `SecureMCPExecutor` wrapping `mcp_client.call_tool()`. Wire it through the agent dispatcher for every MCP call.
+Implement `SecureMCPExecutor` wrapping `mcp_client.call_tool()`. Wire it through the agent dispatcher for every MCP
+call.
 
 ### Class design
 

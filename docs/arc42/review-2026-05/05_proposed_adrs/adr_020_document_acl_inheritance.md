@@ -25,18 +25,18 @@ Scenario described by the user, confirmed:
 
 Evidence per layer:
 
-| Layer                 | File                                                                          | Finding                                                                            |
-| --------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Jira fetch            | `pipelines/jira_to_data_lake/resources/JiraResource.py:38`                    | Service account auth; JQL only filters `project={key}`, no security level     |
-| Jira model            | `lib/common/types/JiraIssue.py:1-72`                                          | No fields: security_level, project_role, creator, assignee                    |
-| Jira metadata extract | `pipelines/jira_to_data_lake/ops/extract_metadata_from_jira_issue.py:1-35`    | No acl, owner                                                                 |
-| Confluence fetch      | `pipelines/confluence_to_data_lake/resources/ConfluenceResource.py:21`        | Service account; does not filter page restrictions                            |
-| Confluence model      | `pipelines/confluence_to_data_lake/types/ConfluencePage.py:1-22`              | No space_permissions, page_restrictions                                       |
-| SharePoint fetch      | `packages/core/.../sharepoint/share_point_settings.py:1-23`                   | Azure AD app-only Sites.Read.All; does not parse folder ACL                   |
-| Milvus schema         | `packages/core/.../persistence/rag/vectors/node_metadata.py:1-116`            | NO ACL, permissions, owner, viewable_by fields                                |
-| RAG retrieve          | `packages/core/.../generative_ai/retrieval/retrieve_nodes.py:40-41`           | Filters only NAMESPACE and TYPE, not user permissions                         |
-| CTC orchestrator      | `agents/retrieval_orchestrator_agent/.../RetrievalOrchestratorAgent.py:59-72` | Does not pass user context into retrieval                                     |
-| CTC chat agent        | `agents/chat_agent/chat_agent/ChatAgent.py:9-12`                              | Does not pass user identity into retrieval                                    |
+| Layer                 | File                                                                          | Finding                                                                   |
+| --------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Jira fetch            | `pipelines/jira_to_data_lake/resources/JiraResource.py:38`                    | Service account auth; JQL only filters `project={key}`, no security level |
+| Jira model            | `lib/common/types/JiraIssue.py:1-72`                                          | No fields: security_level, project_role, creator, assignee                |
+| Jira metadata extract | `pipelines/jira_to_data_lake/ops/extract_metadata_from_jira_issue.py:1-35`    | No acl, owner                                                             |
+| Confluence fetch      | `pipelines/confluence_to_data_lake/resources/ConfluenceResource.py:21`        | Service account; does not filter page restrictions                        |
+| Confluence model      | `pipelines/confluence_to_data_lake/types/ConfluencePage.py:1-22`              | No space_permissions, page_restrictions                                   |
+| SharePoint fetch      | `packages/core/.../sharepoint/share_point_settings.py:1-23`                   | Azure AD app-only Sites.Read.All; does not parse folder ACL               |
+| Milvus schema         | `packages/core/.../persistence/rag/vectors/node_metadata.py:1-116`            | NO ACL, permissions, owner, viewable_by fields                            |
+| RAG retrieve          | `packages/core/.../generative_ai/retrieval/retrieve_nodes.py:40-41`           | Filters only NAMESPACE and TYPE, not user permissions                     |
+| CTC orchestrator      | `agents/retrieval_orchestrator_agent/.../RetrievalOrchestratorAgent.py:59-72` | Does not pass user context into retrieval                                 |
+| CTC chat agent        | `agents/chat_agent/chat_agent/ChatAgent.py:9-12`                              | Does not pass user identity into retrieval                                |
 
 Compliance impact:
 
