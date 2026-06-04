@@ -115,19 +115,23 @@ class MyAgent(Agent):
 
 ### Built-in Self-Awareness (meta questions)
 
-`Agent` inherits `SelfAwarenessMixin`, so every blueprint has the built-in detection/answer steps for meta questions
-about the agent itself ("what can you do?", "why did you do X?"). They are **dormant by default** — `Agent.get_steps()`
-filters them out — and only activate when a blueprint **opts in by overriding `self_awareness_llm_config`** to return
-its `LLMConfig`. Non-adopting and non-conversational blueprints (e.g. `RetrievalAgent`) are completely unaffected.
+Conversational blueprints can answer meta questions about themselves ("what can you do?", "why did you do X?") instead
+of running their normal pipeline. The detection/answer logic is shared as free functions (`do_detect_meta_question`,
+`do_answer_meta_question`, `summarize_workflow_for_meta_answer` in `self_awareness/`); the **steps are defined
+explicitly in each self-aware agent** — there is no base-class mixin and no `get_steps()` filtering. An agent is
+self-aware iff it defines the steps. Non-conversational blueprints (e.g. `RetrievalAgent`) simply don't.
 
-Opting in has two required parts (see ADR `2026_06_02_self_awareness_as_base_agent_capability` and `RAGAgent` as the
+Adopting it has two parts (see ADR `2026_06_04_self_awareness_as_explicit_per_agent_steps` and `RAGAgent` as the
 reference):
 
-1. Override `self_awareness_llm_config(self, agent_config: MyConfig) -> LLMConfig` (this is the opt-in signal).
+1. **Define the three thin `@step` methods** on the agent: `detect_meta_question_step` (on `UserMessageEvent`),
+   `answer_meta_question_step`, and `stop_after_meta_answer_step`. Each delegates to the shared free functions, passing
+   `agent_config.llm`.
 2. **Gate every raw `UserMessageEvent` entry step**: add `_clear: NotAMetaQuestionEvent | None = None` and combine its
-   precondition with `check_passed_meta_question_gate(start_event, clear)`. Gating cannot be automated; a self-aware
-   blueprint that forgets it fails `self_awareness/tests/test_self_awareness_base_class.py` (the entry-step detection
-   would otherwise race the normal pipeline).
+   precondition with `check_passed_meta_question_gate(start_event, clear)`. The gate falls out of event dependencies —
+   the entry step can't fire until detection emits `NotAMetaQuestionEvent`. Gating cannot be automated; a self-aware
+   blueprint that forgets it (or defines a partial step set) fails `self_awareness/tests/test_self_awareness_wiring.py`
+   (the entry-step detection would otherwise race the normal pipeline).
 
 ## The @step Decorator
 
@@ -368,8 +372,9 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
 4. Create custom events inheriting `ControlEvent`/`StartEvent`/`StopEvent`
 5. Add i18n translations in `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`
 6. Create `app/my_agent/main.py` entry point with `AgentRunner`
-7. (Conversational agents) Opt into self-awareness: override `self_awareness_llm_config` and gate raw `UserMessageEvent`
-   entry steps with `_clear: NotAMetaQuestionEvent | None = None` + `check_passed_meta_question_gate` (see the Built-in
+7. (Conversational agents) Add self-awareness: define `detect_meta_question_step` / `answer_meta_question_step` /
+   `stop_after_meta_answer_step` (delegating to the shared free functions) and gate raw `UserMessageEvent` entry steps
+   with `_clear: NotAMetaQuestionEvent | None = None` + `check_passed_meta_question_gate` (see the Built-in
    Self-Awareness section above)
 8. Write BDD tests with `AgentTestRunner`
 9. Run `make test`
@@ -412,6 +417,7 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
 
 - RAGAgent: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/rag_agent.py`
 - RAGAgentConfig: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/configs/rag_agent_config.py`
-- SelfAwarenessMixin: `packages/agent/swiss_ai_hub/agent/self_awareness/self_awareness_mixin.py`
+- Self-awareness step functions: `packages/agent/swiss_ai_hub/agent/self_awareness/self_awareness_step_functions.py`
+- Self-awareness gate: `packages/agent/swiss_ai_hub/agent/self_awareness/meta_question_gate.py`
 
 **Playground patterns**: `playground/minimal_workflow/`

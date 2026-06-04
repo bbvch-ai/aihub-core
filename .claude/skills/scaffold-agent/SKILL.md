@@ -568,15 +568,14 @@ another agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly a
 **Rule of thumb**: If a step consumes it → `ControlEvent`. If only the UI needs it → `DisplayEvent`. If both →
 `ControlAndDisplayEvent`. Most custom agent events are `ControlEvent`.
 
-**Self-awareness pattern**: Built-in detection/answer for meta-questions about the agent itself ("What can you do?",
-"Who are you?") is inherited from the base `Agent` (via `SelfAwarenessMixin`) but stays dormant until the blueprint opts
-in. For a conversational agent, opt in with two steps: (1) override
-`self_awareness_llm_config(self, agent_config) -> LLMConfig` to return the agent's LLM — this is the opt-in signal that
-activates the inherited `detect_meta_question_step` / `answer_meta_question_step`; (2) gate every raw `UserMessageEvent`
-entry step with `_clear: NotAMetaQuestionEvent | None = None` and combine its precondition with
-`check_passed_meta_question_gate`. Do NOT redefine the two `@step` methods — they are inherited. The compliance test
-`self_awareness/tests/test_self_awareness_base_class.py` fails if a self-aware agent leaves an entry step ungated. See
-`RAGAgent` for the reference implementation.
+**Self-awareness pattern**: Detection/answer for meta-questions about the agent itself ("What can you do?", "Who are
+you?") is added per agent, not inherited. For a conversational agent: (1) define three thin `@step` methods —
+`detect_meta_question_step` (on `UserMessageEvent`), `answer_meta_question_step`, and `stop_after_meta_answer_step` —
+each delegating to the shared free functions `do_detect_meta_question` / `do_answer_meta_question` /
+`summarize_workflow_for_meta_answer` and passing `agent_config.llm`; (2) gate every raw `UserMessageEvent` entry step
+with `_clear: NotAMetaQuestionEvent | None = None` and combine its precondition with `check_passed_meta_question_gate`.
+The compliance test `self_awareness/tests/test_self_awareness_wiring.py` fails if a self-aware agent defines a partial
+step set or leaves an entry step ungated. See `RAGAgent` for the reference implementation.
 
 ### The Stop Event Constraint
 

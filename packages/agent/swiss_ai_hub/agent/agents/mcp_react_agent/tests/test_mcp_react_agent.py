@@ -96,7 +96,7 @@ async def _(agent_runner: AgentTestRunner):
         # McpReactAgent now opts into self-awareness: force the non-meta branch so this test exercises
         # the tool-calling pipeline rather than the (separately tested) meta-question classifier.
         patch(
-            "swiss_ai_hub.agent.self_awareness.self_awareness_mixin.do_detect_meta_question",
+            "swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent.do_detect_meta_question",
             AsyncMock(return_value=NotAMetaQuestionEvent(reasoning="not a meta question")),
         ),
     ):

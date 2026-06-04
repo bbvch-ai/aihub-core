@@ -5,12 +5,15 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LLMStopEvent,
     Message,
+    MetaAnswerReadyEvent,
+    MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     StopEvent,
     ToolEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import LLMConfig, limit_chat_history
+from swiss_ai_hub.core.generative_ai import limit_chat_history
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -23,6 +26,11 @@ from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
 from swiss_ai_hub.agent.mcp.mcp_resource_schemas import fetch_static_resources, resource_read_tool_schema
 from swiss_ai_hub.agent.mcp.mcp_tool_schemas import execute_single_tool_call, to_openai_tool_schemas, to_tool_events
 from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
+from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
+from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
+    do_answer_meta_question,
+    do_detect_meta_question,
+)
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -66,9 +74,64 @@ class McpReactAgent(Agent):
     )
     icon: ClassVar[str] = "mage:plug"
 
-    def self_awareness_llm_config(self, agent_config: McpReactAgentConfig) -> LLMConfig:
-        """Opt into built-in self-awareness, classifying and answering meta questions with this agent's LLM."""
-        return agent_config.llm
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
+        icon="mdi:help-circle-outline",
+    )
+    async def detect_meta_question_step(
+        self,
+        event: UserMessageEvent,
+        agent_config: McpReactAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
+        """Gate every chat message: classify it as a meta question or release the normal pipeline."""
+        return await do_detect_meta_question(
+            user_query=event.user_query,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+        )
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
+        icon="mdi:account-voice",
+    )
+    async def answer_meta_question_step(
+        self,
+        event: MetaQuestionDetectedEvent,
+        user_message_event: UserMessageEvent,
+        agent_config: McpReactAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> MetaAnswerReadyEvent:
+        """
+        Stream a meta answer from the agent's own identity and workflow, then hand off to a separate
+        stop step. The terminal stop event must NOT be emitted here: emitting it back-to-back with the
+        answer's chunks lets it race them in the streaming layer and blanks the answer in the chat UI.
+        """
+        stop_event = await do_answer_meta_question(
+            event=event,
+            agent_name=t.extract(agent_config.name),
+            agent_description=t.extract(agent_config.description),
+            workflow_summary=summarize_workflow_for_meta_answer(self.get_steps(), t),
+            chat_history=user_message_event.messages,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+        )
+        return MetaAnswerReadyEvent(stop_event=stop_event)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.description"),
+        icon="mdi:flag-checkered",
+    )
+    async def stop_after_meta_answer_step(self, event: MetaAnswerReadyEvent) -> LLMStopEvent:
+        """Re-emit the streamed answer's stop event as the run's terminal event, a dispatch cycle later."""
+        return event.stop_event
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),

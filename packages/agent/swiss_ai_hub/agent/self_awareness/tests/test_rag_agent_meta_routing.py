@@ -32,7 +32,7 @@ from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_suffi
 
 pytestmark = pytest.mark.self_hosted
 
-MIXIN = "swiss_ai_hub.agent.self_awareness.self_awareness_mixin"
+RAG_MODULE = "swiss_ai_hub.agent.agents.rag_agent.rag_agent"
 
 
 def _config() -> RAGAgentConfig:
@@ -64,8 +64,8 @@ async def test_meta_question_answers_without_retrieval(monkeypatch):
         answer = ChatMessage(role=MessageRole.ASSISTANT, content="I can answer HR questions.")
         return LLMStopEvent(chat_messages=[answer])
 
-    monkeypatch.setattr(f"{MIXIN}.do_detect_meta_question", fake_detect)
-    monkeypatch.setattr(f"{MIXIN}.do_answer_meta_question", fake_answer)
+    monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{RAG_MODULE}.do_answer_meta_question", fake_answer)
 
     runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config())
     async with runner.test_run(delay_before_stop=30) as topic:
@@ -87,7 +87,7 @@ async def test_normal_question_opens_the_gate(monkeypatch):
     async def fake_detect(*, user_query, llm_config, displayer, t):
         return NotAMetaQuestionEvent(reasoning="normal task")
 
-    monkeypatch.setattr(f"{MIXIN}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
 
     runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config())
     async with runner.test_run(delay_before_stop=20) as topic:

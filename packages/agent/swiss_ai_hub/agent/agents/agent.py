@@ -1,5 +1,4 @@
 import functools
-from collections.abc import Callable
 from typing import ClassVar
 
 from swiss_ai_hub.core.events.agent import (
@@ -11,16 +10,9 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.workflow import DispatchableWorkflow
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
-from swiss_ai_hub.agent.self_awareness.self_awareness_mixin import SelfAwarenessMixin
-from swiss_ai_hub.agent.workflow.step_annotations import (
-    AGENT_MAX_EXECUTION_PER_RUN_ANNOTATION,
-    AGENT_PRECONDITION_FUNCTION_ANNOTATION,
-    AGENT_STEP_ANNOTATION,
-    AGENT_STOP_ON_ERROR_ANNOTATION,
-)
 
 
-class Agent(SelfAwarenessMixin, DispatchableWorkflow):
+class Agent(DispatchableWorkflow):
     """
     An agent is a dispatchable workflow that tries to get some work done by defining a series of
     operations that is performed on the input data to achieve a pre-defined goal - the agents output.
@@ -58,33 +50,11 @@ class Agent(SelfAwarenessMixin, DispatchableWorkflow):
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.base_agent.metadata.description")
     icon: ClassVar[str] = "mage:robot"
 
-    STEP_ANNOTATION = AGENT_STEP_ANNOTATION
+    STEP_ANNOTATION = "_is_agent_step"
 
-    PRECONDITION_FUNCTION_ANNOTATION = AGENT_PRECONDITION_FUNCTION_ANNOTATION
-    STOP_ON_ERROR_ANNOTATION = AGENT_STOP_ON_ERROR_ANNOTATION
-    MAX_EXECUTION_PER_RUN_ANNOTATION = AGENT_MAX_EXECUTION_PER_RUN_ANNOTATION
-
-    @classmethod
-    def _is_self_aware(cls) -> bool:
-        """
-        True when this blueprint opts into built-in self-awareness by overriding
-        `self_awareness_llm_config`. Only then are the inherited detection/answer steps activated;
-        otherwise they are filtered out of the workflow entirely (no dead nodes, no extra events).
-        """
-        return cls.self_awareness_llm_config is not Agent.self_awareness_llm_config
-
-    @classmethod
-    @functools.cache
-    def get_steps(cls) -> list[Callable]:
-        """
-        All step methods, with the inherited self-awareness steps included only for self-aware
-        blueprints. This is the single chokepoint feeding `get_input_events`/`get_start_events`/
-        dispatch, so filtering here keeps non-adopting agents completely unaffected.
-        """
-        steps = super().get_steps()
-        if cls._is_self_aware():
-            return steps
-        return [step for step in steps if step.__name__ not in SelfAwarenessMixin.SELF_AWARENESS_STEP_NAMES]
+    PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
+    STOP_ON_ERROR_ANNOTATION = "_stop_on_error"
+    MAX_EXECUTION_PER_RUN_ANNOTATION = "_max_executions_per_run"
 
     @classmethod
     @functools.cache

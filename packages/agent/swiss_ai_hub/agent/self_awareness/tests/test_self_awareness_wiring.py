@@ -1,15 +1,14 @@
 """
-Base-class self-awareness contract.
+Self-awareness wiring contract.
 
-Self-awareness lives on the base `Agent` (via `SelfAwarenessMixin`) but is only activated for a
-blueprint that opts in by overriding `self_awareness_llm_config`. Two invariants protect that design:
+A blueprint becomes self-aware by defining the self-awareness steps explicitly (detect/answer/stop).
+Two invariants protect that design:
 
-1. The inherited detection/answer steps stay dormant (filtered out of `get_steps`) for agents that do
-   not opt in — no dead nodes, no extra `UserMessageEvent` start event, no race.
-2. Any agent that DOES opt in must gate every raw `UserMessageEvent` entry step with
-   `NotAMetaQuestionEvent`, otherwise detection would race the normal pipeline (the §4 race condition).
-   This gating cannot be automated, so this test is the guardrail that forces every present and future
-   self-aware blueprint to wire it.
+1. The three self-awareness steps are defined together or not at all — a partial set is a wiring bug.
+2. A self-aware blueprint must gate every raw `UserMessageEvent` entry step with `NotAMetaQuestionEvent`,
+   otherwise detection would race the normal pipeline (the §4 race condition). This gating cannot be
+   automated, so this test is the guardrail that forces every present and future self-aware blueprint
+   to wire it.
 """
 
 from collections.abc import Callable
@@ -27,7 +26,7 @@ from swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent import McpReactAg
 from swiss_ai_hub.agent.agents.namespace_selection_agent.namespace_selection_agent import NamespaceSelectionAgent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.retrieval_agent.retrieval_agent import RetrievalAgent
-from swiss_ai_hub.agent.self_awareness.self_awareness_mixin import SelfAwarenessMixin
+from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import SELF_AWARENESS_STEP_NAMES
 
 PRODUCTION_AGENTS: list[type[Agent]] = [
     RAGAgent,
@@ -39,6 +38,15 @@ PRODUCTION_AGENTS: list[type[Agent]] = [
     NamespaceSelectionAgent,
     RetrievalAgent,
 ]
+
+
+def _step_names(agent: type[Agent]) -> set[str]:
+    return {step.__name__ for step in agent.get_steps()}
+
+
+def _is_self_aware(agent: type[Agent]) -> bool:
+    """A blueprint is self-aware when it defines the detection step explicitly."""
+    return "detect_meta_question_step" in _step_names(agent)
 
 
 def _is_raw_chat_entry_step(step: Callable) -> bool:
@@ -62,24 +70,23 @@ def _is_raw_chat_entry_step(step: Callable) -> bool:
 
 
 @pytest.mark.parametrize("agent", PRODUCTION_AGENTS)
-def test_self_awareness_steps_are_dormant_unless_opted_in(agent: type[Agent]):
-    """The detection/answer steps appear in a blueprint's workflow only when it overrides the hook."""
-    step_names = {step.__name__ for step in agent.get_steps()}
-    present = step_names & SelfAwarenessMixin.SELF_AWARENESS_STEP_NAMES
-    if agent._is_self_aware():
-        assert present == SelfAwarenessMixin.SELF_AWARENESS_STEP_NAMES
-    else:
-        assert present == set()
+def test_self_awareness_steps_are_all_or_nothing(agent: type[Agent]):
+    """A blueprint defines the full set of self-awareness steps or none — a partial set is a wiring bug."""
+    present = _step_names(agent) & SELF_AWARENESS_STEP_NAMES
+    assert present in (set(), SELF_AWARENESS_STEP_NAMES), (
+        f"{agent.__name__} defines a partial self-awareness step set: {present}. Define "
+        "detect_meta_question_step, answer_meta_question_step and stop_after_meta_answer_step together."
+    )
 
 
 @pytest.mark.parametrize("agent", PRODUCTION_AGENTS)
 def test_self_aware_agents_gate_their_chat_entry_steps(agent: type[Agent]):
     """A self-aware blueprint must gate every raw chat entry step with NotAMetaQuestionEvent."""
-    if not agent._is_self_aware():
-        pytest.skip(f"{agent.__name__} does not opt into self-awareness")
+    if not _is_self_aware(agent):
+        pytest.skip(f"{agent.__name__} does not define the self-awareness steps")
 
     for step in agent.get_steps():
-        if step.__name__ in SelfAwarenessMixin.SELF_AWARENESS_STEP_NAMES:
+        if step.__name__ in SELF_AWARENESS_STEP_NAMES:
             continue
         if not _is_raw_chat_entry_step(step):
             continue
