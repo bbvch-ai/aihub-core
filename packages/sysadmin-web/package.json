@@ -2,7 +2,7 @@
   "name": "@swiss-ai-hub/sysadmin-web",
   "license": "LicenseRef-Proprietary",
   "type": "module",
-  "version": "0.290.12",
+  "version": "0.291.7",
   "description": "Swiss AI Hub - System administration UI (Nuxt 3 layer over @swiss-ai-hub/web)",
   "main": "./nuxt.config.ts",
   "private": false,

@@ -39,7 +39,9 @@ models:
     outputCostAbove128k: Costo output (sopra 128K)
     outputCostAbove200k: Costo output (sopra 200K)
     imageCost: Costo immagine
-    searchContextCost: Costo contesto ricerca
+    searchContextCostLow: Costo contesto ricerca (Basso)
+    searchContextCostMedium: Costo contesto ricerca (Medio)
+    searchContextCostHigh: Costo contesto ricerca (Alto)
     rateLimits: Limiti di velocità
     tokensPerMinute: Token per minuto
     requestsPerMinute: Richieste per minuto
