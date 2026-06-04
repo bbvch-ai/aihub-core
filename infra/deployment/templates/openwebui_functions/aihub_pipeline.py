@@ -1799,7 +1799,11 @@ class Pipe:
                 )
 
                 logger.debug("Request processing completed")
-                return ""
+                # Return the final rendered content (not ""). OpenWebUI's pipe wrapper turns the
+                # return value into the stream's final chunk, and middleware persists THAT as the
+                # message content (overwriting the live `replace` emits). Returning "" here is what
+                # blanks every assistant message once the chat is reloaded from the DB.
+                return state_manager.serialize_to_html()
 
             except Exception as e:
                 logger.exception(f"Error in pipe: {e}")
