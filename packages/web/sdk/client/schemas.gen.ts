@@ -8258,6 +8258,18 @@ export const HealthResponseSchema = {
       title: "Code",
       description: "HTTP status code.",
     },
+    version: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Version",
+      description: "Running service version.",
+    },
     checks: {
       anyOf: [
         {
