@@ -9359,7 +9359,7 @@ export type ModelInfoDto = {
    *
    * The mode of the model (e.g., 'chat', 'completion', 'embedding')
    */
-  mode: string;
+  mode?: string | null;
   /**
    * Max Input Tokens
    *
@@ -9457,11 +9457,9 @@ export type ModelInfoDto = {
    */
   output_cost_per_image?: number | null;
   /**
-   * Search Context Cost Per Query
-   *
-   * Cost per search context query
+   * Cost per search context query by context size
    */
-  search_context_cost_per_query?: number | null;
+  search_context_cost_per_query?: SearchContextCostPerQueryDto | null;
   /**
    * Output Vector Size
    *
@@ -12406,6 +12404,32 @@ export type RunStatistics = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDto;
+};
+
+/**
+ * SearchContextCostPerQueryDTO
+ *
+ * LiteLLM reports search context cost per query broken down by context size, not as a single value.
+ */
+export type SearchContextCostPerQueryDto = {
+  /**
+   * Search Context Size Low
+   *
+   * Cost per query with low search context size
+   */
+  search_context_size_low?: number | null;
+  /**
+   * Search Context Size Medium
+   *
+   * Cost per query with medium search context size
+   */
+  search_context_size_medium?: number | null;
+  /**
+   * Search Context Size High
+   *
+   * Cost per query with high search context size
+   */
+  search_context_size_high?: number | null;
 };
 
 /**

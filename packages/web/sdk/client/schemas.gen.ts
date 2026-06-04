@@ -13893,7 +13893,14 @@ export const ModelDetailsSchema = {
 export const ModelInfoDTOSchema = {
   properties: {
     mode: {
-      type: "string",
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
       title: "Mode",
       description:
         "The mode of the model (e.g., 'chat', 'completion', 'embedding')",
@@ -14094,14 +14101,13 @@ export const ModelInfoDTOSchema = {
     search_context_cost_per_query: {
       anyOf: [
         {
-          type: "number",
+          $ref: "#/components/schemas/SearchContextCostPerQueryDTO",
         },
         {
           type: "null",
         },
       ],
-      title: "Search Context Cost Per Query",
-      description: "Cost per search context query",
+      description: "Cost per search context query by context size",
     },
     output_vector_size: {
       anyOf: [
@@ -14348,7 +14354,6 @@ export const ModelInfoDTOSchema = {
     },
   },
   type: "object",
-  required: ["mode"],
   title: "ModelInfoDTO",
 } as const;
 
@@ -18398,6 +18403,51 @@ export const RunStatisticsSchema = {
   required: ["run_id", "agent"],
   title: "RunStatistics",
   description: "Statistics for a single run, intended for API response.",
+} as const;
+
+export const SearchContextCostPerQueryDTOSchema = {
+  properties: {
+    search_context_size_low: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Search Context Size Low",
+      description: "Cost per query with low search context size",
+    },
+    search_context_size_medium: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Search Context Size Medium",
+      description: "Cost per query with medium search context size",
+    },
+    search_context_size_high: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Search Context Size High",
+      description: "Cost per query with high search context size",
+    },
+  },
+  type: "object",
+  title: "SearchContextCostPerQueryDTO",
+  description:
+    "LiteLLM reports search context cost per query broken down by context size, not as a single value.",
 } as const;
 
 export const SelectSchema = {

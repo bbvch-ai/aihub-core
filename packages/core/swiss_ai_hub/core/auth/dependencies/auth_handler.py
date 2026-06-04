@@ -11,6 +11,9 @@ from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity impor
 
 logger = logging.getLogger(__name__)
 
+_ACTIVE_TENANT_NOT_ACCESSIBLE = "Your active tenant is no longer accessible. Please select a new tenant."
+_ACCESS_DENIED = "Access denied"
+
 
 class AuthHandler(ABC):
     """
@@ -65,14 +68,14 @@ class AuthHandler(ABC):
             await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(
                 status_code=400,
-                detail="Your active tenant is no longer accessible. Please select a new tenant.",
+                detail=_ACTIVE_TENANT_NOT_ACCESSIBLE,
             )
 
         if not await KeycloakAdminService.is_user_member_of_tenant(user_id, active_tenant_id):
             await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(
                 status_code=400,
-                detail="Your active tenant is no longer accessible. Please select a new tenant.",
+                detail=_ACTIVE_TENANT_NOT_ACCESSIBLE,
             )
 
         tenant = TenantMetadataEntity.get_metadata_by_tenant_id(active_tenant_id)
@@ -80,7 +83,7 @@ class AuthHandler(ABC):
             await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(
                 status_code=400,
-                detail="Your active tenant is no longer accessible. Please select a new tenant.",
+                detail=_ACTIVE_TENANT_NOT_ACCESSIBLE,
             )
 
         return tenant
@@ -106,16 +109,16 @@ class AuthHandler(ABC):
         """
         if not await KeycloakAdminService.tenant_exists(tenant_id):
             logger.warning(f"Tenant {tenant_id} not found in Keycloak during resolution for user {user_id}")
-            raise HTTPException(status_code=403, detail="Access denied")
+            raise HTTPException(status_code=403, detail=_ACCESS_DENIED)
 
         if not await KeycloakAdminService.is_user_member_of_tenant(user_id, tenant_id):
             logger.warning(f"User {user_id} attempted to access tenant {tenant_id} without membership")
-            raise HTTPException(status_code=403, detail="Access denied")
+            raise HTTPException(status_code=403, detail=_ACCESS_DENIED)
 
         tenant_entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not tenant_entity:
             logger.warning(f"Tenant {tenant_id} exists in Keycloak but has no metadata")
-            raise HTTPException(status_code=403, detail="Access denied")
+            raise HTTPException(status_code=403, detail=_ACCESS_DENIED)
 
         return TenantIdentity.from_tenant_metadata_entity(tenant_entity)
 

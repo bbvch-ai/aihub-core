@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.7] - 2026-06-03 - Enhanced Model Cost Reporting and API Robustness
+
+### Added
+
+- ✨ **Introduced Granular Search Context Cost Reporting:** Added a new data transfer object
+  (`SearchContextCostPerQueryDTO`) to capture and display search context costs broken down by low, medium, and high
+  context sizes, providing more detailed pricing information.
+- 🦾 **Enhanced API Robustness for Model Information:** Implemented a new data validation mechanism that gracefully
+  handles unexpected data shapes in external model metadata feeds by logging warnings and dropping malformed fields,
+  preventing parsing failures for the entire model information.
+
+### Changed
+
+- 📊 **Updated Model Details Panel:** The **Model Details Panel** now presents search context costs with a more granular
+  breakdown (low, medium, and high context sizes), offering clearer insights into model pricing.
+- 🌍 **Localized Search Context Cost Labels:** Updated internationalization files to include specific labels for low,
+  medium, and high search context costs in various languages (English, German, French, Italian).
+- 🔄 **Revised Model Information Schema:** Modified the **`ModelInfoDTO`** to incorporate the new granular
+  `SearchContextCostPerQueryDTO` for search context costs and made the `mode` field optional, reflecting more flexible
+  model metadata.
+
+______________________________________________________________________
+
+## [v0.291.6] - 2026-06-03 - Core System Refinements and Performance Enhancements
+
+### Changed
+
+- 🚀 **Enhanced LLM Guard Performance:** Switched agent description and few-shot guards to use asynchronous structured
+  prediction, improving responsiveness and concurrency with Large Language Models.
+- ⚡️ **Improved Concurrency for Reranking Nodes:** Blocking reranking operations are now offloaded to a separate thread
+  using `asyncio.to_thread`, preventing event loop starvation and boosting application performance.
+- 📄 **Refined Error Logging:** Updated `MineruLoader` and Redis request hooks to use `logger.exception`, ensuring
+  comprehensive exception details are automatically included in logs for better debugging.
+- 🛠️ **Corrected OpenTelemetry HTTPX Instrumentation:** Ensured asynchronous HTTPX request and response hooks are
+  properly defined as coroutine functions, enabling full observability for async HTTP communications.
+
+### Refactor
+
+- 🧹 **Optimized Dispatcher Event Handling:** The `_build_event_kwargs` method in agent and process dispatchers, as well
+  as the base dispatcher, has been made synchronous, streamlining event argument construction.
+- 🔄 **Standardized Access Rule Prefixes:** Consolidated `aihub.admin` and `aihub.user` access rule prefixes into
+  dedicated constants, enhancing maintainability and clarity across authentication logic.
+- 🔑 **Centralized Authentication Error Messages:** Moved common error messages in the authentication handler to
+  constants, improving consistency and simplifying future updates.
+- ☁️ **Standardized S3 Service Error Messages:** Consolidated error messages for S3 anonymous file access service
+  operations into constants, improving consistency and maintainability.
+- ⚙️ **Refined SonarQube Configuration:** Added specific ignore rules to `sonar-project.properties` to suppress
+  `python:S1192` (duplicated string literals) warnings for known-good patterns, such as lazy imports and MongoDB query
+  syntax, reducing false positives in code quality scans.
+- 📝 **Improved RPC Success Attribute Handling:** Standardized the `rpc.success` attribute for NATS requester tracing
+  using a dedicated constant.
+- 📚 **Improved Test Mock Clarity:** Added `noqa` comments to asynchronous mock methods in authentication utilities and
+  Milvus vector store tests to explicitly state why they remain async for testing purposes, improving code clarity for
+  linters.
+- 🧹 **Minor Python Idiom Improvements:** Updated set creation from `set(generator_expression)` to `{comprehension}` in
+  `base_event` and `dispatchable_workflow` for more idiomatic Python.
+
+______________________________________________________________________
+
 ## [v0.291.5] - 2026-06-02 - Enhanced FormKit Data Handling for Stability
 
 ### Changed
