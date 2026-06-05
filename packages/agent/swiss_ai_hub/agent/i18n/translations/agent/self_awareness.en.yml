@@ -47,6 +47,6 @@ answer:
     Answer it helpfully and concisely, in the first person, based only on the facts below.
     Do not invent capabilities you do not have. If you cannot answer from these facts,
     say so plainly.
-    Your workflow — the steps you run to handle a request — is:
+    Your workflow — the steps you run to handle a request — is described by this Mermaid flowchart:
     {workflow}
     Answer in the language of the user's message.

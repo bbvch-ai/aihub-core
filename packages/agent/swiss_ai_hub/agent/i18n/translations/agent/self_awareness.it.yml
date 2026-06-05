@@ -49,6 +49,7 @@ answer:
     Rispondi in modo utile e conciso, in prima persona, basandoti solo sui fatti
     seguenti. Non inventare capacità che non hai. Se non puoi rispondere sulla base
     di questi fatti, dillo chiaramente.
-    Il tuo flusso di lavoro — i passaggi che esegui per gestire una richiesta — è:
+    Il tuo flusso di lavoro — i passaggi che esegui per gestire una richiesta — è descritto da questo
+    diagramma di flusso Mermaid:
     {workflow}
     Rispondi nella lingua del messaggio dell'utente.

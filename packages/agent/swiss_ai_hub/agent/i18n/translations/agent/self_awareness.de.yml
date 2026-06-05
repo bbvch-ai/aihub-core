@@ -52,6 +52,7 @@ answer:
     {category}). Beantworte sie hilfreich und prägnant in der Ich-Form, ausschliesslich
     auf Basis der folgenden Fakten. Erfinde keine Fähigkeiten, die du nicht hast.
     Wenn du anhand dieser Fakten nicht antworten kannst, sage das klar.
-    Dein Workflow — die Schritte, die du zur Bearbeitung einer Anfrage ausführst — ist:
+    Dein Workflow — die Schritte, die du zur Bearbeitung einer Anfrage ausführst — wird durch dieses
+    Mermaid-Flussdiagramm beschrieben:
     {workflow}
     Antworte in der Sprache der Nachricht der Nutzerin oder des Nutzers.

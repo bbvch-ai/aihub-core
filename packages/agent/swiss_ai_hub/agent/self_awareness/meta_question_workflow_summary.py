@@ -1,28 +1,36 @@
-from collections.abc import Callable
-
+from swiss_ai_hub.core.agents import WorkflowGraph
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.workflow import DispatchableWorkflow
+from swiss_ai_hub.core.workflow import WorkflowMermaidSerializer, WorkflowVisualizer
+
+from swiss_ai_hub.agent.agents.agent import Agent
 
 SELF_AWARENESS_STEP_NAMES: frozenset[str] = frozenset(
     {"detect_meta_question_step", "answer_meta_question_step", "stop_after_meta_answer_step"}
 )
 
 
-def summarize_workflow_for_meta_answer(steps: list[Callable], t: LocaleHandler) -> str:
+def summarize_workflow_for_meta_answer(agent_type: type[Agent], t: LocaleHandler) -> str:
     """
-    A human-readable list of an agent's own workflow steps, used to ground meta answers.
+    A Mermaid flowchart of an agent's own workflow, used to ground meta answers.
 
-    The self-awareness steps themselves are skipped so the agent describes its actual work, not the
+    The self-awareness steps themselves are pruned so the agent describes its actual work, not the
     machinery that answers questions about it.
     """
-    lines: list[str] = []
-    for workflow_step in steps:
-        if workflow_step.__name__ in SELF_AWARENESS_STEP_NAMES:
-            continue
-        name = getattr(workflow_step, DispatchableWorkflow.STEP_NAME_ANNOTATION, None)
-        if name is None:
-            continue
-        description = getattr(workflow_step, DispatchableWorkflow.STEP_DESCRIPTION_ANNOTATION, None)
-        detail = f": {t.extract(description)}" if description is not None else ""
-        lines.append(f"- {t.extract(name)}{detail}")
-    return "\n".join(lines)
+    graph = WorkflowVisualizer(agent=agent_type, locale=t.locale).build()
+    return WorkflowMermaidSerializer(_without_self_awareness_steps(graph)).serialize()
+
+
+def _without_self_awareness_steps(graph: WorkflowGraph) -> WorkflowGraph:
+    """Drop the self-awareness step nodes and any terminal node left dangling once they are gone."""
+    links = [
+        link
+        for link in graph.links
+        if link.source not in SELF_AWARENESS_STEP_NAMES and link.target not in SELF_AWARENESS_STEP_NAMES
+    ]
+    connected = {link.source for link in links} | {link.target for link in links}
+    nodes = [
+        node
+        for node in graph.nodes
+        if node.id not in SELF_AWARENESS_STEP_NAMES and (node.type == "step" or node.id in connected)
+    ]
+    return WorkflowGraph(nodes=nodes, links=links)

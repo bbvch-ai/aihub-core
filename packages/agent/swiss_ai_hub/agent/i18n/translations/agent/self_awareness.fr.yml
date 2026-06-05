@@ -51,6 +51,7 @@ answer:
     Répondez-y de manière utile et concise, à la première personne, uniquement sur
     la base des faits ci-dessous. N'inventez pas de capacités que vous n'avez pas.
     Si vous ne pouvez pas répondre à partir de ces faits, dites-le clairement.
-    Votre flux de travail — les étapes que vous exécutez pour traiter une demande — est :
+    Votre flux de travail — les étapes que vous exécutez pour traiter une demande — est décrit par ce
+    diagramme de flux Mermaid :
     {workflow}
     Répondez dans la langue du message de l'utilisateur.

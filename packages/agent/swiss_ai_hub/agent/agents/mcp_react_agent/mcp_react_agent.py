@@ -116,7 +116,7 @@ class McpReactAgent(Agent):
             event=event,
             agent_name=t.extract(agent_config.name),
             agent_description=t.extract(agent_config.description),
-            workflow_summary=summarize_workflow_for_meta_answer(self.get_steps(), t),
+            workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
             chat_history=user_message_event.messages,
             llm_config=agent_config.llm,
             displayer=displayer,
