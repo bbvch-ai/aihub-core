@@ -35,7 +35,14 @@ class HealthResponse(BaseModel):
 
     status: Annotated[str, Field(description="The health status of the application.")]
     code: Annotated[int, Field(description="HTTP status code.")]
-    version: Annotated[str | None, Field(default=None, description="Running service version.")]
+    version: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Running service version. Optional so health responses from services "
+            "that do not report a version remain valid.",
+        ),
+    ]
     checks: Annotated[
         ApiHealthChecks | AgentHealthChecks | ProcessHealthChecks | None,
         Field(default=None, description="Individual health check results."),

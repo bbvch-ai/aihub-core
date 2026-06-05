@@ -39,6 +39,9 @@ class HealthController(Controller):
         self, *, auth: AuthHandler, route: str = "/health", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
+        # Resolved once at mount time rather than per request: health endpoints are polled
+        # constantly by liveness/readiness probes, and the version never changes at runtime.
+        self._version = AIHubSettings().VERSION
 
     def get_health(self, route: str = "/") -> Self:
         @self.router.get(route, tags=self.tags)
@@ -47,6 +50,6 @@ class HealthController(Controller):
             A simple liveness check endpoint that returns {"status": "ok"} if
             the application is running and capable of handling requests.
             """
-            return HealthResponse(status="ok", code=200, version=AIHubSettings().VERSION)
+            return HealthResponse(status="ok", code=200, version=self._version)
 
         return self

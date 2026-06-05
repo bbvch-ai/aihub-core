@@ -12,7 +12,7 @@ export const useAppVersion = defineQuery(() => {
     key: () => ['app-version', 'api'],
     staleTime: minutesToMilliseconds(60),
     query: async () => {
-      const health = await getHealth({ composable: '$fetch', baseURL: '/api/v1' })
+      const health = await getHealth({ composable: '$fetch' })
       return health.version ?? undefined
     },
   })
