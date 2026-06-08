@@ -6,7 +6,7 @@
         width="100%"
         height="100%"
         title="Open WebUI"
-        allow="microphone"
+        allow="clipboard-write 'src'; clipboard-read 'src'; microphone 'src'; camera 'src'; display-capture 'src'; fullscreen 'src'; geolocation 'src'; autoplay 'src'"
         @load="handleIframeLoad"
       />
     </div>

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/media/logo.png" alt="Swiss AI-Hub" width="120">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/logo.png" alt="Swiss AI-Hub" width="120">
 
 # Swiss AI-Hub
 
@@ -78,7 +78,7 @@ One `docker compose up` starts ~30 containers, fully integrated. Every component
 wired together.
 
 <p align="center" width="100%">
-<img src="docs/media/architecture/low_level/tier_2.png" width="100%" alt="Architecture overview">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/architecture/low_level/tier_2.png" width="100%" alt="Architecture overview">
 <em>Tier 2 architecture: every component connected, from LLM providers to data sources</em><br><br>
 </p>
 
@@ -214,7 +214,7 @@ PPTX, XLSX, and plain text. For production, connect SharePoint, OneDrive, Google
 Rclone for continuous sync.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-knowledge-demo.webp" width="80%" alt="Knowledge ingestion demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-knowledge-demo.webp" width="80%" alt="Knowledge ingestion demo">
 </p>
 
 ### Track every step of the data pipeline
@@ -223,7 +223,7 @@ Dagster provides full lineage from source document to vector embedding: which fi
 chunked, when embeddings were created, what ended up in Milvus. Automatic retry and failure handling included.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-dagster-demo.webp" width="80%" alt="Dagster pipeline demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-dagster-demo.webp" width="80%" alt="Dagster pipeline demo">
 </p>
 
 ### Create agents without writing code
@@ -234,7 +234,7 @@ and the agent goes live. One blueprint powers many profiles. An "Expert RAG Agen
 agent, legal FAQ agent, and IT support agent, each with different knowledge bases and instructions.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-create-agent-demo.webp" width="80%" alt="Agent configurator demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-create-agent-demo.webp" width="80%" alt="Agent configurator demo">
 </p>
 
 ### Ask questions grounded in your data
@@ -244,7 +244,7 @@ Every interaction is traced end-to-end in Langfuse, from the user's question thr
 generation.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-agent-interaction-demo.webp" width="80%" alt="Agent interaction demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-agent-interaction-demo.webp" width="80%" alt="Agent interaction demo">
 </p>
 
 ### Control costs and model routing
@@ -253,7 +253,7 @@ LiteLLM provides a unified dashboard for all LLM usage. Set spending limits per 
 between local and cloud models. Monitor token consumption, latency, and cost per request from a single pane.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-litellm-demo.webp" width="80%" alt="LiteLLM cost control demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-litellm-demo.webp" width="80%" alt="LiteLLM cost control demo">
 </p>
 
 ______________________________________________________________________

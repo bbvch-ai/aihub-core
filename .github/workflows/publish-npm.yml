@@ -21,6 +21,7 @@ jobs:
     name: Publish @swiss-ai-hub/web
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
+    environment: npm
     steps:
       - name: Extract version
         id: version
