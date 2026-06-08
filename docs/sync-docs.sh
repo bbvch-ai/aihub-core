@@ -24,9 +24,19 @@ mkdir -p "changelog"
 # Copy LICENSE_REPORT.md as both .en.md and .de.md (no translation needed)
 cp "../LICENSE_REPORT.md" "./licenses/index.en.md"
 cp "../LICENSE_REPORT.md" "./licenses/index.de.md"
-# Copy CHANGELOG.md as both .en.md and .de.md (no translation needed)
-cp "../CHANGELOG.md" "./changelog/index.en.md"
-cp "../CHANGELOG.md" "./changelog/index.de.md"
+# Copy CHANGELOG.md as both .en.md and .de.md (no translation needed).
+# The body is wrapped in a VitePress `v-pre` container so literal release-note
+# text — e.g. a GitHub Actions `${{ ... }}` expression — is rendered verbatim
+# instead of being parsed as a Vue interpolation, which would break the build.
+# The top-level H1 is kept OUTSIDE the container: the copy/download buttons are
+# injected right after the first <h1>, and `v-pre` would stop them from rendering.
+{
+    head -n 1 "../CHANGELOG.md"
+    printf '\n::: v-pre\n'
+    tail -n +2 "../CHANGELOG.md"
+    printf '\n:::\n'
+} > "./changelog/index.en.md"
+cp "./changelog/index.en.md" "./changelog/index.de.md"
 
 # == Root README -> Introduction page ==
 root_intro="./docs/6_code_deep_dive/1_introduction/index.en.md"
