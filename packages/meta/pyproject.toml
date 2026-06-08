@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub"
-version = "0.291.10"
+version = "0.291.12"
 description = "Meta-package that installs the full Swiss AI Hub Python SDK (core, agent, api, bot, pipeline, process)."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -23,12 +23,12 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.291.10",
-    "swiss-ai-hub-agent==0.291.10",
-    "swiss-ai-hub-api==0.291.10",
-    "swiss-ai-hub-bot==0.291.10",
-    "swiss-ai-hub-pipeline==0.291.10",
-    "swiss-ai-hub-process==0.291.10",
+    "swiss-ai-hub-core==0.291.12",
+    "swiss-ai-hub-agent==0.291.12",
+    "swiss-ai-hub-api==0.291.12",
+    "swiss-ai-hub-bot==0.291.12",
+    "swiss-ai-hub-pipeline==0.291.12",
+    "swiss-ai-hub-process==0.291.12",
 ]
 
 [project.urls]
