@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.9] - 2026-06-08 - Simplified Access Control and Enhanced Identity Provider Setup
+
+### Added
+
+- 📄 **New Identity Provider Setup Documentation**: Introduced comprehensive guides for connecting external identity
+  providers to the Swiss AI Hub via Keycloak, starting with detailed instructions for Microsoft Entra ID (Azure AD).
+- 🔐 **Azure App Registration Guide**: Provided step-by-step documentation for configuring Azure App Registrations,
+  including redirect URIs, required API permissions (`openid`, `email`, `profile`), and client secret management.
+- 👥 **Azure User and Role Management Guide**: Added clear instructions on defining and assigning `AIHubAccess`
+  (mandatory for platform login) and `AIHubSysAdmin` app roles within Azure Entra ID to control user access.
+
+### Changed
+
+- 🔑 **Updated Superuser Role Configuration**: Modified default superuser roles (`SUPERUSER_ROLES_JSON`) to explicitly
+  include `AIHubAccess` as the base role for platform usage, aligning with the refined access control model.
+- 📖 **Enhanced Authentication & Authorization Documentation**: Significantly updated the security documentation to
+  clarify the distinction between Keycloak Realm roles (`AIHubAccess`, `AIHubSysAdmin`) and platform-managed
+  tenant-scoped roles, providing a clearer understanding of the permission hierarchy.
+
+### Removed
+
+- 🗑️ **Streamlined Keycloak Realm Roles**: Deprecated and removed `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` from
+  the Keycloak realm configuration. These roles are now intended to be managed as tenant-specific roles within the
+  platform's internal access management system.
+- 🧹 **Simplified Identity Provider Mappers**: Removed corresponding identity provider mappers for the deprecated
+  `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` roles, streamlining the IdP integration process.
+
+______________________________________________________________________
+
 ## [v0.291.8] - 2026-06-08 - Streamlined Initial Navigation and Enhanced Authentication
 
 ### Added

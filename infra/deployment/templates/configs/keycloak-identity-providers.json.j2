@@ -20,15 +20,13 @@
    2. Set redirect URI: https://auth.YOUR_DOMAIN/realms/aihub/broker/azure-ad/endpoint
    3. Create client secret and copy value
    4. Grant API permissions: openid, email, profile
-   5. Define App Roles in manifest (AIHubAccess, AIHubAdmin, AIHubUser, AIHubDeveloper, AIHubSysAdmin)
+   5. Define App Roles in manifest (AIHubAccess, AIHubSysAdmin)
    6. Assign users/groups to roles in Enterprise Applications
 
    Role Mapping:
-   Azure AD App Roles are automatically mapped to Keycloak realm roles:
+   Azure AD App Roles are automatically mapped to Keycloak realm roles. Only these two
+   roles have an effect in AI-Hub; the platform reads no other realm roles for authorization:
    - Azure "AIHubAccess" → Keycloak "AIHubAccess" (REQUIRED for login)
-   - Azure "AIHubAdmin" → Keycloak "AIHubAdmin"
-   - Azure "AIHubUser" → Keycloak "AIHubUser"
-   - Azure "AIHubDeveloper" → Keycloak "AIHubDeveloper"
    - Azure "AIHubSysAdmin" → Keycloak "AIHubSysAdmin"
 
    Multi-Tenant IDP-to-Tenant Mapping (Optional, Not Default):
@@ -129,39 +127,6 @@
       "config": {
         "syncMode": "INHERIT",
         "template": "${CLAIM.preferred_username}"
-      }
-    },
-    {
-      "name": "role-mapper-admin",
-      "identityProviderAlias": "azure-ad",
-      "identityProviderMapper": "oidc-role-idp-mapper",
-      "config": {
-        "syncMode": "INHERIT",
-        "claim": "roles",
-        "claim.value": "AIHubAdmin",
-        "role": "AIHubAdmin"
-      }
-    },
-    {
-      "name": "role-mapper-user",
-      "identityProviderAlias": "azure-ad",
-      "identityProviderMapper": "oidc-role-idp-mapper",
-      "config": {
-        "syncMode": "INHERIT",
-        "claim": "roles",
-        "claim.value": "AIHubUser",
-        "role": "AIHubUser"
-      }
-    },
-    {
-      "name": "role-mapper-developer",
-      "identityProviderAlias": "azure-ad",
-      "identityProviderMapper": "oidc-role-idp-mapper",
-      "config": {
-        "syncMode": "INHERIT",
-        "claim": "roles",
-        "claim.value": "AIHubDeveloper",
-        "role": "AIHubDeveloper"
       }
     },
     {
