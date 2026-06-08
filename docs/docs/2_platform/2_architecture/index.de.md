@@ -30,5 +30,3 @@ Demnächst, wenn das LikeC4-Modell erweitert wird:
   OpenWebUI
 - **Komponenten-Interna** — L3-Komponentenansichten für jedes eigene Paket (diese werden auf den jeweiligen Paketseiten
   unter [Code Deep Dive](/de/docs/6_code_deep_dive/) zu finden sein)
-
-@joelbarmettlerUZH @mhoegger

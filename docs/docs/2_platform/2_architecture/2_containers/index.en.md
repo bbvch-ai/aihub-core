@@ -102,5 +102,3 @@ consumed mostly by OpenWebUI (as agent tools) and by operators.
 The tier views above slice the platform horizontally — by functional layer. The
 [Package-Centered Views](../5_package_views/) slice it the other way: one diagram per first-party package, centered on
 that package with all its neighbours, for developers about to work inside a specific package.
-
-@joelbarmettlerUZH @mhoegger

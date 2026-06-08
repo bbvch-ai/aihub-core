@@ -74,5 +74,3 @@ Hilfsdienste, die die Anwendungsschicht unterstützen, ohne zu ihrem Kern zu geh
 ## Paketzentrierte Ansichten
 
 Die obigen Schichtansichten unterteilen die Plattform horizontal – nach funktionaler Ebene. Die [Paketzentrierten Ansichten](../5_package_views/) unterteilen sie auf andere Weise: ein Diagramm pro Erstanbieter-Paket, zentriert auf dieses Paket mit all seinen Nachbarn, für Entwickler, die innerhalb eines bestimmten Pakets arbeiten werden.
-
-@joelbarmettlerUZH @mhoegger

@@ -25,5 +25,3 @@ Coming soon as the LikeC4 model expands:
 - **Deployment Topology** — prod deployment with per-class agent instances, OIDC middleware, host-network OpenWebUI
 - **Component Internals** — L3 component views for each first-party package (these will live on the per-package pages
   under [Code Deep Dive](../../6_code_deep_dive/))
-
-@joelbarmettlerUZH @mhoegger
