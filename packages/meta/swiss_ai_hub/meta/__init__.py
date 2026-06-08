@@ -6,4 +6,6 @@ real modules from the packages this distribution depends on (``swiss_ai_hub.core
 ``swiss_ai_hub.agent``, …).
 """
 
-__version__ = "0.291.0"
+from importlib.metadata import version
+
+__version__ = version("swiss-ai-hub")

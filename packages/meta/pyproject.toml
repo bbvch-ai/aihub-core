@@ -22,6 +22,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+# swiss-ai-hub-backup is intentionally omitted: it is AGPL-3.0, and pulling it into the
+# Apache-2.0 meta-package would propagate AGPL obligations to every consumer of `pip install
+# swiss-ai-hub`. Install it explicitly with `pip install swiss-ai-hub-backup` when needed.
 dependencies = [
     "swiss-ai-hub-core==0.291.12",
     "swiss-ai-hub-agent==0.291.12",
