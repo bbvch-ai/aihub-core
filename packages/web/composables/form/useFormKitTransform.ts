@@ -617,6 +617,37 @@ export function coerceNullableToggles(
  * `element.value` looks like; behaviour here is exercised end-to-end on agent and
  * process edit forms.
  */
+/**
+ * Seed a group field's value: leave a disabled nullable group as `null`; otherwise
+ * materialise its children's defaults (starting from the existing object when present).
+ * `coerceNullableToggles` re-nullifies disabled subtrees at submit time, so seeding a
+ * group whose toggle will end up off is safe.
+ */
+function seedGroupDefault(value: unknown, children: FormElement[]): Record<string, unknown> | null {
+  if (value === null) return null
+  const groupValue = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {}
+  return seedFormDefaults(groupValue, children)
+}
+
+/**
+ * Seed a repeater field's value: recurse into each existing item, or materialise an
+ * empty array for an untouched repeater (done here at load time rather than lazily in
+ * the render-time `:model-value` getter, which must stay pure). Any other value is
+ * returned unchanged.
+ */
+function seedRepeaterDefault(value: unknown, children: FormElement[]): unknown {
+  if (Array.isArray(value)) {
+    return value.map(item =>
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? seedFormDefaults(item as Record<string, unknown>, children)
+        : item,
+    )
+  }
+  return value === undefined ? [] : value
+}
+
 export function seedFormDefaults(
   data: Record<string, unknown>,
   elements: FormElement[],
@@ -630,29 +661,10 @@ export function seedFormDefaults(
     const value = result[name]
 
     if (formkitType === 'group') {
-      if (value === null) continue // nullable group disabled — leave as null
-      // value === undefined (or a non-object): materialise group defaults so children
-      // render with backend defaults. For nullable groups whose toggle is off,
-      // coerceNullableToggles re-nullifies the whole subtree at submit time, so seeding
-      // here is safe even when the toggle will end up disabled.
-      const groupValue = (value && typeof value === 'object' && !Array.isArray(value))
-        ? value as Record<string, unknown>
-        : {}
-      result[name] = seedFormDefaults(groupValue, children)
+      result[name] = seedGroupDefault(value, children)
     }
     else if (formkitType === 'repeater') {
-      if (Array.isArray(value)) {
-        result[name] = value.map(item =>
-          item && typeof item === 'object' && !Array.isArray(item)
-            ? seedFormDefaults(item as Record<string, unknown>, children)
-            : item,
-        )
-      }
-      // Materialise an empty array for untouched repeaters here (load time) rather
-      // than lazily inside the render-time `:model-value` getter, which must stay pure.
-      else if (value === undefined) {
-        result[name] = []
-      }
+      result[name] = seedRepeaterDefault(value, children)
     }
     else if (!(name in result) && element.value !== undefined) {
       result[name] = element.value
