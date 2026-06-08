@@ -5,6 +5,125 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.9] - 2026-06-08 - Simplified Access Control and Enhanced Identity Provider Setup
+
+### Added
+
+- 📄 **New Identity Provider Setup Documentation**: Introduced comprehensive guides for connecting external identity
+  providers to the Swiss AI Hub via Keycloak, starting with detailed instructions for Microsoft Entra ID (Azure AD).
+- 🔐 **Azure App Registration Guide**: Provided step-by-step documentation for configuring Azure App Registrations,
+  including redirect URIs, required API permissions (`openid`, `email`, `profile`), and client secret management.
+- 👥 **Azure User and Role Management Guide**: Added clear instructions on defining and assigning `AIHubAccess`
+  (mandatory for platform login) and `AIHubSysAdmin` app roles within Azure Entra ID to control user access.
+
+### Changed
+
+- 🔑 **Updated Superuser Role Configuration**: Modified default superuser roles (`SUPERUSER_ROLES_JSON`) to explicitly
+  include `AIHubAccess` as the base role for platform usage, aligning with the refined access control model.
+- 📖 **Enhanced Authentication & Authorization Documentation**: Significantly updated the security documentation to
+  clarify the distinction between Keycloak Realm roles (`AIHubAccess`, `AIHubSysAdmin`) and platform-managed
+  tenant-scoped roles, providing a clearer understanding of the permission hierarchy.
+
+### Removed
+
+- 🗑️ **Streamlined Keycloak Realm Roles**: Deprecated and removed `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` from
+  the Keycloak realm configuration. These roles are now intended to be managed as tenant-specific roles within the
+  platform's internal access management system.
+- 🧹 **Simplified Identity Provider Mappers**: Removed corresponding identity provider mappers for the deprecated
+  `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` roles, streamlining the IdP integration process.
+
+______________________________________________________________________
+
+## [v0.291.8] - 2026-06-08 - Streamlined Initial Navigation and Enhanced Authentication
+
+### Added
+
+- ✨ **Seamless Initial Navigation:** Introduced a new, dedicated middleware for the home route (`/`) to intelligently
+  determine and redirect users to their appropriate tenant, tenant selection, or previously visited page immediately
+  after login, ensuring a smoother start to their session.
+- 🚀 **Global Loading Overlay:** Implemented a full-screen loading spinner that instantly appears when the initial
+  navigation logic is resolving, eliminating content flicker and providing clear visual feedback during critical
+  redirects.
+- ⚙️ **Centralized Home Resolution State:** Added a shared state management system and client-side plugin to accurately
+  manage the global loading indicator, ensuring it correctly displays during initial route resolution and dismisses on
+  navigation completion or errors.
+
+### Changed
+
+- 🛡️ **Robust Authentication Handling:** Enhanced the authentication flow to automatically invalidate and remove
+  problematic user sessions when silent sign-in or token renewal encounters errors, improving stability and preventing
+  repeated authentication failures.
+
+### Refactor
+
+- 🧹 **Refined Initial Login Flow:** Streamlined the application's startup by relocating the logic for checking and
+  renewing user sessions from the OIDC client plugin to a global authentication middleware, allowing for more efficient
+  and non-blocking initialization.
+- ⬆️ **Modernized Homepage Implementation:** Replaced the client-side `onMounted` logic for tenant fetching and
+  redirection on the homepage with a server-side (or early client-side) middleware, significantly improving the
+  responsiveness and consistency of the initial user experience.
+
+______________________________________________________________________
+
+## [v0.291.7] - 2026-06-03 - Enhanced Model Cost Reporting and API Robustness
+
+### Added
+
+- ✨ **Introduced Granular Search Context Cost Reporting:** Added a new data transfer object
+  (`SearchContextCostPerQueryDTO`) to capture and display search context costs broken down by low, medium, and high
+  context sizes, providing more detailed pricing information.
+- 🦾 **Enhanced API Robustness for Model Information:** Implemented a new data validation mechanism that gracefully
+  handles unexpected data shapes in external model metadata feeds by logging warnings and dropping malformed fields,
+  preventing parsing failures for the entire model information.
+
+### Changed
+
+- 📊 **Updated Model Details Panel:** The **Model Details Panel** now presents search context costs with a more granular
+  breakdown (low, medium, and high context sizes), offering clearer insights into model pricing.
+- 🌍 **Localized Search Context Cost Labels:** Updated internationalization files to include specific labels for low,
+  medium, and high search context costs in various languages (English, German, French, Italian).
+- 🔄 **Revised Model Information Schema:** Modified the **`ModelInfoDTO`** to incorporate the new granular
+  `SearchContextCostPerQueryDTO` for search context costs and made the `mode` field optional, reflecting more flexible
+  model metadata.
+
+______________________________________________________________________
+
+## [v0.291.6] - 2026-06-03 - Core System Refinements and Performance Enhancements
+
+### Changed
+
+- 🚀 **Enhanced LLM Guard Performance:** Switched agent description and few-shot guards to use asynchronous structured
+  prediction, improving responsiveness and concurrency with Large Language Models.
+- ⚡️ **Improved Concurrency for Reranking Nodes:** Blocking reranking operations are now offloaded to a separate thread
+  using `asyncio.to_thread`, preventing event loop starvation and boosting application performance.
+- 📄 **Refined Error Logging:** Updated `MineruLoader` and Redis request hooks to use `logger.exception`, ensuring
+  comprehensive exception details are automatically included in logs for better debugging.
+- 🛠️ **Corrected OpenTelemetry HTTPX Instrumentation:** Ensured asynchronous HTTPX request and response hooks are
+  properly defined as coroutine functions, enabling full observability for async HTTP communications.
+
+### Refactor
+
+- 🧹 **Optimized Dispatcher Event Handling:** The `_build_event_kwargs` method in agent and process dispatchers, as well
+  as the base dispatcher, has been made synchronous, streamlining event argument construction.
+- 🔄 **Standardized Access Rule Prefixes:** Consolidated `aihub.admin` and `aihub.user` access rule prefixes into
+  dedicated constants, enhancing maintainability and clarity across authentication logic.
+- 🔑 **Centralized Authentication Error Messages:** Moved common error messages in the authentication handler to
+  constants, improving consistency and simplifying future updates.
+- ☁️ **Standardized S3 Service Error Messages:** Consolidated error messages for S3 anonymous file access service
+  operations into constants, improving consistency and maintainability.
+- ⚙️ **Refined SonarQube Configuration:** Added specific ignore rules to `sonar-project.properties` to suppress
+  `python:S1192` (duplicated string literals) warnings for known-good patterns, such as lazy imports and MongoDB query
+  syntax, reducing false positives in code quality scans.
+- 📝 **Improved RPC Success Attribute Handling:** Standardized the `rpc.success` attribute for NATS requester tracing
+  using a dedicated constant.
+- 📚 **Improved Test Mock Clarity:** Added `noqa` comments to asynchronous mock methods in authentication utilities and
+  Milvus vector store tests to explicitly state why they remain async for testing purposes, improving code clarity for
+  linters.
+- 🧹 **Minor Python Idiom Improvements:** Updated set creation from `set(generator_expression)` to `{comprehension}` in
+  `base_event` and `dispatchable_workflow` for more idiomatic Python.
+
+______________________________________________________________________
+
 ## [v0.291.5] - 2026-06-02 - Enhanced FormKit Data Handling for Stability
 
 ### Changed

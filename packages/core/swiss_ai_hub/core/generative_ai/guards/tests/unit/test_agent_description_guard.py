@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from llama_index.core import PromptTemplate
@@ -17,7 +17,9 @@ scenarios("./features/agent_description_guard.feature")
 def llm():
     with patch("llama_index.core.llms.llm.LLM", new_callable=Mock) as mock_llm:
         mock_llm_instance = mock_llm.return_value
-        mock_llm_instance.structured_predict.return_value = GuardResult(reasoning="Expected reasoning", success=True)
+        mock_llm_instance.astructured_predict = AsyncMock(
+            return_value=GuardResult(reasoning="Expected reasoning", success=True)
+        )
         yield mock_llm_instance
 
 
@@ -60,8 +62,8 @@ async def _(agent_description, llm, locale_handler, user_query, messages):
 
 @then("structured_predict should be called", target_fixture="call_args")
 def _(llm):
-    llm.structured_predict.assert_called()
-    call_args = llm.structured_predict.call_args
+    llm.astructured_predict.assert_called()
+    call_args = llm.astructured_predict.call_args
     return call_args
 
 

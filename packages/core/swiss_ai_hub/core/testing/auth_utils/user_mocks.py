@@ -89,26 +89,30 @@ def _build_fake_admin() -> MagicMock:
         },
     )
 
-    async def a_get_user(user_id: str) -> dict:
+    # The five mocks below mirror real `async def` methods on python-keycloak's
+    # KeycloakAdmin. They're plugged into `AsyncMock(side_effect=...)` below, which
+    # would also accept sync callables — but keeping them async mirrors the signatures
+    # of the originals they stand in for. Returning canned values requires no real await.
+    async def a_get_user(user_id: str) -> dict:  # noqa: S7503
         return users.setdefault(user_id, _default_user(user_id))
 
-    async def a_get_users(query: dict | None = None) -> list[dict]:
+    async def a_get_users(query: dict | None = None) -> list[dict]:  # noqa: S7503
         if query and "email" in query:
             return [u for u in users.values() if u.get("email") == query["email"]]
         return list(users.values())
 
-    async def a_create_user(payload: dict, exist_ok: bool = True) -> str:
+    async def a_create_user(payload: dict, exist_ok: bool = True) -> str:  # noqa: S7503
         user_id = payload.get("id") or TEST_USER_OID
         users.setdefault(user_id, _default_user(user_id))
         return user_id
 
-    async def a_update_user(user_id: str, payload: dict) -> None:
+    async def a_update_user(user_id: str, payload: dict) -> None:  # noqa: S7503
         existing = users.setdefault(user_id, _default_user(user_id))
         existing.update(payload)
         if "attributes" in payload:
             existing["attributes"] = dict(payload["attributes"])
 
-    async def a_get_user_groups(user_id: str) -> list[dict]:
+    async def a_get_user_groups(user_id: str) -> list[dict]:  # noqa: S7503
         """Returns the user's Keycloak groups, derived from ``UserTenantRoleEntity`` rows.
 
         Tests assert "user X is a member of tenant Y" by creating a role entity row;
