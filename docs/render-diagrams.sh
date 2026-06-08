@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Renders each page of media/architecture/architecture.drawio to an SVG
-# using the dark theme. Page names (e.g. "high_level/tier_1") are used
-# verbatim as the output path under media/architecture/ — this is how
-# the drawio source and the committed SVGs are kept from diverging.
+# Renders each page of media/architecture/architecture.drawio to BOTH an SVG
+# and a PNG. Page names (e.g. "high_level/tier_1") are used verbatim as the
+# output path under media/architecture/ — this is how the drawio source and
+# the committed images are kept from diverging.
 #
-# SVG (not PNG) so the docs site's Outfit font is used at render time,
-# and so the image stays sharp at any zoom level.
+# - SVG (dark theme, transparent, Outfit font embedded): used by the docs site,
+#   which renders SVG natively and stays sharp at any zoom level.
+# - PNG (default theme, scale 2, branded background baked in): used by the
+#   READMEs shown on GitHub and PyPI/npm. Those surfaces fetch images via
+#   raw.githubusercontent.com, which serves .svg as text/plain — so an <img>
+#   pointing at a raw SVG renders broken. PNG is served as image/png and works.
 #
 # Run manually after editing the .drawio file:
 #   pnpm run docs:render-diagrams
@@ -57,11 +61,12 @@ echo "🎨 Rendering ${#PAGES[@]} pages from architecture.drawio..."
 LOG_FILTER='dbus|CONSOLE|sandbox_linux|gbm_support|viz/service|bluetooth|Floss manager|gpu/ipc'
 for i in "${!PAGES[@]}"; do
   PAGE="${PAGES[$i]}"
-  OUTPUT_FILE="${ARCH_DIR}/${PAGE}.svg"
+  OUTPUT_SVG="${ARCH_DIR}/${PAGE}.svg"
+  OUTPUT_PNG="${ARCH_DIR}/${PAGE}.png"
   PAGE_INDEX=$((i + 1))  # drawio CLI is 1-based
-  mkdir -p "$(dirname "${OUTPUT_FILE}")"
-  rm -f "${OUTPUT_FILE}"
-  echo "  [${PAGE_INDEX}] ${PAGE} → media/architecture/${PAGE}.svg"
+  mkdir -p "$(dirname "${OUTPUT_SVG}")"
+  rm -f "${OUTPUT_SVG}" "${OUTPUT_PNG}"
+  echo "  [${PAGE_INDEX}] ${PAGE} → media/architecture/${PAGE}.{svg,png}"
   docker run --rm \
     --user "$(id -u):$(id -g)" \
     --entrypoint /bin/sh \
@@ -71,10 +76,10 @@ for i in "${!PAGES[@]}"; do
     -v "${ARCH_DIR}:/data" \
     -v "${FONTS_DIR}:/fonts:ro" \
     "${IMAGE}" \
-    -c "mkdir -p /tmp/.local/share/fonts && cp -r /fonts/* /tmp/.local/share/fonts/ && fc-cache -f /tmp/.local/share/fonts >/dev/null && xvfb-run -a drawio --export --format svg --svg-theme dark --page-index ${PAGE_INDEX} --output '/data/${PAGE}.svg' --no-sandbox /data/architecture.drawio" \
+    -c "mkdir -p /tmp/.local/share/fonts && cp -r /fonts/* /tmp/.local/share/fonts/ && fc-cache -f /tmp/.local/share/fonts >/dev/null && xvfb-run -a drawio --export --format svg --svg-theme dark --page-index ${PAGE_INDEX} --output '/data/${PAGE}.svg' --no-sandbox /data/architecture.drawio && xvfb-run -a drawio --export --format png --scale 2 --page-index ${PAGE_INDEX} --output '/data/${PAGE}.png' --no-sandbox /data/architecture.drawio" \
     2>&1 | grep -vE "${LOG_FILTER}" || true
-  if [ ! -s "${OUTPUT_FILE}" ]; then
-    echo "❌ Failed to render page ${PAGE_INDEX} '${PAGE}' — no output produced." >&2
+  if [ ! -s "${OUTPUT_SVG}" ] || [ ! -s "${OUTPUT_PNG}" ]; then
+    echo "❌ Failed to render page ${PAGE_INDEX} '${PAGE}' — SVG or PNG missing." >&2
     exit 1
   fi
 done
@@ -110,4 +115,4 @@ for svg_path in sorted(arch_dir.rglob("*.svg")):
     print(f"  {svg_path.relative_to(arch_dir)}")
 PY
 
-echo "✅ Done. Rendered ${#PAGES[@]} pages."
+echo "✅ Done. Rendered ${#PAGES[@]} pages (SVG + PNG)."

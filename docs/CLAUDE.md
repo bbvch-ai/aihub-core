@@ -168,10 +168,10 @@ Apply the design principles from the `likec4-dsl` skill, especially:
 - **Honest self-criticism**: open the rendered diagram in the dev server before declaring a change done. If labels are
   squashed or edges tangled, fix it.
 - **Icons + tier colours**: every container carries a tech/`bootstrap:` icon and a tier colour (app = bbv red, data =
-  slate, llm = blue, eventing = amber, identity/edge = indigo, observability = green, utility = gray, external = muted).
-  See the skill's "Icons, colour, and relationship styling" section for the full convention. Note: the `<likec4-view>`
-  webcomponent can't render a notation legend, so the encoding is conveyed by icons/colours/shapes themselves rather
-  than an on-page key.
+  slate, llm = secondary (renders blue), eventing = amber, identity/edge = indigo, observability = green, utility =
+  gray, external = muted). See the skill's "Icons, colour, and relationship styling" section for the full convention.
+  Note: the `<likec4-view>` webcomponent can't render a notation legend, so the encoding is conveyed by
+  icons/colours/shapes themselves rather than an on-page key.
 
 ### Connectivity research subagent
 
