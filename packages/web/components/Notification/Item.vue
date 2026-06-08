@@ -1,8 +1,7 @@
 <template>
-  <div
+  <li
     class="flex cursor-pointer items-start gap-4 border-b border-surface-100 p-4 transition-colors duration-200 hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800"
     :class="notification.done ? 'opacity-40' : ''"
-    role="listitem"
   >
     <Checkbox
       v-if="showCheckbox"
@@ -20,13 +19,10 @@
     </div>
     <div class="min-w-0 grow">
       <div class="flex items-start justify-between gap-2">
-        <div
-          class="min-w-0 grow cursor-pointer rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
-          :tabindex="0"
-          role="link"
+        <button
+          type="button"
+          class="min-w-0 grow cursor-pointer rounded text-left focus:outline-none focus:ring-2 focus:ring-primary-500"
           @click="$emit('click', notification)"
-          @keydown.enter="$emit('click', notification)"
-          @keydown.space.prevent="$emit('click', notification)"
         >
           <p class="mb-1 text-xs font-light opacity-70">
             {{ timeAgoText }}
@@ -37,7 +33,7 @@
           <p class="text-xs font-light opacity-70">
             {{ notification.message }}
           </p>
-        </div>
+        </button>
 
         <Button
           :label="t('notification.view_button')"
@@ -50,7 +46,7 @@
         />
       </div>
     </div>
-  </div>
+  </li>
 </template>
 
 <script setup lang="ts">

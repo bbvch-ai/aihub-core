@@ -9,12 +9,16 @@
   >
     <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">
+        <label
+          for="namespace-database-select"
+          class="text-sm font-medium"
+        >
           {{ t('knowledge.form.database.label') }}
           <span class="ml-1 text-xs text-red-500">*</span>
         </label>
         <Dropdown
           v-model="selectedDatabase"
+          input-id="namespace-database-select"
           :options="databaseOptions"
           option-label="displayName"
           option-value="name"
@@ -26,12 +30,16 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">
+        <label
+          for="namespace-name-input"
+          class="text-sm font-medium"
+        >
           {{ t('knowledge.form.folder_name.label') }}
           <span class="ml-1 text-xs text-red-500">*</span>
         </label>
         <InputText
           v-model="name"
+          input-id="namespace-name-input"
           :placeholder="t('knowledge.form.folder_name.placeholder')"
           :class="{ 'p-invalid': error || nameValidationError }"
           :disabled="isCreating"
@@ -47,12 +55,16 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">
+        <label
+          for="namespace-display-name-input"
+          class="text-sm font-medium"
+        >
           {{ t('knowledge.form.display_name.label') }}
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
         <InputText
           v-model="displayName"
+          input-id="namespace-display-name-input"
           :placeholder="t('knowledge.form.display_name.placeholder')"
           :disabled="isCreating"
         />
@@ -60,12 +72,16 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">
+        <label
+          for="namespace-description-textarea"
+          class="text-sm font-medium"
+        >
           {{ t('knowledge.form.description.label') }}
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
         <Textarea
           v-model="description"
+          input-id="namespace-description-textarea"
           :placeholder="t('knowledge.form.description.placeholder')"
           :disabled="isCreating"
           rows="3"

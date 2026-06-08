@@ -44,7 +44,7 @@ async def agent_description_guard(
     if not llm.metadata.is_function_calling_model:
         llm_kwargs["tool_choice"] = NOT_GIVEN
 
-    result = llm.structured_predict(
+    result = await llm.astructured_predict(
         guard_result_factory(t),
         prompt,
         llm_kwargs=llm_kwargs,

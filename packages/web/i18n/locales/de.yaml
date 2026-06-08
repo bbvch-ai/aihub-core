@@ -39,7 +39,9 @@ models:
     outputCostAbove128k: Output-Kosten (über 128K)
     outputCostAbove200k: Output-Kosten (über 200K)
     imageCost: Bild-Kosten
-    searchContextCost: Suchkontext-Kosten
+    searchContextCostLow: Suchkontext-Kosten (Niedrig)
+    searchContextCostMedium: Suchkontext-Kosten (Mittel)
+    searchContextCostHigh: Suchkontext-Kosten (Hoch)
     rateLimits: Rate Limits
     tokensPerMinute: Token pro Minute
     requestsPerMinute: Anfragen pro Minute
@@ -90,6 +92,14 @@ user:
   title: Benutzer
   logout: Abmelden
   language: Sprache
+  role_chips:
+    no_roles: Keine Rollen zugewiesen
+    assign: Rolle zuweisen
+    revoke: Entziehen
+    revoke_confirm_header: Rolle entziehen
+    revoke_confirm_message: Soll die Rolle "{role}" diesem Benutzer entzogen werden?
+    assigned_toast: Rolle "{role}" an {user} zugewiesen
+    revoked_toast: Rolle "{role}" von {user} entzogen
   list:
     name: Name
     email: E-Mail

@@ -85,7 +85,7 @@ class RoleEntity(Document):
             tenant_id=tenant_id,
         ).only("name")
 
-        return list(set(role.name for role in existing_roles_query))
+        return list({role.name for role in existing_roles_query})
 
     @classmethod
     @trace_fn

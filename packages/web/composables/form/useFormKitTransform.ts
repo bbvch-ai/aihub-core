@@ -25,28 +25,26 @@ export interface CategorizedElements {
 export type FormElement = Record<string, unknown>
 
 /**
- * Gets a nested value from an object using a dot-separated path.
- * Creates intermediate objects if they don't exist.
+ * Reads a nested array from an object using a dot-separated path. Pure read: never
+ * mutates `obj` (it is called from a render-time `:model-value` getter, where a write
+ * into reactive form data would trigger a recursive render loop). Returns an empty array
+ * when any path segment is missing or the value is not an array.
  */
 export function getNestedValue(
   obj: Record<string, unknown>,
   path: string,
 ): Record<string, unknown>[] {
   const parts = path.split('.')
-  let current: Record<string, unknown> = obj
+  let current: unknown = obj
 
   for (let i = 0; i < parts.length - 1; i++) {
-    const key = parts[i]
-    current[key] ??= {}
-    current = current[key] as Record<string, unknown>
+    if (!current || typeof current !== 'object') return []
+    current = (current as Record<string, unknown>)[parts[i]]
   }
 
-  const lastKey = parts[parts.length - 1]
-  if (!Array.isArray(current[lastKey])) {
-    current[lastKey] = []
-  }
-
-  return current[lastKey] as Record<string, unknown>[]
+  if (!current || typeof current !== 'object') return []
+  const value = (current as Record<string, unknown>)[parts.at(-1)!]
+  return Array.isArray(value) ? value as Record<string, unknown>[] : []
 }
 
 /**
@@ -619,6 +617,37 @@ export function coerceNullableToggles(
  * `element.value` looks like; behaviour here is exercised end-to-end on agent and
  * process edit forms.
  */
+/**
+ * Seed a group field's value: leave a disabled nullable group as `null`; otherwise
+ * materialise its children's defaults (starting from the existing object when present).
+ * `coerceNullableToggles` re-nullifies disabled subtrees at submit time, so seeding a
+ * group whose toggle will end up off is safe.
+ */
+function seedGroupDefault(value: unknown, children: FormElement[]): Record<string, unknown> | null {
+  if (value === null) return null
+  const groupValue = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {}
+  return seedFormDefaults(groupValue, children)
+}
+
+/**
+ * Seed a repeater field's value: recurse into each existing item, or materialise an
+ * empty array for an untouched repeater (done here at load time rather than lazily in
+ * the render-time `:model-value` getter, which must stay pure). Any other value is
+ * returned unchanged.
+ */
+function seedRepeaterDefault(value: unknown, children: FormElement[]): unknown {
+  if (Array.isArray(value)) {
+    return value.map(item =>
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? seedFormDefaults(item as Record<string, unknown>, children)
+        : item,
+    )
+  }
+  return value === undefined ? [] : value
+}
+
 export function seedFormDefaults(
   data: Record<string, unknown>,
   elements: FormElement[],
@@ -632,22 +661,10 @@ export function seedFormDefaults(
     const value = result[name]
 
     if (formkitType === 'group') {
-      if (value === null) continue // nullable group disabled — leave as null
-      // value === undefined (or a non-object): materialise group defaults so children
-      // render with backend defaults. For nullable groups whose toggle is off,
-      // coerceNullableToggles re-nullifies the whole subtree at submit time, so seeding
-      // here is safe even when the toggle will end up disabled.
-      const groupValue = (value && typeof value === 'object' && !Array.isArray(value))
-        ? value as Record<string, unknown>
-        : {}
-      result[name] = seedFormDefaults(groupValue, children)
+      result[name] = seedGroupDefault(value, children)
     }
-    else if (formkitType === 'repeater' && Array.isArray(value)) {
-      result[name] = value.map(item =>
-        item && typeof item === 'object' && !Array.isArray(item)
-          ? seedFormDefaults(item as Record<string, unknown>, children)
-          : item,
-      )
+    else if (formkitType === 'repeater') {
+      result[name] = seedRepeaterDefault(value, children)
     }
     else if (!(name in result) && element.value !== undefined) {
       result[name] = element.value

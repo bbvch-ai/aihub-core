@@ -83,12 +83,14 @@ proved fragile — the inherited `create_app` builds an MCP server and the overr
 than in isolation. Inheriting a runner whose entire lifespan exists to wire
 NATS/Milvus/Redis/S3/WebSocket/discovery/provisioners, only to suppress all of it, was the wrong abstraction.
 
-`SysadminApiRunner` builds a plain `FastAPI` app mounted under `/api/v1` via Starlette, with CORS + `I18nMiddleware`,
-and a `mount()` that matches `Controller.mount(app, runner)`. It does **not**:
+`SysadminApiRunner` builds a plain `FastAPI` app mounted under `/api/v1` via Starlette, with CORS + `I18nMiddleware`. It
+calls `OpenApiSchemaService.inject_tenant_id_into_openapi` (shared with `ApiRunner` via `packages/core`) so re-mounted
+`TenantScopedController` routes get their `{tenant_id}` path parameter documented — without that hook, sysadmin-web's
+generated SDK would type tenant-scoped paths as `path?: never` even though the URL template still contains
+`{tenant_id}`, and rely on HeyAPI's loose runtime placeholder substitution to work at all. `mount()` matches
+`Controller.mount(app, runner)`. It does **not**:
 
 - build an MCP server (sysadmin-api has no MCP need)
-- inject `tenant_id` into the OpenAPI schema (sysadmin-api inherits route shapes from re-mounted controllers — both
-  tenant-scoped routes from `packages/api` and global routes from `sysadmin-api` itself coexist)
 
 **Lifespan:** MongoDB + NATS + Redis + AccessChangeHook (with an OpenWebuiProvisioner instance). The closure in
 `create_app()` captures the inner FastAPI app and stores `app.state.nc` + `app.state.redis` so the standard FastAPI deps

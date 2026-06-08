@@ -117,6 +117,18 @@ export type ApiHealthChecks = {
 };
 
 /**
+ * AssignRoleRequest
+ */
+export type AssignRoleRequest = {
+  /**
+   * Role Name
+   *
+   * Name of the tenant role to assign to the user.
+   */
+  role_name: string;
+};
+
+/**
  * AuthProviderResponse
  *
  * Represents a single identity provider available for login.
@@ -970,7 +982,14 @@ export type UpdateTenantMetadataResponse =
 
 export type GetMyIdentityData = {
   body?: never;
-  path?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
   query?: never;
   url: "/{tenant_id}/my-account/identity";
 };
@@ -988,6 +1007,12 @@ export type GetMyIdentityResponse =
 export type GetUserData = {
   body?: never;
   path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
     /**
      * User Id
      *
@@ -1019,7 +1044,14 @@ export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
 export type GetUsersData = {
   body?: never;
-  path?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
   query?: {
     /**
      * Page Number
@@ -1055,9 +1087,101 @@ export type GetUsersResponses = {
 
 export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
 
+export type AssignRoleData = {
+  body: AssignRoleRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * User Id
+     *
+     * The user's unique identifier (OID).
+     */
+    user_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/users/{user_id}/roles";
+};
+
+export type AssignRoleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type AssignRoleError = AssignRoleErrors[keyof AssignRoleErrors];
+
+export type AssignRoleResponses = {
+  /**
+   * Response Assign Role  Tenant Id  Users  User Id  Roles Post
+   *
+   * Successful Response
+   */
+  201: Array<string>;
+};
+
+export type AssignRoleResponse = AssignRoleResponses[keyof AssignRoleResponses];
+
+export type RevokeRoleData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * User Id
+     *
+     * The user's unique identifier (OID).
+     */
+    user_id: string;
+    /**
+     * Role Name
+     *
+     * Name of the role to revoke from the user.
+     */
+    role_name: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/users/{user_id}/roles/{role_name}";
+};
+
+export type RevokeRoleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type RevokeRoleError = RevokeRoleErrors[keyof RevokeRoleErrors];
+
+export type RevokeRoleResponses = {
+  /**
+   * Response Revoke Role  Tenant Id  Users  User Id  Roles  Role Name  Delete
+   *
+   * Successful Response
+   */
+  200: Array<string>;
+};
+
+export type RevokeRoleResponse = RevokeRoleResponses[keyof RevokeRoleResponses];
+
 export type DeleteRoleData = {
   body?: never;
   path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
     /**
      * Role Id
      */
@@ -1090,6 +1214,12 @@ export type GetRoleData = {
   body?: never;
   path: {
     /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
      * Role Id
      */
     role_id: string;
@@ -1120,6 +1250,12 @@ export type UpdateRoleData = {
   body: UpdateRoleRequest;
   path: {
     /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
      * Role Id
      */
     role_id: string;
@@ -1148,7 +1284,14 @@ export type UpdateRoleResponse = UpdateRoleResponses[keyof UpdateRoleResponses];
 
 export type GetRolesData = {
   body?: never;
-  path?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
   query?: never;
   url: "/{tenant_id}/roles/";
 };
@@ -1166,7 +1309,14 @@ export type GetRolesResponse = GetRolesResponses[keyof GetRolesResponses];
 
 export type CreateRoleData = {
   body: CreateRoleRequest;
-  path?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
   query?: never;
   url: "/{tenant_id}/roles/";
 };

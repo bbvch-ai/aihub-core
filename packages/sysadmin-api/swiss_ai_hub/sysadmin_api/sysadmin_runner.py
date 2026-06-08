@@ -15,6 +15,7 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, NatsS
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
 from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.runners import OpenApiSchemaService
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,23 @@ class SysadminApiRunner:
         # for endpoints that declare it (currently dormant on sysadmin-api, but
         # any mounted ``packages/api`` controller using ``use_locale`` works).
         self._api_app.add_middleware(I18nMiddleware)
+
+        # Match ApiRunner: tenant-scoped controllers mounted here keep their
+        # ``/{tenant_id}/...`` URL prefix from ``TenantScopedController``. FastAPI
+        # only documents params declared on the endpoint function, not ones that
+        # come from the router prefix, so without this post-processor the
+        # generated SDK on sysadmin-web is missing ``tenant_id`` from every
+        # tenant-scoped path type.
+        original_openapi = self._api_app.openapi
+
+        def custom_openapi() -> dict:
+            if self._api_app.openapi_schema:
+                return self._api_app.openapi_schema
+            schema = original_openapi()
+            self._api_app.openapi_schema = OpenApiSchemaService.inject_tenant_id_into_openapi(schema)
+            return self._api_app.openapi_schema
+
+        self._api_app.openapi = custom_openapi  # type: ignore[method-assign]
 
     def mount(self, *controllers: Controller) -> Self:
         for controller in controllers:

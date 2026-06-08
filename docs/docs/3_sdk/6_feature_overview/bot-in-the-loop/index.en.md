@@ -301,5 +301,5 @@ To implement Bot-in-the-Loop in your Swiss AI Hub deployment:
    adds value to automated processes
 
 For detailed agent integration patterns, see the
-[Expert Agents documentation](../../../2_platform/5_agents/3_expert_asking_agent/) for real-world implementation
+[Expert Agents documentation](../../../2_platform/5_agents/9_expert_coordinator_agent/) for real-world implementation
 examples, and the Swiss AI Hub Agent Developer's Guide for comprehensive workflow integration instructions.

@@ -58,6 +58,6 @@ const toNavItem = (navItem: NavItem | null) => {
 }
 
 const activeNavItem = computed<NavItem | undefined>(() => {
-  return navItems.value?.filter(navItem => navItem.isActive())[0]
+  return navItems.value?.find(navItem => navItem.isActive())
 })
 </script>

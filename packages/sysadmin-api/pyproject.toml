@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-sysadmin-api"
-version = "0.290.1"
+version = "0.292.0"
 description = "Swiss AI Hub system administration plane (multi-tenant management API)"
 requires-python = ">=3.13, <3.14"
 authors = [

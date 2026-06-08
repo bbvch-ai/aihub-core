@@ -1,7 +1,7 @@
 [project]
 name = "swiss-ai-hub-agent"
-version = "0.290.1"
-description = "agents core"
+version = "0.292.0"
+description = "Swiss AI Hub Agent SDK: build transparent, workflow-based, event-driven AI agents."
 requires-python = ">=3.13, <3.14"
 authors = [
     { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
@@ -11,9 +11,19 @@ authors = [
     { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
 license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
-    "swiss-ai-hub-core",
+    "swiss-ai-hub-core==0.292.0",
     "fastmcp>=3.0.0",
     "llama-index-llms-openai>=0.6.12",
     "llama-index-llms-azure-openai>=0.4.2",
@@ -25,6 +35,12 @@ dev = [
     "matplotlib>=3.10.1",
     "seaborn>=0.13.2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/bbvch-ai/aihub-core"
+Repository = "https://github.com/bbvch-ai/aihub-core"
+Documentation = "https://bbvch-ai.github.io/aihub-core/"
+Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]
 requires = ["uv_build>=0.10.4,<0.11.0"]

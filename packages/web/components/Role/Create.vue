@@ -53,7 +53,3 @@ const save = async () => {
   emit('close')
 }
 </script>
-
-<style scoped>
-
-</style>

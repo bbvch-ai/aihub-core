@@ -5,6 +5,613 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.292.0] - 2026-06-08 - Streamlined Python Distribution: PyPI Launch and Enhanced Documentation
+
+### Added
+
+- 🚀 **PyPI Publishing Workflow:** Introduced a new automated GitHub Actions workflow for building and publishing all
+  public Python SDK packages to PyPI, enabling wider distribution and easier installation.
+- 🔐 **Distribution Artifact Validation:** Added a new Python script (`check_dist.py`) to enforce namespace integrity,
+  prevent secret leaks, and flag unexpectedly large files within PyPI packages, significantly enhancing release security
+  and quality.
+- 📦 **`swiss-ai-hub` Meta-Package:** A new meta-package, `swiss-ai-hub`, has been added to simplify the installation of
+  the entire Swiss AI Hub Python SDK with a single command.
+- 📄 **Package License Files:** Explicit `LICENSE` files have been added to each Python package (`agent`, `api`, `bot`,
+  `core`, `meta`, `pipeline`, `process`), ensuring clear license compliance for distributed artifacts (Apache-2.0 for
+  most, AGPL-3.0-or-later for `backup`).
+
+### Changed
+
+- 📝 **Comprehensive Package READMEs:** The `README.md` files for all Python SDK packages have been significantly
+  expanded and improved to provide detailed purpose, installation, usage, development, and production guidance, tailored
+  for PyPI consumers.
+- ⚙️ **Standardized PyPI Metadata:** All `pyproject.toml` files across the Python SDK packages have been enhanced with
+  detailed descriptions, relevant PyPI classifiers, and comprehensive project URLs (Homepage, Repository, Documentation,
+  Issues) for improved discoverability and information.
+- 🔗 **Pinned Internal Dependencies:** Python `pyproject.toml` files now explicitly pin inter-package dependencies (e.g.,
+  `swiss-ai-hub-agent` depending on `swiss-ai-hub-core`) to their exact version, ensuring consistent and predictable
+  builds.
+- 🛠️ **Build System Configuration:** Adjusted `uv_build` settings in `pyproject.toml` for all Python packages to
+  correctly handle PEP 420 native namespaces during artifact creation, ensuring proper module loading.
+- 🌐 **Public Image URLs in README:** All image references in the root `README.md` have been updated to use absolute
+  GitHub raw URLs, guaranteeing they display correctly on external platforms like PyPI.
+- 🔒 **NPM Publish Workflow Environment:** The `publish-npm.yml` GitHub Actions workflow now uses an explicit `npm`
+  environment for enhanced security context during package publication.
+- 📖 **Environment Variables Documentation:** The formatting and readability of the environment variables reference
+  documentation have been updated for better clarity.
+- ⬆️ **Core Dependency Updates:** Several key dependencies in `swiss-ai-hub-core` have been upgraded, including
+  `mem0ai`, `langchain-neo4j`, `neo4j`, `rank-bm25`, and `starlette` (with a security floor to `1.0.1`), enhancing
+  functionality and addressing known vulnerabilities.
+- 🐍 **`jambo` Internal Dependency:** The `jambo` dependency in `swiss-ai-hub-api` has been migrated to
+  `swiss-ai-hub-jambo`, reflecting an internal packaging change for consistent namespace usage.
+- ⚡️ **Version Bump Script:** The `Makefile`'s `version-bump` target now correctly updates inter-package dependencies to
+  ensure all internal `swiss-ai-hub-*` packages reference the new version.
+
+### Refactor
+
+- 🧹 **Form Default Seeding Logic:** The web UI's `seedFormDefaults` function has been refactored by extracting dedicated
+  helper functions for handling group and repeater elements, improving code clarity and maintainability.
+
+______________________________________________________________________
+
+## [v0.291.13] - 2026-06-08 - Enhanced OpenAI Service Iframe Permissions
+
+### Changed
+
+- ⚡️ **Expanded OpenAI service iframe capabilities:** The embedded OpenAI service now supports additional browser
+  features such as **clipboard access**, **camera**, **screen capture**, **fullscreen mode**, **geolocation**, and
+  **autoplay**, alongside refined **microphone access**.
+
+______________________________________________________________________
+
+## [v0.291.12] - 2026-06-08 - Refined Skill Permissions for Enhanced Control
+
+### Changed
+
+- ⚡️ **Refined Skill Permissions:** The broad `mcp__*` skill wildcard has been replaced with a specific, enumerated list
+  of allowed `mcp` skills, enhancing control and clarity over which tools are accessible.
+
+______________________________________________________________________
+
+## [v0.291.11] - 2026-06-08 - Enhanced Changelog Documentation
+
+### Changed
+
+- ⚡️ **Improved Changelog Documentation Handling**: The documentation build script now correctly processes changelog
+  content by wrapping its body in a `v-pre` container. This change prevents build errors caused by special syntax (e.g.,
+  GitHub Actions expressions) within release notes, ensuring that content is rendered verbatim on the documentation site
+  while preserving the functionality of dynamic elements like copy/download buttons.
+
+______________________________________________________________________
+
+## [v0.291.10] - 2026-06-08 - Enhanced Security and Code Quality
+
+### Added
+
+- ✨ **Introduced CodeQL Analysis workflow:** A new GitHub Actions workflow has been added to perform automated static
+  code analysis, enhancing the security and overall code quality of the Python and JavaScript/TypeScript codebases.
+
+______________________________________________________________________
+
+## [v0.291.9] - 2026-06-08 - Simplified Access Control and Enhanced Identity Provider Setup
+
+### Added
+
+- 📄 **New Identity Provider Setup Documentation**: Introduced comprehensive guides for connecting external identity
+  providers to the Swiss AI Hub via Keycloak, starting with detailed instructions for Microsoft Entra ID (Azure AD).
+- 🔐 **Azure App Registration Guide**: Provided step-by-step documentation for configuring Azure App Registrations,
+  including redirect URIs, required API permissions (`openid`, `email`, `profile`), and client secret management.
+- 👥 **Azure User and Role Management Guide**: Added clear instructions on defining and assigning `AIHubAccess`
+  (mandatory for platform login) and `AIHubSysAdmin` app roles within Azure Entra ID to control user access.
+
+### Changed
+
+- 🔑 **Updated Superuser Role Configuration**: Modified default superuser roles (`SUPERUSER_ROLES_JSON`) to explicitly
+  include `AIHubAccess` as the base role for platform usage, aligning with the refined access control model.
+- 📖 **Enhanced Authentication & Authorization Documentation**: Significantly updated the security documentation to
+  clarify the distinction between Keycloak Realm roles (`AIHubAccess`, `AIHubSysAdmin`) and platform-managed
+  tenant-scoped roles, providing a clearer understanding of the permission hierarchy.
+
+### Removed
+
+- 🗑️ **Streamlined Keycloak Realm Roles**: Deprecated and removed `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` from
+  the Keycloak realm configuration. These roles are now intended to be managed as tenant-specific roles within the
+  platform's internal access management system.
+- 🧹 **Simplified Identity Provider Mappers**: Removed corresponding identity provider mappers for the deprecated
+  `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` roles, streamlining the IdP integration process.
+
+______________________________________________________________________
+
+## [v0.291.8] - 2026-06-08 - Streamlined Initial Navigation and Enhanced Authentication
+
+### Added
+
+- ✨ **Seamless Initial Navigation:** Introduced a new, dedicated middleware for the home route (`/`) to intelligently
+  determine and redirect users to their appropriate tenant, tenant selection, or previously visited page immediately
+  after login, ensuring a smoother start to their session.
+- 🚀 **Global Loading Overlay:** Implemented a full-screen loading spinner that instantly appears when the initial
+  navigation logic is resolving, eliminating content flicker and providing clear visual feedback during critical
+  redirects.
+- ⚙️ **Centralized Home Resolution State:** Added a shared state management system and client-side plugin to accurately
+  manage the global loading indicator, ensuring it correctly displays during initial route resolution and dismisses on
+  navigation completion or errors.
+
+### Changed
+
+- 🛡️ **Robust Authentication Handling:** Enhanced the authentication flow to automatically invalidate and remove
+  problematic user sessions when silent sign-in or token renewal encounters errors, improving stability and preventing
+  repeated authentication failures.
+
+### Refactor
+
+- 🧹 **Refined Initial Login Flow:** Streamlined the application's startup by relocating the logic for checking and
+  renewing user sessions from the OIDC client plugin to a global authentication middleware, allowing for more efficient
+  and non-blocking initialization.
+- ⬆️ **Modernized Homepage Implementation:** Replaced the client-side `onMounted` logic for tenant fetching and
+  redirection on the homepage with a server-side (or early client-side) middleware, significantly improving the
+  responsiveness and consistency of the initial user experience.
+
+______________________________________________________________________
+
+## [v0.291.7] - 2026-06-03 - Enhanced Model Cost Reporting and API Robustness
+
+### Added
+
+- ✨ **Introduced Granular Search Context Cost Reporting:** Added a new data transfer object
+  (`SearchContextCostPerQueryDTO`) to capture and display search context costs broken down by low, medium, and high
+  context sizes, providing more detailed pricing information.
+- 🦾 **Enhanced API Robustness for Model Information:** Implemented a new data validation mechanism that gracefully
+  handles unexpected data shapes in external model metadata feeds by logging warnings and dropping malformed fields,
+  preventing parsing failures for the entire model information.
+
+### Changed
+
+- 📊 **Updated Model Details Panel:** The **Model Details Panel** now presents search context costs with a more granular
+  breakdown (low, medium, and high context sizes), offering clearer insights into model pricing.
+- 🌍 **Localized Search Context Cost Labels:** Updated internationalization files to include specific labels for low,
+  medium, and high search context costs in various languages (English, German, French, Italian).
+- 🔄 **Revised Model Information Schema:** Modified the **`ModelInfoDTO`** to incorporate the new granular
+  `SearchContextCostPerQueryDTO` for search context costs and made the `mode` field optional, reflecting more flexible
+  model metadata.
+
+______________________________________________________________________
+
+## [v0.291.6] - 2026-06-03 - Core System Refinements and Performance Enhancements
+
+### Changed
+
+- 🚀 **Enhanced LLM Guard Performance:** Switched agent description and few-shot guards to use asynchronous structured
+  prediction, improving responsiveness and concurrency with Large Language Models.
+- ⚡️ **Improved Concurrency for Reranking Nodes:** Blocking reranking operations are now offloaded to a separate thread
+  using `asyncio.to_thread`, preventing event loop starvation and boosting application performance.
+- 📄 **Refined Error Logging:** Updated `MineruLoader` and Redis request hooks to use `logger.exception`, ensuring
+  comprehensive exception details are automatically included in logs for better debugging.
+- 🛠️ **Corrected OpenTelemetry HTTPX Instrumentation:** Ensured asynchronous HTTPX request and response hooks are
+  properly defined as coroutine functions, enabling full observability for async HTTP communications.
+
+### Refactor
+
+- 🧹 **Optimized Dispatcher Event Handling:** The `_build_event_kwargs` method in agent and process dispatchers, as well
+  as the base dispatcher, has been made synchronous, streamlining event argument construction.
+- 🔄 **Standardized Access Rule Prefixes:** Consolidated `aihub.admin` and `aihub.user` access rule prefixes into
+  dedicated constants, enhancing maintainability and clarity across authentication logic.
+- 🔑 **Centralized Authentication Error Messages:** Moved common error messages in the authentication handler to
+  constants, improving consistency and simplifying future updates.
+- ☁️ **Standardized S3 Service Error Messages:** Consolidated error messages for S3 anonymous file access service
+  operations into constants, improving consistency and maintainability.
+- ⚙️ **Refined SonarQube Configuration:** Added specific ignore rules to `sonar-project.properties` to suppress
+  `python:S1192` (duplicated string literals) warnings for known-good patterns, such as lazy imports and MongoDB query
+  syntax, reducing false positives in code quality scans.
+- 📝 **Improved RPC Success Attribute Handling:** Standardized the `rpc.success` attribute for NATS requester tracing
+  using a dedicated constant.
+- 📚 **Improved Test Mock Clarity:** Added `noqa` comments to asynchronous mock methods in authentication utilities and
+  Milvus vector store tests to explicitly state why they remain async for testing purposes, improving code clarity for
+  linters.
+- 🧹 **Minor Python Idiom Improvements:** Updated set creation from `set(generator_expression)` to `{comprehension}` in
+  `base_event` and `dispatchable_workflow` for more idiomatic Python.
+
+______________________________________________________________________
+
+## [v0.291.5] - 2026-06-02 - Enhanced FormKit Data Handling for Stability
+
+### Changed
+
+- 🔄 **Refined `getNestedValue` utility:** The `getNestedValue` function has been refactored to operate as a pure
+  read-only function, specifically for retrieving nested arrays. This change prevents unintended mutations of form data
+  during render-time and mitigates potential recursive render loops in reactive contexts. It now strictly returns an
+  array or an empty array if the specified path does not lead to an array.
+
+### Fixed
+
+- 🛠️ **Improved Repeater Initialization:** FormKit repeater fields now correctly materialize as an empty array during
+  form loading if their default value is `undefined`. This proactive initialization ensures a consistent array structure
+  for repeaters, preventing unexpected behavior and improving stability in reactive render contexts.
+
+______________________________________________________________________
+
+## [v0.291.4] - 2026-06-02 - Enhanced Prompt Reliability for Image Rendering
+
+### Fixed
+
+- 🐛 **Image Rendering in Prompts**: Resolved a Jinja `SecurityError` that occurred when attempting to render image URLs
+  (`pydantic.AnyUrl`) within RAG agent and guard context prompts. The rendering now correctly uses the `| string` filter
+  to safely convert URLs, ensuring images are displayed as intended across all supported languages.
+
+______________________________________________________________________
+
+## [v0.291.3] - 2026-06-02 - Stricter OAuth Role Defaults
+
+### Changed
+
+- 🔑 **Updated OAuth Allowed Roles Default:** The default `OAUTH_ALLOWED_ROLES` configuration for Open WebUI has been
+  updated across all deployment configurations. It now explicitly requires `AIHubAccess` and any configured admin roles
+  (`${OAUTH_ADMIN_ROLES_OPENWEBUI}`) instead of a wildcard (`*`), enhancing access control and improving the security
+  posture for OAuth integrations.
+
+______________________________________________________________________
+
+## [v0.291.2] - 2026-06-02 - GitHub Actions Reliability Improvement
+
+### Fixed
+
+- 🐛 **Corrected GitHub Actions `if` condition parsing:** Ensured proper evaluation of the `claude-code-review`
+  workflow's trigger conditions by explicitly wrapping the complex expression in `${{ ... }}`.
+
+______________________________________________________________________
+
+## [v0.291.1] - 2026-06-02 - Improved Code Quality Checks with SonarCloud Action v6
+
+### Changed
+
+- 🚀 **Updated SonarCloud Scan Action:** The GitHub Action for running SonarCloud code quality scans has been upgraded to
+  `v6.0.0`, enhancing reliability and ensuring compatibility with the latest SonarCloud features.
+- 📄 **Documentation Refresh:** Internal documentation (`CLAUDE.md`) was updated to reflect the new version of the
+  SonarCloud scan action used in CI/CD workflows.
+
+______________________________________________________________________
+
+## [v0.291.0] - 2026-06-02 - 🚀 Web Package Stability, Deployment, and Publishing Overhaul
+
+### Added
+
+- 🚀 **Automated npm publishing workflow**: Introduced a dedicated GitHub Actions workflow (`publish-npm.yml`) to
+  streamline and automate the publishing of the `@swiss-ai-hub/web` package to npm, utilizing OIDC trusted publishing
+  for enhanced security.
+- 🧪 **Web package build and pack verification**: Added a new GitHub Actions workflow (`verify-web-package.yml`) to
+  automatically build and validate the packaging of `@swiss-ai-hub/web` on every pull request, ensuring package
+  integrity and publishability before merge.
+
+### Changed
+
+- ⚙️ **Streamlined CI/CD branch triggering**: Modified several core CI/CD workflows (`analyze-test-pr`, `lint-pr`,
+  `semantic-pr`, `test-backup-e2e`) to exclusively trigger on the `main` branch, simplifying branching strategy and
+  pipeline execution.
+- 📄 **Enhanced web package installation and dependency management documentation**: Significantly updated the
+  `packages/web/README.md` with detailed guidance on required dependency overrides (specifically for `vue` and
+  `primevue`) to prevent common runtime issues caused by multiple framework instances.
+- 🔄 **Redesigned runtime configuration for static builds**: Introduced a new, more robust runtime configuration
+  mechanism for the `@swiss-ai-hub/web` layer, moving away from `NUXT_PUBLIC_*` environment variables to a dynamic
+  `/config.js` file generated at container startup, offering greater deployment flexibility for static single-page
+  applications.
+- 🐳 **Updated Dockerfile and deployment examples**: Provided comprehensive and up-to-date Dockerfile and
+  `nuxt.config.ts` examples in the `packages/web/README.md` that reflect the new best practices for building, serving,
+  and configuring the static web package in production environments.
+- ✨ **Integrated FormKit PrimeVue**: Added `@sfxcode/formkit-primevue` as a new dependency within the `packages/web`
+  package, enhancing its form building capabilities with PrimeVue components.
+- ⬆️ **Updated PrimeVue peer dependency**: Bumped the recommended `primevue` peer dependency version to `4.5.5` to
+  ensure compatibility and leverage the latest updates for the UI component library.
+
+______________________________________________________________________
+
+## [v0.290.13] - 2026-06-02 - OAuth Default Role Access Update
+
+### Added
+
+- ✨ **Introduced `OAUTH_ALLOWED_ROLES` configuration:** Added the `OAUTH_ALLOWED_ROLES` environment variable, set to `*`
+  by default across Docker Compose configurations, to explicitly allow all roles from the OAuth provider, simplifying
+  initial setup for role-based access.
+
+______________________________________________________________________
+
+## [v0.290.12] - 2026-06-02 - Documentation Refinements and Link Consistency
+
+### Changed
+
+- 🔗 **Updated External README Links:** Transformed relative paths for licenses and contributing guidelines in the main
+  `README.md` to absolute GitHub URLs, ensuring links function correctly across all platforms.
+- 📄 **Minor Documentation Formatting:** Improved the display of the Dagster UI URL in the `packages/backup` README for
+  better readability.
+
+### Refactor
+
+- 🧹 **Standardized Internal Documentation Paths:** Performed a comprehensive review and adjustment of numerous relative
+  links throughout the German and English documentation, enhancing navigation and consistency within the platform guides
+  and SDK.
+- 📚 **Streamlined Authentication Documentation:** Removed outdated architectural decision record (ADR) links from
+  authentication-related documentation, simplifying the content and focusing on current implementation details.
+
+______________________________________________________________________
+
+## [v0.290.11] - 2026-06-01 - Enhanced Documentation and Licensing Clarity
+
+### Added
+
+- 📄 **New API Tokens Documentation**: A dedicated guide has been added explaining how to generate, use, and revoke
+  personal API tokens for REST API authentication, including steps within the Swagger UI.
+- ✨ **Comprehensive SDK Licensing Rationale**: New documentation now details the platform's mixed-license model,
+  clarifying the rationale behind using Apache 2.0 for the backend and AGPLv3 for the user interface, and its
+  implications for proprietary agent development and community contributions.
+- 📄 **Licensing Clarifications**: The `LICENSES.md` and `README.md` files have been updated with explicit explanations
+  of the mixed-license model, emphasizing the permissive backend and copyleft UI.
+- 🔑 **UI Extensibility Licensing Note**: A new licensing note has been added to the UI extensibility documentation,
+  explicitly detailing the AGPL-3.0 implications for modifying and offering the UI as a network service.
+
+### Changed
+
+- 🔄 **Refined Ecosystem Model Documentation**: The documentation for the ecosystem model has been significantly revised
+  to provide a clearer and more in-depth explanation of the platform's collaborative approach and licensing strategy.
+- 📝 **Clarified Agent Behaviors**: Extensive updates have been made across several agent documentation pages (**Company
+  Knowledge Agent**, **Instructed Assistant**, **Teachable Assistant**, **Retrieval Agent**, **Document Navigation
+  Assistant**, and **MCP Tool Agent**) to provide clearer descriptions of their purpose, workflows, capabilities,
+  limitations, and setup instructions.
+- 📝 **Improved UI Extensibility Guide**: The UI extensibility documentation has been substantially rewritten to offer
+  more detailed insights into architectural foundations, custom service implementation, development workflows,
+  deployment, and strategic value.
+- 📝 **Updated MCP Tools Usage in SDK**: The SDK documentation for using MCP tools has been rephrased for better clarity,
+  particularly regarding connection configuration and authentication modes.
+- 📄 **Minor Documentation Updates**: Small adjustments and rephrasing have been applied to the **Web Search** and
+  **Environment Variables** documentation pages for improved readability and consistency.
+- 📝 **API Tokens Documentation Enhancement**: The English version of the API Tokens documentation has been updated to
+  include the revoke endpoint in its lifecycle table.
+
+______________________________________________________________________
+
+## [v0.290.10] - 2026-06-01 - Enhancing Project Governance: CLA and Contributor Guidelines
+
+### Added
+
+- ✨ **Contributor License Agreement (CLA):** Introduced a formal Individual Contributor License Agreement
+  (`CONTRIBUTOR_AGREEMENT.md`) to clarify intellectual property rights for contributions.
+- 🚀 **Automated CLA Checks:** Implemented a new GitHub Actions workflow (`cla.yml`) to automatically verify CLA
+  signatures for pull requests, streamlining the contribution process.
+- 📄 **Pull Request Template:** Added a standard pull request template (`pull_request_template.md`) to guide contributors
+  in providing necessary information, improving PR quality and review efficiency.
+
+### Changed
+
+- ✍️ **Updated Contributing Guidelines:** Expanded `CONTRIBUTING.md` with a new section detailing the Contributor
+  License Agreement process and instructions for signing it.
+- ⚖️ **Refined Licensing Notice:** Updated the project's `NOTICE` file to provide a more general description of the
+  mixed-license model, referencing `LICENSES.md` for full details.
+
+______________________________________________________________________
+
+## [v0.290.9] - 2026-06-01 - Next-Gen Agents and Operational Excellence
+
+### Added
+
+- 🦾 **New Agent Blueprints**: Introduced a suite of powerful, pre-built agent blueprints for diverse use cases:
+  - 📄 **Document Intelligence Assistant**: A highly configurable Retrieval-Augmented Generation (RAG) agent that answers
+    questions from internal documents with citations, replacing the previous generic RAG agent with advanced
+    capabilities including context-sufficiency guards and user/organization memory.
+  - 🤝 **Company Knowledge Agent**: An extension of the Document Intelligence Assistant that incorporates
+    human-in-the-loop for user consent and bot-in-the-loop for expert consultation, capturing human replies as
+    organizational knowledge.
+  - 🧑‍💻 **Expert Coordinator Agent**: Designed to relay questions to human experts via Slack or Teams, verify their
+    responses, and store them as reusable organizational knowledge. Channel configuration is now managed directly within
+    the agent's profile.
+  - 🧠 **Instructed Assistant**: A foundational chat assistant that follows plain-text system prompts for focused tasks
+    like drafting, translation, or style-guided responses without document retrieval.
+  - 📚 **Teachable Assistant**: An agent that learns behavior from a few examples (few-shot prompting), making it ideal
+    for tasks requiring specific response styles or formats.
+  - 🔍 **Retrieval Agent**: A headless, composable building block that performs document retrieval from a knowledge base
+    without generating an answer, providing raw context for custom workflows.
+  - 🧭 **Document Navigation Assistant**: A routing agent that intelligently identifies the most relevant knowledge
+    bases/namespaces for a user's question, confirms the selection with the user, and then delegates to a RAG agent.
+  - 🛠️ **MCP Tool Agent**: Enables agents to connect to external Model Context Protocol (MCP) servers and execute
+    actions in other systems, such as creating tickets, querying databases, or sending messages.
+- ⚙️ **Automated PostgreSQL Maintenance**: Integrated continuous weekly cleanup and monthly repack jobs for the Dagster
+  PostgreSQL database, ensuring long-term operational stability by managing log growth and freeing disk space.
+- 📄 **Comprehensive Environment Variable Reference**: Added a new, automatically generated documentation page listing
+  all environment variables, their purpose, and consumer services, clarifying setup and configuration.
+- 🌐 **Self-Hosted Web Search**: Documented the new privacy-focused web search feature, powered by a self-hosted SearXNG
+  meta-search instance for Open-WebUI, including its default search engine list and customization options.
+- 🔗 **MCP Tooling for SDK Agents**: Provided detailed SDK guidance on connecting custom agents to external MCP servers
+  and invoking their tools, including `McpClientConfig` and various authentication modes.
+- 💬 **External Tool Connectivity Overview**: Expanded the Agents overview documentation to include a new section
+  explaining how agents can interact with external systems using the Model Context Protocol (MCP).
+
+### Changed
+
+- 🔄 **Updated Documentation Structure**: Significantly reorganized the agent documentation, reordering blueprint pages
+  for improved logical flow and discoverability.
+- 📝 **Refined German Translations**: Numerous minor textual and stylistic improvements across German documentation for
+  enhanced clarity and consistency.
+- 🔑 **Clarified Tenant Deletion Rules**: Updated multi-tenancy documentation to state that any tenant can be deleted as
+  long as at least one remains, clarifying the lack of special deletion protection for the initial startup tenant.
+- ⚙️ **Standardized Startup Tenant Variables**: Renamed environment variables related to initial tenant configuration
+  (e.g., `AIHUB_DEFAULT_TENANT_NAME` to `AIHUB_STARTUP_TENANT_NAME`) for clearer semantics.
+- 🌐 **Updated Network Egress Requirements**: Removed Jina AI from the list of external service dependencies in the
+  network requirements documentation.
+- 📄 **Improved Main Page Tagline**: Updated the tagline on the main documentation landing page for better clarity and
+  impact.
+- 🔄 **Refined Docs Sync Script**: Improved the `sync-docs.sh` script to precisely control which `README.md` files are
+  synchronized into the `docs/6_code_deep_dive` section, preventing unintended content.
+
+### Removed
+
+- 🗑️ **Deprecated Agent Documentation**: Removed the outdated "RAG Agent" and "Expert Asking Agent" documentation, as
+  their functionalities have been superseded and enhanced by the new agent blueprints.
+- 🗑️ **Removed Internal Tooling Documentation**: Cleaned up documentation pages previously generated from internal
+  `.claude`, `.github/actions`, and `infra/deployment` directories, streamlining the documentation scope.
+
+______________________________________________________________________
+
+## [v0.290.8] - 2026-06-01 - Introducing a Mixed-License Model and Enhanced Contribution Guidelines
+
+### Added
+
+- 📄 **New `NOTICE` File:** Introduced a new `NOTICE` file to formally outline the project's mixed-license model,
+  providing clear attribution and a detailed license breakdown for different components.
+- 👨‍💻 **Author Information for Web Package:** Explicitly added the author (`bbv Software Services AG`) to the
+  `packages/web/package.json` metadata.
+
+### Changed
+
+- ⚖️ **Revised Project Licensing Model:** The project now operates under a mixed-license model; `packages/web` and
+  `packages/backup` are explicitly licensed under AGPL-3.0-or-later, while most other packages remain Apache-2.0 and
+  `sysadmin-*` packages are proprietary.
+- 📝 **Updated Contribution Guidelines:** The `CONTRIBUTING.md` file has been significantly updated to reflect the new
+  mixed-license model, detailing that contributions are subject to the target package's license and requiring
+  contributors to sign a Contributor License Agreement (CLA).
+- 📅 **Extended Copyright Information:** Updated the root `LICENSE` file and relevant package `README.md` files to extend
+  the copyright period to `2026` and specify `bbv Software Services AG` as the copyright holder.
+- 🔗 **Enhanced License Documentation:** `CLAUDE.md`, `LICENSES.md`, `packages/backup/README.md`, and
+  `packages/web/README.md` have been updated to accurately reflect and reference the detailed per-package licensing
+  matrix and the new `NOTICE` file, ensuring greater transparency.
+
+______________________________________________________________________
+
+## [v0.290.7] - 2026-05-29 - Introducing API Token Management and Documentation
+
+### Added
+
+- 📄 **New Documentation for API Tokens:** Added comprehensive documentation guiding users on how to generate, manage,
+  and use personal API tokens (`sk-`) for authenticating REST API requests, ensuring secure and long-lived access for
+  scripts and integrations.
+
+______________________________________________________________________
+
+## [v0.290.6] - 2026-05-29 - Backup Service Refinements and Code Quality Enhancements
+
+### Changed
+
+- 📄 **Refined SonarQube Configurations:** Updated SonarQube issue suppression rules for backup services (Neo4j, Valkey,
+  Milvus) to accurately reflect intentional design patterns and improve the clarity of code quality analysis.
+
+### Refactor
+
+- 🧹 **Optimized Regular Expressions:** Streamlined regex patterns in ClickHouse and PostgreSQL backup services by
+  adopting `\w` shorthand and the `re.ASCII` flag, enhancing readability and precision.
+- ⚡️ **Enhanced Milvus Backup Selection:** Improved the efficiency of Milvus backup selection logic by replacing
+  `sorted()[-1]` with `max()`, leading to a more direct and performant approach for identifying the latest backup.
+
+______________________________________________________________________
+
+## [v0.290.5] - 2026-05-28 - Dependency Security Enhancement
+
+### Security
+
+- 🔑 **Bolstered Dependency Security:** Introduced a minimum version constraint for the `starlette` dependency
+  (`>=1.0.1`) to mitigate a known vulnerability in earlier versions and enhance overall project security.
+
+______________________________________________________________________
+
+## [v0.290.4] - 2026-05-27 - Development Environment Update
+
+### Changed
+
+- ⚡️ **Upgraded `pnpm` Package Manager:** The monorepo's package management tool has been updated to `pnpm` version
+  `10.20.0`, enhancing dependency resolution and optimizing the overall development workflow.
+
+______________________________________________________________________
+
+## [v0.290.3] - 2026-05-27 - Platform Refinements and Developer Experience Improvements
+
+### Added
+
+- 🦾 **Backup Service SonarCloud Analysis:** Enabled SonarCloud scanning for the `backup` package to improve code quality
+  and maintainability.
+- 📄 **Backup Service SonarCloud Configuration:** Introduced `sonar-project.properties` for the `packages/backup`
+  service, configuring its code analysis.
+
+### Changed
+
+- ⚙️ **SonarCloud Rule Exclusions:** Updated SonarCloud configuration to exclude a rule
+  (`Web:ItemTagNotWithinContainerTagCheck`) for `Notification/Item.vue` to accommodate new semantic HTML structures.
+
+### Refactor
+
+- ✨ **Enhanced Accessibility for Input Components:** Improved form accessibility across various components by adding
+  explicit `input-id` attributes to input fields and `for` attributes to their corresponding labels. This includes:
+  - Agent Selector
+  - Chips Input
+  - Vector Store Input
+  - Knowledge Namespace Create and Edit Modals
+  - Memory Edit components
+  - User Settings Language Selector
+- 🚀 **Optimized Data Retrieval Performance:** Improved the efficiency of identifying active items and filtering events
+  by transitioning from array `filter` and `includes` methods to more performant `find` and `Set.has` operations,
+  notably in:
+  - Tenant details page navigation
+  - Event list filtering
+  - Agent, Knowledge document, and Thread navigation composables
+- 🧹 **Codebase Modernization and Cleanup:**
+  - Modernized asynchronous operations and error handling in core functionalities, including the application's health
+    check and authentication callbacks, by adopting `async/await` syntax.
+  - Replaced `window.location.origin` and `window.localStorage` with `globalThis` for improved cross-environment
+    compatibility in the OIDC client plugin.
+  - Standardized Node.js built-in module imports (`node:url`) in Nuxt configuration.
+  - Streamlined conditional checks with optional chaining syntax for better readability.
+  - Removed redundant or empty CSS selectors and unnecessary empty `<style scoped>` blocks from various web components
+    to reduce bundle size and improve code clarity.
+- semantic **Improved Semantic HTML Structure:** Refined the HTML structure in several components for better
+  accessibility and semantic correctness, including:
+- Converting non-interactive `<label>` elements to `<p>` tags for displaying static information (e.g., tenant ID,
+  knowledge document upload location, memory details).
+- Transforming Notification Item from a `div` to a semantically correct `<li>` element, and its interactive area from a
+  `div` with `role="link"` to a `button`, along with converting the Notification Overlay and main notifications list
+  containers to `<ul>` elements.
+
+______________________________________________________________________
+
+## [v0.290.2] - 2026-05-27 - Introducing Comprehensive User Role Management
+
+### Added
+
+- ✨ **New User Role Management API Endpoints:** Introduced `assign_role` and `revoke_role` API endpoints within the
+  `UserController`, enabling robust management of tenant-scoped user roles.
+- 🦾 **Service Layer for Role Actions:** Implemented core service and persistence logic for assigning and revoking user
+  roles, including validation for tenant membership and role existence.
+- 🧪 **Dedicated API Test Suite:** Added a comprehensive test suite to ensure the reliability and correctness of the new
+  user role assignment and revocation APIs.
+- 🖼️ **Interactive User Role Chips Component:** Introduced a new `UserRoleChips` Vue component for the frontend,
+  providing an intuitive interface to display, assign, and revoke user roles directly within user lists.
+- 🚀 **Frontend Composables for Role Management:** Developed new composables (`useAssignRoleToUser`,
+  `useRevokeRoleFromUser`) to streamline role management actions within the web application.
+- 🌐 **Internationalization Support for Role Management:** Added new localization strings across supported languages to
+  provide a consistent user experience for the new role management features.
+- ⚙️ **Centralized OpenAPI Schema Service:** Introduced `OpenApiSchemaService` in `packages/core` to centralize and
+  standardize the injection of `tenant_id` path parameters into OpenAPI schemas, improving SDK generation.
+
+### Changed
+
+- 🔄 **Integrated Role Management in User Controllers:** The `UserController` in both the main API and the Sysadmin API
+  now includes the new `assign_role` and `revoke_role` endpoints.
+- 🤝 **Shared OpenAPI Schema Generation:** Both `ApiRunner` and `SysadminApiRunner` now leverage the new
+  `OpenApiSchemaService` to ensure correct and consistent OpenAPI schema generation, especially for tenant-scoped paths.
+- 📊 **Enhanced User List Component:** Updated the `UserList` component to seamlessly integrate the new `UserRoleChips`
+  for interactive role display and management.
+- 📦 **Updated API Client SDK:** The `sysadmin-web` and `web` API client SDKs have been regenerated to include the new
+  role management methods and to accurately reflect `tenant_id` as a required path parameter for all tenant-scoped
+  endpoints.
+- ⚡️ **Broader Cache Invalidation for Roles:** Modified role-related mutations (create, update, delete) to trigger a
+  broader cache invalidation, ensuring up-to-date data after changes.
+- 📄 **Documentation Updates:** Revised `CLAUDE.md` and `README.md` in `packages/sysadmin-api` to reflect the adoption of
+  `OpenApiSchemaService` and the extended functionality of the re-mounted `UserController`.
+
+### Refactor
+
+- 🧹 **Centralized OpenAPI Schema Logic:** The logic for injecting `tenant_id` into OpenAPI schemas has been refactored
+  from `ApiRunner` into the new `OpenApiSchemaService` for better modularity and reusability across runners.
+
+### Security
+
+- 🔑 **License Change for Web Package:** The license for `packages/web` has been updated from Apache 2.0 to
+  **AGPL-3.0-or-later**.
+
+______________________________________________________________________
+
 ## [v0.290.1] - 2026-05-27 - Enhanced Dependency Stability and Configuration Flexibility
 
 ### Added

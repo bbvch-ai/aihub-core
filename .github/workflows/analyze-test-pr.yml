@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, initiative/*]
+    branches: [main]
     types: [opened, edited, synchronize, reopened, ready_for_review]
 permissions:
   contents: write
@@ -167,6 +167,9 @@ jobs:
             report_coverage: 'true'
           - folder: packages/sysadmin-web
             sonar_project_key: aihub-core_sysadmin-web
+            report_coverage: 'false'
+          - folder: packages/backup
+            sonar_project_key: aihub-core_backup-core
             report_coverage: 'false'
     steps:
       - name: SonarCloud Scan

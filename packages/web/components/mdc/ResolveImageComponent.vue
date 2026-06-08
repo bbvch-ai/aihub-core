@@ -56,7 +56,3 @@ onMounted(() => {
   fetchAndSetImageUrl()
 })
 </script>
-
-<style scoped>
-
-</style>

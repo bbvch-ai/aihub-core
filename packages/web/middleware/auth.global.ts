@@ -40,6 +40,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         await $auth.signinSilent()
       }
       catch {
+        await $auth.removeUser()
         if (import.meta.client && to.fullPath !== '/' && !isAuthPath) {
           sessionStorage.setItem(REDIRECT_KEY, to.fullPath)
         }

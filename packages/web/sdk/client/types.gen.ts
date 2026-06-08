@@ -1437,6 +1437,18 @@ export type ApiHealthChecks = {
 };
 
 /**
+ * AssignRoleRequest
+ */
+export type AssignRoleRequest = {
+  /**
+   * Role Name
+   *
+   * Name of the tenant role to assign to the user.
+   */
+  role_name: string;
+};
+
+/**
  * Audio
  *
  * Data about a previous audio response from the model.
@@ -9347,7 +9359,7 @@ export type ModelInfoDto = {
    *
    * The mode of the model (e.g., 'chat', 'completion', 'embedding')
    */
-  mode: string;
+  mode?: string | null;
   /**
    * Max Input Tokens
    *
@@ -9445,11 +9457,9 @@ export type ModelInfoDto = {
    */
   output_cost_per_image?: number | null;
   /**
-   * Search Context Cost Per Query
-   *
-   * Cost per search context query
+   * Cost per search context query by context size
    */
-  search_context_cost_per_query?: number | null;
+  search_context_cost_per_query?: SearchContextCostPerQueryDto | null;
   /**
    * Output Vector Size
    *
@@ -12394,6 +12404,32 @@ export type RunStatistics = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDto;
+};
+
+/**
+ * SearchContextCostPerQueryDTO
+ *
+ * LiteLLM reports search context cost per query broken down by context size, not as a single value.
+ */
+export type SearchContextCostPerQueryDto = {
+  /**
+   * Search Context Size Low
+   *
+   * Cost per query with low search context size
+   */
+  search_context_size_low?: number | null;
+  /**
+   * Search Context Size Medium
+   *
+   * Cost per query with medium search context size
+   */
+  search_context_size_medium?: number | null;
+  /**
+   * Search Context Size High
+   *
+   * Cost per query with high search context size
+   */
+  search_context_size_high?: number | null;
 };
 
 /**
@@ -23942,6 +23978,92 @@ export type GetUsersResponses = {
 };
 
 export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
+
+export type AssignRoleData = {
+  body: AssignRoleRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * User Id
+     *
+     * The user's unique identifier (OID).
+     */
+    user_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/users/{user_id}/roles";
+};
+
+export type AssignRoleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type AssignRoleError = AssignRoleErrors[keyof AssignRoleErrors];
+
+export type AssignRoleResponses = {
+  /**
+   * Response Assign Role  Tenant Id  Users  User Id  Roles Post
+   *
+   * Successful Response
+   */
+  201: Array<string>;
+};
+
+export type AssignRoleResponse = AssignRoleResponses[keyof AssignRoleResponses];
+
+export type RevokeRoleData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * User Id
+     *
+     * The user's unique identifier (OID).
+     */
+    user_id: string;
+    /**
+     * Role Name
+     *
+     * Name of the role to revoke from the user.
+     */
+    role_name: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/users/{user_id}/roles/{role_name}";
+};
+
+export type RevokeRoleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type RevokeRoleError = RevokeRoleErrors[keyof RevokeRoleErrors];
+
+export type RevokeRoleResponses = {
+  /**
+   * Response Revoke Role  Tenant Id  Users  User Id  Roles  Role Name  Delete
+   *
+   * Successful Response
+   */
+  200: Array<string>;
+};
+
+export type RevokeRoleResponse = RevokeRoleResponses[keyof RevokeRoleResponses];
 
 export type GetLocaleData = {
   body?: never;

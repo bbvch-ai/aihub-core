@@ -130,8 +130,8 @@ die rollenbasierte Zugriffskontrolle stoppt die Verarbeitung.
 Die Plattform implementiert Datenschutz durch Technikgestaltung (Privacy by Design) mit obligatorischer
 TLS/SSL-Verschlüsselung, standardmäßiger Zugriffsverweigerung (Default-Deny Access Control), automatischem
 Audit-Logging, 30-tägiger Löschung von Ephemeral-Daten und minimaler Datenerfassung. Details finden Sie unter
-[Authentifizierung](/de/docs/20_security/1_authentication/), [Verschlüsselung](/de/docs/20_security/5_data_encryption/)
-und [Zugriffskontrolle](/de/docs/11_access_management/).
+[Authentifizierung](../../20_security/1_authentication/), [Verschlüsselung](../../20_security/5_data_encryption/) und
+[Zugriffskontrolle](../../11_access_management/).
 
 ## Internationale Datenübermittlungen
 
@@ -143,7 +143,7 @@ personenbezogener Daten von der EU in die Schweiz ohne zusätzliche Schutzmaßna
 
 Für Organisationen, die in der Schweiz hosten, vereinfacht dies die Einhaltung sowohl der DSGVO- als auch der Schweizer
 DSG-Anforderungen. Hosting-Konfigurationen finden Sie unter
-[Deployment-Optionen](/de/docs/3_deployment_guide/1_deployment_options/).
+[Deployment-Optionen](../../3_deployment_guide/1_deployment_options/).
 
 ### Übermittlungen in andere Länder
 
