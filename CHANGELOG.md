@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.8] - 2026-06-08 - Streamlined Initial Navigation and Enhanced Authentication
+
+### Added
+
+- ✨ **Seamless Initial Navigation:** Introduced a new, dedicated middleware for the home route (`/`) to intelligently
+  determine and redirect users to their appropriate tenant, tenant selection, or previously visited page immediately
+  after login, ensuring a smoother start to their session.
+- 🚀 **Global Loading Overlay:** Implemented a full-screen loading spinner that instantly appears when the initial
+  navigation logic is resolving, eliminating content flicker and providing clear visual feedback during critical
+  redirects.
+- ⚙️ **Centralized Home Resolution State:** Added a shared state management system and client-side plugin to accurately
+  manage the global loading indicator, ensuring it correctly displays during initial route resolution and dismisses on
+  navigation completion or errors.
+
+### Changed
+
+- 🛡️ **Robust Authentication Handling:** Enhanced the authentication flow to automatically invalidate and remove
+  problematic user sessions when silent sign-in or token renewal encounters errors, improving stability and preventing
+  repeated authentication failures.
+
+### Refactor
+
+- 🧹 **Refined Initial Login Flow:** Streamlined the application's startup by relocating the logic for checking and
+  renewing user sessions from the OIDC client plugin to a global authentication middleware, allowing for more efficient
+  and non-blocking initialization.
+- ⬆️ **Modernized Homepage Implementation:** Replaced the client-side `onMounted` logic for tenant fetching and
+  redirection on the homepage with a server-side (or early client-side) middleware, significantly improving the
+  responsiveness and consistency of the initial user experience.
+
+______________________________________________________________________
+
 ## [v0.291.7] - 2026-06-03 - Enhanced Model Cost Reporting and API Robustness
 
 ### Added
