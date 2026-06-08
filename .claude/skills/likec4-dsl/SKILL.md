@@ -425,44 +425,84 @@ Return-arrow precision:
 
 ## Design Principles for Views
 
-Apply when *creating* or *editing* views (not when answering syntax questions). Lessons from real-world model construction.
+Apply when *creating* or *editing* views (not when answering syntax questions). Lessons from real-world model
+construction.
 
 ### Less per view, more views
 
 - Diagrams above ~10 boxes are unreadable regardless of grouping, shapes, or styling.
-- If a view has >10 boxes, **split it** rather than trying to make density work. Group blocks help at the margins; they don't rescue an over-budget view.
+- If a view has >10 boxes, **split it** rather than trying to make density work. Group blocks help at the margins; they
+  don't rescue an over-budget view.
 - For central elements (high in-degree + out-degree), split inbound and outbound into two views:
   ```c4
   view centered_x_outbound of project { include x -> }
   view centered_x_inbound  of project { include -> x }
   ```
-- Prefer many focused views over one comprehensive view. A reader needing the whole picture can flip between views; a reader needing one part is poorly served by a dense composite.
+- Prefer many focused views over one comprehensive view. A reader needing the whole picture can flip between views; a
+  reader needing one part is poorly served by a dense composite.
 
 ### View categories to plan for
 
 For non-trivial systems, ship multiple parallel view families:
 
-| Family | Question it answers | Audience |
-| --- | --- | --- |
-| L1 system context | What is the system and who consumes / depends on it? | Anyone, exec down to dev |
-| L2 overview | What are the major moving parts? | Architects, new devs |
-| L2 tier views | What's in this functional layer? | Architects, ops |
-| L2 centered views (per package) | If I work on package X, what L2 surface will I touch? | Onboarding devs |
-| L3 component views | What's inside container X? | Devs in that container |
-| Dynamic views | How does scenario X flow through the system? | Anyone tracing behavior |
-| Deployment views | How does the model map to running instances? | Ops, SRE |
+| Family                          | Question it answers                                   | Audience                 |
+| ------------------------------- | ----------------------------------------------------- | ------------------------ |
+| L1 system context               | What is the system and who consumes / depends on it?  | Anyone, exec down to dev |
+| L2 overview                     | What are the major moving parts?                      | Architects, new devs     |
+| L2 tier views                   | What's in this functional layer?                      | Architects, ops          |
+| L2 centered views (per package) | If I work on package X, what L2 surface will I touch? | Onboarding devs          |
+| L3 component views              | What's inside container X?                            | Devs in that container   |
+| Dynamic views                   | How does scenario X flow through the system?          | Anyone tracing behavior  |
+| Deployment views                | How does the model map to running instances?          | Ops, SRE                 |
 
 Different audiences read different families. Don't force one family to serve all.
 
 ### Visual structure tools (groups + shapes)
 
-- **Groups** in views cluster elements visually. Use when you have ~5-10 elements falling into 2-4 logical clusters. They don't compensate for too many elements.
-- **Shapes** differentiate element kinds across every view they appear in. Define at element-kind level in `specification` (e.g. `element webapp { style { shape browser } }`). Per-element shape overrides via `style { shape X }` inside a `container "Name" { … }` block are not reliably honored in current LikeC4 — prefer defining specialised kinds.
-- **Group colors** style the group's background, not the element boxes. Useful for tier coloring without overriding brand element color.
+- **Groups** in views cluster elements visually. Use when you have ~5-10 elements falling into 2-4 logical clusters.
+  They don't compensate for too many elements.
+- **Shapes** differentiate element kinds across every view they appear in. Define at element-kind level in
+  `specification` (e.g. `element webapp { style { shape browser } }`). Per-element shape overrides via
+  `style { shape X }` inside a `container "Name" { … }` block are not reliably honored in current LikeC4 — prefer
+  defining specialised kinds.
+- **Group colors** style the group's background, not the element boxes. Useful for tier coloring without overriding
+  brand element color.
+
+### Icons, colour, and relationship styling (high-impact expressiveness)
+
+The single biggest skimmability win is **icons** — a reader recognises a box by its logo before reading the label. Use
+all three channels (colour = which tier, shape + icon = what kind, line = how it talks).
+
+- **Icons.** Add `icon <pack>:<name>` as a direct element property (NOT inside `style { }`) — `icon` as a direct
+  property renders; verify the name with `npx likec4 list-icons`. Prefer real tech logos (`tech:fastapi-icon`,
+  `tech:postgresql`, `tech:nats-icon`, `tech:redis`, `tech:neo4j`, `tech:milvus`, `tech:nuxt`, `tech:traefik-proxy`,
+  `tech:docker`, `tech:opentelemetry-icon`, `tech:jupyter`, `tech:playwright`, `tech:etcd`, `tech:mongodb`). For
+  logo-less services use a meaningful `bootstrap:` glyph (`bootstrap:shield-lock`, `shield-check`, `diagram-3`, `robot`,
+  `clock-history`, `bar-chart-line`, `hdd-stack`, `graph-up-arrow`, `soundwave`, `cpu`, `file-earmark-text`, `search`,
+  `eye`). Icons ARE bundled into the webcomponent build (a `likec4:icons` step runs during codegen).
+- **Colour encodes tier**, not just brand. The Swiss AI Hub palette: Application = `aihub-red` (the brand colour =
+  "stuff we build"), Data = `slate`, LLM = `secondary` (blue), Eventing = `amber`, Identity/Edge = `indigo`,
+  Observability = `green`, Utility = `gray`, External = `muted`. Implement tier colour as a **kind default** where a
+  kind maps cleanly to one tier (e.g. `datastore` → slate, `messagebroker` → amber); for kinds that span tiers
+  (`container`), set `style { color <tier> }` per element. `icon` (direct property) and `color` (in `style`) per-element
+  DO override kind defaults reliably — unlike `shape`.
+- **Relationship kinds carry colour + line + arrowhead.** Define semantic kinds in `specification`:
+  `relationship sync { color slate; line solid; head normal }`, `async { color amber; line dotted; head vee }`,
+  `federate { color sky; line dashed; head diamond }`, `ingress { color indigo; line solid; head open }`. Apply with
+  `a -[async]-> b`. This makes flow type readable without reading labels.
+
+### No in-canvas legend in the webcomponent
+
+The generated `<likec4-view>` webcomponent only honours `view-id`, `browser`, and `dynamic-variant` attributes — it does
+NOT expose a notation/legend toggle, and the popup viewer doesn't render one either. So the visual encoding has to be
+self-explanatory through consistent icons, tier colours, and shapes rather than a rendered key. (`notation "..."` labels
+on kinds remain useful as in-source documentation even though they aren't surfaced as a panel. A markdown legend on the
+page is possible but was tried and removed — keep the encoding intuitive instead.)
 
 ### Honest self-criticism before declaring "done"
 
-If you can see in a screenshot that labels are squashed, edges tangled, or boxes overlapping — fix it before reporting the view as ready. Don't ask reviewers "does this read well?" when the answer is visibly no.
+If you can see in a screenshot that labels are squashed, edges tangled, or boxes overlapping — fix it before reporting
+the view as ready. Don't ask reviewers "does this read well?" when the answer is visibly no.
 
 ### Code-first when modelling connectivity
 
@@ -470,9 +510,12 @@ When inventorying container or component edges:
 
 - READMEs and CLAUDE.md files **lag the code**. Verify against source.
 - `docker-compose depends_on` shows boot order, not runtime integration.
-- Environment variables (e.g. `OPENAI_API_BASE_URL`) hint at integrations but don't confirm what code actually calls — custom plugins can override them.
-- For accurate edge inventories, read entry points, lifetime managers, adapter / client / publisher / subscriber files. Grep for network library imports (`httpx`, `nats`, `pymongo`, `boto3`, etc.).
-- A pre-built connectivity research subagent template (`connectivity-researcher`) exists in monorepos that follow this pattern.
+- Environment variables (e.g. `OPENAI_API_BASE_URL`) hint at integrations but don't confirm what code actually calls —
+  custom plugins can override them.
+- For accurate edge inventories, read entry points, lifetime managers, adapter / client / publisher / subscriber files.
+  Grep for network library imports (`httpx`, `nats`, `pymongo`, `boto3`, etc.).
+- A pre-built connectivity research subagent template (`connectivity-researcher`) exists in monorepos that follow this
+  pattern.
 
 ## Common Mistakes & Debugging
 

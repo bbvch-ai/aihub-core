@@ -38,36 +38,43 @@ model {
 
   identity_provider = externalSystem "Identity Provider" {
     #external
+    icon bootstrap:person-badge
     description "Customer's chosen SSO source — e.g. Entra ID, Okta, on-prem LDAP/AD, Google, GitHub. Federated into the platform via the internal Keycloak realm. Any OIDC- or SAML-capable IdP works."
   }
 
   llm_provider = externalSystem "LLM Provider" {
     #external
+    icon bootstrap:cpu
     description "Upstream model API — e.g. Swiss LLM Cloud, OpenAI, Anthropic, Azure OpenAI, Gemini, or any OpenAI-compatible endpoint. Configured per-deployment in the internal LiteLLM gateway; all tenants in a deployment share the same model roster."
   }
 
   document_source = externalSystem "Document Source" {
     #external
+    icon bootstrap:folder2-open
     description "Where customer documents live — e.g. SharePoint, OneDrive, Google Drive, Azure Blob, S3, Dropbox, FTP. Synced via Rclone (70+ supported backends) into the RAG ingestion pipeline."
   }
 
   collaboration_platform = externalSystem "Collaboration Platform" {
     #external
+    icon bootstrap:chat-dots
     description "Two-way chat surface where users converse with bots — e.g. Slack, Microsoft Teams, Webex, email. Routed via the Microsoft Agents SDK (microsoft-agents-*); the Azure Bot Service still hosts the connector endpoint."
   }
 
   observability_sink = externalSystem "Observability Sink" {
     #external
+    icon bootstrap:graph-up-arrow
     description "Customer-managed trace/log receiver — e.g. SigNoz, Grafana Cloud, Honeycomb, or any OTEL-compatible collector. The platform exports OpenTelemetry traces and structured logs."
   }
 
   notification_target = externalSystem "Notification Target" {
     #external
+    icon bootstrap:bell
     description "One-way alert destination for pipeline failures and operational alerts — e.g. Slack channels, Discord webhooks, email, PagerDuty. Routed via Apprise (80+ supported targets). Distinct integration from the Collaboration Platform even when the vendor overlaps."
   }
 
   external_mcp_tools = externalSystem "External MCP Tools" {
     #external
+    icon bootstrap:tools
     description "Customer-exposed MCP servers that agents call as tools — domain-specific APIs, internal CRMs, ticketing systems, etc. Consumed by the agent runtime's MCPClientFactory."
   }
 

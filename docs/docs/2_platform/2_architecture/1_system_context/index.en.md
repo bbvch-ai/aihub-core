@@ -6,7 +6,15 @@ description: C4 Level 1 — people and external systems that interact with Swiss
 # System Context
 
 The system context view answers the broadest question: who interacts with Swiss AI Hub, and what external systems does
-it integrate with?
+it integrate with? It is C4 Level 1 — the platform appears as a single box, with no internal detail. The point is to
+draw a clean boundary: everyone and everything that *talks to* the platform appears here; everything *inside* it is
+deferred to the [Containers](../2_containers/) view.
+
+Read it as two rings around the central system. Above are the **people** who use the platform, each in a distinct role
+with a distinct surface. Around the edges are the **external system categories** the platform integrates with — and a
+key idea of Swiss AI Hub is that these are *pluggable capabilities*, not fixed vendor choices. The platform ships
+preconfigured with sensible defaults but federates, routes, or adapts to whatever conforming implementation a customer
+brings.
 
 <likec4-view view-id="index" style="display:block;height:600px"></likec4-view>
 

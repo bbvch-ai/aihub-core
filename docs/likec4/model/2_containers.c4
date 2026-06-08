@@ -24,6 +24,7 @@ model {
     api = container "API Gateway" {
       #tier-application
       technology "FastAPI / Python"
+      icon tech:fastapi-icon
       description "Main REST + WebSocket gateway on openwebui.\${DOMAIN}/api. Tenant-scoped controllers, Process Engine embedded as a component, dynamic endpoint discovery from agent NATS broadcasts."
     }
 
@@ -31,12 +32,14 @@ model {
       #tier-application
       #proprietary
       technology "FastAPI / Python"
+      icon tech:fastapi-icon
       description "Sysadmin-gated FastAPI on sysadmin.\${DOMAIN}/api/v1 for tenant lifecycle and cross-tenant ops. Requires AIHubSysAdmin realm role on every endpoint."
     }
 
     web = webapp "Admin UI" {
       #tier-application
       technology "Nuxt 3 / Vue 3 / PrimeVue"
+      icon tech:nuxt
       description "Static SPA on \${DOMAIN}. Pinia-Colada data fetching, WebSocket display-event streaming, generated TypeScript SDK to API."
     }
 
@@ -44,30 +47,35 @@ model {
       #tier-application
       #proprietary
       technology "Nuxt 3 Layer"
+      icon tech:nuxt
       description "Static SPA on sysadmin.\${DOMAIN}. Nuxt Layer extending Admin UI codebase; deployed as a separate container with its own SDK."
     }
 
     agent_runtime = container "Agent Runtime" {
       #tier-application
       technology "Python / NATS subscriber"
+      icon tech:python
       description "Long-running NATS subscriber executing agent workflows step-by-step. Dispatcher + RunContext + StepRegistry + DependencyInjector. Deployed as 7 per-class instances in prod (see deployment view)."
     }
 
     pipeline_orchestrator = container "Pipeline Orchestrator" {
       #tier-application
       technology "Dagster + Rclone"
+      icon bootstrap:diagram-3
       description "Two-stage document ingestion + RAG embedding pipeline. Asset graph orchestrated by Dagster (webserver + daemon + grpc); Rclone daemon embedded for cloud file sync (70+ backends)."
     }
 
     bot_service = container "Bot Service" {
       #tier-application
       technology "FastAPI + microsoft-agents SDK"
+      icon bootstrap:robot
       description "Multi-channel collaboration bot. BaseChatBot + CompletionHandler strategy. Channel-agnostic adapter for Slack/Teams/Webex/email; BITL bridge to NATS."
     }
 
     backup_service = container "Backup Service" {
       #tier-application
       technology "Dagster (independent instance)"
+      icon bootstrap:clock-history
       description "Scheduled backup/restore/maintenance of stateful stores. Independent Dagster instance separate from Pipeline Orchestrator. Webserver + daemon + grpc. Controls platform containers directly via Docker socket (not via the OIDC-tier socket proxy, which is Traefik-only). Does not back up etcd (excluded as ephemeral)."
     }
 
@@ -75,6 +83,7 @@ model {
       #tier-application
       #host-network
       technology "Open WebUI"
+      icon bootstrap:chat-dots
       description "Open-source chat UI; primary end-user surface for conversational interaction with agents."
     }
 
@@ -82,18 +91,24 @@ model {
     litellm = container "LiteLLM Gateway" {
       #tier-llm
       technology "LiteLLM"
+      icon bootstrap:hdd-network
+      style { color secondary }
       description "Unified OpenAI-compatible proxy for upstream LLM providers. All chat/embedding/reranking/ASR/OCR calls flow through here. Deployment-wide model roster."
     }
 
     presidio = container "Presidio" {
       #tier-llm
       technology "Microsoft Presidio (analyzer + anonymizer)"
+      icon bootstrap:shield-lock
+      style { color secondary }
       description "PII detection and anonymization. Two collapsed processes invoked by LiteLLM before/after external LLM calls."
     }
 
     mineru = container "MinerU" {
       #tier-llm
       technology "MinerU"
+      icon bootstrap:file-earmark-text
+      style { color secondary }
       description "Document OCR + structural extraction for the ingestion pipeline. VLM-backed."
     }
 
@@ -101,12 +116,16 @@ model {
       #tier-llm
       #prod-only
       technology "vLLM (GPU)"
+      icon bootstrap:cpu
+      style { color secondary }
       description "Local LLM inference on GPU deployments (chat / embeddings / reranking). Skipped on CPU-only deployments."
     }
 
     speaches = container "Speaches" {
       #tier-llm
       technology "Speaches STT/TTS"
+      icon bootstrap:soundwave
+      style { color secondary }
       description "Speech-to-text and text-to-speech inference."
     }
 
@@ -115,6 +134,7 @@ model {
       #tier-data
       #stateful
       technology "PostgreSQL + pgvector"
+      icon tech:postgresql
       description "Primary SQL store. Hosts multiple databases (openwebui, langfuse, dagster, litellm, keycloak)."
     }
 
@@ -122,6 +142,7 @@ model {
       #tier-data
       #stateful
       technology "FerretDB (MongoDB API over PostgreSQL)"
+      icon tech:mongodb
       description "Document store for conversations, app data, persisted events. MongoDB-compatible API; runs on its own dedicated backing PostgreSQL."
     }
 
@@ -129,6 +150,7 @@ model {
       #tier-data
       #stateful
       technology "Valkey (Redis-compatible)"
+      icon tech:redis
       description "In-memory store for RunContext / ThreadContext, conversation state, OIDC sessions, and cache."
     }
 
@@ -136,6 +158,7 @@ model {
       #tier-data
       #stateful
       technology "Neo4j graph DB"
+      icon tech:neo4j
       description "Graph store for user + organization memory (mem0)."
     }
 
@@ -143,6 +166,7 @@ model {
       #tier-data
       #stateful
       technology "Milvus vector DB"
+      icon tech:milvus
       description "Vector embedding store for RAG retrieval. Uses etcd for metadata, SeaweedFS for backing object storage."
     }
 
@@ -150,6 +174,7 @@ model {
       #tier-data
       #stateful
       technology "ClickHouse"
+      icon bootstrap:bar-chart-line
       description "Analytics store backing Langfuse trace and cost analytics."
     }
 
@@ -157,6 +182,7 @@ model {
       #tier-data
       #stateful
       technology "etcd"
+      icon tech:etcd
       description "Distributed key-value store. Metadata backend for both Milvus and SeaweedFS."
     }
 
@@ -164,6 +190,7 @@ model {
       #tier-data
       #stateful
       technology "SeaweedFS (master + volume + filer + s3)"
+      icon bootstrap:hdd-stack
       description "Distributed object storage with S3-compatible gateway. 4-process cluster collapsed at L2."
     }
 
@@ -172,6 +199,7 @@ model {
       #tier-eventing
       #stateful
       technology "NATS + JetStream"
+      icon tech:nats-icon
       description "Event bus for the Swiss AI Agent Protocol. Control Events durable on JetStream, Display Events ephemeral on NATS Core. The central nervous system of the platform."
     }
 
@@ -180,12 +208,16 @@ model {
       #tier-identity-edge
       #prod-only
       technology "Traefik v3"
+      icon tech:traefik-proxy
+      style { color indigo }
       description "Reverse proxy + TLS termination (Let's Encrypt). Routes all *.\${DOMAIN} subdomains to backend services."
     }
 
     keycloak = container "Keycloak" {
       #tier-identity-edge
       technology "Keycloak"
+      icon bootstrap:shield-lock
+      style { color indigo }
       description "Identity broker. Federates customer IdPs (Entra, Okta, LDAP, …) via OIDC/SAML. Issues platform OIDC tokens; defines the 5 realm roles (AIHubAccess/User/Admin/Developer/SysAdmin)."
     }
 
@@ -194,6 +226,8 @@ model {
       #oidc-middleware
       #prod-only
       technology "oauth2-proxy (4 instances)"
+      icon bootstrap:shield-check
+      style { color indigo }
       description "OIDC-gated reverse proxy in front of operator UIs (Dagster, Backup, SeaweedFS Filer, Attu). Validates Keycloak tokens + AIHubDeveloper realm role before forwarding."
     }
 
@@ -201,6 +235,8 @@ model {
       #tier-identity-edge
       #prod-only
       technology "pgbouncer"
+      icon tech:postgresql
+      style { color indigo }
       description "PostgreSQL connection pooler for Dagster (transaction mode, ≤1000 clients)."
     }
 
@@ -208,6 +244,8 @@ model {
       #tier-identity-edge
       #prod-only
       technology "docker-socket-proxy"
+      icon tech:docker
+      style { color indigo }
       description "Read-only Docker socket proxy. Lets Traefik discover services without raw Docker socket exposure."
     }
 
@@ -215,12 +253,16 @@ model {
     otel_collector = container "OTEL Collector" {
       #tier-observability
       technology "OpenTelemetry Collector"
+      icon tech:opentelemetry-icon
+      style { color green }
       description "Aggregates OTEL traces + logs from every service. Forwards to internal Langfuse by default; configurable to also export to customer-managed sinks."
     }
 
     langfuse = container "Langfuse" {
       #tier-observability
       technology "Langfuse (web + worker)"
+      icon bootstrap:graph-up-arrow
+      style { color green }
       description "LLM-specific observability — prompt/response capture, per-trace cost, eval datasets. Web UI + background worker collapsed."
     }
 
@@ -228,24 +270,32 @@ model {
     searxng = container "SearXNG" {
       #tier-utility
       technology "SearXNG"
+      icon bootstrap:search
+      style { color gray }
       description "Privacy-focused meta-search engine. Web-search tool for OpenWebUI and agent workflows."
     }
 
     jupyter = container "Jupyter" {
       #tier-utility
       technology "Jupyter Lab"
+      icon tech:jupyter
+      style { color gray }
       description "Code execution sandbox for agent/OpenWebUI tool use."
     }
 
     playwright = container "Playwright" {
       #tier-utility
       technology "Playwright (Chromium)"
+      icon tech:playwright
+      style { color gray }
       description "Headless browser daemon for web automation tools."
     }
 
     attu = container "Attu" {
       #tier-utility
       technology "Attu"
+      icon bootstrap:eye
+      style { color gray }
       description "Milvus admin UI; used by operators (AIHubDeveloper role, via OIDC Middleware)."
     }
 
@@ -253,19 +303,20 @@ model {
     // Edges are filtered to ones that explain the architecture; per-store backup
     // edges, OTEL fan-in, and Traefik routing are summarised rather than enumerated.
 
-    // Frontend → Backend (REST + WebSocket via generated TypeScript SDKs)
+    // Frontend → Backend (via generated TypeScript SDKs)
     web          -> api          "REST + WebSocket (display-event stream)"
-    sysadmin_web -> sysadmin_api "REST + WebSocket (same-origin, all tenant/user/role + sysadmin endpoints)"
+    sysadmin_web -> sysadmin_api "REST only, same-origin (tenant/user/role + sysadmin endpoints; no WebSocket on the sysadmin plane)"
 
-    // OpenWebUI ↔ API — multi-channel integration
-    // 1) Custom aihub-pipeline (in infra/deployment/templates/openwebui_functions/aihub_pipeline.py)
-    //    bridges OpenWebUI chat to the Swiss AI Agent Protocol via SSE — NOT OpenAI-compat.
-    // 2) OPENAI_API_BASE_URL fallback for non-chat (image gen, speech, embeddings, parsing).
+    // OpenWebUI → API — multi-channel integration
+    // 1) Custom aihub-pipeline (infra/deployment/templates/openwebui_functions/aihub_pipeline.py)
+    //    bridges OpenWebUI chat to the Swiss AI Agent Protocol via SSE.
+    // 2) All non-agent model traffic (image, STT, TTS, embeddings) + parsing go to the
+    //    API's /api/v1/active/openai and /active/parsing — NOT to LiteLLM directly.
     // 3) Inbound webhooks for user signup events.
-    openwebui -> api "Agent chat via aihub-pipeline (SSE, Swiss AI Agent Protocol); non-chat fallback (image, speech, embeddings, parsing) via OpenAI-compat; user signup webhooks"
+    openwebui -> api "Agent chat via aihub-pipeline (SSE, Swiss AI Agent Protocol); all model traffic (chat/image/STT/TTS/embeddings) + parsing via OpenAI-compat proxy; user signup webhooks"
 
-    // API → OpenWebUI — provisioner pushes agent models + access via SCIM 2.0 + OpenWebUI's /api/v1/models/
-    api          -> openwebui "Provisions agent models, groups, user access (SCIM 2.0 + /api/v1/models/)"
+    // API → OpenWebUI — provisioner pushes agent models (JWT) + groups/users (SCIM 2.0)
+    api          -> openwebui "Provisions agent workspace models (JWT, /api/v1/models/); groups + user memberships (SCIM 2.0, /api/v1/scim/v2)"
 
     // Sysadmin API → OpenWebUI — AccessChangeHook mirrors role mutations
     sysadmin_api -> openwebui "Mirrors tenant/role/user mutations via SCIM (AccessChangeHook on MongoEngine signals)"
@@ -273,93 +324,111 @@ model {
     // API → Langfuse — provisioner syncs agents as 'models' for experiment UI
     api          -> langfuse  "Syncs agent metadata for experiment UI + LLM connection registration"
 
-    // Event bus — the spine of the platform
-    api               -> nats "Publishes Control Events; serves RPC for agent config"
-    bot_service       -> nats "Publishes BITL responses; subscribes to BITL requests"
-    pipeline_orchestrator -[async]-> nats "Emits SourceUpdatedEvent on ingest"
-    nats              -> agent_runtime "Delivers Control Events"
-    agent_runtime  -[async]-> nats "Publishes Display Events; emits StopEvent"
+    // Event bus — the spine of the platform (Swiss AI Agent Protocol).
+    // Control Events ride durable JetStream; Display Events ride ephemeral NATS Core.
+    // StopEvent is a ControlAndDisplayEvent: published to BOTH planes — it terminates
+    // the workflow (control) and signals the UI the run is done (display).
+    api               -> nats "Publishes StartEvents (launch agents) + SourceUpdatedEvent (document upload → triggers ingestion)"
+    nats              -> agent_runtime "Delivers Control Events that trigger steps"
+    agent_runtime  -[async]-> nats "Publishes Control Events (step transitions, StopEvent, exceptions) + Display Events (streaming reasoning)"
+    nats           -[async]-> api "Streams Display Events back (→ WebSocket → UI)"
+    agent_runtime     -> api "Requests agent config via NATS RPC (AgentConfigResponder replies)"
+    bot_service    -[async]-> nats "Subscribes to all agent events (catches BotInTheLoopRequestEvent); publishes BotInTheLoopResponseEvent (JetStream)"
+    nats           -[async]-> pipeline_orchestrator "Delivers SourceUpdatedEvent (Dagster sensor triggers ingestion runs)"
 
     // Application → Data
-    api          -> postgres "Reads/writes tenants, users, roles via SQLAlchemy"
-    api          -> ferretdb "Persists event audit trail and app entities"
-    api          -> valkey   "Discovery cache, ephemeral state"
+    // NOTE: packages/api uses MongoEngine → FerretDB for ALL its entities
+    // (tenants, users, roles, events) — it has NO direct PostgreSQL connection.
+    api          -> ferretdb "Tenants, users, roles, event audit trail, app entities (MongoEngine)"
+    api          -> valkey   "Discovery cache, ephemeral state, provisioner sync locks"
     api          -> milvus   "Knowledge base reads + uploads"
     api          -> seaweedfs "File and artifact storage"
+    api          -> neo4j    "User/org memory via mem0 (per-request, memory routes)"
     agent_runtime -> valkey   "RunContext / ThreadContext / StepStore / TraceStore"
-    agent_runtime -> milvus   "RAG retrieval"
-    agent_runtime -> neo4j    "User + organisation memory (mem0)"
-    agent_runtime -> ferretdb "Fetches AgentConfigEntity at runner startup"
-    bot_service   -> ferretdb "Conversation state with TTL; PathEntity credentials"
-    bot_service   -> valkey   "Slack auth.test cache (30d TTL); session caches"
-    bot_service   -> litellm  "OpenaiCompletionHandler — direct LLM calls (bypasses agents)"
+    agent_runtime -> milvus   "RAG retrieval + mem0 memory vectors"
+    agent_runtime -> neo4j    "User + organisation memory graph (mem0, in-process)"
+    bot_service   -> ferretdb "Conversation state (TTL), trackers, PathEntity credentials"
+    bot_service   -> litellm  "OpenaiCompletionHandler — direct LLM calls via gateway (bypasses agents)"
     sysadmin_api  -> ferretdb "Tenant metadata"
+    sysadmin_api  -> valkey   "OpenWebUI access-sync debounce lock"
     openwebui     -> postgres "App state (conversations, settings, custom-pipeline registrations)"
+    openwebui     -> valkey    "Session store + WebSocket coordination across workers"
     openwebui     -> seaweedfs "User file uploads"
     openwebui     -> milvus    "Direct RAG embedding search (OpenWebUI's built-in RAG)"
     pipeline_orchestrator -> seaweedfs "Document data lake"
-    pipeline_orchestrator -> ferretdb  "Parsed document store"
+    pipeline_orchestrator -> ferretdb  "Parsed document store (RefDocDocument)"
     pipeline_orchestrator -> milvus    "Vector index"
-    pipeline_orchestrator -> postgres  "Dagster metadata (via pgbouncer)"
+    pipeline_orchestrator -> postgres  "Dagster metadata (direct in dev; via pgbouncer in prod)"
 
     // Application → LLM/AI
-    api          -> litellm "Direct model proxying for OpenAI-compatible endpoints"
-    agent_runtime -> litellm "All LLM / embedding / reranking calls"
-    pipeline_orchestrator -> litellm "Embedding generation"
+    // OpenWebUI does NOT call LiteLLM directly — all its model traffic (chat,
+    // embeddings, STT, TTS, images) goes to the API's /api/v1/active/openai,
+    // which proxies onward to LiteLLM. Only direct (non-agent) model requests proxy.
+    api          -> litellm "Proxies direct model requests (chat/embeddings/STT/TTS/images via /active/openai); agent models route via NATS instead"
+    api          -> mineru  "Document parsing (External Document Loader endpoint)"
+    agent_runtime -> litellm "All LLM / embedding / reranking calls (steps + mem0)"
+    pipeline_orchestrator -> litellm "Embedding + text generation"
     pipeline_orchestrator -> mineru  "Document OCR + parsing"
-    openwebui    -> litellm "Chat completions, embeddings, TTS, transcription"
 
     // LLM internal
-    litellm -> presidio "PII detection + anonymization"
+    litellm -> presidio "PII detection + anonymization (opt-in guardrail)"
     litellm -> postgres "Model config, API keys, cost tracking"
+    litellm -> valkey   "Response cache + router state"
+    litellm -[async]-> otel_collector "Emits traces (OTLP/gRPC); observability flows to Langfuse via the collector, not directly"
+    litellm -> vllm     "Local chat/embedding/reranking inference (GPU deployments)"
+    litellm -> speaches "Local STT/TTS inference (GPU deployments)"
 
-    // Backup fans out to every stateful store (summarised)
-    backup_service -[async]-> postgres   "Dumps via pg_dumpall"
-    backup_service -[async]-> ferretdb   "Backs up DocumentDB extension catalog"
-    backup_service -[async]-> milvus     "Snapshots via milvus-backup CLI"
-    backup_service -[async]-> neo4j      "neo4j-admin dump"
-    backup_service -[async]-> clickhouse "BACKUP TO Disk(S3)"
+    // Backup fans out to every stateful store (summarised). Several stores are
+    // reached offline — backup stops the container (via Docker socket) and dumps
+    // its volume/backing store rather than connecting over the store's protocol.
+    backup_service -[async]-> postgres   "pg_dumpall globals + pg_dump per DB; online maintenance (pg_repack) on dagster DB"
+    backup_service -[async]-> ferretdb   "pg_dump of FerretDB's backing Postgres + DocumentDB catalog COPY"
+    backup_service -[async]-> milvus     "milvus-backup CLI (writes straight to S3)"
+    backup_service -[async]-> neo4j      "Offline neo4j-admin dump via temp sibling container"
+    backup_service -[async]-> clickhouse "BACKUP DATABASE TO Disk('backup_s3')"
     backup_service -[async]-> valkey     "BGSAVE + RDB copy"
-    backup_service -[async]-> nats       "Reads JetStream event log"
-    backup_service -[async]-> seaweedfs  "Writes backup artefacts to S3"
+    backup_service -[async]-> nats       "Per-stream backup via `nats stream backup` CLI"
+    backup_service -[async]-> seaweedfs  "Writes backup artefacts to S3 (boto3)"
 
     // Identity & Edge
-    traefik   -> oidc_middleware  "Forwards operator-UI requests through OIDC gate"
+    traefik   -[ingress]-> oidc_middleware  "Forwards operator-UI requests through OIDC gate"
     traefik   -> docker_socket_proxy "Service discovery"
     api          -> keycloak "Validates OIDC tokens"
     sysadmin_api -> keycloak "Validates OIDC tokens + manages tenant groups"
     web          -> keycloak "OIDC login flow"
     sysadmin_web -> keycloak "OIDC login flow"
     openwebui    -> keycloak "OIDC login flow"
-    bot_service  -> keycloak "Validates user identity"
+    bot_service  -> keycloak "Resolves user identity + realm roles via Keycloak Admin API"
     pgbouncer    -> postgres "Pools Dagster connections"
     keycloak     -> postgres "Realm + user storage"
 
-    // Data internals
+    // Data internals.
+    // FerretDB's backing PostgreSQL is a DEDICATED instance (postgres-ferretdb)
+    // used by nothing else — modelled as internal to the FerretDB datastore, so
+    // no edge is drawn (unlike etcd/SeaweedFS, which are SHARED across stores).
     milvus    -> etcd      "Metadata"
-    milvus    -> seaweedfs "Object backing store"
+    milvus    -> seaweedfs "Object backing store (segments)"
     seaweedfs -> etcd      "Filer metadata"
-    clickhouse -> seaweedfs "Analytics S3 backing"
-    ferretdb  -> postgres  "Dedicated backing instance (logically internal)"
+    clickhouse -> seaweedfs "Backup S3 disk (BACKUP TO; primary data is on local volumes)"
     langfuse  -> postgres   "Project + dataset metadata"
     langfuse  -> clickhouse "Trace and cost analytics"
     langfuse  -> valkey     "Session + queue"
-    langfuse  -> seaweedfs  "Trace media uploads"
+    langfuse  -> seaweedfs  "Trace media + event blob uploads (S3)"
 
-    // Observability fan-in (summarised)
+    // Observability fan-in (summarised). Services push OTLP to the collector;
+    // the collector forwards LLM/OpenInference traces to Langfuse's OTLP endpoint.
     api               -[async]-> otel_collector "Trace + log export"
     agent_runtime     -[async]-> otel_collector "Trace + log export (via SmartTracer + Langfuse attributes)"
-    pipeline_orchestrator -[async]-> otel_collector "Trace + log export"
     bot_service       -[async]-> otel_collector "Trace + log export"
     sysadmin_api      -[async]-> otel_collector "Trace + log export"
-    openwebui         -[async]-> otel_collector "Trace + log export (when ENABLE_OTEL set)"
-    otel_collector    -[async]-> langfuse "Forwards LLM traces"
+    openwebui         -[async]-> otel_collector "Trace + metrics export (OTLP/gRPC)"
+    otel_collector    -[async]-> langfuse "Forwards LLM traces (→ Langfuse /api/public/otel)"
 
     // OIDC middleware drops requests into the gated UIs
-    oidc_middleware -> pipeline_orchestrator "Gates Dagster pipeline UI"
-    oidc_middleware -> backup_service        "Gates Backup UI"
-    oidc_middleware -> seaweedfs             "Gates SeaweedFS Filer UI"
-    oidc_middleware -> attu                  "Gates Milvus admin UI"
+    oidc_middleware -[ingress]-> pipeline_orchestrator "Gates Dagster pipeline UI"
+    oidc_middleware -[ingress]-> backup_service        "Gates Backup UI"
+    oidc_middleware -[ingress]-> seaweedfs             "Gates SeaweedFS Filer UI"
+    oidc_middleware -[ingress]-> attu                  "Gates Milvus admin UI"
 
     // External integrations (lift L1 externals into specific containers)
     pipeline_orchestrator -> document_source     "Pulls source documents — SharePoint via direct MS Graph (OAuth2 client-credentials); other backends via Rclone (70+ supported)"
@@ -368,12 +437,29 @@ model {
     collaboration_platform -> bot_service        "Forwards user messages via webhook"
     agent_runtime         -> external_mcp_tools  "Calls customer-exposed MCP tools"
     litellm               -> llm_provider        "Routes inference calls"
-    keycloak  -[federate]-> identity_provider    "Federates SSO (OIDC / SAML)"
-    otel_collector -[async]-> observability_sink "Optional: exports to customer collector"
+    keycloak  -[federate]-> identity_provider    "Federates SSO via OIDC (e.g. Entra ID — preconfigured); no SAML provider today"
+    otel_collector -[async]-> observability_sink "Exports to customer collector (env-gated, non-dev only)"
 
     // OpenWebUI uses utility tools
     openwebui -> jupyter    "Code interpreter"
     openwebui -> playwright "Web automation"
     openwebui -> searxng    "Web search"
+
+    // Admin UI embeds OpenWebUI as the primary chat surface (iframe + bidirectional
+    // postMessage), not merely a hyperlink.
+    web -> openwebui "Embeds chat via iframe (+ postMessage channel for tracing/sources/memory panels)"
+
+    // oauth2-proxy instances validate tokens / drive the OIDC redirect against Keycloak.
+    oidc_middleware -> keycloak "Validates tokens + OIDC authorization redirect"
+
+    // Traefik is the single ingress. It fronts the first-party app containers directly
+    // and the operator UIs via the OIDC middleware. It also routes Keycloak (auth),
+    // Langfuse, LiteLLM, and the SeaweedFS S3 gateway directly (omitted here for clarity).
+    traefik -[ingress]-> api          "Routes openwebui.\${DOMAIN}/api/v1"
+    traefik -[ingress]-> web          "Routes \${DOMAIN}/*"
+    traefik -[ingress]-> sysadmin_api "Routes sysadmin.\${DOMAIN}/api/v1"
+    traefik -[ingress]-> sysadmin_web "Routes sysadmin.\${DOMAIN}/*"
+    traefik -[ingress]-> openwebui    "Routes openwebui.\${DOMAIN}/*"
+    traefik -[ingress]-> bot_service  "Routes bot.\${DOMAIN}"
   }
 }

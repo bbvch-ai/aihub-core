@@ -1,6 +1,10 @@
 specification {
   // bbv brand red — matches --vp-c-red-1 in docs/.vitepress/theme/custom.css.
-  // Used by the SUT and actors; externals stay muted so the L1 boundary reads at a glance.
+  // Used by actors + the SUT + first-party APPLICATION-tier containers ("the stuff we build").
+  // Infrastructure tiers are colour-coded (see per-element styles in the model) so a
+  // container's tier is readable in every view, not just the grouped ones:
+  //   app = aihub-red · data = slate · llm = secondary(purple) · eventing = amber
+  //   identity/edge = indigo · observability = green · utility = gray · external = muted
   color aihub-red #bd0007
 
   // C4 element kinds. Names match canonical C4 vocabulary; LikeC4 itself is kind-agnostic.
@@ -24,8 +28,8 @@ specification {
     style { color aihub-red }
   }
 
-  // Specialised container kinds for visual differentiation.
-  // All still C4 "containers" conceptually — just shape-distinguished.
+  // Specialised container kinds carry both a distinguishing SHAPE and a tier-default COLOUR.
+  // webapp = app-tier (red); datastore = data-tier (slate); messagebroker = eventing (amber).
   element webapp {
     notation "Web UI Container"
     style { color aihub-red; shape browser }
@@ -33,12 +37,12 @@ specification {
 
   element datastore {
     notation "Data Store Container"
-    style { color aihub-red; shape storage }
+    style { color slate; shape storage }
   }
 
   element messagebroker {
     notation "Message Broker Container"
-    style { color aihub-red; shape queue }
+    style { color amber; shape queue }
   }
 
   element component {
@@ -46,11 +50,15 @@ specification {
     style { color aihub-red }
   }
 
-  // Relationship kinds.
-  // `sync` is the default style. `async` styles NATS / event-bus hops. `federate` styles SSO/OIDC trust links.
-  relationship sync     { color slate }
-  relationship async    { color amber; line dotted }
-  relationship federate { color sky;   line dashed }
+  // Relationship kinds — distinguished by colour, line style, and arrowhead.
+  //   sync     = synchronous request/response (solid, filled arrow)
+  //   async    = fire-and-forget / event-bus hop (dotted, open vee)
+  //   federate = SSO / OIDC trust link (dashed, diamond)
+  //   ingress  = reverse-proxy routing from the edge (solid, open arrow)
+  relationship sync     { color slate; line solid;  head normal }
+  relationship async    { color amber; line dotted; head vee }
+  relationship federate { color sky;   line dashed; head diamond }
+  relationship ingress  { color indigo; line solid; head open }
 
   // Tags. Applied to elements via `#tag` syntax; used for filtering in views.
   tag external
