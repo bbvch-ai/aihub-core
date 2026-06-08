@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-workspace"
-version = "0.291.13"
+version = "0.292.0"
 requires-python = ">=3.13, <3.14"
 description = "Swiss AI Hub Monorepo Workspace"
 dependencies = [
@@ -37,10 +37,6 @@ dev = [
 
 [tool.uv]
 package = false
-# mem0ai[graph] 1.0.11 transitively pulls apache-age-python -> psycopg2 (source-only,
-# needs libpq-dev to compile). We only use the Neo4j provider (see
-# packages/core/.../mem0/mem0_settings.py), so drop apache-age-python entirely.
-override-dependencies = ["apache-age-python ; sys_platform == 'never'"]
 # Security floor: starlette 1.0.0 has a known vulnerability, fixed in 1.0.1. starlette is
 # only a transitive dependency (fastapi, mcp, sse-starlette, dagster-graphql), so pin the
 # lower bound to the first fixed release to stop the resolver selecting the affected version.
@@ -56,9 +52,11 @@ members = [
     "packages/process",
     "packages/backup",
     "packages/sysadmin-api",
+    "packages/meta",
 ]
 
 [tool.uv.sources]
+swiss-ai-hub = { workspace = true }
 swiss-ai-hub-core = { workspace = true }
 swiss-ai-hub-agent = { workspace = true }
 swiss-ai-hub-api = { workspace = true }

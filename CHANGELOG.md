@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.292.0] - 2026-06-08 - Streamlined Python Distribution: PyPI Launch and Enhanced Documentation
+
+### Added
+
+- 🚀 **PyPI Publishing Workflow:** Introduced a new automated GitHub Actions workflow for building and publishing all
+  public Python SDK packages to PyPI, enabling wider distribution and easier installation.
+- 🔐 **Distribution Artifact Validation:** Added a new Python script (`check_dist.py`) to enforce namespace integrity,
+  prevent secret leaks, and flag unexpectedly large files within PyPI packages, significantly enhancing release security
+  and quality.
+- 📦 **`swiss-ai-hub` Meta-Package:** A new meta-package, `swiss-ai-hub`, has been added to simplify the installation of
+  the entire Swiss AI Hub Python SDK with a single command.
+- 📄 **Package License Files:** Explicit `LICENSE` files have been added to each Python package (`agent`, `api`, `bot`,
+  `core`, `meta`, `pipeline`, `process`), ensuring clear license compliance for distributed artifacts (Apache-2.0 for
+  most, AGPL-3.0-or-later for `backup`).
+
+### Changed
+
+- 📝 **Comprehensive Package READMEs:** The `README.md` files for all Python SDK packages have been significantly
+  expanded and improved to provide detailed purpose, installation, usage, development, and production guidance, tailored
+  for PyPI consumers.
+- ⚙️ **Standardized PyPI Metadata:** All `pyproject.toml` files across the Python SDK packages have been enhanced with
+  detailed descriptions, relevant PyPI classifiers, and comprehensive project URLs (Homepage, Repository, Documentation,
+  Issues) for improved discoverability and information.
+- 🔗 **Pinned Internal Dependencies:** Python `pyproject.toml` files now explicitly pin inter-package dependencies (e.g.,
+  `swiss-ai-hub-agent` depending on `swiss-ai-hub-core`) to their exact version, ensuring consistent and predictable
+  builds.
+- 🛠️ **Build System Configuration:** Adjusted `uv_build` settings in `pyproject.toml` for all Python packages to
+  correctly handle PEP 420 native namespaces during artifact creation, ensuring proper module loading.
+- 🌐 **Public Image URLs in README:** All image references in the root `README.md` have been updated to use absolute
+  GitHub raw URLs, guaranteeing they display correctly on external platforms like PyPI.
+- 🔒 **NPM Publish Workflow Environment:** The `publish-npm.yml` GitHub Actions workflow now uses an explicit `npm`
+  environment for enhanced security context during package publication.
+- 📖 **Environment Variables Documentation:** The formatting and readability of the environment variables reference
+  documentation have been updated for better clarity.
+- ⬆️ **Core Dependency Updates:** Several key dependencies in `swiss-ai-hub-core` have been upgraded, including
+  `mem0ai`, `langchain-neo4j`, `neo4j`, `rank-bm25`, and `starlette` (with a security floor to `1.0.1`), enhancing
+  functionality and addressing known vulnerabilities.
+- 🐍 **`jambo` Internal Dependency:** The `jambo` dependency in `swiss-ai-hub-api` has been migrated to
+  `swiss-ai-hub-jambo`, reflecting an internal packaging change for consistent namespace usage.
+- ⚡️ **Version Bump Script:** The `Makefile`'s `version-bump` target now correctly updates inter-package dependencies to
+  ensure all internal `swiss-ai-hub-*` packages reference the new version.
+
+### Refactor
+
+- 🧹 **Form Default Seeding Logic:** The web UI's `seedFormDefaults` function has been refactored by extracting dedicated
+  helper functions for handling group and repeater elements, improving code clarity and maintainability.
+
+______________________________________________________________________
+
 ## [v0.291.13] - 2026-06-08 - Enhanced OpenAI Service Iframe Permissions
 
 ### Changed
