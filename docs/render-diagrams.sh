@@ -15,7 +15,8 @@
 # Run manually after editing the .drawio file:
 #   pnpm run docs:render-diagrams
 #
-# Requires: docker.
+# Requires: docker, curl. The Outfit font is NOT committed — it is downloaded
+# on demand (and checksum-verified) into a gitignored cache below.
 
 set -euo pipefail
 
@@ -25,25 +26,37 @@ FONTS_DIR="${DOCS_DIR}/fonts"
 DRAWIO_FILE="${ARCH_DIR}/architecture.drawio"
 IMAGE="rlespinasse/drawio-export:latest"
 
+# Outfit variable font (OFL-1.1), pinned to a specific google/fonts commit via the
+# jsDelivr CDN and verified by SHA-256. Pinning the commit + checksum makes renders
+# reproducible without committing the 110 KB binary to the repo. Bump both together
+# to upgrade. License: docs/fonts/Outfit/OFL.txt.
+FONT_FILE="${FONTS_DIR}/Outfit/Outfit-VariableFont_wght.ttf"
+FONT_URL="https://cdn.jsdelivr.net/gh/google/fonts@5f246070882b903ed95a911dba83d9d4a6836152/ofl/outfit/Outfit%5Bwght%5D.ttf"
+FONT_SHA256="fc7287273e66929776e2ba54f144fe699080bec29f61bf649d70d871468aeade"
+
 if [ ! -f "${DRAWIO_FILE}" ]; then
   echo "❌ Source file not found: ${DRAWIO_FILE}" >&2
   exit 1
 fi
 
-if ! command -v docker >/dev/null 2>&1; then
-  echo "❌ Docker is required but not on PATH." >&2
-  exit 1
-fi
+for cmd in docker curl python3 sha256sum; do
+  if ! command -v "${cmd}" >/dev/null 2>&1; then
+    echo "❌ ${cmd} is required but not on PATH." >&2
+    exit 1
+  fi
+done
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "❌ python3 is required but not on PATH." >&2
-  exit 1
-fi
-
-FONT_FILE="${FONTS_DIR}/Outfit/Outfit-VariableFont_wght.ttf"
-if [ ! -f "${FONT_FILE}" ]; then
-  echo "❌ Outfit font not found at ${FONT_FILE}" >&2
-  exit 1
+# Download + verify the font if it is missing or its checksum does not match.
+if [ ! -f "${FONT_FILE}" ] || [ "$(sha256sum "${FONT_FILE}" | awk '{print $1}')" != "${FONT_SHA256}" ]; then
+  echo "⬇️  Fetching Outfit font (not committed; checksum-pinned)..."
+  mkdir -p "$(dirname "${FONT_FILE}")"
+  curl -fsSL "${FONT_URL}" -o "${FONT_FILE}"
+  ACTUAL_SHA="$(sha256sum "${FONT_FILE}" | awk '{print $1}')"
+  if [ "${ACTUAL_SHA}" != "${FONT_SHA256}" ]; then
+    echo "❌ Font checksum mismatch: expected ${FONT_SHA256}, got ${ACTUAL_SHA}" >&2
+    rm -f "${FONT_FILE}"
+    exit 1
+  fi
 fi
 
 mapfile -t PAGES < <(grep -oE '<diagram name="[^"]*"' "${DRAWIO_FILE}" \
