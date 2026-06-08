@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.291.13] - 2026-06-08 - Enhanced OpenAI Service Iframe Permissions
+
+### Changed
+
+- ⚡️ **Expanded OpenAI service iframe capabilities:** The embedded OpenAI service now supports additional browser
+  features such as **clipboard access**, **camera**, **screen capture**, **fullscreen mode**, **geolocation**, and
+  **autoplay**, alongside refined **microphone access**.
+
+______________________________________________________________________
+
 ## [v0.291.12] - 2026-06-08 - Refined Skill Permissions for Enhanced Control
 
 ### Changed
