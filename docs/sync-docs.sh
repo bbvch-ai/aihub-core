@@ -10,7 +10,6 @@
 
 echo "🔄 Syncing README files..."
 
-
 # First, clean up old files to avoid duplicates
 rm -rf swiss-ai-hub
 rm -f LICENSE_REPORT.md

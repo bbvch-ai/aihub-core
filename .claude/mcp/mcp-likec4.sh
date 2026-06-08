@@ -9,5 +9,8 @@ set -e
 # accurate, project-specific context when editing diagrams or generating new views.
 #
 # See https://likec4.dev/tooling/ai-tools/ for the underlying tools.
+#
+# Pinned to the v1 line for reproducible agent behaviour (matches the `likec4`
+# CLI pin in docs/package.json). Bump deliberately when upgrading the model tooling.
 cd "$(dirname "$0")/../.."
-exec npx -y @likec4/mcp
+exec npx -y "@likec4/mcp@1"

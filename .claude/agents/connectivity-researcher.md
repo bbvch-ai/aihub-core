@@ -38,6 +38,11 @@ Use these exact L2 container labels in your output. They match the LikeC4 model 
 **Application containers**: `API Gateway`, `Sysadmin API`, `Admin UI`, `Sysadmin UI`, `Agent Runtime`,
 `Pipeline Orchestrator`, `Bot Service`, `Backup Service`, `OpenWebUI`
 
+> Note: `packages/process` (the Process Engine) is NOT a standalone container — it runs **embedded inside the API
+> Gateway**. If asked to map `packages/process`, analyse it as "what the API Gateway calls on behalf of process steps"
+> and attribute every edge to the `API Gateway` container, not a non-existent "Process" container. Likewise
+> `packages/core` is a shared library with no container of its own.
+
 **Infrastructure**: `LiteLLM Gateway`, `NATS`, `PostgreSQL`, `FerretDB`, `Valkey`, `Neo4j`, `Milvus`, `ClickHouse`,
 `etcd`, `SeaweedFS Cluster`, `Keycloak`, `Presidio`, `MinerU`, `vLLM`, `Speaches`, `SearXNG`, `Jupyter`, `Playwright`,
 `Attu`, `Traefik`, `OIDC Middleware`, `pgbouncer`, `Docker Socket Proxy`, `OTEL Collector`, `Langfuse`
