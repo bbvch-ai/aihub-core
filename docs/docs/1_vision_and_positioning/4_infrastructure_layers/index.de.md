@@ -14,7 +14,7 @@ Abschnitte übersetzen die geschäftliche Sichtweise in technische Implementieru
 
 ## Ebene 1: Kerninfrastrukturkomponenten
 
-![Tier 1 Architecture](../../../../media/architecture/low_level/tier_1.svg)
+![Tier 1 Architecture](../../../media/architecture/low_level/tier_1.svg)
 
 Die Grundlage beginnt mit **OAuth2**, das die Authentifizierung handhabt. Wenn Benutzer auf Open-WebUI oder die Admin UI
 zugreifen, validiert OAuth2 deren Anmeldeinformationen gegenüber dem Identitätsprovider Ihrer Organisation. Diese
@@ -79,7 +79,7 @@ und zentralisierte Log-Aggregation ohne Vendor Lock-in.
 
 ## Ebene 1+: Integrationsinfrastruktur
 
-![Tier 1+ Architecture](../../../../media/architecture/low_level/tier_1_plus.svg)
+![Tier 1+ Architecture](../../../media/architecture/low_level/tier_1_plus.svg)
 
 Das **Azure Bot Framework** wird zur Brücke zwischen der Plattform und externen Kommunikationskanälen. Wenn eine
 Nachricht von Teams, Slack oder Outlook eingeht, normalisiert das Bot Framework sie in ein Standardaktivitätsformat,
@@ -98,7 +98,7 @@ unterstützen kann.
 
 ## Ebene 2: Wissens- und Agent-Infrastruktur
 
-![Tier 2 Architecture](../../../../media/architecture/low_level/tier_2.svg)
+![Tier 2 Architecture](../../../media/architecture/low_level/tier_2.svg)
 
 **NATS** transformiert die Plattform von einer Request-Response- zu einer ereignisgesteuerten Architektur. Agents
 abonnieren Ereignisströme, die API veröffentlicht Benutzernachrichten, und Komponenten kommunizieren asynchron ohne
@@ -159,7 +159,7 @@ für den Unternehmenseinsatz gebaut wird.
 
 ## Ebene 3: Prozessorchestrierungs-Infrastruktur
 
-![Tier 3 Architecture](../../../../media/architecture/low_level/tier_3.svg)
+![Tier 3 Architecture](../../../media/architecture/low_level/tier_3.svg)
 
 Die **Process UI** führt ein neues Benutzeroberflächenparadigma ein, das für Workflow-Interaktion und nicht für
 Konversationen konzipiert ist. Mit Vue.js erstellt und über WebSockets verbunden, bietet sie

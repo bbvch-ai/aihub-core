@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "likec4:codegen": "likec4 codegen webcomponent -o .vitepress/theme/likec4-webcomponent.js likec4",
+    "likec4:codegen": "likec4 codegen webcomponent -o public/likec4-webcomponent.js likec4",
     "docs:dev": "pnpm run likec4:codegen && vitepress dev",
     "docs:sync": "bash sync-docs.sh",
     "docs:translate": "bash translate-docs.sh",

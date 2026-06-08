@@ -13,7 +13,7 @@ implementation details.
 
 ## Tier 1: Core Infrastructure Components
 
-![Tier 1 Architecture](../../../../media/architecture/low_level/tier_1.svg)
+![Tier 1 Architecture](../../../media/architecture/low_level/tier_1.svg)
 
 The foundation begins with **OAuth2** handling authentication. When users access Open-WebUI or the Admin UI, OAuth2
 validates their credentials against your organization's identity provider. This component was chosen over simpler
@@ -72,7 +72,7 @@ without vendor lock-in.
 
 ## Tier 1+: Integration Infrastructure
 
-![Tier 1+ Architecture](../../../../media/architecture/low_level/tier_1_plus.svg)
+![Tier 1+ Architecture](../../../media/architecture/low_level/tier_1_plus.svg)
 
 The **Azure Bot Framework** becomes the bridge between the platform and external communication channels. When a message
 arrives from Teams, Slack, or Outlook, the Bot Framework normalizes it into a standard activity format, handles
@@ -89,7 +89,7 @@ support other bot frameworks or direct integrations without architectural change
 
 ## Tier 2: Knowledge and Agent Infrastructure
 
-![Tier 2 Architecture](../../../../media/architecture/low_level/tier_2.svg)
+![Tier 2 Architecture](../../../media/architecture/low_level/tier_2.svg)
 
 **NATS** transforms the platform from request-response to event-driven architecture. Agents subscribe to event streams,
 the API publishes user messages, and components communicate asynchronously without direct dependencies. NATS JetStream
@@ -144,7 +144,7 @@ characteristics matter as much as functional capabilities when building a platfo
 
 ## Tier 3: Process Orchestration Infrastructure
 
-![Tier 3 Architecture](../../../../media/architecture/low_level/tier_3.svg)
+![Tier 3 Architecture](../../../media/architecture/low_level/tier_3.svg)
 
 The **Process UI** introduces a new user interface paradigm designed for workflow interaction rather than conversation.
 Built with Vue.js and connected via WebSockets, it provides real-time workflow visualization, task queues for human

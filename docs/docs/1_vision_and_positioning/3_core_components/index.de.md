@@ -48,7 +48,7 @@ Workflows anzupassen, Fähigkeiten zu entwickeln und Vertrauen in das System auf
 
 ## Tier 1: Grundlage für sicheren KI-Zugriff
 
-![Tier 1 Architecture](../../../../media/architecture/high_level/tier_1.svg)
+![Tier 1 Architecture](../../../media/architecture/high_level/tier_1.svg)
 
 Der primäre Zugangspunkt für Benutzer ist die Open-WebUI Weboberfläche, die Text-, Dokument- und Spracheingaben
 unterstützt.
@@ -71,7 +71,7 @@ Infrastruktur der Organisation verbleiben, es sei denn, der externe Modellzugrif
 
 ## Tier 1+: Benutzer dort abholen, wo sie arbeiten
 
-![Tier 1+ Architecture](../../../../media/architecture/high_level/tier_1_plus.svg)
+![Tier 1+ Architecture](../../../media/architecture/high_level/tier_1_plus.svg)
 
 Die Einschränkung einer eigenständigen Weboberfläche ist die Workflow-Unterbrechung, die durch den Kontextwechsel
 verursacht wird. Tier 1+ löst dies, indem es die Funktionen der Plattform in die Anwendungen erweitert, die Mitarbeiter
@@ -101,7 +101,7 @@ Governance- und Logging-Richtlinien unterliegen.
 
 ## Tier 2: Von Daten zu kontextbezogener Intelligenz
 
-![Tier 2 Architecture](../../../../media/architecture/high_level/tier_2.svg)
+![Tier 2 Architecture](../../../media/architecture/high_level/tier_2.svg)
 
 Tier 2 führt Funktionen zur Aufnahme und Strukturierung von Organisationsdaten ein, um KI-Agents Kontext
 bereitzustellen. Der Prozess beginnt mit Informationsquellen wie SharePoint-Dokumentbibliotheken.
@@ -133,7 +133,7 @@ Systemen sicher auf die Plattform und deren Agents zugreifen.
 
 ## Tier 3: Orchestrierung von Geschäftsprozessen
 
-![Tier 3 Architecture](../../../../media/architecture/high_level/tier_3.svg)
+![Tier 3 Architecture](../../../media/architecture/high_level/tier_3.svg)
 
 Tier 3 führt eine Prozess-Orchestrierungs-Engine ein, um mehrstufige Workflows zu automatisieren, die KI-Agents,
 Menschen und externe Systeme involvieren.
