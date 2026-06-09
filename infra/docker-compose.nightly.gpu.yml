@@ -1761,6 +1761,7 @@ services:
         max-file: 2
     networks:
       - backend
+      - egress
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
