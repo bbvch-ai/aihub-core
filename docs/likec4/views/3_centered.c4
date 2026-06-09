@@ -1,0 +1,79 @@
+// Developer-onboarding views: one per first-party container (plus OpenWebUI).
+// Each view centres on a single container and shows its direct L2 neighbours
+// (inbound + outbound) plus any L1 externals it talks to. Audience: a developer
+// about to work on that package — answers "what L2 surface will I touch?".
+
+views {
+  // API Gateway is the most-connected first-party container; one combined view
+  // would be too dense (~13 boxes). Split into inbound + outbound.
+
+  view centered_api_outbound of hub {
+    title       "API Gateway — Outbound"
+    description "What the API Gateway calls. Use this when working on a packages/api controller or service that integrates with infrastructure: every L2 container and L1 external the API reaches OUT to appears here."
+
+    include hub.api ->
+  }
+
+  view centered_api_inbound of hub {
+    title       "API Gateway — Inbound"
+    description "Who calls the API Gateway. Use this when working on packages/api to understand the consumers of the surface you're changing — Admin UI, OpenWebUI custom pipeline, Bot Service via NATS, agents via RPC, sysadmin-web cross-origin role check."
+
+    include -> hub.api
+  }
+
+  view centered_sysadmin_api of hub {
+    title       "Sysadmin API — Direct Neighbours"
+    description "What the Sysadmin API (packages/sysadmin-api) integrates with. Narrower surface than the main API: tenant lifecycle, Keycloak admin, OpenWebUI provisioning."
+
+    include -> hub.sysadmin_api ->
+  }
+
+  view centered_web of hub {
+    title       "Admin UI — Direct Neighbours"
+    description "What the Admin UI (packages/web) calls and what it embeds. Use this when onboarding to the Nuxt frontend. Sysadmin UI is a Nuxt Layer extending this codebase — see centered_sysadmin_web for its specific edges."
+
+    include -> hub.web ->
+  }
+
+  view centered_sysadmin_web of hub {
+    title       "Sysadmin UI — Direct Neighbours"
+    description "What the Sysadmin UI (packages/sysadmin-web, a Nuxt Layer on top of Admin UI) integrates with. Same-origin to Sysadmin API, cross-origin only for the non-sysadmin user bounce-out."
+
+    include -> hub.sysadmin_web ->
+  }
+
+  view centered_agent of hub {
+    title       "Agent Runtime — Direct Neighbours"
+    description "What the Agent Runtime (packages/agent) talks to during workflow execution. Onboarding view for new agent developers: NATS subjects, RAG retrieval, memory, LLM gateway, tool MCP — everything an agent step might reach."
+
+    include -> hub.agent_runtime ->
+  }
+
+  view centered_pipeline of hub {
+    title       "Pipeline Orchestrator — Direct Neighbours"
+    description "What the Pipeline Orchestrator (packages/pipeline) touches during document ingestion. Onboarding view for new pipeline developers: document sources (Rclone + direct MS Graph), parsing, embedding, vector storage, failure notifications."
+
+    include -> hub.pipeline_orchestrator ->
+  }
+
+  view centered_bot of hub {
+    title       "Bot Service — Direct Neighbours"
+    description "What the Bot Service (packages/bot) talks to per message. Onboarding view for new channel-integration developers: NATS bridges, Collaboration Platform (Slack / Teams / Webex / email), per-message Keycloak lookup, LiteLLM direct path."
+
+    include -> hub.bot_service ->
+  }
+
+  view centered_backup of hub {
+    title       "Backup Service — Direct Neighbours"
+    description "What the Backup Service (packages/backup) reads from and writes to. Onboarding view for ops engineers: every stateful store backed up (and the one excluded — etcd), plus the Docker socket interaction (NOT via the OIDC-tier socket proxy)."
+
+    include -> hub.backup_service ->
+  }
+
+  view centered_openwebui of hub {
+    title       "OpenWebUI — Direct Neighbours"
+    description "What OpenWebUI calls and what calls it. Includes the custom aihub-pipeline path (Swiss AI Agent Protocol via SSE → API), OpenAI-compat fallback for non-chat, direct LiteLLM for raw models, plus tool services (Jupyter, Playwright, SearXNG)."
+
+    include -> hub.openwebui ->
+  }
+}
