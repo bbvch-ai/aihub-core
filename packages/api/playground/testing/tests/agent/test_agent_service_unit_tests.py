@@ -255,13 +255,10 @@ class TestAgentServiceUnit:
 
             with patch("swiss_ai_hub.api.routes.agent.agent_service.ChatService") as mock_chat_service:
                 mock_resources = Mock()
-                mock_resources.stop_signal = Mock()
-                mock_resources.stop_signal.wait = AsyncMock()
-                mock_resources.subscriber = Mock()
-                mock_resources.subscriber.stop = AsyncMock()
                 mock_resources.stop_event = mock_stop_event
 
                 mock_chat_service.start_json_event_interaction = AsyncMock(return_value=mock_resources)
+                mock_chat_service.wait_for_stop_then_drain = AsyncMock()
 
                 thread_id = ObjectId()
                 result = await AgentService._send_event(
@@ -276,8 +273,7 @@ class TestAgentServiceUnit:
 
                 mock_get_thread.assert_called_once_with(str(thread_id))
                 mock_chat_service.start_json_event_interaction.assert_called_once()
-                mock_resources.stop_signal.wait.assert_called_once()
-                mock_resources.subscriber.stop.assert_called_once()
+                mock_chat_service.wait_for_stop_then_drain.assert_called_once_with(mock_resources)
 
                 assert result == mock_stop_event
 
@@ -295,13 +291,10 @@ class TestAgentServiceUnit:
 
             with patch("swiss_ai_hub.api.routes.agent.agent_service.ChatService") as mock_chat_service:
                 mock_resources = Mock()
-                mock_resources.stop_signal = Mock()
-                mock_resources.stop_signal.wait = AsyncMock()
-                mock_resources.subscriber = Mock()
-                mock_resources.subscriber.stop = AsyncMock()
                 mock_resources.stop_event = mock_stop_event
 
                 mock_chat_service.start_json_event_interaction = AsyncMock(return_value=mock_resources)
+                mock_chat_service.wait_for_stop_then_drain = AsyncMock()
 
                 result = await AgentService._send_event(
                     nc=mock_nats,
