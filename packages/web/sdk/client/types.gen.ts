@@ -5750,7 +5750,7 @@ export type HealthResponse = {
    *
    * Running service version.
    */
-  version?: string | null;
+  version: string;
   /**
    * Checks
    *

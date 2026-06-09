@@ -41,7 +41,7 @@ def test_health_endpoint_includes_version(api_client):
 
 
 def test_ready_endpoint_includes_version():
-    """The readiness endpoint (polled by k8s) must report the running service version regardless of dependency health."""
+    """The readiness endpoint must report the running service version regardless of dependency health."""
     auth = TestAuthHandler()
     runner = ApiTestRunner()
     runner.mount(ApiHealthController(auth=auth).get_ready())

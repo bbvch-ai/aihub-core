@@ -8,12 +8,12 @@ import { minutesToMilliseconds } from 'date-fns'
 export const useAppVersion = defineQuery(() => {
   const uiVersion = useRuntimeConfig().public.appVersion as string
 
-  const { data: apiVersion } = useQuery<string | undefined>({
+  const { data: apiVersion } = useQuery<string>({
     key: () => ['app-version', 'api'],
     staleTime: minutesToMilliseconds(60),
     query: async () => {
       const health = await getHealth({ composable: '$fetch' })
-      return health.version ?? undefined
+      return health.version
     },
   })
 
