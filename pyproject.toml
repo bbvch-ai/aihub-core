@@ -19,8 +19,8 @@ dev = [
     "pytest-mock>=3.14.0",
     # Linting & formatting
     "black[jupyter]>=26.1.0",
-    "ty>=0.0.34",
-    "ruff>=0.15.12",
+    "ty>=0.0.42",
+    "ruff>=0.15.15",
     "toml-sort>=0.24.4",
     # Utilities
     "pip-licenses>=5.5.5",
@@ -30,7 +30,7 @@ dev = [
     "mdformat-pyproject>=0.0.2",
     "mdformat-vuepress>=0.1.0",
     "mdformat-myst>=0.2.1",
-    "huggingface-hub>=0.36.2",
+    "huggingface-hub>=1.16.1",
     "tomlkit>=0.13.3",
     "yamlfix>=1.19.1",
 ]
