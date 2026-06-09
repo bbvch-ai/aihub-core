@@ -5,6 +5,154 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.292.0] - 2026-06-08 - Streamlined Python Distribution: PyPI Launch and Enhanced Documentation
+
+### Added
+
+- 🚀 **PyPI Publishing Workflow:** Introduced a new automated GitHub Actions workflow for building and publishing all
+  public Python SDK packages to PyPI, enabling wider distribution and easier installation.
+- 🔐 **Distribution Artifact Validation:** Added a new Python script (`check_dist.py`) to enforce namespace integrity,
+  prevent secret leaks, and flag unexpectedly large files within PyPI packages, significantly enhancing release security
+  and quality.
+- 📦 **`swiss-ai-hub` Meta-Package:** A new meta-package, `swiss-ai-hub`, has been added to simplify the installation of
+  the entire Swiss AI Hub Python SDK with a single command.
+- 📄 **Package License Files:** Explicit `LICENSE` files have been added to each Python package (`agent`, `api`, `bot`,
+  `core`, `meta`, `pipeline`, `process`), ensuring clear license compliance for distributed artifacts (Apache-2.0 for
+  most, AGPL-3.0-or-later for `backup`).
+
+### Changed
+
+- 📝 **Comprehensive Package READMEs:** The `README.md` files for all Python SDK packages have been significantly
+  expanded and improved to provide detailed purpose, installation, usage, development, and production guidance, tailored
+  for PyPI consumers.
+- ⚙️ **Standardized PyPI Metadata:** All `pyproject.toml` files across the Python SDK packages have been enhanced with
+  detailed descriptions, relevant PyPI classifiers, and comprehensive project URLs (Homepage, Repository, Documentation,
+  Issues) for improved discoverability and information.
+- 🔗 **Pinned Internal Dependencies:** Python `pyproject.toml` files now explicitly pin inter-package dependencies (e.g.,
+  `swiss-ai-hub-agent` depending on `swiss-ai-hub-core`) to their exact version, ensuring consistent and predictable
+  builds.
+- 🛠️ **Build System Configuration:** Adjusted `uv_build` settings in `pyproject.toml` for all Python packages to
+  correctly handle PEP 420 native namespaces during artifact creation, ensuring proper module loading.
+- 🌐 **Public Image URLs in README:** All image references in the root `README.md` have been updated to use absolute
+  GitHub raw URLs, guaranteeing they display correctly on external platforms like PyPI.
+- 🔒 **NPM Publish Workflow Environment:** The `publish-npm.yml` GitHub Actions workflow now uses an explicit `npm`
+  environment for enhanced security context during package publication.
+- 📖 **Environment Variables Documentation:** The formatting and readability of the environment variables reference
+  documentation have been updated for better clarity.
+- ⬆️ **Core Dependency Updates:** Several key dependencies in `swiss-ai-hub-core` have been upgraded, including
+  `mem0ai`, `langchain-neo4j`, `neo4j`, `rank-bm25`, and `starlette` (with a security floor to `1.0.1`), enhancing
+  functionality and addressing known vulnerabilities.
+- 🐍 **`jambo` Internal Dependency:** The `jambo` dependency in `swiss-ai-hub-api` has been migrated to
+  `swiss-ai-hub-jambo`, reflecting an internal packaging change for consistent namespace usage.
+- ⚡️ **Version Bump Script:** The `Makefile`'s `version-bump` target now correctly updates inter-package dependencies to
+  ensure all internal `swiss-ai-hub-*` packages reference the new version.
+
+### Refactor
+
+- 🧹 **Form Default Seeding Logic:** The web UI's `seedFormDefaults` function has been refactored by extracting dedicated
+  helper functions for handling group and repeater elements, improving code clarity and maintainability.
+
+______________________________________________________________________
+
+## [v0.291.13] - 2026-06-08 - Enhanced OpenAI Service Iframe Permissions
+
+### Changed
+
+- ⚡️ **Expanded OpenAI service iframe capabilities:** The embedded OpenAI service now supports additional browser
+  features such as **clipboard access**, **camera**, **screen capture**, **fullscreen mode**, **geolocation**, and
+  **autoplay**, alongside refined **microphone access**.
+
+______________________________________________________________________
+
+## [v0.291.12] - 2026-06-08 - Refined Skill Permissions for Enhanced Control
+
+### Changed
+
+- ⚡️ **Refined Skill Permissions:** The broad `mcp__*` skill wildcard has been replaced with a specific, enumerated list
+  of allowed `mcp` skills, enhancing control and clarity over which tools are accessible.
+
+______________________________________________________________________
+
+## [v0.291.11] - 2026-06-08 - Enhanced Changelog Documentation
+
+### Changed
+
+- ⚡️ **Improved Changelog Documentation Handling**: The documentation build script now correctly processes changelog
+  content by wrapping its body in a `v-pre` container. This change prevents build errors caused by special syntax (e.g.,
+  GitHub Actions expressions) within release notes, ensuring that content is rendered verbatim on the documentation site
+  while preserving the functionality of dynamic elements like copy/download buttons.
+
+______________________________________________________________________
+
+## [v0.291.10] - 2026-06-08 - Enhanced Security and Code Quality
+
+### Added
+
+- ✨ **Introduced CodeQL Analysis workflow:** A new GitHub Actions workflow has been added to perform automated static
+  code analysis, enhancing the security and overall code quality of the Python and JavaScript/TypeScript codebases.
+
+______________________________________________________________________
+
+## [v0.291.9] - 2026-06-08 - Simplified Access Control and Enhanced Identity Provider Setup
+
+### Added
+
+- 📄 **New Identity Provider Setup Documentation**: Introduced comprehensive guides for connecting external identity
+  providers to the Swiss AI Hub via Keycloak, starting with detailed instructions for Microsoft Entra ID (Azure AD).
+- 🔐 **Azure App Registration Guide**: Provided step-by-step documentation for configuring Azure App Registrations,
+  including redirect URIs, required API permissions (`openid`, `email`, `profile`), and client secret management.
+- 👥 **Azure User and Role Management Guide**: Added clear instructions on defining and assigning `AIHubAccess`
+  (mandatory for platform login) and `AIHubSysAdmin` app roles within Azure Entra ID to control user access.
+
+### Changed
+
+- 🔑 **Updated Superuser Role Configuration**: Modified default superuser roles (`SUPERUSER_ROLES_JSON`) to explicitly
+  include `AIHubAccess` as the base role for platform usage, aligning with the refined access control model.
+- 📖 **Enhanced Authentication & Authorization Documentation**: Significantly updated the security documentation to
+  clarify the distinction between Keycloak Realm roles (`AIHubAccess`, `AIHubSysAdmin`) and platform-managed
+  tenant-scoped roles, providing a clearer understanding of the permission hierarchy.
+
+### Removed
+
+- 🗑️ **Streamlined Keycloak Realm Roles**: Deprecated and removed `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` from
+  the Keycloak realm configuration. These roles are now intended to be managed as tenant-specific roles within the
+  platform's internal access management system.
+- 🧹 **Simplified Identity Provider Mappers**: Removed corresponding identity provider mappers for the deprecated
+  `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` roles, streamlining the IdP integration process.
+
+______________________________________________________________________
+
+## [v0.291.8] - 2026-06-08 - Streamlined Initial Navigation and Enhanced Authentication
+
+### Added
+
+- ✨ **Seamless Initial Navigation:** Introduced a new, dedicated middleware for the home route (`/`) to intelligently
+  determine and redirect users to their appropriate tenant, tenant selection, or previously visited page immediately
+  after login, ensuring a smoother start to their session.
+- 🚀 **Global Loading Overlay:** Implemented a full-screen loading spinner that instantly appears when the initial
+  navigation logic is resolving, eliminating content flicker and providing clear visual feedback during critical
+  redirects.
+- ⚙️ **Centralized Home Resolution State:** Added a shared state management system and client-side plugin to accurately
+  manage the global loading indicator, ensuring it correctly displays during initial route resolution and dismisses on
+  navigation completion or errors.
+
+### Changed
+
+- 🛡️ **Robust Authentication Handling:** Enhanced the authentication flow to automatically invalidate and remove
+  problematic user sessions when silent sign-in or token renewal encounters errors, improving stability and preventing
+  repeated authentication failures.
+
+### Refactor
+
+- 🧹 **Refined Initial Login Flow:** Streamlined the application's startup by relocating the logic for checking and
+  renewing user sessions from the OIDC client plugin to a global authentication middleware, allowing for more efficient
+  and non-blocking initialization.
+- ⬆️ **Modernized Homepage Implementation:** Replaced the client-side `onMounted` logic for tenant fetching and
+  redirection on the homepage with a server-side (or early client-side) middleware, significantly improving the
+  responsiveness and consistency of the initial user experience.
+
+______________________________________________________________________
+
 ## [v0.291.7] - 2026-06-03 - Enhanced Model Cost Reporting and API Robustness
 
 ### Added

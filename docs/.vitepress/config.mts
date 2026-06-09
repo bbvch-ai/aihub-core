@@ -22,6 +22,15 @@ export default withMermaid({
   srcExclude: ['public/**/*.md', 'translate-prompt.md'],
   ignoreDeadLinks: true,
 
+  vue: {
+    template: {
+      compilerOptions: {
+        // Treat <likec4-*> tags as native custom elements (registered by likec4-webcomponent.js).
+        isCustomElement: (tag) => tag.startsWith('likec4-')
+      }
+    }
+  },
+
   markdown: {
     config(md) {
       md.use(copyOrDownloadAsMarkdownButtons)

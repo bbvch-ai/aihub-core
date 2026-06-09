@@ -1,0 +1,98 @@
+// C4 Level 2 views — one overview + 7 zoomed tier views.
+// Tier zoomed views show their containers + most-relevant cross-cutting peer
+// (e.g. NATS in Application tier) + externals the tier directly touches.
+// Actors (people) stay at L1; tier views skip them to reduce noise.
+
+views {
+  // ─── Overview ────────────────────────────────────────────────────────────────
+  view containers_overview of hub {
+    title       "Swiss AI Hub — Containers (L2 Overview)"
+    description "Headline diagram: the 9 first-party application containers + the NATS event spine. Shows how user-facing UIs reach the backend, how backend services exchange events. Shared infrastructure (PostgreSQL, Milvus, Keycloak, LiteLLM, FerretDB, Valkey, etc.) is intentionally OMITTED here for legibility — see the Data, Identity & Edge, LLM/AI tier views for those edges."
+
+    group "User Interfaces" {
+      color sky
+      include hub.web, hub.sysadmin_web, hub.openwebui
+    }
+
+    group "Backend Services" {
+      color slate
+      include hub.api, hub.sysadmin_api, hub.agent_runtime,
+              hub.pipeline_orchestrator, hub.bot_service, hub.backup_service
+    }
+
+    group "Event Bus" {
+      color amber
+      include hub.nats
+    }
+  }
+
+  // ─── Zoomed tier views ──────────────────────────────────────────────────────
+
+  view tier_application of hub {
+    title       "Application Tier"
+    description "First-party packages + OpenWebUI. NATS (Eventing tier), shared state (Data + LLM tiers), and L1 externals are shown in their own views — this view focuses purely on the application containers and how they reach each other."
+
+    include
+      hub.api, hub.sysadmin_api, hub.web, hub.sysadmin_web,
+      hub.agent_runtime, hub.pipeline_orchestrator, hub.bot_service,
+      hub.backup_service, hub.openwebui
+  }
+
+  view tier_llm of hub {
+    title       "LLM / AI Inference Tier"
+    description "All upstream model calls funnel through the LiteLLM gateway, with Presidio handling PII en route to external providers."
+
+    include
+      hub.litellm, hub.presidio, hub.mineru, hub.vllm, hub.speaches,
+      hub.postgres,
+      llm_provider
+  }
+
+  view tier_data of hub {
+    title       "Data Tier"
+    description "Stateful stores and their internal dependencies (Milvus→etcd, SeaweedFS→etcd, FerretDB→its backing Postgres, ClickHouse→S3). Application containers that consume these stores are visible in their own tier views; backup interactions live in the Backup Service component view."
+
+    include
+      hub.postgres, hub.ferretdb, hub.valkey, hub.neo4j,
+      hub.milvus, hub.clickhouse, hub.etcd, hub.seaweedfs
+  }
+
+  view tier_eventing of hub {
+    title       "Eventing Tier"
+    description "NATS / JetStream is the spine of the platform. All Application-tier containers publish or subscribe; the protocol distinction (Control vs Display) is documented in the Swiss AI Agent Protocol arc42 section."
+
+    include
+      hub.nats,
+      hub.api, hub.sysadmin_api, hub.agent_runtime,
+      hub.pipeline_orchestrator, hub.bot_service, hub.backup_service
+  }
+
+  view tier_identity_edge of hub {
+    title       "Identity & Edge Tier"
+    description "Ingress, TLS, OIDC. Traefik fronts everything; oauth2-proxy gates operator UIs; Keycloak federates customer IdPs. Gated containers (Dagster UIs, SeaweedFS Filer, Attu) and OIDC-protected app containers are visible in their own tier views — this view focuses on the edge infrastructure itself."
+
+    include
+      hub.traefik, hub.keycloak, hub.oidc_middleware,
+      hub.pgbouncer, hub.docker_socket_proxy,
+      identity_provider
+  }
+
+  view tier_observability of hub {
+    title       "Observability Tier"
+    description "OTEL Collector aggregates traces and logs from every application container; forwards to Langfuse by default, optionally exports to customer-managed sinks. Langfuse's own data dependencies (ClickHouse, Postgres, Valkey, SeaweedFS) are in the Data tier view."
+
+    include
+      hub.otel_collector, hub.langfuse,
+      hub.api, hub.agent_runtime, hub.pipeline_orchestrator,
+      observability_sink
+  }
+
+  view tier_utility of hub {
+    title       "Utility / Tools Tier"
+    description "Auxiliary services consumed mostly by OpenWebUI and operators. Attu provides a Milvus admin surface."
+
+    include
+      hub.searxng, hub.jupyter, hub.playwright, hub.attu,
+      hub.openwebui, hub.milvus, hub.oidc_middleware
+  }
+}
