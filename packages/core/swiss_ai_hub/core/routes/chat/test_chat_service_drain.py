@@ -16,6 +16,13 @@ def _streaming_resources() -> StreamingResources:
     )
 
 
+def _assistant_stop_event(content: str | None) -> SimpleNamespace:
+    return SimpleNamespace(
+        is_hitl_request_event=False,
+        output_messages=[ChatMessage(role=MessageRole.ASSISTANT, content=content)],
+    )
+
+
 def test_drain_yields_chunk_enqueued_after_stop_signal():
     """
     Reproduces the stop-vs-chunk dispatch race: NCSubscriber handles every message in its own task, so a
@@ -27,7 +34,7 @@ def test_drain_yields_chunk_enqueued_after_stop_signal():
         collected: list[str] = []
 
         async def consume() -> None:
-            async for event in ChatService.iter_streamed_display_events(resources, grace=0.1):
+            async for event in ChatService.iter_streamed_display_events(resources, drain_grace_seconds=0.1):
                 collected.append(event.content)
 
         consumer = asyncio.create_task(consume())
@@ -48,31 +55,61 @@ def test_drain_terminates_after_grace_when_idle():
     async def scenario() -> list[ChunkEvent]:
         resources = _streaming_resources()
         resources.stop_signal.set()
-        return [event async for event in ChatService.iter_streamed_display_events(resources, grace=0.02)]
+        return [event async for event in ChatService.iter_streamed_display_events(resources, drain_grace_seconds=0.02)]
 
     assert asyncio.run(scenario()) == []
 
 
+def test_wait_for_stop_then_drain_blocks_until_stop_then_returns():
+    """wait_for_stop_then_drain returns only after the stop signal is set, then waits out the grace."""
+
+    async def scenario() -> bool:
+        resources = _streaming_resources()
+        drain = asyncio.create_task(ChatService.wait_for_stop_then_drain(resources, drain_grace_seconds=0.02))
+
+        await asyncio.sleep(0.01)
+        blocked_before_stop = not drain.done()
+
+        resources.stop_signal.set()
+        await asyncio.wait_for(drain, timeout=1.0)
+        return blocked_before_stop
+
+    assert asyncio.run(scenario()) is True
+
+
 def test_json_backstop_recovers_answer_when_all_chunks_lost():
     """If every chunk was dropped, the JSON answer is recovered from the stop event's durable payload."""
-    stop_event = SimpleNamespace(
-        is_hitl_request_event=False,
-        output_messages=[ChatMessage(role=MessageRole.ASSISTANT, content="recovered answer")],
+    content = ChatService.build_json_response_content(
+        chunk_events=[], stop_event=_assistant_stop_event("recovered answer")
     )
-
-    content = ChatService.build_json_response_content(chunk_events=[], stop_event=stop_event)
 
     assert content.content == "recovered answer"
 
 
-def test_json_keeps_streamed_chunks_when_present():
-    """When chunks streamed normally, the backstop stays dormant and does not duplicate the answer."""
-    stop_event = SimpleNamespace(
-        is_hitl_request_event=False,
-        output_messages=[ChatMessage(role=MessageRole.ASSISTANT, content="full answer")],
-    )
-    chunks = [ChunkEvent(content="full ", model_name="m"), ChunkEvent(content="answer", model_name="m")]
+def test_json_backstop_recovers_full_answer_on_partial_loss():
+    """If only a prefix of the answer streamed, the JSON backstop fills in the rest from the stop event."""
+    chunks = [ChunkEvent(content="full ", model_name="m")]
 
-    content = ChatService.build_json_response_content(chunk_events=chunks, stop_event=stop_event)
+    content = ChatService.build_json_response_content(
+        chunk_events=chunks, stop_event=_assistant_stop_event("full answer")
+    )
 
     assert content.content == "full answer"
+
+
+def test_json_keeps_streamed_chunks_when_present():
+    """When every chunk streamed, the backstop stays dormant and does not duplicate the answer."""
+    chunks = [ChunkEvent(content="full ", model_name="m"), ChunkEvent(content="answer", model_name="m")]
+
+    content = ChatService.build_json_response_content(
+        chunk_events=chunks, stop_event=_assistant_stop_event("full answer")
+    )
+
+    assert content.content == "full answer"
+
+
+def test_json_backstop_handles_none_message_content():
+    """A stop event whose message content is None must not produce a null body."""
+    content = ChatService.build_json_response_content(chunk_events=[], stop_event=_assistant_stop_event(None))
+
+    assert content.content == ""

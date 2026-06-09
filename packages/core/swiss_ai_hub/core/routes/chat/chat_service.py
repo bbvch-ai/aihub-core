@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -92,16 +93,17 @@ class ChatService:
     @staticmethod
     async def iter_streamed_display_events(
         resources: StreamingResources,
-        grace: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
-    ):
+        drain_grace_seconds: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+    ) -> AsyncGenerator[DisplayEvent]:
         """
-        Yield queued display events until the run has stopped AND no event has surfaced for `grace`
-        seconds. The grace drains trailing events whose handler tasks finish after the terminal stop's
-        task sets the stop signal; ending on the bare stop signal would drop them.
+        Yield queued display events until the run has stopped AND no event has surfaced for the drain
+        grace. The grace drains trailing events whose handler tasks finish after the terminal stop's
+        task sets the stop signal; ending on the bare stop signal would drop them. The subscription is
+        torn down by the aggregator that handles the stop event, not here.
         """
         while True:
             try:
-                event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=grace)
+                event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=drain_grace_seconds)
                 resources.chunk_queue.task_done()
                 yield event
             except TimeoutError:
@@ -111,15 +113,15 @@ class ChatService:
     @staticmethod
     async def wait_for_stop_then_drain(
         resources: StreamingResources | JsonResources,
-        grace: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
-    ):
+        drain_grace_seconds: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+    ) -> None:
         """
         Block until the run stops, then wait out the drain grace so trailing display-event handler
-        tasks finish before the caller reads the collected events and tears the subscription down.
+        tasks finish before the caller reads the collected events. The subscription is already torn
+        down by the aggregator that handles the stop event.
         """
         await resources.stop_signal.wait()
-        await asyncio.sleep(grace)
-        await resources.subscriber.stop()
+        await asyncio.sleep(drain_grace_seconds)
 
     @staticmethod
     def _initialize_interaction(
@@ -407,16 +409,17 @@ class ChatService:
         Construct a JSON response from collected chunk events.
         """
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
-        chat_content = ChatContent(content="", reasoning_content="")
-        chat_content.content = "".join(chunk.content for chunk in sorted_chunks)
+        streamed = "".join(chunk.content for chunk in sorted_chunks)
+        chat_content = ChatContent(content=streamed, reasoning_content="")
         chat_content.reasoning_content = "".join(getattr(chunk, "reasoning_content", "") for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
             chat_content.content += stop_event.question
             return chat_content
-        # Backstop: if every chunk was lost to the stop-vs-chunk dispatch race, recover the full answer
-        # from the stop event's durable payload so the response is never blank.
-        if not chat_content.content:
-            output_messages = getattr(stop_event, "output_messages", None) or []
-            if output_messages:
-                chat_content.content = output_messages[-1].content
+        # Backstop: if chunks were lost to the stop-vs-chunk dispatch race, recover from the stop event's
+        # durable payload. Use the full answer whenever what streamed is a prefix of it (covers a fully
+        # empty body and a partial loss). Best-effort: a streamed value that diverges keeps what streamed.
+        output_messages = getattr(stop_event, "output_messages", None) or []
+        full_answer = (output_messages[-1].content or "") if output_messages else ""
+        if full_answer and full_answer.startswith(streamed):
+            chat_content.content = full_answer
         return chat_content
