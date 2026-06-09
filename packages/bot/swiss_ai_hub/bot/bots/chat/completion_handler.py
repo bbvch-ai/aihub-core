@@ -8,11 +8,12 @@ from typing import Any
 from microsoft_agents.activity import Activity, ActivityTypes, Entity
 from microsoft_agents.activity.teams import TeamsChannelAccount
 from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
-from swiss_ai_hub.core.auth import KeycloakAdminService
+from swiss_ai_hub.core.auth import KeycloakAdminService, UserNotProvisionedError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 from swiss_ai_hub.bot.bots.chat.content_extractor import ContentExtractor
@@ -105,7 +106,7 @@ class CompletionHandler:
         user_email = await CompletionHandler.resolve_user_email(turn_context)
         keycloak_user = await KeycloakAdminService.find_user_by_email(user_email)
         if not keycloak_user:
-            raise ValueError(f"User with email '{user_email}' not found in Keycloak")
+            raise UserNotProvisionedError(user_email)
         realm_roles = await KeycloakAdminService.get_user_realm_roles(keycloak_user.id)
         tenant = await AuthHandler.get_active_tenant_for_user(keycloak_user.id)
         return UserIdentity(
@@ -380,10 +381,18 @@ class CompletionHandler:
         typing_stop_signal: Event,
         t: LocaleHandler,
     ) -> str:
-        logger.exception(f"Exception: {exception}\nTurnContext: {turn_context}")
         typing_stop_signal.set()
         await typing_task
-        response = t("bot.error.generic_error")
+        if isinstance(exception, UserNotProvisionedError):
+            # Expected for bot-first users with no Keycloak account: surface an actionable
+            # "sign in to the Hub first" message instead of an opaque error (see issue #1315).
+            # FRONTEND_ORIGIN is a comma-separated list; the first entry is the primary web portal.
+            login_url = AIHubSettings().FRONTEND_ORIGIN.split(",")[0].strip()
+            logger.info(f"Unprovisioned bot user, prompting web login at {login_url}: {exception}")
+            response = t("bot.error.user_not_provisioned", url=login_url)
+        else:
+            logger.exception(f"Exception: {exception}\nTurnContext: {turn_context}")
+            response = t("bot.error.generic_error")
         await turn_context.send_activity(
             Activity(
                 type=ActivityTypes.message,

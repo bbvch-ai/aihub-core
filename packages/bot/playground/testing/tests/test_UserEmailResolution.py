@@ -12,6 +12,7 @@ import pytest
 from microsoft_agents.activity import Activity, ChannelAccount, ConversationAccount
 from microsoft_agents.activity.teams import TeamsChannelAccount
 from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
+from swiss_ai_hub.core.auth import UserNotProvisionedError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.routes import ChatService
@@ -142,10 +143,10 @@ async def test_resolve_user_identity_builds_identity_from_keycloak(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_resolve_user_identity_raises_when_user_not_in_keycloak():
-    """A resolved email with no matching Keycloak account fails with a clear error."""
+    """A resolved email with no matching Keycloak account raises ``UserNotProvisionedError``."""
     turn_context = _make_turn_context(from_name="ghost@example.com")
 
-    with pytest.raises(ValueError, match="not found in Keycloak"):
+    with pytest.raises(UserNotProvisionedError, match="not provisioned in Keycloak"):
         await CompletionHandler.resolve_user_identity(turn_context)
 
 
