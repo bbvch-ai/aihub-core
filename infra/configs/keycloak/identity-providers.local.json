@@ -74,39 +74,6 @@
       }
     },
     {
-      "name": "role-mapper-admin",
-      "identityProviderAlias": "azure-ad",
-      "identityProviderMapper": "oidc-role-idp-mapper",
-      "config": {
-        "syncMode": "INHERIT",
-        "claim": "roles",
-        "claim.value": "AIHubAdmin",
-        "role": "AIHubAdmin"
-      }
-    },
-    {
-      "name": "role-mapper-user",
-      "identityProviderAlias": "azure-ad",
-      "identityProviderMapper": "oidc-role-idp-mapper",
-      "config": {
-        "syncMode": "INHERIT",
-        "claim": "roles",
-        "claim.value": "AIHubUser",
-        "role": "AIHubUser"
-      }
-    },
-    {
-      "name": "role-mapper-developer",
-      "identityProviderAlias": "azure-ad",
-      "identityProviderMapper": "oidc-role-idp-mapper",
-      "config": {
-        "syncMode": "INHERIT",
-        "claim": "roles",
-        "claim.value": "AIHubDeveloper",
-        "role": "AIHubDeveloper"
-      }
-    },
-    {
       "name": "role-mapper-access",
       "identityProviderAlias": "azure-ad",
       "identityProviderMapper": "oidc-role-idp-mapper",
