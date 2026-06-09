@@ -49,6 +49,12 @@ from swiss_ai_hub.core.topics.agents.agent_instance_topic import AgentInstanceTo
 
 logger = logging.getLogger(__name__)
 
+# After a run's terminal event arrives, give trailing display events this long to surface before the
+# consumer finishes. NCSubscriber dispatches one asyncio task per message, so the stop event's task can
+# set the stop signal before a preceding chunk's task has finished enqueuing it — without this grace the
+# consumer ends on the stop and silently drops those in-flight chunks.
+DISPLAY_STREAM_DRAIN_GRACE_SECONDS = 0.25
+
 
 @dataclass
 class StreamingResources:
@@ -82,6 +88,38 @@ class ChatService:
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
     """
+
+    @staticmethod
+    async def iter_streamed_display_events(
+        resources: StreamingResources,
+        grace: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+    ):
+        """
+        Yield queued display events until the run has stopped AND no event has surfaced for `grace`
+        seconds. The grace drains trailing events whose handler tasks finish after the terminal stop's
+        task sets the stop signal; ending on the bare stop signal would drop them.
+        """
+        while True:
+            try:
+                event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=grace)
+                resources.chunk_queue.task_done()
+                yield event
+            except TimeoutError:
+                if resources.stop_signal.is_set():
+                    return
+
+    @staticmethod
+    async def wait_for_stop_then_drain(
+        resources: StreamingResources | JsonResources,
+        grace: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+    ):
+        """
+        Block until the run stops, then wait out the drain grace so trailing display-event handler
+        tasks finish before the caller reads the collected events and tears the subscription down.
+        """
+        await resources.stop_signal.wait()
+        await asyncio.sleep(grace)
+        await resources.subscriber.stop()
 
     @staticmethod
     def _initialize_interaction(
@@ -374,4 +412,11 @@ class ChatService:
         chat_content.reasoning_content = "".join(getattr(chunk, "reasoning_content", "") for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
             chat_content.content += stop_event.question
+            return chat_content
+        # Backstop: if every chunk was lost to the stop-vs-chunk dispatch race, recover the full answer
+        # from the stop event's durable payload so the response is never blank.
+        if not chat_content.content:
+            output_messages = getattr(stop_event, "output_messages", None) or []
+            if output_messages:
+                chat_content.content = output_messages[-1].content
         return chat_content
