@@ -146,8 +146,9 @@ async def test_resolve_user_identity_raises_when_user_not_in_keycloak():
     """A resolved email with no matching Keycloak account raises ``UserNotProvisionedError``."""
     turn_context = _make_turn_context(from_name="ghost@example.com")
 
-    with pytest.raises(UserNotProvisionedError, match="not provisioned in Keycloak"):
+    with pytest.raises(UserNotProvisionedError, match="not provisioned in Keycloak") as excinfo:
         await CompletionHandler.resolve_user_identity(turn_context)
+    assert excinfo.value.email == "ghost@example.com"
 
 
 @pytest.mark.asyncio
