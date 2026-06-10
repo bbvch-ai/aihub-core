@@ -228,7 +228,7 @@ async def test_unprovisioned_user_is_prompted_to_log_in(
     # They get the actionable "log in to the Hub first" message (with the portal URL), not the
     # opaque generic error.
     locale_handler = LocaleHandler().in_locale("en")
-    login_url = AIHubSettings().FRONTEND_ORIGIN.split(",")[0].strip()
+    login_url = AIHubSettings().primary_frontend_origin
     assert reply_text == locale_handler("bot.error.user_not_provisioned", url=login_url)
     assert login_url in reply_text
     assert reply_text != locale_handler("bot.error.generic_error")

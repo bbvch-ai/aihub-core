@@ -386,8 +386,7 @@ class CompletionHandler:
         if isinstance(exception, UserNotProvisionedError):
             # Expected for bot-first users with no Keycloak account: surface an actionable
             # "sign in to the Hub first" message instead of an opaque error (see issue #1315).
-            # FRONTEND_ORIGIN is a comma-separated list; the first entry is the primary web portal.
-            login_url = AIHubSettings().FRONTEND_ORIGIN.split(",")[0].strip()
+            login_url = AIHubSettings().primary_frontend_origin
             logger.info(f"Unprovisioned bot user, prompting web login at {login_url}: {exception}")
             response = t("bot.error.user_not_provisioned", url=login_url)
         else:
