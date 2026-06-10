@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.292.3] - 2026-06-10 - Enhanced Reliability for Agent Event Streams
+
+### Fixed
+
+- 🐛 Resolved a race condition that could cause **agent output streaming chunks** to be dropped, leading to incomplete or
+  blank answers in chat clients. This fix ensures all `DisplayEvent`s are processed before consumer teardown.
+- 🔗 Guaranteed the **delivery of complete agent answers** by implementing a durable backstop that reconciles any missing
+  content from the final stop event, preventing empty assistant turns and associated errors.
+
+### Added
+
+- ✨ Introduced shared utility methods, **`iter_streamed_display_events`** and **`wait_for_stop_then_drain`**, in
+  `ChatService` to ensure all display events are gracefully drained and processed after an agent run completes.
+- 📄 Documented the architectural decision for robust streaming in a new ADR: **"Drain Display-Event Streams Before
+  Consumer Teardown"**.
+- 🧪 Added new **unit tests** to validate the correctness and resilience of the event draining and answer reconciliation
+  logic.
+
+### Changed
+
+- 🔄 Refactored **all streaming event consumers** (including OpenAI SSE, JSON, and native event streams) to utilize the
+  new graceful draining mechanisms, improving the consistency and reliability of agent output.
+- 🚀 Updated **final content resolution** for OpenAI and JSON responses to include delta reconciliation, using the
+  terminal `StopEvent` as a source of truth to complete partially streamed or lost answers.
+
+______________________________________________________________________
+
 ## [v0.292.2] - 2026-06-09 - Infrastructure Network Enhancements
 
 ### Changed
