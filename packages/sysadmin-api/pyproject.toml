@@ -9,7 +9,7 @@ authors = [
     { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
 ]
-license = "LicenseRef-Proprietary"
+license = "AGPL-3.0-or-later"
 license-files = ["LICENSE"]
 readme = "README.md"
 dependencies = [

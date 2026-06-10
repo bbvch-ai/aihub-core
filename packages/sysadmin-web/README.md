@@ -1,17 +1,17 @@
 # packages/sysadmin-web — Swiss AI Hub system administration UI
 
-**License**: Proprietary — All Rights Reserved (`LicenseRef-Proprietary`). No use granted; commercial license required
-for any use. See `LICENSE` for full terms.
+**License**: AGPL-3.0-or-later. Network-copyleft: hosted modifications must publish their source. See `LICENSE` for full
+terms.
 
 A Nuxt 3 SPA dedicated to system administration: today, the multi-tenant management UI moved out of `@swiss-ai-hub/web`.
-Hosted at `sysadmin.${DOMAIN}/*` and proxies API calls through the same origin to the proprietary
-`swiss-ai-hub-sysadmin-api` at `/api/v1/*`.
+Hosted at `sysadmin.${DOMAIN}/*` and proxies API calls through the same origin to the `swiss-ai-hub-sysadmin-api` at
+`/api/v1/*`.
 
 ## Why a separate package
 
-`packages/web` ships under AGPL. The sysadmin plane is the commercial value-add and ships under a strict proprietary
-notice, so it must be a separately-licensed artifact. Keeping it physically separate also avoids accidentally pulling
-proprietary terms into the AGPL-bound admin UI.
+The sysadmin plane is a separate deploy artifact on its own subdomain, isolating the sysadmin-only management surface
+from the main app as a hard security boundary. Both `packages/web` and this package ship under AGPL-3.0-or-later, so the
+separation is architectural — not a licensing boundary.
 
 ## Nuxt Layer over @swiss-ai-hub/web
 
@@ -66,5 +66,5 @@ Only sysadmin-specific assets live here:
 ## See also
 
 - `packages/web/README.md` — the parent admin UI (AGPL-3.0-or-later)
-- `packages/sysadmin-api/` — the proprietary backend this UI talks to
+- `packages/sysadmin-api/` — the AGPL-3.0 backend this UI talks to
 - `LICENSES.md` (repo root) — the per-package license matrix

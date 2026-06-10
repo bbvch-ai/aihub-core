@@ -1,10 +1,10 @@
-# packages/sysadmin-web - System Administration UI (Proprietary)
+# packages/sysadmin-web - System Administration UI (AGPL-3.0)
 
 **Purpose**: Nuxt 3 SPA dedicated to system administration. Multi-tenant management lives here. Hosted at
 `sysadmin.${DOMAIN}/*`.
 
-**License**: Proprietary — All Rights Reserved (`LicenseRef-Proprietary`). No use granted; commercial license required
-for any use.
+**License**: AGPL-3.0-or-later. Network-copyleft: if you offer a modified version as a hosted service, you must publish
+the source.
 
 ## Architecture: Nuxt Layer over @swiss-ai-hub/web
 
@@ -63,8 +63,8 @@ IS the sysadmin app, so the URL doesn't need to re-declare that fact).
 
 Two backends are in play:
 
-- `swiss-ai-hub-sysadmin-api` (proprietary) — same-origin at `sysadmin.${DOMAIN}/api/v1/*`. The local SDK in
-  `sdk/client/` is generated from its OpenAPI spec and used by the tenant-admin composables.
+- `swiss-ai-hub-sysadmin-api` (AGPL-3.0) — same-origin at `sysadmin.${DOMAIN}/api/v1/*`. The local SDK in `sdk/client/`
+  is generated from its OpenAPI spec and used by the tenant-admin composables.
 - `swiss-ai-hub-api` (main API, Apache-2.0) — cross-origin at `${DOMAIN}/api/v1/*`. Used for ONE call: `getMyTenants`
   for the sysadmin role check in `middleware/sysadmin.global.ts`. We do NOT generate a second SDK for one call — the
   middleware uses `$fetch` against `runtimeConfig.public.mainApi.url` (the API origin) for that check. Cross-origin
@@ -103,5 +103,5 @@ no plugin override needed here.
   non-sysadmin bounce)
 - Sysadmin layout: `layouts/sysadmin.vue`
 - ESLint config: `eslint.config.js` (Nuxt + import/order + SonarJS; no Tailwind linting by design)
-- Proprietary terms: `LICENSE`
+- License terms: `LICENSE` (AGPL-3.0-or-later)
 - Repo-wide license matrix: `LICENSES.md` (root)

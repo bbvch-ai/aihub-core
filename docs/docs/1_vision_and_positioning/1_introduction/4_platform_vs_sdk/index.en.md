@@ -119,10 +119,10 @@ store, trace, display, and deploy. The SDK provides the patterns to tap into the
 
 Swiss AI Hub uses a mixed open-source model: the platform runtime, SDK, agents, pipelines and processes are licensed
 under **Apache 2.0** (permissive — use, modify, distribute commercially, no obligation to share modifications back); the
-web UI and backup orchestration under **AGPL-3.0**; the multi-tenant management plane is proprietary and requires a
-commercial license. See [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the full
-per-package breakdown. The components you typically extend — your own agents, pipelines and processes built on the SDK —
-sit under Apache 2.0, so your code stays yours.
+web UI, the multi-tenant management plane, and backup orchestration under **AGPL-3.0** (network-copyleft). See
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the full per-package breakdown. The
+components you typically extend — your own agents, pipelines and processes built on the SDK — sit under Apache 2.0, so
+your code stays yours.
 
 ## When you need each part
 
