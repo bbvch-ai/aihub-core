@@ -48,11 +48,6 @@ command -v openssl >/dev/null 2>&1 || {
     exit 1
 }
 
-command -v uuidgen >/dev/null 2>&1 || {
-    echo "ERROR: 'uuidgen' is required but not found." >&2
-    exit 1
-}
-
 if [[ ! -f "$TEMPLATE" ]]; then
     echo "ERROR: Template file not found: $TEMPLATE" >&2
     exit 1
@@ -81,10 +76,15 @@ gen_hex_64() {
     openssl rand -hex 32 | tr -d '\n'
 }
 
-# Random UUIDv4. uuidgen emits uppercase on some platforms (e.g. macOS), so
-# normalize to lowercase for consistency.
+# Random UUIDv4 derived from openssl so the script keeps a single crypto
+# dependency (no uuidgen). openssl emits lowercase hex already.
 gen_uuid() {
-    uuidgen | tr 'A-Z' 'a-z' | tr -d '\n'
+    local h
+    h=$(openssl rand -hex 16)
+    printf '%s-%s-4%s-%x%s-%s' \
+        "${h:0:8}" "${h:8:4}" "${h:13:3}" \
+        $((0x8 | (0x${h:16:1} & 0x3))) "${h:17:3}" \
+        "${h:20:12}"
 }
 
 # Replace all occurrences of a placeholder one at a time, each with a unique value.
