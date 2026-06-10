@@ -186,109 +186,18 @@ Azure* at the end.)
 
 ### Step 0 — The local runner (`main_local_emulator.py`)
 
-`packages/bot/playground/testing/main_local_emulator.py` forces the SDK's built-in **unauthenticated mode**
-(`use_anonymous=True` on the channel-service factory) so no Azure/token is needed, binds `0.0.0.0:8001` (reachable
-across the WSL2 boundary), and can stub the user's email for the emulator (see Step 4). It is **local-only — never an
-entry point for a deployed bot**. If it's missing from your checkout, create it with exactly this content:
+The repo ships a local-only runner at **`packages/bot/playground/testing/main_local_emulator.py`** — read that file
+for the full implementation. It is **local-only — never an entry point for a deployed bot**. It does three things the
+plain `main.py` doesn't, all so a live emulator can drive the bot without Azure:
 
-```python
-"""Local-dev entry point for driving the bot from the Bot Framework Emulator WITHOUT Azure.
-
-Forces the SDK's unauthenticated mode (use_anonymous=True) so no MSAL/Azure token is needed, and
-optionally stubs the user's email (BOT_DEV_FAKE_EMAIL) since the emulator can't do the Teams member
-lookup. LOCAL EMULATOR USE ONLY — never an entry point for a deployed bot.
-"""
-
-from dotenv import find_dotenv, load_dotenv
-
-load_dotenv(find_dotenv(usecwd=True))
-
-import asyncio  # noqa: E402
-import inspect  # noqa: E402
-
-
-def _force_anonymous_auth() -> None:
-    from microsoft_agents.hosting.core.rest_channel_service_client_factory import (
-        RestChannelServiceClientFactory,
-    )
-
-    def _wrap(func):  # noqa: ANN001, ANN202
-        signature = inspect.signature(func)
-
-        async def wrapper(self, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003
-            bound = signature.bind(self, *args, **kwargs)
-            bound.apply_defaults()
-            bound.arguments["use_anonymous"] = True
-            arguments = dict(bound.arguments)
-            instance = arguments.pop("self")
-            return await func(instance, **arguments)
-
-        return wrapper
-
-    RestChannelServiceClientFactory.create_connector_client = _wrap(
-        RestChannelServiceClientFactory.create_connector_client
-    )
-    RestChannelServiceClientFactory.create_user_token_client = _wrap(
-        RestChannelServiceClientFactory.create_user_token_client
-    )
-
-
-_force_anonymous_auth()
-
-
-def _stub_user_email_for_emulator() -> None:
-    """Resolve the user's email from BOT_DEV_FAKE_EMAIL instead of the Teams connector (no-op if unset)."""
-    import os
-
-    fake_email = os.environ.get("BOT_DEV_FAKE_EMAIL")
-    if not fake_email:
-        return
-
-    from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
-
-    async def _resolve(turn_context):  # noqa: ANN001
-        return fake_email
-
-    CompletionHandler.resolve_user_email = staticmethod(_resolve)
-
-
-_stub_user_email_for_emulator()
-
-from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
-from swiss_ai_hub.core.routes import HealthController  # noqa: E402
-from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler  # noqa: E402
-
-from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController  # noqa: E402
-from swiss_ai_hub.bot.routes.openai.openai_chat_controller import OpenaiChatController  # noqa: E402
-from swiss_ai_hub.bot.runners.simulated_agent_bot_test_runner import SimulatedAgentBotTestRunner  # noqa: E402
-
-enable_logging()
-
-
-async def main():
-    runner = SimulatedAgentBotTestRunner(agent_class="my_agent_class", agent_id="my_agent_id")
-    runner.with_simple_chunk_events()
-    auth = TestAuthHandler()
-
-    runner.mount(
-        HealthController(auth=auth).get_health(),
-        AgentChatController(auth=auth).completions_json().completions_stream(),
-        OpenaiChatController(auth=auth).json_chat_completion().stream_chat_completion(),
-    )
-
-    # MUST call start_simulation() — runner.run() normally does this before serving. It starts the
-    # simulated agent's NATS subscribers; skip it and every chat times out waiting for a reply.
-    await runner.start_simulation()
-
-    from uvicorn import Config, Server
-
-    server = Server(Config(app=runner.create_app(), host="0.0.0.0", port=8001, log_level="debug"))
-    await server.serve()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
+1. **Forces the SDK's unauthenticated mode** — monkeypatches `RestChannelServiceClientFactory.create_connector_client`
+   and `create_user_token_client` to pass `use_anonymous=True`. Without it the `CloudAdapter` requires MSAL: you hit
+   `TENANT_ID is not set` on inbound and a `401` (rejected token) on the outbound reply.
+2. **Binds `0.0.0.0:8001`** (not the runner's hard-coded `localhost`) so a Windows-hosted emulator can reach it across
+   the WSL2 boundary, and calls **`runner.start_simulation()` before serving** — that starts the simulated agent's NATS
+   subscribers; skip it and every chat times out waiting for a reply.
+3. **Optionally stubs the user email** via `BOT_DEV_FAKE_EMAIL` (see Step 4) — a no-op when unset, so it never affects
+   real connector-based resolution.
 
 ### Step 1 — Seed a PathEntity for the endpoint
 
