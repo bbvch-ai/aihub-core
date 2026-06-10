@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.293.0] - 2026-06-10 - Enhanced Version Visibility for API and UI
+
+### Added
+
+- ✨ **Service Version Reporting**: The API's `/health` and `/ready` endpoints now include the running service version in
+  their responses, improving operational visibility.
+- ✨ **UI Version Display**: The web application now fetches and displays both its own and the API's service versions in
+  the user settings, clearly indicating if the UI and API are running on different versions.
+- ✨ **OpenAPI Version Documentation**: The API's OpenAPI specification has been updated to include the service version,
+  making it programmatically accessible for clients.
+
+### Changed
+
+- 🔄 **Health Response Structure**: The core `HealthResponse` data transfer object has been extended to include a
+  dedicated `version` field.
+- 🔄 **Web Build Process**: The web application's Dockerfile and Nuxt configuration have been updated to bake the service
+  version into the static bundle during build time, ensuring accurate version reporting.
+
+______________________________________________________________________
+
 ## [v0.292.3] - 2026-06-10 - Enhanced Reliability for Agent Event Streams
 
 ### Fixed

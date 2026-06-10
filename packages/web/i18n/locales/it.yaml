@@ -91,6 +91,7 @@ user:
   title: Utenti
   logout: Esci
   language: Lingua
+  version: Versione
   role_chips:
     no_roles: Nessun ruolo assegnato
     assign: Assegna ruolo
