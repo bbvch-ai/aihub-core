@@ -5746,6 +5746,12 @@ export type HealthResponse = {
    */
   code: number;
   /**
+   * Version
+   *
+   * Running service version.
+   */
+  version: string;
+  /**
    * Checks
    *
    * Individual health check results.

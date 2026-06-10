@@ -65,6 +65,7 @@ class ApiHealthController(HealthController):
             return HealthResponse(
                 status=status,
                 code=code,
+                version=self._version,
                 checks=ApiHealthChecks(
                     nats=nats_healthy,
                     mongodb=mongodb_healthy,
