@@ -29,6 +29,13 @@ def _force_anonymous_auth() -> None:
 
     def _wrap(func):  # noqa: ANN001, ANN202
         signature = inspect.signature(func)
+        if "use_anonymous" not in signature.parameters:
+            # Fail loudly instead of silently mis-patching if a future microsoft-agents release
+            # renames or removes the kwarg this shim depends on.
+            raise RuntimeError(
+                f"{func.__qualname__} no longer accepts 'use_anonymous'; the local emulator's "
+                "anonymous-auth shim needs updating for this microsoft-agents version."
+            )
 
         async def wrapper(self, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003
             # Callers pass ``use_anonymous`` positionally, so bind everything and override it by
