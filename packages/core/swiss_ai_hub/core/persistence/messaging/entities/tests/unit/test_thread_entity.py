@@ -11,8 +11,8 @@ class TestGetOrderBy:
         [
             ("created_at", -1, "-created_at"),
             ("created_at", 1, "created_at"),
-            ("name", -1, "-name"),              
-            ("name", 1, "name"),                
+            ("name", -1, "-name"),
+            ("name", 1, "name"),
         ],
     )
     def test_valid_fields_map_to_prefixed_order(self, sort_by, sort_order, expected):
