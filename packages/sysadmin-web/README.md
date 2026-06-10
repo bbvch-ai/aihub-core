@@ -66,5 +66,5 @@ Only sysadmin-specific assets live here:
 ## See also
 
 - `packages/web/README.md` — the parent admin UI (AGPL-3.0-or-later)
-- `packages/sysadmin-api/` — the AGPL-3.0 backend this UI talks to
+- `packages/sysadmin-api/` — the AGPL-3.0-or-later backend this UI talks to
 - `LICENSES.md` (repo root) — the per-package license matrix

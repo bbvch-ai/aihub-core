@@ -1,4 +1,4 @@
-# packages/sysadmin-api - System Administration API (AGPL-3.0)
+# packages/sysadmin-api - System Administration API (AGPL-3.0-or-later)
 
 **Purpose**: FastAPI service for system-administrator-only operations. Multi-tenant management lives here. Runs as a
 separate Docker image on `sysadmin.${DOMAIN}/api/v1/*`.

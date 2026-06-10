@@ -2327,7 +2327,7 @@ services:
       - traefik.http.services.web.loadbalancer.server.port=8080
       - traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file
   # ===================================================================
-  # Sysadmin API (AGPL-3.0)
+  # Sysadmin API (AGPL-3.0-or-later)
   # ===================================================================
   # FastAPI service for system-administrator-only operations (multi-tenant
   # management). Routed at sysadmin.${DOMAIN}/api/v1/*. Independent of the
@@ -2440,7 +2440,7 @@ services:
       - backend
       - data
   # ===================================================================
-  # Sysadmin Web UI (AGPL-3.0)
+  # Sysadmin Web UI (AGPL-3.0-or-later)
   # ===================================================================
   # Nuxt 3 SPA dedicated to system administration. Routed at
   # sysadmin.${DOMAIN}/* (path /api/v1 goes to sysadmin-api by priority).

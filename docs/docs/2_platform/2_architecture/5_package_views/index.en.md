@@ -49,7 +49,7 @@ Because the API is the most-connected first-party container, its view is split i
 creating and deleting tenants, assigning platform-level roles, and other `AIHubSysAdmin`-gated operations. It runs as
 its own FastAPI service on `sysadmin.${DOMAIN}/api/v1/*`.
 
-**Why it's a separate package.** The main API ships under Apache-2.0; the sysadmin plane ships under AGPL-3.0
+**Why it's a separate package.** The main API ships under Apache-2.0; the sysadmin plane ships under AGPL-3.0-or-later
 (network-copyleft). Keeping it a physically separate, separately-licensed artifact prevents AGPL terms from leaking onto
 the Apache-2.0 code. It also enforces a hard security boundary — every endpoint requires the `AIHubSysAdmin` realm role.
 
@@ -83,7 +83,7 @@ Layer that *extends* `@swiss-ai-hub/web`, reusing its components, composables, a
 sysadmin-only pages. It is hosted at `sysadmin.${DOMAIN}/*`.
 
 **Why it's a separate package.** Same reasoning as the Sysadmin API: it is a separate deploy artifact with its own
-security boundary on the `sysadmin.${DOMAIN}` subdomain. Both `packages/web` and the sysadmin plane ship under AGPL-3.0,
+security boundary on the `sysadmin.${DOMAIN}` subdomain. Both `packages/web` and the sysadmin plane ship under AGPL-3.0-or-later,
 so the separation is architectural rather than a licensing boundary. The Nuxt Layer mechanism lets it inherit nearly
 everything from the open-source UI without copying code.
 

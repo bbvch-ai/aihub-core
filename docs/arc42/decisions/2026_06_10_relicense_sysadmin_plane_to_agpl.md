@@ -1,4 +1,4 @@
-# Relicense the Sysadmin Plane to AGPL-3.0 (Fully Open-Source)
+# Relicense the Sysadmin Plane to AGPL-3.0-or-later (Fully Open-Source)
 
 ## Context
 
@@ -18,15 +18,15 @@ deploy artifact, but is relicensed to AGPL rather than kept proprietary.
 - *Trust in regulated Swiss markets* — a publicly auditable, fully open codebase is easier to adopt and review.
 - *Keep SaaS-rehost protection* — AGPL network-copyleft on the administration plane still forces hosted modifications to
   publish source, the same protection the web UI and backup service already rely on.
-- *Simpler licensing story* — two licenses (Apache-2.0 backend/SDK, AGPL-3.0 user-facing + administration) instead of
-  three.
+- *Simpler licensing story* — two licenses (Apache-2.0 backend/SDK, AGPL-3.0-or-later user-facing + administration)
+  instead of three.
 
 ## Decision
 
 Relicense both sysadmin packages from `LicenseRef-Proprietary` to **AGPL-3.0-or-later**:
 
-- Replace `packages/sysadmin-api/LICENSE` and `packages/sysadmin-web/LICENSE` with the verbatim GNU AGPL-3.0 text (as
-  used by `packages/web`).
+- Replace `packages/sysadmin-api/LICENSE` and `packages/sysadmin-web/LICENSE` with the verbatim GNU AGPL v3 license text
+  (as used by `packages/web`).
 - Set `AGPL-3.0-or-later` in `packages/sysadmin-api/pyproject.toml` and `packages/sysadmin-web/package.json`.
 - **Remove the per-file `SPDX-License-Identifier` headers** from both packages instead of flipping them to AGPL. No
   other package carries per-file headers — the package-level `LICENSE` file is authoritative — so removing them makes
@@ -40,7 +40,7 @@ The Apache-2.0 backend/SDK packages (`core`, `agent`, `api`, `bot`, `pipeline`, 
 
 ## Consequences
 
-- The platform is fully open-source; the sysadmin plane can be used, modified, and self-hosted under AGPL-3.0.
+- The platform is fully open-source; the sysadmin plane can be used, modified, and self-hosted under AGPL-3.0-or-later.
 - The package separation is now **architectural** (separate deploy artifact, own subdomain, hard sysadmin-gated security
   boundary) rather than a licensing boundary. The Apache-2.0 → AGPL one-way embedding rule still holds: AGPL code must
   not leak back into the Apache-2.0 packages.
