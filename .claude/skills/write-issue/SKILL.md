@@ -1,7 +1,6 @@
 ---
 name: write-issue
 description: Author a new, convention-conformant GitHub issue for bbvch-ai/aihub-core — title format, the In scope / Out of scope / Accepted when body structure, area:* and version labels, sibling and blocked-by cross-references — then create it and add it to the AI-Scrum board (org project 37) with Item Type, Priority, and Status set. Use when user says 'write an issue', 'create a GitHub issue', 'open an issue for X', 'file a bug', 'draft an epic', or 'add a story to the board'. Do NOT use for planning an existing issue's implementation (use plan-issue), breaking an issue into sub-issues (use splice-issue), or creating a PR (use create-pr).
-disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
@@ -19,6 +18,19 @@ Read two recent issues to anchor on the house style — the body convention is t
 gh issue view 1452 -R bbvch-ai/aihub-core --json title,body   # Story: In/Out/Accepted-when + "Blocked by"
 gh issue view 1412 -R bbvch-ai/aihub-core --json title,labels # Bug: type(scope) title + area: label
 ```
+
+## Step 0: Research the Subject and Clarify
+
+Before drafting, ground the issue in the actual codebase — an issue written from the request alone is not actionable.
+
+1. **Research** the files, packages, conventions, and current behaviour the issue touches (grep/read the relevant code,
+   docs, and config). Name real paths in the body — e.g. the relicensing surface lives in `LICENSES.md`, per-package
+   `LICENSE` files, and SPDX headers, not just "the licenses".
+2. **Resolve ambiguity with the user via the AskUserQuestion tool** before writing — at minimum **Item Type**
+   (Epic/Story/Task) and **Priority** (P0/P1/P2), plus any scope fork the request leaves open. Never guess Priority or
+   invent scope; a wrong field or an assumed boundary sends the issue back for rework.
+
+Carry the answers into the body (Step 3) and the board fields (Step 5).
 
 ## Step 1: Decide the Item Type
 
