@@ -139,6 +139,15 @@ thread:
     numEvents: Numero di eventi
     status: Stato
     pending: In attesa
+    search_placeholder: Cerca per nome
+    filter:
+      status_placeholder: Filtra per stato
+      active: Attivo
+      completed: Completato
+      failed: Fallito
+      agent_name_placeholder: Filtra per agente
+      user_name_placeholder: Filtra per utente
+      date_range_placeholder: Filtra per data
   utils:
     pendingTypes:
       hitl: Umano nel loop
@@ -338,6 +347,13 @@ agent:
     online: Online
     offline: Offline
     clone: Clonare
+    search_placeholder: Cerca per nome
+    no_results: Nessun agente trovato
+    filter:
+      type_placeholder: Filtra per tipo di agente
+      status_placeholder: Filtra per stato
+      enabled: Abilitato
+      disabled: Disabilitato
   workflow:
     title: Flusso di lavoro agentico
     view_tooltip: Visualizza il flusso di lavoro
