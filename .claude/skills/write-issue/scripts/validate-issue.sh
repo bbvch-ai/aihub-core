@@ -4,9 +4,12 @@
 set -euo pipefail
 
 ISSUE="${1:?Usage: validate-issue.sh <issue-number>}"
+[[ "$ISSUE" =~ ^[0-9]+$ ]] || {
+  echo "ERROR: issue must be a number (got: $ISSUE)" >&2
+  exit 1
+}
 REPO="bbvch-ai/aihub-core"
 PROJECT_NUMBER=37
-PROJECT_OWNER="bbvch-ai"
 ERRORS=0
 WARNINGS=0
 
@@ -17,60 +20,72 @@ JSON=$(gh issue view "$ISSUE" -R "$REPO" --json title,body,labels 2>/dev/null) |
   exit 1
 }
 
-TITLE=$(echo "$JSON" | python3 -c 'import json,sys;print(json.load(sys.stdin)["title"])')
-BODY=$(echo "$JSON" | python3 -c 'import json,sys;print(json.load(sys.stdin)["body"] or "")')
-LABELS=$(echo "$JSON" | python3 -c 'import json,sys;print(" ".join(l["name"] for l in json.load(sys.stdin)["labels"]))')
+TITLE=$(jq -r '.title' <<<"$JSON")
+BODY=$(jq -r '.body // ""' <<<"$JSON")
+LABELS=$(jq -r '[.labels[].name] | join(" ")' <<<"$JSON")
 
 echo "Title:  $TITLE"
 echo "Labels: ${LABELS:-<none>}"
 
 # --- area:* label present ---
-if ! echo "$LABELS" | grep -q 'area:'; then
+if ! grep -q 'area:' <<<"$LABELS"; then
   echo "ERROR: No area:* label. Add one per touched package (e.g. area:api)." >&2
   ERRORS=$((ERRORS + 1))
 fi
 
 # --- version label (advisory) ---
-if ! echo "$LABELS" | grep -qE '(^| )(major|minor|patch)( |$)'; then
+if ! grep -qE '(^| )(major|minor|patch)( |$)' <<<"$LABELS"; then
   echo "WARNING: No version label (major/minor/patch). The closing PR will need one." >&2
   WARNINGS=$((WARNINGS + 1))
 fi
 
-# --- body structure ---
+# --- body structure: require the bold heading at line start, not just the phrase ---
 for SECTION in "In scope" "Out of scope" "Accepted when"; do
-  if ! echo "$BODY" | grep -qiF "$SECTION"; then
-    echo "WARNING: Body missing '**$SECTION**' section (expected for epics/stories/features)." >&2
+  if ! grep -qE "^\*\*${SECTION}\*\*" <<<"$BODY"; then
+    echo "WARNING: Body missing '**$SECTION**' heading (expected for epics/stories/features)." >&2
     WARNINGS=$((WARNINGS + 1))
   fi
 done
 
-if ! echo "$BODY" | grep -qE '^\s*- \[ \]'; then
+# --- checkbox acceptance criteria (checked or unchecked) ---
+if ! grep -qE '^[[:space:]]*- \[[ xX]\]' <<<"$BODY"; then
   echo "WARNING: No checkbox acceptance criteria (- [ ]) found in 'Accepted when'." >&2
   WARNINGS=$((WARNINGS + 1))
 fi
 
 # --- on the AI-Scrum board with an Item Type ---
-ITEM=$(gh project item-list "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --format json --limit 2000 2>/dev/null \
-  | python3 -c '
-import json, sys
-issue = int(sys.argv[1])
-data = json.load(sys.stdin)
-for it in data.get("items", []):
-    if (it.get("content") or {}).get("number") == issue:
-        item_type = next((v for k, v in it.items() if k.lower().replace(" ", "") == "itemtype"), "")
-        print(item_type or "")
-        sys.exit(0)
-sys.exit(3)
-' "$ISSUE") && ON_BOARD=1 || ON_BOARD=0
+# Query the issue node directly: O(1) and immune to board growth (no item-list paging),
+# and reads the Item Type single-select by its field name.
+# shellcheck disable=SC2016  # $number is a GraphQL variable (bound via -F), not a shell expansion
+BOARD_JSON=$(gh api graphql -F number="$ISSUE" -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") {
+      issue(number: $number) {
+        projectItems(first: 20) {
+          nodes {
+            project { number }
+            fieldValueByName(name: "Item Type") {
+              ... on ProjectV2ItemFieldSingleSelectValue { name }
+            }
+          }
+        }
+      }
+    }
+  }' 2>/dev/null || echo '{}')
 
-if [ "$ON_BOARD" -ne 1 ]; then
+ON_BOARD=$(jq -r --argjson pn "$PROJECT_NUMBER" \
+  '[.data.repository.issue.projectItems.nodes[]? | select(.project.number == $pn)] | length' <<<"$BOARD_JSON")
+ITEM_TYPE=$(jq -r --argjson pn "$PROJECT_NUMBER" \
+  'first(.data.repository.issue.projectItems.nodes[]? | select(.project.number == $pn) | .fieldValueByName.name) // ""' <<<"$BOARD_JSON")
+
+if [ "${ON_BOARD:-0}" -eq 0 ]; then
   echo "ERROR: Issue #$ISSUE is not on the AI-Scrum board (project $PROJECT_NUMBER)." >&2
   ERRORS=$((ERRORS + 1))
-elif [ -z "$ITEM" ]; then
+elif [ -z "$ITEM_TYPE" ]; then
   echo "WARNING: On the board but Item Type (Epic/Story/Task) is unset." >&2
   WARNINGS=$((WARNINGS + 1))
 else
-  echo "Board:  on AI-Scrum, Item Type=$ITEM"
+  echo "Board:  on AI-Scrum, Item Type=$ITEM_TYPE"
 fi
 
 echo ""

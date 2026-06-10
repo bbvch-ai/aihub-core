@@ -87,11 +87,24 @@ Rules:
 - **Accepted when** is a checkbox list (`- [ ]`) describing observable behavior. No endpoint paths, class names, or
   implementation mechanics — those change. ("Users over their hard cap are rejected at the gateway", not "add a check in
   `LiteLLMService`").
+
 - **Out of scope** bullets name the sibling/parent issue that owns the excluded work. This is how the team keeps issues
   self-contained without scope creep.
+
 - Use `**Blocked by #NNN.**` as a footer only for a true dependency; wire the actual relationship in Step 6.
-- For a **bug**, lead with current-behavior / expected-behavior / repro in the context paragraph, then keep **Accepted
-  when** as the fix criteria.
+
+- For a **bug**, open with current-behaviour / expected-behaviour / repro, then keep **Accepted when** as the fix
+  criteria:
+
+  ```markdown
+  **Current behaviour:** {what happens today, with the error/symptom}.
+  **Expected behaviour:** {what should happen}.
+  **Repro:** {minimal steps, or the trigger condition}.
+
+  **Accepted when**
+
+  - [ ] {the bug no longer reproduces under the steps above}.
+  ```
 
 ## Step 4: Create the Issue
 
@@ -104,8 +117,11 @@ Pick labels first:
   it on the issue if it is already clear).
 - Optional: `Good first issue`, `onboarding needs`, `Possible security concern`.
 
+`gh issue create` prints the new issue URL on stdout. Capture it into `ISSUE_URL` and derive `NEW_ISSUE` (the number) —
+Steps 5–7 reference both:
+
 ```bash
-gh issue create -R bbvch-ai/aihub-core \
+ISSUE_URL=$(gh issue create -R bbvch-ai/aihub-core \
   --title "feat(swiss-ai-hub): Subject here" \
   --body "$(cat <<'EOF'
 Context paragraph referencing #441.
@@ -127,15 +143,16 @@ Context paragraph referencing #441.
 **Blocked by #1451.**
 EOF
 )" \
-  --label "area:api" --label "area:auth" --label "minor"
+  --label "area:api" --label "area:auth" --label "minor")
+NEW_ISSUE="${ISSUE_URL##*/}"   # the issue number, e.g. 1457
+echo "Created $ISSUE_URL (#$NEW_ISSUE)"
 ```
-
-Capture the returned URL/number — both later steps need it.
 
 ## Step 5: Add to the AI-Scrum Board and Set Fields
 
 The AI-Scrum board is **org project 37** (node id `PVT_kwDOCmtSJM4BRjLz`). Add the issue, then set the single-select
-fields by option id.
+fields by option id. (Project node id and the field/option ids below verified 2026-06-10 — re-fetch if stale, see the
+note at the end of this step.)
 
 ```bash
 # Add the issue; capture the returned project item id.
@@ -151,7 +168,7 @@ PROJECT_ID="PVT_kwDOCmtSJM4BRjLz"
 gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" \
   --field-id "PVTSSF_lADOCmtSJM4BRjLzzhR6uAQ" --single-select-option-id "38e86722"
 
-# Status     (field PVTSSF_lADOCmtSJM4BRjLzzg_WG-g): Backlog=f75ad846 Ready=efca25cd ...
+# Status     (field PVTSSF_lADOCmtSJM4BRjLzzg_WG-g): Backlog default below; full option ids listed after this block
 gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" \
   --field-id "PVTSSF_lADOCmtSJM4BRjLzzg_WG-g" --single-select-option-id "f75ad846"
 
