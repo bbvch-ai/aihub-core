@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.293.0] - 2026-06-10 - Enhanced Version Visibility for API and UI
+
+### Added
+
+- ✨ **Service Version Reporting**: The API's `/health` and `/ready` endpoints now include the running service version in
+  their responses, improving operational visibility.
+- ✨ **UI Version Display**: The web application now fetches and displays both its own and the API's service versions in
+  the user settings, clearly indicating if the UI and API are running on different versions.
+- ✨ **OpenAPI Version Documentation**: The API's OpenAPI specification has been updated to include the service version,
+  making it programmatically accessible for clients.
+
+### Changed
+
+- 🔄 **Health Response Structure**: The core `HealthResponse` data transfer object has been extended to include a
+  dedicated `version` field.
+- 🔄 **Web Build Process**: The web application's Dockerfile and Nuxt configuration have been updated to bake the service
+  version into the static bundle during build time, ensuring accurate version reporting.
+
+______________________________________________________________________
+
+## [v0.292.3] - 2026-06-10 - Enhanced Reliability for Agent Event Streams
+
+### Fixed
+
+- 🐛 Resolved a race condition that could cause **agent output streaming chunks** to be dropped, leading to incomplete or
+  blank answers in chat clients. This fix ensures all `DisplayEvent`s are processed before consumer teardown.
+- 🔗 Guaranteed the **delivery of complete agent answers** by implementing a durable backstop that reconciles any missing
+  content from the final stop event, preventing empty assistant turns and associated errors.
+
+### Added
+
+- ✨ Introduced shared utility methods, **`iter_streamed_display_events`** and **`wait_for_stop_then_drain`**, in
+  `ChatService` to ensure all display events are gracefully drained and processed after an agent run completes.
+- 📄 Documented the architectural decision for robust streaming in a new ADR: **"Drain Display-Event Streams Before
+  Consumer Teardown"**.
+- 🧪 Added new **unit tests** to validate the correctness and resilience of the event draining and answer reconciliation
+  logic.
+
+### Changed
+
+- 🔄 Refactored **all streaming event consumers** (including OpenAI SSE, JSON, and native event streams) to utilize the
+  new graceful draining mechanisms, improving the consistency and reliability of agent output.
+- 🚀 Updated **final content resolution** for OpenAI and JSON responses to include delta reconciliation, using the
+  terminal `StopEvent` as a source of truth to complete partially streamed or lost answers.
+
+______________________________________________________________________
+
+## [v0.292.2] - 2026-06-09 - Infrastructure Network Enhancements
+
+### Changed
+
+- 🚀 **Improved Backend Network Connectivity:** The core backend services are now connected to a dedicated `egress`
+  network across all deployment configurations, enhancing support for secure and managed outbound connections.
+
+______________________________________________________________________
+
 ## [v0.292.0] - 2026-06-08 - Streamlined Python Distribution: PyPI Launch and Enhanced Documentation
 
 ### Added

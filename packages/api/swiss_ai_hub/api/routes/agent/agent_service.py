@@ -145,8 +145,7 @@ class AgentService:
             external_agent_event_distributor=external_agent_event_distributor,
         )
 
-        await resources.stop_signal.wait()
-        await resources.subscriber.stop()
+        await ChatService.wait_for_stop_then_drain(resources)
 
         return resources.stop_event
 

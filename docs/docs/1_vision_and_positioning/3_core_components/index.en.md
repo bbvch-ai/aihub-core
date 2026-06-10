@@ -41,7 +41,7 @@ and build confidence in the system.
 
 ## Tier 1: Foundation for secure AI access
 
-![Tier 1 Architecture](../../../../media/architecture/high_level/tier_1.png)
+![Tier 1 Architecture](../../../media/architecture/high_level/tier_1.svg)
 
 The primary user entry point is the Open-WebUI web interface, which supports text, document, and voice inputs.
 
@@ -62,7 +62,7 @@ access is explicitly configured.
 
 ## Tier 1+: Meeting users where they work
 
-![Tier 1+ Architecture](../../../../media/architecture/high_level/tier_1_plus.png)
+![Tier 1+ Architecture](../../../media/architecture/high_level/tier_1_plus.svg)
 
 The limitation of a standalone web interface is the workflow disruption caused by context switching. Tier 1+ resolves
 this by extending the platform's capabilities into the applications employees use daily. A user in Microsoft Teams can
@@ -90,7 +90,7 @@ interactions, regardless of their origin, are subject to the same security, gove
 
 ## Tier 2: From data to contextual intelligence
 
-![Tier 2 Architecture](../../../../media/architecture/high_level/tier_2.png)
+![Tier 2 Architecture](../../../media/architecture/high_level/tier_2.svg)
 
 Tier 2 introduces capabilities for ingesting and structuring organizational data to provide context to AI agents. The
 process starts with information sources like SharePoint document libraries.
@@ -118,7 +118,7 @@ systems can securely access the platform, including its agents.
 
 ## Tier 3: Orchestrating business processes
 
-![Tier 3 Architecture](../../../../media/architecture/high_level/tier_3.png)
+![Tier 3 Architecture](../../../media/architecture/high_level/tier_3.svg)
 
 Tier 3 introduces a process orchestration engine to automate multi-step workflows that involve AI agents, humans, and
 external systems.
