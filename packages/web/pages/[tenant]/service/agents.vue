@@ -23,7 +23,7 @@
             option-value="value"
             :placeholder="t('agent.list.filter.type_placeholder')"
             show-clear
-            class="w-50"
+            class="w-52"
           />
           <Select
             v-model="status"
@@ -32,7 +32,7 @@
             option-value="value"
             :placeholder="t('agent.list.filter.status_placeholder')"
             show-clear
-            class="w-50"
+            class="w-52"
           />
           <InputText
             v-model="searchQuery"
