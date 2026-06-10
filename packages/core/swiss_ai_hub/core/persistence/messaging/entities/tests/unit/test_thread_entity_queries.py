@@ -79,9 +79,7 @@ class TestThreadFilteringAndSorting:
     def test_status_thread_ids_restrict_by_id(self):
         keep = _thread("keep", user_id="u1")
         _thread("drop", user_id="u1")
-        res = ThreadEntity.get_paginated_threads_by_user(
-            "u1", filters=ThreadFilters(status_thread_ids=[str(keep.id)])
-        )
+        res = ThreadEntity.get_paginated_threads_by_user("u1", filters=ThreadFilters(status_thread_ids=[str(keep.id)]))
         assert [t.name for t in res] == ["keep"]
 
     def test_date_range_filters_created_at_inclusive(self):
