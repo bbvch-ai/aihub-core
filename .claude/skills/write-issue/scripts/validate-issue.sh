@@ -57,7 +57,8 @@ issue = int(sys.argv[1])
 data = json.load(sys.stdin)
 for it in data.get("items", []):
     if (it.get("content") or {}).get("number") == issue:
-        print(it.get("itemType") or it.get("Item Type") or "")
+        item_type = next((v for k, v in it.items() if k.lower().replace(" ", "") == "itemtype"), "")
+        print(item_type or "")
         sys.exit(0)
 sys.exit(3)
 ' "$ISSUE") && ON_BOARD=1 || ON_BOARD=0
