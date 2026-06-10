@@ -29,6 +29,7 @@ from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
+from swiss_ai_hub.core.persistence.messaging.entities.thread_filters import ThreadFilters
 
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
@@ -113,11 +114,36 @@ class ThreadService:
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
+        sort_by: str = "created_at",
+        sort_order: int = -1,
+        search: str | None = None,
+        agent_id: str | None = None,
+        user_search_id: str | None = None,
+        status: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
     ) -> tuple[int, list[ThreadDTO]]:
         """Returns a paginated list of threads that the user is a member of."""
         skip = (page - 1) * page_size
-        total = ThreadEntity.count_threads_by_user(user_id)
-        threads = ThreadEntity.get_paginated_threads_by_user(user_id, skip=skip, limit=page_size)
+        status_thread_ids = None
+        if status:
+            status_thread_ids = PersistedAgentEventEntity.thread_ids_by_status(status)
+            if not status_thread_ids:
+                return 0, []
+
+        filters = ThreadFilters(
+            search=search,
+            agent_id=agent_id,
+            user_search_id=user_search_id,
+            status_thread_ids=status_thread_ids,
+            from_date=from_date,
+            to_date=to_date,
+        )
+
+        total = ThreadEntity.count_threads_by_user(user_id, filters=filters)
+        threads = ThreadEntity.get_paginated_threads_by_user(
+            user_id, skip=skip, limit=page_size, sort_by=sort_by, sort_order=sort_order, filters=filters
+        )
         thread_dtos = await asyncio.gather(
             *(ThreadService.thread_response_from_entity(thread, t) for thread in threads)
         )
