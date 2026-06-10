@@ -453,8 +453,6 @@ def default_rclone_to_datalake_definitions(
     """
     encode = resolve_encode_partition_keys(encode_partition_keys)
 
-    rclone_partitions = DynamicPartitionsDefinition(name="rclone_partitions")
-
     # Extract source name from config or from source_remote (e.g., "onedrive:Documents" -> "onedrive")
     # Ensure we always derive a non-empty, stable source_name for asset keys
     if rclone_config and rclone_config.name:
@@ -467,6 +465,8 @@ def default_rclone_to_datalake_definitions(
             source_name = candidate if candidate else "local_fs"
         else:
             source_name = "local_fs"
+
+    rclone_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_{source_name}_rclone_partitions")
 
     pipeline_group = f"{source_name}_to_datalake"
 
