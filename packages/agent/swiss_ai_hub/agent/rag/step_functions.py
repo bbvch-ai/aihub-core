@@ -44,6 +44,9 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
     LimitChatHistoryWithContextEvent,
 )
 from swiss_ai_hub.agent.context.run.run_context import RunContext
+from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
+
+PREV_GROUNDING_NODES_KEY = "prev_grounding_nodes"
 
 
 def do_limit_chat_history(
@@ -178,16 +181,44 @@ async def do_order_nodes_by_documents(
     t: LocaleHandler,
     context_prompt: LocaleString | None,
     displayer: EventDisplayer,
+    carried_nodes: list[IngestedNode] | None = None,
 ) -> InOrderNodeCombinerEvent:
-    """Order nodes and return InOrderNodeCombinerEvent."""
+    """Order nodes and return InOrderNodeCombinerEvent.
+
+    Carried nodes are prior-turn grounding documents (see `ThreadContext`); they are merged in as
+    regular reference documents so a follow-up turn keeps the source that grounded the offer, even
+    when the cold retrieval drops it.
+    """
     await displayer.display_thought(t("agent.thought.searching_knowledge"))
-    nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
+    fresh_nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
+    fresh_nodes = fresh_nodes or []
+    fresh_ids = {node.id for node in fresh_nodes}
+    carried_new = [node for node in (carried_nodes or []) if node.id not in fresh_ids]
+    merged_nodes = fresh_nodes + carried_new
     context_message = combine_nodes_in_order(
-        context_nodes=nodes,
+        context_nodes=merged_nodes,
         t=t,
         context_prompt=context_prompt,
     )
-    return InOrderNodeCombinerEvent(context_message=context_message)
+    return InOrderNodeCombinerEvent(context_message=context_message, grounding_nodes=merged_nodes)
+
+
+async def do_read_carried_grounding_nodes(thread_context: ThreadContext) -> list[IngestedNode]:
+    """Read prior-turn grounding nodes persisted in the thread (empty list when none)."""
+    raw_nodes = await thread_context.get(PREV_GROUNDING_NODES_KEY, [])
+    return [IngestedNode.model_validate(node) for node in raw_nodes]
+
+
+async def do_persist_grounding_nodes(
+    thread_context: ThreadContext,
+    nodes: list[IngestedNode],
+    top_n: int = 2,
+) -> None:
+    """Persist the top-N grounding nodes of this turn for the next turn to carry forward (overwrites)."""
+    await thread_context.set(
+        PREV_GROUNDING_NODES_KEY,
+        [node.model_dump(mode="json") for node in nodes[:top_n]],
+    )
 
 
 async def do_context_sufficient_guard(
