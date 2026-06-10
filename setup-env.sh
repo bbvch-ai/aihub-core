@@ -48,6 +48,11 @@ command -v openssl >/dev/null 2>&1 || {
     exit 1
 }
 
+command -v uuidgen >/dev/null 2>&1 || {
+    echo "ERROR: 'uuidgen' is required but not found." >&2
+    exit 1
+}
+
 if [[ ! -f "$TEMPLATE" ]]; then
     echo "ERROR: Template file not found: $TEMPLATE" >&2
     exit 1
@@ -74,6 +79,12 @@ gen_urlsafe_24() {
 # 32 bytes → 64 hex chars (matches Python secrets.token_hex(32))
 gen_hex_64() {
     openssl rand -hex 32 | tr -d '\n'
+}
+
+# Random UUIDv4. uuidgen emits uppercase on some platforms (e.g. macOS), so
+# normalize to lowercase for consistency.
+gen_uuid() {
+    uuidgen | tr 'A-Z' 'a-z' | tr -d '\n'
 }
 
 # Replace all occurrences of a placeholder one at a time, each with a unique value.
@@ -106,6 +117,7 @@ declare -A PLACEHOLDERS=(
     ["pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY"]="gen_langfuse_pk"
     ["sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY"]="gen_langfuse_sk"
     ["REPLACE_WITH_64_HEX_CHARS"]="gen_hex_64"
+    ["REPLACE_WITH_RANDOM_UUID"]="gen_uuid"
     ["REPLACE_WITH_RANDOM_STRING"]="gen_urlsafe_32"
 )
 
@@ -118,6 +130,7 @@ ORDERED_KEYS=(
     "pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY"
     "sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY"
     "REPLACE_WITH_64_HEX_CHARS"
+    "REPLACE_WITH_RANDOM_UUID"
     "REPLACE_WITH_RANDOM_STRING"
 )
 
