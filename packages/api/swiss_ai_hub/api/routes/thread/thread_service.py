@@ -127,7 +127,8 @@ class ThreadService:
         skip = (page - 1) * page_size
         status_thread_ids = None
         if status:
-            status_thread_ids = PersistedAgentEventEntity.thread_ids_by_status(status)
+            user_thread_ids = ThreadEntity.get_thread_ids_for_user(user_id)
+            status_thread_ids = PersistedAgentEventEntity.thread_ids_by_status(status, thread_ids=user_thread_ids)
             if not status_thread_ids:
                 return 0, []
 
