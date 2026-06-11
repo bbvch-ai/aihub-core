@@ -870,6 +870,7 @@ services:
         max-file: 2
     labels:
       - traefik.enable=true
+      - traefik.docker.network=proxy
       - traefik.http.routers.langfuse.rule=Host(`langfuse.${DOMAIN}`)
       - traefik.http.routers.langfuse.priority=4000
       - traefik.http.routers.langfuse.entrypoints=websecure
