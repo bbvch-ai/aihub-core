@@ -618,13 +618,15 @@ export function coerceNullableToggles(
  * process edit forms.
  */
 /**
- * Seed a group field's value: leave a disabled nullable group as `null`; otherwise
- * materialise its children's defaults (starting from the existing object when present).
- * `coerceNullableToggles` re-nullifies disabled subtrees at submit time, so seeding a
- * group whose toggle will end up off is safe.
+ * Seed a group field's value: always materialise its children's defaults (starting from
+ * the existing object when present, `{}` otherwise — including for a saved `null`). A null
+ * nullable group must still hold an object so FormKit can mount and render its children
+ * when the user flips the "Enable" toggle on. Visibility is governed by the synthetic
+ * toggle (seeded earlier from the raw null-ness by `seedNullableToggles`), and
+ * `coerceNullableToggles` re-nullifies disabled subtrees at submit time — so a materialised
+ * but disabled group is never persisted.
  */
-function seedGroupDefault(value: unknown, children: FormElement[]): Record<string, unknown> | null {
-  if (value === null) return null
+function seedGroupDefault(value: unknown, children: FormElement[]): Record<string, unknown> {
   const groupValue = value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {}
