@@ -120,8 +120,8 @@ class ThreadService:
         agent_id: str | None = None,
         user_search_id: str | None = None,
         status: str | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
     ) -> tuple[int, list[ThreadDTO]]:
         """Returns a paginated list of threads that the user is a member of."""
         skip = (page - 1) * page_size

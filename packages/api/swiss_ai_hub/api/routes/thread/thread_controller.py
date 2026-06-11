@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Literal, Self
 
 from fastapi import Depends, HTTPException, Path, Query, Security
@@ -80,10 +81,10 @@ class ThreadController(TenantScopedController):
                 Query(description="Filter by status: active, completed, failed", pattern="^(active|completed|failed)$"),
             ] = None,
             from_date: Annotated[
-                str | None, Query(alias="from", description="Filter threads created from this date")
+                datetime | None, Query(alias="from", description="Filter threads created from this date")
             ] = None,
             to_date: Annotated[
-                str | None, Query(alias="to", description="Filter threads created up to this date")
+                datetime | None, Query(alias="to", description="Filter threads created up to this date")
             ] = None,
             page: PageNumber = 1,
             page_size: PageSize = 20,
