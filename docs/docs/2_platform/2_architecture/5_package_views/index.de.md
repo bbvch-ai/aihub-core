@@ -14,9 +14,9 @@ proprietäre Paket werden zwei Dinge gepaart:
    es kommuniziert (eingehend *und* ausgehend). Es beantwortet: *"Wenn ich dieses Paket anfasse, womit werde ich sonst
    noch interagieren?"*
 
-Diese Ansichten sind bewusst getrennt vom Abschnitt [Code Deep Dive](../../../6_code_dive/), der die `README.md` jedes
-Pakets widerspiegelt – das Endbenutzerdokument, das auch auf PyPI und npm erscheint. Jenes Publikum installiert das
-Paket; dieses Publikum baut es. Für die geschichtete Plattform-Story (was im Data-Tier, LLM-Tier usw. lebt) siehe
+Diese Ansichten sind bewusst getrennt vom Abschnitt [Code Deep Dive](../../../6_code_deep_dive/), der die `README.md`
+jedes Pakets widerspiegelt – das Endbenutzerdokument, das auch auf PyPI und npm erscheint. Jenes Publikum installiert
+das Paket; dieses Publikum baut es. Für die geschichtete Plattform-Story (was im Data-Tier, LLM-Tier usw. lebt) siehe
 [Container](../2_containers/).
 
 ## API Gateway

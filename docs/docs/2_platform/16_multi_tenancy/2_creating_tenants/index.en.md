@@ -303,8 +303,9 @@ configured later.
 
 ## Practical tips
 
-::: tip Best Practices **Document your decisions**: Write down why you created each tenant and what its scope should be.
-Six months later when roles have changed, this documentation prevents confusion.
+::: tip Best Practices
+**Document your decisions**: Write down why you created each tenant and what its scope should be. Six months later when
+roles have changed, this documentation prevents confusion.
 
 **Start simple**: One management tenant and one end-user tenant works for many organizations. Add complexity only when
 you need it.

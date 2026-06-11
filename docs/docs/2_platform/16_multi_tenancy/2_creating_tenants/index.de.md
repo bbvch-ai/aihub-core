@@ -1,6 +1,6 @@
 ---
 title: Einrichten von Mandanten
-source_sha: f46ffb672981ce09fc8969d43080c3cfd6f6bd7138820d5c3a69415889bead41
+source_sha: 207f6ca847ea8e9f50200219865b470dfafbac25c767f3f831d400ef10706269
 ---
 
 # Einrichten von Mandanten
@@ -117,7 +117,7 @@ administriert _innerhalb_ eines Mandanten, nicht den Mandanten-Lebenszyklus selb
 `tenants`**. Klicken Sie auf der Registerkarte **Child groups** auf **Create group** und geben Sie die ID des Mandanten
 ein – zum Beispiel `finance`. Dies erstellt die Gruppe `/tenants/finance`.
 
-![Creating the tenant group under /tenants/ in the Keycloak admin console](../../../../media/platform/creating_tenants/01_keycloak_create_group.png)
+![Erstellen der Mandantengruppe unter /tenants/ in der Keycloak-Admin-Konsole](../../../../media/platform/creating_tenants/01_keycloak_create_group.png)
 
 Die Gruppen-ID wird zum unveränderlichen Bezeichner des Mandanten. Verwenden Sie einen kurzen, kleingeschriebenen,
 URL-sicheren Slug (`finance`, `acme-corp`, `production`); der menschenlesbare Anzeigename wird später als Metadaten
@@ -135,12 +135,12 @@ nicht eingeben – erreichen Sie sie über die Hauptanwendung auf eine von zwei 
 
 - **Mandanten-Umschalter** in der oberen Leiste → **Mandantenadministration** (nur für `AIHubSysAdmin`-Benutzer
   sichtbar), oder
-- die **Mandantenadministration**-Karte auf dem **Mandanten-Auswahlbildschirm** (`/de/select-tenant`).
+- die **Mandantenadministration**-Karte auf dem **Mandanten-Auswahlbildschirm** (`/select-tenant`).
 
-![The Tenant Administration entry point on the tenant-selection screen](../../../../media/platform/creating_tenants/02_enter_tenant_administration.png)
+![Der Einstiegspunkt zur Mandantenadministration auf dem Mandanten-Auswahlbildschirm](../../../../media/platform/creating_tenants/02_enter_tenant_administration.png)
 
-Beide Wege führen Sie zur Seite **Mandanten** (`/de/tenants`), die jeden Mandanten und seinen Status auflistet (Aktiv,
-Verwaist, Nicht konfiguriert — siehe [Mandantenstatus](#tenant-states)).
+Beide Wege führen Sie zur Seite **Mandanten** (`/tenants`), die jeden Mandanten und seinen Status auflistet (Aktiv,
+Verwaist, Nicht konfiguriert — siehe [Mandantenstatus](#mandantenstatus)).
 
 ### Schritt 3 – Mandanten konfigurieren
 
@@ -148,7 +148,7 @@ Klicken Sie auf der Seite **Mandanten** auf die gestrichelte Karte **Neuer Manda
 gibt es noch keine nicht konfigurierten Keycloak-Gruppen – gehen Sie zurück zu Schritt 1.) Der Dialog **Mandanten
 konfigurieren** hängt Metadaten an Ihre Keycloak-Gruppe an:
 
-![The Tenants page with the New Tenant card](../../../../media/platform/creating_tenants/03_new_tenant_card.png)
+![Die Seite „Mandanten“ mit der Karte „Neuer Mandant“](../../../../media/platform/creating_tenants/03_new_tenant_card.png)
 
 - **Keycloak Mandanten-ID** – ein Dropdown-Menü der Keycloak-Gruppen unter `/tenants/`, die noch keine Metadaten haben.
   Wählen Sie die Gruppe aus, die Sie in Schritt 1 erstellt haben (z. B. `finance`).
@@ -156,15 +156,15 @@ konfigurieren** hängt Metadaten an Ihre Keycloak-Gruppe an:
   („Finanzabteilung“, „Kunde – Acme Corp“, „Produktion“). Muss eindeutig sein.
 - **Beschreibung** – wofür der Mandant ist. Hilft aktuellen und zukünftigen Administratoren, seinen Zweck zu verstehen.
 - **Zugriffsregeln** – optionale Regeln, die den **maximalen Umfang** für jeden im Mandanten definieren (siehe
-  [Mandantenumfang festlegen](#scoping-tenants)). Sie können dies leer lassen und später verfeinern.
+  [Mandantenumfang festlegen](#mandantenumfang-festlegen)). Sie können dies leer lassen und später verfeinern.
 
-![The Configure Tenant dialog with the unconfigured Keycloak group in the Keycloak Tenant ID dropdown](../../../../media/platform/creating_tenants/04_configure_tenant_dialog.png)
+![Der Dialog „Mandanten konfigurieren“ mit der nicht konfigurierten Keycloak-Gruppe im Dropdown „Keycloak Mandanten-ID“](../../../../media/platform/creating_tenants/04_configure_tenant_dialog.png)
 
 Klicken Sie auf **Speichern**. Die Plattform initialisiert die Standardrollen des Mandanten, fügt den aktuellen
 Systemadministrator dem Mandanten hinzu und schreibt die Metadaten. Der Mandant wird sofort **Aktiv** und ist für seine
 Mitglieder auswählbar.
 
-![The newly created tenant shown as Active in the Tenants list](../../../../media/platform/creating_tenants/05_tenant_active.png)
+![Der neu erstellte Mandant wird in der Mandantenliste als „Aktiv“ angezeigt](../../../../media/platform/creating_tenants/05_tenant_active.png)
 
 > Es gibt kein separates „Umfang“-Feld im Erstellungsformular. Mandantengrenzen werden durch **Zugriffsregeln**
 > ausgedrückt, die Sie zum Zeitpunkt der Erstellung festlegen oder später über die Registerkarte **Übersicht** des
@@ -207,7 +207,7 @@ um die Plattform zu administrieren.
 
 Das Speichern eines neuen Mandanten **initialisiert automatisch eine Reihe von Standardrollen**, sodass der Mandant
 sofort nutzbar ist. Um diese zu überprüfen oder zu erweitern, öffnen Sie den Mandanten aus der Mandantenliste und
-wechseln Sie zur Registerkarte **Rollen** (`/de/tenants/<id>/roles`). Rollen definieren, was Benutzer innerhalb der
+wechseln Sie zur Registerkarte **Rollen** (`/tenants/<id>/roles`). Rollen definieren, was Benutzer innerhalb der
 Mandantengrenzen tun können; jede Rolle trägt ihre eigenen Zugriffsregeln, die durch die des Mandanten begrenzt sind.
 
 Für einen Abteilungs-Mandanten könnten Sie hinzufügen:
@@ -225,12 +225,12 @@ hat keine Privilegien im HR-Mandanten, es sei denn, diese wurden explizit gewäh
 
 ## Rollen an Benutzer zuweisen
 
-Öffnen Sie den Mandanten und wechseln Sie zur Registerkarte **Benutzer** (`/de/tenants/<id>/users`). Sie listet die der
+Öffnen Sie den Mandanten und wechseln Sie zur Registerkarte **Benutzer** (`/tenants/<id>/users`). Sie listet die der
 Plattform bekannten Benutzer auf; für jeden weisen Sie **die Rollen dieses Mandanten zu oder entziehen sie**.
 
 Der Benutzer-_Lebenszyklus_ – das Erstellen von Konten, das Löschen von Konten, das Föderieren von einem externen
 Identitätsanbieter – wird in **Keycloak** verwaltet, nicht hier. Ein Benutzer wird Mandantenmitglied durch die
-Keycloak-Gruppenmitgliedschaft (die Gruppe `/tenants/<id}`), was auch der Weg ist, wie IDP-basierte Mappings Benutzer
+Keycloak-Gruppenmitgliedschaft (die Gruppe `/tenants/<id>`), was auch der Weg ist, wie IDP-basierte Mappings Benutzer
 automatisch hinzufügen. Die Registerkarte „Benutzer“ ist der Ort, an dem Sie diesen Mitgliedern ihre In-Mandanten-Rollen
 zuweisen.
 
@@ -305,7 +305,7 @@ drei Zuständen beobachtet werden:
   den Mandanten noch nicht erreichen. Systemadministratoren sehen ihn im „Mandanten konfigurieren“-Fluss, wo das
   Anhängen von Metadaten ihn auf „Aktiv“ setzt.
 
-Die Mandantenadministrations-App (`sysadmin.<Ihre-Domain>`, Route `/de/tenants`) zeigt alle drei Zustände an. Die Aktion
+Die Mandantenadministrations-App (`sysadmin.<Ihre-Domain>`, Route `/tenants`) zeigt alle drei Zustände an. Die Aktion
 „Mandanten konfigurieren“ hängt Metadaten an eine nicht konfigurierte Gruppe an und ist der primäre Weg, über den eine
 vom Operator erstellte Keycloak-Gruppe (z. B. für ein IDP-zu-Mandanten-Mapping) zu einem nutzbaren Mandanten wird.
 
@@ -330,7 +330,10 @@ trägt keine Marker auf Datenbankebene, die ihn von später konfigurierten Manda
 
 ## Praktische Tipps
 
-::: tip Best Practices **Dokumentieren Sie Ihre Entscheidungen**: Schreiben Sie auf, warum Sie jeden Mandanten erstellt haben und welchen Umfang er haben soll. Sechs Monate später, wenn sich Rollen geändert haben, verhindert diese Dokumentation Verwirrung.
+::: tip Best Practices
+**Dokumentieren Sie Ihre Entscheidungen**: Schreiben Sie auf, warum Sie jeden Mandanten erstellt haben und welchen
+Umfang er haben soll. Sechs Monate später, wenn sich Rollen geändert haben, verhindert diese Dokumentation Verwirrung.
+
 **Beginnen Sie einfach**: Ein Management-Mandant und ein Endbenutzer-Mandant funktionieren für viele Organisationen.
 Fügen Sie Komplexität nur hinzu, wenn Sie sie benötigen.
 
