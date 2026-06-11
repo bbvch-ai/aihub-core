@@ -220,22 +220,22 @@ Streamlined workflow — CI auto-discovers from `compose-config.yml`:
 3. Run `make generate-compose`
 4. CI (`build-agents.yml`) automatically discovers and builds the new service
 
-## Sysadmin Subdomain (Proprietary Plane)
+## Sysadmin Subdomain
 
-The system-administration plane (`packages/sysadmin-api`, `packages/sysadmin-web` — proprietary,
-`LicenseRef-Proprietary`) is served on its **own subdomain** `sysadmin.${DOMAIN}`, separate from the main app on
-`${DOMAIN}`. Routing is **path-split** via Traefik: `sysadmin-web` (static SPA) serves `/` and `sysadmin-api` serves
-`/api/v1` (priority 6000, above the web catch-alls, mirroring the main `api`/`web` priority pattern). Both share the
-**same Keycloak realm and `aihub-frontend` client** as the main app, so the realm SSO cookie spans `${DOMAIN}` and
-`sysadmin.${DOMAIN}` — the realm import (see Keycloak Operator Notes) adds the `sysadmin.${DOMAIN}` redirect URIs / web
-origins. Let's Encrypt SANs must include `sysadmin.${DOMAIN}` before the first prod deploy.
+The system-administration plane (`packages/sysadmin-api`, `packages/sysadmin-web` — AGPL-3.0-or-later) is served on its
+**own subdomain** `sysadmin.${DOMAIN}`, separate from the main app on `${DOMAIN}`. Routing is **path-split** via
+Traefik: `sysadmin-web` (static SPA) serves `/` and `sysadmin-api` serves `/api/v1` (priority 6000, above the web
+catch-alls, mirroring the main `api`/`web` priority pattern). Both share the **same Keycloak realm and `aihub-frontend`
+client** as the main app, so the realm SSO cookie spans `${DOMAIN}` and `sysadmin.${DOMAIN}` — the realm import (see
+Keycloak Operator Notes) adds the `sysadmin.${DOMAIN}` redirect URIs / web origins. Let's Encrypt SANs must include
+`sysadmin.${DOMAIN}` before the first prod deploy.
 
 `compose-config.yml` keys are **hyphenated** (`sysadmin-api`, `sysadmin-web`) — not `sysadmin_api`. The key must equal
 the published image name because `set-latest.yml` auto-discovery requires `image_tags[k].latest == "{k}:latest"` and
 retags `ghcr.io/.../{k}`. Because the hyphen is not a valid Jinja attribute identifier, the template uses bracket access
 (`image_tags['sysadmin-api'][stage]`); `get_service_version` already uses bracket access.
 
-To add another proprietary plane in future, follow the same recipe: hyphenated `compose-config.yml` key (== image ==
+To add another management plane in future, follow the same recipe: hyphenated `compose-config.yml` key (== image ==
 package dir), a service block on the `sysadmin.${DOMAIN}` host (or a new subdomain) with bracket-access image tags, the
 per-package `LICENSE` + `LICENSES.md` row, and the `build-sysadmin.yml` matrix / `lint-pr.yml` matrices extended.
 

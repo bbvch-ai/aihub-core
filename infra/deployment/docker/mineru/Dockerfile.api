@@ -2,7 +2,7 @@
 #
 # This container runs the MinerU API service that provides document parsing.
 # It uses HTTP/REST communication only - AGPL-licensed MinerU code is isolated
-# from proprietary code through network boundaries.
+# from the Apache-2.0 platform code through network boundaries.
 #
 # VLM requests are routed through LiteLLM (MINERU_VLM_SERVER_URL) which handles
 # model routing to either self-hosted GPU or external cloud providers.
