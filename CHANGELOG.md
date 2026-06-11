@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.295.2] - 2026-06-11 - Improved Tenant Management and Documentation Clarity
+
+### Added
+
+- 🖼️ **New Visual Aids for Tenant Creation:** Integrated several new screenshots to provide clear, step-by-step guidance
+  for Keycloak group creation and navigating the Tenant Administration UI.
+- 🔑 **Dedicated `AIHubSysAdmin` Role:** Introduced the `AIHubSysAdmin` Keycloak realm role, which is now required for
+  creating and configuring tenants, enhancing security and control over multi-tenancy lifecycle management.
+
+### Changed
+
+- 📄 **Revamped Tenant Creation Documentation:** The "Creating Tenants" guide has been significantly updated with a
+  detailed, step-by-step process, clarifying the interplay between Keycloak groups and platform metadata, tenant states,
+  and in-tenant role assignments.
+- 📚 **Enhanced German Architecture Documentation:** Made minor textual improvements and clarifications across various
+  German architecture documents, including system context, containers, and package-centric views, for improved
+  readability and accuracy.
+
+______________________________________________________________________
+
 ## [v0.295.1] - 2026-06-11 - Enhanced AI-Driven GitHub Issue Management
 
 ### Added
