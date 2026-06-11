@@ -16,7 +16,7 @@ export const useThreads = defineQuery(() => {
   const debouncedSearch = refDebounced(searchQuery, 300)
   const agentInstanceId = useRouteQuery<string | null>('agent_id', null)
   const userSearchId = useRouteQuery<string | null>('user_id', null)
-  const status = useRouteQuery<string | null>('status', null)
+  const status = useRouteQuery<string | null>('thread_status', null)
   const fromDate = useRouteQuery<string | null>('from', null)
   const toDate = useRouteQuery<string | null>('to', null)
 
