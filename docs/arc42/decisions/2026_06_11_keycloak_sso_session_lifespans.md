@@ -50,8 +50,10 @@ forcing a credential re-verification at least monthly.
   to change them.
 - **`keycloak-realm.json.j2`** includes the lifespans in the realm import — fresh installs are correct from first start.
 - **`keycloak-entrypoint.sh.j2`** applies the lifespans via `kcadm.sh update realms/aihub` in the post-startup block on
-  **every container start** — existing deployments converge on their next Keycloak container recreation, without realm
-  re-import and without touching users, clients, or sessions.
+  container start, but **only for fields still holding the Keycloak default** (30 min idle / 10 h max). Existing
+  deployments converge on their next Keycloak container recreation, without realm re-import and without touching users,
+  clients, or sessions — while values an operator customized in the admin console are left untouched. Each of the two
+  fields is checked independently.
 
 ## Consequences
 
@@ -69,9 +71,12 @@ forcing a credential re-verification at least monthly.
 - A leaked refresh token remains usable for up to 5 days of inactivity (previously 30 minutes). Mitigations: tokens are
   bound to the Keycloak session and revoked server-side on logout (`useAuth.logout()` calls the backchannel logout), and
   the 30-day ceiling bounds the worst case.
-- The lifespans are enforced on every start, so ad-hoc changes made through the Keycloak admin console are overwritten
-  on the next container restart — intended, since config-as-code is the source of truth, but admins must know the
-  console is not authoritative for these two settings.
+- The entrypoint only migrates away from Keycloak defaults; it does not enforce the configured values. A deployment
+  whose lifespans were already migrated (or customized) will not pick up future changes to the platform defaults in
+  `compose-config.yml` — rolling out new values to such deployments requires a manual `kcadm`/admin-console change.
+- An operator who deliberately sets a lifespan back to the exact Keycloak default (1800 or 36000 seconds) will see it
+  migrated to the platform value on the next container start, since it is indistinguishable from a never-configured
+  realm.
 - Sessions already expired before the rollout cannot be revived; users see one final forced login after the change is
   deployed.
 

@@ -16,9 +16,10 @@
 # - identity-providers.json: Applied via partialImport API after startup (every start,
 #   with OVERWRITE so config changes are picked up). This keeps the files separate
 #   and avoids --import-realm's OVERWRITE_EXISTING destroying the realm.
-# - Realm session lifespans: Applied via kcadm update after startup (every start),
-#   because the first-start-only realm import never propagates them to
-#   existing deployments.
+# - Realm session lifespans: Applied via kcadm update after startup, but only
+#   while a lifespan still holds the Keycloak default (30 min idle / 10 h max) —
+#   the first-start-only realm import never propagates them to existing
+#   deployments, while operator overrides made in the admin console must survive.
 
 set -euo pipefail
 
@@ -45,7 +46,9 @@ cp /tmp/aihub-realm.json /opt/keycloak/data/import/
 # Post-startup configuration applied on every start: identity providers via
 # partialImport, and realm session lifespans via kcadm (the realm import only
 # runs on first start, so existing deployments would otherwise never pick up
-# lifespan changes and fall back to Keycloak defaults of 30 min idle / 10 h max).
+# lifespan changes and stay on Keycloak defaults of 30 min idle / 10 h max).
+# Each lifespan is only written while it still holds the Keycloak default —
+# values customized by operators in the admin console are left untouched.
 (
   echo "Waiting for Keycloak to be ready before applying post-startup configuration..."
   until /opt/keycloak/bin/kcadm.sh config credentials \
@@ -62,11 +65,22 @@ cp /tmp/aihub-realm.json /opt/keycloak/data/import/
       && echo "Identity providers applied successfully." \
       || echo "ERROR: Failed to apply identity providers."
   fi
-  /opt/keycloak/bin/kcadm.sh update realms/aihub \
-    -s ssoSessionIdleTimeout={{ keycloak.sso_session_idle_timeout }} \
-    -s ssoSessionMaxLifespan={{ keycloak.sso_session_max_lifespan }} \
-    && echo "Realm session lifespans applied successfully." \
-    || echo "ERROR: Failed to apply realm session lifespans."
+  current_lifespans=$(/opt/keycloak/bin/kcadm.sh get realms/aihub \
+    --fields ssoSessionIdleTimeout,ssoSessionMaxLifespan 2> /dev/null)
+  lifespan_updates=()
+  if [[ "$current_lifespans" =~ \"ssoSessionIdleTimeout\"[[:space:]]*:[[:space:]]*1800([^0-9]|$) ]]; then
+    lifespan_updates+=(-s ssoSessionIdleTimeout={{ keycloak.sso_session_idle_timeout }})
+  fi
+  if [[ "$current_lifespans" =~ \"ssoSessionMaxLifespan\"[[:space:]]*:[[:space:]]*36000([^0-9]|$) ]]; then
+    lifespan_updates+=(-s ssoSessionMaxLifespan={{ keycloak.sso_session_max_lifespan }})
+  fi
+  if [ {% raw %}${#lifespan_updates[@]}{% endraw %} -gt 0 ]; then
+    /opt/keycloak/bin/kcadm.sh update realms/aihub "${lifespan_updates[@]}" \
+      && echo "Realm session lifespans applied successfully." \
+      || echo "ERROR: Failed to apply realm session lifespans."
+  else
+    echo "Realm session lifespans differ from Keycloak defaults; leaving unchanged."
+  fi
 ) &
 
 exec /opt/keycloak/bin/kc.sh "$@" --import-realm
