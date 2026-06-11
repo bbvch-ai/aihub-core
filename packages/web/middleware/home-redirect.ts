@@ -1,4 +1,4 @@
-import { getMyTenants } from '@core/sdk/client'
+import { getMyActiveTenant, getMyTenants } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -11,8 +11,11 @@ export default defineNuxtRouteMiddleware(async () => {
 
   const localePath = useLocalePath()
 
-  const response = await getMyTenants({ composable: '$fetch' }).catch(() => null)
-  const tenants = response?.tenants ?? []
+  const [tenantsResponse, activeTenant] = await Promise.all([
+    getMyTenants({ composable: '$fetch' }).catch(() => null),
+    getMyActiveTenant({ composable: '$fetch' }).catch(() => null),
+  ])
+  const tenants = tenantsResponse?.tenants ?? []
   if (!tenants.length) {
     return
   }
@@ -25,6 +28,9 @@ export default defineNuxtRouteMiddleware(async () => {
   }
   if (tenants.length === 1) {
     return navigateTo(localePath(`/${tenants[0].id}/service/openai`), { replace: true })
+  }
+  if (activeTenant && tenants.some(tenant => tenant.id === activeTenant.id)) {
+    return navigateTo(localePath(`/${activeTenant.id}/service/openai`), { replace: true })
   }
   return navigateTo(localePath('/select-tenant'), { replace: true })
 })

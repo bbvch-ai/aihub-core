@@ -16,6 +16,9 @@
 # - identity-providers.json: Applied via partialImport API after startup (every start,
 #   with OVERWRITE so config changes are picked up). This keeps the files separate
 #   and avoids --import-realm's OVERWRITE_EXISTING destroying the realm.
+# - Realm session lifespans: Applied via kcadm update after startup (every start),
+#   because the first-start-only realm import never propagates them to
+#   existing deployments.
 
 set -euo pipefail
 
@@ -39,23 +42,31 @@ done
 # Only the realm file goes to --import-realm (first-start creation)
 cp /tmp/aihub-realm.json /opt/keycloak/data/import/
 
-# Apply identity providers via partialImport after Keycloak is ready
-if [ -f /tmp/identity-providers.json ]; then
-  (
-    echo "Waiting for Keycloak to be ready before applying identity providers..."
-    until /opt/keycloak/bin/kcadm.sh config credentials \
-      --server http://localhost:8080 \
-      --realm master \
-      --user "$KC_BOOTSTRAP_ADMIN_USERNAME" \
-      --password "$KC_BOOTSTRAP_ADMIN_PASSWORD" > /dev/null 2>&1; do
-      sleep 3
-    done
+# Post-startup configuration applied on every start: identity providers via
+# partialImport, and realm session lifespans via kcadm (the realm import only
+# runs on first start, so existing deployments would otherwise never pick up
+# lifespan changes and fall back to Keycloak defaults of 30 min idle / 10 h max).
+(
+  echo "Waiting for Keycloak to be ready before applying post-startup configuration..."
+  until /opt/keycloak/bin/kcadm.sh config credentials \
+    --server http://localhost:8080 \
+    --realm master \
+    --user "$KC_BOOTSTRAP_ADMIN_USERNAME" \
+    --password "$KC_BOOTSTRAP_ADMIN_PASSWORD" > /dev/null 2>&1; do
+    sleep 3
+  done
+  if [ -f /tmp/identity-providers.json ]; then
     /opt/keycloak/bin/kcadm.sh create partialImport -r aihub \
       -s ifResourceExists=OVERWRITE \
       -f /tmp/identity-providers.json \
       && echo "Identity providers applied successfully." \
       || echo "ERROR: Failed to apply identity providers."
-  ) &
-fi
+  fi
+  /opt/keycloak/bin/kcadm.sh update realms/aihub \
+    -s ssoSessionIdleTimeout={{ keycloak.sso_session_idle_timeout }} \
+    -s ssoSessionMaxLifespan={{ keycloak.sso_session_max_lifespan }} \
+    && echo "Realm session lifespans applied successfully." \
+    || echo "ERROR: Failed to apply realm session lifespans."
+) &
 
 exec /opt/keycloak/bin/kc.sh "$@" --import-realm
