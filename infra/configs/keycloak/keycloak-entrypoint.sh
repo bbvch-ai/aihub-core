@@ -63,7 +63,7 @@ cp /tmp/aihub-realm.json /opt/keycloak/data/import/
       || echo "ERROR: Failed to apply identity providers."
   fi
   /opt/keycloak/bin/kcadm.sh update realms/aihub \
-    -s ssoSessionIdleTimeout=1209600 \
+    -s ssoSessionIdleTimeout=432000 \
     -s ssoSessionMaxLifespan=2592000 \
     && echo "Realm session lifespans applied successfully." \
     || echo "ERROR: Failed to apply realm session lifespans."

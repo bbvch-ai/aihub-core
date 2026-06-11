@@ -11,7 +11,7 @@
   "registrationAllowed": false,
   "registrationEmailAsUsername": true,
   "rememberMe": true,
-  "ssoSessionIdleTimeout": 1209600,
+  "ssoSessionIdleTimeout": 432000,
   "ssoSessionMaxLifespan": 2592000,
   "verifyEmail": false,
   "loginWithEmailAllowed": true,

@@ -151,5 +151,5 @@ notifications:
 # Keycloak defaults (30 min idle / 10 h max) force daily re-logins.
 # -------------------------------------------------------------------
 keycloak:
-  sso_session_idle_timeout: 1209600  # 14 days
+  sso_session_idle_timeout: 432000  # 5 days
   sso_session_max_lifespan: 2592000  # 30 days
