@@ -1,7 +1,10 @@
 from datetime import UTC, datetime
+from functools import reduce
+from operator import or_
 
 from mongoengine import DateTimeField, Document, Q
 
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.agents import AgentConfigEntity
 
@@ -41,15 +44,11 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
     def find_for_name(cls, agent_class: str, name: str | None = None) -> list["AgentConfigEntityDocument"]:
         if name is None:
             return list(cls.find_for_class(agent_class))
-        name_matches = (
-            Q(name__de__icontains=name)
-            | Q(name__en__icontains=name)
-            | Q(name__fr__icontains=name)
-            | Q(name__it__icontains=name)
+        name_matches = reduce(
+            or_,
+            (Q(**{f"name__{locale}__icontains": name}) for locale in LocaleHandler.LOCALE_WHITE_LIST),
         )
-        queryset = cls.objects(name_matches, agent_class=agent_class)
-
-        return list(queryset)
+        return list(cls.objects(name_matches, agent_class=agent_class))
 
     @classmethod
     @trace_fn
