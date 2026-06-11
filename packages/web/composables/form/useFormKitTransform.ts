@@ -6,6 +6,10 @@ export interface RepeaterConfig {
   label?: string
   addLabel?: string
   childrenSchema: FormKitSchemaNode[]
+  // Seeded default for a freshly added item. `childrenSchema` is transformed and has its
+  // `value` defaults stripped (see EXCLUDED_FIELDS), so a new item must be cloned from this
+  // instead of `{}` — otherwise fields like "documents to retrieve" render empty.
+  defaultItem: Record<string, unknown>
   min?: number
   max?: number
 }
@@ -457,12 +461,14 @@ export function extractRepeaterConfigs(
       // Build full path for nested data access
       const fullPath = parentPath ? `${parentPath}.${elementName}` : elementName
 
+      const itemChildren = (element.children as FormElement[]) || []
       repeaters.push({
         name: elementName,
         path: fullPath,
         label: getLocalizedString(element.label, locale),
         addLabel: getLocalizedString(element.addLabel || element.add_label, locale),
         childrenSchema,
+        defaultItem: seedFormDefaults({}, itemChildren),
         min: element.min as number | undefined,
         max: element.max as number | undefined,
       })

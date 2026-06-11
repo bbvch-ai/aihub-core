@@ -105,6 +105,7 @@
                       :label="rep.label"
                       :add-label="rep.addLabel"
                       :children-schema="rep.childrenSchema"
+                      :default-item="rep.defaultItem"
                       :min="rep.min"
                       :max="rep.max"
                       @update:model-value="setRepeaterData(rep.path, $event)"

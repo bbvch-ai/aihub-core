@@ -53,6 +53,8 @@
 </template>
 
 <script setup lang="ts">
+import { cloneDeep } from 'lodash-es'
+
 import type { FormKitSchemaNode } from '@formkit/core'
 
 const props = defineProps<{
@@ -60,6 +62,7 @@ const props = defineProps<{
   label?: string
   addLabel?: string
   childrenSchema: FormKitSchemaNode[]
+  defaultItem?: Record<string, unknown>
   min?: number
   max?: number
 }>()
@@ -83,7 +86,7 @@ function addItem() {
   if (!modelValue.value) {
     modelValue.value = []
   }
-  modelValue.value.push({})
+  modelValue.value.push(props.defaultItem ? cloneDeep(props.defaultItem) : {})
 }
 
 function removeItem(index: number) {
