@@ -40,7 +40,7 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
     @trace_fn
     def find_for_name(cls, agent_class: str, name: str | None = None) -> list["AgentConfigEntityDocument"]:
         if name is None:
-            return cls.find_for_class(agent_class)
+            return list(cls.find_for_class(agent_class))
         name_matches = (
             Q(name__de__icontains=name)
             | Q(name__en__icontains=name)
