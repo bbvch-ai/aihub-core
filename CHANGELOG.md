@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.296.0] - 2026-06-11 - Empowering Data Discovery: Advanced Filtering, Search, and Sorting for Agents and Threads
+
+### Added
+
+- ✨ **Agent Instance Filtering and Search:** Introduced new API capabilities and corresponding UI elements allowing
+  users to filter agent instances by **class** and search by **name**, significantly improving agent discovery.
+- 🚀 **Advanced Thread Management:** Implemented comprehensive filtering options for threads, including search by
+  **name**, filtering by associated **agent ID**, specific **user ID**, run **status** (active, completed, failed), and
+  a flexible **date range**.
+- 📈 **Thread Sorting Capabilities:** Added the ability to sort threads by **name** or **creation date** in both
+  ascending and descending order, providing more control over how threads are organized and viewed.
+- 🦾 **Thread Status Classification:** Introduced robust backend logic to accurately classify threads into `active`,
+  `completed`, or `failed` states based on their agent event history, enabling precise status filtering.
+
+### Changed
+
+- 🔄 **API Query Parameter Expansion:** The `getAllAgentInstances` and `getPaginatedThreadsForUser` API endpoints have
+  been extended to support the new filtering, searching, and sorting parameters, providing more powerful data retrieval.
+- 🌐 **UI Enhancements for Agents and Threads:** The web interface for both Agent Instances and Threads has been
+  significantly updated to expose and utilize all new filtering, search, and sorting functionalities, improving user
+  experience and data navigation.
+
+### Refactor
+
+- 🧹 **Optimized Agent Configuration Search:** Refactored the agent configuration search logic to support multilingual,
+  case-insensitive substring matching for agent names, enhancing search flexibility.
+- ⚙️ **Streamlined Thread Query Logic:** Introduced dedicated helper methods (`_apply_filters`, `get_order_by`) within
+  the `ThreadEntity` for more modular, efficient, and maintainable query construction.
+
+______________________________________________________________________
+
 ## [v0.295.4] - 2026-06-11 - Improved Authentication Flow and Persistent User Sessions
 
 ### Added

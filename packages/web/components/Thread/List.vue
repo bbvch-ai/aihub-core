@@ -1,15 +1,20 @@
 <template>
   <DataTable
     :value="threads"
+    lazy
+    :sort-field="sortField"
+    :sort-order="sortOrder"
     table-style="min-width: 50rem"
     selection-mode="single"
     :selection="selectedThread"
     size="small"
     @update:selection="emit('selected', $event)"
+    @sort="onSort"
   >
     <Column
       field="name"
       :header="t('thread.list.name')"
+      sortable
     />
     <Column
       field="agents"
@@ -50,8 +55,9 @@
       </template>
     </Column>
     <Column
-      field="Created"
+      field="created_at"
       :header="t('thread.list.created')"
+      sortable
     >
       <template #body="{ data }">
         <p>{{ formatted(data.created_at) }}</p>
@@ -112,17 +118,28 @@
 
 <script setup lang="ts">
 import type { ThreadDto, MinimalUserDto } from '@core/sdk/client'
+import type { DataTableSortEvent } from 'primevue'
 
 const route = useRoute()
 const { t } = useI18n()
 
 const props = defineProps<{
   threads: ThreadDto[]
+  sortField: string
+  sortOrder: 1 | -1
 }>()
 
 const emit = defineEmits<{
   selected: [thread: ThreadDto]
+  sort: [payload: { field: string, order: 1 | -1 }]
 }>()
+
+const onSort = (event: DataTableSortEvent) => {
+  emit('sort', {
+    field: event.sortField as string,
+    order: (event.sortOrder ?? -1) as 1 | -1,
+  })
+}
 
 const initials = (user: MinimalUserDto) => user.name?.split(' ').map(n => n[0]).join('')
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY HH:mm:ss')

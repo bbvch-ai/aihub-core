@@ -220,12 +220,17 @@ class AgentController(TenantScopedController):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             online: Annotated[bool | None, Query(description="Filter by online status")] = None,
+            agent_class: Annotated[str | None, Query(description="Filter by agent class")] = None,
+            search: Annotated[str | None, Query(description="Search by agent name")] = None,
         ) -> list[FullAgentInstanceDTO]:
             """
             Retrieve a list of all agent instances across all classes.
             Use `?online=true` for online instances only, `?online=false` for offline only.
+            Use `?search={agentName}` to search an agent with its name.
             """
-            agents = await AgentService.get_all_agent_instances(t, online=online)
+            agents = await AgentService.get_all_agent_instances(
+                t, online=online, search=search, agent_class=agent_class
+            )
             return [
                 agent
                 for agent in agents
