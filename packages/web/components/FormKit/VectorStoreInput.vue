@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
 import { getDatabases } from '@core/sdk/client'
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { DatabaseDto } from '@core/sdk/client'
 
@@ -200,7 +200,7 @@ function emitValue(collectionName: string, namespaces: string[], allowedFilterFi
 const databaseOptions = computed<DatabaseOption[]>(() =>
   databases.value.map(db => ({
     name: db.name,
-    displayName: db.display_name || useChangeCase(db.name, 'capitalCase'),
+    displayName: db.display_name || capitalCase(db.name),
   })),
 )
 
@@ -213,7 +213,7 @@ const namespaceOptions = computed<NamespaceOption[]>(() => {
     return []
   return db.namespaces.map(ns => ({
     name: ns.name,
-    displayName: ns.display_name || useChangeCase(ns.name, 'capitalCase'),
+    displayName: ns.display_name || capitalCase(ns.name),
   }))
 })
 
