@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from fastapi import Depends, HTTPException, Path, Query, Security
 from mongoengine import DoesNotExist
@@ -94,7 +94,9 @@ class ThreadController(TenantScopedController):
                     pattern="^(name|created_at)$",
                 ),
             ] = "created_at",
-            sort_order: Annotated[int, Query(description="Sort order: 1 for ascending, -1 for descending")] = -1,
+            sort_order: Annotated[
+                Literal[-1, 1], Query(description="Sort order: 1 for ascending, -1 for descending")
+            ] = -1,
         ) -> PaginatedThreadsResponse:
             """
             Returns all threads that the authenticated user is a member of.
