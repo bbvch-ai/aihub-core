@@ -172,7 +172,6 @@ class ThreadEntity(Document):
     def get_thread_ids_for_user(cls, user_id: str) -> list[str]:
         return [str(thread.id) for thread in cls.objects(users__user_id=user_id).only("id")]
 
-
     @classmethod
     @trace_fn
     def add_user_to_thread(cls, thread_id: str, user: User) -> Self:
