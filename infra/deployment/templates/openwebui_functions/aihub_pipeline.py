@@ -1799,7 +1799,7 @@ class Pipe:
                 )
 
                 logger.debug("Request processing completed")
-                return ""
+                return state_manager.serialize_to_html()
 
             except Exception as e:
                 logger.exception(f"Error in pipe: {e}")
