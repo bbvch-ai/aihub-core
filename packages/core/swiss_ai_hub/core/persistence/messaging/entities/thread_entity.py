@@ -5,7 +5,7 @@ from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.persistence.messaging.entities.thread_filters import ThreadFilters
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 
 
 class User(EmbeddedDocument):

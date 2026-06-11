@@ -29,7 +29,7 @@ from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
-from swiss_ai_hub.core.persistence.messaging.entities.thread_filters import ThreadFilters
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO

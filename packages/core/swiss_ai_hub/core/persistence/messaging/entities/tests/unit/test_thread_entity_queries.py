@@ -10,7 +10,7 @@ from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import (
     ThreadEntity,
     User,
 )
-from swiss_ai_hub.core.persistence.messaging.entities.thread_filters import ThreadFilters
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 
 
 @pytest.fixture
