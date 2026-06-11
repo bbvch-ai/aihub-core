@@ -174,21 +174,15 @@ ______________________________________________________________________
 
 ## Local Development Setup
 
-You can drive the bot locally from the Microsoft **Bot Framework Emulator** with **no Azure registration**, using a
-dedicated local runner. (For an authentic Teams/Slack test with real identities, see *Real channel via DevTunnel +
-Azure* at the end.)
+You can drive the bot locally from the Microsoft **Bot Framework Emulator** with **no Azure registration**, using the
+testing playground. (For an authentic Teams/Slack test with real identities, see *Real channel via DevTunnel + Azure*
+at the end.)
 
-> ⚠️ The old "connect the emulator to `main.py` on `:8000`" instructions do **not** work: the `microsoft-agents`
-> `CloudAdapter` always performs MSAL auth (even to *receive* a message it builds a user-token client needing a real
-> `TENANT_ID`, and to *reply* it signs with a bearer token). So `playground/testing/main.py` — built for the pytest
-> harness, where MSAL is mocked — fails with `TENANT_ID is not set` the moment a live emulator connects. Use the runner
-> below instead.
+### Step 0 — The testing playground runner (`main.py`)
 
-### Step 0 — The local runner (`main_local_emulator.py`)
-
-The repo ships a local-only runner at **`packages/bot/playground/testing/main_local_emulator.py`** — read that file
-for the full implementation. It is **local-only — never an entry point for a deployed bot**. It does three things the
-plain `main.py` doesn't, all so a live emulator can drive the bot without Azure:
+The runner is **`packages/bot/playground/testing/main.py`** — read that file for the full implementation. It is
+**local-only — never an entry point for a deployed bot**. It does three things so a live emulator can drive the bot
+without Azure:
 
 1. **Forces the SDK's unauthenticated mode** — monkeypatches `RestChannelServiceClientFactory.create_connector_client`
    and `create_user_token_client` to pass `use_anonymous=True`. Without it the `CloudAdapter` requires MSAL: you hit
@@ -227,14 +221,14 @@ PY
 ### Step 2 — Start (or restart) the runner
 
 ```bash
-# 1. stop any running instance (no-op if none)
-pkill -f main_local_emulator.py
+# 1. stop any running playground instance (no-op if none; matches any python "main.py")
+pkill -f main.py
 
 # 2. go to the testing playground
 cd packages/bot/playground/testing
 
 # 3. start it, backgrounded, logging to /tmp/bot_local.log  (serves on 0.0.0.0:8001)
-uv run python main_local_emulator.py > /tmp/bot_local.log 2>&1 &
+uv run python main.py > /tmp/bot_local.log 2>&1 &
 ```
 
 Watch logs with `tail -f /tmp/bot_local.log`. Requires the dev stack's MongoDB/FerretDB, NATS, and Keycloak to be
@@ -250,8 +244,8 @@ tail -5 /tmp/bot_local.log     # GOOD: "Uvicorn running on http://0.0.0.0:8001"
 ss -ltnp | grep :8001          # must show exactly ONE listener
 ```
 
-If you see `address already in use`, run `pkill -9 -f main_local_emulator.py`, wait until `ss -ltnp | grep :8001` is
-empty, then start again.
+If you see `address already in use`, run `pkill -9 -f main.py`, wait until `ss -ltnp | grep :8001` is empty, then start
+again.
 
 ### Step 3 — Connect the Bot Framework Emulator
 
@@ -326,11 +320,10 @@ production code.
 
 | Symptom                                           | Cause                                          | Fix                                                                 |
 | ------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
-| `TENANT_ID is not set` on connect                 | Ran `main.py` instead of the local runner      | Use `main_local_emulator.py` (forces anonymous auth)                |
 | `No credentials found for path`                   | PathEntity missing                             | Seed it (Step 1)                                                    |
 | Emulator `POST 400`, nothing in the bot log       | Emulator can't reach the bot (WSL2)            | Connect via the WSL2 IP, not `localhost`                            |
 | Reply fails: `Cannot connect to localhost:<port>` | Bot (WSL2) can't reach the emulator reply URL  | Set up the devtunnel and paste the Tunnel Url                       |
-| Reply `401` to `*.devtunnels.ms`                  | Pasted the `-inspect` URL, or a token was sent | Use the "Connect via browser" URL; ensure the local runner          |
+| Reply `401` to `*.devtunnels.ms`                  | Pasted the `-inspect` tunnel URL               | Use the "Connect via browser" URL, not the `-inspect` one           |
 | `KeyError: 'assistant_name'`                      | `system_message` uses both placeholders        | Use ≤1 placeholder in the seeded system_message                     |
 | Bot 404s on `.../members/...` → generic error     | Emulator can't do the Teams member lookup      | Set `BOT_DEV_FAKE_EMAIL` to drive identity (Step 4)                 |
 | 60s typing then "taking too long"                 | The simulated agent didn't reply (harness)     | Identity resolved fine; use a real agent or test a pre-agent branch |
