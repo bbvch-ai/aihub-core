@@ -29,8 +29,8 @@ settings added to the template never reach already-provisioned deployments.
   usable. Periodic re-authentication re-verifies credentials against the identity provider (e.g. picks up disabled Entra
   ID accounts).
 - **Existing deployments must converge without manual intervention**:\
-  Auto-deployed customer environments (ansible-pull every 15 minutes) cannot rely on a first-start-only realm import to
-  pick up lifespan changes, and operators should not have to run `kcadm` by hand.
+  Automatically updated customer environments cannot rely on a first-start-only realm import to pick up lifespan
+  changes, and operators should not have to run `kcadm` by hand.
 - **Single source of truth**:\
   The values must not drift between the realm template (fresh installs) and any runtime enforcement mechanism.
 
