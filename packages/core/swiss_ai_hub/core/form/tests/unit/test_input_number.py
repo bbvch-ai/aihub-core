@@ -37,3 +37,26 @@ class TestInputNumberValidation:
         assert "max:0|" not in element.validation + "|"
         assert "e-" not in element.validation
         assert "E-" not in element.validation
+
+
+class TestInputNumberFractionDigits:
+    """PrimeVue InputNumber is integer-only unless fraction digits are configured, so a
+    fractional field must auto-enable decimals (otherwise the decimal point is rejected)."""
+
+    def test_fractional_step_enables_decimals(self) -> None:
+        element = InputNumber(label=LocaleString(en="Temperature"), min=0.0, max=2.0, step=0.1, value=0.1)
+        assert element.max_fraction_digits == 1
+        assert element.min_fraction_digits == 0
+
+    def test_finer_step_allows_more_decimals(self) -> None:
+        element = InputNumber(label=LocaleString(en="Score"), step=0.05)
+        assert element.max_fraction_digits == 2
+
+    def test_integer_field_stays_integer(self) -> None:
+        element = InputNumber(label=LocaleString(en="Tokens"), min=0, max=128_000, step=1024, value=128_000)
+        assert element.max_fraction_digits is None
+        assert element.min_fraction_digits is None
+
+    def test_explicit_fraction_digits_are_respected(self) -> None:
+        element = InputNumber(label=LocaleString(en="Custom"), step=0.1, max_fraction_digits=4)
+        assert element.max_fraction_digits == 4
