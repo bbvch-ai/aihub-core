@@ -5,7 +5,6 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LLMStopEvent,
     Message,
-    MetaAnswerReadyEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     StopEvent,
@@ -25,7 +24,6 @@ from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
 from swiss_ai_hub.agent.mcp.mcp_resource_schemas import fetch_static_resources, resource_read_tool_schema
 from swiss_ai_hub.agent.mcp.mcp_tool_schemas import execute_single_tool_call, to_openai_tool_schemas, to_tool_events
-from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
     do_answer_meta_question,
@@ -54,15 +52,6 @@ async def exceeded_max_iterations(reasoning_events: list[McpReasoningEvent], con
 async def all_tool_calls_emitted(tool_events: list[ToolEvent], run_context: RunContext) -> bool:
     total = await run_context.get(TOTAL_TOOL_CALLS_KEY, 0)
     return total > 0 and len(tool_events) == total
-
-
-@precondition()
-async def passed_meta_question_gate(
-    start_event: UserMessageEvent,
-    clear: NotAMetaQuestionEvent | None = None,
-) -> bool:
-    """Hold back the chat entry step until meta-question detection has cleared the message."""
-    return check_passed_meta_question_gate(start_event, clear)
 
 
 class McpReactAgent(Agent):
@@ -106,13 +95,9 @@ class McpReactAgent(Agent):
         agent_config: McpReactAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> MetaAnswerReadyEvent:
-        """
-        Stream a meta answer from the agent's own identity and workflow, then hand off to a separate
-        stop step. The terminal stop event must NOT be emitted here: emitting it back-to-back with the
-        answer's chunks lets it race them in the streaming layer and blanks the answer in the chat UI.
-        """
-        stop_event = await do_answer_meta_question(
+    ) -> LLMStopEvent:
+        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
+        return await do_answer_meta_question(
             event=event,
             agent_name=t.extract(agent_config.name),
             agent_description=t.extract(agent_config.description),
@@ -122,22 +107,11 @@ class McpReactAgent(Agent):
             displayer=displayer,
             t=t,
         )
-        return MetaAnswerReadyEvent(stop_event=stop_event)
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.description"),
-        icon="mdi:flag-checkered",
-    )
-    async def stop_after_meta_answer_step(self, event: MetaAnswerReadyEvent) -> LLMStopEvent:
-        """Re-emit the streamed answer's stop event as the run's terminal event, a dispatch cycle later."""
-        return event.stop_event
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),
         description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.description"),
         icon="mage:search",
-        precondition=passed_meta_question_gate,
     )
     async def init_step(
         self,
@@ -145,7 +119,7 @@ class McpReactAgent(Agent):
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         run_context: RunContext,
-        _clear: NotAMetaQuestionEvent | None = None,
+        _clear: NotAMetaQuestionEvent,
     ) -> McpReasoningEvent:
         """Discover MCP tools and resources, seed conversation with system prompt, trigger first reasoning iteration."""
         user_token = await McpAuthResolver.resolve_user_token(run_context)

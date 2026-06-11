@@ -9,10 +9,6 @@ steps:
     name: Meta-Frage beantworten
     description: Beantwortet eine Frage über den Assistenten anhand seiner eigenen
       Konfiguration und Workflow-Definition.
-  stop:
-    name: Meta-Antwort abschließen
-    description: Schließt den Lauf ab, nachdem die Antwort auf die Meta-Frage vollständig
-      gestreamt wurde.
 thought:
   detecting: Prüfe, ob dies eine Frage über mich ist
   answering: Beantworte eine Frage über mich selbst

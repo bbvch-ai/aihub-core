@@ -4,9 +4,7 @@ from swiss_ai_hub.core.workflow import WorkflowMermaidSerializer, WorkflowVisual
 
 from swiss_ai_hub.agent.agents.agent import Agent
 
-SELF_AWARENESS_STEP_NAMES: frozenset[str] = frozenset(
-    {"detect_meta_question_step", "answer_meta_question_step", "stop_after_meta_answer_step"}
-)
+SELF_AWARENESS_STEP_NAMES: frozenset[str] = frozenset({"detect_meta_question_step", "answer_meta_question_step"})
 
 
 def summarize_workflow_for_meta_answer(agent_type: type[Agent], t: LocaleHandler) -> str:

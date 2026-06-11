@@ -8,10 +8,6 @@ steps:
     name: Rispondi a meta-domanda
     description: Risponde a una domanda sull'assistente utilizzando la propria configurazione
       e la definizione del flusso di lavoro.
-  stop:
-    name: Completa la meta-risposta
-    description: Completa l'esecuzione dopo che la risposta alla meta-domanda è stata
-      trasmessa completamente.
 thought:
   detecting: Sto verificando se questa è una domanda su di me
   answering: Sto rispondendo a una domanda su me stesso

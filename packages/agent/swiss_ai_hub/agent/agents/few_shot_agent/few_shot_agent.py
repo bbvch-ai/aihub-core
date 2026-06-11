@@ -7,7 +7,6 @@ from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityRejectEvent,
     LimitChatHistoryEvent,
     LLMStopEvent,
-    MetaAnswerReadyEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     StopEvent,
@@ -28,23 +27,12 @@ from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_questio
 )
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
-from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
     do_answer_meta_question,
     do_detect_meta_question,
 )
-from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
-
-
-@precondition()
-async def passed_meta_question_gate(
-    start_event: UserMessageEvent,
-    clear: NotAMetaQuestionEvent | None = None,
-) -> bool:
-    """Hold back the chat entry step until meta-question detection has cleared the message."""
-    return check_passed_meta_question_gate(start_event, clear)
 
 
 class FewShotAgent(Agent):
@@ -99,13 +87,9 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> MetaAnswerReadyEvent:
-        """
-        Stream a meta answer from the agent's own identity and workflow, then hand off to a separate
-        stop step. The terminal stop event must NOT be emitted here: emitting it back-to-back with the
-        answer's chunks lets it race them in the streaming layer and blanks the answer in the chat UI.
-        """
-        stop_event = await do_answer_meta_question(
+    ) -> LLMStopEvent:
+        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
+        return await do_answer_meta_question(
             event=event,
             agent_name=t.extract(agent_config.name),
             agent_description=t.extract(agent_config.description),
@@ -115,28 +99,17 @@ class FewShotAgent(Agent):
             displayer=displayer,
             t=t,
         )
-        return MetaAnswerReadyEvent(stop_event=stop_event)
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.description"),
-        icon="mdi:flag-checkered",
-    )
-    async def stop_after_meta_answer_step(self, event: MetaAnswerReadyEvent) -> LLMStopEvent:
-        """Re-emit the streamed answer's stop event as the run's terminal event, a dispatch cycle later."""
-        return event.stop_event
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.name"),
         description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.description"),
         icon="mage:edit",
-        precondition=passed_meta_question_gate,
     )
     async def limit_chat_history_step(
         self,
         event: UserMessageEvent,
         agent_config: FewShotAgentConfig,
-        _clear: NotAMetaQuestionEvent | None = None,
+        _clear: NotAMetaQuestionEvent,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit

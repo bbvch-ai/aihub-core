@@ -1,10 +1,10 @@
 """
 Self-awareness wiring contract.
 
-A blueprint becomes self-aware by defining the self-awareness steps explicitly (detect/answer/stop).
+A blueprint becomes self-aware by defining the self-awareness steps explicitly (detect/answer).
 Two invariants protect that design:
 
-1. The three self-awareness steps are defined together or not at all — a partial set is a wiring bug.
+1. The self-awareness steps are defined together or not at all — a partial set is a wiring bug.
 2. A self-aware blueprint must gate every raw `UserMessageEvent` entry step with `NotAMetaQuestionEvent`,
    otherwise detection would race the normal pipeline (the §4 race condition). This gating cannot be
    automated, so this test is the guardrail that forces every present and future self-aware blueprint
@@ -75,7 +75,7 @@ def test_self_awareness_steps_are_all_or_nothing(agent: type[Agent]):
     present = _step_names(agent) & SELF_AWARENESS_STEP_NAMES
     assert present in (set(), SELF_AWARENESS_STEP_NAMES), (
         f"{agent.__name__} defines a partial self-awareness step set: {present}. Define "
-        "detect_meta_question_step, answer_meta_question_step and stop_after_meta_answer_step together."
+        "detect_meta_question_step and answer_meta_question_step together."
     )
 
 

@@ -124,14 +124,24 @@ self-aware iff it defines the steps. Non-conversational blueprints (e.g. `Retrie
 Adopting it has two parts (see ADR `2026_06_04_self_awareness_as_explicit_per_agent_steps` and `RAGAgent` as the
 reference):
 
-1. **Define the three thin `@step` methods** on the agent: `detect_meta_question_step` (on `UserMessageEvent`),
-   `answer_meta_question_step`, and `stop_after_meta_answer_step`. Each delegates to the shared free functions, passing
-   `agent_config.llm`.
-2. **Gate every raw `UserMessageEvent` entry step**: add `_clear: NotAMetaQuestionEvent | None = None` and combine its
-   precondition with `check_passed_meta_question_gate(start_event, clear)`. The gate falls out of event dependencies —
-   the entry step can't fire until detection emits `NotAMetaQuestionEvent`. Gating cannot be automated; a self-aware
-   blueprint that forgets it (or defines a partial step set) fails `self_awareness/tests/test_self_awareness_wiring.py`
-   (the entry-step detection would otherwise race the normal pipeline).
+1. **Define the two thin `@step` methods** on the agent: `detect_meta_question_step` (on `UserMessageEvent`) and
+   `answer_meta_question_step` (returns `LLMStopEvent` directly). Each delegates to the shared free functions, passing
+   `agent_config.llm`. (There is no separate stop step: once the consumer drains trailing display events before teardown
+   — ADR `2026_06_09_drain_display_event_streams_before_consumer_teardown` — the answer step can emit the terminal
+   `LLMStopEvent` itself without its chunks being raced.)
+
+2. **Gate every raw `UserMessageEvent` entry step** so detection can't be raced. Two equivalent forms depending on the
+   agent's start events:
+
+   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`): add a
+     **required** `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates the step — no precondition.
+   - **Entry also accepts a programmatic start** (e.g. `RAGAgent`, `ExpertRAGAgent`, `NamespaceSelectionAgent` accept
+     `UserMessageEvent | RAGStartEvent`): keep `_clear: NotAMetaQuestionEvent | None = None` and combine the step's
+     precondition with `check_passed_meta_question_gate(start_event, clear)`, so programmatic starts skip detection.
+
+   The gate falls out of event dependencies — the entry step can't fire on a chat message until detection emits
+   `NotAMetaQuestionEvent`. Gating cannot be automated; a self-aware blueprint that forgets it (or defines a partial
+   step set) fails `self_awareness/tests/test_self_awareness_wiring.py`.
 
 ## The @step Decorator
 
@@ -372,10 +382,11 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
 4. Create custom events inheriting `ControlEvent`/`StartEvent`/`StopEvent`
 5. Add i18n translations in `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`
 6. Create `app/my_agent/main.py` entry point with `AgentRunner`
-7. (Conversational agents) Add self-awareness: define `detect_meta_question_step` / `answer_meta_question_step` /
-   `stop_after_meta_answer_step` (delegating to the shared free functions) and gate raw `UserMessageEvent` entry steps
-   with `_clear: NotAMetaQuestionEvent | None = None` + `check_passed_meta_question_gate` (see the Built-in
-   Self-Awareness section above)
+7. (Conversational agents) Add self-awareness: define `detect_meta_question_step` / `answer_meta_question_step`
+   (delegating to the shared free functions) and gate raw `UserMessageEvent` entry steps with `NotAMetaQuestionEvent` —
+   a required dependency for `UserMessageEvent`-only agents, or `_clear: NotAMetaQuestionEvent | None = None` +
+   `check_passed_meta_question_gate` for agents that also accept a programmatic start (see the Built-in Self-Awareness
+   section above)
 8. Write BDD tests with `AgentTestRunner`
 9. Run `make test`
 

@@ -8,10 +8,6 @@ steps:
     name: Répondre à une méta-question
     description: Répond à une question sur l'assistant à partir de sa propre configuration
       et de la définition de son flux de travail.
-  stop:
-    name: Terminer la méta-réponse
-    description: Termine l'exécution une fois que la réponse à la méta-question a
-      fini d'être diffusée.
 thought:
   detecting: Je vérifie s'il s'agit d'une question à mon sujet
   answering: Je réponds à une question à mon sujet

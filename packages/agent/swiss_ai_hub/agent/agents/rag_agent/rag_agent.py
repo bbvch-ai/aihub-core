@@ -10,7 +10,6 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
-    MetaAnswerReadyEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     RAGFailureStopEvent,
@@ -224,13 +223,9 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> MetaAnswerReadyEvent:
-        """
-        Stream a meta answer from the agent's own identity and workflow, then hand off to a separate
-        stop step. The terminal stop event must NOT be emitted here: emitting it back-to-back with the
-        answer's chunks lets it race them in the streaming layer and blanks the answer in the chat UI.
-        """
-        stop_event = await do_answer_meta_question(
+    ) -> LLMStopEvent:
+        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
+        return await do_answer_meta_question(
             event=event,
             agent_name=t.extract(agent_config.name),
             agent_description=t.extract(agent_config.description),
@@ -240,16 +235,6 @@ class RAGAgent(Agent):
             displayer=displayer,
             t=t,
         )
-        return MetaAnswerReadyEvent(stop_event=stop_event)
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.stop.description"),
-        icon="mdi:flag-checkered",
-    )
-    async def stop_after_meta_answer_step(self, event: MetaAnswerReadyEvent) -> LLMStopEvent:
-        """Re-emit the streamed answer's stop event as the run's terminal event, a dispatch cycle later."""
-        return event.stop_event
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.name"),

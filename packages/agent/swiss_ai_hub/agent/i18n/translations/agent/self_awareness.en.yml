@@ -8,9 +8,6 @@ steps:
     name: Answer Meta Question
     description: Answers a question about the assistant using its own configuration
       and workflow definition.
-  stop:
-    name: Finish Meta Answer
-    description: Completes the run after the meta-question answer has finished streaming.
 thought:
   detecting: Checking whether this is a question about me
   answering: Answering a question about myself
