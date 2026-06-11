@@ -49,10 +49,9 @@ Because the API is the most-connected first-party container, its view is split i
 creating and deleting tenants, assigning platform-level roles, and other `AIHubSysAdmin`-gated operations. It runs as
 its own FastAPI service on `sysadmin.${DOMAIN}/api/v1/*`.
 
-**Why it's a separate package.** The main API ships under Apache-2.0; the sysadmin plane is the platform's commercial
-value-add and ships under a proprietary license. Keeping it a physically separate, separately-licensed artifact prevents
-proprietary terms from leaking onto the open-source code. It also enforces a hard security boundary — every endpoint
-requires the `AIHubSysAdmin` realm role.
+**Why it's a separate package.** The main API ships under Apache-2.0; the sysadmin plane ships under AGPL-3.0-or-later
+(network-copyleft). Keeping it a physically separate, separately-licensed artifact prevents AGPL terms from leaking onto
+the Apache-2.0 code. It also enforces a hard security boundary — every endpoint requires the `AIHubSysAdmin` realm role.
 
 **What it contains.** Its own `TenantAdminController` (tenant lifecycle), plus a curated set of controllers *re-mounted*
 from `packages/api` (user, role, account, auth-provider) so the Sysadmin UI's inherited composables resolve same-origin.
@@ -83,9 +82,10 @@ system.
 Layer that *extends* `@swiss-ai-hub/web`, reusing its components, composables, and design system while adding
 sysadmin-only pages. It is hosted at `sysadmin.${DOMAIN}/*`.
 
-**Why it's a separate package.** Same reasoning as the Sysadmin API: `packages/web` ships under AGPL, the sysadmin plane
-is proprietary, so it must be a separately-licensed artifact. The Nuxt Layer mechanism lets it inherit nearly everything
-from the open-source UI without copying code, while keeping its own license boundary.
+**Why it's a separate package.** Same reasoning as the Sysadmin API: it is a separate deploy artifact with its own
+security boundary on the `sysadmin.${DOMAIN}` subdomain. Both `packages/web` and the sysadmin plane ship under AGPL-3.0-or-later,
+so the separation is architectural rather than a licensing boundary. The Nuxt Layer mechanism lets it inherit nearly
+everything from the open-source UI without copying code.
 
 **What it contains.** Tenant CRUD pages and the sysadmin route guard, layered on top of the inherited Admin UI. Its SDK
 and most API calls resolve same-origin against the Sysadmin API; the only cross-origin call is the role check that

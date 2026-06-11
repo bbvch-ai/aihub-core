@@ -13,7 +13,7 @@
 # distributed under the Apache License 2.0 (see the root LICENSE).
 #
 # The SERVICES it orchestrates carry their OWN licenses — Apache-2.0, AGPL-3.0,
-# proprietary, and various permissive third-party terms. Each service block
+# and various permissive third-party terms. Each service block
 # below is annotated with `# License: <SPDX>` for at-a-glance reference.
 #
 # Authoritative sources for license details:

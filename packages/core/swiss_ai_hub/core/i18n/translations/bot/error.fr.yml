@@ -1,3 +1,5 @@
 ---
 response_timeout: Désolé, ma réponse prend trop de temps. Veuillez réessayer.
 generic_error: Désolé, une erreur s'est produite. Veuillez réessayer.
+user_not_provisioned: Il semble que vous n'ayez pas encore de compte Swiss AI Hub.
+  Veuillez vous connecter une fois sur %{url}, puis revenez m'écrire ici.

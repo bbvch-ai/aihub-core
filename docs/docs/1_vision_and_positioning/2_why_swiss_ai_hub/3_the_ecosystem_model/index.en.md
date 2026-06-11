@@ -39,8 +39,8 @@ everyone's document processing improves. When someone adds a new security featur
 
 ## The contribution dynamic
 
-The Swiss AI Hub platform runtime, SDK, agents, pipelines, and processes are licensed under Apache 2.0. (The web UI and
-backup orchestration are AGPL-3.0; the multi-tenant management plane is proprietary. See
+The Swiss AI Hub platform runtime, SDK, agents, pipelines, and processes are licensed under Apache 2.0. (The web UI, the
+multi-tenant management plane, and backup orchestration are AGPL-3.0-or-later. See
 [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the per-package breakdown.) The
 permissive license on the runtime + SDK creates natural collaboration incentives without forcing them.
 
@@ -101,7 +101,7 @@ For production AI systems, be extremely cautious with:
 
 These licenses might seem acceptable initially, but create legal landmines when you scale, offer services, or integrate
 with customer systems - **when they sit underneath the code you build on**. That is precisely why the Swiss AI Hub keeps
-the runtime and SDK permissive. The web UI and backup orchestration are a deliberate exception: they are AGPL-3.0
+the runtime and SDK permissive. The web UI and backup orchestration are a deliberate exception: they are AGPL-3.0-or-later
 *because* they are end-user applications rather than building blocks, so copyleft protects community improvements
 without ever forcing your agents or business logic open.
 
@@ -114,8 +114,8 @@ reviewed and approved.
 **You get the freedom each package's license confers — see
 [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the exact terms per package.** Briefly:
 the runtime + SDK (Apache 2.0) place no restrictions on commercial use or integration with proprietary systems; the web
-UI and backup orchestration (AGPL-3.0) require source disclosure of your modifications when you offer them as a network
-service; the multi-tenant administration plane is proprietary and requires a commercial license.
+UI, the multi-tenant administration plane, and backup orchestration (AGPL-3.0-or-later) require source disclosure of your
+modifications when you offer them as a network service.
 
 **Why Apache 2.0 specifically for the runtime and SDK:** Beyond being permissive, Apache 2.0 includes explicit patent
 grants, protecting you from patent claims by contributors. It's trusted by enterprises, well-understood by legal teams,
@@ -123,8 +123,8 @@ and compatible with virtually all other licenses. It's the gold standard for col
 precisely the role of the runtime and SDK.
 
 This isn't just idealism - it's pragmatism. A permissive runtime + SDK removes barriers to adoption and prevents vendor
-lock-in for the building blocks you extend; the AGPL components protect against hostile SaaS rehosts of the UI without
-burdening the building blocks; the proprietary plane funds continued development.
+lock-in for the building blocks you extend; the AGPL components protect against hostile SaaS rehosts of the UI and the
+administration plane without burdening the building blocks.
 
 ## Real collaboration patterns
 
