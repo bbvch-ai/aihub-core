@@ -129,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 interface Props {
   visible: boolean
@@ -146,11 +146,11 @@ const props = withDefaults(defineProps<Props>(), {
 const { t } = useI18n()
 
 const databaseDisplayName = computed(() => {
-  return props.databaseDisplayName || useChangeCase(props.database, 'capitalCase').value
+  return props.databaseDisplayName || capitalCase(props.database)
 })
 
 const namespaceDisplayName = computed(() => {
-  return props.namespaceDisplayName || useChangeCase(props.namespace, 'capitalCase').value
+  return props.namespaceDisplayName || capitalCase(props.namespace)
 })
 
 const emit = defineEmits<{
