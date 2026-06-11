@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.296.1] - 2026-06-11 - Deployment: Enhanced Traefik Network Integration
+
+### Changed
+
+- 🌐 **Enhanced Traefik network configuration:** Explicitly assigned the Langfuse service to the `proxy` network for
+  Traefik, improving routing and integration in self-hosted Docker deployments.
+
+______________________________________________________________________
+
 ## [v0.296.0] - 2026-06-11 - Empowering Data Discovery: Advanced Filtering, Search, and Sorting for Agents and Threads
 
 ### Added
