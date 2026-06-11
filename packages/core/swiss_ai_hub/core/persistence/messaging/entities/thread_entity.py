@@ -4,7 +4,7 @@ from typing import Self
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
-from swiss_ai_hub.api.routes.thread.dto.thread_sort import SortOrder
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 

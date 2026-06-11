@@ -17,7 +17,7 @@ from openai.types.chat import (
 )
 from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
-from swiss_ai_hub.api.routes.thread.dto.thread_sort import SortOrder
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
