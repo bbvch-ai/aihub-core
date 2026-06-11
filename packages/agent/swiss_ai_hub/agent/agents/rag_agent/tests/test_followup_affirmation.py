@@ -63,7 +63,7 @@ from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 enable_logging()
 
 NAMESPACE_NAME = "ai_knowledge"
-COLLECTION = "development"
+COLLECTION = "followup_affirmation_test"
 GROUNDING_DOC_ID = "phoenix-deploy-arch"
 
 # The first turn's answer (canned, so the condenser deterministically produces the follow-up).
@@ -203,10 +203,10 @@ def seeded_corpus(event_loop):
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store = MilvusVectorStoreConfig(uri="http://localhost", collection_name=COLLECTION, dimensions=1024)
     doc_store = create_mongo_document_store(document_store_name=COLLECTION)
-    drop_collection()
+    drop_collection(collection_name=COLLECTION)
     fill_collection(embedding_config, vector_store, doc_store, nodes=ALL_NODES)
     yield
-    drop_collection()
+    drop_collection(collection_name=COLLECTION)
 
 
 def _build_config():
