@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.295.1] - 2026-06-11 - Enhanced AI-Driven GitHub Issue Management
+
+### Added
+
+- ✨ **New AI Skill: `write-issue`**: Introduced a powerful new AI skill that enables automated authoring, creation, and
+  management of GitHub issues within the `bbvch-ai/aihub-core` repository. This skill ensures adherence to established
+  project conventions for titles, body structure, labels, and project board integration.
+- 📄 **Comprehensive Issue Creation Guidelines**: Detailed a comprehensive set of conventions and steps for drafting
+  GitHub issues, covering everything from title formatting (Epic/Story vs. Task/Bug), structured body content
+  (`In scope`, `Out of scope`, `Accepted when`), required `area:*` and optional `version` labels, to setting project
+  board fields like Item Type, Priority, and Status.
+- ⚙️ **Automated Issue Validation Script**: Implemented a new Bash script (`validate-issue.sh`) to automatically verify
+  that newly created GitHub issues conform to project standards. This script checks for correct labeling, the presence
+  of specific body sections, checkbox acceptance criteria, and proper placement on the AI-Scrum board with an assigned
+  Item Type.
+
+______________________________________________________________________
+
 ## [v0.295.0] - 2026-06-11 - Streamlined Bot Setup and Clearer User Provisioning
 
 ### Added
