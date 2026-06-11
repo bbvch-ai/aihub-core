@@ -30,7 +30,6 @@ model {
 
     sysadmin_api = container "Sysadmin API" {
       #tier-application
-      #proprietary
       technology "FastAPI / Python"
       icon tech:fastapi-icon
       description "Sysadmin-gated FastAPI on sysadmin.\${DOMAIN}/api/v1 for tenant lifecycle and cross-tenant ops. Requires AIHubSysAdmin realm role on every endpoint."
@@ -45,7 +44,6 @@ model {
 
     sysadmin_web = webapp "Sysadmin UI" {
       #tier-application
-      #proprietary
       technology "Nuxt 3 Layer"
       icon tech:nuxt
       description "Static SPA on sysadmin.\${DOMAIN}. Nuxt Layer extending Admin UI codebase; deployed as a separate container with its own SDK."

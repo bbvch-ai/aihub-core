@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-sysadmin-api"
-version = "0.293.2"
+version = "0.295.2"
 description = "Swiss AI Hub system administration plane (multi-tenant management API)"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -9,7 +9,7 @@ authors = [
     { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
 ]
-license = "LicenseRef-Proprietary"
+license = "AGPL-3.0-or-later"
 license-files = ["LICENSE"]
 readme = "README.md"
 dependencies = [

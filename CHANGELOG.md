@@ -5,6 +5,118 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.295.2] - 2026-06-11 - Improved Tenant Management and Documentation Clarity
+
+### Added
+
+- 🖼️ **New Visual Aids for Tenant Creation:** Integrated several new screenshots to provide clear, step-by-step guidance
+  for Keycloak group creation and navigating the Tenant Administration UI.
+- 🔑 **Dedicated `AIHubSysAdmin` Role:** Introduced the `AIHubSysAdmin` Keycloak realm role, which is now required for
+  creating and configuring tenants, enhancing security and control over multi-tenancy lifecycle management.
+
+### Changed
+
+- 📄 **Revamped Tenant Creation Documentation:** The "Creating Tenants" guide has been significantly updated with a
+  detailed, step-by-step process, clarifying the interplay between Keycloak groups and platform metadata, tenant states,
+  and in-tenant role assignments.
+- 📚 **Enhanced German Architecture Documentation:** Made minor textual improvements and clarifications across various
+  German architecture documents, including system context, containers, and package-centric views, for improved
+  readability and accuracy.
+
+______________________________________________________________________
+
+## [v0.295.1] - 2026-06-11 - Enhanced AI-Driven GitHub Issue Management
+
+### Added
+
+- ✨ **New AI Skill: `write-issue`**: Introduced a powerful new AI skill that enables automated authoring, creation, and
+  management of GitHub issues within the `bbvch-ai/aihub-core` repository. This skill ensures adherence to established
+  project conventions for titles, body structure, labels, and project board integration.
+- 📄 **Comprehensive Issue Creation Guidelines**: Detailed a comprehensive set of conventions and steps for drafting
+  GitHub issues, covering everything from title formatting (Epic/Story vs. Task/Bug), structured body content
+  (`In scope`, `Out of scope`, `Accepted when`), required `area:*` and optional `version` labels, to setting project
+  board fields like Item Type, Priority, and Status.
+- ⚙️ **Automated Issue Validation Script**: Implemented a new Bash script (`validate-issue.sh`) to automatically verify
+  that newly created GitHub issues conform to project standards. This script checks for correct labeling, the presence
+  of specific body sections, checkbox acceptance criteria, and proper placement on the AI-Scrum board with an assigned
+  Item Type.
+
+______________________________________________________________________
+
+## [v0.295.0] - 2026-06-11 - Streamlined Bot Setup and Clearer User Provisioning
+
+### Added
+
+- ✨ **New Architecture Decision Record (ADR)**: Documented the decision to prevent bot-first Keycloak provisioning,
+  requiring users to log in to the web portal once before interacting with the bot. This clarifies the user onboarding
+  process and ensures consistent identity management.
+- 🦾 **`UserNotProvisionedError`**: Introduced a specific exception for users attempting to interact with the bot before
+  their Keycloak account has been provisioned via web login, allowing for targeted error handling.
+- 📄 **Localized Bot Messages**: Added new internationalized messages across German, English, French, and Italian,
+  providing clear and actionable guidance to users who are not yet provisioned in Keycloak.
+- ⚙️ **`BOT_DEV_FAKE_EMAIL` Environment Variable**: Introduced a new environment variable for local development to
+  simulate user identity for the bot, bypassing the Teams connector and enabling comprehensive testing of authentication
+  flows without Azure.
+- ⚡️ **`primary_frontend_origin` Setting**: Added a convenience property to `AIHubSettings` to easily retrieve the
+  primary web portal URL, used for directing unprovisioned users to the login page.
+
+### Changed
+
+- 🚀 **Overhauled Bot Local Development Setup**: Significantly revised the local development documentation for the bot,
+  providing detailed, step-by-step instructions for using the Bot Framework Emulator, including support for WSL2 and
+  anonymous authentication.
+- 🔄 **Bot User Identity Resolution**: Modified the bot's identity resolution logic to raise a specific
+  `UserNotProvisionedError` when a user's email is not found in Keycloak, replacing a generic `ValueError`.
+- 💬 **Actionable Error Handling for Unprovisioned Users**: The bot now gracefully handles `UserNotProvisionedError` by
+  replying with a clear, localized message instructing users to perform a one-time web portal login, rather than
+  displaying an opaque error.
+- 🌎 **WSL2 Compatibility for Local Bot Runner**: Updated the local bot runner (`main.py`) to bind to `0.0.0.0:8001`,
+  enabling seamless connectivity from the Bot Framework Emulator running on Windows when the bot is hosted in WSL2.
+- 🔑 **Anonymous Authentication for Local Bot Runner**: The local bot runner now monkeypatches the Microsoft Agents SDK
+  to force unauthenticated mode, allowing the Bot Framework Emulator to drive the bot without requiring Azure
+  credentials.
+
+### Removed
+
+- 🗑️ **Bot-Driven User Provisioning Capability**: The `create_user` method in `KeycloakAdminService` and its
+  corresponding integration test were removed, aligning with the architectural decision to exclusively provision
+  Keycloak users via the web portal's first-broker-login flow.
+
+______________________________________________________________________
+
+## [v0.294.0] - 2026-06-11 - Swiss AI Hub Now Fully Open-Source with AGPL-3.0-or-later Sysadmin Plane
+
+### Added
+
+- 📄 **New Architectural Decision Record (ADR):** Introduced a comprehensive ADR detailing the strategic decision to
+  relicense the multi-tenant administration plane to AGPL-3.0-or-later, outlining its context, decision drivers, and
+  consequences.
+
+### Changed
+
+- 🔄 **Relicensed Multi-Tenant Administration Plane:** The `packages/sysadmin-api` and `packages/sysadmin-web`
+  components, previously proprietary, are now open-source under the **GNU Affero General Public License v3.0 or later
+  (AGPL-3.0-or-later)**. This change completes the transition of Swiss AI Hub to a fully open-source platform.
+- 🔑 **Updated Licensing Model Documentation:** All project documentation, including the root `README.md`, `LICENSES.md`,
+  `CONTRIBUTING.md`, and internal architecture documents, has been thoroughly revised to reflect the new dual-license
+  model (Apache-2.0 for backend/SDK and AGPL-3.0-or-later for UI/administration).
+- ⚡️ **Refined Sysadmin Package Rationale:** The justification for `sysadmin-api` and `sysadmin-web` existing as
+  separate packages now focuses purely on architectural and security boundaries, rather than licensing, as both the main
+  application and administration plane share the AGPL-3.0-or-later license.
+- ⚙️ **Deployment Configuration Updates:** Docker Compose templates and generation scripts have been updated to reflect
+  the AGPL-3.0-or-later license for `sysadmin-api` and `sysadmin-web`, ensuring accurate license annotations in
+  deployment artifacts.
+
+### Removed
+
+- 🗑️ **Deprecated Proprietary License Identifiers:** All per-file `SPDX-License-Identifier` headers denoting proprietary
+  licenses have been removed from source files within `packages/sysadmin-api` and `packages/sysadmin-web` for
+  consistency with the rest of the monorepo, which relies on package-level `LICENSE` files.
+- 🗑️ **Removed Proprietary Tags from Architecture:** The `#proprietary` tag has been eliminated from architecture
+  specifications and container definitions, aligning these views with the platform's fully open-source status.
+
+______________________________________________________________________
+
 ## [v0.293.2] - 2026-06-10 - Improved Configuration Generation and Placeholders
 
 ### Added

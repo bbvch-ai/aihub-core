@@ -1,3 +1,5 @@
 ---
 response_timeout: Sorry, I am taking too long to respond. Please try again.
 generic_error: Sorry, something went wrong. Please try again.
+user_not_provisioned: It looks like you don't have a Swiss AI Hub account yet. Please
+  sign in once at %{url}, then come back and message me here.
