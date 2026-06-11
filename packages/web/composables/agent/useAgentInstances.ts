@@ -4,8 +4,8 @@ import { minutesToMilliseconds } from 'date-fns'
 export const useAgentInstances = defineQuery(() => {
   const { tenantId } = useTenant()
   const searchQuery = ref<string | null>(null)
-  const agentClass = useRouteQuery<string | null>('type', null)
-  const status = useRouteQuery<string | null>('status', null)
+  const agentClass = useRouteQuery<string | null>('agent_type', null)
+  const status = useRouteQuery<string | null>('agent_status', null)
 
   const debouncedSearch = refDebounced(searchQuery, 300)
 
