@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.295.3] - 2026-06-11 - Improved Streaming State and Richer Responses
+
+### Refactor
+
+- 🧹 **Enhanced Streaming State Management Initialization:** The `StreamingStateManager` is now initialized earlier in
+  the processing pipeline, ensuring comprehensive state capture from the very beginning of a request.
+
+### Changed
+
+- ⚡️ **Richer Output for Successful Operations:** The pipeline now consistently returns serialized HTML content from the
+  streaming state manager upon successful completion, providing more detailed and structured results to the user
+  interface.
+- 📄 **Contextual Error Reporting:** Error messages now include any available partial streaming state (serialized as
+  HTML) alongside the error details. This provides users with more context and partial results, making it easier to
+  understand and debug issues.
+
+______________________________________________________________________
+
 ## [v0.295.2] - 2026-06-11 - Improved Tenant Management and Documentation Clarity
 
 ### Added
