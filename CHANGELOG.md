@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.293.2] - 2026-06-10 - Improved Configuration Generation and Placeholders
+
+### Added
+
+- ✨ **Introduced UUID generation for environment setup:** Added a new `gen_uuid` function and `REPLACE_WITH_RANDOM_UUID`
+  placeholder to the `setup-env.sh` script, enabling automatic generation of UUIDs for configuration values.
+
+### Changed
+
+- 🔄 **Updated Rclone RC credential placeholders:** Renamed the default placeholders for Rclone RC user and password in
+  `.env.prod` to `REPLACE_WITH_RANDOM_STRING` for consistency and clarity with the automated generation process.
+
+______________________________________________________________________
+
 ## [v0.293.0] - 2026-06-10 - Enhanced Version Visibility for API and UI
 
 ### Added
