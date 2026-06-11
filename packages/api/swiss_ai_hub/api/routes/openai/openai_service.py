@@ -320,9 +320,8 @@ class OpenaiService:
             locale=locale,
             aihub_headers=aihub_headers,
         )
-        # Wait until all events are processed
-        await resources.stop_signal.wait()
-        await resources.subscriber.stop()
+        # Wait until all events are processed, draining trailing events before teardown
+        await ChatService.wait_for_stop_then_drain(resources)
 
         if resources.stop_event.is_exception_event:
             raise HTTPException(resources.stop_event.http_status_code, resources.stop_event.message)
@@ -401,23 +400,13 @@ class OpenaiService:
 
     @staticmethod
     async def _sse_event_generator(resources: StreamingResources) -> AsyncGenerator[str]:
-        streamed_any = False
-        while True:
-            if resources.stop_signal.is_set() and resources.chunk_queue.empty():
-                logger.debug("Stop streaming due to stop_event and empty queue")
-                break
-            try:
-                chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
-                yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
-                streamed_any = True
-                resources.chunk_queue.task_done()
-            except TimeoutError:
-                continue
-            except asyncio.CancelledError:
-                break
+        streamed_parts: list[str] = []
+        async for chunk_event in ChatService.iter_streamed_display_events(resources):
+            streamed_parts.append(chunk_event.content)
+            yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
 
         yield OpenaiService._build_chunk_sse(
-            content=OpenaiService._resolve_final_content(resources.stop_event, streamed_any=streamed_any),
+            content=OpenaiService._resolve_final_content(resources.stop_event, streamed="".join(streamed_parts)),
             model="",
             finish_reason="stop",
         )
@@ -425,20 +414,21 @@ class OpenaiService:
     @staticmethod
     def _resolve_final_content(
         stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None,
-        streamed_any: bool = False,
+        streamed: str = "",
     ) -> str:
         if stop_event.is_hitl_request_event:
             return stop_event.question
         if stop_event.is_exception_event:
             return f"\n\n>[!CAUTION]\n>**Error:** {stop_event.message}\n"
-        # Safety net: a stop event that finishes streaming within a single step (e.g. the
-        # self-awareness answer's LLMStopEvent) can race its own ChunkEvents and have them dropped
-        # before they reach the client. When nothing streamed, recover the full answer from the stop
-        # event's output messages. Skipped once chunks streamed, to avoid duplicating the answer.
-        if not streamed_any:
-            output_messages = getattr(stop_event, "output_messages", None) or []
-            return output_messages[-1].content if output_messages else ""
-        return ""
+        # Backstop: emit only the portion of the authoritative answer the client never received, in case
+        # chunks were lost to the stop-vs-chunk dispatch race. Empty once everything has already streamed.
+        # Best-effort: the prefix match can miss if the stream parser normalized whitespace differently
+        # from output_messages, in which case we keep what streamed rather than risk duplicating it.
+        output_messages = getattr(stop_event, "output_messages", None) or []
+        full_answer = (output_messages[-1].content or "") if output_messages else ""
+        if full_answer and full_answer.startswith(streamed):
+            return full_answer[len(streamed) :]
+        return "" if streamed else full_answer
 
     @staticmethod
     def _build_chunk_sse(*, content: str, model: str, finish_reason: str | None = None) -> str:

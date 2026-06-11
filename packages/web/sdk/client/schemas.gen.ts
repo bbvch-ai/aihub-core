@@ -8261,6 +8261,11 @@ export const HealthResponseSchema = {
       title: "Code",
       description: "HTTP status code.",
     },
+    version: {
+      type: "string",
+      title: "Version",
+      description: "Running service version.",
+    },
     checks: {
       anyOf: [
         {
@@ -8281,7 +8286,7 @@ export const HealthResponseSchema = {
     },
   },
   type: "object",
-  required: ["status", "code"],
+  required: ["status", "code", "version"],
   title: "HealthResponse",
   description: "Standard health check response.",
 } as const;

@@ -91,6 +91,7 @@ user:
   title: Utilisateurs
   logout: Déconnexion
   language: Langue
+  version: Version
   role_chips:
     no_roles: Aucun rôle assigné
     assign: Assigner un rôle

@@ -91,6 +91,7 @@ user:
   title: Users
   logout: Logout
   language: Language
+  version: Version
   role_chips:
     no_roles: No roles assigned
     assign: Assign role

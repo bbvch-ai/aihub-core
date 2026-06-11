@@ -92,6 +92,7 @@ user:
   title: Benutzer
   logout: Abmelden
   language: Sprache
+  version: Version
   role_chips:
     no_roles: Keine Rollen zugewiesen
     assign: Rolle zuweisen
