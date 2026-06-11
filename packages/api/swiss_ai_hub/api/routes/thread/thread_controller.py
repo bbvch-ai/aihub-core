@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Literal, Self
+from typing import Annotated, Self
 
 from fastapi import Depends, HTTPException, Path, Query, Security
 from mongoengine import DoesNotExist
@@ -20,6 +20,7 @@ from swiss_ai_hub.api.routes.thread.dto.create_thread_request import CreateThrea
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
 from swiss_ai_hub.api.routes.thread.dto.paginated_threads_response import PaginatedThreadsResponse
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
+from swiss_ai_hub.api.routes.thread.dto.thread_sort import SortOrder
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 
 
@@ -96,8 +97,8 @@ class ThreadController(TenantScopedController):
                 ),
             ] = "created_at",
             sort_order: Annotated[
-                Literal[-1, 1], Query(description="Sort order: 1 for ascending, -1 for descending")
-            ] = -1,
+                SortOrder, Query(description="Sort order: 1 for ascending, -1 for descending")
+            ] = SortOrder.DESCENDING,
         ) -> PaginatedThreadsResponse:
             """
             Returns all threads that the authenticated user is a member of.

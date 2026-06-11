@@ -4,6 +4,7 @@ from typing import Self
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
+from swiss_ai_hub.api.routes.thread.dto.thread_sort import SortOrder
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 
@@ -123,7 +124,7 @@ class ThreadEntity(Document):
         skip: int = 0,
         limit: int = 20,
         sort_by: str = "created_at",
-        sort_order: int = -1,
+        sort_order: SortOrder = SortOrder.DESCENDING,
         filters: ThreadFilters | None = None,
     ) -> list["ThreadEntity"]:
         """Get a paginated list of threads that include the specified user."""
