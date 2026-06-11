@@ -453,35 +453,42 @@ export function extractRepeaterConfigs(
     const formkitType = getFormkitType(element)
     const elementName = element.name as string
 
-    if (formkitType === 'repeater') {
-      const childrenSchema = (element.children as FormElement[] || []).flatMap(
-        child => transformElementForRepeater(child, locale),
-      ) as FormKitSchemaNode[]
+    // Isolate each element so one malformed repeater (or a group containing one) is skipped
+    // rather than throwing out of the computed and breaking every repeater on the form.
+    try {
+      if (formkitType === 'repeater') {
+        const childrenSchema = (element.children as FormElement[] || []).flatMap(
+          child => transformElementForRepeater(child, locale),
+        ) as FormKitSchemaNode[]
 
-      // Build full path for nested data access
-      const fullPath = parentPath ? `${parentPath}.${elementName}` : elementName
+        // Build full path for nested data access
+        const fullPath = parentPath ? `${parentPath}.${elementName}` : elementName
 
-      const itemChildren = (element.children as FormElement[]) || []
-      repeaters.push({
-        name: elementName,
-        path: fullPath,
-        label: getLocalizedString(element.label, locale),
-        addLabel: getLocalizedString(element.addLabel || element.add_label, locale),
-        childrenSchema,
-        defaultItem: seedFormDefaults({}, itemChildren),
-        min: element.min as number | undefined,
-        max: element.max as number | undefined,
-      })
+        const itemChildren = (element.children as FormElement[]) || []
+        repeaters.push({
+          name: elementName,
+          path: fullPath,
+          label: getLocalizedString(element.label, locale),
+          addLabel: getLocalizedString(element.addLabel || element.add_label, locale),
+          childrenSchema,
+          defaultItem: seedFormDefaults({}, itemChildren),
+          min: element.min as number | undefined,
+          max: element.max as number | undefined,
+        })
+      }
+      else if (formkitType === 'group' && element.children) {
+        // Recursively search for repeaters inside groups, passing the current path
+        const groupPath = parentPath ? `${parentPath}.${elementName}` : elementName
+        const nestedRepeaters = extractRepeaterConfigs(
+          element.children as FormElement[],
+          locale,
+          groupPath,
+        )
+        repeaters.push(...nestedRepeaters)
+      }
     }
-    else if (formkitType === 'group' && element.children) {
-      // Recursively search for repeaters inside groups, passing the current path
-      const groupPath = parentPath ? `${parentPath}.${elementName}` : elementName
-      const nestedRepeaters = extractRepeaterConfigs(
-        element.children as FormElement[],
-        locale,
-        groupPath,
-      )
-      repeaters.push(...nestedRepeaters)
+    catch (error) {
+      console.error(`Error extracting repeater "${elementName ?? '<unknown>'}":`, error)
     }
   }
 
@@ -497,13 +504,19 @@ export function buildFormKitSchema(
 ): FormKitSchemaNode[] {
   if (!formElements || formElements.length === 0) return []
 
-  try {
-    return formElements.flatMap(el => transformElementToSchema(el, options)) as FormKitSchemaNode[]
-  }
-  catch (error) {
-    console.error('Error transforming schema:', error)
-    return []
-  }
+  // Isolate each element: a single malformed element is skipped (and logged) instead of
+  // collapsing the whole section to []. A blanket try/catch here meant one throwing input
+  // took every sibling down with it — e.g. a bad config field wiped the entire Basic Info
+  // step (agent_id, name, …), leaving an unusable form.
+  return formElements.flatMap((element) => {
+    try {
+      return transformElementToSchema(element, options)
+    }
+    catch (error) {
+      console.error(`Error transforming form element "${(element?.name as string) ?? '<unknown>'}":`, error)
+      return []
+    }
+  }) as FormKitSchemaNode[]
 }
 
 const LOCALE_KEYS = new Set(['de', 'en', 'fr', 'it'])
@@ -760,9 +773,11 @@ export function extractGroupConfigs(
   const groups: GroupConfig[] = []
 
   for (const element of formElements) {
-    const formkitType = getFormkitType(element)
+    if (getFormkitType(element) !== 'group') continue
 
-    if (formkitType === 'group') {
+    // Isolate each group so a single malformed group is skipped rather than throwing out
+    // of the computed and blanking the whole step list.
+    try {
       const schema = transformElementToSchema(element, { locale })
       const schemaArray = Array.isArray(schema) ? schema : [schema]
 
@@ -771,6 +786,9 @@ export function extractGroupConfigs(
         label: getLocalizedString(element.label, locale),
         schema: schemaArray,
       })
+    }
+    catch (error) {
+      console.error(`Error transforming group "${(element?.name as string) ?? '<unknown>'}":`, error)
     }
   }
 
