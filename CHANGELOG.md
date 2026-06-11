@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.295.4] - 2026-06-11 - Improved Authentication Flow and Persistent User Sessions
+
+### Added
+
+- ✨ **Architectural Decision Record for Keycloak Sessions:** Documented the rationale, drivers, and implementation
+  details for extending Keycloak Single Sign-On (SSO) session lifespans, outlining the benefits for user experience and
+  system behavior.
+- ⚙️ **Centralized Keycloak Session Configuration:** Introduced new configuration parameters (`sso_session_idle_timeout`
+  and `sso_session_max_lifespan`) in `compose-config.yml`, providing a single source of truth for Keycloak realm session
+  settings.
+
+### Changed
+
+- 🚀 **Extended Keycloak SSO Session Lifespans:** Increased Keycloak SSO session idle timeout to 5 days and maximum
+  lifespan to 30 days. This significantly reduces the frequency of forced re-logins, allowing users to stay logged in
+  across nights and weekends for a smoother experience.
+- 🔄 **Automatic Keycloak Session Lifespan Migration:** Implemented logic within the Keycloak entrypoint script to
+  automatically update SSO session lifespans for existing deployments. This ensures that environments originally
+  configured with Keycloak's default short lifespans are automatically upgraded to the new, longer durations without
+  overwriting manual operator customizations.
+- ⚡️ **Optimized Home Page Redirection:** Enhanced the login experience by implementing smart redirection. Users are now
+  automatically directed to their last active tenant after successful login or silent token renewal, leveraging
+  persisted active tenant information.
+
+______________________________________________________________________
+
 ## [v0.295.3] - 2026-06-11 - Improved Streaming State and Richer Responses
 
 ### Refactor
