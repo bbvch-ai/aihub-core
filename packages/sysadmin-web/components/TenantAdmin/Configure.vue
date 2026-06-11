@@ -1,4 +1,3 @@
-<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <div>
     <span class="mb-6 block text-surface-500 dark:text-surface-400">

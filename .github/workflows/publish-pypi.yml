@@ -2,8 +2,8 @@
 name: Publish Python packages to PyPI
 run-name: Publish PyPI - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}
 # Publishes the Swiss AI Hub Python distributions to PyPI via OIDC trusted publishing on release.
-# Excludes the proprietary swiss-ai-hub-sysadmin-api package. The jambo fork (swiss-ai-hub-jambo)
-# is published from its own repository, not here.
+# Excludes swiss-ai-hub-sysadmin-api, which ships as a Docker image rather than a PyPI library. The
+# jambo fork (swiss-ai-hub-jambo) is published from its own repository, not here.
 on:
   repository_dispatch:
     types: [release-ready]
@@ -58,7 +58,7 @@ jobs:
           TAG: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          # Publishable distributions only — the proprietary sysadmin-api is intentionally excluded.
+          # Publishable distributions only — sysadmin-api ships as a Docker image, not a PyPI library.
           PACKAGES=(
             swiss-ai-hub-core
             swiss-ai-hub-agent

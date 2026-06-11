@@ -1,4 +1,3 @@
-<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <div
     class="flex flex-col gap-3 rounded-xl border border-surface-200 p-4 dark:border-surface-800"

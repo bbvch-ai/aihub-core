@@ -53,6 +53,11 @@ class AIHubSettings(EnvironmentSettings):
             f"The open-source AI infrastructure stack for Swiss enterprises - v{self.VERSION}\n"
         )
 
+    @property
+    def primary_frontend_origin(self) -> str:
+        """The primary web portal URL — the first entry of the comma-separated FRONTEND_ORIGIN."""
+        return self.FRONTEND_ORIGIN.split(",")[0].strip()
+
     MONGO_MAIN_DB_NAME: Annotated[
         str,
         Field(
