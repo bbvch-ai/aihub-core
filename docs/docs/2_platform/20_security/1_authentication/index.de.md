@@ -145,8 +145,7 @@ Langfuse sitzt nicht hinter einem OAuth2 Proxy — es nutzt seine native Keycloa
 `langfuse`-Client trägt den Marker-Client-Scope `langfuse-sysadmin-gate`, der eine bedingte Zugriffsverweigerung in den
 Authentifizierungs-Flows aktiviert (Browser-Flow `browser-aihub` und Post-Broker-Login-Flow). Benutzer ohne
 `AIHubSysAdmin` werden beim Keycloak-Login abgewiesen — sowohl bei neuen Logins über den Identity Provider als auch bei
-bestehenden SSO-Sitzungen. Details im ADR *Restrict Langfuse Access to AIHubSysAdmin via a Keycloak Authentication-Flow
-Gate*.
+bestehenden SSO-Sitzungen.
 
 ## Härtung: Zugriff auf die Keycloak Admin Console
 
