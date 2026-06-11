@@ -24370,7 +24370,7 @@ export type GetUserThreadsData = {
      *
      * Sort order: 1 for ascending, -1 for descending
      */
-    sort_order?: number;
+    sort_order?: -1 | 1;
   };
   url: "/{tenant_id}/threads/";
 };
