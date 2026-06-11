@@ -11,7 +11,7 @@ strategic design that gives you maximum flexibility in how you adopt, deploy, an
 
 The platform is everything that runs when you execute `docker compose up`. It's the databases, message queues, LLM
 gateway, vector stores, authentication system, user interfaces, and monitoring tools. Open-source (Apache 2.0 for the
-runtime, AGPL-3.0 for the UI and backup; see [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md)
+runtime, AGPL-3.0-or-later for the UI and backup; see [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md)
 for the per-package breakdown), it's yours to deploy, modify, and operate however you need.
 
 Think of the platform as your AI operating system. It handles:
@@ -119,10 +119,10 @@ store, trace, display, and deploy. The SDK provides the patterns to tap into the
 
 Swiss AI Hub uses a mixed open-source model: the platform runtime, SDK, agents, pipelines and processes are licensed
 under **Apache 2.0** (permissive — use, modify, distribute commercially, no obligation to share modifications back); the
-web UI and backup orchestration under **AGPL-3.0**; the multi-tenant management plane is proprietary and requires a
-commercial license. See [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the full
-per-package breakdown. The components you typically extend — your own agents, pipelines and processes built on the SDK —
-sit under Apache 2.0, so your code stays yours.
+web UI, the multi-tenant management plane, and backup orchestration under **AGPL-3.0-or-later** (network-copyleft). See
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the full per-package breakdown. The
+components you typically extend — your own agents, pipelines and processes built on the SDK — sit under Apache 2.0, so
+your code stays yours.
 
 ## When you need each part
 

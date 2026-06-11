@@ -62,7 +62,6 @@ specification {
 
   // Tags. Applied to elements via `#tag` syntax; used for filtering in views.
   tag external
-  tag proprietary
   tag sysadmin
   tag stateful
   tag stateless

@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.294.0] - 2026-06-11 - Swiss AI Hub Now Fully Open-Source with AGPL-3.0-or-later Sysadmin Plane
+
+### Added
+
+- 📄 **New Architectural Decision Record (ADR):** Introduced a comprehensive ADR detailing the strategic decision to
+  relicense the multi-tenant administration plane to AGPL-3.0-or-later, outlining its context, decision drivers, and
+  consequences.
+
+### Changed
+
+- 🔄 **Relicensed Multi-Tenant Administration Plane:** The `packages/sysadmin-api` and `packages/sysadmin-web`
+  components, previously proprietary, are now open-source under the **GNU Affero General Public License v3.0 or later
+  (AGPL-3.0-or-later)**. This change completes the transition of Swiss AI Hub to a fully open-source platform.
+- 🔑 **Updated Licensing Model Documentation:** All project documentation, including the root `README.md`, `LICENSES.md`,
+  `CONTRIBUTING.md`, and internal architecture documents, has been thoroughly revised to reflect the new dual-license
+  model (Apache-2.0 for backend/SDK and AGPL-3.0-or-later for UI/administration).
+- ⚡️ **Refined Sysadmin Package Rationale:** The justification for `sysadmin-api` and `sysadmin-web` existing as
+  separate packages now focuses purely on architectural and security boundaries, rather than licensing, as both the main
+  application and administration plane share the AGPL-3.0-or-later license.
+- ⚙️ **Deployment Configuration Updates:** Docker Compose templates and generation scripts have been updated to reflect
+  the AGPL-3.0-or-later license for `sysadmin-api` and `sysadmin-web`, ensuring accurate license annotations in
+  deployment artifacts.
+
+### Removed
+
+- 🗑️ **Deprecated Proprietary License Identifiers:** All per-file `SPDX-License-Identifier` headers denoting proprietary
+  licenses have been removed from source files within `packages/sysadmin-api` and `packages/sysadmin-web` for
+  consistency with the rest of the monorepo, which relies on package-level `LICENSE` files.
+- 🗑️ **Removed Proprietary Tags from Architecture:** The `#proprietary` tag has been eliminated from architecture
+  specifications and container definitions, aligning these views with the platform's fully open-source status.
+
+______________________________________________________________________
+
 ## [v0.293.2] - 2026-06-10 - Improved Configuration Generation and Placeholders
 
 ### Added
