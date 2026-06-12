@@ -1,17 +1,36 @@
 <template>
+  <div
+    v-if="checkedDocuments.length > 0"
+    class="mb-2 flex items-center justify-between"
+  >
+    <p class="text-sm">
+      {{ t('document.list.selected_count', { count: checkedDocuments.length }) }}
+    </p>
+    <Button
+      size="small"
+      severity="danger"
+      icon="pi pi-trash"
+      :label="t('document.delete.button_selected')"
+      :loading="isBatchDeleting"
+      @click="confirmBatchDelete"
+    />
+  </div>
   <DataTable
+    v-model:selection="checkedDocuments"
     :value="documents"
     table-style="min-width: 50rem"
-    selection-mode="single"
-    :selection="selectedDocument"
     :row-class="getRowClass"
     :sort-field="sortField ?? undefined"
     :sort-order="sortOrder"
     removable-sort
     size="small"
-    @update:selection="handleSelection"
+    @row-click="handleRowClick"
     @sort="handleSort"
   >
+    <Column
+      selection-mode="multiple"
+      header-style="width: 3rem"
+    />
     <Column
       field="document_title"
       :header="t('document.list.title')"
@@ -68,34 +87,50 @@
     </Column>
     <Column
       field="source"
-      :header="t('document.list.download')"
+      :header="t('document.list.actions')"
     >
       <template #body="{ data }">
-        <Button
-          v-if="data.source"
-          rounded
-          size="small"
-          variant="outlined"
-          icon="pi pi-download"
-          @click="() => downloadFile(data.id)"
-        />
-        <span
-          v-else
-          class="text-sm text-surface-400"
-        >-</span>
+        <div class="flex items-center gap-2">
+          <Button
+            v-if="data.source"
+            v-tooltip.top="t('document.list.download')"
+            rounded
+            size="small"
+            variant="outlined"
+            icon="pi pi-download"
+            @click.stop="() => downloadFile(data.id)"
+          />
+          <Button
+            v-tooltip.top="t('document.delete.button')"
+            rounded
+            size="small"
+            variant="outlined"
+            severity="danger"
+            icon="pi pi-trash"
+            :loading="isDeleting"
+            @click.stop="() => confirmDelete(data)"
+          />
+        </div>
       </template>
     </Column>
   </DataTable>
 </template>
 
 <script setup lang="ts">
+import { useConfirm } from 'primevue/useconfirm'
+import { useToast } from 'primevue/usetoast'
+
 import type { DocumentDto } from '@core/sdk/client'
-import type { DataTableSortEvent } from 'primevue/datatable'
+import type { DataTableRowClickEvent, DataTableSortEvent } from 'primevue/datatable'
 
 const route = useRoute()
 const { t } = useI18n()
 const { tenantId } = useTenant()
 const { getDocumentSourceUrl } = useDocumentUrl()
+const { deleteDocument, isDeleting } = useDeleteDocument()
+const { deleteDocuments, isDeleting: isBatchDeleting } = useDeleteDocuments()
+const confirm = useConfirm()
+const toast = useToast()
 
 const props = defineProps<{
   documents: DocumentDto[]
@@ -106,23 +141,25 @@ const props = defineProps<{
 const emit = defineEmits<{
   selected: [document: DocumentDto]
   sort: [field: string | null, order: 1 | -1]
+  deleted: [documentIds: string[]]
 }>()
 
-const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
-const selectedDocument = computed(() => {
-  return props.documents.filter((document: DocumentDto) => {
-    return document.id === route.params.document_id
-  })
-})
+const checkedDocuments = ref<DocumentDto[]>([])
 
-const handleSelection = (document: DocumentDto) => {
+const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
+
+const handleRowClick = (event: DataTableRowClickEvent) => {
+  const document = event.data as DocumentDto
   if (document.is_ingested) {
     emit('selected', document)
   }
 }
 
 const getRowClass = (data: DocumentDto) => {
-  return data.is_ingested ? '' : 'opacity-50 cursor-not-allowed pointer-events-none'
+  if (!data.is_ingested) {
+    return 'opacity-50 cursor-not-allowed pointer-events-none'
+  }
+  return data.id === route.params.document_id ? 'bg-surface-100 dark:bg-surface-800' : ''
 }
 
 const handleSort = (event: DataTableSortEvent) => {
@@ -136,5 +173,92 @@ const downloadFile = async (documentId: string) => {
   const namespace = route.params.namespace as string
   const url = await getDocumentSourceUrl(tenantId.value!, database, namespace, documentId)
   window.open(url, '_blank')
+}
+
+const confirmDelete = (document: DocumentDto) => {
+  confirm.require({
+    message: t('document.delete.confirmMessage', { title: document.document_title }),
+    header: t('document.delete.title'),
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: t('common.actions.cancel'),
+    acceptLabel: t('document.delete.button'),
+    acceptClass: 'p-button-danger',
+    accept: () => handleDelete(document),
+  })
+}
+
+const handleDelete = async (document: DocumentDto) => {
+  try {
+    await deleteDocument({
+      tenantId: tenantId.value!,
+      database: route.params.db as string,
+      namespace: route.params.namespace as string,
+      documentId: document.id,
+    })
+    toast.add({
+      severity: 'success',
+      summary: t('document.delete.success'),
+      life: 3000,
+    })
+    emit('deleted', [document.id])
+  }
+  catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: t('document.delete.error'),
+      detail: error instanceof Error ? error.message : String(error),
+      life: 5000,
+    })
+  }
+}
+
+const confirmBatchDelete = () => {
+  confirm.require({
+    message: t('document.delete.confirmMessageBatch', { count: checkedDocuments.value.length }),
+    header: t('document.delete.title'),
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: t('common.actions.cancel'),
+    acceptLabel: t('document.delete.button'),
+    acceptClass: 'p-button-danger',
+    accept: handleBatchDelete,
+  })
+}
+
+const handleBatchDelete = async () => {
+  const documentIds = checkedDocuments.value.map(document => document.id)
+  try {
+    const response = await deleteDocuments({
+      tenantId: tenantId.value!,
+      database: route.params.db as string,
+      namespace: route.params.namespace as string,
+      documentIds,
+    })
+    const deletedIds = response.results.filter(result => result.status === 'deleted').map(result => result.document_id)
+    const failedCount = response.results.length - deletedIds.length
+    if (failedCount > 0) {
+      toast.add({
+        severity: 'warn',
+        summary: t('document.delete.partial', { deleted: deletedIds.length, failed: failedCount }),
+        life: 5000,
+      })
+    }
+    else {
+      toast.add({
+        severity: 'success',
+        summary: t('document.delete.success'),
+        life: 3000,
+      })
+    }
+    checkedDocuments.value = []
+    emit('deleted', deletedIds)
+  }
+  catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: t('document.delete.error'),
+      detail: error instanceof Error ? error.message : String(error),
+      life: 5000,
+    })
+  }
 }
 </script>

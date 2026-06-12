@@ -15,12 +15,15 @@ from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_
 from swiss_ai_hub.core.generative_ai.document.types.file_type_config import FileTypeConfig
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
+from swiss_ai_hub.core.generative_ai.utils.path_utils import create_figures_folder_name
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import MongoSettings, trace_fn
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
+from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import get_partition_name_for_namespace
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     DOCUMENT_ID,
     NAMESPACE,
@@ -32,6 +35,10 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
 
+from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import (
+    BatchDeleteDocumentsResponse,
+    DocumentDeletionResult,
+)
 from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.database_dto import DatabaseDTO
 from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
@@ -448,3 +455,79 @@ class KnowledgeService:
     @staticmethod
     def get_supported_file_types() -> list[str]:
         return FileTypeConfig().get_unique_extensions()
+
+    @staticmethod
+    @trace_fn
+    def delete_document(
+        db: str,
+        namespace: str,
+        document_id: str,
+        s3_service: S3AnonymousFileAccessService,
+        vector_store_factory: VectorStoreFactory,
+    ) -> None:
+        """
+        Permanently removes a document from all three storage layers.
+
+        Deletion order matters: Milvus first (RAG stops returning content), doc store second
+        (document disappears from listings), S3 last. If the S3 deletion fails the file remains
+        in the data lake and the scheduled pipeline reconciliation re-ingests it, so the system
+        self-heals to a consistent state instead of leaving invisible orphans.
+        """
+        KnowledgeService._ensure_db_exists(db)
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        source = ref_doc.data.metadata.source
+
+        vector_store = vector_store_factory(db)
+        partition_name = get_partition_name_for_namespace(namespace)
+        vector_store.delete(document_id, partition_name=partition_name)
+        logger.info(f"Deleted vector store nodes for document {document_id} in partition {partition_name}")
+
+        doc_store = create_mongo_document_store(db)
+        doc_store.delete_document(document_id, raise_error=False)
+        logger.info(f"Deleted document {document_id} from doc store {db}")
+
+        KnowledgeService._delete_source_from_data_lake(s3_service, source)
+
+    @staticmethod
+    def _delete_source_from_data_lake(s3_service: S3AnonymousFileAccessService, source: str) -> None:
+        stripped = source.removeprefix("s3://")
+        parts = stripped.split("/", 1)
+        container = parts[0]
+        file_path = parts[1] if len(parts) > 1 else ""
+        if not file_path:
+            logger.warning(f"Source '{source}' has no object key, skipping data lake deletion")
+            return
+
+        s3_service.delete_file(container=container, file_path=file_path)
+
+        figures_prefix = create_figures_folder_name(uri=file_path)
+        deleted_figures = s3_service.delete_directory(container=container, prefix=f"{figures_prefix}/")
+        if deleted_figures:
+            logger.info(f"Deleted {deleted_figures} figure objects for source {source}")
+
+    @staticmethod
+    @trace_fn
+    def batch_delete_documents(
+        db: str,
+        namespace: str,
+        document_ids: list[str],
+        s3_service: S3AnonymousFileAccessService,
+        vector_store_factory: VectorStoreFactory,
+    ) -> BatchDeleteDocumentsResponse:
+        """Best-effort batch deletion: each document is deleted independently with a per-document result."""
+        results = []
+        for document_id in document_ids:
+            try:
+                KnowledgeService.delete_document(db, namespace, document_id, s3_service, vector_store_factory)
+                status = "deleted"
+            except HTTPException as e:
+                status = "not_found" if e.status_code == 404 else "failed"
+            except Exception:
+                logger.exception(f"Failed to delete document {document_id} in {db}/{namespace}")
+                status = "failed"
+            results.append(DocumentDeletionResult(document_id=document_id, status=status))
+        return BatchDeleteDocumentsResponse(results=results)

@@ -410,6 +410,21 @@ document:
     number_of_pages: Anzahl der Seiten
     download: Download
     is_processing: Verarbeitung läuft
+    actions: Aktionen
+    selected_count: '{count} Dokument(e) ausgewählt'
+  delete:
+    title: Dokument löschen
+    button: Löschen
+    button_selected: Ausgewählte löschen
+    confirmMessage: Möchten Sie dieses Dokument wirklich löschen? Es wird dauerhaft
+      aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht
+      werden.
+    confirmMessageBatch: Möchten Sie {count} Dokument(e) wirklich löschen? Sie werden
+      dauerhaft aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig
+      gemacht werden.
+    success: Dokument erfolgreich gelöscht
+    partial: '{deleted} Dokument(e) gelöscht, {failed} fehlgeschlagen'
+    error: Dokument konnte nicht gelöscht werden
 knowledge:
   title: Wissensdatenbanken
   created_at: 'Erstellt:'
