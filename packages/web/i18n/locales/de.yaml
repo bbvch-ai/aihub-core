@@ -439,8 +439,8 @@ document:
     confirmMessageBatch: Möchten Sie {count} Dokument(e) wirklich löschen? Sie werden
       dauerhaft aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig
       gemacht werden.
-    success: Dokument erfolgreich gelöscht
-    partial: '{deleted} Dokument(e) gelöscht, {failed} fehlgeschlagen'
+    success: Löschung des Dokuments geplant
+    partial: 'Löschung von {deleted} Dokument(en) geplant, {failed} fehlgeschlagen'
     error: Dokument konnte nicht gelöscht werden
 knowledge:
   title: Wissensdatenbanken

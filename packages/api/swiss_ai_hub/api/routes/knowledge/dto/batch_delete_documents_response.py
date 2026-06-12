@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-DocumentDeletionStatus = Literal["deleted", "not_found", "failed"]
+DocumentDeletionStatus = Literal["scheduled", "not_found", "failed"]
 
 
 class DocumentDeletionResult(BaseModel):

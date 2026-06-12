@@ -27,7 +27,7 @@
     </div>
 
     <KnowledgeDocumentList
-      :documents="documents"
+      :documents="visibleDocuments"
       :sort-field="sortState.field"
       :sort-order="sortState.order"
       @selected="toDocument"
@@ -143,8 +143,14 @@ const handleUpload = () => {
   refetch()
 }
 
+const deletionScheduledIds = ref<Set<string>>(new Set())
+
+const visibleDocuments = computed(() => {
+  return documents.value?.filter(document => !deletionScheduledIds.value.has(document.id)) ?? []
+})
+
 const handleDeleted = (documentIds: string[]) => {
-  refetch()
+  deletionScheduledIds.value = new Set([...deletionScheduledIds.value, ...documentIds])
   if (documentIds.includes(route.params.document_id as string)) {
     router.push(tenantPath(`/service/knowledge/${route.params.db}/${route.params.namespace}`))
   }

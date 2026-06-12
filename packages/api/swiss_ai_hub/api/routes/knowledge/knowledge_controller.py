@@ -341,7 +341,7 @@ class KnowledgeController(TenantScopedController):
     def delete_document(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}"
     ) -> Self:
-        @self.router.delete(route, tags=self.tags, status_code=status.HTTP_204_NO_CONTENT, summary="Delete document")
+        @self.router.delete(route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete document")
         async def delete_document(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -350,26 +350,31 @@ class KnowledgeController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
-            vector_store_factory: Annotated[VectorStoreFactory, Depends(use_vector_store_factory)],
+            nc: Annotated[NATS, Depends(use_nats)],
         ) -> Response:
-            """Permanently deletes a document from the vector store, doc store, and data lake."""
+            """
+            Deletes the document's source file from the data lake and schedules cleanup of the
+            doc store and vector store via the pipeline's reconciliation.
+            """
             if database in ["admin", "local", "config"]:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
-            KnowledgeService.delete_document(
+            await KnowledgeService.delete_document(
+                nc=nc,
                 db=database,
                 namespace=namespace,
                 document_id=document_id,
                 s3_service=s3_service,
-                vector_store_factory=vector_store_factory,
             )
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
+            return Response(status_code=status.HTTP_202_ACCEPTED)
 
         return self
 
     def batch_delete_documents(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents"
     ) -> Self:
-        @self.router.delete(route, tags=self.tags, summary="Delete multiple documents")
+        @self.router.delete(
+            route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete multiple documents"
+        )
         async def batch_delete_documents(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -378,17 +383,17 @@ class KnowledgeController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
-            vector_store_factory: Annotated[VectorStoreFactory, Depends(use_vector_store_factory)],
+            nc: Annotated[NATS, Depends(use_nats)],
         ) -> BatchDeleteDocumentsResponse:
-            """Best-effort deletion of multiple documents with a per-document result."""
+            """Best-effort scheduling of multiple document deletions with a per-document result."""
             if database in ["admin", "local", "config"]:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
-            return KnowledgeService.batch_delete_documents(
+            return await KnowledgeService.batch_delete_documents(
+                nc=nc,
                 db=database,
                 namespace=namespace,
                 document_ids=request.document_ids,
                 s3_service=s3_service,
-                vector_store_factory=vector_store_factory,
             )
 
         return self

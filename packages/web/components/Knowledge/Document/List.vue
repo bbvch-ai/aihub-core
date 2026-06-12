@@ -233,7 +233,7 @@ const handleBatchDelete = async () => {
       namespace: route.params.namespace as string,
       documentIds,
     })
-    const deletedIds = response.results.filter(result => result.status === 'deleted').map(result => result.document_id)
+    const deletedIds = response.results.filter(result => result.status === 'scheduled').map(result => result.document_id)
     const failedCount = response.results.length - deletedIds.length
     if (failedCount > 0) {
       toast.add({

@@ -431,8 +431,8 @@ document:
       removed from the knowledge base. This action cannot be undone.
     confirmMessageBatch: Are you sure you want to delete {count} document(s)? They will
       be permanently removed from the knowledge base. This action cannot be undone.
-    success: Document deleted successfully
-    partial: '{deleted} document(s) deleted, {failed} failed'
+    success: Document scheduled for deletion
+    partial: '{deleted} document(s) scheduled for deletion, {failed} failed'
     error: Failed to delete document
 knowledge:
   title: Knowledge Databases

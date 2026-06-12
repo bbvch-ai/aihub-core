@@ -30,6 +30,9 @@ import type {
   AssignRoleData,
   AssignRoleError,
   AssignRoleResponse,
+  BatchDeleteDocumentsData,
+  BatchDeleteDocumentsError,
+  BatchDeleteDocumentsResponse2,
   ChatCompletionWithAssistantsData,
   ChatCompletionWithAssistantsError,
   ChatCompletionWithAssistantsResponse,
@@ -66,6 +69,9 @@ import type {
   DeleteAllOrganizationMemoriesResponse,
   DeleteAllUserMemoriesData,
   DeleteAllUserMemoriesResponse,
+  DeleteDocumentData,
+  DeleteDocumentError,
+  DeleteDocumentResponse,
   DeleteOrganizationMemoryData,
   DeleteOrganizationMemoryError,
   DeleteOrganizationMemoryResponse,
@@ -2612,6 +2618,41 @@ export const getDatabases = <
   });
 
 /**
+ * Delete multiple documents
+ *
+ * Best-effort deletion of multiple documents with a per-document result.
+ */
+export const batchDeleteDocuments = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends BatchDeleteDocumentsResponse2 =
+    BatchDeleteDocumentsResponse2,
+>(
+  options: Options<
+    TComposable,
+    BatchDeleteDocumentsData,
+    BatchDeleteDocumentsResponse2,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    BatchDeleteDocumentsResponse2 | DefaultT,
+    BatchDeleteDocumentsError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
  * Get Documents For Namespace
  *
  * Returns paginated documents for a specific namespace within a database.
@@ -2641,6 +2682,36 @@ export const getDocumentsForNamespace = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents",
+    ...options,
+  });
+
+/**
+ * Delete document
+ *
+ * Permanently deletes a document from the vector store, doc store, and data lake.
+ */
+export const deleteDocument = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends DeleteDocumentResponse = DeleteDocumentResponse,
+>(
+  options: Options<
+    TComposable,
+    DeleteDocumentData,
+    DeleteDocumentResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    DeleteDocumentResponse | DefaultT,
+    DeleteDocumentError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}",
     ...options,
   });
 

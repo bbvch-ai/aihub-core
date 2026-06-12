@@ -435,8 +435,8 @@ document:
     confirmMessageBatch: Voulez-vous vraiment supprimer {count} document(s) ? Ils
       seront définitivement retirés de la base de connaissances. Cette action est
       irréversible.
-    success: Document supprimé avec succès
-    partial: '{deleted} document(s) supprimé(s), {failed} en échec'
+    success: Suppression du document planifiée
+    partial: 'Suppression de {deleted} document(s) planifiée, {failed} en échec'
     error: Échec de la suppression du document
 knowledge:
   title: Bases de connaissances
