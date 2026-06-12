@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.296.2] - 2026-06-12 - Expanded Security Configuration for Backup Services
+
+### Added
+
+- 🔑 **Added Keycloak OAuth2 Proxy Secret for Backup Service:** Introduced support for a new
+  `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` environment variable across all Docker Compose configurations, enabling secure
+  access to a dedicated backup service via Keycloak OAuth2 Proxy.
+
+______________________________________________________________________
+
 ## [v0.296.1] - 2026-06-11 - Deployment: Enhanced Traefik Network Integration
 
 ### Changed
