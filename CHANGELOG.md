@@ -5,6 +5,263 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.296.1] - 2026-06-11 - Deployment: Enhanced Traefik Network Integration
+
+### Changed
+
+- 🌐 **Enhanced Traefik network configuration:** Explicitly assigned the Langfuse service to the `proxy` network for
+  Traefik, improving routing and integration in self-hosted Docker deployments.
+
+______________________________________________________________________
+
+## [v0.296.0] - 2026-06-11 - Empowering Data Discovery: Advanced Filtering, Search, and Sorting for Agents and Threads
+
+### Added
+
+- ✨ **Agent Instance Filtering and Search:** Introduced new API capabilities and corresponding UI elements allowing
+  users to filter agent instances by **class** and search by **name**, significantly improving agent discovery.
+- 🚀 **Advanced Thread Management:** Implemented comprehensive filtering options for threads, including search by
+  **name**, filtering by associated **agent ID**, specific **user ID**, run **status** (active, completed, failed), and
+  a flexible **date range**.
+- 📈 **Thread Sorting Capabilities:** Added the ability to sort threads by **name** or **creation date** in both
+  ascending and descending order, providing more control over how threads are organized and viewed.
+- 🦾 **Thread Status Classification:** Introduced robust backend logic to accurately classify threads into `active`,
+  `completed`, or `failed` states based on their agent event history, enabling precise status filtering.
+
+### Changed
+
+- 🔄 **API Query Parameter Expansion:** The `getAllAgentInstances` and `getPaginatedThreadsForUser` API endpoints have
+  been extended to support the new filtering, searching, and sorting parameters, providing more powerful data retrieval.
+- 🌐 **UI Enhancements for Agents and Threads:** The web interface for both Agent Instances and Threads has been
+  significantly updated to expose and utilize all new filtering, search, and sorting functionalities, improving user
+  experience and data navigation.
+
+### Refactor
+
+- 🧹 **Optimized Agent Configuration Search:** Refactored the agent configuration search logic to support multilingual,
+  case-insensitive substring matching for agent names, enhancing search flexibility.
+- ⚙️ **Streamlined Thread Query Logic:** Introduced dedicated helper methods (`_apply_filters`, `get_order_by`) within
+  the `ThreadEntity` for more modular, efficient, and maintainable query construction.
+
+______________________________________________________________________
+
+## [v0.295.4] - 2026-06-11 - Improved Authentication Flow and Persistent User Sessions
+
+### Added
+
+- ✨ **Architectural Decision Record for Keycloak Sessions:** Documented the rationale, drivers, and implementation
+  details for extending Keycloak Single Sign-On (SSO) session lifespans, outlining the benefits for user experience and
+  system behavior.
+- ⚙️ **Centralized Keycloak Session Configuration:** Introduced new configuration parameters (`sso_session_idle_timeout`
+  and `sso_session_max_lifespan`) in `compose-config.yml`, providing a single source of truth for Keycloak realm session
+  settings.
+
+### Changed
+
+- 🚀 **Extended Keycloak SSO Session Lifespans:** Increased Keycloak SSO session idle timeout to 5 days and maximum
+  lifespan to 30 days. This significantly reduces the frequency of forced re-logins, allowing users to stay logged in
+  across nights and weekends for a smoother experience.
+- 🔄 **Automatic Keycloak Session Lifespan Migration:** Implemented logic within the Keycloak entrypoint script to
+  automatically update SSO session lifespans for existing deployments. This ensures that environments originally
+  configured with Keycloak's default short lifespans are automatically upgraded to the new, longer durations without
+  overwriting manual operator customizations.
+- ⚡️ **Optimized Home Page Redirection:** Enhanced the login experience by implementing smart redirection. Users are now
+  automatically directed to their last active tenant after successful login or silent token renewal, leveraging
+  persisted active tenant information.
+
+______________________________________________________________________
+
+## [v0.295.3] - 2026-06-11 - Improved Streaming State and Richer Responses
+
+### Refactor
+
+- 🧹 **Enhanced Streaming State Management Initialization:** The `StreamingStateManager` is now initialized earlier in
+  the processing pipeline, ensuring comprehensive state capture from the very beginning of a request.
+
+### Changed
+
+- ⚡️ **Richer Output for Successful Operations:** The pipeline now consistently returns serialized HTML content from the
+  streaming state manager upon successful completion, providing more detailed and structured results to the user
+  interface.
+- 📄 **Contextual Error Reporting:** Error messages now include any available partial streaming state (serialized as
+  HTML) alongside the error details. This provides users with more context and partial results, making it easier to
+  understand and debug issues.
+
+______________________________________________________________________
+
+## [v0.295.2] - 2026-06-11 - Improved Tenant Management and Documentation Clarity
+
+### Added
+
+- 🖼️ **New Visual Aids for Tenant Creation:** Integrated several new screenshots to provide clear, step-by-step guidance
+  for Keycloak group creation and navigating the Tenant Administration UI.
+- 🔑 **Dedicated `AIHubSysAdmin` Role:** Introduced the `AIHubSysAdmin` Keycloak realm role, which is now required for
+  creating and configuring tenants, enhancing security and control over multi-tenancy lifecycle management.
+
+### Changed
+
+- 📄 **Revamped Tenant Creation Documentation:** The "Creating Tenants" guide has been significantly updated with a
+  detailed, step-by-step process, clarifying the interplay between Keycloak groups and platform metadata, tenant states,
+  and in-tenant role assignments.
+- 📚 **Enhanced German Architecture Documentation:** Made minor textual improvements and clarifications across various
+  German architecture documents, including system context, containers, and package-centric views, for improved
+  readability and accuracy.
+
+______________________________________________________________________
+
+## [v0.295.1] - 2026-06-11 - Enhanced AI-Driven GitHub Issue Management
+
+### Added
+
+- ✨ **New AI Skill: `write-issue`**: Introduced a powerful new AI skill that enables automated authoring, creation, and
+  management of GitHub issues within the `bbvch-ai/aihub-core` repository. This skill ensures adherence to established
+  project conventions for titles, body structure, labels, and project board integration.
+- 📄 **Comprehensive Issue Creation Guidelines**: Detailed a comprehensive set of conventions and steps for drafting
+  GitHub issues, covering everything from title formatting (Epic/Story vs. Task/Bug), structured body content
+  (`In scope`, `Out of scope`, `Accepted when`), required `area:*` and optional `version` labels, to setting project
+  board fields like Item Type, Priority, and Status.
+- ⚙️ **Automated Issue Validation Script**: Implemented a new Bash script (`validate-issue.sh`) to automatically verify
+  that newly created GitHub issues conform to project standards. This script checks for correct labeling, the presence
+  of specific body sections, checkbox acceptance criteria, and proper placement on the AI-Scrum board with an assigned
+  Item Type.
+
+______________________________________________________________________
+
+## [v0.295.0] - 2026-06-11 - Streamlined Bot Setup and Clearer User Provisioning
+
+### Added
+
+- ✨ **New Architecture Decision Record (ADR)**: Documented the decision to prevent bot-first Keycloak provisioning,
+  requiring users to log in to the web portal once before interacting with the bot. This clarifies the user onboarding
+  process and ensures consistent identity management.
+- 🦾 **`UserNotProvisionedError`**: Introduced a specific exception for users attempting to interact with the bot before
+  their Keycloak account has been provisioned via web login, allowing for targeted error handling.
+- 📄 **Localized Bot Messages**: Added new internationalized messages across German, English, French, and Italian,
+  providing clear and actionable guidance to users who are not yet provisioned in Keycloak.
+- ⚙️ **`BOT_DEV_FAKE_EMAIL` Environment Variable**: Introduced a new environment variable for local development to
+  simulate user identity for the bot, bypassing the Teams connector and enabling comprehensive testing of authentication
+  flows without Azure.
+- ⚡️ **`primary_frontend_origin` Setting**: Added a convenience property to `AIHubSettings` to easily retrieve the
+  primary web portal URL, used for directing unprovisioned users to the login page.
+
+### Changed
+
+- 🚀 **Overhauled Bot Local Development Setup**: Significantly revised the local development documentation for the bot,
+  providing detailed, step-by-step instructions for using the Bot Framework Emulator, including support for WSL2 and
+  anonymous authentication.
+- 🔄 **Bot User Identity Resolution**: Modified the bot's identity resolution logic to raise a specific
+  `UserNotProvisionedError` when a user's email is not found in Keycloak, replacing a generic `ValueError`.
+- 💬 **Actionable Error Handling for Unprovisioned Users**: The bot now gracefully handles `UserNotProvisionedError` by
+  replying with a clear, localized message instructing users to perform a one-time web portal login, rather than
+  displaying an opaque error.
+- 🌎 **WSL2 Compatibility for Local Bot Runner**: Updated the local bot runner (`main.py`) to bind to `0.0.0.0:8001`,
+  enabling seamless connectivity from the Bot Framework Emulator running on Windows when the bot is hosted in WSL2.
+- 🔑 **Anonymous Authentication for Local Bot Runner**: The local bot runner now monkeypatches the Microsoft Agents SDK
+  to force unauthenticated mode, allowing the Bot Framework Emulator to drive the bot without requiring Azure
+  credentials.
+
+### Removed
+
+- 🗑️ **Bot-Driven User Provisioning Capability**: The `create_user` method in `KeycloakAdminService` and its
+  corresponding integration test were removed, aligning with the architectural decision to exclusively provision
+  Keycloak users via the web portal's first-broker-login flow.
+
+______________________________________________________________________
+
+## [v0.294.0] - 2026-06-11 - Swiss AI Hub Now Fully Open-Source with AGPL-3.0-or-later Sysadmin Plane
+
+### Added
+
+- 📄 **New Architectural Decision Record (ADR):** Introduced a comprehensive ADR detailing the strategic decision to
+  relicense the multi-tenant administration plane to AGPL-3.0-or-later, outlining its context, decision drivers, and
+  consequences.
+
+### Changed
+
+- 🔄 **Relicensed Multi-Tenant Administration Plane:** The `packages/sysadmin-api` and `packages/sysadmin-web`
+  components, previously proprietary, are now open-source under the **GNU Affero General Public License v3.0 or later
+  (AGPL-3.0-or-later)**. This change completes the transition of Swiss AI Hub to a fully open-source platform.
+- 🔑 **Updated Licensing Model Documentation:** All project documentation, including the root `README.md`, `LICENSES.md`,
+  `CONTRIBUTING.md`, and internal architecture documents, has been thoroughly revised to reflect the new dual-license
+  model (Apache-2.0 for backend/SDK and AGPL-3.0-or-later for UI/administration).
+- ⚡️ **Refined Sysadmin Package Rationale:** The justification for `sysadmin-api` and `sysadmin-web` existing as
+  separate packages now focuses purely on architectural and security boundaries, rather than licensing, as both the main
+  application and administration plane share the AGPL-3.0-or-later license.
+- ⚙️ **Deployment Configuration Updates:** Docker Compose templates and generation scripts have been updated to reflect
+  the AGPL-3.0-or-later license for `sysadmin-api` and `sysadmin-web`, ensuring accurate license annotations in
+  deployment artifacts.
+
+### Removed
+
+- 🗑️ **Deprecated Proprietary License Identifiers:** All per-file `SPDX-License-Identifier` headers denoting proprietary
+  licenses have been removed from source files within `packages/sysadmin-api` and `packages/sysadmin-web` for
+  consistency with the rest of the monorepo, which relies on package-level `LICENSE` files.
+- 🗑️ **Removed Proprietary Tags from Architecture:** The `#proprietary` tag has been eliminated from architecture
+  specifications and container definitions, aligning these views with the platform's fully open-source status.
+
+______________________________________________________________________
+
+## [v0.293.2] - 2026-06-10 - Improved Configuration Generation and Placeholders
+
+### Added
+
+- ✨ **Introduced UUID generation for environment setup:** Added a new `gen_uuid` function and `REPLACE_WITH_RANDOM_UUID`
+  placeholder to the `setup-env.sh` script, enabling automatic generation of UUIDs for configuration values.
+
+### Changed
+
+- 🔄 **Updated Rclone RC credential placeholders:** Renamed the default placeholders for Rclone RC user and password in
+  `.env.prod` to `REPLACE_WITH_RANDOM_STRING` for consistency and clarity with the automated generation process.
+
+______________________________________________________________________
+
+## [v0.293.0] - 2026-06-10 - Enhanced Version Visibility for API and UI
+
+### Added
+
+- ✨ **Service Version Reporting**: The API's `/health` and `/ready` endpoints now include the running service version in
+  their responses, improving operational visibility.
+- ✨ **UI Version Display**: The web application now fetches and displays both its own and the API's service versions in
+  the user settings, clearly indicating if the UI and API are running on different versions.
+- ✨ **OpenAPI Version Documentation**: The API's OpenAPI specification has been updated to include the service version,
+  making it programmatically accessible for clients.
+
+### Changed
+
+- 🔄 **Health Response Structure**: The core `HealthResponse` data transfer object has been extended to include a
+  dedicated `version` field.
+- 🔄 **Web Build Process**: The web application's Dockerfile and Nuxt configuration have been updated to bake the service
+  version into the static bundle during build time, ensuring accurate version reporting.
+
+______________________________________________________________________
+
+## [v0.292.3] - 2026-06-10 - Enhanced Reliability for Agent Event Streams
+
+### Fixed
+
+- 🐛 Resolved a race condition that could cause **agent output streaming chunks** to be dropped, leading to incomplete or
+  blank answers in chat clients. This fix ensures all `DisplayEvent`s are processed before consumer teardown.
+- 🔗 Guaranteed the **delivery of complete agent answers** by implementing a durable backstop that reconciles any missing
+  content from the final stop event, preventing empty assistant turns and associated errors.
+
+### Added
+
+- ✨ Introduced shared utility methods, **`iter_streamed_display_events`** and **`wait_for_stop_then_drain`**, in
+  `ChatService` to ensure all display events are gracefully drained and processed after an agent run completes.
+- 📄 Documented the architectural decision for robust streaming in a new ADR: **"Drain Display-Event Streams Before
+  Consumer Teardown"**.
+- 🧪 Added new **unit tests** to validate the correctness and resilience of the event draining and answer reconciliation
+  logic.
+
+### Changed
+
+- 🔄 Refactored **all streaming event consumers** (including OpenAI SSE, JSON, and native event streams) to utilize the
+  new graceful draining mechanisms, improving the consistency and reliability of agent output.
+- 🚀 Updated **final content resolution** for OpenAI and JSON responses to include delta reconciliation, using the
+  terminal `StopEvent` as a source of truth to complete partially streamed or lost answers.
+
+______________________________________________________________________
+
 ## [v0.292.2] - 2026-06-09 - Infrastructure Network Enhancements
 
 ### Changed

@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-Proprietary
 from datetime import datetime
 from typing import Annotated, Self
 

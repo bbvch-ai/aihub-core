@@ -91,6 +91,7 @@ user:
   title: Utilisateurs
   logout: Déconnexion
   language: Langue
+  version: Version
   role_chips:
     no_roles: Aucun rôle assigné
     assign: Assigner un rôle
@@ -138,6 +139,15 @@ thread:
     numEvents: Nombre d'événements
     status: Statut
     pending: En attente
+    search_placeholder: Rechercher par nom
+    filter:
+      status_placeholder: Filtrer par statut
+      active: Actif
+      completed: Terminé
+      failed: Échoué
+      agent_name_placeholder: Filtrer par agent
+      user_name_placeholder: Filtrer par utilisateur
+      date_range_placeholder: Filtrer par date
   utils:
     pendingTypes:
       hitl: Humain dans la boucle
@@ -337,6 +347,13 @@ agent:
     online: En ligne
     offline: Hors ligne
     clone: Cloner
+    search_placeholder: Rechercher par nom
+    no_results: Aucun agent trouvé
+    filter:
+      type_placeholder: Filtrer par type d'agent
+      status_placeholder: Filtrer par statut
+      enabled: Activé
+      disabled: Désactivé
   workflow:
     title: Flux de travail agentique
     view_tooltip: Afficher le flux de travail

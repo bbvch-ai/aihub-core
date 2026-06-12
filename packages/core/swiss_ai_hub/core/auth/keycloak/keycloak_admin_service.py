@@ -52,16 +52,6 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
-    async def create_user(email: str) -> str:
-        admin = _create_admin()
-        user_id = await admin.a_create_user(
-            {"email": email, "username": email, "enabled": True},
-            exist_ok=True,
-        )
-        return user_id
-
-    @staticmethod
-    @trace_fn
     async def get_user_by_id(keycloak_user_id: str) -> KeycloakUser:
         admin = _create_admin()
         data = await admin.a_get_user(keycloak_user_id)

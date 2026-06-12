@@ -13,7 +13,7 @@
 # distributed under the Apache License 2.0 (see the root LICENSE).
 #
 # The SERVICES it orchestrates carry their OWN licenses — Apache-2.0, AGPL-3.0,
-# proprietary, and various permissive third-party terms. Each service block
+# and various permissive third-party terms. Each service block
 # below is annotated with `# License: <SPDX>` for at-a-glance reference.
 #
 # Authoritative sources for license details:
@@ -857,6 +857,7 @@ services:
         max-file: 2
     labels:
       - traefik.enable=true
+      - traefik.docker.network=proxy
       - traefik.http.routers.langfuse.rule=Host(`langfuse.${DOMAIN}`)
       - traefik.http.routers.langfuse.priority=4000
       - traefik.http.routers.langfuse.entrypoints=websecure
@@ -2541,14 +2542,14 @@ services:
       - traefik.http.services.web.loadbalancer.server.port=8080
       - traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file
   # ===================================================================
-  # Sysadmin API (Proprietary)
+  # Sysadmin API (AGPL-3.0-or-later)
   # ===================================================================
   # FastAPI service for system-administrator-only operations (multi-tenant
   # management). Routed at sysadmin.${DOMAIN}/api/v1/*. Independent of the
   # main `api` service — uses its own lightweight lifespan that only wires
   # MongoDB and Keycloak (no NATS / Milvus / Redis / S3 / WebSocket).
   # ===================================================================
-  # License: LicenseRef-Proprietary — own image (see LICENSES.md)
+  # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   sysadmin-api:
     container_name: sysadmin-api
     restart: always
@@ -2654,12 +2655,12 @@ services:
       - backend
       - data
   # ===================================================================
-  # Sysadmin Web UI (Proprietary)
+  # Sysadmin Web UI (AGPL-3.0-or-later)
   # ===================================================================
   # Nuxt 3 SPA dedicated to system administration. Routed at
   # sysadmin.${DOMAIN}/* (path /api/v1 goes to sysadmin-api by priority).
   # ===================================================================
-  # License: LicenseRef-Proprietary — own image (see LICENSES.md)
+  # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   sysadmin-web:
     container_name: sysadmin-web
     restart: always

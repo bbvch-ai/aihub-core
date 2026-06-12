@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -49,6 +50,12 @@ from swiss_ai_hub.core.topics.agents.agent_instance_topic import AgentInstanceTo
 
 logger = logging.getLogger(__name__)
 
+# After a run's terminal event arrives, give trailing display events this long to surface before the
+# consumer finishes. NCSubscriber dispatches one asyncio task per message, so the stop event's task can
+# set the stop signal before a preceding chunk's task has finished enqueuing it — without this grace the
+# consumer ends on the stop and silently drops those in-flight chunks.
+DISPLAY_STREAM_DRAIN_GRACE_SECONDS = 0.25
+
 
 @dataclass
 class StreamingResources:
@@ -82,6 +89,39 @@ class ChatService:
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
     """
+
+    @staticmethod
+    async def iter_streamed_display_events(
+        resources: StreamingResources,
+        drain_grace_seconds: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+    ) -> AsyncGenerator[DisplayEvent]:
+        """
+        Yield queued display events until the run has stopped AND no event has surfaced for the drain
+        grace. The grace drains trailing events whose handler tasks finish after the terminal stop's
+        task sets the stop signal; ending on the bare stop signal would drop them. The subscription is
+        torn down by the aggregator that handles the stop event, not here.
+        """
+        while True:
+            try:
+                event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=drain_grace_seconds)
+                resources.chunk_queue.task_done()
+                yield event
+            except TimeoutError:
+                if resources.stop_signal.is_set():
+                    return
+
+    @staticmethod
+    async def wait_for_stop_then_drain(
+        resources: StreamingResources | JsonResources,
+        drain_grace_seconds: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+    ) -> None:
+        """
+        Block until the run stops, then wait out the drain grace so trailing display-event handler
+        tasks finish before the caller reads the collected events. The subscription is already torn
+        down by the aggregator that handles the stop event.
+        """
+        await resources.stop_signal.wait()
+        await asyncio.sleep(drain_grace_seconds)
 
     @staticmethod
     def _initialize_interaction(
@@ -369,9 +409,17 @@ class ChatService:
         Construct a JSON response from collected chunk events.
         """
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
-        chat_content = ChatContent(content="", reasoning_content="")
-        chat_content.content = "".join(chunk.content for chunk in sorted_chunks)
+        streamed = "".join(chunk.content for chunk in sorted_chunks)
+        chat_content = ChatContent(content=streamed, reasoning_content="")
         chat_content.reasoning_content = "".join(getattr(chunk, "reasoning_content", "") for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
             chat_content.content += stop_event.question
+            return chat_content
+        # Backstop: if chunks were lost to the stop-vs-chunk dispatch race, recover from the stop event's
+        # durable payload. Use the full answer whenever what streamed is a prefix of it (covers a fully
+        # empty body and a partial loss). Best-effort: a streamed value that diverges keeps what streamed.
+        output_messages = getattr(stop_event, "output_messages", None) or []
+        full_answer = (output_messages[-1].content or "") if output_messages else ""
+        if full_answer and full_answer.startswith(streamed):
+            chat_content.content = full_answer
         return chat_content

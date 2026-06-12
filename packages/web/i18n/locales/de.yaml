@@ -92,6 +92,7 @@ user:
   title: Benutzer
   logout: Abmelden
   language: Sprache
+  version: Version
   role_chips:
     no_roles: Keine Rollen zugewiesen
     assign: Rolle zuweisen
@@ -139,6 +140,15 @@ thread:
     numEvents: Anzahl der Ereignisse
     status: Status
     pending: Ausstehend
+    search_placeholder: Nach Namen suchen
+    filter:
+      status_placeholder: Nach Status filtern
+      active: Aktiv
+      completed: Abgeschlossen
+      failed: Fehlgeschlagen
+      agent_name_placeholder: Nach Agent filtern
+      user_name_placeholder: Nach Benutzer filtern
+      date_range_placeholder: Nach Datum filtern
   utils:
     pendingTypes:
       hitl: Mensch in der Schleife
@@ -340,6 +350,13 @@ agent:
     online: Online
     offline: Offline
     clone: Klonen
+    search_placeholder: Nach Namen suchen
+    no_results: Keine Agenten gefunden
+    filter:
+      type_placeholder: Nach Agententyp filtern
+      status_placeholder: Nach Status filtern
+      enabled: Aktiviert
+      disabled: Deaktiviert
   workflow:
     title: Agenten-Workflow
     view_tooltip: Workflow anzeigen

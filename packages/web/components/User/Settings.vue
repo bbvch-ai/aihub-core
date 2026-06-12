@@ -32,6 +32,9 @@
         icon-pos="right"
         @click="auth.logout"
       />
+      <div class="text-center text-xs text-surface-500 dark:text-surface-400">
+        {{ t('user.version') }} {{ versionDisplay }}
+      </div>
     </div>
   </Popover>
 </template>
@@ -40,6 +43,7 @@
 import { changeLocale } from '@formkit/vue'
 
 const auth = useAuth()
+const { versionDisplay } = useAppVersion()
 const { t, locale, locales } = useI18n()
 const queryCache = useQueryCache()
 const switchLocalePath = useSwitchLocalePath()

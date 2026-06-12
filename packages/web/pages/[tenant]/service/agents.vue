@@ -6,20 +6,50 @@
       :loading="isLoading"
       size="large"
     >
-      <SelectButton
-        :model-value="activeNavItem"
-        :options="navItems"
-        data-key="key"
-        option-label="name"
-        size="small"
-        @update:model-value="toNavItem"
-      />
-      <div class="flex flex-col gap-12 pt-4">
+      <div class="flex justify-between">
+        <SelectButton
+          :model-value="activeNavItem"
+          :options="navItems"
+          data-key="key"
+          option-label="name"
+          size="small"
+          @update:model-value="toNavItem"
+        />
+        <div class="flex items-center gap-4">
+          <Select
+            v-model="agentClass"
+            :options="agentClassOptions"
+            option-label="label"
+            option-value="value"
+            :placeholder="t('agent.list.filter.type_placeholder')"
+            show-clear
+            class="w-52"
+          />
+          <Select
+            v-model="status"
+            :options="statusOptions"
+            option-label="label"
+            option-value="value"
+            :placeholder="t('agent.list.filter.status_placeholder')"
+            show-clear
+            class="w-52"
+          />
+          <InputText
+            v-model="searchQuery"
+            :placeholder="t('agent.list.search_placeholder')"
+            class="w-80"
+          />
+        </div>
+      </div>
+      <div class="flex flex-col gap-8 pt-4">
         <div
           v-for="group in groupedAgents"
           :key="group.agentClass"
         >
-          <div class="pb-4">
+          <div
+            v-if="group.instances.length > 0 && !showNoResults"
+            class="pb-4"
+          >
             <div class="flex items-center gap-2 pb-2">
               <Icon
                 :name="group.icon"
@@ -58,10 +88,16 @@
               @clone="handleClone"
             />
             <AgentEmptyCard
-              v-if="group.isAvailable"
+              v-if="group.isAvailable && (!searchQuery && !status && !agentClass)"
               @add="openCreateModal(group.agentClass)"
             />
           </div>
+        </div>
+        <div
+          v-if="showNoResults"
+          class="flex items-center justify-center py-8 text-surface-500"
+        >
+          <span class="text-xl">{{ t('agent.list.no_results') }}</span>
         </div>
       </div>
       <AgentCreateModal
@@ -99,7 +135,7 @@ const route = useRoute()
 const tenantPath = useTenantPath()
 const { t, locale } = useI18n()
 
-const { agentInstances, agentInstancesAreLoading } = useAgentInstances()
+const { agentInstances, agentInstancesAreLoading, searchQuery, agentClass, status } = useAgentInstances()
 const { agentClasses, agentClassesAreLoading } = useAgentClasses()
 const { navItems, activeNavItem, toNavItem } = useAgentNavigation()
 
@@ -112,6 +148,29 @@ const initialDataForCreate = ref<Record<string, unknown> | null>(null)
 
 const workflowModalOpen = ref(false)
 const selectedGroupForWorkflow = ref<AgentGroup | null>(null)
+
+const agentClassOptions = computed(() => {
+  if (!agentClasses.value) return []
+
+  return agentClasses.value.map(c => ({
+    label: c.name?.[locale.value] ?? c.agent_class,
+    value: c.agent_class,
+  }))
+},
+)
+
+const statusOptions = computed(() => [
+  { label: t('agent.list.filter.enabled'), value: 'enabled' },
+  { label: t('agent.list.filter.disabled'), value: 'disabled' },
+])
+
+const hasVisibleInstances = computed(() =>
+  groupedAgents.value.some(group => group.instances.length > 0),
+)
+
+const showNoResults = computed(() =>
+  !hasVisibleInstances.value && (!!searchQuery.value || !!agentClass.value || !!status.value),
+)
 
 const openWorkflowModal = (group: AgentGroup) => {
   selectedGroupForWorkflow.value = group

@@ -82,7 +82,12 @@ class AgentService:
 
     @staticmethod
     @trace_fn
-    async def get_all_agent_instances(t: LocaleHandler, online: bool | None = None) -> list[FullAgentInstanceDTO]:
+    async def get_all_agent_instances(
+        t: LocaleHandler,
+        online: bool | None = None,
+        search: str | None = None,
+        agent_class: str | None = None,
+    ) -> list[FullAgentInstanceDTO]:
         """
         Returns all registered agent instances from the database.
         Online status is determined by the last_discovered timestamp - agents that responded
@@ -92,8 +97,10 @@ class AgentService:
         for class_entity in AgentClassEntity.get_all():
             if online is not None and class_entity.is_online != online:
                 continue
+            if agent_class is not None and class_entity.agent_class != agent_class:
+                continue
 
-            configs = AgentConfigEntityDocument.find_for_class(class_entity.agent_class)
+            configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
                 agents.append(FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t))
         return agents
@@ -145,8 +152,7 @@ class AgentService:
             external_agent_event_distributor=external_agent_event_distributor,
         )
 
-        await resources.stop_signal.wait()
-        await resources.subscriber.stop()
+        await ChatService.wait_for_stop_then_drain(resources)
 
         return resources.stop_event
 

@@ -5746,6 +5746,12 @@ export type HealthResponse = {
    */
   code: number;
   /**
+   * Version
+   *
+   * Running service version.
+   */
+  version: string;
+  /**
    * Checks
    *
    * Individual health check results.
@@ -24306,6 +24312,42 @@ export type GetUserThreadsData = {
   };
   query?: {
     /**
+     * Search
+     *
+     * Search by thread name
+     */
+    search?: string | null;
+    /**
+     * Agent Id
+     *
+     * Filter by agent id
+     */
+    agent_id?: string | null;
+    /**
+     * User Id
+     *
+     * Filter by user id
+     */
+    user_id?: string | null;
+    /**
+     * Status
+     *
+     * Filter by status: active, completed, failed
+     */
+    status?: string | null;
+    /**
+     * From
+     *
+     * Filter threads created from this date
+     */
+    from?: string | null;
+    /**
+     * To
+     *
+     * Filter threads created up to this date
+     */
+    to?: string | null;
+    /**
      * Page Number
      *
      * Page number to retrieve (starting from 1)
@@ -24317,6 +24359,18 @@ export type GetUserThreadsData = {
      * Number of items per page (maximum 100)
      */
     page_size?: number;
+    /**
+     * Sort Field
+     *
+     * Field to sort by: name, created_at
+     */
+    sort_field?: string;
+    /**
+     * Sort Order
+     *
+     * Sort order: 1 for ascending, -1 for descending
+     */
+    sort_order?: -1 | 1;
   };
   url: "/{tenant_id}/threads/";
 };
@@ -24968,6 +25022,18 @@ export type GetAllAgentInstancesData = {
      * Filter by online status
      */
     online?: boolean | null;
+    /**
+     * Agent Class
+     *
+     * Filter by agent class
+     */
+    agent_class?: string | null;
+    /**
+     * Search
+     *
+     * Search by agent name
+     */
+    search?: string | null;
   };
   url: "/{tenant_id}/agents/instances";
 };
