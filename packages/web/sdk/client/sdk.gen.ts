@@ -1429,6 +1429,7 @@ export const getAgentInstanceThreads = <
  *
  * Retrieve a list of all agent instances across all classes.
  * Use `?online=true` for online instances only, `?online=false` for offline only.
+ * Use `?search={agentName}` to search an agent with its name.
  */
 export const getAllAgentInstances = <
   TComposable extends Composable = "$fetch",

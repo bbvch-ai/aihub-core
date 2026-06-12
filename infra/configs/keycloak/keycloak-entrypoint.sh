@@ -16,6 +16,10 @@
 # - identity-providers.json: Applied via partialImport API after startup (every start,
 #   with OVERWRITE so config changes are picked up). This keeps the files separate
 #   and avoids --import-realm's OVERWRITE_EXISTING destroying the realm.
+# - Realm session lifespans: Applied via kcadm update after startup, but only
+#   while a lifespan still holds the Keycloak default (30 min idle / 10 h max) —
+#   the first-start-only realm import never propagates them to existing
+#   deployments, while operator overrides made in the admin console must survive.
 # - Langfuse sysadmin gate: Reconciled via kcadm after startup (every start), because
 #   authentication flows are not supported by partialImport and the realm file is only
 #   imported on first start. Each step checks for existence first, so already-initialized
@@ -176,9 +180,12 @@ apply_langfuse_gate() {
   $KCADM update realms/aihub -s browserFlow=browser-aihub || return 1
 }
 
-# Apply identity providers and the Langfuse sysadmin gate after Keycloak is ready
+# Post-startup configuration applied on every start: identity providers via
+# partialImport, realm session lifespans via kcadm (only while they still hold
+# the Keycloak defaults — operator overrides survive), and the Langfuse
+# sysadmin gate reconciliation.
 (
-  echo "Waiting for Keycloak to be ready before applying admin API config..."
+  echo "Waiting for Keycloak to be ready before applying post-startup configuration..."
   until $KCADM config credentials \
     --server http://localhost:8080 \
     --realm master \
@@ -193,6 +200,23 @@ apply_langfuse_gate() {
       -f /tmp/identity-providers.json \
       && echo "Identity providers applied successfully." \
       || echo "ERROR: Failed to apply identity providers."
+  fi
+
+  current_lifespans=$($KCADM get realms/aihub \
+    --fields ssoSessionIdleTimeout,ssoSessionMaxLifespan 2> /dev/null)
+  lifespan_updates=()
+  if [[ "$current_lifespans" =~ \"ssoSessionIdleTimeout\"[[:space:]]*:[[:space:]]*1800([^0-9]|$) ]]; then
+    lifespan_updates+=(-s ssoSessionIdleTimeout=432000)
+  fi
+  if [[ "$current_lifespans" =~ \"ssoSessionMaxLifespan\"[[:space:]]*:[[:space:]]*36000([^0-9]|$) ]]; then
+    lifespan_updates+=(-s ssoSessionMaxLifespan=2592000)
+  fi
+  if [ ${#lifespan_updates[@]} -gt 0 ]; then
+    $KCADM update realms/aihub "${lifespan_updates[@]}" \
+      && echo "Realm session lifespans applied successfully." \
+      || echo "ERROR: Failed to apply realm session lifespans."
+  else
+    echo "Realm session lifespans differ from Keycloak defaults; leaving unchanged."
   fi
 
   if apply_langfuse_gate; then

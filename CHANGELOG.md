@@ -5,6 +5,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.296.1] - 2026-06-11 - Deployment: Enhanced Traefik Network Integration
+
+### Changed
+
+- 🌐 **Enhanced Traefik network configuration:** Explicitly assigned the Langfuse service to the `proxy` network for
+  Traefik, improving routing and integration in self-hosted Docker deployments.
+
+______________________________________________________________________
+
+## [v0.296.0] - 2026-06-11 - Empowering Data Discovery: Advanced Filtering, Search, and Sorting for Agents and Threads
+
+### Added
+
+- ✨ **Agent Instance Filtering and Search:** Introduced new API capabilities and corresponding UI elements allowing
+  users to filter agent instances by **class** and search by **name**, significantly improving agent discovery.
+- 🚀 **Advanced Thread Management:** Implemented comprehensive filtering options for threads, including search by
+  **name**, filtering by associated **agent ID**, specific **user ID**, run **status** (active, completed, failed), and
+  a flexible **date range**.
+- 📈 **Thread Sorting Capabilities:** Added the ability to sort threads by **name** or **creation date** in both
+  ascending and descending order, providing more control over how threads are organized and viewed.
+- 🦾 **Thread Status Classification:** Introduced robust backend logic to accurately classify threads into `active`,
+  `completed`, or `failed` states based on their agent event history, enabling precise status filtering.
+
+### Changed
+
+- 🔄 **API Query Parameter Expansion:** The `getAllAgentInstances` and `getPaginatedThreadsForUser` API endpoints have
+  been extended to support the new filtering, searching, and sorting parameters, providing more powerful data retrieval.
+- 🌐 **UI Enhancements for Agents and Threads:** The web interface for both Agent Instances and Threads has been
+  significantly updated to expose and utilize all new filtering, search, and sorting functionalities, improving user
+  experience and data navigation.
+
+### Refactor
+
+- 🧹 **Optimized Agent Configuration Search:** Refactored the agent configuration search logic to support multilingual,
+  case-insensitive substring matching for agent names, enhancing search flexibility.
+- ⚙️ **Streamlined Thread Query Logic:** Introduced dedicated helper methods (`_apply_filters`, `get_order_by`) within
+  the `ThreadEntity` for more modular, efficient, and maintainable query construction.
+
+______________________________________________________________________
+
+## [v0.295.4] - 2026-06-11 - Improved Authentication Flow and Persistent User Sessions
+
+### Added
+
+- ✨ **Architectural Decision Record for Keycloak Sessions:** Documented the rationale, drivers, and implementation
+  details for extending Keycloak Single Sign-On (SSO) session lifespans, outlining the benefits for user experience and
+  system behavior.
+- ⚙️ **Centralized Keycloak Session Configuration:** Introduced new configuration parameters (`sso_session_idle_timeout`
+  and `sso_session_max_lifespan`) in `compose-config.yml`, providing a single source of truth for Keycloak realm session
+  settings.
+
+### Changed
+
+- 🚀 **Extended Keycloak SSO Session Lifespans:** Increased Keycloak SSO session idle timeout to 5 days and maximum
+  lifespan to 30 days. This significantly reduces the frequency of forced re-logins, allowing users to stay logged in
+  across nights and weekends for a smoother experience.
+- 🔄 **Automatic Keycloak Session Lifespan Migration:** Implemented logic within the Keycloak entrypoint script to
+  automatically update SSO session lifespans for existing deployments. This ensures that environments originally
+  configured with Keycloak's default short lifespans are automatically upgraded to the new, longer durations without
+  overwriting manual operator customizations.
+- ⚡️ **Optimized Home Page Redirection:** Enhanced the login experience by implementing smart redirection. Users are now
+  automatically directed to their last active tenant after successful login or silent token renewal, leveraging
+  persisted active tenant information.
+
+______________________________________________________________________
+
+## [v0.295.3] - 2026-06-11 - Improved Streaming State and Richer Responses
+
+### Refactor
+
+- 🧹 **Enhanced Streaming State Management Initialization:** The `StreamingStateManager` is now initialized earlier in
+  the processing pipeline, ensuring comprehensive state capture from the very beginning of a request.
+
+### Changed
+
+- ⚡️ **Richer Output for Successful Operations:** The pipeline now consistently returns serialized HTML content from the
+  streaming state manager upon successful completion, providing more detailed and structured results to the user
+  interface.
+- 📄 **Contextual Error Reporting:** Error messages now include any available partial streaming state (serialized as
+  HTML) alongside the error details. This provides users with more context and partial results, making it easier to
+  understand and debug issues.
+
+______________________________________________________________________
+
 ## [v0.295.2] - 2026-06-11 - Improved Tenant Management and Documentation Clarity
 
 ### Added

@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, Path, Security
+from fastapi import Depends, HTTPException, Path, Query, Security
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
@@ -19,6 +20,7 @@ from swiss_ai_hub.api.routes.thread.dto.create_thread_request import CreateThrea
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
 from swiss_ai_hub.api.routes.thread.dto.paginated_threads_response import PaginatedThreadsResponse
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 
 
@@ -72,14 +74,48 @@ class ThreadController(TenantScopedController):
         async def get_user_threads(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
+            search: Annotated[str | None, Query(description="Search by thread name")] = None,
+            agent_id: Annotated[str | None, Query(description="Filter by agent id")] = None,
+            user_id: Annotated[str | None, Query(description="Filter by user id")] = None,
+            status: Annotated[
+                str | None,
+                Query(description="Filter by status: active, completed, failed", pattern="^(active|completed|failed)$"),
+            ] = None,
+            from_date: Annotated[
+                datetime | None, Query(alias="from", description="Filter threads created from this date")
+            ] = None,
+            to_date: Annotated[
+                datetime | None, Query(alias="to", description="Filter threads created up to this date")
+            ] = None,
             page: PageNumber = 1,
             page_size: PageSize = 20,
+            sort_field: Annotated[
+                str,
+                Query(
+                    description="Field to sort by: name, created_at",
+                    pattern="^(name|created_at)$",
+                ),
+            ] = "created_at",
+            sort_order: Annotated[
+                SortOrder, Query(description="Sort order: 1 for ascending, -1 for descending")
+            ] = SortOrder.DESCENDING,
         ) -> PaginatedThreadsResponse:
             """
             Returns all threads that the authenticated user is a member of.
             """
             total, threads = await ThreadService.get_paginated_threads_for_user(
-                user.id, t=t, page=page, page_size=page_size
+                user.id,
+                t=t,
+                page=page,
+                page_size=page_size,
+                sort_by=sort_field,
+                sort_order=sort_order,
+                search=search,
+                agent_id=agent_id,
+                user_search_id=user_id,
+                status=status,
+                from_date=from_date,
+                to_date=to_date,
             )
 
             total_pages = (total + page_size - 1) // page_size
