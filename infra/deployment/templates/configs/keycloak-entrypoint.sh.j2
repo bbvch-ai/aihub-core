@@ -93,7 +93,7 @@ add_execution() {
 add_subflow() {
   local parent="$1" alias="$2" requirement="$3" description="$4" exec_id
   $KCADM create "authentication/flows/$parent/executions/flow" -r aihub \
-    -b "{\"alias\":\"$alias\",\"type\":\"basic-flow\",\"provider\":\"registration-page-form\",\"description\":\"$description\"}" || return 1
+    -b "{\"alias\":\"$alias\",\"type\":\"basic-flow\",\"description\":\"$description\"}" || return 1
   exec_id=$(kc_exec_id "$parent" "$alias") || return 1
   $KCADM update "authentication/flows/$parent/executions" -r aihub -n \
     -b "{\"id\":\"$exec_id\",\"requirement\":\"$requirement\"}" || return 1
@@ -133,7 +133,7 @@ create_browser_flow() {
 add_gate_subflow() {
   local parent="$1" alias="$2" cfg="$3" exec_id
   $KCADM create "authentication/flows/$parent/executions/flow" -r aihub \
-    -b "{\"alias\":\"$alias\",\"type\":\"basic-flow\",\"provider\":\"registration-page-form\",\"description\":\"Conditional sub-flow: deny clients carrying the langfuse-sysadmin-gate scope unless the user has the AIHubSysAdmin role\"}" || return 1
+    -b "{\"alias\":\"$alias\",\"type\":\"basic-flow\",\"description\":\"Conditional sub-flow: deny clients carrying the langfuse-sysadmin-gate scope unless the user has the AIHubSysAdmin role\"}" || return 1
   exec_id=$(kc_exec_id "$parent" "$alias") || return 1
   $KCADM update "authentication/flows/$parent/executions" -r aihub -n \
     -b "{\"id\":\"$exec_id\",\"requirement\":\"CONDITIONAL\"}" || return 1
