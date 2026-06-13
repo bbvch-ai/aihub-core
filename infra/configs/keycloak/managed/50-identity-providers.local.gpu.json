@@ -1,0 +1,99 @@
+{
+  "realm": "aihub",
+  "identityProviders": [
+    {
+      "alias": "azure-ad",
+      "displayName": "Microsoft Entra ID",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "postBrokerLoginFlowAlias": "Post Broker Login - AIHubAccess Check",
+      "config": {
+        "clientId": "$(env:KEYCLOAK_AZURE_CLIENT_ID)",
+        "clientSecret": "$(env:KEYCLOAK_AZURE_CLIENT_SECRET)",
+        "tokenUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/oauth2/v2.0/token",
+        "authorizationUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/oauth2/v2.0/authorize",
+        "logoutUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/oauth2/v2.0/logout",
+        "userInfoUrl": "https://graph.microsoft.com/oidc/userinfo",
+        "issuer": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/v2.0",
+        "jwksUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/discovery/v2.0/keys",
+        "defaultScope": "openid email profile",
+        "validateSignature": "true",
+        "useJwksUrl": "true",
+        "pkceEnabled": "true",
+        "pkceMethod": "S256",
+        "syncMode": "FORCE",
+        "clientAuthMethod": "client_secret_post",
+        "hideOnLoginPage": "false",
+        "backchannelSupported": "false",
+        "icon": "pi-microsoft"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "email-mapper",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "email",
+        "user.attribute": "email"
+      }
+    },
+    {
+      "name": "first-name-mapper",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "given_name",
+        "user.attribute": "firstName"
+      }
+    },
+    {
+      "name": "last-name-mapper",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "family_name",
+        "user.attribute": "lastName"
+      }
+    },
+    {
+      "name": "username-mapper",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-username-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "template": "${CLAIM.preferred_username}"
+      }
+    },
+    {
+      "name": "role-mapper-access",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-role-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "roles",
+        "claim.value": "AIHubAccess",
+        "role": "AIHubAccess"
+      }
+    },
+    {
+      "name": "role-mapper-sysadmin",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-role-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "roles",
+        "claim.value": "AIHubSysAdmin",
+        "role": "AIHubSysAdmin"
+      }
+    }
+  ]
+}

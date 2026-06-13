@@ -84,3 +84,5 @@ forcing a credential re-verification at least monthly.
 
 - `2026_04_07_active_tenant_as_keycloak_user_attribute.md` — active tenant persisted in Keycloak, restored after login
 - `2025_12_28_keycloak_as_identity_broker.md` — Keycloak as sole OIDC provider
+- `2026_06_12_declarative_keycloak_realm_reconciliation.md` — managed realm config reconciled via keycloak-config-cli;
+  realm-level settings (incl. these lifespans) stay bootstrap-only, so the kcadm default-migration here is unchanged

@@ -1,0 +1,21 @@
+{
+  "realm": "aihub",
+  "users": [
+    {
+      "username": "$(env:SUPERUSER_USERNAME)",
+      "email": "$(env:SUPERUSER_EMAIL)",
+      "firstName": "$(env:SUPERUSER_FIRSTNAME)",
+      "lastName": "$(env:SUPERUSER_LASTNAME)",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "$(env:SUPERUSER_PASSWORD)",
+          "temporary": false
+        }
+      ],
+      "realmRoles": "$(envjson:SUPERUSER_ROLES_JSON)"
+    }
+  ]
+}

@@ -101,7 +101,8 @@ Each identity provider can have a custom icon displayed on its login button. Ico
 Keycloak identity provider's `config` map as the `icon` field using PrimeIcon CSS classes (e.g., `pi-microsoft`,
 `pi-google`). Providers without an icon configured fall back to `pi-sign-in`.
 
-To set an icon, add the `icon` field to the identity provider's configuration in `keycloak-identity-providers.json.j2`:
+To set an icon, add the `icon` field to the identity provider's configuration in
+`infra/deployment/templates/configs/keycloak/managed/50-identity-providers.json.j2`:
 
 ```json
 "config": {
@@ -206,7 +207,8 @@ Keycloak:
 **Option 1: Realm default roles (applies to all new users)**
 
 In the Keycloak admin console, navigate to **Realm Settings > User Registration > Default Roles** and add the desired
-roles. Alternatively, set the `defaultRoles` array in the realm configuration template (`keycloak-realm.json.j2`):
+roles. Alternatively, set the `defaultRoles` array in the bootstrap realm configuration template
+(`infra/deployment/templates/configs/keycloak/bootstrap/groups.json.j2` — applied on first start only):
 
 ```json
 "defaultRoles": ["AIHubUser"]
@@ -215,8 +217,8 @@ roles. Alternatively, set the `defaultRoles` array in the realm configuration te
 **Option 2: Identity provider mappers (applies per IdP)**
 
 For more granular control, configure role mappers on individual identity providers. This allows different roles for
-users from different organizations. In the Keycloak admin console, navigate to **Identity Providers > [your IdP] >
-Mappers** and add a **Hardcoded Role** mapper:
+users from different organizations. Add a **Hardcoded Role** mapper entry to the `identityProviderMappers` array in
+`infra/deployment/templates/configs/keycloak/managed/50-identity-providers.json.j2`:
 
 | Field       | Value               |
 | ----------- | ------------------- |
@@ -226,10 +228,15 @@ Mappers** and add a **Hardcoded Role** mapper:
 
 This assigns the role only to users authenticating through that specific identity provider.
 
+::: warning Identity provider mappers are managed config
+Identity providers and their mappers are reconciled from `50-identity-providers.json.j2` on every stack start — a mapper
+added only in the Keycloak admin console is deleted on the next restart. Always add mappers to the config file.
+:::
+
 **Option 3: Claim-based role mapping (conditional assignment)**
 
 For conditional role assignment based on IdP claims (e.g., Azure AD app roles), use the existing `oidc-role-idp-mapper`
-pattern already configured in `keycloak-identity-providers.json.j2`. Each Azure AD app role is mapped to a corresponding
+pattern already configured in `50-identity-providers.json.j2`. Each Azure AD app role is mapped to a corresponding
 Keycloak realm role. To add a new mapping, add an entry to the `identityProviderMappers` array:
 
 ```json

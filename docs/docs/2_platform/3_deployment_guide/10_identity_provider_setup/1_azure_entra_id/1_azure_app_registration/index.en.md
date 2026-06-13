@@ -71,12 +71,13 @@ The app registration is not usable until you define and assign its **app roles**
 
 ::: tip Operators don't edit the provider
 The `azure-ad` provider and its claim mappers are defined in
-`infra/deployment/templates/configs/keycloak-identity-providers.json.j2`. You normally only set the three `.env`
-variables — no Keycloak configuration is needed.
+`infra/deployment/templates/configs/keycloak/managed/50-identity-providers.json.j2`. You normally only set the three
+`.env` variables — no Keycloak configuration is needed. This file is reconciled on every stack start: changes reach
+running deployments automatically, and manual admin-console edits to the provider are overwritten.
 :::
 
 ::: tip Multi-tenant deployments
 A single deployment can federate multiple organizations, each with its own app registration mapped to a separate tenant
-group in Keycloak. This is an advanced, non-default setup; see the comments in `keycloak-identity-providers.json.j2` for
-the hardcoded-group mapper pattern.
+group in Keycloak. This is an advanced, non-default setup; see the comments in `50-identity-providers.json.j2` for the
+hardcoded-group mapper pattern.
 :::

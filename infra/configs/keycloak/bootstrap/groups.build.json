@@ -1,0 +1,17 @@
+{
+  "realm": "aihub",
+  "defaultRoles": [],
+
+  "groups": [
+    {
+      "name": "tenants",
+      "subGroups": [
+        {
+          "name": "$(env:AIHUB_STARTUP_TENANT_ID)"
+        }
+      ]
+    }
+  ],
+
+  "defaultGroups": ["/tenants/$(env:AIHUB_STARTUP_TENANT_ID)"]
+}

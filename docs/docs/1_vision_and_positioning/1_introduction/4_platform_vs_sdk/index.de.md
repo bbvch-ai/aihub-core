@@ -1,38 +1,39 @@
 ---
 title: Plattform vs. SDK
-source_sha: 943f5374c466240f75db8a8ee40e699da4632a84c0ff714960109d759ff67a78
+source_sha: 5ed28d4f5a6809011a397e76c87da825792708d186ab3badaebd7595cc19302e
 ---
 
 # Plattform vs. SDK: Die duale Architektur verstehen
 
-Der Swiss AI Hub trennt bewusst die Plattform vom SDK. Diese Trennung ist keine architektonische Komplexität; es ist ein
+Der Swiss AI Hub trennt Plattform und SDK bewusst. Diese Trennung ist keine architektonische Komplexität; sie ist ein
 strategisches Design, das Ihnen maximale Flexibilität bei der Einführung, dem Deployment und der Erweiterung des Systems
 bietet.
 
 ## Die Plattform: Ihre KI-Infrastruktur
 
-Die Plattform umfasst alles, was beim Ausführen von `docker compose up` läuft. Sie beinhaltet Datenbanken, Message
-Queues, das LLM Gateway, Vector Stores, das Authentifizierungssystem, Benutzeroberflächen und Monitoring Tools. Als
-Open-Source (Apache 2.0 für die Runtime, AGPL-3.0 für die UI und das Backup; siehe
-[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) für die Aufschlüsselung pro Paket) steht es
-Ihnen frei, diese nach Bedarf zu deployen, zu modifizieren und zu betreiben.
+Die Plattform umfasst alles, was beim Ausführen von `docker compose up` gestartet wird. Dazu gehören Datenbanken,
+Message Queues, das LLM-Gateway, Vector Stores, das Authentifizierungssystem, Benutzeroberflächen und Überwachungstools.
+Als Open-Source (Apache 2.0 für die Runtime, AGPL-3.0-or-later für die UI und das Backup; siehe
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) für die Aufschlüsselung pro Paket) steht sie
+Ihnen zur Verfügung, um sie nach Ihren Bedürfnissen zu deployen, zu modifizieren und zu betreiben.
 
-Stellen Sie sich die Plattform als Ihr KI-Betriebssystem vor. Sie verwaltet:
+Betrachten Sie die Plattform als Ihr KI-Betriebssystem. Sie regelt:
 
 - Wo Daten gespeichert und wie darauf zugegriffen wird
 - Welche Modelle verfügbar sind und wie sie aufgerufen werden
-- Wer worauf zugreifen kann und wie die Authentifizierung erfolgt
-- Wie Komponenten kommunizieren und koordinieren
+- Wer auf was zugreifen kann und wie die Authentifizierung erfolgt
+- Wie Komponenten kommunizieren und sich koordinieren
 - Was Benutzer sehen und wie sie interagieren
 
-Die Plattform funktioniert sofort. Deployen Sie sie und Sie verfügen über ein funktionsfähiges KI-System mit
-vorgefertigten Agents, Chat-Oberflächen und Integrationen. Sie können es ohne jeglichen Code sofort nutzen.
+Die Plattform funktioniert sofort. Deployen Sie sie, und Sie haben ein funktionsfähiges KI-System mit vorgefertigten
+Agents, Chat-Oberflächen und Integrationen. Sie können sie sofort verwenden, ohne eine einzige Zeile Code schreiben zu
+müssen.
 
 ## Das SDK: Ihr Entwicklungsframework
 
-Das SDK ist die Art und Weise, wie Sie neue Funktionen erstellen, die auf der Plattform laufen. Es bietet Basisklassen,
-Decorators, Patterns und Tools, die Ihre benutzerdefinierten Agents, Pipelines und Prozesse automatisch mit der
-Plattforminfrastruktur kompatibel machen.
+Das SDK ist die Art und Weise, wie Sie neue Funktionen entwickeln, die auf der Plattform ausgeführt werden. Es bietet
+Basisklassen, Decorators, Muster und Tools, die Ihre benutzerdefinierten Agents, Pipelines und Prozesse automatisch mit
+der Plattform-Infrastruktur kompatibel machen.
 
 Wenn Sie mit dem SDK entwickeln, schreiben Sie Geschäftslogik, während das SDK die Plattformintegration übernimmt:
 
@@ -44,14 +45,14 @@ class MyAgent(Agent):
         return AnalysisEvent(results=analysis)
 ```
 
-Dieser Agent:
+Dieser Agent übernimmt automatisch:
 
 - Streamt Updates über die WebSocket-Verbindungen der Plattform
 - Erscheint in der Chat-Oberfläche
-- Wird in Langfuse getraced
-- Respektiert die Plattform-Authentifizierung
-- Speichert den Zustand in den Plattform-Datenbanken
-- Behandelt Fehler gemäss den Plattform-Patterns
+- Wird in Langfuse nachverfolgt
+- Berücksichtigt die Plattform-Authentifizierung
+- Speichert den Zustand in Plattform-Datenbanken
+- Behandelt Fehler gemäß den Plattform-Mustern
 
 ## Warum die Trennung wichtig ist
 
@@ -61,43 +62,44 @@ vorgefertigten KI-Funktionen arbeiten, während Entwickler an benutzerdefinierte
 vom ersten Tag an einen Mehrwert.
 
 **Entwicklungsunabhängigkeit**\
-Die SDK-Entwicklung findet ausserhalb der Plattform-Runtime statt. Entwickler arbeiten in ihrer IDE mit vertrauten Tools
-und testen lokal, bevor sie deployen. Es ist nicht notwendig, die interne Architektur der Plattform zu verstehen, um
-Agents zu erstellen.
+Die SDK-Entwicklung erfolgt außerhalb der Plattform-Runtime. Entwickler arbeiten in ihrer IDE mit vertrauten Tools und
+testen lokal vor dem Deployment. Es ist nicht notwendig, die interne Architektur der Plattform zu verstehen, um Agents
+zu erstellen.
 
 **Update-Isolation**\
 Plattform-Updates (neue Versionen von Langfuse, LiteLLM oder der Web-UI) unterbrechen Ihre benutzerdefinierten Agents
-nicht. SDK-Updates (neue Decorators oder Patterns) erfordern keine Plattform-Änderungen. Jede Schicht entwickelt sich
-unabhängig.
+nicht. SDK-Updates (neue Decorators oder Muster) erfordern keine Plattformänderungen. Jede Schicht entwickelt sich
+unabhängig voneinander.
 
 **Klare architektonische Grenzen**\
-Die Trennung schafft klare Schnittstellen zwischen Infrastruktur und Geschäftslogik. Plattform-Anliegen
-(Authentifizierung, Speicherung, Tracing) sind vollständig von der Agent-Logik getrennt. Dies erleichtert das
-Verständnis, das Testen und die Wartung der Codebasis.
+Die Trennung schafft klare Schnittstellen zwischen Infrastruktur und Geschäftslogik. Plattform-Belange
+(Authentifizierung, Speicherung, Tracing) sind vollständig von der Agent-Logik getrennt. Dies macht die Codebasis
+einfacher zu verstehen, zu testen und zu warten.
 
 ## Wie sie zusammenarbeiten
 
-Die Magie entsteht durch klar definierte Schnittstellen:
+Die Magie geschieht durch klar definierte Schnittstellen:
 
-**Event-Kontrakte**\
-Das SDK definiert Event-Typen, die die Plattform versteht. Wenn Ihr Agent ein `UserMessageEvent` aussendet, weiss die
-Plattform, wie sie es routen, speichern und anzeigen muss. Der Kontrakt ist das Event-Schema, nicht die Implementierung.
+**Event-Verträge**\
+Das SDK definiert Ereignistypen, die die Plattform versteht. Wenn Ihr Agent ein `UserMessageEvent` ausgibt, weiß die
+Plattform, wie sie es routen, speichern und anzeigen muss. Der Vertrag ist das Ereignisschema, nicht die
+Implementierung.
 
 **Discovery-Protokolle**\
-Mit dem SDK erstellte Agents melden sich über NATS-Nachrichten bei der Plattform an. Die Plattform entdeckt verfügbare
+Mit dem SDK erstellte Agents melden sich der Plattform über NATS-Nachrichten an. Die Plattform entdeckt verfügbare
 Agents dynamisch, ohne Konfiguration.
 
-**Ressourcen-Injektion**\
-Das SDK kennt Plattform-Ressourcen (Datenbanken, LLM-Clients, Storage). Wenn Ihr Agent diese benötigt, injiziert die
+**Ressourceninjektion**\
+Das SDK kennt Plattform-Ressourcen (Datenbanken, LLM-Clients, Speicher). Wenn Ihr Agent diese benötigt, injiziert die
 Plattform automatisch konfigurierte Instanzen.
 
-**Standardisierte Patterns**\
-Das SDK erzwingt Patterns, die die Plattform erwartet. Workflow-Schritte, Kontextverwaltung und Fehlerbehandlung folgen
-alle Konventionen, die die Plattform überwachen und verwalten kann.
+**Standardisierte Muster**\
+Das SDK erzwingt Muster, die die Plattform erwartet. Workflow-Schritte, Kontextverwaltung, Fehlerbehandlung – all dies
+folgt Konventionen, die die Plattform überwachen und verwalten kann.
 
 ## Ein praktischer Vergleich
 
-Betrachten Sie den Aufbau eines Dokumentenanalyse-Agenten:
+Betrachten Sie die Entwicklung eines Dokumentenanalyse-Agenten:
 
 **Ohne das SDK:**
 
@@ -119,31 +121,34 @@ class DocumentAnalyzer(Agent):
         return analyze_document(doc)
 ```
 
-Das SDK verbirgt keine Komplexität, es eliminiert Redundanz. Die Plattform weiss bereits, wie man streamt,
-authentifiziert, speichert, traced, anzeigt und deployt. Das SDK bietet die Patterns, um diese Funktionen zu nutzen.
+Das SDK verbirgt keine Komplexität, es eliminiert Redundanz. Die Plattform weiß bereits, wie man streamt,
+authentifiziert, speichert, traced, anzeigt und deployt. Das SDK stellt die Muster bereit, um diese Funktionen zu
+nutzen.
 
 ## Open Source und Lizenzierung
 
 Der Swiss AI Hub verwendet ein gemischtes Open-Source-Modell: Die Plattform-Runtime, das SDK, Agents, Pipelines und
-Prozesse sind unter **Apache 2.0** lizenziert (permissiv — kommerzielle Nutzung, Modifikation, Distribution, keine
-Verpflichtung zur Rückgabe von Änderungen); die Web-UI und die Backup-Orchestrierung unter **AGPL-3.0**; die
-Multi-Tenant-Management-Plane ist proprietär und erfordert eine kommerzielle Lizenz. Eine vollständige Aufschlüsselung
-pro Paket finden Sie unter [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md). Die Komponenten,
-die Sie typischerweise erweitern – Ihre eigenen Agents, Pipelines und Prozesse, die auf dem SDK basieren – fallen unter
-Apache 2.0, sodass Ihr Code Ihnen gehört.
+Prozesse sind unter **Apache 2.0** lizenziert (permissiv – kommerzielle Nutzung, Modifikation, Verteilung, keine
+Verpflichtung zur Rückgabe von Änderungen); die Web-UI, die Multi-Mandanten-Management-Plane und die
+Backup-Orchestrierung unter **AGPL-3.0-or-later** (Netzwerk-Copyleft). Eine vollständige Aufschlüsselung pro Paket
+finden Sie unter [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md). Die Komponenten, die Sie
+typischerweise erweitern – Ihre eigenen Agents, Pipelines und Prozesse, die auf dem SDK basieren – fallen unter Apache
+2.0, sodass Ihr Code Ihnen gehört.
 
-## Wann Sie welche Komponente benötigen
+## Wann Sie welchen Teil benötigen
 
-**Nur Plattform:** Sie wünschen sich sicheren KI-Zugriff mit vorgefertigten Funktionen. Perfekt für Organisationen, die
-ihre KI-Reise beginnen, oder Teams, die Standard-Agents benötigen.
+**Nur Plattform:**\
+Sie möchten sicheren KI-Zugriff mit vorgefertigten Funktionen. Perfekt für Organisationen, die ihre KI-Reise beginnen,
+oder Teams, die Standard-Agents benötigen.
 
-**Plattform + SDK:** Sie benötigen benutzerdefinierte Agents, spezialisierte Pipelines oder komplexe
-Prozessautomatisierung. Das SDK wird unerlässlich, wenn vorgefertigte Funktionen nicht ausreichen.
+**Plattform + SDK:**\
+Sie benötigen benutzerdefinierte Agents, spezialisierte Pipelines oder komplexe Prozessautomatisierung. Das SDK wird
+unerlässlich, wenn vorgefertigte Funktionen nicht ausreichen.
 
-**SDK für die Migration:** Sie haben bestehende Agents, die mit anderen Frameworks erstellt wurden. Das SDK bietet
-Migrationspfade, um diese Plattform-nativ zu machen und gleichzeitig Ihre Investitionen in die Geschäftslogik zu
-erhalten.
+**SDK für Migration:**\
+Sie haben bestehende Agents, die mit anderen Frameworks erstellt wurden. Das SDK bietet Migrationspfade, um diese
+plattform-nativ zu machen, während Ihre Investition in die Geschäftslogik erhalten bleibt.
 
-Die Plattform betreibt Ihre KI-Infrastruktur. Das SDK schafft Ihren Wettbewerbsvorteil. Gemeinsam bilden sie ein
-vollständiges Ökosystem, in dem die Infrastruktur gelöst und die Entwicklung optimiert ist, sodass Sie sich auf das
+Die Plattform betreibt Ihre KI-Infrastruktur. Das SDK schafft Ihren Wettbewerbsvorteil. Gemeinsam bieten sie ein
+vollständiges Ökosystem, in dem die Infrastruktur gelöst und die Entwicklung optimiert wird, sodass Sie sich auf das
 konzentrieren können, was Ihre KI-Anwendungen einzigartig macht.
