@@ -4,10 +4,14 @@ import pytest
 from bson import ObjectId
 from fastapi import HTTPException
 from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
@@ -344,3 +348,102 @@ class TestAgentServiceUnit:
                 await AgentService.get_agent_instance("TestAgent", "test_agent_1", mock_locale_handler)
 
             assert str(exc_info.value) == "Database error"
+
+
+_ADMIN_RULE = "aihub.admin.agent.TestAgent.test_agent_1"
+_ROLE_NAME = "agent-TestAgent-test_agent_1-admin"
+
+
+@pytest.fixture
+def creator_user():
+    """A non-sysadmin user acting within a tenant whose ceiling does not cover the instance."""
+    user = Mock(spec=UserIdentity)
+    user.id = "user_123"
+    user.acting_within_tenant = Mock()
+    user.acting_within_tenant.id = "tenant_1"
+    user.acting_within_tenant.access_rules = ["aihub.admin.agent.TestAgent"]
+    return user
+
+
+class TestGrantCreatorAccess:
+    """Unit tests for the per-instance access grant on creation."""
+
+    def test_grants_tenant_rule_and_creator_role_when_not_covered(self, creator_user):
+        config_entity = Mock()
+        with (
+            patch.object(AccessChecker, "rules_grant_admin_to_agent", return_value=False) as mock_covered,
+            patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
+            patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
+            patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
+        ):
+            AgentService._grant_creator_access("TestAgent", "test_agent_1", creator_user, config_entity)
+
+        mock_covered.assert_called_once_with(["aihub.admin.agent.TestAgent"], "TestAgent", "test_agent_1")
+        mock_grant.assert_called_once_with("tenant_1", _ADMIN_RULE)
+        mock_ensure.assert_called_once_with(_ROLE_NAME, _ADMIN_RULE, "tenant_1", "TestAgent", "test_agent_1")
+        mock_add_roles.assert_called_once_with("user_123", "tenant_1", [_ROLE_NAME])
+        config_entity.delete.assert_not_called()
+
+    def test_skips_tenant_grant_when_already_covered(self, creator_user):
+        config_entity = Mock()
+        with (
+            patch.object(AccessChecker, "rules_grant_admin_to_agent", return_value=True),
+            patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
+            patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
+            patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
+        ):
+            AgentService._grant_creator_access("TestAgent", "test_agent_1", creator_user, config_entity)
+
+        mock_grant.assert_not_called()
+        mock_ensure.assert_called_once()
+        mock_add_roles.assert_called_once()
+
+    def test_rolls_back_and_raises_on_grant_failure(self, creator_user):
+        config_entity = Mock()
+        with (
+            patch.object(AccessChecker, "rules_grant_admin_to_agent", return_value=False),
+            patch.object(TenantMetadataEntity, "grant_access_rule"),
+            patch.object(AgentService, "_ensure_instance_admin_role"),
+            patch.object(UserTenantRoleEntity, "add_roles", side_effect=RuntimeError("boom")),
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as mock_revoke,
+            patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
+        ):
+            with pytest.raises(HTTPException) as exc_info:
+                AgentService._grant_creator_access("TestAgent", "test_agent_1", creator_user, config_entity)
+
+        assert exc_info.value.status_code == 500
+        mock_revoke.assert_called_once_with([_ADMIN_RULE])
+        mock_delete_role.assert_called_once_with(_ROLE_NAME)
+        config_entity.delete.assert_called_once()
+
+
+class TestDeleteAgentInstanceCleanup:
+    """Unit tests for per-instance access cleanup on deletion."""
+
+    @pytest.mark.asyncio
+    async def test_revokes_rules_and_deletes_role(self):
+        with (
+            patch.object(AgentConfigEntityDocument, "find_for_class_and_id", return_value=Mock()),
+            patch.object(AgentConfigEntityDocument, "delete_if_exists_for_class_and_id") as mock_delete_config,
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as mock_revoke,
+            patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
+        ):
+            await AgentService.delete_agent_instance("TestAgent", "test_agent_1")
+
+        mock_delete_config.assert_called_once_with("TestAgent", "test_agent_1")
+        mock_revoke.assert_called_once_with(["aihub.user.agent.TestAgent.test_agent_1", _ADMIN_RULE])
+        mock_delete_role.assert_called_once_with(_ROLE_NAME)
+
+    @pytest.mark.asyncio
+    async def test_missing_instance_raises_404_without_cleanup(self):
+        with (
+            patch.object(AgentConfigEntityDocument, "find_for_class_and_id", return_value=None),
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as mock_revoke,
+            patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
+        ):
+            with pytest.raises(HTTPException) as exc_info:
+                await AgentService.delete_agent_instance("TestAgent", "missing")
+
+        assert exc_info.value.status_code == 404
+        mock_revoke.assert_not_called()
+        mock_delete_role.assert_not_called()

@@ -159,6 +159,20 @@ class AccessChecker:
             return True
         return ri == len(access_rule_parts) and ti == len(template_parts)
 
+    @classmethod
+    def rules_grant_admin_to_agent(cls, rules: list[str], agent_class: str, agent_id: str) -> bool:
+        """Whether a flat rule list already grants admin to a concrete agent instance.
+
+        Used to decide whether a per-instance grant is redundant (e.g. a tenant already
+        holding ``aihub.admin.>``), without the two-tier tenant/user evaluation.
+        """
+        checker = cls(user_access_rules=rules, tenant_access_rules=[])
+        admin_permission = f"{_ADMIN_PREFIX}agent.{agent_class}.{agent_id}"
+        return any(
+            checker._access_rule_matches_concrete_permission(access_rule, admin_permission)
+            for access_rule in checker.user_admin_access_rules
+        )
+
     def access_level(self, permission_template: str) -> AccessLevel:
         """
         Checks for the highest level of permission (Admin, User, or Denied).

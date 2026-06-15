@@ -21,6 +21,9 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
@@ -476,14 +479,79 @@ class AgentService:
         )
         config_entity.save()
 
+        if user.acting_within_tenant is not None:
+            AgentService._grant_creator_access(agent_class, request.agent_id, user, config_entity)
+
         return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
 
     @staticmethod
     @trace_fn
     async def delete_agent_instance(agent_class: str, agent_id: str) -> None:
-        """Deletes an agent instance by removing its configuration from the database."""
+        """Deletes an agent instance and the per-instance access it was granted on creation."""
         config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config:
             raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found.")
 
         AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class, agent_id)
+
+        TenantMetadataEntity.revoke_access_rule_from_all_tenants(
+            [
+                AgentService._instance_user_rule(agent_class, agent_id),
+                AgentService._instance_admin_rule(agent_class, agent_id),
+            ]
+        )
+        RoleEntity.delete_role_from_all_tenants(AgentService._instance_admin_role_name(agent_class, agent_id))
+
+    @staticmethod
+    def _instance_admin_rule(agent_class: str, agent_id: str) -> str:
+        return f"aihub.admin.agent.{agent_class}.{agent_id}"
+
+    @staticmethod
+    def _instance_user_rule(agent_class: str, agent_id: str) -> str:
+        return f"aihub.user.agent.{agent_class}.{agent_id}"
+
+    @staticmethod
+    def _instance_admin_role_name(agent_class: str, agent_id: str) -> str:
+        return f"agent-{agent_class}-{agent_id}-admin"
+
+    @staticmethod
+    def _grant_creator_access(
+        agent_class: str, agent_id: str, user: UserIdentity, config_entity: AgentConfigEntityDocument
+    ) -> None:
+        """Grants the creating tenant and creator per-instance admin access, rolling back on failure.
+
+        Tenant ceiling gets the instance rule only when not already covered by a broader rule;
+        the creator always receives a dedicated per-instance admin role.
+        """
+        tenant = user.acting_within_tenant
+        admin_rule = AgentService._instance_admin_rule(agent_class, agent_id)
+        role_name = AgentService._instance_admin_role_name(agent_class, agent_id)
+        try:
+            if not AccessChecker.rules_grant_admin_to_agent(tenant.access_rules, agent_class, agent_id):
+                TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
+            AgentService._ensure_instance_admin_role(role_name, admin_rule, tenant.id, agent_class, agent_id)
+            UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
+        except Exception as error:
+            TenantMetadataEntity.revoke_access_rule_from_all_tenants([admin_rule])
+            RoleEntity.delete_role_from_all_tenants(role_name)
+            config_entity.delete()
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Agent instance '{agent_class}/{agent_id}' was created but access could not be granted; "
+                    "the creation was rolled back."
+                ),
+            ) from error
+
+    @staticmethod
+    def _ensure_instance_admin_role(
+        role_name: str, admin_rule: str, tenant_id: str, agent_class: str, agent_id: str
+    ) -> None:
+        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+            return
+        RoleEntity.create_tenant_role(
+            name=role_name,
+            description=f"Admin access to agent instance {agent_class}/{agent_id}",
+            access_rules=[admin_rule],
+            tenant_id=tenant_id,
+        )
