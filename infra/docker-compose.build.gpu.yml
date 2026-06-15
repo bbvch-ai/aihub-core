@@ -1012,6 +1012,11 @@ services:
       # Defense in depth — no managed file may contain groups (tenants are
       # runtime data, see ADR 2026_04_15_keycloak_as_tenant_existence_authority).
       IMPORT_MANAGED_GROUP: no-delete
+      # Defense in depth — identity providers are bootstrap-only (first-start
+      # --import-realm); no managed file declares them, so kcc must never delete
+      # the ones seeded by the realm import or configured in the admin console.
+      IMPORT_MANAGED_IDENTITYPROVIDER: no-delete
+      IMPORT_MANAGED_IDENTITYPROVIDERMAPPER: no-delete
       DOMAIN: ${DOMAIN}
       # Client secrets (substituted into the managed config files)
       KEYCLOAK_OPENWEBUI_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
@@ -1021,16 +1026,14 @@ services:
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
-      # Azure Entra ID configuration (for identity provider federation)
-      KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
-      KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
-      KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
+      # Azure Entra ID vars are NOT needed here — identity providers are
+      # bootstrap-only (seeded by the keycloak container's --import-realm), not
+      # reconciled by keycloak-config-cli.
     volumes:
       - ./configs/keycloak/managed/10-roles.build.gpu.json:/config/10-roles.json:ro
       - ./configs/keycloak/managed/20-client-scopes.build.gpu.json:/config/20-client-scopes.json:ro
       - ./configs/keycloak/managed/30-clients.build.gpu.json:/config/30-clients.json:ro
       - ./configs/keycloak/managed/40-auth-flows.build.gpu.json:/config/40-auth-flows.json:ro
-      - ./configs/keycloak/managed/50-identity-providers.build.gpu.json:/config/50-identity-providers.json:ro
       - ./configs/keycloak/managed/60-service-accounts.build.gpu.json:/config/60-service-accounts.json:ro
     depends_on:
       keycloak:

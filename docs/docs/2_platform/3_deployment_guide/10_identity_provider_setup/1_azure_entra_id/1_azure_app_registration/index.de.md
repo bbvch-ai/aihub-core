@@ -1,7 +1,7 @@
 ---
 title: Azure App-Registrierung
 description: Konfigurieren Sie eine Entra ID-App-Registrierung, damit Keycloak sie als Identitätsprovider akzeptiert.
-source_sha: c886ac8534e6a18d90be3cb2fe8d0ff31af13b65332478af1fb7279278490302
+source_sha: 1c636c6918594e760dd319d0b3c9f004ba1666c5f0e4236c9d22b7277df59960
 ---
 
 # Azure App-Registrierung
@@ -76,14 +76,15 @@ um sich anzumelden.
 
 ::: tip Operatoren bearbeiten den Provider nicht
 Der `azure-ad`-Provider und seine Claim-Mapper sind in
-`infra/deployment/templates/configs/keycloak/managed/50-identity-providers.json.j2` definiert. Sie setzen normalerweise
-nur die drei `.env`-Variablen — es ist keine Keycloak-Konfiguration erforderlich. Diese Datei wird bei jedem Stack-Start
-abgeglichen: Änderungen erreichen laufende Deployments automatisch, und manuelle Admin-Konsolen-Bearbeitungen am
-Provider werden überschrieben.
+`infra/deployment/templates/configs/keycloak/bootstrap/identity-providers.json.j2` definiert. Sie setzen normalerweise
+nur die drei `.env`-Variablen — es ist keine Keycloak-Konfiguration erforderlich. Dies ist Bootstrap-Konfiguration: Sie
+wird vom Realm-Import **nur beim ersten Start** angewendet, sodass manuelle Admin-Konsolen-Bearbeitungen am Provider
+Neustarts überstehen und Änderungen an der Datei ein bereits initialisiertes Deployment nur über die Admin Console (oder
+eine frische Realm-Datenbank) erreichen.
 :::
 
 ::: tip Multi-Tenant-Deployments
 Ein einzelnes Deployment kann mehrere Organisationen föderieren, jede mit ihrer eigenen App-Registrierung, die einer
 separaten Tenant-Gruppe in Keycloak zugeordnet ist. Dies ist ein erweitertes, nicht standardmäßiges Setup; siehe die
-Kommentare in `50-identity-providers.json.j2` für das Hardcoded-Group-Mapper-Muster.
+Kommentare in `bootstrap/identity-providers.json.j2` für das Hardcoded-Group-Mapper-Muster.
 :::

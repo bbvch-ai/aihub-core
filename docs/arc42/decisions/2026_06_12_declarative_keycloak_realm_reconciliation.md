@@ -39,10 +39,10 @@ after Keycloak is healthy, reconciles the managed realm config through the Admin
 **Config layout — single source, two render targets.** The realm config lives in standalone JSON templates under
 `infra/deployment/templates/configs/keycloak/`, split by lifecycle and entity type:
 
-| Folder       | Files                                                                                             | Lifecycle                                                    |
-| ------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `bootstrap/` | realm-settings, components (user profile), groups (startup tenant seed), users-superuser          | First start only (`--import-realm`), never reconciled        |
-| `managed/`   | 10-roles, 20-client-scopes, 30-clients, 40-auth-flows, 50-identity-providers, 60-service-accounts | Reconciled on every start by keycloak-config-cli (file wins) |
+| Folder       | Files                                                                                                        | Lifecycle                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `bootstrap/` | realm-settings, components (user profile), groups (startup tenant seed), users-superuser, identity-providers | First start only (`--import-realm`), never reconciled        |
+| `managed/`   | 10-roles, 20-client-scopes, 30-clients, 40-auth-flows, 60-service-accounts                                   | Reconciled on every start by keycloak-config-cli (file wins) |
 
 `generate_compose.py` renders the managed templates 1:1 as the keycloak-config-cli input files and additionally
 JSON-merges all bootstrap + managed documents into the single `aihub-realm.{stage}.json` consumed by `--import-realm`.
@@ -55,14 +55,17 @@ its remote state on its first run so deletion-reconcile works identically on fre
 - Files are processed lexicographically as separate imports, each full-managed per entity type — so all entities of one
   type MUST live in a single file (a second file containing `clients` would delete the first file's clients). The
   numeric prefixes encode the dependency order: roles before flows (authenticator config references `AIHubAccess`),
-  scopes before clients (`defaultClientScopes`), flows before identity providers (`postBrokerLoginFlowAlias`), clients
-  before service accounts (`serviceAccountClientId`).
+  scopes before clients (`defaultClientScopes`), clients before service accounts (`serviceAccountClientId`).
 - Users are never a full-managed type: only users listed in a file are updated, absent users are never deleted. The
   `service-account-aihub-api-service` user lives in a managed file so realm-management role changes propagate, without
   endangering real users or the superuser.
 - `IMPORT_CACHE_ENABLED=false` forces re-application even when file checksums are unchanged, so admin-console drift on
   managed objects is always reverted.
-- `IMPORT_MANAGED_GROUP=no-delete` is set as defense in depth; no managed file may contain `groups`.
+- `IMPORT_MANAGED_GROUP=no-delete` (groups) and
+  `IMPORT_MANAGED_IDENTITYPROVIDER`/`IMPORT_MANAGED_IDENTITYPROVIDERMAPPER=no-delete` (identity providers) are set as
+  defense in depth; no managed file may contain `groups` or `identityProviders`. Identity providers are bootstrap-only
+  (see below), so the auth flow they reference (`postBrokerLoginFlowAlias`) is resolved inside the merged first-start
+  import where flows and IdPs coexist.
 
 **Placeholder convention.** All realm config files use the keycloak-config-cli variable-substitution syntax `$(env:VAR)`
 (its default `$(` prefix deliberately avoids colliding with Keycloak-internal `${role_...}` / `${CLAIM...}`
@@ -72,13 +75,16 @@ parseable JSON.
 
 **What stays in the entrypoint.** `--import-realm` for first-start bootstrap and the conditional kcadm session-lifespan
 default-migration (`2026_06_11` — operator lifespan overrides survive because realm-level settings are bootstrap-only
-and never appear in managed files). The identity-provider `partialImport` block is retired; identity providers are now a
-managed file.
+and never appear in managed files). The identity-provider `partialImport` block is retired; identity providers are
+bootstrap-only (seeded by the first-start realm import, never reconciled), so updating IdP config on a running
+deployment requires the admin console or a fresh realm database.
 
 ## Consequences
 
-- Admin-console edits to managed objects (clients, scopes, realm roles, custom flows, identity providers) are
-  overwritten on the next stack start. Intentional changes must go through the config templates.
+- Admin-console edits to managed objects (clients, scopes, realm roles, custom flows) are overwritten on the next stack
+  start. Intentional changes must go through the config templates. Identity providers are the exception — being
+  bootstrap-only, admin-console edits to them survive, and template changes reach existing deployments only via the
+  admin console or a fresh realm database.
 - Objects removed from managed files are deleted from running realms. Keycloak built-in roles, flows, and default scopes
   are never touched.
 - A failed `keycloak-config` run surfaces as a non-zero exit in `docker compose ps -a`; Keycloak keeps running with the

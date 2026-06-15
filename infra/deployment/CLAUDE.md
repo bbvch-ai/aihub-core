@@ -34,9 +34,10 @@ deployment/
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
 │       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
-│           ├── bootstrap/             # First-start-only seeds: realm-settings, components, groups, users-superuser
+│           ├── bootstrap/             # First-start-only seeds: realm-settings, components, groups, users-superuser,
+│           │                          #   identity-providers
 │           └── managed/               # Reconciled every start by keycloak-config-cli: 10-roles, 20-client-scopes,
-│                                      #   30-clients, 40-auth-flows, 50-identity-providers, 60-service-accounts
+│                                      #   30-clients, 40-auth-flows, 60-service-accounts
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py
     ├── openai_pipeline.py
@@ -161,18 +162,21 @@ The realm config lives in standalone JSON templates under `templates/configs/key
 `2026_06_12_declarative_keycloak_realm_reconciliation`):
 
 - **`bootstrap/`** — applied via `--import-realm` on **first start only**, never reconciled: realm-level settings
-  (themes, brute force, session lifespans, SMTP), the user-profile component, the startup tenant group seed, and the
-  superuser seed. Operator changes to these in the admin console survive restarts.
+  (themes, brute force, session lifespans, SMTP), the user-profile component, the startup tenant group seed, the
+  superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the admin
+  console survive restarts — and updating identity-provider config on an already-initialized deployment requires the
+  admin console (or a fresh realm DB), since they do not reconcile automatically.
 - **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
-  (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, identity providers, and the
-  `aihub-api-service` service account. **File wins**: admin-console edits to these objects are overwritten, and objects
-  removed from config are deleted from running realms. Users and tenant groups are never touched.
+  (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
+  service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config
+  are deleted from running realms. Users, tenant groups, and identity providers are never touched
+  (`IMPORT_MANAGED_IDENTITYPROVIDER`/`IMPORT_MANAGED_GROUP` are set to `no-delete` as defense in depth).
 
 Rules when editing:
 
 - All entities of one type MUST stay in their single managed file — keycloak-config-cli processes each file as a
   separate full-managed import, so a second file containing e.g. `clients` would delete the first file's clients. The
-  numeric prefixes encode the import order (roles → scopes → clients → flows → identity providers → service accounts).
+  numeric prefixes encode the import order (roles → scopes → clients → flows → service accounts).
 - Placeholders use keycloak-config-cli syntax: `$(env:VAR)` inside JSON strings, and the quoted `"$(envjson:VAR)"`
   sentinel for raw JSON injection (superuser roles). The entrypoint's bash envsubst handles the same syntax for the
   first-start import. Never use `${VAR}` — it collides with Keycloak-internal placeholders.

@@ -7,8 +7,11 @@
    full reconcile — Keycloak built-in flows are never touched). All custom
    flows must live in this single file (see 10-roles.json.j2 for the
    per-entity-type single-file constraint). Imported after the realm roles
-   (10) referenced in the authenticator config, and before the identity
-   providers (50) whose postBrokerLoginFlowAlias points at the top-level flow.
+   (10) referenced in the authenticator config. The bootstrap identity
+   providers reference "Post Broker Login - AIHubAccess Check" via their
+   postBrokerLoginFlowAlias; that binding is resolved at first-start import
+   (both live in the merged aihub-realm file) and the flow itself stays
+   reconciled here on every start.
 
    browserFlow is bound here (not in the bootstrap realm settings) so that
    keycloak-config-cli rebinds the custom browser flow on every start — this

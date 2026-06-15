@@ -34,9 +34,9 @@ CONFIG_SPECS = [
     # Docker Compose - always required
     ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{stage}{hardware}.yml"),
     # Keycloak bootstrap configs (realm settings, user profile, startup tenant
-    # group, superuser) are first-start-only seeds. They are NOT rendered
-    # standalone here — they are emitted solely through the merged aihub-realm
-    # file consumed by --import-realm (see generate_keycloak_realm /
+    # group, superuser, identity providers) are first-start-only seeds. They are
+    # NOT rendered standalone here — they are emitted solely through the merged
+    # aihub-realm file consumed by --import-realm (see generate_keycloak_realm /
     # KEYCLOAK_BOOTSTRAP_TEMPLATES). Bootstrap changes stay reviewable via the
     # diff of the merged aihub-realm.{stage}.json output.
     # Keycloak managed configs - reconciled on every start by keycloak-config-cli.
@@ -55,11 +55,6 @@ CONFIG_SPECS = [
         "templates/configs/keycloak/managed/40-auth-flows.json.j2",
         "configs/keycloak/managed",
         "40-auth-flows.{stage}{hardware}.json",
-    ),
-    (
-        "templates/configs/keycloak/managed/50-identity-providers.json.j2",
-        "configs/keycloak/managed",
-        "50-identity-providers.{stage}{hardware}.json",
     ),
     (
         "templates/configs/keycloak/managed/60-service-accounts.json.j2",
@@ -94,22 +89,23 @@ CONFIG_SPECS = [
 
 # Keycloak realm documents merged into the single aihub-realm file consumed by
 # --import-realm on first start. Bootstrap documents are first-start-only seeds
-# (realm settings, user profile, groups, superuser); managed documents are also
-# reconciled on every start by keycloak-config-cli, but must appear in the
-# merged file too so fresh boots come up complete without waiting for the
-# reconciler (kcc adopts the pre-created entities into its remote state).
+# (realm settings, user profile, groups, superuser, identity providers);
+# managed documents are also reconciled on every start by keycloak-config-cli,
+# but must appear in the merged file too so fresh boots come up complete without
+# waiting for the reconciler (kcc adopts the pre-created entities into its
+# remote state).
 KEYCLOAK_BOOTSTRAP_TEMPLATES = [
     "templates/configs/keycloak/bootstrap/realm-settings.json.j2",
     "templates/configs/keycloak/bootstrap/components.json.j2",
     "templates/configs/keycloak/bootstrap/groups.json.j2",
     "templates/configs/keycloak/bootstrap/users-superuser.json.j2",
+    "templates/configs/keycloak/bootstrap/identity-providers.json.j2",
 ]
 KEYCLOAK_MANAGED_TEMPLATES = [
     "templates/configs/keycloak/managed/10-roles.json.j2",
     "templates/configs/keycloak/managed/20-client-scopes.json.j2",
     "templates/configs/keycloak/managed/30-clients.json.j2",
     "templates/configs/keycloak/managed/40-auth-flows.json.j2",
-    "templates/configs/keycloak/managed/50-identity-providers.json.j2",
     "templates/configs/keycloak/managed/60-service-accounts.json.j2",
 ]
 

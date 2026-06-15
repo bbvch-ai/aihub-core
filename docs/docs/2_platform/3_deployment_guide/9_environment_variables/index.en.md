@@ -59,9 +59,9 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `KEYCLOAK_ADMIN_PASSWORD` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_ADMIN_USER` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `keycloak`, `keycloak-config`, `sysadmin-api` | Client secret for the API service account |
-| `KEYCLOAK_AZURE_CLIENT_ID` | `50-identity-providers.json` | `keycloak`, `keycloak-config` |  |
-| `KEYCLOAK_AZURE_CLIENT_SECRET` | `50-identity-providers.json` | `keycloak`, `keycloak-config` |  |
-| `KEYCLOAK_AZURE_TENANT_ID` | `50-identity-providers.json` | `keycloak`, `keycloak-config` |  |
+| `KEYCLOAK_AZURE_CLIENT_ID` | `identity-providers.json` | `keycloak` |  |
+| `KEYCLOAK_AZURE_CLIENT_SECRET` | `identity-providers.json` | `keycloak` |  |
+| `KEYCLOAK_AZURE_TENANT_ID` | `identity-providers.json` | `keycloak` |  |
 | `KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-attu` |  |
 | `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-backup` |  |
 | `KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-dagster` |  |

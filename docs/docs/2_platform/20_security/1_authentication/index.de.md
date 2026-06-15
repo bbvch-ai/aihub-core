@@ -1,6 +1,6 @@
 ---
 title: Authentifizierung und Autorisierung
-source_sha: 18e217226f9c432c5d90abe9f5ab364a2dfc8e8523885a237826d9c89dc946b7
+source_sha: a9a02a93c954aba0cb83ea103eb355b51e0b1ead434b123840d9fb8306d5a890
 ---
 
 # Authentifizierung und Autorisierung
@@ -113,7 +113,7 @@ der `config`-Map des Keycloak Identity Providers als `icon`-Feld unter Verwendun
 `pi-microsoft`, `pi-google`) konfiguriert. Provider ohne konfiguriertes Symbol greifen auf `pi-sign-in` zurück.
 
 Um ein Symbol festzulegen, fügen Sie das Feld `icon` zur Konfiguration des Identity Providers in
-`infra/deployment/templates/configs/keycloak/managed/50-identity-providers.json.j2` hinzu:
+`infra/deployment/templates/configs/keycloak/bootstrap/identity-providers.json.j2` hinzu:
 
 ```json
 "config": {
@@ -239,7 +239,7 @@ gewünschten Rollen hinzu. Alternativ können Sie das `defaultRoles`-Array in de
 Für eine granularere Kontrolle konfigurieren Sie Rollen-Mapper für einzelne Identity Provider. Dies ermöglicht
 unterschiedliche Rollen für Benutzer aus verschiedenen Organisationen. Fügen Sie einen **Hardcoded Role** Mapper-Eintrag
 zum `identityProviderMappers`-Array in
-`infra/deployment/templates/configs/keycloak/managed/50-identity-providers.json.j2` hinzu:
+`infra/deployment/templates/configs/keycloak/bootstrap/identity-providers.json.j2` hinzu:
 
 | Feld        | Wert                |
 | ----------- | ------------------- |
@@ -249,18 +249,19 @@ zum `identityProviderMappers`-Array in
 
 Dies weist die Rolle nur Benutzern zu, die sich über diesen spezifischen Identity Provider authentifizieren.
 
-::: warning Identity Provider Mapper sind verwaltete Konfiguration
-Identity Provider und ihre Mapper werden bei jedem Stack-Start aus `50-identity-providers.json.j2` abgeglichen – ein
-Mapper, der nur in der Keycloak Admin Console hinzugefügt wird, wird beim nächsten Neustart gelöscht. Fügen Sie Mapper
-immer zur Konfigurationsdatei hinzu.
+::: warning Identity Provider sind Bootstrap-Konfiguration
+Identity Provider und ihre Mapper werden aus `bootstrap/identity-providers.json.j2` **nur beim ersten Start** durch den
+Realm-Import übernommen – sie werden nicht von keycloak-config-cli abgeglichen. Änderungen in der Keycloak Admin Console
+überstehen Neustarts, und Änderungen an der Konfigurationsdatei erreichen ein bereits initialisiertes Deployment nur
+über die Admin Console (oder eine frische Realm-Datenbank).
 :::
 
 **Option 3: Claim-basierte Rollenzuweisung (bedingte Zuweisung)**
 
 Für eine bedingte Rollenzuweisung basierend auf IdP-Claims (z. B. Azure AD App-Rollen) verwenden Sie das bestehende
-`oidc-role-idp-mapper`-Muster, das bereits in `50-identity-providers.json.j2` konfiguriert ist. Jede Azure AD App-Rolle
-wird einer entsprechenden Keycloak Realm-Rolle zugeordnet. Um eine neue Zuordnung hinzuzufügen, fügen Sie einen Eintrag
-zum `identityProviderMappers`-Array hinzu:
+`oidc-role-idp-mapper`-Muster, das bereits in `bootstrap/identity-providers.json.j2` konfiguriert ist. Jede Azure AD
+App-Rolle wird einer entsprechenden Keycloak Realm-Rolle zugeordnet. Um eine neue Zuordnung hinzuzufügen, fügen Sie
+einen Eintrag zum `identityProviderMappers`-Array hinzu:
 
 ```json
 {
