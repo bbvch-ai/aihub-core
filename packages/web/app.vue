@@ -3,7 +3,10 @@
     <NuxtPage />
     <Toast />
     <ConfirmDialog />
-    <div v-if="homeResolving" class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-surface-900">
+    <div
+      v-if="homeResolving"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-surface-900"
+    >
       <ProgressSpinner />
     </div>
   </NuxtLayout>
@@ -50,7 +53,8 @@ client.setConfig({
 
     if (Array.isArray(rawDetail) && rawDetail.every(e => typeof e.msg === 'string')) {
       message = rawDetail.map(e => e.msg).join('\n')
-    } else if (typeof rawDetail === 'object' && rawDetail?.message) {
+    }
+    else if (typeof rawDetail === 'object' && rawDetail?.message) {
       message = rawDetail.message
     }
 
