@@ -12,8 +12,8 @@ traces**, which may contain sensitive prompts and documents.
 All other infrastructure UIs (Dagster, SeaweedFS, Attu, Backup) are gated behind oauth2-proxy sidecars with
 `OAUTH2_PROXY_ALLOWED_GROUPS=AIHubSysAdmin`. Langfuse must be equally restricted to users holding the `AIHubSysAdmin`
 realm role, but it differs from those services: it has first-class OIDC support and its own session handling, so
-wrapping it in an additional proxy layer adds a container, a second cookie domain, and a second login hop without
-adding value.
+wrapping it in an additional proxy layer adds a container, a second cookie domain, and a second login hop without adding
+value.
 
 ## Decision Drivers
 
@@ -44,10 +44,10 @@ regardless of the requested `scope` parameter, so the scope acts as a reliable p
 `Condition - user role` (`AIHubSysAdmin`, negated) → `Deny access` — is added in two places, covering all login paths:
 
 - `langfuse-gate-browser` in a custom top-level browser flow `browser-aihub` (bound as the realm browser flow), which
-  replicates the built-in browser flow (cookie, IdP redirector, forms, conditional OTP). The authentication
-  alternatives are nested in a REQUIRED sub-flow (`browser-aihub-authenticate`) because Keycloak ignores ALTERNATIVE
-  executions that share a level with a CONDITIONAL sub-flow — placing the gate next to the alternatives would break
-  login for everyone. This flow covers users with an existing Keycloak SSO session and direct Keycloak logins.
+  replicates the built-in browser flow (cookie, IdP redirector, forms, conditional OTP). The authentication alternatives
+  are nested in a REQUIRED sub-flow (`browser-aihub-authenticate`) because Keycloak ignores ALTERNATIVE executions that
+  share a level with a CONDITIONAL sub-flow — placing the gate next to the alternatives would break login for everyone.
+  This flow covers users with an existing Keycloak SSO session and direct Keycloak logins.
 - `langfuse-gate-post-broker` appended to the existing `Post Broker Login - AIHubAccess Check` flow. This covers fresh
   Azure AD brokered logins, which bypass the remainder of the browser flow after the IdP redirect.
 
@@ -64,8 +64,8 @@ org/project membership on first login.
 
 ### Positive
 
-- Only users with the `AIHubSysAdmin` realm role can log into Langfuse; everyone else is denied at Keycloak with a
-  clear error message, on both fresh logins and existing SSO sessions.
+- Only users with the `AIHubSysAdmin` realm role can log into Langfuse; everyone else is denied at Keycloak with a clear
+  error message, on both fresh logins and existing SSO sessions.
 - No new runtime component; single login flow preserved.
 - Running environments converge automatically on the next deployment (Keycloak container restart) — no manual realm
   surgery, no re-import, no downtime beyond the restart.

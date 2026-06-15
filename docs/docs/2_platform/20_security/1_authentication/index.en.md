@@ -134,6 +134,7 @@ Access is restricted to users with the `AIHubSysAdmin` role directly in Keycloak
 marker client scope `langfuse-sysadmin-gate`, which activates a conditional deny in the authentication flows
 (`browser-aihub` browser flow and the post-broker-login flow). Users without `AIHubSysAdmin` are denied at the Keycloak
 login — on fresh logins via the identity provider as well as on existing SSO sessions.
+
 ## Hardening: Keycloak Admin Console Access
 
 The Keycloak admin console (`https://auth.<domain>/admin/`) is protected by username and password but is accessible from

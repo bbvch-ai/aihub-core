@@ -26,7 +26,8 @@ indication that a one-time web login was required (issue #1315).
 - **Avoid partial, unauthorized accounts**: A bot-provisioned user would still have no tenant membership, roles, or
   active tenant, so they could not actually be authorized to do anything until those were also synthesized — replicating
   significant parts of the login flow outside Keycloak.
-- **Clarity over silent failure**: Whatever the policy, the end user must get an actionable message, not an opaque error.
+- **Clarity over silent failure**: Whatever the policy, the end user must get an actionable message, not an opaque
+  error.
 - **Lowest responsible effort**: The use case (Teams-only onboarding with zero web touch) is not common enough to
   justify reimplementing identity provisioning; a one-time web login is an acceptable prerequisite.
 
@@ -39,9 +40,9 @@ actionable message (`bot.error.user_not_provisioned`, localized in de/en/fr/it) 
 web portal first. The unused `KeycloakAdminService.create_user()` bot-provisioning path is explicitly rejected, not
 adopted.
 
-The typed exception is what makes the message specific: the bot's `handle_exception` distinguishes the
-"not provisioned" case from genuine errors (which keep the generic message) and surfaces the actionable text only for
-the former. The developer-facing reason is still logged at info level.
+The typed exception is what makes the message specific: the bot's `handle_exception` distinguishes the "not provisioned"
+case from genuine errors (which keep the generic message) and surfaces the actionable text only for the former. The
+developer-facing reason is still logged at info level.
 
 ## Consequences
 

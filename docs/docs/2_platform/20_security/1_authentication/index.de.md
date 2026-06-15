@@ -1,6 +1,6 @@
 ---
 title: Authentifizierung und Autorisierung
-source_sha: 50b10d4f1012632658dacf0ba16809b2a98a6aa4f1ce7d53beb127960b67de89
+source_sha: 5bc4d516cb311c1a6793f60b212ec3eda7fc1a23ccc725bcc0f375effbde0dbb
 ---
 
 # Authentifizierung und Autorisierung
