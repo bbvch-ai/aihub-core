@@ -332,7 +332,6 @@ class ProcessService:
                 status_code=409, detail=f"Process instance '{process_class}/{request.process_id}' already exists."
             )
 
-        # Same normalization as update: strip FormKit internal `_`-keys and empty values.
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
         config_model = ModelCreationService.create_process_config_model(

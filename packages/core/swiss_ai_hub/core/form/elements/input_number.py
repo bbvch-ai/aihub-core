@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Annotated, Literal, Self
 
-from pydantic import Field, computed_field, model_validator
+from pydantic import Field, computed_field
 
 from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
@@ -21,12 +21,15 @@ class InputNumber(PrimeVueElement):
     max: Annotated[float | None, Field(description="Maximum value")] = None
     step: Annotated[float | None, Field(description="Step factor for increment/decrement")] = None
     use_grouping: Annotated[bool, Field(description="Whether to use grouping separators", alias="useGrouping")] = True
+    # PrimeVue InputNumber is integer-only unless fraction digits are configured. Default to
+    # accepting up to 6 decimals so fractional fields (e.g. temperature) take a decimal point;
+    # integer-typed fields are still validated as ints by the config model on submit.
     min_fraction_digits: Annotated[
-        int | None, Field(description="Minimum number of fraction digits", alias="minFractionDigits")
-    ] = None
+        int, Field(description="Minimum number of fraction digits", alias="minFractionDigits")
+    ] = 0
     max_fraction_digits: Annotated[
-        int | None, Field(description="Maximum number of fraction digits", alias="maxFractionDigits")
-    ] = None
+        int, Field(description="Maximum number of fraction digits", alias="maxFractionDigits")
+    ] = 6
     locale: Annotated[str | None, Field(description="Locale to use for number formatting")] = None
     mode: Annotated[Literal["decimal", "currency"] | None, Field(description="Input mode")] = None
     currency: Annotated[str | None, Field(description="Currency code for currency mode")] = None
@@ -39,25 +42,6 @@ class InputNumber(PrimeVueElement):
         Literal["stacked", "horizontal"] | None,
         Field(description="Layout of increment/decrement buttons", alias="buttonLayout"),
     ] = None
-
-    @model_validator(mode="after")
-    def _allow_fractional_input(self) -> Self:
-        # PrimeVue InputNumber is integer-only unless fraction digits are configured, so a
-        # fractional field (e.g. temperature with step 0.1) would reject the decimal point.
-        # When unset, allow as many fraction digits as the field's own precision implies.
-        if self.max_fraction_digits is None:
-            numeric = [value for value in (self.step, self.min, self.max, self.value) if isinstance(value, float)]
-            decimals = max((self._decimal_places(value) for value in numeric), default=0)
-            if decimals:
-                self.max_fraction_digits = decimals
-                if self.min_fraction_digits is None:
-                    self.min_fraction_digits = 0
-        return self
-
-    @staticmethod
-    def _decimal_places(value: float) -> int:
-        exponent = Decimal(repr(value)).normalize().as_tuple().exponent
-        return -exponent if isinstance(exponent, int) and exponent < 0 else 0
 
     @computed_field
     @property

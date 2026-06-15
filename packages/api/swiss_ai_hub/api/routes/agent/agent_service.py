@@ -429,8 +429,6 @@ class AgentService:
                 status_code=409, detail=f"Agent instance '{agent_class}/{request.agent_id}' already exists."
             )
 
-        # Same normalization as update: strip FormKit internal `_`-keys and empty values, so a
-        # stray repeater/toggle artifact can never be persisted into config_data.
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
         config_model = ModelCreationService.create_agent_config_model(
