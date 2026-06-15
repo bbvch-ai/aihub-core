@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.296.3] - 2026-06-15 - Enhanced Prompt Configuration for Agents and Steps
+
+### Changed
+
+- 🔗 **Mandatory System Prompts:** The `system_prompt` field for both the **`LLMWrappingAgent`** and **`FewShotStep`** is
+  now mandatory, ensuring that these components always have a defined behavioral context.
+- 📄 **LLMWrappingAgent Prompt Clarity:** The description for the **`LLMWrappingAgent`'s system prompt** has been updated
+  to more accurately reflect its purpose in setting the agent's behavior for the wrapped LLM.
+
+______________________________________________________________________
+
 ## [v0.296.2] - 2026-06-12 - Expanded Security Configuration for Backup Services
 
 ### Added
