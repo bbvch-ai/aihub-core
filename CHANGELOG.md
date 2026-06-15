@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.2] - 2026-06-15 - Improved LiteLLM User & Key Management
+
+### Fixed
+
+- 🐛 **Enhanced LiteLLM provisioning resilience:** Improved the user and API key generation process to gracefully handle
+  concurrent requests and race conditions by treating `409 Conflict` responses for user or key creation as successful,
+  pre-existing entities. This makes the service more robust in high-concurrency environments.
+
+### Refactor
+
+- 🧹 **Streamlined LiteLLM key provisioning:** The internal logic for managing LiteLLM users and API keys has been
+  refactored into distinct, more focused methods (`_create_user_if_absent`, `_generate_key`) to improve clarity,
+  maintainability, and error handling.
+
+### Added
+
+- 🧪 **Comprehensive LiteLLM service unit tests:** Introduced a new suite of unit tests for the `LiteLLMService` covering
+  various scenarios, including existing users, new user creation, and handling of concurrency conflicts during user and
+  key provisioning.
+
+______________________________________________________________________
+
 ## [v0.297.1] - 2026-06-15 - Stricter Langfuse Access Control and Local Dev Setup Enhancements
 
 ### Security
