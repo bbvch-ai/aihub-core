@@ -5,8 +5,10 @@ from llama_index.core.memory import ChatMemoryBuffer
 def _carries_content(message: ChatMessage) -> bool:
     """
     True if the message has something to send to the LLM: non-blank text, or a non-text block
-    (image/audio). Empty-content turns must be dropped — a chat client can capture a streamed answer
-    as an empty assistant message, and most providers reject an empty assistant message with a 400.
+    (image/audio). Empty-content turns are dropped because most providers reject an empty assistant
+    message with a 400. The blank-answer race that produced these is fixed at the source (#1443 drains
+    display-event streams before teardown); this is now a backstop against any empty turn that still
+    slips through (e.g. a cached conversation or a different chat client).
     """
     if str(message.content or "").strip():
         return True

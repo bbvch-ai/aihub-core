@@ -47,9 +47,10 @@ async def do_answer_meta_question(
         workflow=workflow_summary,
         category=event.category,
     )
-    # Drop empty-content turns before prompting: a prior meta answer can be captured empty by the chat
-    # client (its chunks race the stop event), and most providers reject an empty assistant message with
-    # a 400 — which would otherwise blank out this answer too.
+    # Defense in depth: drop empty-content turns before prompting. Most providers reject an empty
+    # assistant message with a 400. The blank-answer race that produced these is fixed at the source
+    # (#1443 drains display-event streams before teardown); this is now a backstop against any empty
+    # turn that still slips through (e.g. a cached conversation or a different chat client).
     non_empty_history = [message for message in chat_history if str(message.content or "").strip()]
     messages = merge_consecutive_messages(
         [*non_empty_history, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)]
