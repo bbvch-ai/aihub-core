@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -17,6 +18,7 @@ from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import Ag
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
+from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import CreateAgentInstanceRequest
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
@@ -415,6 +417,58 @@ class TestGrantCreatorAccess:
         mock_revoke.assert_called_once_with([_ADMIN_RULE])
         mock_delete_role.assert_called_once_with(_ROLE_NAME)
         config_entity.delete.assert_called_once()
+
+
+_MODULE = "swiss_ai_hub.api.routes.agent.agent_service"
+
+
+class TestCreateAgentInstanceGrantWiring:
+    """create_agent_instance only grants when the creator acts within a tenant."""
+
+    @staticmethod
+    def _mock_create_dependencies(stack: ExitStack):
+        class_entity = Mock()
+        class_entity.is_online = True
+        class_entity.agent_config_specs.agent_class = "TestAgent"
+        class_entity.agent_config_specs.agent_config_schema = {}
+        config_entity = Mock()
+        grant = stack.enter_context(patch.object(AgentService, "_grant_creator_access"))
+        stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
+        stack.enter_context(patch(f"{_MODULE}.normalize_empty_objects_to_none", return_value={}))
+        stack.enter_context(patch(f"{_MODULE}.normalize_empty_locale_strings", return_value={}))
+        stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
+        stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
+        stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        stack.enter_context(patch(f"{_MODULE}.FullAgentInstanceDTO"))
+        config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
+        config_doc.find_for_class_and_id.return_value = None
+        config_doc.return_value = config_entity
+        return grant, config_entity
+
+    @pytest.mark.asyncio
+    async def test_skips_grant_for_sysadmin_without_tenant(self):
+        request = CreateAgentInstanceRequest(agent_id="demo", configuration={})
+        user = Mock()
+        user.acting_within_tenant = None
+
+        with ExitStack() as stack:
+            grant, _ = self._mock_create_dependencies(stack)
+            await AgentService.create_agent_instance("TestAgent", request, Mock(spec=LocaleHandler), user=user)
+
+        grant.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_grants_when_acting_within_tenant(self):
+        request = CreateAgentInstanceRequest(agent_id="demo", configuration={})
+        user = Mock()
+        user.acting_within_tenant = Mock()
+
+        with ExitStack() as stack:
+            grant, config_entity = self._mock_create_dependencies(stack)
+            await AgentService.create_agent_instance("TestAgent", request, Mock(spec=LocaleHandler), user=user)
+
+        grant.assert_called_once_with("TestAgent", "demo", user, config_entity)
 
 
 class TestDeleteAgentInstanceCleanup:

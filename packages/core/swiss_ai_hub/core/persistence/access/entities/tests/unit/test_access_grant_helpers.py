@@ -66,6 +66,13 @@ class TestRevokeAccessRuleFromAllTenants:
         assert TenantMetadataEntity.get_metadata_by_tenant_id("t2").access_rules == []
         assert TenantMetadataEntity.get_metadata_by_tenant_id("t3").access_rules == ["aihub.admin.>"]
 
+    def test_is_noop_when_no_tenant_holds_the_rule(self) -> None:
+        TenantMetadataEntity.create_tenant_metadata("t1", "Tenant 1", access_rules=["aihub.admin.>"])
+
+        TenantMetadataEntity.revoke_access_rule_from_all_tenants(["aihub.admin.agent.Gone.gone"])
+
+        assert TenantMetadataEntity.get_metadata_by_tenant_id("t1").access_rules == ["aihub.admin.>"]
+
 
 class TestDeleteRoleFromAllTenants:
     def test_deletes_role_and_unassigns_users(self) -> None:
@@ -79,3 +86,6 @@ class TestDeleteRoleFromAllTenants:
         assert removed == 2
         assert RoleEntity.objects(name=role_name).count() == 0
         assert UserTenantRoleEntity.get_roles_for_user_in_tenant("user1", "t1") == []
+
+    def test_returns_zero_when_role_absent(self) -> None:
+        assert RoleEntity.delete_role_from_all_tenants("agent-Gone-gone-admin") == 0

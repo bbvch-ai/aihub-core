@@ -179,11 +179,9 @@ class TenantMetadataEntity(Document):
         """
         rules_to_remove = set(access_rules)
         for tenant in cls.objects(access_rules__in=list(rules_to_remove)):
-            remaining = [rule for rule in tenant.access_rules if rule not in rules_to_remove]
-            if remaining != tenant.access_rules:
-                tenant.access_rules = remaining
-                tenant.updated_at = datetime.now(UTC)
-                tenant.save()
+            tenant.access_rules = [rule for rule in tenant.access_rules if rule not in rules_to_remove]
+            tenant.updated_at = datetime.now(UTC)
+            tenant.save()
 
     @classmethod
     @trace_fn
