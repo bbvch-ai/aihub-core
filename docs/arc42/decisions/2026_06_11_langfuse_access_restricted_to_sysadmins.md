@@ -51,10 +51,12 @@ regardless of the requested `scope` parameter, so the scope acts as a reliable p
 - `langfuse-gate-post-broker` appended to the existing `Post Broker Login - AIHubAccess Check` flow. This covers fresh
   Azure AD brokered logins, which bypass the remainder of the browser flow after the IdP redirect.
 
-**Reconciliation on running instances**: `keycloak-entrypoint.sh` applies the same configuration idempotently via
-`kcadm` on every container start (create marker scope, attach to client, build the `browser-aihub` flow if absent, add
-the gate sub-flows, bind the realm browser flow). Fresh installations get the identical state declaratively from the
-realm import; every kcadm step checks for existence first and no-ops.
+**Reconciliation on running instances**: the gate is **managed** config — the marker scope, the `langfuse` client's
+default-scope attachment, the `browser-aihub` flow, the gate sub-flows, and the realm `browserFlow` binding are
+reconciled on every container start by the `keycloak-config` service (keycloak-config-cli), so already-running
+deployments converge on the next restart. Fresh installations get the identical state from the first-start realm import.
+(The original implementation reconciled this imperatively via `kcadm` in `keycloak-entrypoint.sh`; it was superseded by
+the declarative pipeline — see ADR `2026_06_12_declarative_keycloak_realm_reconciliation`.)
 
 Langfuse-side settings (`LANGFUSE_DEFAULT_*` auto-provisioning, `AUTH_DISABLE_SIGNUP=false`) are intentionally kept:
 with the Keycloak gate in place, only sysadmins can complete SSO, and auto-provisioning conveniently grants them

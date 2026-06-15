@@ -200,10 +200,13 @@ deployments on the next start.
 
 **Langfuse sysadmin gate**: the `langfuse` client carries the marker client scope `langfuse-sysadmin-gate` (default
 scope, no mappers). It activates a conditional deny sub-flow — deny unless the user has `AIHubSysAdmin` — in the custom
-`browser-aihub` flow (bound as the realm browser flow) and in the `Post Broker Login - AIHubAccess Check` flow. Because
-the realm JSON is only imported on first start and `partialImport` does not support authentication flows,
-`keycloak-entrypoint.sh.j2` reconciles the gate idempotently via `kcadm` on every container start — already-running
-instances converge on the next restart with no manual steps. See ADR
+`browser-aihub` flow (bound as the realm browser flow) and in the `Post Broker Login - AIHubAccess Check` flow. The
+whole gate is **managed** config: the flows, the authenticator configs and the realm `browserFlow` binding live in
+`managed/40-auth-flows.json.j2`, the marker scope in `managed/20-client-scopes.json.j2`, and its attachment to the
+`langfuse` client in `managed/30-clients.json.j2`. keycloak-config-cli reconciles them on every start (no `kcadm` in the
+entrypoint), so already-running instances converge on the next restart. The `browserFlow` binding lives in the managed
+auth-flows file (not bootstrap realm settings) precisely so kcc rebinds it every start — activating the gate on existing
+deployments, not just on the first `--import-realm`. See ADR
 `docs/arc42/decisions/2026_06_11_langfuse_access_restricted_to_sysadmins.md`. The `browser-aihub` flow replicates the
 built-in browser flow and must be reviewed on Keycloak major upgrades. Structural caveat: the authentication
 alternatives (cookie, IdP redirector, forms) are nested in a REQUIRED sub-flow — never place a CONDITIONAL sub-flow at

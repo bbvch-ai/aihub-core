@@ -48,7 +48,9 @@ forcing a credential re-verification at least monthly.
 
 - **`compose-config.yml`** holds the values; both Jinja2 templates below render from it, so there is exactly one place
   to change them.
-- **`keycloak-realm.json.j2`** includes the lifespans in the realm import — fresh installs are correct from first start.
+- **`bootstrap/realm-settings.json.j2`** (merged into `aihub-realm.{stage}.json`) includes the lifespans in the realm
+  import — fresh installs are correct from first start. As bootstrap config they are first-start-only, which is why the
+  entrypoint migration below is needed to reach existing deployments.
 - **`keycloak-entrypoint.sh.j2`** applies the lifespans via `kcadm.sh update realms/aihub` in the post-startup block on
   container start, but **only for fields still holding the Keycloak default** (30 min idle / 10 h max). Existing
   deployments converge on their next Keycloak container recreation, without realm re-import and without touching users,
