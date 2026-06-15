@@ -41,6 +41,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
     LimitChatHistoryWithContextEvent,
 )
 from swiss_ai_hub.agent.context.run.run_context import RunContext
+from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.preconditions import (
     check_context_ready_for_history_limit,
@@ -61,6 +62,8 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_limit_chat_history,
     do_limit_chat_history_with_context,
     do_order_nodes_by_documents,
+    do_persist_grounding_nodes,
+    do_read_carried_grounding_nodes,
     do_rerank_nodes,
     do_respond_with_llm,
     do_retrieve,
@@ -368,8 +371,12 @@ class RAGAgent(Agent):
         t: LocaleHandler,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
+        thread_context: ThreadContext,
     ) -> InOrderNodeCombinerEvent:
-        return await do_order_nodes_by_documents(event, t, agent_config.context_prompt, displayer)
+        carried_nodes = await do_read_carried_grounding_nodes(thread_context)
+        return await do_order_nodes_by_documents(
+            event, t, agent_config.context_prompt, displayer, carried_nodes=carried_nodes
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.name"),
@@ -398,6 +405,25 @@ class RAGAgent(Agent):
             t,
             chat_history=chat_history_event.limited_history,
         )
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.persist_grounding_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.persist_grounding_nodes.description"),
+        icon="mdi:content-save-cog",
+    )
+    async def persist_grounding_nodes_step(
+        self,
+        _: ContextSufficientAcceptEvent,
+        event: RerankerEvent | RetrieverEvent,
+        thread_context: ThreadContext,
+    ) -> None:
+        """Persist this turn's top grounding nodes so a follow-up turn can carry them forward.
+
+        Gated on acceptance so we never persist context the guard judged insufficient. On a multi-hop
+        run the dispatcher injects the latest (approved) RerankerEvent/RetrieverEvent.
+        """
+        nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
+        await do_persist_grounding_nodes(thread_context, nodes or [])
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history_with_context.name"),

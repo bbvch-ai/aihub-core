@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.296.5] - 2026-06-15 - Improved RAG Agent Context Persistence for Follow-up Questions
+
+### Fixed
+
+- 🐛 **RAG Agent follow-up context loss**: Addressed a critical bug where the RAG agent would fail to answer affirmative
+  replies to offered follow-up questions due to the loss of essential grounding context between conversation turns.
+
+### Added
+
+- ✨ **Grounding node persistence**: Introduced a new mechanism to automatically persist and carry over the most relevant
+  grounding documents from a previous turn into the current conversation turn, ensuring continuous context for follow-up
+  questions.
+- 📄 **`grounding_nodes` to `InOrderNodeCombinerEvent`**: Added a new field to the `InOrderNodeCombinerEvent` to
+  explicitly track and expose the complete set of nodes (comprising both fresh retrieval and carried prior-turn nodes)
+  that collectively ground the agent's answer.
+- 🚀 **Dedicated RAG agent steps**: Implemented new workflow steps (`persist_grounding_nodes_step`,
+  `do_read_carried_grounding_nodes`, `do_persist_grounding_nodes`) within the RAG agent to manage the lifecycle and
+  integration of carried grounding nodes.
+- 🧪 **Regression test for follow-up affirmation**: Introduced a comprehensive regression test to validate the fix and
+  prevent future regressions related to context retention in multi-turn follow-up scenarios.
+
+### Changed
+
+- 🔄 **Enhanced context combination logic**: Modified the `order_nodes_by_documents_step` to seamlessly integrate carried
+  grounding nodes alongside newly retrieved content, creating a more robust and complete context for generating
+  responses to follow-up questions.
+
+______________________________________________________________________
+
 ## [v0.296.4] - 2026-06-15 - Enhanced LLM Parameter Precision
 
 ### Changed
