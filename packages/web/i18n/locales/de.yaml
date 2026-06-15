@@ -684,6 +684,7 @@ bar:
   show_notifications: Benachrichtigungen anzeigen
 process:
   title: Prozesse
+  no_results: Keine Prozesse gefunden
   overview:
     name: Name
     class: Klasse
@@ -759,8 +760,10 @@ memory:
   title: Erinnerungen
   graph:
     title: Wissensgraph
+    no_results: Keine Erinnerungen gefunden
   list:
     title: Erinnerungsliste
+    no_results: Keine Erinnerungen gefunden
   detail:
     title: Erinnerungsdetails
     created_at: Erstellt am
