@@ -670,6 +670,7 @@ bar:
   show_notifications: Show notifications
 process:
   title: Processes
+  no_results: No processes found
   overview:
     name: Name
     class: Class
@@ -745,8 +746,10 @@ memory:
   title: Memories
   graph:
     title: Knowledge Graph
+    no_results: No memories found
   list:
     title: Memory List
+    no_results: No memories found
   detail:
     title: Memory Details
     created_at: Created At
