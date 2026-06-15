@@ -33,32 +33,12 @@ GPU_MODES = {False: "", True: ".gpu"}
 CONFIG_SPECS = [
     # Docker Compose - always required
     ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{stage}{hardware}.yml"),
-    # Keycloak bootstrap configs - first-start-only seeds (realm settings, user
-    # profile, startup tenant group, superuser). These are merged into the
-    # aihub-realm file consumed by --import-realm (see generate_keycloak_realm),
-    # AND rendered standalone here so every realm fragment has a visible,
-    # reviewable per-domain output. The standalone bootstrap files are not
-    # mounted into any container — only the merged aihub-realm file is.
-    (
-        "templates/configs/keycloak/bootstrap/realm-settings.json.j2",
-        "configs/keycloak/bootstrap",
-        "realm-settings.{stage}{hardware}.json",
-    ),
-    (
-        "templates/configs/keycloak/bootstrap/components.json.j2",
-        "configs/keycloak/bootstrap",
-        "components.{stage}{hardware}.json",
-    ),
-    (
-        "templates/configs/keycloak/bootstrap/groups.json.j2",
-        "configs/keycloak/bootstrap",
-        "groups.{stage}{hardware}.json",
-    ),
-    (
-        "templates/configs/keycloak/bootstrap/users-superuser.json.j2",
-        "configs/keycloak/bootstrap",
-        "users-superuser.{stage}{hardware}.json",
-    ),
+    # Keycloak bootstrap configs (realm settings, user profile, startup tenant
+    # group, superuser) are first-start-only seeds. They are NOT rendered
+    # standalone here — they are emitted solely through the merged aihub-realm
+    # file consumed by --import-realm (see generate_keycloak_realm /
+    # KEYCLOAK_BOOTSTRAP_TEMPLATES). Bootstrap changes stay reviewable via the
+    # diff of the merged aihub-realm.{stage}.json output.
     # Keycloak managed configs - reconciled on every start by keycloak-config-cli.
     ("templates/configs/keycloak/managed/10-roles.json.j2", "configs/keycloak/managed", "10-roles.{stage}{hardware}.json"),
     (
