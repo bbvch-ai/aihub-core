@@ -48,9 +48,17 @@ client.setConfig({
     if (!route.params.tenant) return
 
     const rawDetail = response._data?.detail
-    const message = typeof rawDetail === 'object' && rawDetail?.message
-      ? rawDetail.message
-      : rawDetail
+
+    let message = rawDetail
+
+    if (typeof rawDetail === 'object' && rawDetail?.message) {
+      message = rawDetail.message
+    }
+
+    if (Array.isArray(rawDetail) && rawDetail.every(e => typeof e.msg === 'string')) {
+      message = rawDetail.map(e => e.msg).join('\n')
+    }
+
     toast.add({
       severity: 'error',
       summary: t(`http_error.code.${response.status}`),
