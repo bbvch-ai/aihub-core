@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.4] - 2026-06-15 - Enhanced Empty State Feedback
+
+### Added
+
+- ✨ **Improved Empty State Feedback:** Introduced clear "no results" messages for the Processes, Memory Graph, and
+  Memory List pages, ensuring users receive visual feedback when no items are available.
+- 📄 **New Localization Strings:** Added new translation keys for "no results" messages across multiple languages
+  (German, English, French, Italian) to support the improved empty state feedback.
+
+______________________________________________________________________
+
+## [v0.297.3] - 2026-06-15 - Streamlined Sysadmin Tenant Routing
+
+### Changed
+
+- 🔄 **Simplified Sysadmin Tenant Paths:** The `/sysadmin` URL prefix has been removed from all tenant administration
+  routes. Sysadmin functionality is now directly accessible under `/tenants`, making the URL structure more concise and
+  aligned with the sysadmin application's primary function.
+- 🧹 **Refined `useTenantPath` Logic:** The `useTenantPath` composable now explicitly focuses on generating paths for
+  tenant-scoped `/[tenant]/...` routes. Sysadmin routes (`/tenants/...`) are now treated as absolute and no longer
+  require dynamic tenant injection through this composable, clarifying and streamlining path generation logic.
+- 📄 **Updated Sysadmin Documentation:** The project documentation has been updated to reflect the new, simplified
+  sysadmin routing structure, providing clearer guidance on tenant administration paths.
+
+______________________________________________________________________
+
+## [v0.297.2] - 2026-06-15 - Improved LiteLLM User & Key Management
+
+### Fixed
+
+- 🐛 **Enhanced LiteLLM provisioning resilience:** Improved the user and API key generation process to gracefully handle
+  concurrent requests and race conditions by treating `409 Conflict` responses for user or key creation as successful,
+  pre-existing entities. This makes the service more robust in high-concurrency environments.
+
+### Refactor
+
+- 🧹 **Streamlined LiteLLM key provisioning:** The internal logic for managing LiteLLM users and API keys has been
+  refactored into distinct, more focused methods (`_create_user_if_absent`, `_generate_key`) to improve clarity,
+  maintainability, and error handling.
+
+### Added
+
+- 🧪 **Comprehensive LiteLLM service unit tests:** Introduced a new suite of unit tests for the `LiteLLMService` covering
+  various scenarios, including existing users, new user creation, and handling of concurrency conflicts during user and
+  key provisioning.
+
+______________________________________________________________________
+
 ## [v0.297.1] - 2026-06-15 - Stricter Langfuse Access Control and Local Dev Setup Enhancements
 
 ### Security

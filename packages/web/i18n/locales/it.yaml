@@ -680,6 +680,7 @@ bar:
   show_notifications: Mostra notifiche
 process:
   title: Processi
+  no_results: Nessun processo trovato
   overview:
     name: Nome
     class: Classe
@@ -755,8 +756,10 @@ memory:
   title: Ricordi
   graph:
     title: Grafo della conoscenza
+    no_results: Nessun ricordo trovato
   list:
     title: Elenco dei ricordi
+    no_results: Nessun ricordo trovato
   detail:
     title: Dettagli del ricordo
     created_at: Creato il
