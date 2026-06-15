@@ -5,6 +5,235 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.1] - 2026-06-15 - Stricter Langfuse Access Control and Local Dev Setup Enhancements
+
+### Security
+
+- 🔑 **Restricted Langfuse UI Access:** Implemented Keycloak-level access control for the Langfuse UI, ensuring that only
+  users with the `AIHubSysAdmin` realm role can log in. This prevents unauthorized users from viewing sensitive trace
+  data by denying access directly at the Keycloak login flow.
+- 🔑 **Idempotent Keycloak Flow Reconciliation:** Added robust scripting to the Keycloak entrypoint that idempotently
+  applies authentication flow configurations, including the new Langfuse access gate, on every container start. This
+  ensures security policies are consistently enforced across all deployments, especially existing ones.
+- 📄 **Documented Langfuse Sysadmin Gate:** Introduced new architecture decision records (ADRs) and comprehensive
+  deep-dive documentation explaining the detailed mechanism, rationale, and structural rules for the Langfuse sysadmin
+  gate within Keycloak.
+- 📄 **Updated Observability and Authentication Documentation:** Enhanced platform documentation in both English and
+  German to clearly reflect the new Langfuse access restrictions and the role of the `AIHubSysAdmin` in controlling
+  access to administrative tools.
+
+### Fixed
+
+- 🐛 **Langfuse OIDC Callback in Local Environments:** Resolved an issue where Langfuse's OIDC backchannel to Keycloak
+  would fail in local and build environments when using self-signed `mkcert` certificates. The Langfuse container now
+  correctly trusts the `mkcert` root CA, allowing successful OIDC authentication.
+
+### Added
+
+- 🛠️ **Automated `mkcert` Root CA Copy:** The `make local-cert` command now automatically copies the `mkcert` root CA
+  certificate into the Traefik certificates directory, streamlining local development setup for secure communication.
+- 📄 **Keycloak Configuration Deep-Dive:** Added new, comprehensive documentation sections providing an overview of the
+  `aihub` Keycloak realm, including its clients, scopes, roles, tenant groups, identity brokering, and the mechanisms by
+  which configuration changes are applied to running instances.
+
+### Changed
+
+- ⚙️ **Keycloak Realm Configuration Update:** Modified the Keycloak realm configuration across all deployment stages to
+  bind a custom browser flow and introduce a new marker client scope (`langfuse-sysadmin-gate`), enabling the
+  conditional access denial logic for Langfuse.
+- 🧹 **Documentation Sync Exclusions:** Updated the documentation synchronization script and `.gitignore` to specifically
+  preserve hand-authored Keycloak configuration deep-dive documentation sections during automated content updates.
+
+### Refactor
+
+- 📄 **Minor Documentation Adjustments:** Performed various minor formatting and wording adjustments across several
+  existing documentation files to improve clarity and readability.
+
+______________________________________________________________________
+
+## [v0.297.0] - 2026-06-15 - Self-Aware Agents: Sm🧠rter Conversations and Robust Workflows
+
+### Added
+
+- 🦾 **Agent Self-Awareness Feature:** Introduced the ability for conversational agents to detect and answer
+  meta-questions about themselves (e.g., "What can you do?", "Who are you?") based on their identity, capabilities, and
+  behavior, instead of running their normal pipeline.
+- ✨ **New Self-Awareness Events:** Created `MetaQuestionDetectedEvent` to signal when a user's query is a meta-question
+  about the agent, and `NotAMetaQuestionEvent` to act as an "all-clear" gate, releasing the agent's normal workflow.
+- 💬 **Localized Meta-Question Handling:** Added comprehensive i18n support for self-awareness steps, detection prompts,
+  and answer prompts, enabling agents to respond to meta-questions in multiple languages.
+- 📄 **Workflow Mermaid Flowchart Generation:** Implemented a new utility to generate Mermaid flowcharts of an agent's
+  workflow (excluding self-awareness steps) to help ground the agent's answers to meta-questions about its processes.
+- 🧪 **Comprehensive Self-Awareness Testing:** Introduced a suite of unit and integration tests, including a compliance
+  test, to ensure self-awareness features are correctly wired into conversational agents and prevent common pitfalls
+  like race conditions.
+- 🖼️ **UI Support for Meta-Question Events:** Added a new Vue component to display `MetaQuestionDetectedEvent` in the
+  UI, providing visual feedback when an agent is handling a meta-question.
+
+### Changed
+
+- 🔄 **Conversational Agents Integrated with Self-Awareness:** The `RAGAgent`, `ExpertRAGAgent`, `FewShotAgent`,
+  `LLMWrappingAgent`, `McpReactAgent`, and `NamespaceSelectionAgent` blueprints now explicitly define steps for
+  detecting and answering meta-questions, and their entry points are gated to prevent conflicts.
+- 📝 **Updated Agent Documentation and Guidance:** Refreshed the `SKILL.md` and `CLAUDE.md` documents with detailed
+  guidelines on integrating and testing self-awareness in new and existing conversational agents.
+
+### Fixed
+
+- 🐛 **Robust Chat History Limiting:** Enhanced the chat history limiting mechanism to proactively filter out empty chat
+  messages, preventing potential 400 errors from LLM providers and improving overall agent reliability.
+
+### Refactor
+
+- 🧹 **Decoupled Self-Awareness Implementation:** Architecturally decided to implement self-awareness as explicit,
+  per-agent steps rather than a shared base-class mixin. This keeps agent workflows transparent and avoids invasive
+  changes to core `Agent` machinery, ensuring cleaner integration and easier debugging.
+
+______________________________________________________________________
+
+## [v0.296.5] - 2026-06-15 - Improved RAG Agent Context Persistence for Follow-up Questions
+
+### Fixed
+
+- 🐛 **RAG Agent follow-up context loss**: Addressed a critical bug where the RAG agent would fail to answer affirmative
+  replies to offered follow-up questions due to the loss of essential grounding context between conversation turns.
+
+### Added
+
+- ✨ **Grounding node persistence**: Introduced a new mechanism to automatically persist and carry over the most relevant
+  grounding documents from a previous turn into the current conversation turn, ensuring continuous context for follow-up
+  questions.
+- 📄 **`grounding_nodes` to `InOrderNodeCombinerEvent`**: Added a new field to the `InOrderNodeCombinerEvent` to
+  explicitly track and expose the complete set of nodes (comprising both fresh retrieval and carried prior-turn nodes)
+  that collectively ground the agent's answer.
+- 🚀 **Dedicated RAG agent steps**: Implemented new workflow steps (`persist_grounding_nodes_step`,
+  `do_read_carried_grounding_nodes`, `do_persist_grounding_nodes`) within the RAG agent to manage the lifecycle and
+  integration of carried grounding nodes.
+- 🧪 **Regression test for follow-up affirmation**: Introduced a comprehensive regression test to validate the fix and
+  prevent future regressions related to context retention in multi-turn follow-up scenarios.
+
+### Changed
+
+- 🔄 **Enhanced context combination logic**: Modified the `order_nodes_by_documents_step` to seamlessly integrate carried
+  grounding nodes alongside newly retrieved content, creating a more robust and complete context for generating
+  responses to follow-up questions.
+
+______________________________________________________________________
+
+## [v0.296.4] - 2026-06-15 - Enhanced LLM Parameter Precision
+
+### Changed
+
+- 🎨 Improved the display precision of the **LLM temperature parameter** slider in the UI, ensuring it shows a maximum of
+  one decimal place for better readability and user experience.
+
+______________________________________________________________________
+
+## [v0.296.3] - 2026-06-15 - Enhanced Prompt Configuration for Agents and Steps
+
+### Changed
+
+- 🔗 **Mandatory System Prompts:** The `system_prompt` field for both the **`LLMWrappingAgent`** and **`FewShotStep`** is
+  now mandatory, ensuring that these components always have a defined behavioral context.
+- 📄 **LLMWrappingAgent Prompt Clarity:** The description for the **`LLMWrappingAgent`'s system prompt** has been updated
+  to more accurately reflect its purpose in setting the agent's behavior for the wrapped LLM.
+
+______________________________________________________________________
+
+## [v0.296.2] - 2026-06-12 - Expanded Security Configuration for Backup Services
+
+### Added
+
+- 🔑 **Added Keycloak OAuth2 Proxy Secret for Backup Service:** Introduced support for a new
+  `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` environment variable across all Docker Compose configurations, enabling secure
+  access to a dedicated backup service via Keycloak OAuth2 Proxy.
+
+______________________________________________________________________
+
+## [v0.296.1] - 2026-06-11 - Deployment: Enhanced Traefik Network Integration
+
+### Changed
+
+- 🌐 **Enhanced Traefik network configuration:** Explicitly assigned the Langfuse service to the `proxy` network for
+  Traefik, improving routing and integration in self-hosted Docker deployments.
+
+______________________________________________________________________
+
+## [v0.296.0] - 2026-06-11 - Empowering Data Discovery: Advanced Filtering, Search, and Sorting for Agents and Threads
+
+### Added
+
+- ✨ **Agent Instance Filtering and Search:** Introduced new API capabilities and corresponding UI elements allowing
+  users to filter agent instances by **class** and search by **name**, significantly improving agent discovery.
+- 🚀 **Advanced Thread Management:** Implemented comprehensive filtering options for threads, including search by
+  **name**, filtering by associated **agent ID**, specific **user ID**, run **status** (active, completed, failed), and
+  a flexible **date range**.
+- 📈 **Thread Sorting Capabilities:** Added the ability to sort threads by **name** or **creation date** in both
+  ascending and descending order, providing more control over how threads are organized and viewed.
+- 🦾 **Thread Status Classification:** Introduced robust backend logic to accurately classify threads into `active`,
+  `completed`, or `failed` states based on their agent event history, enabling precise status filtering.
+
+### Changed
+
+- 🔄 **API Query Parameter Expansion:** The `getAllAgentInstances` and `getPaginatedThreadsForUser` API endpoints have
+  been extended to support the new filtering, searching, and sorting parameters, providing more powerful data retrieval.
+- 🌐 **UI Enhancements for Agents and Threads:** The web interface for both Agent Instances and Threads has been
+  significantly updated to expose and utilize all new filtering, search, and sorting functionalities, improving user
+  experience and data navigation.
+
+### Refactor
+
+- 🧹 **Optimized Agent Configuration Search:** Refactored the agent configuration search logic to support multilingual,
+  case-insensitive substring matching for agent names, enhancing search flexibility.
+- ⚙️ **Streamlined Thread Query Logic:** Introduced dedicated helper methods (`_apply_filters`, `get_order_by`) within
+  the `ThreadEntity` for more modular, efficient, and maintainable query construction.
+
+______________________________________________________________________
+
+## [v0.295.4] - 2026-06-11 - Improved Authentication Flow and Persistent User Sessions
+
+### Added
+
+- ✨ **Architectural Decision Record for Keycloak Sessions:** Documented the rationale, drivers, and implementation
+  details for extending Keycloak Single Sign-On (SSO) session lifespans, outlining the benefits for user experience and
+  system behavior.
+- ⚙️ **Centralized Keycloak Session Configuration:** Introduced new configuration parameters (`sso_session_idle_timeout`
+  and `sso_session_max_lifespan`) in `compose-config.yml`, providing a single source of truth for Keycloak realm session
+  settings.
+
+### Changed
+
+- 🚀 **Extended Keycloak SSO Session Lifespans:** Increased Keycloak SSO session idle timeout to 5 days and maximum
+  lifespan to 30 days. This significantly reduces the frequency of forced re-logins, allowing users to stay logged in
+  across nights and weekends for a smoother experience.
+- 🔄 **Automatic Keycloak Session Lifespan Migration:** Implemented logic within the Keycloak entrypoint script to
+  automatically update SSO session lifespans for existing deployments. This ensures that environments originally
+  configured with Keycloak's default short lifespans are automatically upgraded to the new, longer durations without
+  overwriting manual operator customizations.
+- ⚡️ **Optimized Home Page Redirection:** Enhanced the login experience by implementing smart redirection. Users are now
+  automatically directed to their last active tenant after successful login or silent token renewal, leveraging
+  persisted active tenant information.
+
+______________________________________________________________________
+
+## [v0.295.3] - 2026-06-11 - Improved Streaming State and Richer Responses
+
+### Refactor
+
+- 🧹 **Enhanced Streaming State Management Initialization:** The `StreamingStateManager` is now initialized earlier in
+  the processing pipeline, ensuring comprehensive state capture from the very beginning of a request.
+
+### Changed
+
+- ⚡️ **Richer Output for Successful Operations:** The pipeline now consistently returns serialized HTML content from the
+  streaming state manager upon successful completion, providing more detailed and structured results to the user
+  interface.
+- 📄 **Contextual Error Reporting:** Error messages now include any available partial streaming state (serialized as
+  HTML) alongside the error details. This provides users with more context and partial results, making it easier to
+  understand and debug issues.
+
+______________________________________________________________________
+
 ## [v0.295.2] - 2026-06-11 - Improved Tenant Management and Documentation Clarity
 
 ### Added

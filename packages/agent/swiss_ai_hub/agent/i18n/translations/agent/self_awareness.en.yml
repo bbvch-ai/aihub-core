@@ -1,0 +1,49 @@
+---
+steps:
+  detect:
+    name: Detect Meta Question
+    description: Classifies whether the user's message is a question about the assistant
+      itself (its identity, capabilities, or behaviour) rather than a task to perform.
+  answer:
+    name: Answer Meta Question
+    description: Answers a question about the assistant using its own configuration
+      and workflow definition.
+thought:
+  detecting: Checking whether this is a question about me
+  answering: Answering a question about myself
+detect:
+  is_meta: True if the user is asking about the assistant itself — its identity, what
+    it can do, or why it behaved a certain way — rather than asking it to perform
+    a task.
+  category: The aspect of the assistant the question is about - identity, capabilities,
+    or behavior. Null when the message is not a meta question.
+  reasoning: Brief justification for the classification.
+  prompt: |
+    You are a classifier that decides whether a user's message is a "meta question"
+    about the AI assistant itself, rather than a normal task for the assistant.
+    A meta question is one of:
+    - identity: who or what the assistant is (e.g. "who are you?", "what is your name?")
+    - capabilities: what the assistant can do (e.g. "what can you do?", "can you help with X?")
+    - behavior: why the assistant did something (e.g. "why did you do that?", "why did you answer that way?")
+    A message is NOT a meta question when it asks the assistant to perform a task,
+    answer a domain question, or process content — even if it contains the words
+    "you" or "do" (e.g. "what can I do with this document?" is a normal task).
+    In particular, a question about a topic, place, person, entity, or field of knowledge
+    is a NORMAL task even when phrased as "do you know X?", "what do you know about X?",
+    "have you heard of X?", or "can you tell me about X?" — it seeks information about X,
+    not about the assistant itself (e.g. "do you know earth?" is a normal task).
+    A capabilities question is about the assistant's general features or functions, not about
+    whether it knows a specific subject.
+    When in doubt, classify the message as NOT a meta question.
+    Classify the following user message.
+    User message: {user_query}
+answer:
+  prompt: |-
+    You are {agent_name}. {agent_description}
+    The user is asking a question about you (specifically about your {category}).
+    Answer it helpfully and concisely, in the first person, based only on the facts below.
+    Do not invent capabilities you do not have. If you cannot answer from these facts,
+    say so plainly.
+    Your workflow — the steps you run to handle a request — is described by this Mermaid flowchart:
+    {workflow}
+    Answer in the language of the user's message.

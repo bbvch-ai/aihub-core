@@ -797,7 +797,15 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
-    ports: [6006:3000]
+    ports:
+      - 6006:3000
+    # auth.${DOMAIN} (nip.io) resolves to 127.0.0.1 — the container's own loopback;
+    # route it to the host's Traefik so the OIDC backchannel to Keycloak succeeds.
+    extra_hosts:
+      - auth.${DOMAIN}:host-gateway
+    # Mount the mkcert root CA (from `make local-cert`); NODE_EXTRA_CA_CERTS (below)
+    # trusts it so the OIDC backchannel to Traefik's self-signed cert validates.
+    volumes: [./configs/traefik/certs/rootCA.pem:/certs/rootCA.pem:ro]
     environment:
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: https://langfuse.${DOMAIN}
@@ -845,6 +853,7 @@ services:
       AUTH_KEYCLOAK_CLIENT_ID: langfuse
       AUTH_KEYCLOAK_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       AUTH_KEYCLOAK_ISSUER: https://auth.${DOMAIN}/realms/aihub
+      NODE_EXTRA_CA_CERTS: /certs/rootCA.pem
       AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING: 'true'
       # Auto-provisioning — SSO users get MEMBER in the AI-Hub org/project
       LANGFUSE_DEFAULT_ORG_ID: aihub-org
@@ -870,6 +879,7 @@ services:
         max-file: 2
     labels:
       - traefik.enable=true
+      - traefik.docker.network=proxy
       - traefik.http.routers.langfuse.rule=Host(`langfuse.${DOMAIN}`)
       - traefik.http.routers.langfuse.priority=4000
       - traefik.http.routers.langfuse.entrypoints=websecure
@@ -926,6 +936,7 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
