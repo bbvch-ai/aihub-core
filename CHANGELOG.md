@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.0] - 2026-06-15 - Self-Aware Agents: Sm🧠rter Conversations and Robust Workflows
+
+### Added
+
+- 🦾 **Agent Self-Awareness Feature:** Introduced the ability for conversational agents to detect and answer
+  meta-questions about themselves (e.g., "What can you do?", "Who are you?") based on their identity, capabilities, and
+  behavior, instead of running their normal pipeline.
+- ✨ **New Self-Awareness Events:** Created `MetaQuestionDetectedEvent` to signal when a user's query is a meta-question
+  about the agent, and `NotAMetaQuestionEvent` to act as an "all-clear" gate, releasing the agent's normal workflow.
+- 💬 **Localized Meta-Question Handling:** Added comprehensive i18n support for self-awareness steps, detection prompts,
+  and answer prompts, enabling agents to respond to meta-questions in multiple languages.
+- 📄 **Workflow Mermaid Flowchart Generation:** Implemented a new utility to generate Mermaid flowcharts of an agent's
+  workflow (excluding self-awareness steps) to help ground the agent's answers to meta-questions about its processes.
+- 🧪 **Comprehensive Self-Awareness Testing:** Introduced a suite of unit and integration tests, including a compliance
+  test, to ensure self-awareness features are correctly wired into conversational agents and prevent common pitfalls
+  like race conditions.
+- 🖼️ **UI Support for Meta-Question Events:** Added a new Vue component to display `MetaQuestionDetectedEvent` in the
+  UI, providing visual feedback when an agent is handling a meta-question.
+
+### Changed
+
+- 🔄 **Conversational Agents Integrated with Self-Awareness:** The `RAGAgent`, `ExpertRAGAgent`, `FewShotAgent`,
+  `LLMWrappingAgent`, `McpReactAgent`, and `NamespaceSelectionAgent` blueprints now explicitly define steps for
+  detecting and answering meta-questions, and their entry points are gated to prevent conflicts.
+- 📝 **Updated Agent Documentation and Guidance:** Refreshed the `SKILL.md` and `CLAUDE.md` documents with detailed
+  guidelines on integrating and testing self-awareness in new and existing conversational agents.
+
+### Fixed
+
+- 🐛 **Robust Chat History Limiting:** Enhanced the chat history limiting mechanism to proactively filter out empty chat
+  messages, preventing potential 400 errors from LLM providers and improving overall agent reliability.
+
+### Refactor
+
+- 🧹 **Decoupled Self-Awareness Implementation:** Architecturally decided to implement self-awareness as explicit,
+  per-agent steps rather than a shared base-class mixin. This keeps agent workflows transparent and avoids invasive
+  changes to core `Agent` machinery, ensuring cleaner integration and easier debugging.
+
+______________________________________________________________________
+
 ## [v0.296.5] - 2026-06-15 - Improved RAG Agent Context Persistence for Follow-up Questions
 
 ### Fixed
