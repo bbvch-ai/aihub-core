@@ -194,6 +194,15 @@
           }
         }
       ]
+    },
+    {
+      "name": "langfuse-sysadmin-gate",
+      "description": "Marker scope (no mappers). Presence as a default client scope activates the AIHubSysAdmin deny gate in the authentication flows.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      }
     }
   ]
 }

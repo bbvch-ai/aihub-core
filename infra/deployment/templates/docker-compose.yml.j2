@@ -925,6 +925,16 @@ services:
     ports:
       - "6006:3000"
     {%- endif %}
+    {%- if stage in ['local', 'build'] %}
+    # auth.${DOMAIN} (nip.io) resolves to 127.0.0.1 — the container's own loopback;
+    # route it to the host's Traefik so the OIDC backchannel to Keycloak succeeds.
+    extra_hosts:
+      - "auth.${DOMAIN}:host-gateway"
+    # Mount the mkcert root CA (from `make local-cert`); NODE_EXTRA_CA_CERTS (below)
+    # trusts it so the OIDC backchannel to Traefik's self-signed cert validates.
+    volumes:
+      - "./configs/traefik/certs/rootCA.pem:/certs/rootCA.pem:ro"
+    {%- endif %}
     environment:
       HOSTNAME: "0.0.0.0"
       NEXTAUTH_URL: {{ LANGFUSE_NEXTAUTH_URL }}
@@ -975,6 +985,9 @@ services:
       AUTH_KEYCLOAK_ISSUER: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}
       {%- else %}
       AUTH_KEYCLOAK_ISSUER: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}
+      {%- endif %}
+      {%- if stage in ['local', 'build'] %}
+      NODE_EXTRA_CA_CERTS: /certs/rootCA.pem
       {%- endif %}
       AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING: "true"
       # Auto-provisioning — SSO users get MEMBER in the AI-Hub org/project

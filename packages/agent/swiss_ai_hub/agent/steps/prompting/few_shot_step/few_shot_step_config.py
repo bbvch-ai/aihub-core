@@ -17,9 +17,9 @@ class FewShotStepConfig(StepConfig):
         Field(description="List of few-shot examples to guide the agent's responses.", title="Few-Shot Examples"),
     ] = []
     system_prompt: Annotated[
-        LocaleString | LocaleInput | None,
+        LocaleString | LocaleInput,
         Field(description="System prompt that sets the context for few-shot learning."),
-    ] = None
+    ]
 
     @classmethod
     def as_form(cls) -> Self:

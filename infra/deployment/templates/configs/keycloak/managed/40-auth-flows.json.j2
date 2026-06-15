@@ -9,9 +9,15 @@
    per-entity-type single-file constraint). Imported after the realm roles
    (10) referenced in the authenticator config, and before the identity
    providers (50) whose postBrokerLoginFlowAlias points at the top-level flow.
+
+   browserFlow is bound here (not in the bootstrap realm settings) so that
+   keycloak-config-cli rebinds the custom browser flow on every start — this
+   activates the Langfuse sysadmin gate on already-initialized deployments,
+   not just on the first --import-realm.
 -#}
 {
   "realm": "aihub",
+  "browserFlow": "browser-aihub",
   "authenticationFlows": [
     {
       "alias": "Post Broker Login - AIHubAccess Check",
@@ -33,6 +39,13 @@
           "priority": 1,
           "userSetupAllowed": false,
           "autheticatorFlow": false
+        },
+        {
+          "flowAlias": "langfuse-gate-post-broker",
+          "requirement": "CONDITIONAL",
+          "priority": 2,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
         }
       ]
     },
@@ -60,6 +73,171 @@
           "autheticatorFlow": false
         }
       ]
+    },
+    {
+      "alias": "browser-aihub",
+      "description": "Browser flow with a deny gate for clients carrying the langfuse-sysadmin-gate scope. Replicates the built-in browser flow (cookie, IdP redirector, forms, conditional OTP); review on Keycloak major upgrades.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "flowAlias": "browser-aihub-authenticate",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        },
+        {
+          "flowAlias": "langfuse-gate-browser",
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-aihub-authenticate",
+      "description": "Authentication alternatives of the built-in browser flow, nested in a REQUIRED sub-flow so the CONDITIONAL gate does not disable them.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "requirement": "ALTERNATIVE",
+          "priority": 25,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "flowAlias": "browser-aihub-forms",
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-aihub-forms",
+      "description": "Username, password, otp and other auth forms.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "flowAlias": "browser-aihub-conditional-2fa",
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-aihub-conditional-2fa",
+      "description": "Flow to determine if the OTP is required for the authentication.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-configured",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    },
+    {
+      "alias": "langfuse-gate-browser",
+      "description": "Conditional sub-flow: deny clients carrying the langfuse-sysadmin-gate scope unless the user has the AIHubSysAdmin role",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-client-scope",
+          "authenticatorConfig": "langfuse-gate-browser-scope-condition",
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "langfuse-gate-browser-role-condition",
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "langfuse-gate-browser-deny-message",
+          "requirement": "REQUIRED",
+          "priority": 2,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    },
+    {
+      "alias": "langfuse-gate-post-broker",
+      "description": "Conditional sub-flow: deny clients carrying the langfuse-sysadmin-gate scope unless the user has the AIHubSysAdmin role",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-client-scope",
+          "authenticatorConfig": "langfuse-gate-post-broker-scope-condition",
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "langfuse-gate-post-broker-role-condition",
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "langfuse-gate-post-broker-deny-message",
+          "requirement": "REQUIRED",
+          "priority": 2,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
     }
   ],
 
@@ -75,6 +253,46 @@
       "alias": "aihub-access-deny-message",
       "config": {
         "error_message": "Access denied. You need the AIHubAccess role to use AI-Hub. Please contact your administrator."
+      }
+    },
+    {
+      "alias": "langfuse-gate-browser-scope-condition",
+      "config": {
+        "client_scope": "langfuse-sysadmin-gate",
+        "negate": "false"
+      }
+    },
+    {
+      "alias": "langfuse-gate-browser-role-condition",
+      "config": {
+        "condUserRole": "AIHubSysAdmin",
+        "negate": "true"
+      }
+    },
+    {
+      "alias": "langfuse-gate-browser-deny-message",
+      "config": {
+        "error_message": "Access denied. Langfuse is restricted to system administrators (AIHubSysAdmin). Please contact your administrator."
+      }
+    },
+    {
+      "alias": "langfuse-gate-post-broker-scope-condition",
+      "config": {
+        "client_scope": "langfuse-sysadmin-gate",
+        "negate": "false"
+      }
+    },
+    {
+      "alias": "langfuse-gate-post-broker-role-condition",
+      "config": {
+        "condUserRole": "AIHubSysAdmin",
+        "negate": "true"
+      }
+    },
+    {
+      "alias": "langfuse-gate-post-broker-deny-message",
+      "config": {
+        "error_message": "Access denied. Langfuse is restricted to system administrators (AIHubSysAdmin). Please contact your administrator."
       }
     }
   ]

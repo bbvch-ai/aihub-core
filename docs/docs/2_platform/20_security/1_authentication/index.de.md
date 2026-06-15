@@ -1,6 +1,6 @@
 ---
 title: Authentifizierung und Autorisierung
-source_sha: e9401e790f17f66b173adbb928e5d9d0d173bbe479583ba521b334a0939e5733
+source_sha: 18e217226f9c432c5d90abe9f5ab364a2dfc8e8523885a237826d9c89dc946b7
 ---
 
 # Authentifizierung und Autorisierung
@@ -139,7 +139,16 @@ können auf diese Services zugreifen.
 Aufgrund des Split-Horizon-Netzwerks in Docker-Deployments (Container verwenden interne Hostnamen, Browser externe URLs)
 wird die OIDC-Erkennung übersprungen und Endpunkte werden explizit konfiguriert.
 
-## Härtung: Keycloak Admin Console Zugriff
+## Langfuse-Zugriff
+
+Langfuse sitzt nicht hinter einem OAuth2 Proxy — es nutzt seine native Keycloak-SSO-Integration (OIDC-Client
+`langfuse`). Der Zugriff ist direkt in Keycloak auf Benutzer mit der Rolle `AIHubSysAdmin` beschränkt: Der
+`langfuse`-Client trägt den Marker-Client-Scope `langfuse-sysadmin-gate`, der eine bedingte Zugriffsverweigerung in den
+Authentifizierungs-Flows aktiviert (Browser-Flow `browser-aihub` und Post-Broker-Login-Flow). Benutzer ohne
+`AIHubSysAdmin` werden beim Keycloak-Login abgewiesen — sowohl bei neuen Logins über den Identity Provider als auch bei
+bestehenden SSO-Sitzungen.
+
+## Härtung: Zugriff auf die Keycloak Admin Console
 
 Die Keycloak Admin Console (`https://auth.<domain>/admin/`) ist durch Benutzername und Passwort geschützt, aber
 standardmässig von jeder IP-Adresse aus zugänglich. Für Produktions-Deployments wird dringend empfohlen, den Zugriff auf
@@ -191,10 +200,10 @@ verwaltet (siehe [Berechtigungen](../../11_access_management/2_permissions/)).
 
 Zwei Realm-Rollen wirken sich auf die Plattform aus:
 
-| Rolle           | Effekt                                                                                                                                                            |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AIHubAccess`   | Erforderlich für den Plattform-Login. Benutzern ohne diese Rolle wird der Zugriff im Keycloak Login Flow verweigert.                                              |
-| `AIHubSysAdmin` | Plattform-Administrator. Wird aus dem Token gelesen, um Admin-Zugriff zu gewähren und die OAuth2-Proxy Admin Tools (Dagster, Attu, SeaweedFS, Backup) zu steuern. |
+| Rolle           | Effekt                                                                                                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AIHubAccess`   | Für den Plattform-Login erforderlich. Benutzer ohne diese Rolle werden im Keycloak Login Flow abgelehnt.                                                                      |
+| `AIHubSysAdmin` | Plattform-Administrator. Wird vom Token gelesen, um Admin-Zugriff zu gewähren und die OAuth2-Proxy Admin-Tools (Dagster, Attu, SeaweedFS, Backup) sowie Langfuse zu schützen. |
 
 ::: info Realm-Rollen vs. Plattform-Rollen
 Das `aihub`-Realm definiert nur diese beiden Rollen. Feingranulare, alltägliche Berechtigungen werden separat durch

@@ -1,0 +1,60 @@
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.events.agent import LLMStopEvent, MetaQuestionDetectedEvent, NotAMetaQuestionEvent
+from swiss_ai_hub.core.generative_ai import LLMConfig, merge_consecutive_messages
+from swiss_ai_hub.core.i18n import LocaleHandler
+
+from swiss_ai_hub.agent.self_awareness.meta_question_detector import detect_meta_question
+
+
+async def do_detect_meta_question(
+    user_query: str,
+    llm_config: LLMConfig,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
+    """Classify the user message and emit the routing event for the self-awareness branch."""
+    await displayer.display_thought(t("agent.self_awareness.thought.detecting"))
+
+    async with llm_config.cost_reporting_llm(displayer) as llm:
+        classification = await detect_meta_question(llm=llm, t=t, user_query=user_query)
+
+    if classification.is_meta_question and classification.category is not None:
+        return MetaQuestionDetectedEvent(
+            user_query=user_query,
+            category=classification.category,
+            reasoning=classification.reasoning,
+        )
+    return NotAMetaQuestionEvent(reasoning=classification.reasoning)
+
+
+async def do_answer_meta_question(
+    event: MetaQuestionDetectedEvent,
+    agent_name: str,
+    agent_description: str,
+    workflow_summary: str,
+    chat_history: list[ChatMessage],
+    llm_config: LLMConfig,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> LLMStopEvent:
+    """Answer a meta question from the agent's own identity and workflow, then stop the run."""
+    await displayer.display_thought(t("agent.self_awareness.thought.answering"))
+
+    system_prompt = t("agent.self_awareness.answer.prompt").format(
+        agent_name=agent_name,
+        agent_description=agent_description,
+        workflow=workflow_summary,
+        category=event.category,
+    )
+    # Defense in depth: drop empty-content turns before prompting. Most providers reject an empty
+    # assistant message with a 400. The blank-answer race that produced these is fixed at the source
+    # (#1443 drains display-event streams before teardown); this is now a backstop against any empty
+    # turn that still slips through (e.g. a cached conversation or a different chat client).
+    non_empty_history = [message for message in chat_history if str(message.content or "").strip()]
+    messages = merge_consecutive_messages(
+        [*non_empty_history, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)]
+    )
+
+    async with llm_config.cost_reporting_llm(displayer) as llm:
+        return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=True)
