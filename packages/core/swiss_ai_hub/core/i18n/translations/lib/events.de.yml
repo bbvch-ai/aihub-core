@@ -57,6 +57,11 @@ guard_rejection_event:
   name: Anfrage abgelehnt
   description: Die Anfrage wurde aus Sicherheitsgründen oder wegen Richtlinienverstössen
     abgelehnt.
+meta_question_detected_event:
+  name: Meta-Frage erkannt
+  description: Die Nutzerin oder der Nutzer hat nach dem Assistenten selbst gefragt
+    — Identität, Fähigkeiten oder Verhalten — daher antwortet der Assistent aus seiner
+    eigenen Konfiguration, statt seinen normalen Arbeitsablauf auszuführen.
 few_shot_guard_accept_event:
   name: Few-Shot-Prüfung bestanden
   description: Die Anfrage entspricht den Mustern aus Few-Shot-Beispielen und darf

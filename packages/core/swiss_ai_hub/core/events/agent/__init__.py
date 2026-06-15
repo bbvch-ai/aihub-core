@@ -102,6 +102,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event import StoreUserMemoryEvent
     from swiss_ai_hub.core.events.agent.router.route_options import RouteOptions
     from swiss_ai_hub.core.events.agent.router.router_event import RouterEvent
+    from swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event import MetaQuestionDetectedEvent
+    from swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event import NotAMetaQuestionEvent
     from swiss_ai_hub.core.events.agent.semantic.agent.agent_event import AgentEvent
     from swiss_ai_hub.core.events.agent.semantic.chain.chain_event import ChainEvent
     from swiss_ai_hub.core.events.agent.semantic.embedding.embedding import Embedding
@@ -174,6 +176,8 @@ __all__ = [
     "LanguageEvent",
     "LimitChatHistoryEvent",
     "Message",
+    "MetaQuestionDetectedEvent",
+    "NotAMetaQuestionEvent",
     "RAGFailureReason",
     "RAGFailureStopEvent",
     "RAGStartEvent",
@@ -259,6 +263,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "LanguageEvent": "swiss_ai_hub.core.events.agent.common.language_event",
     "LimitChatHistoryEvent": "swiss_ai_hub.core.events.agent.common.limit_chat_history_event",
     "Message": "swiss_ai_hub.core.events.agent.semantic.llm.message",
+    "MetaQuestionDetectedEvent": "swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event",
+    "NotAMetaQuestionEvent": "swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event",
     "RAGFailureReason": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason",
     "RAGFailureStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event",
     "RAGStartEvent": "swiss_ai_hub.core.events.agent.control.start.rag_start_event",

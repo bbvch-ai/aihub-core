@@ -164,6 +164,17 @@ query-groups, view-groups, view-realm, view-clients
 `view-realm` and `view-clients` are required by the realm-role-members endpoint
 (`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status.
 
+**Langfuse sysadmin gate**: the `langfuse` client carries the marker client scope `langfuse-sysadmin-gate` (default
+scope, no mappers). It activates a conditional deny sub-flow — deny unless the user has `AIHubSysAdmin` — in the custom
+`browser-aihub` flow (bound as the realm browser flow) and in the `Post Broker Login - AIHubAccess Check` flow. Because
+the realm JSON is only imported on first start and `partialImport` does not support authentication flows,
+`keycloak-entrypoint.sh.j2` reconciles the gate idempotently via `kcadm` on every container start — already-running
+instances converge on the next restart with no manual steps. See ADR
+`docs/arc42/decisions/2026_06_11_langfuse_access_restricted_to_sysadmins.md`. The `browser-aihub` flow replicates the
+built-in browser flow and must be reviewed on Keycloak major upgrades. Structural caveat: the authentication
+alternatives (cookie, IdP redirector, forms) are nested in a REQUIRED sub-flow — never place a CONDITIONAL sub-flow at
+the same level as ALTERNATIVE executions, or Keycloak ignores the alternatives and login breaks for all clients.
+
 ## Env Var Conventions
 
 - `.env.dev` — local development template (copy to `.env` to get started)
