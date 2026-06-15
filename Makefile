@@ -153,6 +153,7 @@ local-cert:
 	mkcert -key-file infra/configs/traefik/certs/dev-key.pem -cert-file infra/configs/traefik/certs/dev-cert.pem \
 		"localhost" "*.localhost" \
 		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
+	cp "$$(mkcert -CAROOT)/rootCA.pem" infra/configs/traefik/certs/rootCA.pem
 	@echo "Certificates written to infra/configs/traefik/certs/"
 
 install-ffmpeg:
