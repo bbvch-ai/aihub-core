@@ -797,7 +797,15 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
-    ports: [6006:3000]
+    ports:
+      - 6006:3000
+    # auth.${DOMAIN} (nip.io) resolves to 127.0.0.1 — the container's own loopback;
+    # route it to the host's Traefik so the OIDC backchannel to Keycloak succeeds.
+    extra_hosts:
+      - auth.${DOMAIN}:host-gateway
+    # Mount the mkcert root CA (from `make local-cert`); NODE_EXTRA_CA_CERTS (below)
+    # trusts it so the OIDC backchannel to Traefik's self-signed cert validates.
+    volumes: [./configs/traefik/certs/rootCA.pem:/certs/rootCA.pem:ro]
     environment:
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: https://langfuse.${DOMAIN}
@@ -845,6 +853,7 @@ services:
       AUTH_KEYCLOAK_CLIENT_ID: langfuse
       AUTH_KEYCLOAK_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       AUTH_KEYCLOAK_ISSUER: https://auth.${DOMAIN}/realms/aihub
+      NODE_EXTRA_CA_CERTS: /certs/rootCA.pem
       AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING: 'true'
       # Auto-provisioning — SSO users get MEMBER in the AI-Hub org/project
       LANGFUSE_DEFAULT_ORG_ID: aihub-org

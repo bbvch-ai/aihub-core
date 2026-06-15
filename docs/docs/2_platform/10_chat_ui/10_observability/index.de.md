@@ -106,6 +106,10 @@ zeigen, wie sich Agents in der Praxis verhalten.
 
 ## Datenschutz und Sicherheit
 
+Der Zugriff auf die Langfuse-Oberfläche (`langfuse.<domain>`) ist auf Systemadministratoren beschränkt: Nur Benutzer mit
+der Keycloak-Realm-Rolle `AIHubSysAdmin` können sich anmelden. Die Beschränkung wird direkt beim Keycloak-Login
+durchgesetzt, sodass Benutzer ohne diese Rolle abgewiesen werden, bevor Trace-Daten erreichbar sind.
+
 Die Trace-Sichtbarkeit respektiert das Berechtigungssystem. Benutzer können nur Traces für Konversationen einsehen, an
 denen sie teilgenommen haben oder für deren Audit sie autorisiert sind. Administratorzugriff erfordert explizite
 Berechtigungen.

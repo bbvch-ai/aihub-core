@@ -63,8 +63,8 @@ IS the sysadmin app, so the URL doesn't need to re-declare that fact).
 
 Two backends are in play:
 
-- `swiss-ai-hub-sysadmin-api` (AGPL-3.0-or-later) — same-origin at `sysadmin.${DOMAIN}/api/v1/*`. The local SDK in `sdk/client/`
-  is generated from its OpenAPI spec and used by the tenant-admin composables.
+- `swiss-ai-hub-sysadmin-api` (AGPL-3.0-or-later) — same-origin at `sysadmin.${DOMAIN}/api/v1/*`. The local SDK in
+  `sdk/client/` is generated from its OpenAPI spec and used by the tenant-admin composables.
 - `swiss-ai-hub-api` (main API, Apache-2.0) — cross-origin at `${DOMAIN}/api/v1/*`. Used for ONE call: `getMyTenants`
   for the sysadmin role check in `middleware/sysadmin.global.ts`. We do NOT generate a second SDK for one call — the
   middleware uses `$fetch` against `runtimeConfig.public.mainApi.url` (the API origin) for that check. Cross-origin
