@@ -159,6 +159,16 @@ class AccessChecker:
             return True
         return ri == len(access_rule_parts) and ti == len(template_parts)
 
+    @staticmethod
+    def agent_admin_rule(agent_class: str, agent_id: str) -> str:
+        """Canonical admin permission for a specific agent instance."""
+        return f"{_ADMIN_PREFIX}agent.{agent_class}.{agent_id}"
+
+    @staticmethod
+    def agent_user_rule(agent_class: str, agent_id: str) -> str:
+        """Canonical user permission for a specific agent instance."""
+        return f"{_USER_PREFIX}agent.{agent_class}.{agent_id}"
+
     @classmethod
     def rules_grant_admin_to_agent(cls, rules: list[str], agent_class: str, agent_id: str) -> bool:
         """Whether a flat rule list already grants admin to a concrete agent instance.
@@ -167,7 +177,7 @@ class AccessChecker:
         holding ``aihub.admin.>``), without the two-tier tenant/user evaluation.
         """
         checker = cls(user_access_rules=rules, tenant_access_rules=[])
-        admin_permission = f"{_ADMIN_PREFIX}agent.{agent_class}.{agent_id}"
+        admin_permission = cls.agent_admin_rule(agent_class, agent_id)
         return any(
             checker._access_rule_matches_concrete_permission(access_rule, admin_permission)
             for access_rule in checker.user_admin_access_rules
@@ -256,7 +266,7 @@ class AccessChecker:
 
     def access_level_for_agent(self, agent_class: str, agent_id: str) -> AccessLevel:
         """Convenience method to check access level for a specific agent."""
-        return self.access_level(f"aihub.user.agent.{agent_class}.{agent_id}")
+        return self.access_level(self.agent_user_rule(agent_class, agent_id))
 
     def has_access_to_agent(self, agent_class: str, agent_id: str) -> bool:
         """Convenience method to check access level for a specific agent."""

@@ -496,8 +496,8 @@ class AgentService:
         AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class, agent_id)
 
         rules = [
-            AgentService._instance_user_rule(agent_class, agent_id),
-            AgentService._instance_admin_rule(agent_class, agent_id),
+            AccessChecker.agent_user_rule(agent_class, agent_id),
+            AccessChecker.agent_admin_rule(agent_class, agent_id),
         ]
         role_name = AgentService._instance_admin_role_name(agent_class, agent_id)
         AgentService._best_effort(
@@ -506,14 +506,6 @@ class AgentService:
         AgentService._best_effort(
             lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
         )
-
-    @staticmethod
-    def _instance_admin_rule(agent_class: str, agent_id: str) -> str:
-        return f"aihub.admin.agent.{agent_class}.{agent_id}"
-
-    @staticmethod
-    def _instance_user_rule(agent_class: str, agent_id: str) -> str:
-        return f"aihub.user.agent.{agent_class}.{agent_id}"
 
     @staticmethod
     def _instance_admin_role_name(agent_class: str, agent_id: str) -> str:
@@ -529,7 +521,7 @@ class AgentService:
         the creator always receives a dedicated per-instance admin role.
         """
         tenant = user.acting_within_tenant
-        admin_rule = AgentService._instance_admin_rule(agent_class, agent_id)
+        admin_rule = AccessChecker.agent_admin_rule(agent_class, agent_id)
         role_name = AgentService._instance_admin_role_name(agent_class, agent_id)
         granted_tenant_rule = False
         created_role = False
