@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { type FormElement, normalizeFormLocaleStrings } from '@core/composables/form/useFormKitTransform'
+import { type FormElement, serializeFormData } from '@core/composables/form/useFormKitTransform'
 import { getNode } from '@formkit/core'
 
 const props = defineProps<{
@@ -169,8 +169,6 @@ const {
   getRepeaterStepIndex,
   getRepeaterData,
   setRepeaterData,
-  cleanFormData,
-  coerceNullableToggles,
   applyInitialData,
   resetForm,
 } = useCreateInstanceForm({
@@ -220,9 +218,7 @@ function triggerFormSubmit() {
 
 async function handleFormSubmit() {
   try {
-    const cleanedData = cleanFormData(formData.value)
-    const coerced = coerceNullableToggles(cleanedData, configForm.value as FormElement[])
-    const normalizedConfig = normalizeFormLocaleStrings(coerced)
+    const normalizedConfig = serializeFormData(formData.value, configForm.value as FormElement[])
     const agentId = normalizedConfig.agent_id as string
     await createAgentInstance({
       agentClass: selectedClass.value,

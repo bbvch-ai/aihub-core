@@ -229,6 +229,8 @@ const EXCLUDED_FIELDS = new Set([
   'placeholder', // Transformed via getLocalizedString
   'children', // Handled separately for recursion
   'nullable', // Wrapper-level signal for the transform; never a FormKit/PrimeVue prop
+  'defaultEnabled', // Wrapper-level signal (initial nullable-toggle state); never a FormKit prop
+  'default_enabled', // snake_case form of the above
   // Backend serialises the Pydantic default into element.value (form duality). FormKit pushes
   // schema `value` up to the parent v-model on input registration, which would clobber the
   // loaded data with the backend default. Defaults belong in data, seeded via seedFormDefaults.
@@ -696,8 +698,11 @@ export function seedFormDefaults(
 }
 
 /**
- * Recursively seeds synthetic toggle values from initial data: toggle is on iff the
- * matching field was non-null/undefined in the source data.
+ * Recursively seeds synthetic toggle values from initial data. When the field is present in
+ * the source data the toggle follows its null-ness (edit/clone). When it is absent — a fresh
+ * form — the toggle falls back to the backend's `default_enabled` (the field's data default is
+ * non-null), so a nullable field that ships a default (e.g. a prompt, or org_memory) comes up
+ * enabled while a `None`-defaulting one (e.g. reranking_config) stays off.
  */
 export function seedNullableToggles(
   data: Record<string, unknown>,
@@ -708,7 +713,9 @@ export function seedNullableToggles(
   for (const element of elements) {
     const name = element.name as string
     if (element.nullable === true) {
-      result[nullableToggleName(name)] = result[name] !== null && result[name] !== undefined
+      result[nullableToggleName(name)] = name in result
+        ? result[name] !== null && result[name] !== undefined
+        : (element.defaultEnabled ?? element.default_enabled) === true
     }
 
     const formkitType = getFormkitType(element)
@@ -728,6 +735,45 @@ export function seedNullableToggles(
   }
 
   return result
+}
+
+/**
+ * Strips FormKit submission artifacts: the `slots` helper key and the repeater validation
+ * mirror keys (`__validate__*`) registered by Repeater.vue. Recurses into nested group objects.
+ */
+export function cleanFormData(data: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(data)) {
+    if (key === 'slots' || key.startsWith('__validate__')) continue
+    result[key] = value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? cleanFormData(value as Record<string, unknown>)
+      : value
+  }
+  return result
+}
+
+/**
+ * Raw saved/template/empty data → a fully hydrated FormKit model: nullable toggles seeded from
+ * the data's null-ness (or `default_enabled` on a fresh form), then groups materialised and
+ * leaf defaults filled. Single entry point so create and edit forms hydrate identically.
+ */
+export function hydrateFormData(
+  raw: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  return seedFormDefaults(seedNullableToggles(raw, elements), elements)
+}
+
+/**
+ * FormKit model → submission payload: disabled nullable subtrees nulled and synthetic toggle
+ * keys dropped (coerceNullableToggles), LocaleStrings normalised, FormKit artifacts stripped.
+ * Single entry point so create and edit forms serialise identically.
+ */
+export function serializeFormData(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  return cleanFormData(normalizeFormLocaleStrings(coerceNullableToggles(data, elements)))
 }
 
 /**
