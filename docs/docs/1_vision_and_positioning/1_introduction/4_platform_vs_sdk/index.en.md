@@ -11,8 +11,9 @@ strategic design that gives you maximum flexibility in how you adopt, deploy, an
 
 The platform is everything that runs when you execute `docker compose up`. It's the databases, message queues, LLM
 gateway, vector stores, authentication system, user interfaces, and monitoring tools. Open-source (Apache 2.0 for the
-runtime, AGPL-3.0-or-later for the UI and backup; see [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md)
-for the per-package breakdown), it's yours to deploy, modify, and operate however you need.
+runtime, AGPL-3.0-or-later for the UI and backup; see
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the per-package breakdown), it's yours
+to deploy, modify, and operate however you need.
 
 Think of the platform as your AI operating system. It handles:
 

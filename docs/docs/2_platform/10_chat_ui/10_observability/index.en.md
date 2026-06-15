@@ -100,6 +100,10 @@ practice.
 
 ## Privacy and security
 
+Access to the Langfuse UI (`langfuse.<domain>`) is restricted to system administrators: only users with the
+`AIHubSysAdmin` Keycloak realm role can log in. The restriction is enforced at the Keycloak login itself, so users
+without the role are denied before any trace data is reachable.
+
 Trace visibility respects the permission system. Users can only view traces for conversations they participated in or
 are authorized to audit. Administrative access requires explicit permissions.
 

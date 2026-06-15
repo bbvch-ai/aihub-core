@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.1] - 2026-06-15 - Stricter Langfuse Access Control and Local Dev Setup Enhancements
+
+### Security
+
+- 🔑 **Restricted Langfuse UI Access:** Implemented Keycloak-level access control for the Langfuse UI, ensuring that only
+  users with the `AIHubSysAdmin` realm role can log in. This prevents unauthorized users from viewing sensitive trace
+  data by denying access directly at the Keycloak login flow.
+- 🔑 **Idempotent Keycloak Flow Reconciliation:** Added robust scripting to the Keycloak entrypoint that idempotently
+  applies authentication flow configurations, including the new Langfuse access gate, on every container start. This
+  ensures security policies are consistently enforced across all deployments, especially existing ones.
+- 📄 **Documented Langfuse Sysadmin Gate:** Introduced new architecture decision records (ADRs) and comprehensive
+  deep-dive documentation explaining the detailed mechanism, rationale, and structural rules for the Langfuse sysadmin
+  gate within Keycloak.
+- 📄 **Updated Observability and Authentication Documentation:** Enhanced platform documentation in both English and
+  German to clearly reflect the new Langfuse access restrictions and the role of the `AIHubSysAdmin` in controlling
+  access to administrative tools.
+
+### Fixed
+
+- 🐛 **Langfuse OIDC Callback in Local Environments:** Resolved an issue where Langfuse's OIDC backchannel to Keycloak
+  would fail in local and build environments when using self-signed `mkcert` certificates. The Langfuse container now
+  correctly trusts the `mkcert` root CA, allowing successful OIDC authentication.
+
+### Added
+
+- 🛠️ **Automated `mkcert` Root CA Copy:** The `make local-cert` command now automatically copies the `mkcert` root CA
+  certificate into the Traefik certificates directory, streamlining local development setup for secure communication.
+- 📄 **Keycloak Configuration Deep-Dive:** Added new, comprehensive documentation sections providing an overview of the
+  `aihub` Keycloak realm, including its clients, scopes, roles, tenant groups, identity brokering, and the mechanisms by
+  which configuration changes are applied to running instances.
+
+### Changed
+
+- ⚙️ **Keycloak Realm Configuration Update:** Modified the Keycloak realm configuration across all deployment stages to
+  bind a custom browser flow and introduce a new marker client scope (`langfuse-sysadmin-gate`), enabling the
+  conditional access denial logic for Langfuse.
+- 🧹 **Documentation Sync Exclusions:** Updated the documentation synchronization script and `.gitignore` to specifically
+  preserve hand-authored Keycloak configuration deep-dive documentation sections during automated content updates.
+
+### Refactor
+
+- 📄 **Minor Documentation Adjustments:** Performed various minor formatting and wording adjustments across several
+  existing documentation files to improve clarity and readability.
+
+______________________________________________________________________
+
 ## [v0.297.0] - 2026-06-15 - Self-Aware Agents: Sm🧠rter Conversations and Robust Workflows
 
 ### Added

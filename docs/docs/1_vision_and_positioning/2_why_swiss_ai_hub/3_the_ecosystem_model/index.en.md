@@ -101,9 +101,9 @@ For production AI systems, be extremely cautious with:
 
 These licenses might seem acceptable initially, but create legal landmines when you scale, offer services, or integrate
 with customer systems - **when they sit underneath the code you build on**. That is precisely why the Swiss AI Hub keeps
-the runtime and SDK permissive. The web UI and backup orchestration are a deliberate exception: they are AGPL-3.0-or-later
-*because* they are end-user applications rather than building blocks, so copyleft protects community improvements
-without ever forcing your agents or business logic open.
+the runtime and SDK permissive. The web UI and backup orchestration are a deliberate exception: they are
+AGPL-3.0-or-later *because* they are end-user applications rather than building blocks, so copyleft protects community
+improvements without ever forcing your agents or business logic open.
 
 ### Our licensing commitment
 
@@ -114,8 +114,8 @@ reviewed and approved.
 **You get the freedom each package's license confers — see
 [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the exact terms per package.** Briefly:
 the runtime + SDK (Apache 2.0) place no restrictions on commercial use or integration with proprietary systems; the web
-UI, the multi-tenant administration plane, and backup orchestration (AGPL-3.0-or-later) require source disclosure of your
-modifications when you offer them as a network service.
+UI, the multi-tenant administration plane, and backup orchestration (AGPL-3.0-or-later) require source disclosure of
+your modifications when you offer them as a network service.
 
 **Why Apache 2.0 specifically for the runtime and SDK:** Beyond being permissive, Apache 2.0 includes explicit patent
 grants, protecting you from patent claims by contributors. It's trusted by enterprises, well-understood by legal teams,
