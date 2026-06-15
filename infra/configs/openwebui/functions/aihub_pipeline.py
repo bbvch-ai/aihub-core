@@ -1710,6 +1710,7 @@ class Pipe:
                 "user.email": __user__["email"],
             },
         ) as span:
+            state_manager = StreamingStateManager()
             try:
                 logger.debug(f"Processing request for {agent_class}.{agent_id}")
                 logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
@@ -1766,8 +1767,6 @@ class Pipe:
                     }
                 )
 
-                state_manager = StreamingStateManager()
-
                 async def stream_start_callback():
                     await self._set_ui_context(thread_id, hitl_display_id, __event_emitter__)
 
@@ -1799,10 +1798,6 @@ class Pipe:
                 )
 
                 logger.debug("Request processing completed")
-                # Return the final rendered content (not ""). OpenWebUI's pipe wrapper turns the
-                # return value into the stream's final chunk, and middleware persists THAT as the
-                # message content (overwriting the live `replace` emits). Returning "" here is what
-                # blanks every assistant message once the chat is reloaded from the DB.
                 return state_manager.serialize_to_html()
 
             except Exception as e:
@@ -1820,4 +1815,5 @@ class Pipe:
                 )
                 span.record_exception(e)
                 span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
-                return f"Error: {str(e)}"
+                partial = state_manager.serialize_to_html()
+                return f"{partial}\n\n> Error: {e}" if partial else f"Error: {e}"

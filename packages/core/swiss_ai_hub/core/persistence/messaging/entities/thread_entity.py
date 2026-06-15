@@ -4,7 +4,9 @@ from typing import Self
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 
 
 class User(EmbeddedDocument):
@@ -23,10 +25,11 @@ class ThreadEntity(Document):
         "collection": "threads",
         "strict": False,
         "indexes": [
-            {"fields": ["users.user_id"]},
             {"fields": ["created_at"]},
             {"fields": ["process_walkthrough_id"]},
             {"fields": ["agents.agent_id", "agents.agent_class"]},
+            {"fields": ["users.user_id", "-created_at"]},
+            {"fields": ["users.user_id", "name"]},
         ],
     }
     name = StringField(required=True)
@@ -80,11 +83,31 @@ class ThreadEntity(Document):
     def get_threads_by_user(cls, user_id: str) -> list["ThreadEntity"]:
         return cls.objects().filter(users__user_id=user_id)
 
+    @staticmethod
+    def _apply_filters(query, filters: ThreadFilters | None):
+        if not filters:
+            return query
+        if filters.search:
+            query = query.filter(name__icontains=filters.search)
+        if filters.agent_id:
+            query = query.filter(agents__agent_id=filters.agent_id)
+        if filters.user_search_id:
+            query = query.filter(users__user_id=filters.user_search_id)
+        if filters.status_thread_ids is not None:
+            query = query.filter(id__in=filters.status_thread_ids)
+        if filters.from_date is not None:
+            query = query.filter(created_at__gte=filters.from_date)
+        if filters.to_date is not None:
+            query = query.filter(created_at__lte=filters.to_date)
+        return query
+
     @classmethod
     @trace_fn
-    def count_threads_by_user(cls, user_id: str) -> int:
+    def count_threads_by_user(cls, user_id: str, filters: ThreadFilters | None = None) -> int:
         """Count the total number of threads that include the specified user."""
-        return cls.objects().filter(users__user_id=user_id).count()
+        query = cls.objects().filter(users__user_id=user_id)
+        query = cls._apply_filters(query, filters)
+        return query.count()
 
     @classmethod
     @trace_fn
@@ -94,9 +117,32 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_paginated_threads_by_user(cls, user_id: str, skip: int = 0, limit: int = 20) -> list["ThreadEntity"]:
+    def get_paginated_threads_by_user(
+        cls,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 20,
+        sort_by: str = "created_at",
+        sort_order: SortOrder = SortOrder.DESCENDING,
+        filters: ThreadFilters | None = None,
+    ) -> list["ThreadEntity"]:
         """Get a paginated list of threads that include the specified user."""
-        return cls.objects().filter(users__user_id=user_id).order_by("-created_at").skip(skip).limit(limit)
+        order_by = cls.get_order_by(sort_by, sort_order)
+        query = cls.objects().filter(users__user_id=user_id)
+        query = cls._apply_filters(query, filters)
+        return query.order_by(order_by).skip(skip).limit(limit)
+
+    @staticmethod
+    def get_order_by(sort_by: str, sort_order: int) -> str:
+        field_mapping = {
+            "created_at": "created_at",
+            "name": "name",
+        }
+
+        if sort_by in field_mapping:
+            prefix = "-" if sort_order == -1 else ""
+            return f"{prefix}{field_mapping[sort_by]}"
+        return "-created_at"
 
     @classmethod
     @trace_fn
@@ -121,6 +167,11 @@ class ThreadEntity(Document):
     @trace_fn
     def get_threads_by_agent(cls, agent_class: str, agent_id: str) -> list["ThreadEntity"]:
         return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
+
+    @classmethod
+    @trace_fn
+    def get_thread_ids_for_user(cls, user_id: str) -> list[str]:
+        return [str(thread.id) for thread in cls.objects(users__user_id=user_id).only("id")]
 
     @classmethod
     @trace_fn

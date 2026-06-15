@@ -139,6 +139,15 @@ thread:
     numEvents: Number of Events
     status: Status
     pending: Pending
+    search_placeholder: Search by name
+    filter:
+      status_placeholder: Filter by status
+      active: Active
+      completed: Completed
+      failed: Failed
+      agent_name_placeholder: Filter by agent
+      user_name_placeholder: Filter by user
+      date_range_placeholder: Filter by date
   utils:
     pendingTypes:
       hitl: Human in the Loop
@@ -342,6 +351,13 @@ agent:
     online: Online
     offline: Offline
     clone: Clone
+    search_placeholder: Search by name
+    no_results: No agents found
+    filter:
+      type_placeholder: Filter by agent type
+      status_placeholder: Filter by status
+      enabled: Enabled
+      disabled: Disabled
   workflow:
     title: Agentic Workflow
     view_tooltip: View workflow
