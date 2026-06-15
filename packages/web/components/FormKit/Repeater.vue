@@ -7,7 +7,7 @@
     <div class="flex flex-col gap-3">
       <div
         v-for="(item, index) in items"
-        :key="index"
+        :key="rowKeys[index]"
         class="relative rounded-lg border border-surface-200 p-4 dark:border-surface-700"
       >
         <div class="mb-3 flex items-center justify-between">
@@ -27,9 +27,9 @@
 
         <FormKit
           v-if="modelValue"
-          :id="`__validate__${name}__${index}`"
+          :id="`__validate__${name}__${rowKeys[index]}`"
           v-model="modelValue[index]"
-          :name="`__validate__${name}__${index}`"
+          :name="`__validate__${name}__${rowKeys[index]}`"
           type="group"
         >
           <FormKitSchema
@@ -71,6 +71,22 @@ const modelValue = defineModel<Record<string, unknown>[]>({ default: () => [] })
 
 const items = computed(() => modelValue.value || [])
 
+function makeRowKey(): string {
+  return crypto.randomUUID()
+}
+
+// One stable key per row, used both as the Vue `:key` and inside the FormKit group id/name.
+// Index-based keys reindex survivors when a non-last row is removed, rebinding each FormKit
+// group to a different row's data and corrupting the form; stable keys avoid that. add/remove
+// keep the array aligned to the rows; the watch only reconciles external model replacement
+// (e.g. form load), preserving existing keys positionally.
+const rowKeys = ref<string[]>(items.value.map(makeRowKey))
+
+watch(() => items.value.length, (length) => {
+  if (length === rowKeys.value.length) return
+  rowKeys.value = Array.from({ length }, (_, index) => rowKeys.value[index] ?? makeRowKey())
+})
+
 const isAddDisabled = computed(() => {
   if (typeof props.max !== 'number') return false
   return items.value.length >= props.max
@@ -86,11 +102,13 @@ function addItem() {
   if (!modelValue.value) {
     modelValue.value = []
   }
+  rowKeys.value.push(makeRowKey())
   modelValue.value.push(props.defaultItem ? cloneDeep(props.defaultItem) : {})
 }
 
 function removeItem(index: number) {
   if (!modelValue.value || isRemoveDisabled.value) return
+  rowKeys.value.splice(index, 1)
   modelValue.value = modelValue.value.filter((_, i) => i !== index)
 }
 </script>
