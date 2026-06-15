@@ -50,11 +50,15 @@ def _patched_settings(transport: _RecordingTransport) -> MagicMock:
 
 
 async def _run(transport: _RecordingTransport, user: UserIdentity) -> str:
+    settings = _patched_settings(transport)
     with patch(
         "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service.LiteLLMProxySettings",
-        return_value=_patched_settings(transport),
+        return_value=settings,
     ):
-        return await LiteLLMService.api_key_for_user(user)
+        try:
+            return await LiteLLMService.api_key_for_user(user)
+        finally:
+            await settings.httpx_aclient.aclose()
 
 
 @pytest.mark.asyncio
@@ -86,16 +90,45 @@ async def test_absent_user_is_created_with_a_key() -> None:
 
 
 @pytest.mark.asyncio
-async def test_user_new_conflict_is_treated_as_already_provisioned() -> None:
+async def test_user_new_conflict_still_generates_the_key() -> None:
     user = _user("racing-user")
     transport = _RecordingTransport(
         {
             "/user/info": httpx.Response(404, json={"error": "not found"}),
             "/user/new": httpx.Response(409, json={"error": "user already exists"}),
+            "/key/generate": httpx.Response(200, json={"key": "sk-irrelevant"}),
         }
     )
 
     key = await _run(transport, user)
 
     assert key == LiteLLMService.generate_key_for_user(user)
-    assert transport.requests == [("GET", "/user/info"), ("POST", "/user/new")]
+    assert transport.requests == [("GET", "/user/info"), ("POST", "/user/new"), ("POST", "/key/generate")]
+
+
+@pytest.mark.asyncio
+async def test_key_generate_conflict_is_treated_as_success() -> None:
+    user = _user("racing-key-user")
+    transport = _RecordingTransport(
+        {
+            "/user/info": httpx.Response(404, json={"error": "not found"}),
+            "/user/new": httpx.Response(200, json={"user_id": "racing-key-user"}),
+            "/key/generate": httpx.Response(409, json={"error": "key already exists"}),
+        }
+    )
+
+    key = await _run(transport, user)
+
+    assert key == LiteLLMService.generate_key_for_user(user)
+    assert transport.requests == [("GET", "/user/info"), ("POST", "/user/new"), ("POST", "/key/generate")]
+
+
+@pytest.mark.asyncio
+async def test_user_info_server_error_propagates_without_caching() -> None:
+    user = _user("erroring-user")
+    transport = _RecordingTransport({"/user/info": httpx.Response(500, json={"error": "boom"})})
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await _run(transport, user)
+
+    assert user.id not in LiteLLMService._user_cache

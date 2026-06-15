@@ -66,9 +66,9 @@ class LiteLLMService:
         )
 
         # A concurrent first-login request can create the user between the GET and the POST, yielding 409.
-        if new_user_response.status_code == 409:
-            return False
-        new_user_response.raise_for_status()
+        # The concurrent request may not have generated the key yet, so still attempt key generation below.
+        if new_user_response.status_code != 409:
+            new_user_response.raise_for_status()
         return True
 
     @staticmethod
@@ -77,7 +77,9 @@ class LiteLLMService:
             "/key/generate",
             json={"key_alias": f"{user.name} - Auto Generated Key", "user_id": user.id, "key": api_key},
         )
-        key_response.raise_for_status()
+        # A concurrent provisioner may have already created this deterministic key; 409 means it exists already.
+        if key_response.status_code != 409:
+            key_response.raise_for_status()
 
     @staticmethod
     async def httpx_client_for_user(user: UserIdentity) -> httpx.Client:
