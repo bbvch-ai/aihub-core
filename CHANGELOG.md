@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.298.1] - 2026-06-16 - Enhanced Agent List Display and Filtering
+
+### Changed
+
+- 🖼️ **Refined Agent Group Display:** The Agents page now intelligently shows or hides agent group headers based on
+  active filters. When filters are applied, only groups with instances matching the criteria will display a header,
+  providing a cleaner and more relevant overview. When no filters are active, all available agent classes will show
+  their headers.
+
+______________________________________________________________________
+
 ## [v0.298.0] - 2026-06-16 - Introducing Document Deletion and Enhanced Management for Knowledge Bases
 
 ### Added

@@ -47,7 +47,7 @@
           :key="group.agentClass"
         >
           <div
-            v-if="group.instances.length > 0 && !showNoResults"
+            v-if="showGroupHeader(group)"
             class="pb-4"
           >
             <div class="flex items-center gap-2 pb-2">
@@ -95,7 +95,7 @@
         </div>
         <div
           v-if="showNoResults"
-          class="flex items-center justify-center py-8 text-surface-500"
+          class="mb-28 flex items-center justify-center text-surface-500"
         >
           <span class="text-xl">{{ t('agent.list.no_results') }}</span>
         </div>
@@ -176,6 +176,13 @@ const openWorkflowModal = (group: AgentGroup) => {
   selectedGroupForWorkflow.value = group
   workflowModalOpen.value = true
 }
+
+const hasActiveFilters = computed(() =>
+  !!searchQuery.value || !!agentClass.value || !!status.value,
+)
+
+const showGroupHeader = (group: AgentGroup) =>
+  hasActiveFilters.value ? group.instances.length > 0 : group.isAvailable
 
 const openCreateModal = (agentClass: string) => {
   selectedClassForCreate.value = agentClass
