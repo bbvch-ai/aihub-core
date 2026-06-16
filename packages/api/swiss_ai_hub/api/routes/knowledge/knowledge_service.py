@@ -15,7 +15,6 @@ from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_
 from swiss_ai_hub.core.generative_ai.document.types.file_type_config import FileTypeConfig
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.generative_ai.utils.path_utils import create_figures_folder_name
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import MongoSettings, trace_fn
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -497,12 +496,6 @@ class KnowledgeService:
             raise HTTPException(status_code=500, detail=f"Document source '{source}' has no object key")
 
         s3_service.delete_file(container=container, file_path=file_path)
-
-        figures_prefix = create_figures_folder_name(uri=file_path)
-        deleted_figures = s3_service.delete_directory(container=container, prefix=f"{figures_prefix}/")
-        if deleted_figures:
-            logger.info(f"Deleted {deleted_figures} figure objects for source {source}")
-
         return container, file_path
 
     @staticmethod

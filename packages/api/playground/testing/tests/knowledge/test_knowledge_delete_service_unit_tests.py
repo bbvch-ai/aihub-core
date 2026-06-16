@@ -27,9 +27,7 @@ def nc():
 
 @pytest.fixture
 def s3_service():
-    service = MagicMock()
-    service.delete_directory.return_value = 0
-    return service
+    return MagicMock()
 
 
 @pytest.fixture
@@ -54,15 +52,6 @@ class TestDeleteDocument:
         publish_event.assert_awaited_once_with(
             nc=nc, database=DB, container="my-bucket", file_path=f"{NAMESPACE}/report.pdf"
         )
-
-    @pytest.mark.asyncio
-    async def test_deletes_figures_folder(self, delete_mocks, nc, s3_service):
-        await KnowledgeService.delete_document(nc, DB, NAMESPACE, DOCUMENT_ID, s3_service)
-
-        s3_service.delete_directory.assert_called_once()
-        prefix = s3_service.delete_directory.call_args.kwargs["prefix"]
-        assert prefix.startswith(f"{NAMESPACE}/")
-        assert prefix.endswith("/")
 
     @pytest.mark.asyncio
     async def test_unknown_document_raises_404(self, delete_mocks, nc, s3_service):

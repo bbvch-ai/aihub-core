@@ -223,23 +223,3 @@ class S3AnonymousFileAccessService:
 
         self._s3_client.delete_object(Bucket=container, Key=file_path)
         logger.info(f"Deleted file: {container}/{file_path}")
-
-    @trace_fn
-    def delete_directory(self, container: str, prefix: str) -> int:
-        """Permanently remove all objects under a prefix; returns the number of deleted objects."""
-        if not container or not container.strip():
-            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
-        if not prefix or not prefix.strip():
-            raise ValueError(_FILE_PATH_EMPTY_ERROR)
-
-        deleted_count = 0
-        paginator = self._s3_client.get_paginator("list_objects_v2")
-        for page in paginator.paginate(Bucket=container, Prefix=prefix):
-            keys = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
-            if not keys:
-                continue
-            self._s3_client.delete_objects(Bucket=container, Delete={"Objects": keys})
-            deleted_count += len(keys)
-
-        logger.info(f"Deleted {deleted_count} objects under prefix: {container}/{prefix}")
-        return deleted_count
