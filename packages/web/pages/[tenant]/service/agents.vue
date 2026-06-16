@@ -1,116 +1,47 @@
 <template>
   <StructuralScreen>
-    <StructuralColumn
-      v-if="!isTemplatesRoute"
-      :title="t('agent.title')"
-      :loading="isLoading"
-      size="large"
-    >
+    <StructuralColumn v-if="!isTemplatesRoute" :title="t('agent.title')" :loading="isLoading" size="large">
       <div class="flex justify-between">
-        <SelectButton
-          :model-value="activeNavItem"
-          :options="navItems"
-          data-key="key"
-          option-label="name"
-          size="small"
-          @update:model-value="toNavItem"
-        />
+        <SelectButton :model-value="activeNavItem" :options="navItems" data-key="key" option-label="name" size="small"
+          @update:model-value="toNavItem" />
         <div class="flex items-center gap-4">
-          <Select
-            v-model="agentClass"
-            :options="agentClassOptions"
-            option-label="label"
-            option-value="value"
-            :placeholder="t('agent.list.filter.type_placeholder')"
-            show-clear
-            class="w-52"
-          />
-          <Select
-            v-model="status"
-            :options="statusOptions"
-            option-label="label"
-            option-value="value"
-            :placeholder="t('agent.list.filter.status_placeholder')"
-            show-clear
-            class="w-52"
-          />
-          <InputText
-            v-model="searchQuery"
-            :placeholder="t('agent.list.search_placeholder')"
-            class="w-80"
-          />
+          <Select v-model="agentClass" :options="agentClassOptions" option-label="label" option-value="value"
+            :placeholder="t('agent.list.filter.type_placeholder')" show-clear class="w-52" />
+          <Select v-model="status" :options="statusOptions" option-label="label" option-value="value"
+            :placeholder="t('agent.list.filter.status_placeholder')" show-clear class="w-52" />
+          <InputText v-model="searchQuery" :placeholder="t('agent.list.search_placeholder')" class="w-80" />
         </div>
       </div>
       <div class="flex flex-col gap-8 pt-4">
-        <div
-          v-for="group in groupedAgents"
-          :key="group.agentClass"
-        >
-          <div
-            v-if="group.instances.length > 0 && !showNoResults"
-            class="pb-4"
-          >
+        <div v-for="group in groupedAgents" :key="group.agentClass">
+          <div v-if="!searchQuery && !status && !agentClass" class="pb-4">
             <div class="flex items-center gap-2 pb-2">
-              <Icon
-                :name="group.icon"
-                size="2em"
-                class="text-surface-500"
-              />
+              <Icon :name="group.icon" size="2em" class="text-surface-500" />
               <span class="text-lg font-medium">{{ group.name }}</span>
-              <Button
-                v-if="group.networkGraph"
-                v-tooltip.top="t('agent.workflow.view_tooltip')"
-                severity="secondary"
-                text
-                rounded
-                size="small"
-                @click="openWorkflowModal(group)"
-              >
-                <Icon
-                  name="mage:arrows-all-direction-2"
-                  size="1.25em"
-                />
+              <Button v-if="group.networkGraph" v-tooltip.top="t('agent.workflow.view_tooltip')" severity="secondary"
+                text rounded size="small" @click="openWorkflowModal(group)">
+                <Icon name="mage:arrows-all-direction-2" size="1.25em" />
               </Button>
             </div>
-            <span
-              v-if="group.description"
-              class="pb-2 text-xs text-surface-500"
-            >
+            <span v-if="group.description" class="pb-2 text-xs text-surface-500">
               {{ group.description }}
             </span>
           </div>
           <div class="grid grid-cols-3 gap-4">
-            <AgentCard
-              v-for="agent in group.instances"
-              :key="`${agent.agent_class}-${agent.agent_id}`"
-              :agent="agent"
-              @click="() => toAgent(agent)"
-              @clone="handleClone"
-            />
-            <AgentEmptyCard
-              v-if="group.isAvailable && (!searchQuery && !status && !agentClass)"
-              @add="openCreateModal(group.agentClass)"
-            />
+            <AgentCard v-for="agent in group.instances" :key="`${agent.agent_class}-${agent.agent_id}`" :agent="agent"
+              @click="() => toAgent(agent)" @clone="handleClone" />
+            <AgentEmptyCard v-if="group.isAvailable && (!searchQuery && !status && !agentClass)"
+              @add="openCreateModal(group.agentClass)" />
           </div>
         </div>
-        <div
-          v-if="showNoResults"
-          class="flex items-center justify-center py-8 text-surface-500"
-        >
+        <div v-if="showNoResults" class="flex items-center justify-center text-surface-500">
           <span class="text-xl">{{ t('agent.list.no_results') }}</span>
         </div>
       </div>
-      <AgentCreateModal
-        v-model="createModalOpen"
-        :initial-class="selectedClassForCreate"
-        :initial-data="initialDataForCreate"
-        @success="handleCreateSuccess"
-      />
-      <WorkflowModal
-        v-model="workflowModalOpen"
-        :graph-data="selectedGroupForWorkflow?.networkGraph"
-        :header="selectedGroupForWorkflow ? `${t('agent.workflow.title')} — ${selectedGroupForWorkflow.name}` : undefined"
-      />
+      <AgentCreateModal v-model="createModalOpen" :initial-class="selectedClassForCreate"
+        :initial-data="initialDataForCreate" @success="handleCreateSuccess" />
+      <WorkflowModal v-model="workflowModalOpen" :graph-data="selectedGroupForWorkflow?.networkGraph"
+        :header="selectedGroupForWorkflow ? `${t('agent.workflow.title')} — ${selectedGroupForWorkflow.name}` : undefined" />
     </StructuralColumn>
 
     <NuxtPage />
