@@ -1,5 +1,12 @@
 # Keycloak SSO Session Lifespans
 
+> **Revised** by
+> [`2026_06_12_declarative_keycloak_realm_reconciliation`](./2026_06_12_declarative_keycloak_realm_reconciliation.md):
+> that ADR restructured the realm-config templates, so the `keycloak-realm.json.j2` referenced below was split into
+> `bootstrap/` + `managed/` templates and merged into `aihub-realm.{stage}.json` for the first-start import (the
+> lifespans now live in `bootstrap/realm-settings.json.j2`). The session-lifespan decision and mechanism described here
+> (first-start bootstrap seed + the entrypoint `kcadm` default-migration) are unchanged.
+
 ## Context
 
 The Keycloak realm import never set any session or token lifetime values, so every deployment ran on Keycloak's
@@ -48,9 +55,7 @@ forcing a credential re-verification at least monthly.
 
 - **`compose-config.yml`** holds the values; both Jinja2 templates below render from it, so there is exactly one place
   to change them.
-- **`bootstrap/realm-settings.json.j2`** (merged into `aihub-realm.{stage}.json`) includes the lifespans in the realm
-  import — fresh installs are correct from first start. As bootstrap config they are first-start-only, which is why the
-  entrypoint migration below is needed to reach existing deployments.
+- **`keycloak-realm.json.j2`** includes the lifespans in the realm import — fresh installs are correct from first start.
 - **`keycloak-entrypoint.sh.j2`** applies the lifespans via `kcadm.sh update realms/aihub` in the post-startup block on
   container start, but **only for fields still holding the Keycloak default** (30 min idle / 10 h max). Existing
   deployments converge on their next Keycloak container recreation, without realm re-import and without touching users,
@@ -86,5 +91,3 @@ forcing a credential re-verification at least monthly.
 
 - `2026_04_07_active_tenant_as_keycloak_user_attribute.md` — active tenant persisted in Keycloak, restored after login
 - `2025_12_28_keycloak_as_identity_broker.md` — Keycloak as sole OIDC provider
-- `2026_06_12_declarative_keycloak_realm_reconciliation.md` — managed realm config reconciled via keycloak-config-cli;
-  realm-level settings (incl. these lifespans) stay bootstrap-only, so the kcadm default-migration here is unchanged
