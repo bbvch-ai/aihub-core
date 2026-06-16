@@ -184,13 +184,16 @@ watch(
   { immediate: true },
 )
 
-// "Select all" would otherwise include processing rows that cannot be deleted.
-watch(checkedDocuments, (selected) => {
-  const deletable = selected.filter(isDocumentDeletable)
-  if (deletable.length !== selected.length) {
-    checkedDocuments.value = deletable
-  }
-})
+// Drop any selected document that is no longer deletable — either picked by "select all" while
+// processing, or flipped to "deleting" by a single-row delete after it was already selected.
+watch(
+  () => checkedDocuments.value.filter(document => !isDocumentDeletable(document)).length,
+  (nonDeletableCount) => {
+    if (nonDeletableCount > 0) {
+      checkedDocuments.value = checkedDocuments.value.filter(isDocumentDeletable)
+    }
+  },
+)
 
 const handleRowClick = (event: DataTableRowClickEvent) => {
   const document = event.data as DocumentDto
