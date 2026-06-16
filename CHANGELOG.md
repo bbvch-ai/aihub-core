@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.7] - 2026-06-16 - Dashboard UI and Chart Display Improvements
+
+### Fixed
+
+- 🖼️ **Dashboard Grid Filters:** Resolved potential display and layering issues for dropdown menus within the
+  **Dashboard Grid** by ensuring proper rendering of event data type and agent selection options.
+- 📈 **Event Timeseries Chart:** Enhanced the visual layout and readability of the **Event Timeseries Chart** by
+  fine-tuning chart and data label vertical positioning, including responsive adjustments for smaller screens.
+
+______________________________________________________________________
+
 ## [v0.297.6] - 2026-06-16 - Strengthened OpenWebUI Group Management and Sync Reliability
 
 ### Added
