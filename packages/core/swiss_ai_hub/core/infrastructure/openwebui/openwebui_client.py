@@ -68,7 +68,9 @@ class OpenWebuiClient:
             for group in response.resources:
                 if group.display_name == name:
                     logger.warning(
-                        "OpenWebUI group '%s' already exists; reusing it instead of creating a duplicate", name
+                        "OpenWebUI group '%s' already exists (id=%s); reusing it instead of creating a duplicate",
+                        name,
+                        group.id,
                     )
                     return group
             return await client.create(Group(display_name=name))

@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 from redis.asyncio import Redis
+from redis.exceptions import LockError
 from scim2_client.engines.httpx import AsyncSCIMClient
 from scim2_models import Group, User
 
@@ -27,6 +28,10 @@ AIHUB_GROUP_PREFIX = "aihub:"
 AIHUB_MODEL_PREFIX = "aihub-agent-"
 
 _LOCK_TIMEOUT = 60
+# The group critical section lists all SCIM groups/users + all Keycloak users and then issues one
+# membership update per group, so it can run for a while on large tenants. Its lock TTL must comfortably
+# exceed that worst case, otherwise the lock auto-expires mid-run and a second sync can race it.
+_GROUPS_LOCK_TTL = 600
 
 type AiHubToOwuiUserIdMapping = dict[str, str]
 """Maps AI-Hub user IDs (keys) to OpenWebUI user IDs (values), matched by email."""
@@ -50,16 +55,22 @@ class OpenWebuiProvisioner:
         self._redis = redis
 
     @asynccontextmanager
-    async def _sync_lock(self, key: str, *, blocking: bool = False) -> AsyncIterator[bool]:
+    async def _sync_lock(
+        self, key: str, *, blocking: bool = False, ttl: int = _LOCK_TIMEOUT, wait: int = _LOCK_TIMEOUT
+    ) -> AsyncIterator[bool]:
         """Acquires a Redis lock for the given key.
 
         ``blocking=False`` (default): skip the work if another instance holds it — used for whole-sync
         operations that are safe to drop because the holder already covers the same work.
-        ``blocking=True``: wait (up to the lock timeout) for the holder to finish — used for the group
+        ``blocking=True``: wait up to ``wait`` seconds for the holder to finish — used for the group
         critical section, which must run rather than be skipped, but must never run concurrently.
+
+        ``ttl`` is the lock's auto-expiry and must exceed the worst-case runtime of the protected work,
+        otherwise the lock expires mid-run and a second caller can acquire it. ``wait`` only bounds how
+        long a blocking caller waits, so the two are decoupled.
         """
-        lock = self._redis.lock(key, timeout=_LOCK_TIMEOUT)
-        blocking_timeout = _LOCK_TIMEOUT if blocking else None
+        lock = self._redis.lock(key, timeout=ttl)
+        blocking_timeout = wait if blocking else None
         if not await lock.acquire(blocking=blocking, blocking_timeout=blocking_timeout):
             logger.debug("OpenWebUI %s skipped: another instance is syncing", key.rsplit(":", 1)[-1])
             yield False
@@ -67,7 +78,12 @@ class OpenWebuiProvisioner:
         try:
             yield True
         finally:
-            await lock.release()
+            try:
+                await lock.release()
+            except LockError:
+                # The lock auto-expired (work outran its TTL) and may now be held by another caller;
+                # don't let the release failure mask the outcome of the work we just did.
+                logger.warning("OpenWebUI sync lock '%s' expired before release; consider raising its TTL", key)
 
     async def provision(self) -> None:
         async with self._sync_lock("openwebui:sync:provision") as acquired:
@@ -182,7 +198,7 @@ class OpenWebuiProvisioner:
         both observe a group as missing and each create it, yielding duplicate same-named groups. This
         dedicated blocking lock guarantees the create/delete section runs one-at-a-time across processes.
         """
-        async with self._sync_lock("openwebui:sync:groups", blocking=True) as acquired:
+        async with self._sync_lock("openwebui:sync:groups", blocking=True, ttl=_GROUPS_LOCK_TTL) as acquired:
             if not acquired:
                 logger.warning("OpenWebUI group sync skipped: timed out waiting for the group-sync lock")
                 return
