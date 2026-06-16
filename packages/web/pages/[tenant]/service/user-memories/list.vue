@@ -3,7 +3,10 @@
     :title="t('memory.list.title')"
     :loading="memoriesAreLoading"
   >
-    <div class="flex h-full flex-col gap-2">
+    <div
+      v-if="paginatedMemories.length > 0"
+      class="flex h-full flex-col gap-2"
+    >
       <div class="flex w-full items-center justify-between gap-2">
         <div class="flex flex-1 items-center gap-2">
           <IconField class="flex-1">
@@ -52,6 +55,13 @@
           @prev-page="prevPage"
         />
       </div>
+    </div>
+
+    <div
+      v-else
+      class="flex items-center justify-center py-8 text-surface-500"
+    >
+      <span class="text-xl">{{ t('memory.list.no_results') }}</span>
     </div>
   </StructuralColumn>
 

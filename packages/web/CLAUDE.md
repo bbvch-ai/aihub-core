@@ -218,14 +218,15 @@ use this. Use `dark:` Tailwind prefix for dark-mode styles.
 
 ## Sysadmin Layout
 
-A separate `sysadmin.vue` layout powers the `/sysadmin/tenants/...` route tree, used exclusively for tenant
-administration by users with the `AIHubSysAdmin` Keycloak realm role. The route shape is independent of the regular
+Tenant administration lives in the `packages/sysadmin-web` layer (its own `sysadmin.vue` layout + pages), used
+exclusively by users with the `AIHubSysAdmin` Keycloak realm role. Because that app IS the sysadmin app, its routes are
+mounted at `/tenants/...` — there is NO `/sysadmin/` URL prefix. The route shape is independent of the regular
 `/[tenant]/service/...` admin pages:
 
-- `/sysadmin/tenants` — tenant list (Active + Orphaned + Unconfigured states)
-- `/sysadmin/tenants/[tenant_id]/overview` — metadata edit
-- `/sysadmin/tenants/[tenant_id]/roles` — role management within the tenant
-- `/sysadmin/tenants/[tenant_id]/users` — user list within the tenant (read-only; user lifecycle managed in Keycloak)
+- `/tenants` — tenant list (Active + Orphaned + Unconfigured states)
+- `/tenants/[tenant_id]/overview` — metadata edit
+- `/tenants/[tenant_id]/roles` — role management within the tenant
+- `/tenants/[tenant_id]/users` — user list within the tenant (read-only; user lifecycle managed in Keycloak)
 
 `useTenant()` reads from either `route.params.tenant` (regular routes) or `route.params.tenant_id` (sysadmin routes), so
 role/user composables work transparently in both contexts.

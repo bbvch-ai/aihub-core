@@ -29,6 +29,7 @@ import {
   EventDisplayBaseRetrieveMemoryEvent,
   EventDisplayBaseStoreMemoryEvent,
   EventDisplayAddMemoryToChatHistoryEvent,
+  EventDisplayMetaQuestionDetectedEvent,
 } from '#components'
 
 export const useEventComponent = () => {
@@ -69,6 +70,7 @@ export const useEventComponent = () => {
       BaseRetrieveMemoryEvent: EventDisplayBaseRetrieveMemoryEvent,
       BaseStoreMemoryEvent: EventDisplayBaseStoreMemoryEvent,
       AddMemoryToChatHistoryEvent: EventDisplayAddMemoryToChatHistoryEvent,
+      MetaQuestionDetectedEvent: EventDisplayMetaQuestionDetectedEvent,
     }
     const exact_match = mapping[event.event._event_name]
     if (exact_match) {

@@ -63,6 +63,8 @@ class LLMParameter(Form):
                 max=2.0,
                 step=0.1,
                 value=0.1,
+                min_fraction_digits=0,
+                max_fraction_digits=1,
             ),
             logprobs=Checkbox(
                 label=LocaleString.from_i18n_path("lib.llm.config.logprobs.label"),

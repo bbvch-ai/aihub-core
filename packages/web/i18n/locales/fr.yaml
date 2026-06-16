@@ -265,6 +265,11 @@ event:
     assistant: Assistant
     system: Système
     user: Utilisateur
+  metaQuestionDetected:
+    category:
+      identity: Identité
+      capabilities: Capacités
+      behavior: Comportement
   standaloneQuestionCondenser:
     summary: Question affinée et condensée
     condensedQuestion: Question Condensée
@@ -692,6 +697,7 @@ bar:
   show_notifications: Afficher les notifications
 process:
   title: Processus
+  no_results: Aucun processus trouvé
   overview:
     name: Nom
     class: Classe
@@ -767,8 +773,10 @@ memory:
   title: Souvenirs
   graph:
     title: Graphe de connaissances
+    no_results: Aucun souvenir trouvé
   list:
     title: Liste des souvenirs
+    no_results: Aucun souvenir trouvé
   detail:
     title: Détails du souvenir
     created_at: Créé le

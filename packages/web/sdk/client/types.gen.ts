@@ -3662,6 +3662,7 @@ export type ContextualizedAgentEvent = {
     | EmbeddingEvent
     | LlmEvent
     | LlmStopEvent
+    | MetaQuestionDetectedEvent
     | RerankerEvent
     | RetrieverEvent
     | ToolEvent
@@ -9185,6 +9186,74 @@ export const MessageRole = {
  * Message role.
  */
 export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
+
+export const MetaQuestionCategory = {
+  IDENTITY: "identity",
+  CAPABILITIES: "capabilities",
+  BEHAVIOR: "behavior",
+} as const;
+
+export type MetaQuestionCategory =
+  (typeof MetaQuestionCategory)[keyof typeof MetaQuestionCategory];
+
+/**
+ * MetaQuestionDetectedEvent
+ *
+ * Emitted when the user's message is a meta question about the agent itself —
+ * its identity, its capabilities, or why it behaved a certain way — rather than a
+ * task for the agent to perform. Routes the run to the self-awareness answer step
+ * instead of the agent's normal workflow.
+ */
+export type MetaQuestionDetectedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Query
+   *
+   * The user message classified as a meta question.
+   */
+  user_query: string;
+  /**
+   * Which aspect of the agent the question is about.
+   */
+  category: MetaQuestionCategory;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a meta question.
+   */
+  reasoning: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
 
 /**
  * Metadata
@@ -17301,6 +17370,7 @@ export type ContextualizedAgentEventWritable = {
     | EmbeddingEventWritable
     | LlmEventWritable
     | LlmStopEventWritable
+    | MetaQuestionDetectedEventWritable
     | RerankerEventWritable
     | RetrieverEventWritable
     | ToolEventWritable
@@ -20296,6 +20366,52 @@ export type MessageWritable = {
    * The message contents as an array of content blocks (text, image, audio).
    */
   contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
+
+/**
+ * MetaQuestionDetectedEvent
+ *
+ * Emitted when the user's message is a meta question about the agent itself —
+ * its identity, its capabilities, or why it behaved a certain way — rather than a
+ * task for the agent to perform. Routes the run to the self-awareness answer step
+ * instead of the agent's normal workflow.
+ */
+export type MetaQuestionDetectedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Query
+   *
+   * The user message classified as a meta question.
+   */
+  user_query: string;
+  /**
+   * Which aspect of the agent the question is about.
+   */
+  category: MetaQuestionCategory;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a meta question.
+   */
+  reasoning: string;
+  [key: string]: unknown;
 };
 
 /**

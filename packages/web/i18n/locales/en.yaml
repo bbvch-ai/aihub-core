@@ -264,6 +264,11 @@ event:
     noChunksFound: No chunks found
     noChunksFoundDescription: The retrieval search didn't find any relevant content
       chunks.
+  metaQuestionDetected:
+    category:
+      identity: Identity
+      capabilities: Capabilities
+      behavior: Behaviour
   standaloneQuestionCondenser:
     summary: Question refined and condensed
     condensedQuestion: Condensed Question
@@ -683,6 +688,7 @@ bar:
   show_notifications: Show notifications
 process:
   title: Processes
+  no_results: No processes found
   overview:
     name: Name
     class: Class
@@ -758,8 +764,10 @@ memory:
   title: Memories
   graph:
     title: Knowledge Graph
+    no_results: No memories found
   list:
     title: Memory List
+    no_results: No memories found
   detail:
     title: Memory Details
     created_at: Created At

@@ -4,7 +4,10 @@
     :loading="memoriesAreLoading"
     class="overflow-hidden"
   >
-    <div class="flex h-full flex-col gap-2">
+    <div
+      v-if="paginatedMemories.length > 0"
+      class="flex h-full flex-col gap-2"
+    >
       <div class="flex w-full items-center gap-2">
         <IconField class="flex-1">
           <InputIcon>
@@ -40,6 +43,13 @@
           @select-node="handleSelectNode"
         />
       </div>
+    </div>
+
+    <div
+      v-else
+      class="flex items-center justify-center py-8 text-surface-500"
+    >
+      <span class="text-xl">{{ t('memory.graph.no_results') }}</span>
     </div>
   </StructuralColumn>
 

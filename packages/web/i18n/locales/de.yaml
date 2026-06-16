@@ -267,6 +267,11 @@ event:
     noChunksFound: Keine Abschnitte gefunden
     noChunksFoundDescription: Die Abrufsuche hat keine relevanten Inhaltsabschnitte
       gefunden.
+  metaQuestionDetected:
+    category:
+      identity: Identität
+      capabilities: Fähigkeiten
+      behavior: Verhalten
   standaloneQuestionCondenser:
     summary: Frage verfeinert und verdichtet
     condensedQuestion: Verdichtete Frage
@@ -694,6 +699,7 @@ bar:
   show_notifications: Benachrichtigungen anzeigen
 process:
   title: Prozesse
+  no_results: Keine Prozesse gefunden
   overview:
     name: Name
     class: Klasse
@@ -769,8 +775,10 @@ memory:
   title: Erinnerungen
   graph:
     title: Wissensgraph
+    no_results: Keine Erinnerungen gefunden
   list:
     title: Erinnerungsliste
+    no_results: Keine Erinnerungen gefunden
   detail:
     title: Erinnerungsdetails
     created_at: Erstellt am

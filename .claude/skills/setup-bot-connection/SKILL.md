@@ -175,8 +175,8 @@ ______________________________________________________________________
 ## Local Development Setup
 
 You can drive the bot locally from the Microsoft **Bot Framework Emulator** with **no Azure registration**, using the
-testing playground. (For an authentic Teams/Slack test with real identities, see *Real channel via DevTunnel + Azure*
-at the end.)
+testing playground. (For an authentic Teams/Slack test with real identities, see *Real channel via DevTunnel + Azure* at
+the end.)
 
 ### Step 0 — The testing playground runner (`main.py`)
 
@@ -318,15 +318,15 @@ production code.
 
 ### Emulator troubleshooting
 
-| Symptom                                           | Cause                                          | Fix                                                                 |
-| ------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
-| `No credentials found for path`                   | PathEntity missing                             | Seed it (Step 1)                                                    |
-| Emulator `POST 400`, nothing in the bot log       | Emulator can't reach the bot (WSL2)            | Connect via the WSL2 IP, not `localhost`                            |
-| Reply fails: `Cannot connect to localhost:<port>` | Bot (WSL2) can't reach the emulator reply URL  | Set up the devtunnel and paste the Tunnel Url                       |
-| Reply `401` to `*.devtunnels.ms`                  | Pasted the `-inspect` tunnel URL               | Use the "Connect via browser" URL, not the `-inspect` one           |
-| `KeyError: 'assistant_name'`                      | `system_message` uses both placeholders        | Use ≤1 placeholder in the seeded system_message                     |
-| Bot 404s on `.../members/...` → generic error     | Emulator can't do the Teams member lookup      | Set `BOT_DEV_FAKE_EMAIL` to drive identity (Step 4)                 |
-| 60s typing then "taking too long"                 | The simulated agent didn't reply (harness)     | Identity resolved fine; use a real agent or test a pre-agent branch |
+| Symptom                                           | Cause                                         | Fix                                                                 |
+| ------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------- |
+| `No credentials found for path`                   | PathEntity missing                            | Seed it (Step 1)                                                    |
+| Emulator `POST 400`, nothing in the bot log       | Emulator can't reach the bot (WSL2)           | Connect via the WSL2 IP, not `localhost`                            |
+| Reply fails: `Cannot connect to localhost:<port>` | Bot (WSL2) can't reach the emulator reply URL | Set up the devtunnel and paste the Tunnel Url                       |
+| Reply `401` to `*.devtunnels.ms`                  | Pasted the `-inspect` tunnel URL              | Use the "Connect via browser" URL, not the `-inspect` one           |
+| `KeyError: 'assistant_name'`                      | `system_message` uses both placeholders       | Use ≤1 placeholder in the seeded system_message                     |
+| Bot 404s on `.../members/...` → generic error     | Emulator can't do the Teams member lookup     | Set `BOT_DEV_FAKE_EMAIL` to drive identity (Step 4)                 |
+| 60s typing then "taking too long"                 | The simulated agent didn't reply (harness)    | Identity resolved fine; use a real agent or test a pre-agent branch |
 
 ### Real channel via DevTunnel + Azure (authentic Teams/Slack)
 
