@@ -31,12 +31,14 @@
                 v-model="event"
                 :options="eventOptions"
                 option-label="label"
+                append-to="self"
                 :placeholder="t('dashboard.select_data_type')"
               />
               <Select
                 v-model="agent"
                 :options="agentInstances"
                 option-label="agent_config.name"
+                append-to="self"
                 :placeholder="t('dashboard.select_agent')"
                 :loading="agentInstancesAreLoading"
                 show-clear
