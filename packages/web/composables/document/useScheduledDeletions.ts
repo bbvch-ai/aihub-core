@@ -1,28 +1,46 @@
+import { useStorage } from '@vueuse/core'
+
 import type { MaybeRefOrGetter } from 'vue'
 
 /**
  * Tracks documents whose deletion has been scheduled but not yet reconciled by the pipeline.
  *
- * Deletion is eventual (the pipeline cleans the doc store + vector store ~1-3 min later), so the
- * list query keeps returning a scheduled document until cleanup completes. This module-level,
- * namespace-keyed store lets any view (list row delete or detail-page delete) mark a document as
- * scheduled and have the list hide it immediately — surviving the navigation from detail to list.
+ * Deletion is eventual: the API removes the S3 source immediately and returns 202, but the doc
+ * store + vector store are only cleaned by the pipeline a few minutes later. Until then the list
+ * query keeps returning the document. Rather than optimistically hiding it (which flickers back on
+ * a page refresh once the in-memory state is lost), we persist scheduled ids in localStorage and
+ * render a "Deleting" badge. The row disappears for good once the pipeline removes it and the list
+ * refetches. Entries auto-expire after a TTL so a failed cleanup eventually re-surfaces the row
+ * instead of hiding the truth forever.
  */
-const scheduledByKey = reactive(new Map<string, Set<string>>())
+const TTL_MS = 30 * 60 * 1000
 
-function keyFor(database: string, namespace: string): string {
-  return `${database}/${namespace}`
+const store = useStorage<Record<string, number>>('aihub:scheduled-deletions', {})
+
+function entryKey(database: string, namespace: string, documentId: string): string {
+  return `${database}/${namespace}/${documentId}`
 }
 
 export function useScheduledDeletions(database: MaybeRefOrGetter<string>, namespace: MaybeRefOrGetter<string>) {
-  const scheduledIds = computed(() => scheduledByKey.get(keyFor(toValue(database), toValue(namespace))) ?? new Set<string>())
-
-  function schedule(documentIds: string[]): void {
-    const key = keyFor(toValue(database), toValue(namespace))
-    const existing = scheduledByKey.get(key) ?? new Set<string>()
-    documentIds.forEach(id => existing.add(id))
-    scheduledByKey.set(key, existing)
+  function isScheduled(documentId: string): boolean {
+    const scheduledAt = store.value[entryKey(toValue(database), toValue(namespace), documentId)]
+    return scheduledAt != null && Date.now() - scheduledAt < TTL_MS
   }
 
-  return { scheduledIds, schedule }
+  function schedule(documentIds: string[]): void {
+    const now = Date.now()
+    const next: Record<string, number> = {}
+    // Drop expired entries while we rewrite, keeping localStorage bounded.
+    for (const [key, scheduledAt] of Object.entries(store.value)) {
+      if (now - scheduledAt < TTL_MS) {
+        next[key] = scheduledAt
+      }
+    }
+    for (const documentId of documentIds) {
+      next[entryKey(toValue(database), toValue(namespace), documentId)] = now
+    }
+    store.value = next
+  }
+
+  return { isScheduled, schedule }
 }

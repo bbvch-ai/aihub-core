@@ -44,7 +44,18 @@
             {{ data.document_title }}
           </p>
           <div
-            v-if="!data.is_ingested"
+            v-if="isScheduled(data.id)"
+            class="flex items-center gap-2"
+          >
+            <Tag
+              :value="t('document.delete.deleting')"
+              size="small"
+              icon="pi pi-trash"
+              severity="danger"
+            />
+          </div>
+          <div
+            v-else-if="!data.is_ingested"
             class="flex items-center gap-2"
           >
             <Tag
@@ -101,6 +112,7 @@
             @click.stop="() => downloadFile(data.id)"
           />
           <Button
+            v-if="!isScheduled(data.id)"
             v-tooltip.top="t('document.delete.button')"
             rounded
             size="small"
@@ -129,10 +141,14 @@ const { tenantId } = useTenant()
 const { getDocumentSourceUrl } = useDocumentUrl()
 const { deleteDocument, isDeleting } = useDeleteDocument()
 const { deleteDocuments, isDeleting: isBatchDeleting } = useDeleteDocuments()
+const { isScheduled, schedule } = useScheduledDeletions(
+  () => route.params.db as string,
+  () => route.params.namespace as string,
+)
 const confirm = useConfirm()
 const toast = useToast()
 
-const props = defineProps<{
+defineProps<{
   documents: DocumentDto[]
   sortField: string | null
   sortOrder: 1 | -1
@@ -150,13 +166,13 @@ const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.Y
 
 const handleRowClick = (event: DataTableRowClickEvent) => {
   const document = event.data as DocumentDto
-  if (document.is_ingested) {
+  if (document.is_ingested && !isScheduled(document.id)) {
     emit('selected', document)
   }
 }
 
 const getRowClass = (data: DocumentDto) => {
-  if (!data.is_ingested) {
+  if (!data.is_ingested || isScheduled(data.id)) {
     return 'opacity-50 cursor-not-allowed pointer-events-none'
   }
   return data.id === route.params.document_id ? 'bg-surface-100 dark:bg-surface-800' : ''
@@ -195,6 +211,7 @@ const handleDelete = async (document: DocumentDto) => {
       namespace: route.params.namespace as string,
       documentId: document.id,
     })
+    schedule([document.id])
     toast.add({
       severity: 'success',
       summary: t('document.delete.success'),
@@ -234,6 +251,7 @@ const handleBatchDelete = async () => {
       documentIds,
     })
     const deletedIds = response.results.filter(result => result.status === 'scheduled').map(result => result.document_id)
+    schedule(deletedIds)
     const failedCount = response.results.length - deletedIds.length
     if (failedCount > 0) {
       toast.add({

@@ -433,6 +433,7 @@ document:
     selected_count: '{count} document(s) sélectionné(s)'
   delete:
     title: Supprimer le document
+    deleting: Suppression en cours
     button: Supprimer
     button_selected: Supprimer la sélection
     confirmMessage: Voulez-vous vraiment supprimer ce document ? Il sera définitivement
