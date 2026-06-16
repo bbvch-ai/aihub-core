@@ -8,6 +8,7 @@ from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.infrastructure import enable_logging
 
 from swiss_ai_hub.api.routes import (
+    AccessController,
     AgentController,
     ApiHealthController,
     AuthProviderController,
@@ -88,14 +89,8 @@ runner.mount(
     .send_process_start_form()
     .send_process_open_form(),
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
-    RoleController(auth=auth)
-    .get_role()
-    .get_roles()
-    .create_role()
-    .update_role()
-    .delete_role()
-    .get_access_capabilities()
-    .get_access_presets(),
+    RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
+    AccessController(auth=auth).get_access_capabilities().get_access_presets(),
     OpenaiController(auth=auth)
     .get_models()
     .get_model_with_assistants()

@@ -7,8 +7,8 @@ from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 
+from swiss_ai_hub.api.decorators.access_catalog import ACCESS_CATALOG_ENTRY_ATTRIBUTE, AccessCatalogEntryMeta
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
-from swiss_ai_hub.api.routes.access.capability import CAPABILITY_ATTRIBUTE, CapabilityMeta
 from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import (
     AccessCapabilitiesResponse,
     Capability,
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # The implicit per-service gate is not backed by a ``user_with_permission`` route, so it carries no
-# ``@capability`` annotation — its labels live here instead of being read off a route.
+# ``@access_catalog_entry`` annotation — its labels live here instead of being read off a route.
 _SERVICE_USE_LABEL = ApiLocaleString.from_i18n_path("api.access.capabilities.ops.service.use.label")
 _SERVICE_USE_DESCRIPTION = ApiLocaleString.from_i18n_path("api.access.capabilities.ops.service.use.description")
 _SERVICE_ADMIN_LABEL = ApiLocaleString.from_i18n_path("api.access.capabilities.ops.service.administer.label")
@@ -43,7 +43,7 @@ class _ResourceNode(NamedTuple):
 class AccessCapabilityService:
     """Builds the human-readable capability catalog by introspecting each controller's routes at runtime.
 
-    Groups are services (controllers). Each route annotated with ``@capability(...)`` becomes a capability
+    Groups are services (controllers). Each route annotated with ``@access_catalog_entry(...)`` becomes a capability
     whose access rule **is** the route's own ``user_with_permission`` guard — the single source of truth,
     never restated. ``granted`` is evaluated through the subject's ``AccessChecker`` with the exact
     ``has_access`` call the endpoint enforces with, so the table cannot drift from enforcement: the sysadmin
@@ -92,10 +92,10 @@ class AccessCapabilityService:
         service_name = controller.service_name
         all_templates, annotated_guards = AccessCapabilityService._introspect(controller)
         gate_templates = {
-            "aihub.user.?>",
-            "aihub.admin.?>",
-            f"aihub.user.service.{service_name}",
-            f"aihub.admin.service.{service_name}",
+            f"{AccessChecker.USER_PREFIX}?>",
+            f"{AccessChecker.ADMIN_PREFIX}?>",
+            AccessChecker.service_user_rule(service_name),
+            AccessChecker.service_admin_rule(service_name),
         }
         resource_guards = {tmpl: meta for tmpl, meta in annotated_guards.items() if tmpl not in gate_templates}
 
@@ -134,9 +134,11 @@ class AccessCapabilityService:
     ) -> list[Capability]:
         """The implicit per-service gate: every service has a "Use" capability; "Administer" is surfaced
         only when the controller actually exposes an ``aihub.admin.service.<name>`` endpoint."""
-        gate_specs = [(_SERVICE_USE_LABEL, _SERVICE_USE_DESCRIPTION, f"aihub.user.service.{service_name}")]
-        if f"aihub.admin.service.{service_name}" in all_templates:
-            gate_specs.append((_SERVICE_ADMIN_LABEL, _SERVICE_ADMIN_DESCRIPTION, f"aihub.admin.service.{service_name}"))
+        gate_specs = [(_SERVICE_USE_LABEL, _SERVICE_USE_DESCRIPTION, AccessChecker.service_user_rule(service_name))]
+        if AccessChecker.service_admin_rule(service_name) in all_templates:
+            gate_specs.append(
+                (_SERVICE_ADMIN_LABEL, _SERVICE_ADMIN_DESCRIPTION, AccessChecker.service_admin_rule(service_name))
+            )
         return [
             capability
             for label, description, guard_template in gate_specs
@@ -148,11 +150,12 @@ class AccessCapabilityService:
         ]
 
     @staticmethod
-    def _introspect(controller: TenantScopedController) -> tuple[set[str], dict[str, CapabilityMeta]]:
+    def _introspect(controller: TenantScopedController) -> tuple[set[str], dict[str, AccessCatalogEntryMeta]]:
         """Reads every route's ``user_with_permission`` guard. Returns all guard templates (used to detect
-        whether an "Administer" gate exists) and the subset annotated with ``@capability`` (the catalog rows)."""
+        whether an "Administer" gate exists) and the subset annotated with ``@access_catalog_entry`` (the
+        catalog rows)."""
         all_templates: set[str] = set()
-        annotated_guards: dict[str, CapabilityMeta] = {}
+        annotated_guards: dict[str, AccessCatalogEntryMeta] = {}
         for route in controller.router.routes:
             if not isinstance(route, APIRoute):
                 continue
@@ -160,8 +163,8 @@ class AccessCapabilityService:
             if template is None:
                 continue
             all_templates.add(template)
-            meta = getattr(route, CAPABILITY_ATTRIBUTE, None)
-            if isinstance(meta, CapabilityMeta):
+            meta = getattr(route, ACCESS_CATALOG_ENTRY_ATTRIBUTE, None)
+            if isinstance(meta, AccessCatalogEntryMeta):
                 if template in annotated_guards and annotated_guards[template] != meta:
                     logger.warning(
                         "Two @capability annotations resolve to the same guard %r on %s; keeping the first "
@@ -200,7 +203,7 @@ class AccessCapabilityService:
                 continue
             # Require the permission-template prefixes, not just ``aihub.``, so an unrelated captured string
             # (a NATS subject, a log prefix) can't be mistaken for the guard and silently shadow the real one.
-            if isinstance(value, str) and value.startswith(("aihub.user.", "aihub.admin.")):
+            if isinstance(value, str) and value.startswith((AccessChecker.USER_PREFIX, AccessChecker.ADMIN_PREFIX)):
                 return value
         return None
 
@@ -264,7 +267,7 @@ class AccessCapabilityService:
     @staticmethod
     async def _resource_groups(
         service_name: str,
-        resource_guards: dict[str, CapabilityMeta],
+        resource_guards: dict[str, AccessCatalogEntryMeta],
         subject: AccessChecker,
         granted_rules: set[str],
         ceiling: AccessChecker | None,
@@ -353,7 +356,7 @@ class AccessCapabilityService:
             tuple[str, str],
             "The guard's (class-level, instance-level) path-parameter names, e.g. ``('agent_class', 'agent_id')``.",
         ],
-        resource_guards: dict[str, CapabilityMeta],
+        resource_guards: dict[str, AccessCatalogEntryMeta],
         subject: AccessChecker,
         granted_rules: set[str],
         ceiling: AccessChecker | None,

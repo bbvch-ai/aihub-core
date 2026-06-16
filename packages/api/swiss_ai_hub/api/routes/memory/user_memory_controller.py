@@ -6,9 +6,9 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import TenantScopedController
 
+from swiss_ai_hub.api.decorators.access_catalog import access_catalog_entry
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
-from swiss_ai_hub.api.routes.access.capability import capability
 from swiss_ai_hub.api.routes.memory.dto.delete_memory_response import DeleteAllMemoriesResponse, DeleteMemoryResponse
 from swiss_ai_hub.api.routes.memory.dto.memories_response import MemoriesResponse
 from swiss_ai_hub.api.routes.memory.dto.memory_search_response import MemorySearchResponse
@@ -27,7 +27,7 @@ class UserMemoryController(TenantScopedController):
     def __init__(self, *, auth: AuthHandler, route: str = "/user-memories", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)
 
-    @capability("api.access.capabilities.ops.memory.personal")
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.memory.personal")
     def get_user_memories(self, route: str = "") -> Self:
         @self.router.get(route, tags=self.tags, response_model=MemoriesResponse)
         async def get_user_memories(

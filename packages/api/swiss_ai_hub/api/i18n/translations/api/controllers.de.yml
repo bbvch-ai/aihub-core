@@ -35,6 +35,9 @@ openai:
 process:
   name: Arbeitsabläufe
   description: Automatisierte Geschäftsprozesse verwalten
+access:
+  name: Zugriffskatalog
+  description: Katalog der Zugriffsberechtigungen und Vorlagen zum Erstellen von Zugriffsregeln
 role:
   name: Benutzerrollen
   description: Zugriffsrechte und Rollen konfigurieren

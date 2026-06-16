@@ -10,8 +10,8 @@ from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
 
-from swiss_ai_hub.api.routes.access.access_catalog_service import AccessCatalogService
-from swiss_ai_hub.api.routes.access.dto.access_dto import Access
+from swiss_ai_hub.api.routes.my_account.access_catalog_service import AccessCatalogService
+from swiss_ai_hub.api.routes.my_account.dto.access_dto import Access
 from swiss_ai_hub.api.routes.user.dto.dashboard.dashboard_dto import DashboardDTO
 from swiss_ai_hub.api.routes.user.dto.user_dto import UserDTO
 

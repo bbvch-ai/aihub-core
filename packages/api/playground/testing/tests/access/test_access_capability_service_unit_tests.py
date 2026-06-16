@@ -7,9 +7,9 @@ from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 
+from swiss_ai_hub.api.decorators.access_catalog import ACCESS_CATALOG_ENTRY_ATTRIBUTE, AccessCatalogEntryMeta
 from swiss_ai_hub.api.routes.access.access_capability_service import AccessCapabilityService
 from swiss_ai_hub.api.routes.access.access_preset_service import AccessPresetService
-from swiss_ai_hub.api.routes.access.capability import CAPABILITY_ATTRIBUTE, CapabilityMeta
 
 _AGENT = "swiss_ai_hub.api.routes.agent.agent_service.AgentService"
 _PROCESS = "swiss_ai_hub.api.routes.process.process_service.ProcessService"
@@ -23,7 +23,7 @@ class _FakeRoute(APIRoute):
 
         self.dependant = SimpleNamespace(call=_dependency, dependencies=[])
         if cap_key:
-            setattr(self, CAPABILITY_ATTRIBUTE, CapabilityMeta.from_i18n_base(cap_key))
+            setattr(self, ACCESS_CATALOG_ENTRY_ATTRIBUTE, AccessCatalogEntryMeta.from_i18n_path(cap_key))
 
 
 def _controller(name: str, cls_name: str, routes: list[tuple[str, str | None]]) -> TenantScopedController:

@@ -8,11 +8,11 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.testing.auth_utils import TEST_TENANT_ID, TestAuthHandler, fake_user
 
-from swiss_ai_hub.api.routes.role.role_controller import RoleController
+from swiss_ai_hub.api.routes.access.access_controller import AccessController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
-CAPABILITIES_URL = f"/api/v1/{TEST_TENANT_ID}/roles/access/capabilities"
+CAPABILITIES_URL = f"/api/v1/{TEST_TENANT_ID}/access/capabilities"
 
 
 class _SysAdminAuthHandler(TestAuthHandler):
@@ -24,7 +24,7 @@ class _SysAdminAuthHandler(TestAuthHandler):
 
 def _capabilities_client(auth: TestAuthHandler):
     runner = ApiTestRunner()
-    runner.mount(RoleController(auth=auth).get_access_capabilities())
+    runner.mount(AccessController(auth=auth).get_access_capabilities())
     return runner.create_app()
 
 

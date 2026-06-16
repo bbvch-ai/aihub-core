@@ -1,22 +1,13 @@
 import logging
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, Request, Security, status
+from fastapi import HTTPException, Security, status
 from mongoengine.errors import NotUniqueError
-from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
-from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
-from swiss_ai_hub.api.routes.access.access_capability_service import AccessCapabilityService
-from swiss_ai_hub.api.routes.access.access_preset_service import AccessPresetService
-from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import AccessCapabilitiesResponse
-from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import AccessCapabilitiesRequest
-from swiss_ai_hub.api.routes.access.dto.access_preset_dto import AccessPresetDTO
-from swiss_ai_hub.api.routes.access.platform_access_proxy import PlatformAccessProxy
 
 from .dto.create_role_request import CreateRoleRequest
 from .dto.delete_role_response import DeleteRoleResponse
@@ -143,65 +134,5 @@ class RoleController(TenantScopedController):
         ) -> DeleteRoleResponse:
             RoleService.delete_role(role_id, user.acting_within_tenant.id)
             return DeleteRoleResponse()
-
-        return self
-
-    def get_access_capabilities(self, route: str = "/access/capabilities") -> Self:
-        @self.router.post(
-            route,
-            summary="Evaluate Access Capabilities",
-            description="Returns the catalog of concrete capabilities (per service, agent and process), each with "
-            "its exact access rule and whether the supplied draft rules grant it.",
-            tags=self.tags,
-        )
-        async def get_access_capabilities(
-            request: AccessCapabilitiesRequest,
-            http_request: Request,
-            user: Annotated[
-                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
-            ],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> AccessCapabilitiesResponse:
-            platform_api_base_url = self._runner.platform_api_base_url
-            if platform_api_base_url is not None:
-                return await PlatformAccessProxy.fetch_capabilities(
-                    platform_api_base_url, http_request.path_params["tenant_id"], http_request, request
-                )
-            # `is_sys_admin` and `restrict_to_tenant` come from the request body, so without this gate a
-            # non-sysadmin role admin could claim sysadmin or drop the ceiling to enumerate every agent,
-            # process and knowledge namespace platform-wide. Both privileges require the *acting* user to
-            # actually be a sysadmin; everyone else is forced to a ceiling-bounded, non-sysadmin view.
-            acting_is_sys_admin = user.is_sys_admin
-            subject = AccessChecker(
-                user_access_rules=request.access_rules,
-                tenant_access_rules=request.access_rules,
-                is_sys_admin=request.is_sys_admin and acting_is_sys_admin,
-            )
-            ceiling = None
-            if request.restrict_to_tenant or not acting_is_sys_admin:
-                tenant_rules = user.acting_within_tenant.access_rules
-                ceiling = AccessChecker(user_access_rules=tenant_rules, tenant_access_rules=tenant_rules)
-            return await AccessCapabilityService.build_capabilities(subject, self._runner, t, ceiling)
-
-        return self
-
-    def get_access_presets(self, route: str = "/access/presets") -> Self:
-        @self.router.get(
-            route,
-            summary="List Access Presets",
-            description="Returns a curated, described library of common access rules for one-click authoring.",
-            tags=self.tags,
-        )
-        async def get_access_presets(
-            http_request: Request,
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> list[AccessPresetDTO]:
-            platform_api_base_url = self._runner.platform_api_base_url
-            if platform_api_base_url is not None:
-                return await PlatformAccessProxy.fetch_presets(
-                    platform_api_base_url, http_request.path_params["tenant_id"], http_request
-                )
-            return AccessPresetService.get_presets(t)
 
         return self

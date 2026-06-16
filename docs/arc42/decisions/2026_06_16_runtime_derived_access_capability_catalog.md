@@ -48,12 +48,13 @@ each controller's routes at runtime**:
   capability is **read-only** (shown, not toggleable). This makes divergence between the catalog and the enforced guard
   structurally impossible.
 - Endpoints opt into the catalog by annotating their **fluent builder method** with
-  `@capability("api.access.capabilities.ops.<key>")`, which carries **only** the i18n label/description — mirroring how
-  controllers already declare `name`/`description`. The decorator lets the method register its route, then tags that
+  `@access_catalog_entry(i18n_path="api.access.capabilities.ops.<key>")` (the decorator lives in
+  `packages/api/.../decorators/`, not under `routes/`), which carries **only** the i18n label/description — mirroring
+  how controllers already declare `name`/`description`. The decorator lets the method register its route, then tags that
   route with the metadata. Opting in is deliberate: controllers whose access is not a per-operator grant decision — the
-  chat/thread, token, notification, file, model and OpenAI-compatibility surfaces — carry no `@capability` annotation
-  and simply do not appear in the catalog. Their service-level gate still surfaces once any resource capability exists;
-  they are absent because there is nothing meaningful for an operator to toggle, not by oversight.
+  chat/thread, token, notification, file, model and OpenAI-compatibility surfaces — carry no `@access_catalog_entry`
+  annotation and simply do not appear in the catalog. Their service-level gate still surfaces once any resource
+  capability exists; they are absent because there is nothing meaningful for an operator to toggle, not by oversight.
 - Path-parameter guards (`{agent_class}`, `{agent_id}`, `{database}`, `{namespace}`, …) are enumerated across the
   concrete agents/processes/knowledge namespaces; the implicit service gate (`aihub.user.service.<name>`) is synthesized
   from the controller's `service_name`, with "Administer" surfaced when an `aihub.admin.service.<name>` endpoint exists.
@@ -74,21 +75,22 @@ identity, never trusted from the body**: only an acting sysadmin may wield them,
 to enumerate the platform beyond its own tenant. Ticking a capability adds its exact rule; broad/wildcard grants (and
 named presets like `aihub.admin.>`) render as locked, with the raw rule list retained as the power-user escape hatch.
 
-To keep the sysadmin plane same-origin (see
-[sysadmin_api_full_self_contained_lifespan](2026_05_26_sysadmin_api_full_self_contained_lifespan.md)), the capability
-and preset endpoints are mounted on `RoleController`, which sysadmin-api already re-mounts.
+The capability and preset endpoints live on a dedicated `AccessController` (`/access/capabilities`, `/access/presets`),
+which sysadmin-api re-mounts so the sysadmin plane stays same-origin (see
+[sysadmin_api_full_self_contained_lifespan](2026_05_26_sysadmin_api_full_self_contained_lifespan.md)).
 
 **Catalog completeness on the sysadmin plane via a server-to-server proxy.** Because `packages/api` is consumed as an
 SDK, every deployment mounts its own subset of controllers — the sysadmin API mounts a deliberately lean slice (user,
 role, identity, auth-provider). Introspecting *its* runner would therefore report a misleadingly narrow catalog, yet the
 sysadmin tenant-ceiling editor must show the **full** platform surface. Only the main API authoritatively knows what it
-serves, and that is deployment-dependent — so it cannot be resolved by importing controllers. The catalog endpoints
-instead ask their runner where the authoritative platform API is: `Runner.platform_api_base_url` returns `None` on the
-main API (build locally from `self._runner`), and the `SysadminApiRunner` overrides it to the main API's internal URL
-(`AIHubSettings.INTERNAL_API_BASE_URL` — `http://api:8000` in compose, `http://localhost:8000` in local dev). When it is
-set, the endpoint **proxies** the caller's request server-to-server (forwarding the bearer token and locale) and returns
-whatever the live platform API reports. The hop is the backend's responsibility, so the sysadmin web app stays purely
-same-origin against sysadmin-api.
+serves, and that is deployment-dependent — so it cannot be resolved by importing controllers. The main API's
+`AccessController` therefore builds the catalog locally with no proxy branch; the sysadmin plane instead mounts a
+`SysadminAccessController` subclass that **overrides** the two endpoints to proxy the caller's request server-to-server
+(forwarding the bearer token and locale) to the main platform API, returning the same DTOs. It learns the authoritative
+URL from its runner — `SysadminApiRunner.platform_api_base_url` resolves to the main API's internal URL
+(`AIHubSettings.INTERNAL_API_BASE_URL` — `http://api:8000` in compose, `http://localhost:8000` in local dev). Keeping
+the override and its `PlatformAccessProxy` wholly inside the sysadmin package means the main API and the shared
+controllers carry no proxy concern, while the sysadmin web app stays purely same-origin against sysadmin-api.
 
 ## Consequences
 
@@ -102,7 +104,7 @@ same-origin against sysadmin-api.
   a forged request field leaks the platform surface to a non-sysadmin.
 - One engine powers three surfaces (role editor, tenant-ceiling editor, read-only user view), sysadmin-aware on the
   last.
-- New endpoints self-describe with a one-line `@capability(...)` on their builder method; no rule restated.
+- New endpoints self-describe with a one-line `@access_catalog_entry(...)` on their builder method; no rule restated.
 - Named presets cover the common broad grants in one click.
 - The sysadmin tenant-ceiling editor shows the full platform catalog by proxying to the main API, so it reflects exactly
   what that deployment serves — without the sysadmin plane having to mount every controller or hardcode the surface.
