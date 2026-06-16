@@ -38,6 +38,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
+    MetaQuestionDetectedEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
     RAGSuccessStopEvent,
@@ -92,6 +93,7 @@ DisplayEvents = (
     | Annotated[EmbeddingEvent, Tag("EmbeddingEvent")]
     | Annotated[LLMEvent, Tag("LLMEvent")]
     | Annotated[LLMStopEvent, Tag("LLMStopEvent")]
+    | Annotated[MetaQuestionDetectedEvent, Tag("MetaQuestionDetectedEvent")]
     | Annotated[RerankerEvent, Tag("RerankerEvent")]
     | Annotated[RetrieverEvent, Tag("RetrieverEvent")]
     | Annotated[ToolEvent, Tag("ToolEvent")]

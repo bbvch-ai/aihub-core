@@ -53,6 +53,11 @@ guard_accept_event:
 guard_rejection_event:
   name: Request Rejected
   description: The request was rejected for security reasons or due to policy violations.
+meta_question_detected_event:
+  name: Meta Question Detected
+  description: The user asked about the assistant itself — its identity, capabilities,
+    or behaviour — so the assistant answers from its own configuration instead of
+    running its normal workflow.
 few_shot_guard_accept_event:
   name: Few-Shot Guard Accepted
   description: The request matches the patterns from few-shot examples and is allowed

@@ -113,6 +113,36 @@ class MyAgent(Agent):
 `Agent` (extends `DispatchableWorkflow`) provides introspection: `get_start_events()`, `get_stop_events()`,
 `get_hitl_request_events()`, `get_hitl_response_events()` — all cached classmethods that scan `@step()` signatures.
 
+### Built-in Self-Awareness (meta questions)
+
+Conversational blueprints can answer meta questions about themselves ("what can you do?", "why did you do X?") instead
+of running their normal pipeline. The detection/answer logic is shared as free functions (`do_detect_meta_question`,
+`do_answer_meta_question`, `summarize_workflow_for_meta_answer` in `self_awareness/`); the **steps are defined
+explicitly in each self-aware agent** — there is no base-class mixin and no `get_steps()` filtering. An agent is
+self-aware iff it defines the steps. Non-conversational blueprints (e.g. `RetrievalAgent`) simply don't.
+
+Adopting it has two parts (see ADR `2026_06_04_self_awareness_as_explicit_per_agent_steps` and `RAGAgent` as the
+reference):
+
+1. **Define the two thin `@step` methods** on the agent: `detect_meta_question_step` (on `UserMessageEvent`) and
+   `answer_meta_question_step` (returns `LLMStopEvent` directly). Each delegates to the shared free functions, passing
+   `agent_config.llm`. (There is no separate stop step: once the consumer drains trailing display events before teardown
+   — ADR `2026_06_09_drain_display_event_streams_before_consumer_teardown` — the answer step can emit the terminal
+   `LLMStopEvent` itself without its chunks being raced.)
+
+2. **Gate every raw `UserMessageEvent` entry step** so detection can't be raced. Two equivalent forms depending on the
+   agent's start events:
+
+   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`): add a
+     **required** `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates the step — no precondition.
+   - **Entry also accepts a programmatic start** (e.g. `RAGAgent`, `ExpertRAGAgent`, `NamespaceSelectionAgent` accept
+     `UserMessageEvent | RAGStartEvent`): keep `_clear: NotAMetaQuestionEvent | None = None` and combine the step's
+     precondition with `check_passed_meta_question_gate(start_event, clear)`, so programmatic starts skip detection.
+
+   The gate falls out of event dependencies — the entry step can't fire on a chat message until detection emits
+   `NotAMetaQuestionEvent`. Gating cannot be automated; a self-aware blueprint that forgets it (or defines a partial
+   step set) fails `self_awareness/tests/test_self_awareness_wiring.py`.
+
 ## The @step Decorator
 
 ```python
@@ -308,15 +338,15 @@ the relevant steps.
 
 ## Pre-Built Agents
 
-| Agent                       | Purpose                          | Key Pattern                                            |
-| --------------------------- | -------------------------------- | ------------------------------------------------------ |
-| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory   |
-| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                  |
-| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory       |
-| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop         |
-| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection         |
-| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate |
-| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context             |
+| Agent                       | Purpose                          | Key Pattern                                                                                         |
+| --------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) |
+| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                                                               |
+| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory                                                    |
+| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop                                                      |
+| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection                                                      |
+| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate                                              |
+| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context                                                          |
 
 Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.py` (entry point),
 `agents/{snake_name}/tests/` (BDD tests).
@@ -352,8 +382,13 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
 4. Create custom events inheriting `ControlEvent`/`StartEvent`/`StopEvent`
 5. Add i18n translations in `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`
 6. Create `app/my_agent/main.py` entry point with `AgentRunner`
-7. Write BDD tests with `AgentTestRunner`
-8. Run `make test`
+7. (Conversational agents) Add self-awareness: define `detect_meta_question_step` / `answer_meta_question_step`
+   (delegating to the shared free functions) and gate raw `UserMessageEvent` entry steps with `NotAMetaQuestionEvent` —
+   a required dependency for `UserMessageEvent`-only agents, or `_clear: NotAMetaQuestionEvent | None = None` +
+   `check_passed_meta_question_gate` for agents that also accept a programmatic start (see the Built-in Self-Awareness
+   section above)
+8. Write BDD tests with `AgentTestRunner`
+9. Run `make test`
 
 ## Essential Files
 
@@ -393,5 +428,7 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
 
 - RAGAgent: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/rag_agent.py`
 - RAGAgentConfig: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/configs/rag_agent_config.py`
+- Self-awareness step functions: `packages/agent/swiss_ai_hub/agent/self_awareness/self_awareness_step_functions.py`
+- Self-awareness gate: `packages/agent/swiss_ai_hub/agent/self_awareness/meta_question_gate.py`
 
 **Playground patterns**: `playground/minimal_workflow/`

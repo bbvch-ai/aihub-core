@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-core"
-version = "0.296.1"
+version = "0.297.5"
 description = "Foundational shared library for the Swiss AI Hub platform: event-driven Swiss AI Agent Protocol, auth, and AI/ML utilities."
 requires-python = ">=3.13, <3.14"
 authors = [
