@@ -86,6 +86,17 @@ class TestDeleteDocument:
 
         publish_event.assert_not_awaited()
 
+    @pytest.mark.asyncio
+    async def test_s3_delete_happens_before_event_publish(self, delete_mocks, nc, s3_service):
+        _, publish_event = delete_mocks
+        order: list[str] = []
+        s3_service.delete_file.side_effect = lambda **_: order.append("s3")
+        publish_event.side_effect = lambda **_: order.append("event")
+
+        await KnowledgeService.delete_document(nc, DB, NAMESPACE, DOCUMENT_ID, s3_service)
+
+        assert order == ["s3", "event"]
+
 
 class TestBatchDeleteDocuments:
     @pytest.mark.asyncio
@@ -126,6 +137,13 @@ class TestDeleteSourceFromDataLake:
     def test_source_without_object_key_raises_500(self, s3_service):
         with pytest.raises(HTTPException) as exc_info:
             KnowledgeService._delete_source_from_data_lake(s3_service, "s3://my-bucket")
+
+        assert exc_info.value.status_code == 500
+        s3_service.delete_file.assert_not_called()
+
+    def test_non_s3_source_raises_500(self, s3_service):
+        with pytest.raises(HTTPException) as exc_info:
+            KnowledgeService._delete_source_from_data_lake(s3_service, "file:///etc/passwd")
 
         assert exc_info.value.status_code == 500
         s3_service.delete_file.assert_not_called()

@@ -143,14 +143,17 @@ const handleUpload = () => {
   refetch()
 }
 
-const deletionScheduledIds = ref<Set<string>>(new Set())
+const { scheduledIds, schedule } = useScheduledDeletions(
+  () => route.params.db as string,
+  () => route.params.namespace as string,
+)
 
 const visibleDocuments = computed(() => {
-  return documents.value?.filter(document => !deletionScheduledIds.value.has(document.id)) ?? []
+  return documents.value?.filter(document => !scheduledIds.value.has(document.id)) ?? []
 })
 
 const handleDeleted = (documentIds: string[]) => {
-  deletionScheduledIds.value = new Set([...deletionScheduledIds.value, ...documentIds])
+  schedule(documentIds)
   if (documentIds.includes(route.params.document_id as string)) {
     router.push(tenantPath(`/service/knowledge/${route.params.db}/${route.params.namespace}`))
   }

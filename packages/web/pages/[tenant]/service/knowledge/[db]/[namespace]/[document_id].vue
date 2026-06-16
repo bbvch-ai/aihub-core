@@ -37,6 +37,10 @@ const tenantPath = useTenantPath()
 const { t } = useI18n()
 const { tenantId } = useTenant()
 const { deleteDocument, isDeleting } = useDeleteDocument()
+const { schedule } = useScheduledDeletions(
+  () => route.params.db as string,
+  () => route.params.namespace as string,
+)
 const confirm = useConfirm()
 const toast = useToast()
 
@@ -85,6 +89,7 @@ const handleDelete = async () => {
       namespace: route.params.namespace as string,
       documentId: route.params.document_id as string,
     })
+    schedule([route.params.document_id as string])
     toast.add({
       severity: 'success',
       summary: t('document.delete.success'),

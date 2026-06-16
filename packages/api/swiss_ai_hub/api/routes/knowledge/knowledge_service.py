@@ -485,8 +485,10 @@ class KnowledgeService:
 
     @staticmethod
     def _delete_source_from_data_lake(s3_service: S3AnonymousFileAccessService, source: str) -> tuple[str, str]:
-        stripped = source.removeprefix("s3://")
-        parts = stripped.split("/", 1)
+        if not source.startswith("s3://"):
+            raise HTTPException(status_code=500, detail=f"Document source '{source}' is not an s3:// URI")
+
+        parts = source.removeprefix("s3://").split("/", 1)
         container = parts[0]
         file_path = parts[1] if len(parts) > 1 else ""
         if not file_path:

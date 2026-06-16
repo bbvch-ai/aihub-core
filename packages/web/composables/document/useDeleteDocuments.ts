@@ -1,5 +1,6 @@
-import type { BatchDeleteDocumentsResponse } from '@core/sdk/client'
 import { batchDeleteDocuments } from '@core/sdk/client'
+
+import type { BatchDeleteDocumentsResponse } from '@core/sdk/client'
 
 export const useDeleteDocuments = defineMutation(() => {
   const queryCache = useQueryCache()
