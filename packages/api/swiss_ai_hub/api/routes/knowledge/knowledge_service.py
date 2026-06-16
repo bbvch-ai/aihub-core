@@ -350,10 +350,10 @@ class KnowledgeService:
         file_path: Annotated[str, Field(description="Path to the uploaded file")],
     ) -> None:
         """
-        Publishes a SourceUpdatedEvent to NATS when a file is successfully uploaded.
+        Publishes a SourceUpdatedEvent to NATS after a source file is added or removed.
 
-        This event triggers downstream pipeline processing via Dagster sensors that
-        listen for file upload events on the pipeline stream.
+        The Dagster observe job reacts by scanning the data lake, so the same event drives
+        both ingestion (file uploaded) and cleanup (file deleted, picked up as an orphan).
         """
         topic_manager = PipelineInstanceTopicManager(
             source_type="datalake",
