@@ -61,10 +61,10 @@ def _current_user() -> UserIdentity:
     )
 
 
-def _grant_creator_access() -> None:
-    """Mirrors AgentService._grant_creator_access using the real helpers."""
+def _grant_instance_access() -> None:
+    """Mirrors AgentService._grant_instance_access using the real helpers."""
     tenant = TenantMetadataEntity.get_metadata_by_tenant_id(TENANT_ID)
-    if not AccessChecker.rules_grant_admin_to_agent(tenant.access_rules, AGENT_CLASS, AGENT_ID):
+    if not AccessChecker.rules_grant_admin_to_agent_instance(tenant.access_rules, AGENT_CLASS, AGENT_ID):
         TenantMetadataEntity.grant_access_rule(TENANT_ID, ADMIN_RULE)
     if not RoleEntity.objects(name=ROLE_NAME, tenant_id=TENANT_ID).first():
         RoleEntity.create_tenant_role(ROLE_NAME, "Admin access", [ADMIN_RULE], TENANT_ID)
@@ -87,7 +87,7 @@ def test_tenant_ceiling_is_the_blocker_and_grant_unblocks() -> None:
 
     assert not AccessChecker.from_user(_current_user()).has_access_to_agent(AGENT_CLASS, AGENT_ID)
 
-    _grant_creator_access()
+    _grant_instance_access()
     assert AccessChecker.from_user(_current_user()).has_access_to_agent(AGENT_CLASS, AGENT_ID)
 
     _cleanup_instance_access()
@@ -102,7 +102,7 @@ def test_user_role_is_the_blocker_and_per_instance_role_unblocks() -> None:
 
     assert not AccessChecker.from_user(_current_user()).has_access_to_agent(AGENT_CLASS, AGENT_ID)
 
-    _grant_creator_access()
+    _grant_instance_access()
     assert AccessChecker.from_user(_current_user()).has_access_to_agent(AGENT_CLASS, AGENT_ID)
 
     _cleanup_instance_access()
@@ -117,8 +117,8 @@ def test_grant_is_idempotent_on_recreate() -> None:
     RoleEntity.create_tenant_role("BroadAgentAdmin", "desc", ["aihub.admin.agent.>"], TENANT_ID)
     UserTenantRoleEntity.create_or_update(USER_ID, TENANT_ID, ["BroadAgentAdmin"], validate_roles=False)
 
-    _grant_creator_access()
-    _grant_creator_access()
+    _grant_instance_access()
+    _grant_instance_access()
 
     tenant = TenantMetadataEntity.get_metadata_by_tenant_id(TENANT_ID)
     assert tenant.access_rules.count(ADMIN_RULE) == 1

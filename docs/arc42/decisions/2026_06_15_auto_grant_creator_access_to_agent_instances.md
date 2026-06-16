@@ -13,18 +13,17 @@ Agent instances (`AgentConfigEntityDocument`, keyed by `(agent_class, agent_id)`
 layer; tenant isolation is enforced entirely through the access rules. In deployments that restrict agents per instance,
 a tenant has **no** access to an instance by default — each one must be granted explicitly.
 
-This created a self-service gap (issue #1389): to create an instance a tenant admin only needs
-`aihub.admin.agent.<class>` (class-level, no id). But that concrete rule does **not** match the longer
-`aihub.admin.agent.<class>.<id>` — `AccessChecker` requires equal segment counts unless a `*`/`>` wildcard is present.
-So immediately after creating an instance, the same admin was blocked from opening, editing, deleting, or chatting with
-it until a sysadmin manually added the instance rule in tenant management. A tenant admin could create an instance they
-were not allowed to use.
+This created a self-service gap: to create an instance a tenant admin only needs `aihub.admin.agent.<class>`
+(class-level, no id). But that concrete rule does **not** match the longer `aihub.admin.agent.<class>.<id>` —
+`AccessChecker` requires equal segment counts unless a `*`/`>` wildcard is present. So immediately after creating an
+instance, the same admin was blocked from opening, editing, deleting, or chatting with it until a sysadmin manually
+added the instance rule in tenant management. A tenant admin could create an instance they were not allowed to use.
 
 ## Decision Drivers
 
 - **Self-service creation**\
   A tenant admin who can create an instance must be able to use it immediately, with no sysadmin step in between. This
-  is the core requirement of issue #1389.
+  is the core requirement driving the change.
 - **Tenant isolation preserved**\
   The grant must only ever cover the single instance in the creating tenant. Broad grants or cross-tenant sharing would
   break the isolation that per-instance access exists to provide; cross-tenant sharing stays a deliberate sysadmin

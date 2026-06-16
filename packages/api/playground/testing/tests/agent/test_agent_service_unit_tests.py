@@ -367,18 +367,18 @@ def creator_user():
     return user
 
 
-class TestGrantCreatorAccess:
+class TestGrantInstanceAccess:
     """Unit tests for the per-instance access grant on creation."""
 
     def test_grants_tenant_rule_and_creator_role_when_not_covered(self, creator_user):
         config_entity = Mock()
         with (
-            patch.object(AccessChecker, "rules_grant_admin_to_agent", return_value=False) as mock_covered,
+            patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=False) as mock_covered,
             patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
             patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
             patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
         ):
-            AgentService._grant_creator_access("TestAgent", "test_agent_1", creator_user, config_entity)
+            AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
 
         mock_covered.assert_called_once_with(["aihub.admin.agent.TestAgent"], "TestAgent", "test_agent_1")
         mock_grant.assert_called_once_with("tenant_1", _ADMIN_RULE)
@@ -389,12 +389,12 @@ class TestGrantCreatorAccess:
     def test_skips_tenant_grant_when_already_covered(self, creator_user):
         config_entity = Mock()
         with (
-            patch.object(AccessChecker, "rules_grant_admin_to_agent", return_value=True),
+            patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=True),
             patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
             patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
             patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
         ):
-            AgentService._grant_creator_access("TestAgent", "test_agent_1", creator_user, config_entity)
+            AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
 
         mock_grant.assert_not_called()
         mock_ensure.assert_called_once()
@@ -403,7 +403,7 @@ class TestGrantCreatorAccess:
     def test_rolls_back_and_raises_on_grant_failure(self, creator_user):
         config_entity = Mock()
         with (
-            patch.object(AccessChecker, "rules_grant_admin_to_agent", return_value=False),
+            patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=False),
             patch.object(TenantMetadataEntity, "grant_access_rule"),
             patch.object(AgentService, "_ensure_instance_admin_role"),
             patch.object(UserTenantRoleEntity, "add_roles", side_effect=RuntimeError("boom")),
@@ -411,7 +411,7 @@ class TestGrantCreatorAccess:
             patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
         ):
             with pytest.raises(HTTPException) as exc_info:
-                AgentService._grant_creator_access("TestAgent", "test_agent_1", creator_user, config_entity)
+                AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
 
         assert exc_info.value.status_code == 500
         mock_revoke.assert_called_once_with([_ADMIN_RULE])
@@ -432,7 +432,7 @@ class TestCreateAgentInstanceGrantWiring:
         class_entity.agent_config_specs.agent_class = "TestAgent"
         class_entity.agent_config_specs.agent_config_schema = {}
         config_entity = Mock()
-        grant = stack.enter_context(patch.object(AgentService, "_grant_creator_access"))
+        grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.normalize_empty_objects_to_none", return_value={}))
         stack.enter_context(patch(f"{_MODULE}.normalize_empty_locale_strings", return_value={}))

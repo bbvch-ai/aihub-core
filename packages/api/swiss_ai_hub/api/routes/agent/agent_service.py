@@ -481,7 +481,7 @@ class AgentService:
         config_entity.save()
 
         if user.acting_within_tenant is not None:
-            AgentService._grant_creator_access(agent_class, request.agent_id, user, config_entity)
+            AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
 
         return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
 
@@ -496,8 +496,8 @@ class AgentService:
         AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class, agent_id)
 
         rules = [
-            AccessChecker.agent_user_rule(agent_class, agent_id),
-            AccessChecker.agent_admin_rule(agent_class, agent_id),
+            AccessChecker.agent_instance_user_rule(agent_class, agent_id),
+            AccessChecker.agent_instance_admin_rule(agent_class, agent_id),
         ]
         role_name = AgentService._instance_admin_role_name(agent_class, agent_id)
         AgentService._best_effort(
@@ -512,7 +512,7 @@ class AgentService:
         return f"agent-{agent_class}-{agent_id}-admin"
 
     @staticmethod
-    def _grant_creator_access(
+    def _grant_instance_access(
         agent_class: str, agent_id: str, user: UserIdentity, config_entity: AgentConfigEntityDocument
     ) -> None:
         """Grants the creating tenant and creator per-instance admin access, rolling back on failure.
@@ -521,12 +521,12 @@ class AgentService:
         the creator always receives a dedicated per-instance admin role.
         """
         tenant = user.acting_within_tenant
-        admin_rule = AccessChecker.agent_admin_rule(agent_class, agent_id)
+        admin_rule = AccessChecker.agent_instance_admin_rule(agent_class, agent_id)
         role_name = AgentService._instance_admin_role_name(agent_class, agent_id)
         granted_tenant_rule = False
         created_role = False
         try:
-            if not AccessChecker.rules_grant_admin_to_agent(tenant.access_rules, agent_class, agent_id):
+            if not AccessChecker.rules_grant_admin_to_agent_instance(tenant.access_rules, agent_class, agent_id):
                 TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
                 granted_tenant_rule = True
             created_role = AgentService._ensure_instance_admin_role(

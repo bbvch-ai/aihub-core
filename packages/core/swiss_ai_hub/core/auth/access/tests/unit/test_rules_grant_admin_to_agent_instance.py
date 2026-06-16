@@ -19,10 +19,10 @@ from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
         (["not-a-valid-rule", "aihub.admin.agent.MyAgent.inst1"], True),
     ],
 )
-def test_rules_grant_admin_to_agent(rules: list[str], expected: bool) -> None:
-    assert AccessChecker.rules_grant_admin_to_agent(rules, "MyAgent", "inst1") is expected
+def test_rules_grant_admin_to_agent_instance(rules: list[str], expected: bool) -> None:
+    assert AccessChecker.rules_grant_admin_to_agent_instance(rules, "MyAgent", "inst1") is expected
 
 
-def test_agent_rule_builders() -> None:
-    assert AccessChecker.agent_admin_rule("MyAgent", "inst1") == "aihub.admin.agent.MyAgent.inst1"
-    assert AccessChecker.agent_user_rule("MyAgent", "inst1") == "aihub.user.agent.MyAgent.inst1"
+def test_agent_instance_rule_builders() -> None:
+    assert AccessChecker.agent_instance_admin_rule("MyAgent", "inst1") == "aihub.admin.agent.MyAgent.inst1"
+    assert AccessChecker.agent_instance_user_rule("MyAgent", "inst1") == "aihub.user.agent.MyAgent.inst1"
