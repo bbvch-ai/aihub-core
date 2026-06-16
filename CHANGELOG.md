@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.5] - 2026-06-15 - Enhanced Error Reporting for Clearer Notifications
+
+### Fixed
+
+- 🐛 **Improved Error Message Display:** Enhanced the client-side error handling to correctly parse and display detailed
+  error messages received as arrays, ensuring users receive comprehensive and readable notifications in toast alerts.
+
+______________________________________________________________________
+
 ## [v0.297.4] - 2026-06-15 - Enhanced Empty State Feedback
 
 ### Added
