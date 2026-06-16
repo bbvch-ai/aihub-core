@@ -45,7 +45,7 @@
       :class="depth === 0 ? 'mt-3' : 'mt-2'"
     >
       <label
-        v-for="cap in group.capabilities"
+        v-for="cap in group.capabilities ?? []"
         :key="cap.key"
         class="group/cap flex items-start gap-3 rounded-md py-1 pr-1"
         :class="readonly || !cap.toggleable || cap.locked ? 'cursor-default' : 'cursor-pointer'"
@@ -85,12 +85,12 @@
 
     <!-- Nested groups (classes, then instances) -->
     <div
-      v-if="group.groups.length"
+      v-if="group.groups?.length"
       class="mt-4 flex flex-col gap-6"
       :class="depth === 0 ? 'pl-1' : 'pl-4'"
     >
       <AccessCapabilityGroup
-        v-for="sub in group.groups"
+        v-for="sub in group.groups ?? []"
         :key="sub.key"
         :group="sub"
         :depth="depth + 1"

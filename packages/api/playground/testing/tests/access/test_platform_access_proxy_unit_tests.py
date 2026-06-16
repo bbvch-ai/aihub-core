@@ -1,10 +1,14 @@
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
+from fastapi import HTTPException
 
 from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import AccessCapabilitiesRequest
 from swiss_ai_hub.api.routes.access.platform_access_proxy import PlatformAccessProxy
+
+_CLIENT = "swiss_ai_hub.api.routes.access.platform_access_proxy.httpx.AsyncClient"
 
 
 def _request(headers: dict[str, str]) -> SimpleNamespace:
@@ -62,3 +66,36 @@ async def test_fetch_presets_proxies_to_main_api():
 
     assert [preset.rule for preset in result] == ["aihub.user.>"]
     assert client.get.call_args.args[0] == "/api/v1/active/roles/access/presets"
+
+
+@pytest.mark.asyncio
+async def test_fetch_capabilities_passes_through_upstream_status():
+    upstream = httpx.Response(403, text="forbidden", request=httpx.Request("POST", "http://api:8000/x"))
+
+    def _raise_403():
+        raise httpx.HTTPStatusError("403", request=upstream.request, response=upstream)
+
+    response = SimpleNamespace(raise_for_status=_raise_403, json=lambda: {})
+    client = AsyncMock()
+    client.post.return_value = response
+    context = AsyncMock()
+    context.__aenter__.return_value = client
+    body = AccessCapabilitiesRequest(access_rules=[], restrict_to_tenant=True)
+
+    with patch(_CLIENT, return_value=context), pytest.raises(HTTPException) as raised:
+        await PlatformAccessProxy.fetch_capabilities("http://api:8000", "active", _request({}), body)
+
+    assert raised.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_fetch_presets_maps_network_failure_to_502():
+    client = AsyncMock()
+    client.get.side_effect = httpx.ConnectError("connection refused")
+    context = AsyncMock()
+    context.__aenter__.return_value = client
+
+    with patch(_CLIENT, return_value=context), pytest.raises(HTTPException) as raised:
+        await PlatformAccessProxy.fetch_presets("http://api:8000", "active", _request({}))
+
+    assert raised.value.status_code == 502
