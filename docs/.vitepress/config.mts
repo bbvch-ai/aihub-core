@@ -8,7 +8,8 @@ export default withMermaid({
   title: "Swiss AI-Hub",
   description: "Developer focused documentation of the Swiss AI-Hub Agentic Platform",
   lastUpdated: true,
-  base: '/aihub-core/',
+  base: '/',
+  sitemap: { hostname: 'https://docs.ai-hub.bbv.ch/' },
 
   rewrites: {
     ':path(.*)/index.en.md': ':path/index.md',

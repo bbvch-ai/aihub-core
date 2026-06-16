@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.298.2] - 2026-06-16 - Documentation Site Migration to Custom Domain
+
+### Added
+
+- 📄 **Custom Domain Configuration:** Integrated support for a custom domain (`docs.ai-hub.bbv.ch`) for the documentation
+  site, enhancing branding and direct access.
+- 🌐 **Sitemap Generation:** Enabled sitemap generation for the documentation portal, improving search engine
+  optimization and content discoverability.
+- 🤖 **Crawler Access:** Updated the `robots.txt` file to allow web crawlers to access and index the entire documentation
+  site.
+
+### Changed
+
+- 🚀 **Documentation Base Path:** Modified the documentation site's base path to be served from the root `/` (instead of
+  `/aihub-core/`), aligning with the new custom domain setup.
+- 🔗 **Live URL and Deployment Details:** Revised internal configuration and documentation to reflect the new live URL
+  (`https://docs.ai-hub.bbv.ch/`) and updated deployment specifics.
+
+______________________________________________________________________
+
 ## [v0.298.1] - 2026-06-16 - Enhanced Agent List Display and Filtering
 
 ### Changed
