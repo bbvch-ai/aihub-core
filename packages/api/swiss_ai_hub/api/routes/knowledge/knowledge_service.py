@@ -484,9 +484,7 @@ class KnowledgeService:
         )
 
     @staticmethod
-    def _delete_source_from_data_lake(
-        s3_service: S3AnonymousFileAccessService, source: str
-    ) -> tuple[str, str]:
+    def _delete_source_from_data_lake(s3_service: S3AnonymousFileAccessService, source: str) -> tuple[str, str]:
         stripped = source.removeprefix("s3://")
         parts = stripped.split("/", 1)
         container = parts[0]

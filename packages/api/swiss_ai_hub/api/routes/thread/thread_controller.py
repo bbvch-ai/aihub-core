@@ -7,6 +7,7 @@ from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
@@ -20,7 +21,6 @@ from swiss_ai_hub.api.routes.thread.dto.create_thread_request import CreateThrea
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
 from swiss_ai_hub.api.routes.thread.dto.paginated_threads_response import PaginatedThreadsResponse
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
-from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 
 

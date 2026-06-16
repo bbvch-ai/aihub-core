@@ -369,9 +369,7 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
-    def batch_delete_documents(
-        self, route: str = "/databases/{database}/namespaces/{namespace}/documents"
-    ) -> Self:
+    def batch_delete_documents(self, route: str = "/databases/{database}/namespaces/{namespace}/documents") -> Self:
         @self.router.delete(
             route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete multiple documents"
         )

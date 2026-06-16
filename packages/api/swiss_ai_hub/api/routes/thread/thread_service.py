@@ -17,7 +17,6 @@ from openai.types.chat import (
 )
 from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
-from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
@@ -31,6 +30,7 @@ from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity impor
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
+from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
