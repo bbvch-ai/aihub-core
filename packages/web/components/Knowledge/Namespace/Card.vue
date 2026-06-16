@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { NamespaceDto } from '@core/sdk/client'
 
@@ -82,7 +82,7 @@ const { t } = useI18n()
 
 const displayName = computed(() => {
   // Use display_name if available, otherwise fall back to formatted technical name
-  return props.namespace.display_name || useChangeCase(props.namespace.name, 'capitalCase')
+  return props.namespace.display_name || capitalCase(props.namespace.name)
 })
 
 const createdAt = computed(() => {

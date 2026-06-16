@@ -104,6 +104,7 @@
                       :label="rep.label"
                       :add-label="rep.addLabel"
                       :children-schema="rep.childrenSchema"
+                      :default-item="rep.defaultItem"
                       :min="rep.min"
                       :max="rep.max"
                       @update:model-value="setRepeaterData(rep.path, $event)"
@@ -134,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { type FormElement, normalizeFormLocaleStrings } from '@core/composables/form/useFormKitTransform'
+import { type FormElement, serializeFormData } from '@core/composables/form/useFormKitTransform'
 import { getNode } from '@formkit/core'
 
 const props = defineProps<{
@@ -166,8 +167,6 @@ const {
   getRepeaterStepIndex,
   getRepeaterData,
   setRepeaterData,
-  cleanFormData,
-  coerceNullableToggles,
   applyInitialData,
   resetForm,
 } = useCreateInstanceForm({
@@ -212,9 +211,7 @@ function triggerFormSubmit() {
 
 async function handleFormSubmit() {
   try {
-    const cleanedData = cleanFormData(formData.value)
-    const coerced = coerceNullableToggles(cleanedData, configForm.value as FormElement[])
-    const normalizedConfig = normalizeFormLocaleStrings(coerced)
+    const normalizedConfig = serializeFormData(formData.value, configForm.value as FormElement[])
     const processId = normalizedConfig.process_id as string
     await createProcessInstance({
       processClass: selectedClass.value,

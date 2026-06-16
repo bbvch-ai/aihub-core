@@ -175,6 +175,7 @@ class Form(BaseModel):
                                 children=nested_elements,
                                 ref=group_ref,
                                 nullable=True,
+                                default_enabled=self._default_is_non_null(field_info),
                             )
                         )
                 continue
@@ -199,6 +200,7 @@ class Form(BaseModel):
                     condition_if=group_condition,
                     ref=group_ref,
                     nullable=allows_none,
+                    default_enabled=self._default_is_non_null(field_info) if allows_none else None,
                 )
                 formkit_elements.append(group)
 
@@ -256,13 +258,16 @@ class Form(BaseModel):
             element_copy.required = is_required
             if allows_none and not is_skip_required:
                 element_copy.nullable = True
+                element_copy.default_enabled = self._default_is_non_null(field_info)
 
             # If element has no explicit value, use Pydantic field default
             if element_copy.value is None and field_info.default is not PydanticUndefined:
-                # Only use primitive defaults (not FormkitElements or Forms)
+                # A BaseModel default (e.g. a LocaleString prompt) is dumped to its dict so it fits
+                # the primitive `value` type and doesn't trip the Pydantic serializer; FormkitElement
+                # and Form defaults are not values (they describe structure) so they are skipped.
                 default = field_info.default
-                if not isinstance(default, FormkitElement | Form) and default is not None:
-                    element_copy.value = default
+                if default is not None and not isinstance(default, FormkitElement | Form):
+                    element_copy.value = default.model_dump() if isinstance(default, BaseModel) else default
 
             return element_copy
 
@@ -282,6 +287,12 @@ class Form(BaseModel):
             return type(None) in union_args
 
         return False
+
+    @staticmethod
+    def _default_is_non_null(field_info: FieldInfo) -> bool:
+        """Whether the field's data default is a concrete non-null value. Drives a nullable
+        element's initial toggle state on a fresh form (toggle on ⇔ default is non-null)."""
+        return field_info.default is not PydanticUndefined and field_info.default is not None
 
     @staticmethod
     def _extract_form_type(annotation: Any) -> type[Form] | None:

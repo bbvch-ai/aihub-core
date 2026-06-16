@@ -18,7 +18,6 @@ from swiss_ai_hub.core.events.agent import (
     StartEvent,
     StopEvent,
 )
-from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
@@ -437,8 +436,7 @@ class AgentService:
                 status_code=409, detail=f"Agent instance '{agent_class}/{request.agent_id}' already exists."
             )
 
-        config = normalize_empty_objects_to_none(request.configuration)
-        config = normalize_empty_locale_strings(config) or {}
+        config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
         config_model = ModelCreationService.create_agent_config_model(
             AgentConfigSpecs(

@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.298.3] - 2026-06-16 - Configuration Forms: Robustness and User Experience Improvements
+
+### Fixed
+
+- 🐛 **Configuration Form Defaults:** Resolved an issue where nullable fields with default values were not correctly
+  initialized on new form creation, leading to silent data loss of defaults. Forms now consistently apply declared
+  default values, ensuring a predictable user experience.
+- 🐛 **Repeater Row Stability:** Eliminated data corruption and UI inconsistencies in repeater components by implementing
+  stable, unique keys for each row. This prevents issues caused by re-indexing when non-last rows are removed from a
+  list.
+- 🐛 **Fractional Input Fields:** Corrected the behavior of numeric input fields (`InputNumber`) to properly accept and
+  display decimal values for fractional properties (e.g., LLM `temperature`), which previously rejected decimal points.
+- 🐛 **Form Rendering Robustness:** Enhanced the dynamic form builder to handle malformed schema elements gracefully. A
+  single invalid field will now be skipped and logged without causing the entire form section to disappear or become
+  unusable.
+- 🐛 **UI Performance & Stability:** Addressed intermittent blank or broken form displays by refactoring label and option
+  resolvers to use synchronous case conversion, eliminating reactive effect leakage and improving rendering stability.
+
+### Changed
+
+- 🔄 **Unified Form Data Handling:** The agent and process configuration forms now utilize a single, consistent pipeline
+  for hydrating initial data and serializing submissions. This ensures identical behavior and data integrity across both
+  creation and editing workflows.
+- 📄 **Nullable Field Toggle Logic:** Extended the backend form schema to include a `default_enabled` flag for nullable
+  elements. This accurately indicates whether a field with a non-null default value should appear enabled by default on
+  a fresh form.
+- ⚡️ **Symmetric Backend Normalization:** Agent and process creation endpoints now apply the same server-side
+  configuration normalization as update operations. This prevents internal UI artifacts (like FormKit `__validate__`
+  keys) from persisting in the configuration data.
+
+### Refactor
+
+- 🧹 **Case Conversion Utility:** Replaced the `useChangeCase` composable with a direct, synchronous `capitalCase`
+  utility across various UI components, contributing to the overall stability and performance of form rendering.
+
+______________________________________________________________________
+
 ## [v0.298.2] - 2026-06-16 - Documentation Site Migration to Custom Domain
 
 ### Added

@@ -29,6 +29,14 @@ class FormkitElement(BaseModel, abc.ABC):
         bool,
         Field(description="Render with a sibling toggle that sets this field to null when off"),
     ] = False
+    default_enabled: Annotated[
+        bool | None,
+        Field(
+            description="For a nullable element, whether its toggle should start enabled on a fresh "
+            "form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+            alias="defaultEnabled",
+        ),
+    ] = None
 
     @abc.abstractmethod
     def in_locale(self, t: LocaleHandler) -> Self: ...
