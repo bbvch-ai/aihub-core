@@ -156,6 +156,7 @@ const chartOptions = computed<ApexOptions>(() => {
       {
         breakpoint: 480,
         options: {
+          chart: { offsetY: 0 },
           legend: {
             position: 'bottom',
             offsetX: -10,
