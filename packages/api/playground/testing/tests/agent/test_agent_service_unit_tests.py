@@ -352,8 +352,24 @@ class TestAgentServiceUnit:
             assert str(exc_info.value) == "Database error"
 
 
+class TestInstanceAdminRoleName:
+    """The per-instance role is named after the (globally unique) agent id: PascalCase + 'Admin'."""
+
+    @pytest.mark.parametrize(
+        ("agent_id", "expected"),
+        [
+            ("access-test", "AccessTestAdmin"),
+            ("rag-agent-hr", "RagAgentHrAdmin"),
+            ("demo_naming", "DemoNamingAdmin"),
+            ("test_agent_1", "TestAgent1Admin"),
+        ],
+    )
+    def test_derives_role_name_from_agent_id(self, agent_id: str, expected: str):
+        assert AgentService._instance_admin_role_name(agent_id) == expected
+
+
 _ADMIN_RULE = "aihub.admin.agent.TestAgent.test_agent_1"
-_ROLE_NAME = "agent-TestAgent-test_agent_1-admin"
+_ROLE_NAME = "TestAgent1Admin"
 
 
 @pytest.fixture

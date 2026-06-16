@@ -57,17 +57,19 @@ access, the add is skipped. Append is idempotent.
 
 ### User tier — always
 
-A dedicated per-instance role `agent-<class>-<id>-admin` (rules `["aihub.admin.agent.<class>.<id>"]`) is created in the
-creating tenant and assigned to the creator via `UserTenantRoleEntity.add_roles`. This is **always** done — it gives the
-specific creator instance access without widening any shared role. Role creation and assignment are idempotent (reused
-if present; assignment is a set union).
+A dedicated per-instance role (rules `["aihub.admin.agent.<class>.<id>"]`) is created in the creating tenant and
+assigned to the creator via `UserTenantRoleEntity.add_roles`. The role is named after the **agent id** — PascalCased and
+suffixed with `Admin` (e.g. an instance with id `access-test` yields `AccessTestAdmin`). The id is immutable and (soon)
+globally unique, so the name is stable and collision-free without any disambiguation. This is **always** done — it gives
+the specific creator instance access without widening any shared role. Role creation and assignment are idempotent
+(reused if present; assignment is a set union).
 
 ### Cleanup on delete
 
 Because an instance is globally unique, deletion removes both `aihub.user.agent.<class>.<id>` and
-`aihub.admin.agent.<class>.<id>` from **every** tenant ceiling that holds them, and deletes the
-`agent-<class>-<id>-admin` role wherever it exists (cascading the role off all `UserTenantRoleEntity` rows). Broad
-wildcard rules and shared default roles are untouched.
+`aihub.admin.agent.<class>.<id>` from **every** tenant ceiling that holds them, and deletes the per-instance admin role
+(re-derived from the immutable agent id) wherever it exists (cascading the role off all `UserTenantRoleEntity` rows).
+Broad wildcard rules and shared default roles are untouched.
 
 ### Failure handling
 
@@ -77,13 +79,14 @@ role, delete the just-saved config — and returns a clear error, so no half-cre
 ### Scope of "rename"
 
 The instance key `(agent_class, agent_id)` is immutable: the update endpoint only changes `config_data` and
-name/description/icon, and there is no rename endpoint. The only way to change an instance's id is delete + create, both
-of which are already covered. A future rename feature would have to move the grant and role.
+name/description/icon, and there is no id-rename endpoint. The only way to change an instance's id is delete + create,
+both of which are already covered. Because the role name derives from the immutable agent id (not the editable display
+name), it never drifts — a later delete always re-derives the same name.
 
 ### Implementation
 
-- `AccessChecker.rules_grant_admin_to_agent(rules, agent_class, agent_id)` — coverage check reused for the conditional
-  tenant grant.
+- `AccessChecker.rules_grant_admin_to_agent_instance(rules, agent_class, agent_id)` — coverage check reused for the
+  conditional tenant grant.
 - `TenantMetadataEntity.grant_access_rule` / `revoke_access_rule_from_all_tenants` — idempotent append / cross-tenant
   removal, both via `.save()`.
 - `RoleEntity.delete_role_from_all_tenants` — name-based deletion across tenants, reusing the existing `delete_role`
@@ -105,8 +108,11 @@ of which are already covered. A future rename feature would have to move the gra
 
 ### Trade-offs
 
-- Each instance creates a dedicated `agent-<class>-<id>-admin` role, which appears in the roles listing and
-  role-assignment UI. Filtering these from the UI is a possible follow-up.
+- Each instance creates a dedicated admin role named after its agent id (e.g. `AccessTestAdmin`), which appears in the
+  roles listing and role-assignment UI. Filtering these from the UI is a possible follow-up.
+- The role name keys on the agent id, which is collision-free only once ids are enforced globally unique (in flight). In
+  the interim, two instances of *different* classes that share an id would map to the same role name; the `(class, id)`
+  compound key still keeps the configs distinct, but the shared role would scope to whichever instance created it first.
 - A `try/except` compensation block appears in `create_agent_instance`, a deliberate exception to the project's
   fail-fast convention, justified by the no-half-created-state requirement.
 - The grant touches three access entities per create, each triggering a (debounced) OpenWebUI re-sync.

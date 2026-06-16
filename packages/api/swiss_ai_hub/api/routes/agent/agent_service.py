@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 from collections.abc import Callable
 from typing import Annotated, Any
 
@@ -499,7 +500,7 @@ class AgentService:
             AccessChecker.agent_instance_user_rule(agent_class, agent_id),
             AccessChecker.agent_instance_admin_rule(agent_class, agent_id),
         ]
-        role_name = AgentService._instance_admin_role_name(agent_class, agent_id)
+        role_name = AgentService._instance_admin_role_name(agent_id)
         AgentService._best_effort(
             lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(rules), f"revoke {rules}"
         )
@@ -508,8 +509,14 @@ class AgentService:
         )
 
     @staticmethod
-    def _instance_admin_role_name(agent_class: str, agent_id: str) -> str:
-        return f"agent-{agent_class}-{agent_id}-admin"
+    def _instance_admin_role_name(agent_id: str) -> str:
+        """Per-instance admin role name: the (globally unique) agent id PascalCased, suffixed with 'Admin'.
+
+        Keying on the immutable, unique agent id keeps the name stable and collision-free — e.g.
+        'access-test' yields 'AccessTestAdmin'.
+        """
+        pascal_case = "".join(word[:1].upper() + word[1:] for word in re.split(r"[^0-9A-Za-z]+", agent_id) if word)
+        return f"{pascal_case}Admin"
 
     @staticmethod
     def _grant_instance_access(
@@ -522,7 +529,7 @@ class AgentService:
         """
         tenant = user.acting_within_tenant
         admin_rule = AccessChecker.agent_instance_admin_rule(agent_class, agent_id)
-        role_name = AgentService._instance_admin_role_name(agent_class, agent_id)
+        role_name = AgentService._instance_admin_role_name(agent_id)
         granted_tenant_rule = False
         created_role = False
         try:
