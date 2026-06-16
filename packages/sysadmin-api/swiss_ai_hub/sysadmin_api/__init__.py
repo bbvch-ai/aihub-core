@@ -3,15 +3,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.sysadmin_api.routes.access.sysadmin_access_controller import SysadminAccessController
     from swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_controller import TenantAdminController
     from swiss_ai_hub.sysadmin_api.sysadmin_runner import SysadminApiRunner
 
 __all__ = [
+    "SysadminAccessController",
     "SysadminApiRunner",
     "TenantAdminController",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "SysadminAccessController": "swiss_ai_hub.sysadmin_api.routes.access.sysadmin_access_controller",
     "SysadminApiRunner": "swiss_ai_hub.sysadmin_api.sysadmin_runner",
     "TenantAdminController": "swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_controller",
 }

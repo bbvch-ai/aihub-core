@@ -11,7 +11,7 @@ from swiss_ai_hub.core.auth import TokenAndOauth2Handler
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.routes import HealthController
 
-from swiss_ai_hub.sysadmin_api import SysadminApiRunner, TenantAdminController
+from swiss_ai_hub.sysadmin_api import SysadminAccessController, SysadminApiRunner, TenantAdminController
 
 enable_logging()
 
@@ -44,14 +44,10 @@ runner.mount(
     # field lives on the identity DTO already.
     MyAccountController(auth=auth).get_my_identity(),
     UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
-    RoleController(auth=auth)
-    .get_role()
-    .get_roles()
-    .create_role()
-    .update_role()
-    .delete_role()
-    .get_access_capabilities()
-    .get_access_presets(),
+    RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
+    # The access catalog depends on the full controller surface a deployment serves, which this curated
+    # plane does not have — SysadminAccessController overrides the endpoints to proxy them to the main API.
+    SysadminAccessController(auth=auth).get_access_capabilities().get_access_presets(),
     AuthProviderController(auth=auth).get_auth_providers(),
 )
 

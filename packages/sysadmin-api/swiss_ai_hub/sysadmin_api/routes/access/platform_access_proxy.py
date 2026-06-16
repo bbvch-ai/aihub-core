@@ -1,9 +1,6 @@
 import httpx
 from fastapi import HTTPException, Request, status
-
-from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import AccessCapabilitiesResponse
-from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import AccessCapabilitiesRequest
-from swiss_ai_hub.api.routes.access.dto.access_preset_dto import AccessPresetDTO
+from swiss_ai_hub.api import AccessCapabilitiesRequest, AccessCapabilitiesResponse, AccessPresetDTO
 
 # Forwarded so the *main API* re-authenticates the caller and resolves the same locale — `lang`/`locale`/
 # `accept-language` are the hints its I18nMiddleware reads; nothing else (no cookies, host) is passed on.
@@ -14,11 +11,11 @@ _TIMEOUT = httpx.Timeout(10.0)
 
 
 class PlatformAccessProxy:
-    """Forwards access-catalog calls from a curated plane (sysadmin API) to the main platform API.
+    """Forwards access-catalog calls from the sysadmin plane to the main platform API.
 
     The capability and preset catalogs depend on the controllers a deployment actually serves, which
-    only the main API knows. A plane mounting a subset proxies the caller's request — bearer token and
-    locale included — server-to-server, returning whatever the live platform API reports.
+    only the main API knows. The sysadmin plane mounts a subset, so it proxies the caller's request —
+    bearer token and locale included — server-to-server, returning whatever the live platform API reports.
     """
 
     @staticmethod
@@ -28,7 +25,7 @@ class PlatformAccessProxy:
         try:
             async with httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT) as client:
                 response = await client.post(
-                    f"/api/v1/{tenant_id}/roles/access/capabilities",
+                    f"/api/v1/{tenant_id}/access/capabilities",
                     json=body.model_dump(),
                     headers=PlatformAccessProxy._forward_headers(request),
                 )
@@ -42,7 +39,7 @@ class PlatformAccessProxy:
         try:
             async with httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT) as client:
                 response = await client.get(
-                    f"/api/v1/{tenant_id}/roles/access/presets",
+                    f"/api/v1/{tenant_id}/access/presets",
                     headers=PlatformAccessProxy._forward_headers(request),
                 )
                 response.raise_for_status()
