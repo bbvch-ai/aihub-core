@@ -34,7 +34,7 @@
               @add="openCreateModal(group.agentClass)" />
           </div>
         </div>
-        <div v-if="showNoResults" class="flex items-center justify-center text-surface-500">
+        <div v-if="showNoResults" class="flex items-center justify-center text-surface-500 mb-28">
           <span class="text-xl">{{ t('agent.list.no_results') }}</span>
         </div>
       </div>
