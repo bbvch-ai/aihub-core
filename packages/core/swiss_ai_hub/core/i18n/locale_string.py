@@ -55,8 +55,20 @@ class LocaleString(BaseModel):
     it: Annotated[str | None, Field(description="Italian")] = None
 
     def in_locale(self, locale: str) -> str | None:
-        """Extract the string for a specific locale."""
-        return getattr(self, locale, None)
+        """Extract the string for a locale, falling back to other locales if it is unset.
+
+        Mirrors `LocaleHandler.extract_multi_locale`: requested locale → default locale →
+        first populated locale in the whitelist. Returns None only when every locale is empty.
+        """
+        from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+
+        value = getattr(self, locale, None)
+        if value:
+            return value
+        fallback_value = getattr(self, LocaleHandler.DEFAULT_LOCALE, None)
+        if fallback_value:
+            return fallback_value
+        return next((getattr(self, field) for field in LocaleHandler.LOCALE_WHITE_LIST if getattr(self, field)), None)
 
     @classmethod
     def from_i18n_path(cls, path: str) -> LocaleString:
