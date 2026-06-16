@@ -124,6 +124,7 @@ const chartOptions = computed<ApexOptions>(() => {
       type: 'bar',
       height: props.height,
       stacked: true,
+      offsetY: 20,
       toolbar: {
         show: false,
       },
@@ -193,7 +194,7 @@ const chartOptions = computed<ApexOptions>(() => {
       show: true,
       showForSingleSeries: true,
       position: 'top',
-      offsetY: 0,
+      offsetY: 35,
     },
     fill: {
       opacity: 1,
