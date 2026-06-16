@@ -164,11 +164,13 @@ const checkedDocuments = ref<DocumentDto[]>([])
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
 
-// A document is only "deleting" if it was ingested before deletion. Document ids are derived from
-// the source URI, so re-uploading a just-deleted file reuses the id; that arrives as a placeholder
-// (is_ingested === false), which we detect to clear the stale scheduled entry.
 const isDocumentDeleting = (document: DocumentDto) => isScheduled(document.id) && document.is_ingested
 
+// Processing documents are mid-ingestion; removing their source now would race the pipeline.
+const isDocumentDeletable = (document: DocumentDto) => document.is_ingested && !isDocumentDeleting(document)
+
+// Ids derive from the source URI, so re-uploading a just-deleted file reuses its id. When that id
+// reappears as a placeholder, the scheduled entry is stale and must be cleared.
 watch(
   () => props.documents,
   (documents) => {
@@ -181,6 +183,14 @@ watch(
   },
   { immediate: true },
 )
+
+// "Select all" would otherwise include processing rows that cannot be deleted.
+watch(checkedDocuments, (selected) => {
+  const deletable = selected.filter(isDocumentDeletable)
+  if (deletable.length !== selected.length) {
+    checkedDocuments.value = deletable
+  }
+})
 
 const handleRowClick = (event: DataTableRowClickEvent) => {
   const document = event.data as DocumentDto
