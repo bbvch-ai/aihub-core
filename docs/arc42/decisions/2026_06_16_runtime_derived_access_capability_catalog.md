@@ -66,6 +66,18 @@ To keep the sysadmin plane same-origin (see
 [sysadmin_api_full_self_contained_lifespan](2026_05_26_sysadmin_api_full_self_contained_lifespan.md)), the capability
 and preset endpoints are mounted on `RoleController`, which sysadmin-api already re-mounts.
 
+**Catalog completeness on the sysadmin plane via a server-to-server proxy.** Because `packages/api` is consumed as an
+SDK, every deployment mounts its own subset of controllers — the sysadmin API mounts a deliberately lean slice (user,
+role, identity, auth-provider). Introspecting *its* runner would therefore report a misleadingly narrow catalog, yet the
+sysadmin tenant-ceiling editor must show the **full** platform surface. Only the main API authoritatively knows what it
+serves, and that is deployment-dependent — so it cannot be resolved by importing controllers. The catalog endpoints
+instead ask their runner where the authoritative platform API is: `Runner.platform_api_base_url` returns `None` on the
+main API (build locally from `self._runner`), and the `SysadminApiRunner` overrides it to the main API's internal URL
+(`AIHubSettings.INTERNAL_API_BASE_URL` — `http://api:8000` in compose, `http://localhost:8000` in local dev). When it is
+set, the endpoint **proxies** the caller's request server-to-server (forwarding the bearer token and locale) and returns
+whatever the live platform API reports. The hop is the backend's responsibility, so the sysadmin web app stays purely
+same-origin against sysadmin-api.
+
 ## Consequences
 
 ### Positive
@@ -76,6 +88,8 @@ and preset endpoints are mounted on `RoleController`, which sysadmin-api already
 - One engine powers three surfaces (role editor, tenant-ceiling editor, read-only user view).
 - New endpoints self-describe with a one-line `@capability(...)` on their builder method; no rule restated.
 - Named presets cover the common broad grants in one click.
+- The sysadmin tenant-ceiling editor shows the full platform catalog by proxying to the main API, so it reflects exactly
+  what that deployment serves — without the sysadmin plane having to mount every controller or hardcode the surface.
 
 ### Trade-offs
 
@@ -87,5 +101,7 @@ and preset endpoints are mounted on `RoleController`, which sysadmin-api already
   generic.
 - Broad wildcard grants are shown as locked and cannot be decomposed into per-resource toggles, so the raw rule list
   remains necessary as a fallback.
-- The sysadmin tenant-ceiling editor's catalog is limited to the controllers mounted on sysadmin-api; surfacing the full
-  platform catalog there would require pointing those calls at the main API.
+- The sysadmin tenant-ceiling editor's full catalog depends on the main API being reachable from the sysadmin plane (a
+  server-to-server hop over the shared Docker network, predictable per deployment). If the main API is not deployed
+  alongside the sysadmin plane, the editor cannot enumerate the platform surface — the trade-off for not duplicating the
+  controller set or hardcoding it.

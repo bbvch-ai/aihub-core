@@ -63,7 +63,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `KEYCLOAK_AZURE_CLIENT_SECRET` | `keycloak-identity-providers.json` | `keycloak` |  |
 | `KEYCLOAK_AZURE_TENANT_ID` | `keycloak-identity-providers.json` | `keycloak` |  |
 | `KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET` | `keycloak-realm.json` | `keycloak`, `oauth2proxy-attu` |  |
-| `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `keycloak-realm.json` | `oauth2proxy-backup` |  |
+| `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `keycloak-realm.json` | `keycloak`, `oauth2proxy-backup` |  |
 | `KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET` | `keycloak-realm.json` | `keycloak`, `oauth2proxy-dagster` |  |
 | `KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET` | `keycloak-realm.json` | `keycloak`, `oauth2proxy-seaweed` |  |
 | `KEYCLOAK_OPENWEBUI_CLIENT_SECRET` | `keycloak-realm.json` | `keycloak`, `open-webui` |  |
@@ -176,6 +176,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `AIHUB_API_DEBUG_MODE` | `AIHubSettings.API_DEBUG_MODE` | `False` |  | Debug mode for development |
 | `AIHUB_CREATE_DEFAULT_ROLES` | `AIHubSettings.CREATE_DEFAULT_ROLES` | `True` | `api`, `sysadmin-api` | Creates default roles like AI-Hub Admin and AI-Hub User |
 | `AIHUB_FRONTEND_ORIGIN` | `AIHubSettings.FRONTEND_ORIGIN` | _(supplied by compose)_ | `api`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline`, `sysadmin-api` | Comma separated list of origins to allow CORS |
+| `AIHUB_INTERNAL_API_BASE_URL` | `AIHubSettings.INTERNAL_API_BASE_URL` | `'http://api:8000'` | `sysadmin-api` | Internal base URL of the main platform API (no path), used for server-to-server calls such as the sysadmin plane proxying the access-capability catalog. Predictable per deployment: the Docker service name in compose, localhost in local dev. |
 | `AIHUB_MONGO_MAIN_DB_NAME` | `AIHubSettings.MONGO_MAIN_DB_NAME` | `'aihub'` |  | Name of mongodb database that will be used to store data |
 | `AIHUB_OPENAI_API_BASE_URL` | `AIHubSettings.OPENAI_API_BASE_URL` | `'http://api:8000/api/v1/active/openai'` | `api` | Base URL of AI-Hub's OpenAI-compatible endpoint, used for Langfuse LLM connection |
 | `AUTH_ENABLE_API_ACCESS` | `AuthSettings.ENABLE_API_ACCESS` | `True` | `api`, `sysadmin-api` | Enable API access |
