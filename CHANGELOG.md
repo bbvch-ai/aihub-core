@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.6] - 2026-06-16 - Strengthened OpenWebUI Group Management and Sync Reliability
+
+### Added
+
+- 📄 **Improved logging:** Added logging capabilities to the OpenWebUI client for better operational visibility during
+  interactions with the OpenWebUI API.
+
+### Fixed
+
+- 🐛 **Prevented duplicate OpenWebUI groups:** The `create_group` operation is now idempotent. It intelligently reuses an
+  existing OpenWebUI group if one with the same display name is found, preventing the creation of duplicate groups that
+  could disrupt role-to-group synchronization.
+- 🔐 **Enhanced group synchronization reliability:** Implemented a dedicated, blocking Redis lock for OpenWebUI group
+  reconciliation. This prevents concurrent synchronization processes from creating duplicate groups or causing
+  inconsistent states, ensuring robust group management.
+- ⚡️ **Increased group sync lock timeout:** The maximum duration for the group synchronization lock has been
+  significantly extended from 60 to 600 seconds. This prevents premature lock expiration for potentially long-running
+  group reconciliation operations on large tenants.
+
+### Changed
+
+- 🔄 **Improved Redis lock robustness:** The Redis lock acquisition and release mechanism has been enhanced to gracefully
+  handle scenarios where a lock auto-expires before it can be explicitly released. This prevents failures and provides
+  warnings for better operational insights.
+
+### Refactor
+
+- 🧹 **Refactored group synchronization logic:** The core group reconciliation logic within the provisioner has been
+  extracted into a new method (`_sync_groups_locked`), improving code clarity and better isolating the critical section
+  protected by the dedicated synchronization lock.
+
+______________________________________________________________________
+
 ## [v0.297.5] - 2026-06-15 - Enhanced Error Reporting for Clearer Notifications
 
 ### Fixed
