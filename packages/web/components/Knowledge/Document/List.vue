@@ -44,7 +44,7 @@
             {{ data.document_title }}
           </p>
           <div
-            v-if="isDeleting(data)"
+            v-if="isDocumentDeleting(data)"
             class="flex items-center gap-2"
           >
             <Tag
@@ -112,7 +112,7 @@
             @click.stop="() => downloadFile(data.id)"
           />
           <Button
-            v-if="!isDeleting(data)"
+            v-if="!isDocumentDeleting(data)"
             v-tooltip.top="t('document.delete.button')"
             rounded
             size="small"
@@ -167,7 +167,7 @@ const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.Y
 // A document is only "deleting" if it was ingested before deletion. Document ids are derived from
 // the source URI, so re-uploading a just-deleted file reuses the id; that arrives as a placeholder
 // (is_ingested === false), which we detect to clear the stale scheduled entry.
-const isDeleting = (document: DocumentDto) => isScheduled(document.id) && document.is_ingested
+const isDocumentDeleting = (document: DocumentDto) => isScheduled(document.id) && document.is_ingested
 
 watch(
   () => props.documents,
@@ -184,13 +184,13 @@ watch(
 
 const handleRowClick = (event: DataTableRowClickEvent) => {
   const document = event.data as DocumentDto
-  if (document.is_ingested && !isDeleting(document)) {
+  if (document.is_ingested && !isDocumentDeleting(document)) {
     emit('selected', document)
   }
 }
 
 const getRowClass = (data: DocumentDto) => {
-  if (!data.is_ingested || isDeleting(data)) {
+  if (!data.is_ingested || isDocumentDeleting(data)) {
     return 'opacity-50 cursor-not-allowed pointer-events-none'
   }
   return data.id === route.params.document_id ? 'bg-surface-100 dark:bg-surface-800' : ''
