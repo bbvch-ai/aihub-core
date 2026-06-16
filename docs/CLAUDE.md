@@ -203,8 +203,8 @@ without re-reading the `.c4` files.
 
 - Automatic via GitHub Pages on release (`repository_dispatch: release-ready`)
 - Manual: `workflow_dispatch` on `.github/workflows/deploy-docs.yml`
-- Base path: `/aihub-core/`
-- Live URL: https://bbvch-ai.github.io/aihub-core/
+- Base path: `/` (served from a custom domain; `public/CNAME` holds `docs.ai-hub.bbv.ch`)
+- Live URL: https://docs.ai-hub.bbv.ch/
 
 ## Essential Files
 
