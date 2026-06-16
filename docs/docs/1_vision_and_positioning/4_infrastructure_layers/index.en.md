@@ -52,9 +52,9 @@ SeaweedFS stores uploaded files, generated reports, and model artifacts with ver
 SeaweedFS Filer uses **etcd** as its metadata backend, enabling high-availability deployments with multiple Filer
 instances. The platform exposes two interfaces: the **S3 API** at `s3.${DOMAIN}` with AWS signature authentication for
 programmatic access, and the **Filer web UI** at `datalake.${DOMAIN}` via OAuth2 proxy for developers to browse and
-debug files (requires AIHubDeveloper role). MongoDB persists conversation history, user preferences, application data,
-and event history. These choices provide cloud-native storage patterns that work identically whether deployed on-premise
-or in cloud environments.
+debug files (requires the `AIHubSysAdmin` realm role). MongoDB persists conversation history, user preferences,
+application data, and event history. These choices provide cloud-native storage patterns that work identically whether
+deployed on-premise or in cloud environments.
 
 The platform includes integrated AI tools that enhance the chat experience. **Jupyter Lab** enables code interpretation
 and execution when users ask the LLM to analyze data or run calculations. The LLM can write Python code that executes

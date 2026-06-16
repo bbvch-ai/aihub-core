@@ -26,8 +26,9 @@ brings.
   sysadmin plane (`sysadmin.${DOMAIN}`) to manage tenants, user-tenant assignments, and platform-level configuration.
 - **Collaboration Channel User** — Subset of tenant users who interact with Swiss AI Hub agents from collaboration
   channels (Slack, Teams, Webex, email) rather than the dedicated web UI.
-- **Platform Operator** — Platform DevOps / SRE engineer. Holds the `AIHubDeveloper` realm role; consumes observability
-  and operational surfaces (Dagster, Langfuse, Attu, Backup, SeaweedFS Filer).
+- **Platform Operator** — Platform DevOps / SRE engineer. Holds the `AIHubSysAdmin` realm role (the gate in front of the
+  oauth2-proxy admin tools); consumes observability and operational surfaces (Dagster, Langfuse, Attu, Backup, SeaweedFS
+  Filer).
 
 ## External integrations
 

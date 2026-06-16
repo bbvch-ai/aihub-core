@@ -203,38 +203,32 @@ For the operator setup of the Azure app registration and role assignment, see
 [Identity Provider Setup](../../3_deployment_guide/10_identity_provider_setup/).
 :::
 
-By default, no roles are automatically assigned to new users. This ensures that users federated from an external
-identity provider only receive the roles explicitly mapped from their IdP claims, following the principle of least
-privilege.
+By default, no realm roles are automatically assigned to new users: a federated user receives only the realm roles
+explicitly mapped from their IdP claims (principle of least privilege). At the Keycloak / IdP level there are only ever
+**two** roles to assign — `AIHubAccess` and `AIHubSysAdmin` (see the info box above). `AIHubUser` / `AIHubAdmin` and the
+other "platform roles" are **not** Keycloak realm roles and are never set on the IdP; they are tenant-scoped and
+configured inside the platform (see [Default platform roles](#default-platform-roles) below).
 
-### Configuring Automatic Role Assignment
+### Mapping the realm roles from the IdP
 
-If your deployment requires that all new users receive a default role (e.g., `AIHubUser`), this can be configured in
-Keycloak:
-
-**Option 1: Realm default roles (applies to all new users)**
-
-In the Keycloak admin console, navigate to **Realm Settings > User Registration > Default Roles** and add the desired
-roles. Alternatively, set the `defaultRoles` array in the bootstrap realm configuration template
-(`infra/deployment/templates/configs/keycloak/bootstrap/groups.json.j2` — applied on first start only):
+The `azure-ad` provider already maps the two realm roles from the Azure `roles` claim via two `oidc-role-idp-mapper`
+entries in `infra/deployment/templates/configs/keycloak/bootstrap/identity-providers.json.j2` (`role-mapper-access` →
+`AIHubAccess`, `role-mapper-sysadmin` → `AIHubSysAdmin`). To federate the same two roles from a different provider, add
+the equivalent mappers — targeting only `AIHubAccess` and `AIHubSysAdmin`:
 
 ```json
-"defaultRoles": ["AIHubUser"]
+{
+  "name": "role-mapper-access",
+  "identityProviderAlias": "<your-idp-alias>",
+  "identityProviderMapper": "oidc-role-idp-mapper",
+  "config": {
+    "syncMode": "INHERIT",
+    "claim": "roles",
+    "claim.value": "AIHubAccess",
+    "role": "AIHubAccess"
+  }
+}
 ```
-
-**Option 2: Identity provider mappers (applies per IdP)**
-
-For more granular control, configure role mappers on individual identity providers. This allows different roles for
-users from different organizations. Add a **Hardcoded Role** mapper entry to the `identityProviderMappers` array in
-`infra/deployment/templates/configs/keycloak/bootstrap/identity-providers.json.j2`:
-
-| Field       | Value               |
-| ----------- | ------------------- |
-| Name        | `default-user-role` |
-| Mapper Type | Hardcoded Role      |
-| Role        | `AIHubUser`         |
-
-This assigns the role only to users authenticating through that specific identity provider.
 
 ::: warning Identity providers are bootstrap config
 Identity providers and their mappers are seeded from `bootstrap/identity-providers.json.j2` by the realm import on the
@@ -243,31 +237,20 @@ restarts, and changes to the config file reach an already-initialized deployment
 realm database).
 :::
 
-**Option 3: Claim-based role mapping (conditional assignment)**
-
-For conditional role assignment based on IdP claims (e.g., Azure AD app roles), use the existing `oidc-role-idp-mapper`
-pattern already configured in `bootstrap/identity-providers.json.j2`. Each Azure AD app role is mapped to a
-corresponding Keycloak realm role. To add a new mapping, add an entry to the `identityProviderMappers` array:
-
-```json
-{
-  "name": "role-mapper-my-role",
-  "identityProviderAlias": "azure-ad",
-  "identityProviderMapper": "oidc-role-idp-mapper",
-  "config": {
-    "syncMode": "INHERIT",
-    "claim": "roles",
-    "claim.value": "MyAzureAppRole",
-    "role": "AIHubUser"
-  }
-}
-```
-
-::: warning
-The `AIHubAccess` role is enforced at the Keycloak login flow level via the "Post Broker Login - AIHubAccess Check"
-authentication flow. Users without this role are denied access regardless of any other role assignments. Ensure that
-your role mapping strategy includes `AIHubAccess` for users who should be able to log in.
+::: warning AIHubAccess is required to log in
+`AIHubAccess` is enforced at the Keycloak login flow ("Post Broker Login - AIHubAccess Check"): a user without it is
+denied regardless of any other assignment. Make sure your IdP grants `AIHubAccess` to everyone who should be able to log
+in.
 :::
+
+### Default platform roles
+
+Day-to-day permissions come from **platform roles** (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, …), which are
+tenant-scoped and managed inside the platform — not in Keycloak and not from the IdP. Which roles a new user receives is
+controlled by the `AIHUB_USER_SIGNUP_*` environment variables (`AIHUB_USER_SIGNUP_DEFAULT_ROLES`,
+`AIHUB_USER_SIGNUP_REGULAR_USER_ROLES`, `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES`), and each tenant is seeded with its
+default role set at creation. See [Access Management](../../11_access_management/1_authentication_setup/) and
+[Permissions](../../11_access_management/2_permissions/).
 
 ## Security Standards and Operational Capabilities
 
