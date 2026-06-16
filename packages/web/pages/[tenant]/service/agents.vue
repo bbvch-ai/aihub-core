@@ -181,13 +181,6 @@ const openWorkflowModal = (group: AgentGroup) => {
   workflowModalOpen.value = true
 }
 
-const hasActiveFilters = computed(() =>
-  !!searchQuery.value || !!agentClass.value || !!status.value,
-)
-
-const showGroupHeader = (group: AgentGroup) =>
-  hasActiveFilters.value ? group.instances.length > 0 : group.isAvailable
-
 const openCreateModal = (agentClass: string) => {
   selectedClassForCreate.value = agentClass
   initialDataForCreate.value = null
