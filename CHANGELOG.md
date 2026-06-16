@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.298.0] - 2026-06-16 - Introducing Document Deletion and Enhanced Management for Knowledge Bases
+
+### Added
+
+- ✨ **Document Deletion API Endpoints:** Introduced new API endpoints for deleting individual documents and performing
+  batch deletions from knowledge bases.
+- 🗑️ **Core S3 File Deletion:** Added foundational S3 service capabilities to permanently remove source files from data
+  lakes as part of the document deletion process.
+- 🚀 **Asynchronous Document Cleanup:** Implemented service logic to schedule the cleanup of document and vector stores
+  via pipeline reconciliation after a document's source file is removed.
+- 📄 **Batch Deletion Data Transfer Objects:** Introduced new DTOs for requests and responses to support the new batch
+  document deletion functionality, providing clear status for each document.
+- 🖼️ **Interactive Document Deletion UI:** Added user interface elements to the document list for both single and
+  multi-select document deletion, including confirmation dialogs and progress indicators.
+- ⚡️ **Real-time Deletion Status Tracking:** Developed front-end composables to manage the state of scheduled document
+  deletions, providing visual feedback to users even after page refreshes.
+- 🌐 **Localized Deletion Messages:** Integrated comprehensive localization for all new document deletion features across
+  multiple languages.
+- 🧪 **Extensive Deletion Service Tests:** Added a new suite of unit tests to ensure the reliability and correctness of
+  the knowledge document deletion service.
+
+### Fixed
+
+- 🐛 **Robust Metadata Table Generation:** Corrected an issue in the pipeline's metadata utility to ensure consistent and
+  valid table structures when displaying heterogeneous document metadata, preventing errors in Dagster reports.
+
+### Changed
+
+- 🔄 **Updated Document List Experience:** Enhanced the document list to clearly indicate documents pending deletion and
+  integrated hooks for refreshing data after deletion events.
+- ✍️ **Clarified Source Update Event Purpose:** Updated the documentation for the `SourceUpdatedEvent` to explicitly
+  state its role in triggering both ingestion and cleanup processes within the pipeline.
+
+### Refactor
+
+- 🧹 **Standardized S3 URI Handling:** Centralized the definition and usage of the S3 URI scheme within the knowledge
+  service for improved consistency and maintainability.
+
+______________________________________________________________________
+
 ## [v0.297.9] - 2026-06-16 - Streamlined Agent Evaluations with Enhanced Langfuse Integration
 
 ### Changed

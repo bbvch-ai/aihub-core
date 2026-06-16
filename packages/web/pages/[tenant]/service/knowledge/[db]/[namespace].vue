@@ -32,6 +32,7 @@
       :sort-order="sortState.order"
       @selected="toDocument"
       @sort="handleSort"
+      @deleted="handleDeleted"
     />
 
     <div class="mt-4">
@@ -140,5 +141,12 @@ const openUploadModal = () => {
 
 const handleUpload = () => {
   refetch()
+}
+
+const handleDeleted = (documentIds: string[]) => {
+  refetch()
+  if (documentIds.includes(route.params.document_id as string)) {
+    router.push(tenantPath(`/service/knowledge/${route.params.db}/${route.params.namespace}`))
+  }
 }
 </script>
