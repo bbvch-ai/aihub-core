@@ -95,7 +95,7 @@
         </div>
         <div
           v-if="showNoResults"
-          class="flex items-center justify-center py-8 text-surface-500"
+          class="mb-28 flex items-center justify-center text-surface-500"
         >
           <span class="text-xl">{{ t('agent.list.no_results') }}</span>
         </div>
@@ -180,6 +180,13 @@ const openWorkflowModal = (group: AgentGroup) => {
   selectedGroupForWorkflow.value = group
   workflowModalOpen.value = true
 }
+
+const hasActiveFilters = computed(() =>
+  !!searchQuery.value || !!agentClass.value || !!status.value,
+)
+
+const showGroupHeader = (group: AgentGroup) =>
+  hasActiveFilters.value ? group.instances.length > 0 : group.isAvailable
 
 const openCreateModal = (agentClass: string) => {
   selectedClassForCreate.value = agentClass

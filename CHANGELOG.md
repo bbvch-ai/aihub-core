@@ -5,6 +5,199 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.298.1] - 2026-06-16 - Enhanced Agent List Display and Filtering
+
+### Changed
+
+- 🖼️ **Refined Agent Group Display:** The Agents page now intelligently shows or hides agent group headers based on
+  active filters. When filters are applied, only groups with instances matching the criteria will display a header,
+  providing a cleaner and more relevant overview. When no filters are active, all available agent classes will show
+  their headers.
+
+______________________________________________________________________
+
+## [v0.298.0] - 2026-06-16 - Introducing Document Deletion and Enhanced Management for Knowledge Bases
+
+### Added
+
+- ✨ **Document Deletion API Endpoints:** Introduced new API endpoints for deleting individual documents and performing
+  batch deletions from knowledge bases.
+- 🗑️ **Core S3 File Deletion:** Added foundational S3 service capabilities to permanently remove source files from data
+  lakes as part of the document deletion process.
+- 🚀 **Asynchronous Document Cleanup:** Implemented service logic to schedule the cleanup of document and vector stores
+  via pipeline reconciliation after a document's source file is removed.
+- 📄 **Batch Deletion Data Transfer Objects:** Introduced new DTOs for requests and responses to support the new batch
+  document deletion functionality, providing clear status for each document.
+- 🖼️ **Interactive Document Deletion UI:** Added user interface elements to the document list for both single and
+  multi-select document deletion, including confirmation dialogs and progress indicators.
+- ⚡️ **Real-time Deletion Status Tracking:** Developed front-end composables to manage the state of scheduled document
+  deletions, providing visual feedback to users even after page refreshes.
+- 🌐 **Localized Deletion Messages:** Integrated comprehensive localization for all new document deletion features across
+  multiple languages.
+- 🧪 **Extensive Deletion Service Tests:** Added a new suite of unit tests to ensure the reliability and correctness of
+  the knowledge document deletion service.
+
+### Fixed
+
+- 🐛 **Robust Metadata Table Generation:** Corrected an issue in the pipeline's metadata utility to ensure consistent and
+  valid table structures when displaying heterogeneous document metadata, preventing errors in Dagster reports.
+
+### Changed
+
+- 🔄 **Updated Document List Experience:** Enhanced the document list to clearly indicate documents pending deletion and
+  integrated hooks for refreshing data after deletion events.
+- ✍️ **Clarified Source Update Event Purpose:** Updated the documentation for the `SourceUpdatedEvent` to explicitly
+  state its role in triggering both ingestion and cleanup processes within the pipeline.
+
+### Refactor
+
+- 🧹 **Standardized S3 URI Handling:** Centralized the definition and usage of the S3 URI scheme within the knowledge
+  service for improved consistency and maintainability.
+
+______________________________________________________________________
+
+## [v0.297.9] - 2026-06-16 - Streamlined Agent Evaluations with Enhanced Langfuse Integration
+
+### Changed
+
+- 🔄 **Updated Agent Evaluation Workflow:** The agent evaluation process has been re-architected to deeply integrate with
+  **Langfuse**, establishing it as the primary platform for conducting experiments and managing evaluators. The Swiss AI
+  Hub now auto-provisions all necessary components for a seamless Langfuse experience.
+- 📄 **Revised Evaluation Documentation:** The comprehensive documentation for agent evaluations has been completely
+  updated to guide users through the new Langfuse-centric workflow, detailing how to create datasets, configure
+  evaluators, and execute experiments effectively.
+- ⚡️ **Simplified Evaluator Configuration:** The documentation for creating evaluators has been streamlined, emphasizing
+  recommended scoring dimensions and highlighting the auto-provisioned LLM connection for judge models directly within
+  Langfuse.
+
+### Removed
+
+- 🗑️ **Deprecated Experiment UI Images:** Outdated screenshots depicting the previous in-platform UI for running
+  experiments have been removed to align with the new Langfuse-based evaluation workflow.
+
+______________________________________________________________________
+
+## [v0.297.8] - 2026-06-16 - Refined Localization and Translation Capabilities
+
+### Changed
+
+- ✨ **Enhanced Locale String Handling:** The `LocaleString` utility has been significantly improved with a more robust
+  `in_locale` method, now offering intelligent fallback logic to ensure the best available translation is always
+  retrieved. This includes prioritizing the exact requested locale, falling back to a default, and then to other
+  available languages.
+- 🔄 **Precision in Translation Service:** The `TranslationService` now explicitly requests translations for the exact
+  source locale without automatic fallbacks, ensuring greater control and precision in the translation process,
+  leveraging the new `LocaleString` enhancements.
+
+### Added
+
+- ✅ **Expanded Unit Tests for Localization:** New, comprehensive unit tests have been introduced for the `LocaleString`
+  class, rigorously validating the new fallback logic and precise locale retrieval mechanisms to ensure the reliability
+  of internationalization features.
+
+______________________________________________________________________
+
+## [v0.297.7] - 2026-06-16 - Dashboard UI and Chart Display Improvements
+
+### Fixed
+
+- 🖼️ **Dashboard Grid Filters:** Resolved potential display and layering issues for dropdown menus within the
+  **Dashboard Grid** by ensuring proper rendering of event data type and agent selection options.
+- 📈 **Event Timeseries Chart:** Enhanced the visual layout and readability of the **Event Timeseries Chart** by
+  fine-tuning chart and data label vertical positioning, including responsive adjustments for smaller screens.
+
+______________________________________________________________________
+
+## [v0.297.6] - 2026-06-16 - Strengthened OpenWebUI Group Management and Sync Reliability
+
+### Added
+
+- 📄 **Improved logging:** Added logging capabilities to the OpenWebUI client for better operational visibility during
+  interactions with the OpenWebUI API.
+
+### Fixed
+
+- 🐛 **Prevented duplicate OpenWebUI groups:** The `create_group` operation is now idempotent. It intelligently reuses an
+  existing OpenWebUI group if one with the same display name is found, preventing the creation of duplicate groups that
+  could disrupt role-to-group synchronization.
+- 🔐 **Enhanced group synchronization reliability:** Implemented a dedicated, blocking Redis lock for OpenWebUI group
+  reconciliation. This prevents concurrent synchronization processes from creating duplicate groups or causing
+  inconsistent states, ensuring robust group management.
+- ⚡️ **Increased group sync lock timeout:** The maximum duration for the group synchronization lock has been
+  significantly extended from 60 to 600 seconds. This prevents premature lock expiration for potentially long-running
+  group reconciliation operations on large tenants.
+
+### Changed
+
+- 🔄 **Improved Redis lock robustness:** The Redis lock acquisition and release mechanism has been enhanced to gracefully
+  handle scenarios where a lock auto-expires before it can be explicitly released. This prevents failures and provides
+  warnings for better operational insights.
+
+### Refactor
+
+- 🧹 **Refactored group synchronization logic:** The core group reconciliation logic within the provisioner has been
+  extracted into a new method (`_sync_groups_locked`), improving code clarity and better isolating the critical section
+  protected by the dedicated synchronization lock.
+
+______________________________________________________________________
+
+## [v0.297.5] - 2026-06-15 - Enhanced Error Reporting for Clearer Notifications
+
+### Fixed
+
+- 🐛 **Improved Error Message Display:** Enhanced the client-side error handling to correctly parse and display detailed
+  error messages received as arrays, ensuring users receive comprehensive and readable notifications in toast alerts.
+
+______________________________________________________________________
+
+## [v0.297.4] - 2026-06-15 - Enhanced Empty State Feedback
+
+### Added
+
+- ✨ **Improved Empty State Feedback:** Introduced clear "no results" messages for the Processes, Memory Graph, and
+  Memory List pages, ensuring users receive visual feedback when no items are available.
+- 📄 **New Localization Strings:** Added new translation keys for "no results" messages across multiple languages
+  (German, English, French, Italian) to support the improved empty state feedback.
+
+______________________________________________________________________
+
+## [v0.297.3] - 2026-06-15 - Streamlined Sysadmin Tenant Routing
+
+### Changed
+
+- 🔄 **Simplified Sysadmin Tenant Paths:** The `/sysadmin` URL prefix has been removed from all tenant administration
+  routes. Sysadmin functionality is now directly accessible under `/tenants`, making the URL structure more concise and
+  aligned with the sysadmin application's primary function.
+- 🧹 **Refined `useTenantPath` Logic:** The `useTenantPath` composable now explicitly focuses on generating paths for
+  tenant-scoped `/[tenant]/...` routes. Sysadmin routes (`/tenants/...`) are now treated as absolute and no longer
+  require dynamic tenant injection through this composable, clarifying and streamlining path generation logic.
+- 📄 **Updated Sysadmin Documentation:** The project documentation has been updated to reflect the new, simplified
+  sysadmin routing structure, providing clearer guidance on tenant administration paths.
+
+______________________________________________________________________
+
+## [v0.297.2] - 2026-06-15 - Improved LiteLLM User & Key Management
+
+### Fixed
+
+- 🐛 **Enhanced LiteLLM provisioning resilience:** Improved the user and API key generation process to gracefully handle
+  concurrent requests and race conditions by treating `409 Conflict` responses for user or key creation as successful,
+  pre-existing entities. This makes the service more robust in high-concurrency environments.
+
+### Refactor
+
+- 🧹 **Streamlined LiteLLM key provisioning:** The internal logic for managing LiteLLM users and API keys has been
+  refactored into distinct, more focused methods (`_create_user_if_absent`, `_generate_key`) to improve clarity,
+  maintainability, and error handling.
+
+### Added
+
+- 🧪 **Comprehensive LiteLLM service unit tests:** Introduced a new suite of unit tests for the `LiteLLMService` covering
+  various scenarios, including existing users, new user creation, and handling of concurrency conflicts during user and
+  key provisioning.
+
+______________________________________________________________________
+
 ## [v0.297.1] - 2026-06-15 - Stricter Langfuse Access Control and Local Dev Setup Enhancements
 
 ### Security

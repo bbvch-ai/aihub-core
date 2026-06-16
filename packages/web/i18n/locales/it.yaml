@@ -428,6 +428,20 @@ document:
     number_of_pages: Numero di pagine
     download: Scarica
     is_processing: Elaborazione in corso
+    actions: Azioni
+    selected_count: '{count} documento/i selezionato/i'
+  delete:
+    title: Elimina documento
+    deleting: Eliminazione in corso
+    button: Elimina
+    button_selected: Elimina selezionati
+    confirmMessage: Vuoi davvero eliminare questo documento? Verrà rimosso definitivamente
+      dalla base di conoscenza. Questa azione non può essere annullata.
+    confirmMessageBatch: Vuoi davvero eliminare {count} documento/i? Verranno rimossi
+      definitivamente dalla base di conoscenza. Questa azione non può essere annullata.
+    success: Eliminazione del documento pianificata
+    partial: Eliminazione di {deleted} documento/i pianificata, {failed} non riuscito/i
+    error: Eliminazione del documento non riuscita
 knowledge:
   title: Basi di conoscenza
   created_at: 'Creato:'
@@ -680,6 +694,7 @@ bar:
   show_notifications: Mostra notifiche
 process:
   title: Processi
+  no_results: Nessun processo trovato
   overview:
     name: Nome
     class: Classe
@@ -755,8 +770,10 @@ memory:
   title: Ricordi
   graph:
     title: Grafo della conoscenza
+    no_results: Nessun ricordo trovato
   list:
     title: Elenco dei ricordi
+    no_results: Nessun ricordo trovato
   detail:
     title: Dettagli del ricordo
     created_at: Creato il
