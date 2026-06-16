@@ -55,12 +55,21 @@ each controller's routes at runtime**:
   concrete agents/processes/knowledge namespaces; the implicit service gate (`aihub.user.service.<name>`) is synthesized
   from the controller's `service_name`, with "Administer" surfaced when an `aihub.admin.service.<name>` endpoint exists.
 
-Each capability is evaluated against a draft rule set to produce `granted` / `locked` (granted via a broader rule) /
-`toggleable`. A `restrict_to_tenant` flag selects the audience: the **role editor** passes the acting tenant's ceiling
-so capabilities it cannot grant are pruned from the catalog entirely; the **sysadmin ceiling editor** passes none and
-sees the full platform catalog. The same engine renders read-only on the user-detail page (effective access from the
-user's resolved rules). Ticking a capability adds its exact rule; broad/wildcard grants (and named presets like
-`aihub.admin.>`) render as locked, with the raw rule list retained as the power-user escape hatch.
+Each capability's `granted` flag is evaluated by calling **the subject's own `AccessChecker.has_access` — the same call
+the endpoint's guard makes at request time** — so the table matches enforcement exactly, the sysadmin short-circuit and
+the tenant-ceiling cap included. There is no parallel matcher: the catalog rides on the authorization engine rather than
+re-deriving access from rule strings, so neither the rule *nor* the grant decision can drift. `locked` (granted via a
+rule broader than the one this checkbox would add) and `toggleable` are then read off the draft rule set.
+
+Who the `subject` and `ceiling` are selects the audience: the **role editor** evaluates the draft rules under the acting
+tenant's ceiling, which prunes — never merely disables — capabilities the ceiling cannot grant; the **sysadmin ceiling
+editor** drops the ceiling to show the full platform; the **user-detail page** renders read-only against the viewed
+user's effective access, including the `AIHubSysAdmin` short-circuit (a sysadmin holds admin via the realm role, not via
+rules, so the catalog must evaluate it as such, otherwise it shows nothing). Crucially, the two privileged selectors —
+dropping the ceiling and evaluating as a sysadmin — arrive as request fields but are **gated on the authenticated
+identity, never trusted from the body**: only an acting sysadmin may wield them, so a tenant role-admin cannot set them
+to enumerate the platform beyond its own tenant. Ticking a capability adds its exact rule; broad/wildcard grants (and
+named presets like `aihub.admin.>`) render as locked, with the raw rule list retained as the power-user escape hatch.
 
 To keep the sysadmin plane same-origin (see
 [sysadmin_api_full_self_contained_lifespan](2026_05_26_sysadmin_api_full_self_contained_lifespan.md)), the capability
@@ -83,9 +92,13 @@ same-origin against sysadmin-api.
 ### Positive
 
 - Operators see and edit access as named capabilities with their exact rules, not opaque strings.
-- The catalog cannot drift from enforcement: the guard is the single source of truth for every rule.
-- The role editor structurally cannot reveal or grant beyond the tenant ceiling — no leakage.
-- One engine powers three surfaces (role editor, tenant-ceiling editor, read-only user view).
+- The catalog cannot drift from enforcement: the guard is the single source of truth for the rule, and `granted` is the
+  guard's own `has_access` verdict — there is no second access-matching code path to keep in sync.
+- The role editor structurally cannot reveal or grant beyond the tenant ceiling, and the two privileged audience
+  selectors (drop-the-ceiling, evaluate-as-sysadmin) are gated on the acting identity — so neither a missing ceiling nor
+  a forged request field leaks the platform surface to a non-sysadmin.
+- One engine powers three surfaces (role editor, tenant-ceiling editor, read-only user view), sysadmin-aware on the
+  last.
 - New endpoints self-describe with a one-line `@capability(...)` on their builder method; no rule restated.
 - Named presets cover the common broad grants in one click.
 - The sysadmin tenant-ceiling editor shows the full platform catalog by proxying to the main API, so it reflects exactly
@@ -96,7 +109,8 @@ same-origin against sysadmin-api.
 - Labels/descriptions must be authored: the codebase has effectively no endpoint summaries, so the human text cannot be
   auto-derived — only the rule can.
 - The engine depends on reading the guard from the `user_with_permission` dependency closure; a change to how that
-  template is captured would require updating the introspection.
+  template is captured would require updating the introspection. A regression test asserts a real guarded route stays
+  discoverable, so such a change fails loudly rather than silently dropping rows.
 - Per-resource enumeration (agents, processes, knowledge namespaces) is custom per resource type rather than fully
   generic.
 - Broad wildcard grants are shown as locked and cannot be decomposed into per-resource toggles, so the raw rule list
