@@ -8,7 +8,7 @@ from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 
-F = TypeVar("F", bound=Callable[..., "Self"])
+F = TypeVar("F", bound=Callable[..., Self])
 
 # Attribute set on the route an annotated builder method registers; read by AccessCapabilityService.
 CAPABILITY_ATTRIBUTE = "__capability__"
@@ -47,6 +47,8 @@ def capability(i18n_base: str) -> Callable[[F], F]:
         def wrapper(self, *args, **kwargs):
             registered_before = len(self.router.routes)
             result = builder_method(self, *args, **kwargs)
+            # Fluent builder methods register exactly one route; every route this method added is tagged
+            # with the same metadata, so annotating a method that registers two routes labels both alike.
             for route in self.router.routes[registered_before:]:
                 if isinstance(route, APIRoute):
                     setattr(route, CAPABILITY_ATTRIBUTE, meta)

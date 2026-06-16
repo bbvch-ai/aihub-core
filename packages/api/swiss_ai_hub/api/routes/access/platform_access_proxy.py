@@ -5,6 +5,8 @@ from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import AccessCap
 from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import AccessCapabilitiesRequest
 from swiss_ai_hub.api.routes.access.dto.access_preset_dto import AccessPresetDTO
 
+# Forwarded so the *main API* re-authenticates the caller and resolves the same locale — `lang`/`locale`/
+# `accept-language` are the hints its I18nMiddleware reads; nothing else (no cookies, host) is passed on.
 _FORWARDED_HEADERS = ("authorization", "lang", "locale", "accept-language")
 # Bound the server-to-server hop so a slow or hung main API surfaces as an error instead of
 # blocking the sysadmin worker until the client gives up.

@@ -50,7 +50,10 @@ each controller's routes at runtime**:
 - Endpoints opt into the catalog by annotating their **fluent builder method** with
   `@capability("api.access.capabilities.ops.<key>")`, which carries **only** the i18n label/description — mirroring how
   controllers already declare `name`/`description`. The decorator lets the method register its route, then tags that
-  route with the metadata.
+  route with the metadata. Opting in is deliberate: controllers whose access is not a per-operator grant decision — the
+  chat/thread, token, notification, file, model and OpenAI-compatibility surfaces — carry no `@capability` annotation
+  and simply do not appear in the catalog. Their service-level gate still surfaces once any resource capability exists;
+  they are absent because there is nothing meaningful for an operator to toggle, not by oversight.
 - Path-parameter guards (`{agent_class}`, `{agent_id}`, `{database}`, `{namespace}`, …) are enumerated across the
   concrete agents/processes/knowledge namespaces; the implicit service gate (`aihub.user.service.<name>`) is synthesized
   from the controller's `service_name`, with "Administer" surfaced when an `aihub.admin.service.<name>` endpoint exists.

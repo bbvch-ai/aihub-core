@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Annotated, NamedTuple
 
 from fastapi.routing import APIRoute
@@ -16,6 +17,8 @@ from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import (
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.runners import Runner
+
+logger = logging.getLogger(__name__)
 
 # The implicit per-service gate is not backed by a ``user_with_permission`` route, so it carries no
 # ``@capability`` annotation — its labels live here instead of being read off a route.
@@ -159,6 +162,13 @@ class AccessCapabilityService:
             all_templates.add(template)
             meta = getattr(route, CAPABILITY_ATTRIBUTE, None)
             if isinstance(meta, CapabilityMeta):
+                if template in annotated_guards and annotated_guards[template] != meta:
+                    logger.warning(
+                        "Two @capability annotations resolve to the same guard %r on %s; keeping the first "
+                        "and dropping the other. Give the routes distinct guards or merge their labels.",
+                        template,
+                        type(controller).__name__,
+                    )
                 annotated_guards.setdefault(template, meta)
         return all_templates, annotated_guards
 
@@ -188,7 +198,9 @@ class AccessCapabilityService:
                 value = cell.cell_contents
             except ValueError:
                 continue
-            if isinstance(value, str) and value.startswith("aihub."):
+            # Require the permission-template prefixes, not just ``aihub.``, so an unrelated captured string
+            # (a NATS subject, a log prefix) can't be mistaken for the guard and silently shadow the real one.
+            if isinstance(value, str) and value.startswith(("aihub.user.", "aihub.admin.")):
                 return value
         return None
 

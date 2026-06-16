@@ -200,6 +200,30 @@ def test_real_route_guard_is_discoverable():
     assert AccessCapabilityService._route_template(route) == f"aihub.admin.service.{controller.service_name}"
 
 
+def test_annotated_controllers_expose_capabilities():
+    # Beyond the fakes above: the closure-walk + @capability introspection must hold against real
+    # production controllers — including their path-parameter guards — so a refactor of
+    # user_with_permission cannot silently empty the catalog for any of them.
+    from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
+
+    from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
+    from swiss_ai_hub.api.routes.process.process_controller import ProcessController
+
+    controllers = [
+        AgentController(auth=TestAuthHandler()).get_agent_classes().create_agent_instance().get_agent_instance(),
+        ProcessController(auth=TestAuthHandler())
+        .get_process_classes()
+        .create_process_instance()
+        .get_process_instance(),
+    ]
+    for controller in controllers:
+        name = type(controller).__name__
+        all_templates, annotated = AccessCapabilityService._introspect(controller)
+        assert annotated, f"{name}: no @capability guard discovered — closure-walk or annotation plumbing broke"
+        assert any("{" in template for template in annotated), f"{name}: expected a path-parameter guard"
+        assert all(template.startswith(("aihub.user.", "aihub.admin.")) for template in all_templates)
+
+
 def test_presets_cover_curated_rules_with_localized_names():
     presets = AccessPresetService.get_presets(LocaleHandler("en"))
 

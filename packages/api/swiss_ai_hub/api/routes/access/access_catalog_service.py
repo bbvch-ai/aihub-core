@@ -32,8 +32,10 @@ class AccessCatalogService:
             service_access = access_checker.access_level_for_service(controller.service_name)
             if controller.additionally_required_permission and service_access != AccessLevel.ACCESS_DENIED:
                 special_access = access_checker.access_level(controller.additionally_required_permission)
-                if special_access == AccessLevel.ACCESS_DENIED:
-                    service_access = AccessLevel.ACCESS_DENIED
+                # Effective level is the lower of the two gates, not just denied-if-denied: an ADMIN service
+                # capped by a USER-only extra permission is USER, mirroring how the endpoint would enter.
+                if special_access.value < service_access.value:
+                    service_access = special_access
             if service_access == AccessLevel.ACCESS_DENIED and not include_denied:
                 continue
             access.services.append(UserAccess(name=t.extract(controller.name), level=service_access))
