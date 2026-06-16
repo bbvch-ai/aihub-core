@@ -177,7 +177,12 @@ class AccessCapabilityService:
 
     @staticmethod
     def _guard_in_closure(call: object) -> str | None:
-        """Finds the ``aihub.…`` permission template captured as a free variable by ``user_with_permission``."""
+        """Finds the ``aihub.…`` permission template captured as a free variable by ``user_with_permission``.
+
+        This couples the catalog to *how* ``Controller.user_with_permission`` captures its template (as a
+        string closure cell); if that helper ever stops closing over the raw template, routes silently drop
+        out of the catalog. The contract is exercised end-to-end by ``test_real_route_guard_is_discoverable``.
+        """
         for cell in getattr(call, "__closure__", None) or ():
             try:
                 value = cell.cell_contents
@@ -255,6 +260,8 @@ class AccessCapabilityService:
     ) -> list[CapabilityGroup]:
         """Expands the controller's ``{path_param}`` guards over the concrete resources of enumerable services
         (agents, processes, knowledge) into the class → instance group tree. Other services have no subtree."""
+        # Imported here, not at module load, to break the import cycle (these services import API DTOs that
+        # transitively reach this module).
         from swiss_ai_hub.api.routes.agent.agent_service import AgentService
         from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
         from swiss_ai_hub.api.routes.process.process_service import ProcessService

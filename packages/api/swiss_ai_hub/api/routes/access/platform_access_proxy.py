@@ -6,6 +6,9 @@ from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import Acces
 from swiss_ai_hub.api.routes.access.dto.access_preset_dto import AccessPresetDTO
 
 _FORWARDED_HEADERS = ("authorization", "lang", "locale", "accept-language")
+# Bound the server-to-server hop so a slow or hung main API surfaces as an error instead of
+# blocking the sysadmin worker until the client gives up.
+_TIMEOUT = httpx.Timeout(10.0)
 
 
 class PlatformAccessProxy:
@@ -20,7 +23,7 @@ class PlatformAccessProxy:
     async def fetch_capabilities(
         base_url: str, tenant_id: str, request: Request, body: AccessCapabilitiesRequest
     ) -> AccessCapabilitiesResponse:
-        async with httpx.AsyncClient(base_url=base_url) as client:
+        async with httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT) as client:
             response = await client.post(
                 f"/api/v1/{tenant_id}/roles/access/capabilities",
                 json=body.model_dump(),
@@ -31,7 +34,7 @@ class PlatformAccessProxy:
 
     @staticmethod
     async def fetch_presets(base_url: str, tenant_id: str, request: Request) -> list[AccessPresetDTO]:
-        async with httpx.AsyncClient(base_url=base_url) as client:
+        async with httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT) as client:
             response = await client.get(
                 f"/api/v1/{tenant_id}/roles/access/presets",
                 headers=PlatformAccessProxy._forward_headers(request),

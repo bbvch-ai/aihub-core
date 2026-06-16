@@ -167,13 +167,18 @@ class RoleController(TenantScopedController):
                 return await PlatformAccessProxy.fetch_capabilities(
                     platform_api_base_url, http_request.path_params["tenant_id"], http_request, request
                 )
+            # `is_sys_admin` and `restrict_to_tenant` come from the request body, so without this gate a
+            # non-sysadmin role admin could claim sysadmin or drop the ceiling to enumerate every agent,
+            # process and knowledge namespace platform-wide. Both privileges require the *acting* user to
+            # actually be a sysadmin; everyone else is forced to a ceiling-bounded, non-sysadmin view.
+            acting_is_sys_admin = user.is_sys_admin
             subject = AccessChecker(
                 user_access_rules=request.access_rules,
                 tenant_access_rules=request.access_rules,
-                is_sys_admin=request.is_sys_admin,
+                is_sys_admin=request.is_sys_admin and acting_is_sys_admin,
             )
             ceiling = None
-            if request.restrict_to_tenant:
+            if request.restrict_to_tenant or not acting_is_sys_admin:
                 tenant_rules = user.acting_within_tenant.access_rules
                 ceiling = AccessChecker(user_access_rules=tenant_rules, tenant_access_rules=tenant_rules)
             return await AccessCapabilityService.build_capabilities(subject, self._runner, t, ceiling)

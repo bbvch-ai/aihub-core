@@ -187,6 +187,19 @@ async def test_no_restriction_shows_full_catalog():
     assert _by_rule(caps, "aihub.admin.service.role")
 
 
+def test_real_route_guard_is_discoverable():
+    # The unit tests above use a fake route; this asserts the closure-walk works against a REAL
+    # user_with_permission guard, so a refactor of how the template is captured fails loudly here.
+    from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
+
+    from swiss_ai_hub.api.routes.role.role_controller import RoleController
+
+    controller = RoleController(auth=TestAuthHandler()).get_roles()
+    route = next(r for r in controller.router.routes if isinstance(r, APIRoute))
+
+    assert AccessCapabilityService._route_template(route) == f"aihub.admin.service.{controller.service_name}"
+
+
 def test_presets_cover_curated_rules_with_localized_names():
     presets = AccessPresetService.get_presets(LocaleHandler("en"))
 
