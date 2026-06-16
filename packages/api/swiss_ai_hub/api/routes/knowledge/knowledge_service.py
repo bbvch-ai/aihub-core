@@ -52,6 +52,8 @@ from swiss_ai_hub.api.routes.translation.translation_service import TranslationS
 
 logger = logging.getLogger(__name__)
 
+_S3_URI_SCHEME = "s3://"
+
 
 class KnowledgeService:
     @staticmethod
@@ -404,7 +406,7 @@ class KnowledgeService:
 
         if exists:
             KnowledgeService._ensure_db_exists(database)
-            source = f"s3://{container}/{object_key}"
+            source = f"{_S3_URI_SCHEME}{container}/{object_key}"
             document_title = object_key.split("/")[-1]
 
             try:
@@ -444,7 +446,7 @@ class KnowledgeService:
         except DoesNotExist:
             raise HTTPException(status_code=404, detail="Document not found")
         source = ref_doc.data.metadata.source
-        source = source.removeprefix("s3://")
+        source = source.removeprefix(_S3_URI_SCHEME)
         parts = source.split("/", 1)
         container = parts[0]
         file_path = parts[1] if len(parts) > 1 else ""
@@ -485,10 +487,10 @@ class KnowledgeService:
 
     @staticmethod
     def _delete_source_from_data_lake(s3_service: S3AnonymousFileAccessService, source: str) -> tuple[str, str]:
-        if not source.startswith("s3://"):
-            raise HTTPException(status_code=500, detail=f"Document source '{source}' is not an s3:// URI")
+        if not source.startswith(_S3_URI_SCHEME):
+            raise HTTPException(status_code=500, detail=f"Document source '{source}' is not an {_S3_URI_SCHEME} URI")
 
-        parts = source.removeprefix("s3://").split("/", 1)
+        parts = source.removeprefix(_S3_URI_SCHEME).split("/", 1)
         container = parts[0]
         file_path = parts[1] if len(parts) > 1 else ""
         if not file_path:
