@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.8] - 2026-06-16 - Refined Localization and Translation Capabilities
+
+### Changed
+
+- ✨ **Enhanced Locale String Handling:** The `LocaleString` utility has been significantly improved with a more robust
+  `in_locale` method, now offering intelligent fallback logic to ensure the best available translation is always
+  retrieved. This includes prioritizing the exact requested locale, falling back to a default, and then to other
+  available languages.
+- 🔄 **Precision in Translation Service:** The `TranslationService` now explicitly requests translations for the exact
+  source locale without automatic fallbacks, ensuring greater control and precision in the translation process,
+  leveraging the new `LocaleString` enhancements.
+
+### Added
+
+- ✅ **Expanded Unit Tests for Localization:** New, comprehensive unit tests have been introduced for the `LocaleString`
+  class, rigorously validating the new fallback logic and precise locale retrieval mechanisms to ensure the reliability
+  of internationalization features.
+
+______________________________________________________________________
+
 ## [v0.297.7] - 2026-06-16 - Dashboard UI and Chart Display Improvements
 
 ### Fixed
