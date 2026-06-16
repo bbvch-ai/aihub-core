@@ -925,6 +925,12 @@ export type UserWithAccessDto = {
    * User access levels
    */
   access: Access;
+  /**
+   * Access Rules
+   *
+   * The user's resolved access rules (union of their roles), to drive the capability view.
+   */
+  access_rules: Array<string>;
 };
 
 /**

@@ -59,6 +59,8 @@
       </Panel>
       <AccessCapabilities
         :rules="user.access_rules"
+        :is-sys-admin="user.is_sys_admin"
+        :restrict-to-tenant="!user.is_sys_admin"
         readonly
       />
     </div>

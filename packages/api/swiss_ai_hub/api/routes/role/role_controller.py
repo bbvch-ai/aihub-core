@@ -1,8 +1,9 @@
 import logging
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Request, Security, status
 from mongoengine.errors import NotUniqueError
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -15,6 +16,7 @@ from swiss_ai_hub.api.routes.access.access_preset_service import AccessPresetSer
 from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import AccessCapabilitiesResponse
 from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import AccessCapabilitiesRequest
 from swiss_ai_hub.api.routes.access.dto.access_preset_dto import AccessPresetDTO
+from swiss_ai_hub.api.routes.access.platform_access_proxy import PlatformAccessProxy
 
 from .dto.create_role_request import CreateRoleRequest
 from .dto.delete_role_response import DeleteRoleResponse
@@ -154,15 +156,27 @@ class RoleController(TenantScopedController):
         )
         async def get_access_capabilities(
             request: AccessCapabilitiesRequest,
+            http_request: Request,
             user: Annotated[
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> AccessCapabilitiesResponse:
-            tenant_ceiling = user.acting_within_tenant.access_rules if request.restrict_to_tenant else None
-            return await AccessCapabilityService.build_capabilities(
-                request.access_rules, self._runner, t, tenant_ceiling
+            platform_api_base_url = self._runner.platform_api_base_url
+            if platform_api_base_url is not None:
+                return await PlatformAccessProxy.fetch_capabilities(
+                    platform_api_base_url, http_request.path_params["tenant_id"], http_request, request
+                )
+            subject = AccessChecker(
+                user_access_rules=request.access_rules,
+                tenant_access_rules=request.access_rules,
+                is_sys_admin=request.is_sys_admin,
             )
+            ceiling = None
+            if request.restrict_to_tenant:
+                tenant_rules = user.acting_within_tenant.access_rules
+                ceiling = AccessChecker(user_access_rules=tenant_rules, tenant_access_rules=tenant_rules)
+            return await AccessCapabilityService.build_capabilities(subject, self._runner, t, ceiling)
 
         return self
 
@@ -174,9 +188,15 @@ class RoleController(TenantScopedController):
             tags=self.tags,
         )
         async def get_access_presets(
+            http_request: Request,
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[AccessPresetDTO]:
+            platform_api_base_url = self._runner.platform_api_base_url
+            if platform_api_base_url is not None:
+                return await PlatformAccessProxy.fetch_presets(
+                    platform_api_base_url, http_request.path_params["tenant_id"], http_request
+                )
             return AccessPresetService.get_presets(t)
 
         return self

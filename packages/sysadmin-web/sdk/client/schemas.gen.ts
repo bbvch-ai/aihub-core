@@ -1079,9 +1079,18 @@ export const UserWithAccessDTOSchema = {
       $ref: "#/components/schemas/Access",
       description: "User access levels",
     },
+    access_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Access Rules",
+      description:
+        "The user's resolved access rules (union of their roles), to drive the capability view.",
+    },
   },
   type: "object",
-  required: ["id", "name", "email", "access"],
+  required: ["id", "name", "email", "access", "access_rules"],
   title: "UserWithAccessDTO",
 } as const;
 

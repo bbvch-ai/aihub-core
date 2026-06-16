@@ -15,6 +15,13 @@ class AccessCapabilitiesRequest(BaseModel):
             "Set false when editing the tenant ceiling itself (sysadmin)."
         ),
     ] = True
+    is_sys_admin: Annotated[
+        bool,
+        Field(
+            description="Evaluate the catalog as a platform sysadmin (AIHubSysAdmin), who holds admin on every "
+            "resource regardless of rules — the user page passes the viewed user's flag. False for rule editing."
+        ),
+    ] = False
 
     @field_validator("access_rules")
     @classmethod

@@ -46,9 +46,11 @@ const { t } = useI18n()
 const props = withDefaults(defineProps<{
   rules: string[]
   restrictToTenant?: boolean
+  isSysAdmin?: boolean
   readonly?: boolean
 }>(), {
   restrictToTenant: true,
+  isSysAdmin: false,
   readonly: false,
 })
 
@@ -60,5 +62,6 @@ const emit = defineEmits<{
 const { capabilities, capabilitiesAreLoading } = useAccessCapabilities(
   () => props.rules,
   () => props.restrictToTenant,
+  () => props.isSysAdmin,
 )
 </script>

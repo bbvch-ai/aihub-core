@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.routing import APIRoute
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 
@@ -71,14 +72,18 @@ _ROLE_ROUTES = [("aihub.admin.service.role", None)]
 _OPENAI_ROUTES = [("aihub.user.?>", None)]
 
 
-async def _capabilities(rules: list[str], controllers, tenant_rules=None) -> dict[str, SimpleNamespace]:
+async def _capabilities(
+    rules: list[str], controllers, tenant_rules=None, is_sys_admin=False
+) -> dict[str, SimpleNamespace]:
     runner = SimpleNamespace(controllers=controllers)
+    subject = AccessChecker(user_access_rules=rules, tenant_access_rules=rules, is_sys_admin=is_sys_admin)
+    ceiling = AccessChecker(tenant_rules, tenant_rules) if tenant_rules is not None else None
     with (
         patch(_AGENT, _AgentService),
         patch(_PROCESS, _ProcessService),
         patch(_KNOWLEDGE, _KnowledgeService),
     ):
-        response = await AccessCapabilityService.build_capabilities(rules, runner, LocaleHandler("en"), tenant_rules)
+        response = await AccessCapabilityService.build_capabilities(subject, runner, LocaleHandler("en"), ceiling)
 
     flat: dict[str, SimpleNamespace] = {}
 
@@ -130,6 +135,15 @@ async def test_wildcard_guards_are_read_only():
     # "See all assistants" (aihub.user.agent.?>) has no addable rule → read-only, but reflects access.
     see_all = next(cap for cap in caps.values() if not cap.toggleable and cap.granted)
     assert see_all.rule is None and not see_all.toggleable
+
+
+@pytest.mark.asyncio
+async def test_sysadmin_subject_grants_every_capability():
+    # A sysadmin holds admin everywhere via the short-circuit, not via rules — the catalog must reflect that.
+    caps = await _capabilities([], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)], is_sys_admin=True)
+
+    toggleable = [cap for cap in caps.values() if cap.toggleable]
+    assert toggleable and all(cap.granted and cap.locked for cap in toggleable)
 
 
 @pytest.mark.asyncio

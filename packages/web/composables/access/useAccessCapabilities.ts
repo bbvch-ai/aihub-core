@@ -11,6 +11,9 @@ import type { MaybeRefOrGetter } from 'vue'
 export function useAccessCapabilities(
   rules: MaybeRefOrGetter<string[]>,
   restrictToTenant: MaybeRefOrGetter<boolean> = true,
+  // The read-only user view passes the viewed user's AIHubSysAdmin flag: a sysadmin holds admin on
+  // everything via the short-circuit, not via rules, so the catalog must be evaluated with it set.
+  isSysAdmin: MaybeRefOrGetter<boolean> = false,
 ) {
   const { tenantId } = useTenant()
   // The tenant-ceiling editor (configure-new-tenant) runs on a route with no tenant param. With
@@ -22,14 +25,19 @@ export function useAccessCapabilities(
     isPending: capabilitiesAreLoading,
   } = useQuery<AccessCapabilitiesResponse>({
     key: () => [
-      'tenant', targetTenantId.value, 'access-capabilities', toValue(restrictToTenant), JSON.stringify(toValue(rules)),
+      'tenant', targetTenantId.value, 'access-capabilities',
+      toValue(restrictToTenant), toValue(isSysAdmin), JSON.stringify(toValue(rules)),
     ],
     staleTime: 0,
     query: async () => {
       return await getAccessCapabilities({
         composable: '$fetch',
         path: { tenant_id: targetTenantId.value },
-        body: { access_rules: toValue(rules), restrict_to_tenant: toValue(restrictToTenant) },
+        body: {
+          access_rules: toValue(rules),
+          restrict_to_tenant: toValue(restrictToTenant),
+          is_sys_admin: toValue(isSysAdmin),
+        },
       })
     },
   })

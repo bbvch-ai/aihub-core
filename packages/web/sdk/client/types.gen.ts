@@ -44,6 +44,12 @@ export type AccessCapabilitiesRequest = {
    * Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).
    */
   restrict_to_tenant?: boolean;
+  /**
+   * Is Sys Admin
+   *
+   * Evaluate the catalog as a platform sysadmin (AIHubSysAdmin), who holds admin on every resource regardless of rules — the user page passes the viewed user's flag. False for rule editing.
+   */
+  is_sys_admin?: boolean;
 };
 
 /**
@@ -182,7 +188,7 @@ export type AddMemoryToChatHistoryEvent = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessageOutput>;
+  extended_history: Array<ChatMessage>;
   /**
    * Event Name
    *
@@ -231,7 +237,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessageOutput>;
+  extended_history: Array<ChatMessage>;
   /**
    * Event Name
    *
@@ -280,7 +286,7 @@ export type AddUserMemoryToChatHistoryEvent = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessageOutput>;
+  extended_history: Array<ChatMessage>;
   /**
    * Event Name
    *
@@ -1527,35 +1533,7 @@ export type Audio = {
  *
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlockInput = {
-  /**
-   * Block Type
-   */
-  block_type?: "audio";
-  /**
-   * Audio
-   */
-  audio?: Blob | File | null;
-  /**
-   * Path
-   */
-  path?: string | null;
-  /**
-   * Url
-   */
-  url?: string | string | null;
-  /**
-   * Format
-   */
-  format?: string | null;
-};
-
-/**
- * AudioBlock
- *
- * A representation of audio data to directly pass to/from the LLM.
- */
-export type AudioBlockOutput = {
+export type AudioBlock = {
   /**
    * Block Type
    */
@@ -2992,55 +2970,7 @@ export type ChatCompletionUserMessageParam = {
  *
  * Chat message.
  */
-export type ChatMessageInput = {
-  role?: MessageRole;
-  /**
-   * Additional Kwargs
-   */
-  additional_kwargs?: AdditionalKwargs;
-  /**
-   * Blocks
-   */
-  blocks?: Array<
-    | ({
-        block_type: "text";
-      } & TextBlock)
-    | ({
-        block_type: "image";
-      } & ImageBlockInput)
-    | ({
-        block_type: "audio";
-      } & AudioBlockInput)
-    | ({
-        block_type: "video";
-      } & VideoBlockInput)
-    | ({
-        block_type: "document";
-      } & DocumentBlockInput)
-    | ({
-        block_type: "cache";
-      } & CachePoint)
-    | ({
-        block_type: "citable";
-      } & CitableBlockInput)
-    | ({
-        block_type: "citation";
-      } & CitationBlockInput)
-    | ({
-        block_type: "thinking";
-      } & ThinkingBlockInput)
-    | ({
-        block_type: "tool_call";
-      } & ToolCallBlockInput)
-  >;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type ChatMessageOutput = {
+export type ChatMessage = {
   role?: MessageRole;
   /**
    * Additional Kwargs
@@ -3055,31 +2985,31 @@ export type ChatMessageOutput = {
       } & TextBlock)
     | ({
         block_type: "image";
-      } & ImageBlockOutput)
+      } & ImageBlock)
     | ({
         block_type: "audio";
-      } & AudioBlockOutput)
+      } & AudioBlock)
     | ({
         block_type: "video";
-      } & VideoBlockOutput)
+      } & VideoBlock)
     | ({
         block_type: "document";
-      } & DocumentBlockOutput)
+      } & DocumentBlock)
     | ({
         block_type: "cache";
       } & CachePoint)
     | ({
         block_type: "citable";
-      } & CitableBlockOutput)
+      } & CitableBlock)
     | ({
         block_type: "citation";
-      } & CitationBlockOutput)
+      } & CitationBlock)
     | ({
         block_type: "thinking";
-      } & ThinkingBlockOutput)
+      } & ThinkingBlock)
     | ({
         block_type: "tool_call";
-      } & ToolCallBlockOutput)
+      } & ToolCallBlock)
   >;
 };
 
@@ -3417,7 +3347,7 @@ export type ChunkEvent = {
  *
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlockInput = {
+export type CitableBlock = {
   /**
    * Block Type
    */
@@ -3439,44 +3369,10 @@ export type CitableBlockInput = {
       } & TextBlock)
     | ({
         block_type: "image";
-      } & ImageBlockInput)
+      } & ImageBlock)
     | ({
         block_type: "document";
-      } & DocumentBlockInput)
-  >;
-};
-
-/**
- * CitableBlock
- *
- * Supports providing citable content to LLMs that have built-in citation support.
- */
-export type CitableBlockOutput = {
-  /**
-   * Block Type
-   */
-  block_type?: "citable";
-  /**
-   * Title
-   */
-  title: string;
-  /**
-   * Source
-   */
-  source: string;
-  /**
-   * Content
-   */
-  content: Array<
-    | ({
-        block_type: "text";
-      } & TextBlock)
-    | ({
-        block_type: "image";
-      } & ImageBlockOutput)
-    | ({
-        block_type: "document";
-      } & DocumentBlockOutput)
+      } & DocumentBlock)
   >;
 };
 
@@ -3485,7 +3381,7 @@ export type CitableBlockOutput = {
  *
  * A representation of cited content from past messages.
  */
-export type CitationBlockInput = {
+export type CitationBlock = {
   /**
    * Block Type
    */
@@ -3499,41 +3395,7 @@ export type CitationBlockInput = {
       } & TextBlock)
     | ({
         block_type: "image";
-      } & ImageBlockInput);
-  /**
-   * Source
-   */
-  source: string;
-  /**
-   * Title
-   */
-  title: string;
-  /**
-   * Additional Location Info
-   */
-  additional_location_info: AdditionalLocationInfo;
-};
-
-/**
- * CitationBlock
- *
- * A representation of cited content from past messages.
- */
-export type CitationBlockOutput = {
-  /**
-   * Block Type
-   */
-  block_type?: "citation";
-  /**
-   * Cited Content
-   */
-  cited_content:
-    | ({
-        block_type: "text";
-      } & TextBlock)
-    | ({
-        block_type: "image";
-      } & ImageBlockOutput);
+      } & ImageBlock);
   /**
    * Source
    */
@@ -4760,39 +4622,7 @@ export type DisplayStatistics = {
  *
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlockInput = {
-  /**
-   * Block Type
-   */
-  block_type?: "document";
-  /**
-   * Data
-   */
-  data?: Blob | File | null;
-  /**
-   * Path
-   */
-  path?: string | string | null;
-  /**
-   * Url
-   */
-  url?: string | null;
-  /**
-   * Title
-   */
-  title?: string | null;
-  /**
-   * Document Mimetype
-   */
-  document_mimetype?: string | null;
-};
-
-/**
- * DocumentBlock
- *
- * A representation of a document to directly pass to the LLM.
- */
-export type DocumentBlockOutput = {
+export type DocumentBlock = {
   /**
    * Block Type
    */
@@ -7091,39 +6921,7 @@ export type Image = {
  *
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlockInput = {
-  /**
-   * Block Type
-   */
-  block_type?: "image";
-  /**
-   * Image
-   */
-  image?: Blob | File | null;
-  /**
-   * Path
-   */
-  path?: string | null;
-  /**
-   * Url
-   */
-  url?: string | string | null;
-  /**
-   * Image Mimetype
-   */
-  image_mimetype?: string | null;
-  /**
-   * Detail
-   */
-  detail?: string | null;
-};
-
-/**
- * ImageBlock
- *
- * A representation of image data to directly pass to/from the LLM.
- */
-export type ImageBlockOutput = {
+export type ImageBlock = {
   /**
    * Block Type
    */
@@ -8735,7 +8533,7 @@ export type LimitChatHistoryEvent = {
    *
    * Limited chat history based on number of input tokens.
    */
-  limited_history: Array<ChatMessageOutput>;
+  limited_history: Array<ChatMessage>;
   /**
    * Event Name
    *
@@ -11743,34 +11541,6 @@ export type RagFailureStopEvent = {
 };
 
 /**
- * RAGFailureStopEventOutput
- */
-export type RagFailureStopEventOutput = {
-  /**
-   * Display Name
-   *
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display Description
-   *
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-  /**
-   * Answer
-   *
-   * Final assistant answer text, populated for non-streaming consumers.
-   */
-  answer?: string | null;
-  /**
-   * Why this run failed to produce a useful answer.
-   */
-  reason: RagFailureReason;
-};
-
-/**
  * RAGStartEvent
  *
  * Namespace-aware start event for the RAG agent.
@@ -11812,7 +11582,7 @@ export type RagStartEvent = {
    *
    * Chat history providing the context and the user query for retrieval.
    */
-  messages?: Array<ChatMessageOutput>;
+  messages?: Array<ChatMessage>;
   /**
    * Files
    *
@@ -11851,42 +11621,6 @@ export type RagStartEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
-};
-
-/**
- * RAGStartEventInput
- */
-export type RagStartEventInput = {
-  /**
-   * Messages
-   *
-   * Chat history providing the context and the user query for retrieval.
-   */
-  messages?: Array<ChatMessageInput>;
-  /**
-   * Files
-   *
-   * Files uploaded alongside the query for additional context.
-   */
-  files?: Array<UserUploadedFile> | null;
-  /**
-   * Selected Namespaces
-   *
-   * List of bucket-namespace pairs restricting RAG retrieval.
-   */
-  selected_namespaces: Array<BucketNamespacePair>;
-  /**
-   * Additional Filters
-   *
-   * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
-   */
-  additional_filters?: Array<BucketMetadataFilters> | null;
-  /**
-   * Org Memory Namespaces
-   *
-   * Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.
-   */
-  org_memory_namespaces?: Array<string>;
 };
 
 /**
@@ -11933,30 +11667,6 @@ export type RagSuccessStopEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
-};
-
-/**
- * RAGSuccessStopEventOutput
- */
-export type RagSuccessStopEventOutput = {
-  /**
-   * Display Name
-   *
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display Description
-   *
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-  /**
-   * Answer
-   *
-   * Final assistant answer text, populated for non-streaming consumers.
-   */
-  answer?: string | null;
 };
 
 /**
@@ -13647,7 +13357,7 @@ export type StandaloneQuestionCondenserEvent = {
   /**
    * Single chat message containing the condensed user question.
    */
-  condensed_chat_message: ChatMessageOutput;
+  condensed_chat_message: ChatMessage;
   /**
    * Event Name
    *
@@ -14245,41 +13955,7 @@ export type Textarea = {
  *
  * For the same reason, they are also not templatable.
  */
-export type ThinkingBlockInput = {
-  /**
-   * Block Type
-   */
-  block_type?: "thinking";
-  /**
-   * Content
-   *
-   * Content of the reasoning/thinking process, if available
-   */
-  content?: string | null;
-  /**
-   * Num Tokens
-   *
-   * Number of token used for reasoning/thinking, if available
-   */
-  num_tokens?: number | null;
-  /**
-   * Additional Information
-   */
-  additional_information?: AdditionalInformation;
-};
-
-/**
- * ThinkingBlock
- *
- * A representation of the content streamed from reasoning/thinking processes by LLMs
- *
- * Because of LLM provider's reliance on signatures for Thought Processes,
- * we do not support merging/splitting/truncating for this block, as we want to preserve the integrity of the content
- * provided by the LLM.
- *
- * For the same reason, they are also not templatable.
- */
-export type ThinkingBlockOutput = {
+export type ThinkingBlock = {
   /**
    * Block Type
    */
@@ -14827,35 +14503,7 @@ export type TokenResponse = {
 /**
  * ToolCallBlock
  */
-export type ToolCallBlockInput = {
-  /**
-   * Block Type
-   */
-  block_type?: "tool_call";
-  /**
-   * Tool Call Id
-   *
-   * ID of the tool call, if provided
-   */
-  tool_call_id?: string | null;
-  /**
-   * Tool Name
-   *
-   * Name of the called tool
-   */
-  tool_name: string;
-  /**
-   * Tool Kwargs
-   *
-   * Arguments provided to the tool, if available
-   */
-  tool_kwargs?: Sub0 | string;
-};
-
-/**
- * ToolCallBlock
- */
-export type ToolCallBlockOutput = {
+export type ToolCallBlock = {
   /**
    * Block Type
    */
@@ -15572,7 +15220,7 @@ export type UserMessageEvent = {
    *
    * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
    */
-  messages?: Array<ChatMessageOutput>;
+  messages?: Array<ChatMessage>;
   /**
    * Files
    *
@@ -15593,24 +15241,6 @@ export type UserMessageEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
-};
-
-/**
- * UserMessageEventInput
- */
-export type UserMessageEventInput = {
-  /**
-   * Messages
-   *
-   * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-   */
-  messages?: Array<ChatMessageInput>;
-  /**
-   * Files
-   *
-   * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-   */
-  files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -15889,43 +15519,7 @@ export type VectorStoreInput = {
  *
  * A representation of video data to directly pass to/from the LLM.
  */
-export type VideoBlockInput = {
-  /**
-   * Block Type
-   */
-  block_type?: "video";
-  /**
-   * Video
-   */
-  video?: Blob | File | null;
-  /**
-   * Path
-   */
-  path?: string | null;
-  /**
-   * Url
-   */
-  url?: string | string | null;
-  /**
-   * Video Mimetype
-   */
-  video_mimetype?: string | null;
-  /**
-   * Detail
-   */
-  detail?: string | null;
-  /**
-   * Fps
-   */
-  fps?: number | null;
-};
-
-/**
- * VideoBlock
- *
- * A representation of video data to directly pass to/from the LLM.
- */
-export type VideoBlockOutput = {
+export type VideoBlock = {
   /**
    * Block Type
    */
@@ -15999,29 +15593,6 @@ export type WorkflowGraph = {
    * List of edges in the graph
    */
   links: Array<EdgeData>;
-};
-
-/**
- * ThinkingBlock.additional_information
- *
- * Additional information related to the thinking/reasoning process, if available
- */
-export type AdditionalInformation = {
-  [key: string]: unknown;
-};
-
-/**
- * ChatMessage.additional_kwargs
- */
-export type AdditionalKwargs = {
-  [key: string]: unknown;
-};
-
-/**
- * CitationBlock.additional_location_info
- */
-export type AdditionalLocationInfo = {
-  [key: string]: unknown;
 };
 
 /**
@@ -16143,13 +15714,6 @@ export type OpenaiTypesImagesResponseUsage = {
 };
 
 /**
- * ToolCallBlock.tool_kwargs.sub0
- */
-export type Sub0 = {
-  [key: string]: unknown;
-};
-
-/**
  * AddMemoryToChatHistoryEvent
  *
  * A control and display event emitted when an agent extends chat history with retrieved memories.
@@ -16191,7 +15755,7 @@ export type AddMemoryToChatHistoryEventWritable = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessageOutput>;
+  extended_history: Array<ChatMessage>;
   [key: string]: unknown;
 };
 
@@ -16227,7 +15791,7 @@ export type AddOrganizationMemoryToChatHistoryEventWritable = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessageOutput>;
+  extended_history: Array<ChatMessage>;
   [key: string]: unknown;
 };
 
@@ -16263,7 +15827,7 @@ export type AddUserMemoryToChatHistoryEventWritable = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessageOutput>;
+  extended_history: Array<ChatMessage>;
   [key: string]: unknown;
 };
 
@@ -20588,7 +20152,7 @@ export type LimitChatHistoryEventWritable = {
    *
    * Limited chat history based on number of input tokens.
    */
-  limited_history: Array<ChatMessageOutput>;
+  limited_history: Array<ChatMessage>;
   [key: string]: unknown;
 };
 
@@ -21937,7 +21501,7 @@ export type RagStartEventWritable = {
    *
    * Chat history providing the context and the user query for retrieval.
    */
-  messages?: Array<ChatMessageOutput>;
+  messages?: Array<ChatMessage>;
   /**
    * Files
    *
@@ -23332,7 +22896,7 @@ export type StandaloneQuestionCondenserEventWritable = {
   /**
    * Single chat message containing the condensed user question.
    */
-  condensed_chat_message: ChatMessageOutput;
+  condensed_chat_message: ChatMessage;
   [key: string]: unknown;
 };
 
@@ -24213,7 +23777,7 @@ export type UserMessageEventWritable = {
    *
    * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
    */
-  messages?: Array<ChatMessageOutput>;
+  messages?: Array<ChatMessage>;
   /**
    * Files
    *
@@ -24374,36 +23938,6 @@ export type VectorStoreInputWritable = {
    * Whether to enable filtering/search
    */
   filter?: boolean;
-  [key: string]: unknown;
-};
-
-/**
- * ThinkingBlock.additional_information
- *
- * Additional information related to the thinking/reasoning process, if available
- */
-export type AdditionalInformationWritable = {
-  [key: string]: unknown;
-};
-
-/**
- * ChatMessage.additional_kwargs
- */
-export type AdditionalKwargsWritable = {
-  [key: string]: unknown;
-};
-
-/**
- * CitationBlock.additional_location_info
- */
-export type AdditionalLocationInfoWritable = {
-  [key: string]: unknown;
-};
-
-/**
- * ToolCallBlock.tool_kwargs.sub0
- */
-export type Sub0Writable = {
   [key: string]: unknown;
 };
 
@@ -28461,209 +27995,3 @@ export type ReceiveOpenwebuiWebhookResponses = {
 
 export type ReceiveOpenwebuiWebhookResponse =
   ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData =
-  {
-    body: UserMessageEventInput;
-    path: {
-      /**
-       * Tenant Id
-       *
-       * Tenant identifier: a name, ObjectId, or 'active'
-       */
-      tenant_id: string;
-      /**
-       * Agent ID
-       *
-       * The specific agent instance ID
-       */
-      agent_id: string;
-    };
-    query?: {
-      /**
-       * Thread Id
-       */
-      thread_id?: string;
-      /**
-       * Display Id
-       */
-      display_id?: string;
-    };
-    url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent";
-  };
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors =
-  {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-  };
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError =
-  SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors];
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses =
-  {
-    /**
-     * Response Send User Message Event To R A G Agent  Tenant Id  Agents Classes Ragagent Instances  Agent Id  Usermessageevent Post
-     *
-     * Successful Response
-     */
-    200: RagSuccessStopEventOutput | RagFailureStopEventOutput;
-  };
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse =
-  SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData =
-  {
-    body: UserMessageEventInput;
-    path: {
-      /**
-       * Tenant Id
-       *
-       * Tenant identifier: a name, ObjectId, or 'active'
-       */
-      tenant_id: string;
-      /**
-       * Agent ID
-       *
-       * The specific agent instance ID
-       */
-      agent_id: string;
-    };
-    query?: {
-      /**
-       * Thread Id
-       */
-      thread_id?: string;
-      /**
-       * Display Id
-       */
-      display_id?: string;
-    };
-    url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream";
-  };
-
-export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors =
-  {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-  };
-
-export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError =
-  StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostResponses =
-  {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-  };
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostData =
-  {
-    body: RagStartEventInput;
-    path: {
-      /**
-       * Tenant Id
-       *
-       * Tenant identifier: a name, ObjectId, or 'active'
-       */
-      tenant_id: string;
-      /**
-       * Agent ID
-       *
-       * The specific agent instance ID
-       */
-      agent_id: string;
-    };
-    query?: {
-      /**
-       * Thread Id
-       */
-      thread_id?: string;
-      /**
-       * Display Id
-       */
-      display_id?: string;
-    };
-    url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent";
-  };
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors =
-  {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-  };
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostError =
-  SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors[keyof SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors];
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses =
-  {
-    /**
-     * Response Send R A G Start Event To R A G Agent  Tenant Id  Agents Classes Ragagent Instances  Agent Id  Ragstartevent Post
-     *
-     * Successful Response
-     */
-    200: RagSuccessStopEventOutput | RagFailureStopEventOutput;
-  };
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse =
-  SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses[keyof SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses];
-
-export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostData =
-  {
-    body: RagStartEventInput;
-    path: {
-      /**
-       * Tenant Id
-       *
-       * Tenant identifier: a name, ObjectId, or 'active'
-       */
-      tenant_id: string;
-      /**
-       * Agent ID
-       *
-       * The specific agent instance ID
-       */
-      agent_id: string;
-    };
-    query?: {
-      /**
-       * Thread Id
-       */
-      thread_id?: string;
-      /**
-       * Display Id
-       */
-      display_id?: string;
-    };
-    url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent/stream";
-  };
-
-export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors =
-  {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-  };
-
-export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostError =
-  StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors[keyof StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors];
-
-export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostResponses =
-  {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-  };
