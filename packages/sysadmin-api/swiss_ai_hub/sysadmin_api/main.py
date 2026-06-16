@@ -44,7 +44,14 @@ runner.mount(
     # field lives on the identity DTO already.
     MyAccountController(auth=auth).get_my_identity(),
     UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
-    RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
+    RoleController(auth=auth)
+    .get_role()
+    .get_roles()
+    .create_role()
+    .update_role()
+    .delete_role()
+    .get_access_capabilities()
+    .get_access_presets(),
     AuthProviderController(auth=auth).get_auth_providers(),
 )
 

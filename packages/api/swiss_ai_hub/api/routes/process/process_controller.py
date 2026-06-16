@@ -16,6 +16,7 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.pagination.type.page_number import PageNumber
 from swiss_ai_hub.api.pagination.type.page_size import PageSize
+from swiss_ai_hub.api.routes.access.capability import capability
 from swiss_ai_hub.api.routes.process.dto import PaginatedProcessWalkthroughsResponse
 from swiss_ai_hub.api.routes.process.dto.create_process_instance_request import CreateProcessInstanceRequest
 from swiss_ai_hub.api.routes.process.dto.full_process_instance_dto import FullProcessInstanceDTO
@@ -50,6 +51,7 @@ class ProcessController(TenantScopedController):
 
     # ==================== Process Classes Endpoints ====================
 
+    @capability("api.access.capabilities.ops.process.see_admin")
     def get_process_classes(self, route: str = "/classes") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_process_classes(
@@ -77,6 +79,7 @@ class ProcessController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.process.see_class")
     def get_process_class_instances(self, route: str = "/classes/{process_class}/instances") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_process_class_instances(
@@ -94,6 +97,7 @@ class ProcessController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.process.create")
     def create_process_instance(self, route: str = "/classes/{process_class}/instances") -> Self:
         from fastapi import status
 
@@ -111,6 +115,7 @@ class ProcessController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.process.use")
     def get_process_instance(self, route: str = _INSTANCE_ROUTE) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_process_instance(
@@ -126,6 +131,7 @@ class ProcessController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.process.manage")
     def update_process_instance(self, route: str = _INSTANCE_ROUTE) -> Self:
         @self.router.put(route, tags=self.tags)
         async def update_process_instance(
@@ -167,6 +173,7 @@ class ProcessController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.process.see")
     def get_all_process_instances(self, route: str = "/instances") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_all_process_instances(

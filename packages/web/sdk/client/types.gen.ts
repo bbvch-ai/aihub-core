@@ -29,6 +29,36 @@ export type Access = {
 };
 
 /**
+ * AccessCapabilitiesRequest
+ */
+export type AccessCapabilitiesRequest = {
+  /**
+   * Access Rules
+   *
+   * Draft access rules to evaluate the capability catalog against.
+   */
+  access_rules: Array<string>;
+  /**
+   * Restrict To Tenant
+   *
+   * Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).
+   */
+  restrict_to_tenant?: boolean;
+};
+
+/**
+ * AccessCapabilitiesResponse
+ */
+export type AccessCapabilitiesResponse = {
+  /**
+   * Groups
+   *
+   * Top-level groups, one per controller/service.
+   */
+  groups: Array<CapabilityGroup>;
+};
+
+/**
  * AccessLevel
  *
  * Defines the possible outcomes of a permission check.
@@ -45,6 +75,36 @@ export const AccessLevel = {
  * Defines the possible outcomes of a permission check.
  */
 export type AccessLevel = (typeof AccessLevel)[keyof typeof AccessLevel];
+
+/**
+ * AccessPresetDTO
+ */
+export type AccessPresetDto = {
+  /**
+   * Rule
+   *
+   * The access rule string this preset adds.
+   */
+  rule: string;
+  /**
+   * Name
+   *
+   * Short, human-readable name for the preset.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What this preset grants.
+   */
+  description: string;
+  /**
+   * Category
+   *
+   * Stable category key for grouping in the UI.
+   */
+  category: string;
+};
 
 /**
  * ActiveTenantDTO
@@ -122,7 +182,7 @@ export type AddMemoryToChatHistoryEvent = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessage>;
+  extended_history: Array<ChatMessageOutput>;
   /**
    * Event Name
    *
@@ -171,7 +231,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessage>;
+  extended_history: Array<ChatMessageOutput>;
   /**
    * Event Name
    *
@@ -220,7 +280,7 @@ export type AddUserMemoryToChatHistoryEvent = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessage>;
+  extended_history: Array<ChatMessageOutput>;
   /**
    * Event Name
    *
@@ -1467,7 +1527,35 @@ export type Audio = {
  *
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlock = {
+export type AudioBlockInput = {
+  /**
+   * Block Type
+   */
+  block_type?: "audio";
+  /**
+   * Audio
+   */
+  audio?: Blob | File | null;
+  /**
+   * Path
+   */
+  path?: string | null;
+  /**
+   * Url
+   */
+  url?: string | string | null;
+  /**
+   * Format
+   */
+  format?: string | null;
+};
+
+/**
+ * AudioBlock
+ *
+ * A representation of audio data to directly pass to/from the LLM.
+ */
+export type AudioBlockOutput = {
   /**
    * Block Type
    */
@@ -1822,6 +1910,90 @@ export type CachePoint = {
    */
   block_type?: "cache";
   cache_control: CacheControl;
+};
+
+/**
+ * Capability
+ */
+export type Capability = {
+  /**
+   * Key
+   *
+   * Stable identifier for this capability.
+   */
+  key: string;
+  /**
+   * Label
+   *
+   * Short human-readable action label.
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * What holding this capability lets the user do.
+   */
+  description: string;
+  /**
+   * Rule
+   *
+   * Exact access rule that grants this capability, or null for read-only capabilities.
+   */
+  rule: string | null;
+  /**
+   * Granted
+   *
+   * Whether the draft rules grant this capability.
+   */
+  granted: boolean;
+  /**
+   * Locked
+   *
+   * Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here.
+   */
+  locked: boolean;
+  /**
+   * Toggleable
+   *
+   * Whether ticking the box can add a rule. False for ?-wildcard guards with no concrete grant.
+   */
+  toggleable: boolean;
+};
+
+/**
+ * CapabilityGroup
+ */
+export type CapabilityGroup = {
+  /**
+   * Key
+   *
+   * Stable identifier (a controller/service, a class, an instance, ...).
+   */
+  key: string;
+  /**
+   * Label
+   *
+   * Display title for the group.
+   */
+  label: string;
+  /**
+   * Icon
+   *
+   * Iconify icon for the group (service or class), if any.
+   */
+  icon?: string | null;
+  /**
+   * Capabilities
+   *
+   * Capabilities directly on this group.
+   */
+  capabilities?: Array<Capability>;
+  /**
+   * Groups
+   *
+   * Nested groups (e.g. classes, then instances).
+   */
+  groups?: Array<CapabilityGroup>;
 };
 
 /**
@@ -2820,7 +2992,55 @@ export type ChatCompletionUserMessageParam = {
  *
  * Chat message.
  */
-export type ChatMessage = {
+export type ChatMessageInput = {
+  role?: MessageRole;
+  /**
+   * Additional Kwargs
+   */
+  additional_kwargs?: AdditionalKwargs;
+  /**
+   * Blocks
+   */
+  blocks?: Array<
+    | ({
+        block_type: "text";
+      } & TextBlock)
+    | ({
+        block_type: "image";
+      } & ImageBlockInput)
+    | ({
+        block_type: "audio";
+      } & AudioBlockInput)
+    | ({
+        block_type: "video";
+      } & VideoBlockInput)
+    | ({
+        block_type: "document";
+      } & DocumentBlockInput)
+    | ({
+        block_type: "cache";
+      } & CachePoint)
+    | ({
+        block_type: "citable";
+      } & CitableBlockInput)
+    | ({
+        block_type: "citation";
+      } & CitationBlockInput)
+    | ({
+        block_type: "thinking";
+      } & ThinkingBlockInput)
+    | ({
+        block_type: "tool_call";
+      } & ToolCallBlockInput)
+  >;
+};
+
+/**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type ChatMessageOutput = {
   role?: MessageRole;
   /**
    * Additional Kwargs
@@ -2835,31 +3055,31 @@ export type ChatMessage = {
       } & TextBlock)
     | ({
         block_type: "image";
-      } & ImageBlock)
+      } & ImageBlockOutput)
     | ({
         block_type: "audio";
-      } & AudioBlock)
+      } & AudioBlockOutput)
     | ({
         block_type: "video";
-      } & VideoBlock)
+      } & VideoBlockOutput)
     | ({
         block_type: "document";
-      } & DocumentBlock)
+      } & DocumentBlockOutput)
     | ({
         block_type: "cache";
       } & CachePoint)
     | ({
         block_type: "citable";
-      } & CitableBlock)
+      } & CitableBlockOutput)
     | ({
         block_type: "citation";
-      } & CitationBlock)
+      } & CitationBlockOutput)
     | ({
         block_type: "thinking";
-      } & ThinkingBlock)
+      } & ThinkingBlockOutput)
     | ({
         block_type: "tool_call";
-      } & ToolCallBlock)
+      } & ToolCallBlockOutput)
   >;
 };
 
@@ -3197,7 +3417,7 @@ export type ChunkEvent = {
  *
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlock = {
+export type CitableBlockInput = {
   /**
    * Block Type
    */
@@ -3219,10 +3439,44 @@ export type CitableBlock = {
       } & TextBlock)
     | ({
         block_type: "image";
-      } & ImageBlock)
+      } & ImageBlockInput)
     | ({
         block_type: "document";
-      } & DocumentBlock)
+      } & DocumentBlockInput)
+  >;
+};
+
+/**
+ * CitableBlock
+ *
+ * Supports providing citable content to LLMs that have built-in citation support.
+ */
+export type CitableBlockOutput = {
+  /**
+   * Block Type
+   */
+  block_type?: "citable";
+  /**
+   * Title
+   */
+  title: string;
+  /**
+   * Source
+   */
+  source: string;
+  /**
+   * Content
+   */
+  content: Array<
+    | ({
+        block_type: "text";
+      } & TextBlock)
+    | ({
+        block_type: "image";
+      } & ImageBlockOutput)
+    | ({
+        block_type: "document";
+      } & DocumentBlockOutput)
   >;
 };
 
@@ -3231,7 +3485,7 @@ export type CitableBlock = {
  *
  * A representation of cited content from past messages.
  */
-export type CitationBlock = {
+export type CitationBlockInput = {
   /**
    * Block Type
    */
@@ -3245,7 +3499,41 @@ export type CitationBlock = {
       } & TextBlock)
     | ({
         block_type: "image";
-      } & ImageBlock);
+      } & ImageBlockInput);
+  /**
+   * Source
+   */
+  source: string;
+  /**
+   * Title
+   */
+  title: string;
+  /**
+   * Additional Location Info
+   */
+  additional_location_info: AdditionalLocationInfo;
+};
+
+/**
+ * CitationBlock
+ *
+ * A representation of cited content from past messages.
+ */
+export type CitationBlockOutput = {
+  /**
+   * Block Type
+   */
+  block_type?: "citation";
+  /**
+   * Cited Content
+   */
+  cited_content:
+    | ({
+        block_type: "text";
+      } & TextBlock)
+    | ({
+        block_type: "image";
+      } & ImageBlockOutput);
   /**
    * Source
    */
@@ -4472,7 +4760,39 @@ export type DisplayStatistics = {
  *
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlock = {
+export type DocumentBlockInput = {
+  /**
+   * Block Type
+   */
+  block_type?: "document";
+  /**
+   * Data
+   */
+  data?: Blob | File | null;
+  /**
+   * Path
+   */
+  path?: string | string | null;
+  /**
+   * Url
+   */
+  url?: string | null;
+  /**
+   * Title
+   */
+  title?: string | null;
+  /**
+   * Document Mimetype
+   */
+  document_mimetype?: string | null;
+};
+
+/**
+ * DocumentBlock
+ *
+ * A representation of a document to directly pass to the LLM.
+ */
+export type DocumentBlockOutput = {
   /**
    * Block Type
    */
@@ -6771,7 +7091,39 @@ export type Image = {
  *
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlock = {
+export type ImageBlockInput = {
+  /**
+   * Block Type
+   */
+  block_type?: "image";
+  /**
+   * Image
+   */
+  image?: Blob | File | null;
+  /**
+   * Path
+   */
+  path?: string | null;
+  /**
+   * Url
+   */
+  url?: string | string | null;
+  /**
+   * Image Mimetype
+   */
+  image_mimetype?: string | null;
+  /**
+   * Detail
+   */
+  detail?: string | null;
+};
+
+/**
+ * ImageBlock
+ *
+ * A representation of image data to directly pass to/from the LLM.
+ */
+export type ImageBlockOutput = {
   /**
    * Block Type
    */
@@ -8383,7 +8735,7 @@ export type LimitChatHistoryEvent = {
    *
    * Limited chat history based on number of input tokens.
    */
-  limited_history: Array<ChatMessage>;
+  limited_history: Array<ChatMessageOutput>;
   /**
    * Event Name
    *
@@ -11391,6 +11743,34 @@ export type RagFailureStopEvent = {
 };
 
 /**
+ * RAGFailureStopEventOutput
+ */
+export type RagFailureStopEventOutput = {
+  /**
+   * Display Name
+   *
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display Description
+   *
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Answer
+   *
+   * Final assistant answer text, populated for non-streaming consumers.
+   */
+  answer?: string | null;
+  /**
+   * Why this run failed to produce a useful answer.
+   */
+  reason: RagFailureReason;
+};
+
+/**
  * RAGStartEvent
  *
  * Namespace-aware start event for the RAG agent.
@@ -11432,7 +11812,7 @@ export type RagStartEvent = {
    *
    * Chat history providing the context and the user query for retrieval.
    */
-  messages?: Array<ChatMessage>;
+  messages?: Array<ChatMessageOutput>;
   /**
    * Files
    *
@@ -11471,6 +11851,42 @@ export type RagStartEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * RAGStartEventInput
+ */
+export type RagStartEventInput = {
+  /**
+   * Messages
+   *
+   * Chat history providing the context and the user query for retrieval.
+   */
+  messages?: Array<ChatMessageInput>;
+  /**
+   * Files
+   *
+   * Files uploaded alongside the query for additional context.
+   */
+  files?: Array<UserUploadedFile> | null;
+  /**
+   * Selected Namespaces
+   *
+   * List of bucket-namespace pairs restricting RAG retrieval.
+   */
+  selected_namespaces: Array<BucketNamespacePair>;
+  /**
+   * Additional Filters
+   *
+   * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
+   */
+  additional_filters?: Array<BucketMetadataFilters> | null;
+  /**
+   * Org Memory Namespaces
+   *
+   * Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.
+   */
+  org_memory_namespaces?: Array<string>;
 };
 
 /**
@@ -11517,6 +11933,30 @@ export type RagSuccessStopEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * RAGSuccessStopEventOutput
+ */
+export type RagSuccessStopEventOutput = {
+  /**
+   * Display Name
+   *
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display Description
+   *
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Answer
+   *
+   * Final assistant answer text, populated for non-streaming consumers.
+   */
+  answer?: string | null;
 };
 
 /**
@@ -13171,6 +13611,16 @@ export type Slider = {
 };
 
 /**
+ * SortOrder
+ */
+export const SortOrder = { 1: 1, "-1": -1 } as const;
+
+/**
+ * SortOrder
+ */
+export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
+
+/**
  * StandaloneQuestionCondenserEvent
  *
  * Event to condense chat messages into a single standalone question as a chat message.
@@ -13197,7 +13647,7 @@ export type StandaloneQuestionCondenserEvent = {
   /**
    * Single chat message containing the condensed user question.
    */
-  condensed_chat_message: ChatMessage;
+  condensed_chat_message: ChatMessageOutput;
   /**
    * Event Name
    *
@@ -13795,7 +14245,41 @@ export type Textarea = {
  *
  * For the same reason, they are also not templatable.
  */
-export type ThinkingBlock = {
+export type ThinkingBlockInput = {
+  /**
+   * Block Type
+   */
+  block_type?: "thinking";
+  /**
+   * Content
+   *
+   * Content of the reasoning/thinking process, if available
+   */
+  content?: string | null;
+  /**
+   * Num Tokens
+   *
+   * Number of token used for reasoning/thinking, if available
+   */
+  num_tokens?: number | null;
+  /**
+   * Additional Information
+   */
+  additional_information?: AdditionalInformation;
+};
+
+/**
+ * ThinkingBlock
+ *
+ * A representation of the content streamed from reasoning/thinking processes by LLMs
+ *
+ * Because of LLM provider's reliance on signatures for Thought Processes,
+ * we do not support merging/splitting/truncating for this block, as we want to preserve the integrity of the content
+ * provided by the LLM.
+ *
+ * For the same reason, they are also not templatable.
+ */
+export type ThinkingBlockOutput = {
   /**
    * Block Type
    */
@@ -14343,7 +14827,35 @@ export type TokenResponse = {
 /**
  * ToolCallBlock
  */
-export type ToolCallBlock = {
+export type ToolCallBlockInput = {
+  /**
+   * Block Type
+   */
+  block_type?: "tool_call";
+  /**
+   * Tool Call Id
+   *
+   * ID of the tool call, if provided
+   */
+  tool_call_id?: string | null;
+  /**
+   * Tool Name
+   *
+   * Name of the called tool
+   */
+  tool_name: string;
+  /**
+   * Tool Kwargs
+   *
+   * Arguments provided to the tool, if available
+   */
+  tool_kwargs?: Sub0 | string;
+};
+
+/**
+ * ToolCallBlock
+ */
+export type ToolCallBlockOutput = {
   /**
    * Block Type
    */
@@ -14903,11 +15415,11 @@ export type UserAccess = {
   /**
    * Name
    *
-   * Name of the service/agent/process to which user has access to
+   * Name of the service/agent/process to which access is evaluated
    */
   name: string;
   /**
-   * Users access level to service/agent/process
+   * Access level to the service/agent/process
    */
   level: AccessLevel;
 };
@@ -15060,7 +15572,7 @@ export type UserMessageEvent = {
    *
    * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
    */
-  messages?: Array<ChatMessage>;
+  messages?: Array<ChatMessageOutput>;
   /**
    * Files
    *
@@ -15081,6 +15593,24 @@ export type UserMessageEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type UserMessageEventInput = {
+  /**
+   * Messages
+   *
+   * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+   */
+  messages?: Array<ChatMessageInput>;
+  /**
+   * Files
+   *
+   * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+   */
+  files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -15160,6 +15690,12 @@ export type UserWithAccessDto = {
    * User access levels
    */
   access: Access;
+  /**
+   * Access Rules
+   *
+   * The user's resolved access rules (union of their roles), to drive the capability view.
+   */
+  access_rules: Array<string>;
 };
 
 /**
@@ -15353,7 +15889,43 @@ export type VectorStoreInput = {
  *
  * A representation of video data to directly pass to/from the LLM.
  */
-export type VideoBlock = {
+export type VideoBlockInput = {
+  /**
+   * Block Type
+   */
+  block_type?: "video";
+  /**
+   * Video
+   */
+  video?: Blob | File | null;
+  /**
+   * Path
+   */
+  path?: string | null;
+  /**
+   * Url
+   */
+  url?: string | string | null;
+  /**
+   * Video Mimetype
+   */
+  video_mimetype?: string | null;
+  /**
+   * Detail
+   */
+  detail?: string | null;
+  /**
+   * Fps
+   */
+  fps?: number | null;
+};
+
+/**
+ * VideoBlock
+ *
+ * A representation of video data to directly pass to/from the LLM.
+ */
+export type VideoBlockOutput = {
   /**
    * Block Type
    */
@@ -15427,6 +15999,29 @@ export type WorkflowGraph = {
    * List of edges in the graph
    */
   links: Array<EdgeData>;
+};
+
+/**
+ * ThinkingBlock.additional_information
+ *
+ * Additional information related to the thinking/reasoning process, if available
+ */
+export type AdditionalInformation = {
+  [key: string]: unknown;
+};
+
+/**
+ * ChatMessage.additional_kwargs
+ */
+export type AdditionalKwargs = {
+  [key: string]: unknown;
+};
+
+/**
+ * CitationBlock.additional_location_info
+ */
+export type AdditionalLocationInfo = {
+  [key: string]: unknown;
 };
 
 /**
@@ -15548,6 +16143,13 @@ export type OpenaiTypesImagesResponseUsage = {
 };
 
 /**
+ * ToolCallBlock.tool_kwargs.sub0
+ */
+export type Sub0 = {
+  [key: string]: unknown;
+};
+
+/**
  * AddMemoryToChatHistoryEvent
  *
  * A control and display event emitted when an agent extends chat history with retrieved memories.
@@ -15589,7 +16191,7 @@ export type AddMemoryToChatHistoryEventWritable = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessage>;
+  extended_history: Array<ChatMessageOutput>;
   [key: string]: unknown;
 };
 
@@ -15625,7 +16227,7 @@ export type AddOrganizationMemoryToChatHistoryEventWritable = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessage>;
+  extended_history: Array<ChatMessageOutput>;
   [key: string]: unknown;
 };
 
@@ -15661,7 +16263,7 @@ export type AddUserMemoryToChatHistoryEventWritable = {
    *
    * Chat history extended with user memories.
    */
-  extended_history: Array<ChatMessage>;
+  extended_history: Array<ChatMessageOutput>;
   [key: string]: unknown;
 };
 
@@ -19986,7 +20588,7 @@ export type LimitChatHistoryEventWritable = {
    *
    * Limited chat history based on number of input tokens.
    */
-  limited_history: Array<ChatMessage>;
+  limited_history: Array<ChatMessageOutput>;
   [key: string]: unknown;
 };
 
@@ -21335,7 +21937,7 @@ export type RagStartEventWritable = {
    *
    * Chat history providing the context and the user query for retrieval.
    */
-  messages?: Array<ChatMessage>;
+  messages?: Array<ChatMessageOutput>;
   /**
    * Files
    *
@@ -22730,7 +23332,7 @@ export type StandaloneQuestionCondenserEventWritable = {
   /**
    * Single chat message containing the condensed user question.
    */
-  condensed_chat_message: ChatMessage;
+  condensed_chat_message: ChatMessageOutput;
   [key: string]: unknown;
 };
 
@@ -23611,7 +24213,7 @@ export type UserMessageEventWritable = {
    *
    * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
    */
-  messages?: Array<ChatMessage>;
+  messages?: Array<ChatMessageOutput>;
   /**
    * Files
    *
@@ -23772,6 +24374,36 @@ export type VectorStoreInputWritable = {
    * Whether to enable filtering/search
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * ThinkingBlock.additional_information
+ *
+ * Additional information related to the thinking/reasoning process, if available
+ */
+export type AdditionalInformationWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * ChatMessage.additional_kwargs
+ */
+export type AdditionalKwargsWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * CitationBlock.additional_location_info
+ */
+export type AdditionalLocationInfoWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * ToolCallBlock.tool_kwargs.sub0
+ */
+export type Sub0Writable = {
   [key: string]: unknown;
 };
 
@@ -24456,13 +25088,13 @@ export type GetUserThreadsData = {
      *
      * Filter threads created from this date
      */
-    from?: string | null;
+    from?: Date | null;
     /**
      * To
      *
      * Filter threads created up to this date
      */
-    to?: string | null;
+    to?: Date | null;
     /**
      * Page Number
      *
@@ -24482,11 +25114,9 @@ export type GetUserThreadsData = {
      */
     sort_field?: string;
     /**
-     * Sort Order
-     *
      * Sort order: 1 for ascending, -1 for descending
      */
-    sort_order?: -1 | 1;
+    sort_order?: SortOrder;
   };
   url: "/{tenant_id}/threads/";
 };
@@ -26114,6 +26744,66 @@ export type CreateRoleResponses = {
 };
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
+
+export type GetAccessCapabilitiesData = {
+  body: AccessCapabilitiesRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/roles/access/capabilities";
+};
+
+export type GetAccessCapabilitiesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAccessCapabilitiesError =
+  GetAccessCapabilitiesErrors[keyof GetAccessCapabilitiesErrors];
+
+export type GetAccessCapabilitiesResponses = {
+  /**
+   * Successful Response
+   */
+  200: AccessCapabilitiesResponse;
+};
+
+export type GetAccessCapabilitiesResponse =
+  GetAccessCapabilitiesResponses[keyof GetAccessCapabilitiesResponses];
+
+export type GetAccessPresetsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/roles/access/presets";
+};
+
+export type GetAccessPresetsResponses = {
+  /**
+   * Response Get Access Presets  Tenant Id  Roles Access Presets Get
+   *
+   * Successful Response
+   */
+  200: Array<AccessPresetDto>;
+};
+
+export type GetAccessPresetsResponse =
+  GetAccessPresetsResponses[keyof GetAccessPresetsResponses];
 
 export type GetModelsData = {
   body?: never;
@@ -27771,3 +28461,209 @@ export type ReceiveOpenwebuiWebhookResponses = {
 
 export type ReceiveOpenwebuiWebhookResponse =
   ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData =
+  {
+    body: UserMessageEventInput;
+    path: {
+      /**
+       * Tenant Id
+       *
+       * Tenant identifier: a name, ObjectId, or 'active'
+       */
+      tenant_id: string;
+      /**
+       * Agent ID
+       *
+       * The specific agent instance ID
+       */
+      agent_id: string;
+    };
+    query?: {
+      /**
+       * Thread Id
+       */
+      thread_id?: string;
+      /**
+       * Display Id
+       */
+      display_id?: string;
+    };
+    url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent";
+  };
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError =
+  SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors];
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses =
+  {
+    /**
+     * Response Send User Message Event To R A G Agent  Tenant Id  Agents Classes Ragagent Instances  Agent Id  Usermessageevent Post
+     *
+     * Successful Response
+     */
+    200: RagSuccessStopEventOutput | RagFailureStopEventOutput;
+  };
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse =
+  SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData =
+  {
+    body: UserMessageEventInput;
+    path: {
+      /**
+       * Tenant Id
+       *
+       * Tenant identifier: a name, ObjectId, or 'active'
+       */
+      tenant_id: string;
+      /**
+       * Agent ID
+       *
+       * The specific agent instance ID
+       */
+      agent_id: string;
+    };
+    query?: {
+      /**
+       * Thread Id
+       */
+      thread_id?: string;
+      /**
+       * Display Id
+       */
+      display_id?: string;
+    };
+    url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream";
+  };
+
+export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError =
+  StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+  };
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostData =
+  {
+    body: RagStartEventInput;
+    path: {
+      /**
+       * Tenant Id
+       *
+       * Tenant identifier: a name, ObjectId, or 'active'
+       */
+      tenant_id: string;
+      /**
+       * Agent ID
+       *
+       * The specific agent instance ID
+       */
+      agent_id: string;
+    };
+    query?: {
+      /**
+       * Thread Id
+       */
+      thread_id?: string;
+      /**
+       * Display Id
+       */
+      display_id?: string;
+    };
+    url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent";
+  };
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostError =
+  SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors[keyof SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors];
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses =
+  {
+    /**
+     * Response Send R A G Start Event To R A G Agent  Tenant Id  Agents Classes Ragagent Instances  Agent Id  Ragstartevent Post
+     *
+     * Successful Response
+     */
+    200: RagSuccessStopEventOutput | RagFailureStopEventOutput;
+  };
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse =
+  SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses[keyof SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses];
+
+export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostData =
+  {
+    body: RagStartEventInput;
+    path: {
+      /**
+       * Tenant Id
+       *
+       * Tenant identifier: a name, ObjectId, or 'active'
+       */
+      tenant_id: string;
+      /**
+       * Agent ID
+       *
+       * The specific agent instance ID
+       */
+      agent_id: string;
+    };
+    query?: {
+      /**
+       * Thread Id
+       */
+      thread_id?: string;
+      /**
+       * Display Id
+       */
+      display_id?: string;
+    };
+    url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent/stream";
+  };
+
+export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostError =
+  StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors[keyof StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors];
+
+export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+  };

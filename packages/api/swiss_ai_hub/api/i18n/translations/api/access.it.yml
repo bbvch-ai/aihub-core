@@ -1,0 +1,90 @@
+---
+presets:
+  user_everything:
+    name: Usa tutto
+    description: Accedi e usa ogni servizio, agente e processo — senza crearli né
+      gestirli.
+  admin_everything:
+    name: Amministra tutto
+    description: Controllo completo su ogni servizio, agente e processo, inclusi creazione,
+      configurazione ed eliminazione.
+  use_all_agents:
+    name: Usa tutti gli agenti
+    description: Chatta e usa ogni istanza di agente.
+  manage_all_agents:
+    name: Gestisci tutti gli agenti
+    description: Crea, configura ed elimina ogni istanza di agente.
+  use_all_processes:
+    name: Usa tutti i processi
+    description: Avvia e partecipa a ogni processo.
+  manage_all_processes:
+    name: Gestisci tutti i processi
+    description: Crea, configura ed elimina ogni processo.
+  manage_knowledge:
+    name: Gestisci le basi di conoscenza
+    description: Controllo completo sulle basi di conoscenza e i loro documenti.
+capabilities:
+  ops:
+    service:
+      use:
+        label: Visualizza & usa
+        description: Apri questo servizio e usa le sue funzionalità.
+      administer:
+        label: Amministra
+        description: Gestisci la configurazione e i dati di questo servizio.
+    agent:
+      see:
+        label: Vedi tutti gli assistenti
+        description: Visualizza l'elenco degli assistenti e i loro blueprint.
+      see_class:
+        label: Vedi istanze
+        description: Visualizza le istanze di questo tipo di assistente.
+      create:
+        label: Crea istanze
+        description: Crea nuovi assistenti di questo tipo.
+      use:
+        label: Usa
+        description: Chatta con e usa questo assistente.
+      manage:
+        label: Configura & elimina
+        description: Modifica la configurazione di questo assistente o eliminalo.
+    requires:
+      agent_admin:
+        label: Richiede admin assistenti
+        description: Questo servizio è protetto da accesso admin agli assistenti.
+    process:
+      see:
+        label: Vedi processi
+        description: Visualizza l'elenco dei processi.
+      see_admin:
+        label: Vedi tutti i processi
+        description: Visualizza ogni definizione di processo.
+      see_class:
+        label: Vedi istanze
+        description: Visualizza le istanze di questo tipo di processo.
+      create:
+        label: Crea istanze
+        description: Crea nuovi processi di questo tipo.
+      use:
+        label: Usa
+        description: Avvia e partecipa a questo processo.
+      manage:
+        label: Configura & elimina
+        description: Modifica la configurazione di questo processo o eliminalo.
+    knowledge:
+      see:
+        label: Vedi basi di conoscenza
+        description: Visualizza l'elenco delle basi di conoscenza.
+      use:
+        label: Usa
+        description: Cerca e leggi questo namespace di conoscenza.
+      manage:
+        label: Gestisci
+        description: Configura e inserisci documenti in questo namespace.
+    memory:
+      org:
+        label: Usa memoria organizzazione
+        description: Leggi e gestisci la memoria condivisa dell'organizzazione.
+      personal:
+        label: Usa memoria personale
+        description: Leggi e gestisci la tua memoria personale.

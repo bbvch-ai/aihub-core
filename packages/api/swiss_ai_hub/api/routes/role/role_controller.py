@@ -1,13 +1,20 @@
 import logging
 from typing import Annotated, Self
 
-from fastapi import HTTPException, Security, status
+from fastapi import Depends, HTTPException, Security, status
 from mongoengine.errors import NotUniqueError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
+from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
+from swiss_ai_hub.api.routes.access.access_capability_service import AccessCapabilityService
+from swiss_ai_hub.api.routes.access.access_preset_service import AccessPresetService
+from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import AccessCapabilitiesResponse
+from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import AccessCapabilitiesRequest
+from swiss_ai_hub.api.routes.access.dto.access_preset_dto import AccessPresetDTO
 
 from .dto.create_role_request import CreateRoleRequest
 from .dto.delete_role_response import DeleteRoleResponse
@@ -134,5 +141,42 @@ class RoleController(TenantScopedController):
         ) -> DeleteRoleResponse:
             RoleService.delete_role(role_id, user.acting_within_tenant.id)
             return DeleteRoleResponse()
+
+        return self
+
+    def get_access_capabilities(self, route: str = "/access/capabilities") -> Self:
+        @self.router.post(
+            route,
+            summary="Evaluate Access Capabilities",
+            description="Returns the catalog of concrete capabilities (per service, agent and process), each with "
+            "its exact access rule and whether the supplied draft rules grant it.",
+            tags=self.tags,
+        )
+        async def get_access_capabilities(
+            request: AccessCapabilitiesRequest,
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> AccessCapabilitiesResponse:
+            tenant_ceiling = user.acting_within_tenant.access_rules if request.restrict_to_tenant else None
+            return await AccessCapabilityService.build_capabilities(
+                request.access_rules, self._runner, t, tenant_ceiling
+            )
+
+        return self
+
+    def get_access_presets(self, route: str = "/access/presets") -> Self:
+        @self.router.get(
+            route,
+            summary="List Access Presets",
+            description="Returns a curated, described library of common access rules for one-click authoring.",
+            tags=self.tags,
+        )
+        async def get_access_presets(
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[AccessPresetDTO]:
+            return AccessPresetService.get_presets(t)
 
         return self

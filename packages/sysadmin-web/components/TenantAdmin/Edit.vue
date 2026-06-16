@@ -27,6 +27,7 @@
     <AccessRulesEditor
       v-model:rules="accessRules"
       :initial-rules="initialAccessRules"
+      :restrict-to-tenant="false"
     />
   </div>
 </template>

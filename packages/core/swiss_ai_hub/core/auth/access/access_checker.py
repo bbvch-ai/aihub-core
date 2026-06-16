@@ -159,6 +159,26 @@ class AccessChecker:
             return True
         return ri == len(access_rule_parts) and ti == len(template_parts)
 
+    @classmethod
+    def rules_grant(cls, rules: list[str], capability_rule: str) -> bool:
+        """Whether a flat rule list grants a capability rule, honoring admin⊇user.
+
+        Unlike ``access_level``, the ``capability_rule`` may itself contain ``*``/``>`` (it is a
+        grant string, not a permission template) — so "use all instances" (``...agent.X.>``) can be
+        tested directly. A draft rule equal to OR broader than the capability counts as granting it;
+        this drives the capability checkbox state. A ``user``-prefixed capability is also satisfied
+        by the matching ``admin`` rule, since admin implies user.
+        """
+        checker = cls(user_access_rules=rules, tenant_access_rules=[])
+        targets = [capability_rule]
+        if capability_rule.startswith(_USER_PREFIX):
+            targets.append(capability_rule.replace(_USER_PREFIX, _ADMIN_PREFIX, 1))
+        return any(
+            checker._access_rule_matches_concrete_permission(access_rule, target)
+            for target in targets
+            for access_rule in checker.user_valid_access_rules
+        )
+
     def access_level(self, permission_template: str) -> AccessLevel:
         """
         Checks for the highest level of permission (Admin, User, or Denied).

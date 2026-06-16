@@ -214,13 +214,13 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 
 Events are organized by which system they belong to:
 
-| Scope               | Directory          | What belongs here                                         |
-| ------------------- | ------------------ | --------------------------------------------------------- |
-| Agent events        | `events/agent/`    | All agent workflow events (control, display, HITL, etc.)  |
-| Process events      | `events/process/`  | Process orchestration, work delegation, process discovery |
-| Pipeline events         | `events/pipeline/`              | Data pipeline events (SourceUpdatedEvent)                                     |
-| Self-awareness events   | `events/agent/self_awareness/`  | Meta-question detection gate (`MetaQuestionDetectedEvent`, `NotAMetaQuestionEvent`) |
-| Shared base classes     | `events/`                       | BaseEvent, shared discovery (ClassDiscoveryRequestEvent)                      |
+| Scope                 | Directory                      | What belongs here                                                                   |
+| --------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
+| Agent events          | `events/agent/`                | All agent workflow events (control, display, HITL, etc.)                            |
+| Process events        | `events/process/`              | Process orchestration, work delegation, process discovery                           |
+| Pipeline events       | `events/pipeline/`             | Data pipeline events (SourceUpdatedEvent)                                           |
+| Self-awareness events | `events/agent/self_awareness/` | Meta-question detection gate (`MetaQuestionDetectedEvent`, `NotAMetaQuestionEvent`) |
+| Shared base classes   | `events/`                      | BaseEvent, shared discovery (ClassDiscoveryRequestEvent)                            |
 
 ### Creating a New Event
 

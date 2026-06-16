@@ -8,6 +8,7 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import LangfuseSettings
 from swiss_ai_hub.core.routes import TenantScopedController
 
+from swiss_ai_hub.api.routes.access.capability import capability
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset import Dataset
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset_create import DatasetCreate
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset_update import DatasetUpdate
@@ -37,6 +38,7 @@ class DatasetController(TenantScopedController):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
+    @capability("api.access.capabilities.ops.requires.agent_admin")
     def create_dataset(self, route: str = "/") -> Self:
         @self.router.post(
             route,

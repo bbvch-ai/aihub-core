@@ -88,7 +88,14 @@ runner.mount(
     .send_process_start_form()
     .send_process_open_form(),
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
-    RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
+    RoleController(auth=auth)
+    .get_role()
+    .get_roles()
+    .create_role()
+    .update_role()
+    .delete_role()
+    .get_access_capabilities()
+    .get_access_presets(),
     OpenaiController(auth=auth)
     .get_models()
     .get_model_with_assistants()

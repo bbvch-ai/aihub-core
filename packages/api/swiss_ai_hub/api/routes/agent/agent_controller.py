@@ -15,6 +15,7 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.pagination.type.page_number import PageNumber
 from swiss_ai_hub.api.pagination.type.page_size import PageSize
+from swiss_ai_hub.api.routes.access.capability import capability
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
 from swiss_ai_hub.api.routes.agent.dependencies.use_agent_file_upload import use_agent_file_upload_service
@@ -54,6 +55,7 @@ class AgentController(TenantScopedController):
 
     # ==================== Agent Classes Endpoints ====================
 
+    @capability("api.access.capabilities.ops.agent.see")
     def get_agent_classes(self, route: str = "/classes") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_classes(
@@ -69,6 +71,7 @@ class AgentController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.agent.see_class")
     def get_agent_class(self, route: str = "/classes/{agent_class}") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_class(
@@ -102,6 +105,7 @@ class AgentController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.agent.create")
     def create_agent_instance(self, route: str = "/classes/{agent_class}/instances") -> Self:
         from fastapi import status
 
@@ -119,6 +123,7 @@ class AgentController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.agent.use")
     def get_agent_instance(self, route: str = _AGENT_INSTANCE_ROUTE) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_instance(
@@ -136,6 +141,7 @@ class AgentController(TenantScopedController):
 
         return self
 
+    @capability("api.access.capabilities.ops.agent.manage")
     def update_agent_instance(self, route: str = _AGENT_INSTANCE_ROUTE) -> Self:
         @self.router.put(route, tags=self.tags)
         async def update_agent_instance(

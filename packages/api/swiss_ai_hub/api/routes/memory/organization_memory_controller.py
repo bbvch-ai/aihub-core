@@ -8,6 +8,7 @@ from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
+from swiss_ai_hub.api.routes.access.capability import capability
 from swiss_ai_hub.api.routes.memory.dto.delete_memory_response import DeleteAllMemoriesResponse, DeleteMemoryResponse
 from swiss_ai_hub.api.routes.memory.dto.memories_response import MemoriesResponse
 from swiss_ai_hub.api.routes.memory.dto.memory_search_response import MemorySearchResponse
@@ -26,6 +27,7 @@ class OrganizationMemoryController(TenantScopedController):
     def __init__(self, *, auth: AuthHandler, route: str = "/organization-memories", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)
 
+    @capability("api.access.capabilities.ops.memory.org")
     def get_organization_memories(self, route: str = "") -> Self:
         @self.router.get(route, tags=self.tags, response_model=MemoriesResponse)
         async def get_organization_memories(

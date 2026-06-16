@@ -34,11 +34,79 @@ export const AccessSchema = {
   title: "Access",
 } as const;
 
+export const AccessCapabilitiesRequestSchema = {
+  properties: {
+    access_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Access Rules",
+      description:
+        "Draft access rules to evaluate the capability catalog against.",
+    },
+    restrict_to_tenant: {
+      type: "boolean",
+      title: "Restrict To Tenant",
+      description:
+        "Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).",
+      default: true,
+    },
+  },
+  type: "object",
+  required: ["access_rules"],
+  title: "AccessCapabilitiesRequest",
+} as const;
+
+export const AccessCapabilitiesResponseSchema = {
+  properties: {
+    groups: {
+      items: {
+        $ref: "#/components/schemas/CapabilityGroup",
+      },
+      type: "array",
+      title: "Groups",
+      description: "Top-level groups, one per controller/service.",
+    },
+  },
+  type: "object",
+  required: ["groups"],
+  title: "AccessCapabilitiesResponse",
+} as const;
+
 export const AccessLevelSchema = {
   type: "integer",
   enum: [0, 1, 2],
   title: "AccessLevel",
   description: "Defines the possible outcomes of a permission check.",
+} as const;
+
+export const AccessPresetDTOSchema = {
+  properties: {
+    rule: {
+      type: "string",
+      title: "Rule",
+      description: "The access rule string this preset adds.",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "Short, human-readable name for the preset.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "What this preset grants.",
+    },
+    category: {
+      type: "string",
+      title: "Category",
+      description: "Stable category key for grouping in the UI.",
+    },
+  },
+  type: "object",
+  required: ["rule", "name", "description", "category"],
+  title: "AccessPresetDTO",
 } as const;
 
 export const ActiveTenantDTOSchema = {
@@ -112,7 +180,7 @@ export const AddMemoryToChatHistoryEventSchema = {
     },
     extended_history: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Extended History",
@@ -180,7 +248,7 @@ export const AddOrganizationMemoryToChatHistoryEventSchema = {
     },
     extended_history: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Extended History",
@@ -248,7 +316,7 @@ export const AddUserMemoryToChatHistoryEventSchema = {
     },
     extended_history: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Extended History",
@@ -1886,7 +1954,74 @@ export const AudioSchema = {
     "Data about a previous audio response from the model.\n[Learn more](https://platform.openai.com/docs/guides/audio).",
 } as const;
 
-export const AudioBlockSchema = {
+export const AudioBlock_InputSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "audio",
+      title: "Block Type",
+      default: "audio",
+    },
+    audio: {
+      anyOf: [
+        {
+          type: "string",
+          format: "binary",
+          contentMediaType: "application/octet-stream",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Audio",
+    },
+    path: {
+      anyOf: [
+        {
+          type: "string",
+          format: "file-path",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Path",
+    },
+    url: {
+      anyOf: [
+        {
+          type: "string",
+          minLength: 1,
+          format: "uri",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Url",
+    },
+    format: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Format",
+    },
+  },
+  type: "object",
+  title: "AudioBlock",
+  description:
+    "A representation of audio data to directly pass to/from the LLM.",
+} as const;
+
+export const AudioBlock_OutputSchema = {
   properties: {
     block_type: {
       type: "string",
@@ -2385,6 +2520,116 @@ export const CachePointSchema = {
   title: "CachePoint",
   description:
     "Used to set the point to cache up to, if the LLM supports caching.",
+} as const;
+
+export const CapabilitySchema = {
+  properties: {
+    key: {
+      type: "string",
+      title: "Key",
+      description: "Stable identifier for this capability.",
+    },
+    label: {
+      type: "string",
+      title: "Label",
+      description: "Short human-readable action label.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "What holding this capability lets the user do.",
+    },
+    rule: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Rule",
+      description:
+        "Exact access rule that grants this capability, or null for read-only capabilities.",
+    },
+    granted: {
+      type: "boolean",
+      title: "Granted",
+      description: "Whether the draft rules grant this capability.",
+    },
+    locked: {
+      type: "boolean",
+      title: "Locked",
+      description:
+        "Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here.",
+    },
+    toggleable: {
+      type: "boolean",
+      title: "Toggleable",
+      description:
+        "Whether ticking the box can add a rule. False for ?-wildcard guards with no concrete grant.",
+    },
+  },
+  type: "object",
+  required: [
+    "key",
+    "label",
+    "description",
+    "rule",
+    "granted",
+    "locked",
+    "toggleable",
+  ],
+  title: "Capability",
+} as const;
+
+export const CapabilityGroupSchema = {
+  properties: {
+    key: {
+      type: "string",
+      title: "Key",
+      description:
+        "Stable identifier (a controller/service, a class, an instance, ...).",
+    },
+    label: {
+      type: "string",
+      title: "Label",
+      description: "Display title for the group.",
+    },
+    icon: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Icon",
+      description: "Iconify icon for the group (service or class), if any.",
+    },
+    capabilities: {
+      items: {
+        $ref: "#/components/schemas/Capability",
+      },
+      type: "array",
+      title: "Capabilities",
+      description: "Capabilities directly on this group.",
+      default: [],
+    },
+    groups: {
+      items: {
+        $ref: "#/components/schemas/CapabilityGroup",
+      },
+      type: "array",
+      title: "Groups",
+      description: "Nested groups (e.g. classes, then instances).",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["key", "label"],
+  title: "CapabilityGroup",
 } as const;
 
 export const CascadeSelectSchema = {
@@ -4051,7 +4296,76 @@ export const ChatCompletionUserMessageParamSchema = {
     "Messages sent by an end user, containing prompts or additional context\ninformation.",
 } as const;
 
-export const ChatMessageSchema = {
+export const ChatMessage_InputSchema = {
+  properties: {
+    role: {
+      $ref: "#/components/schemas/MessageRole",
+      default: "user",
+    },
+    additional_kwargs: {
+      $ref: "#/components/schemas/additional_kwargs",
+      title: "Additional Kwargs",
+    },
+    blocks: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/TextBlock",
+          },
+          {
+            $ref: "#/components/schemas/ImageBlock-Input",
+          },
+          {
+            $ref: "#/components/schemas/AudioBlock-Input",
+          },
+          {
+            $ref: "#/components/schemas/VideoBlock-Input",
+          },
+          {
+            $ref: "#/components/schemas/DocumentBlock-Input",
+          },
+          {
+            $ref: "#/components/schemas/CachePoint",
+          },
+          {
+            $ref: "#/components/schemas/CitableBlock-Input",
+          },
+          {
+            $ref: "#/components/schemas/CitationBlock-Input",
+          },
+          {
+            $ref: "#/components/schemas/ThinkingBlock-Input",
+          },
+          {
+            $ref: "#/components/schemas/ToolCallBlock-Input",
+          },
+        ],
+        discriminator: {
+          propertyName: "block_type",
+          mapping: {
+            audio: "#/components/schemas/AudioBlock-Input",
+            cache: "#/components/schemas/CachePoint",
+            citable: "#/components/schemas/CitableBlock-Input",
+            citation: "#/components/schemas/CitationBlock-Input",
+            document: "#/components/schemas/DocumentBlock-Input",
+            image: "#/components/schemas/ImageBlock-Input",
+            text: "#/components/schemas/TextBlock",
+            thinking: "#/components/schemas/ThinkingBlock-Input",
+            tool_call: "#/components/schemas/ToolCallBlock-Input",
+            video: "#/components/schemas/VideoBlock-Input",
+          },
+        },
+      },
+      type: "array",
+      title: "Blocks",
+    },
+  },
+  type: "object",
+  title: "ChatMessage",
+  description: "Chat message.",
+} as const;
+
+export const ChatMessage_OutputSchema = {
   properties: {
     role: {
       $ref: "#/components/schemas/MessageRole",
@@ -4067,46 +4381,46 @@ export const ChatMessageSchema = {
             $ref: "#/components/schemas/TextBlock",
           },
           {
-            $ref: "#/components/schemas/ImageBlock",
+            $ref: "#/components/schemas/ImageBlock-Output",
           },
           {
-            $ref: "#/components/schemas/AudioBlock",
+            $ref: "#/components/schemas/AudioBlock-Output",
           },
           {
-            $ref: "#/components/schemas/VideoBlock",
+            $ref: "#/components/schemas/VideoBlock-Output",
           },
           {
-            $ref: "#/components/schemas/DocumentBlock",
+            $ref: "#/components/schemas/DocumentBlock-Output",
           },
           {
             $ref: "#/components/schemas/CachePoint",
           },
           {
-            $ref: "#/components/schemas/CitableBlock",
+            $ref: "#/components/schemas/CitableBlock-Output",
           },
           {
-            $ref: "#/components/schemas/CitationBlock",
+            $ref: "#/components/schemas/CitationBlock-Output",
           },
           {
-            $ref: "#/components/schemas/ThinkingBlock",
+            $ref: "#/components/schemas/ThinkingBlock-Output",
           },
           {
-            $ref: "#/components/schemas/ToolCallBlock",
+            $ref: "#/components/schemas/ToolCallBlock-Output",
           },
         ],
         discriminator: {
           propertyName: "block_type",
           mapping: {
-            audio: "#/components/schemas/AudioBlock",
+            audio: "#/components/schemas/AudioBlock-Output",
             cache: "#/components/schemas/CachePoint",
-            citable: "#/components/schemas/CitableBlock",
-            citation: "#/components/schemas/CitationBlock",
-            document: "#/components/schemas/DocumentBlock",
-            image: "#/components/schemas/ImageBlock",
+            citable: "#/components/schemas/CitableBlock-Output",
+            citation: "#/components/schemas/CitationBlock-Output",
+            document: "#/components/schemas/DocumentBlock-Output",
+            image: "#/components/schemas/ImageBlock-Output",
             text: "#/components/schemas/TextBlock",
-            thinking: "#/components/schemas/ThinkingBlock",
-            tool_call: "#/components/schemas/ToolCallBlock",
-            video: "#/components/schemas/VideoBlock",
+            thinking: "#/components/schemas/ThinkingBlock-Output",
+            tool_call: "#/components/schemas/ToolCallBlock-Output",
+            video: "#/components/schemas/VideoBlock-Output",
           },
         },
       },
@@ -4669,7 +4983,7 @@ export const ChunkEventSchema = {
     'An event representing a portion of output or generated content (a "chunk") that is\nstreamed or delivered in segments - common in incremental output scenarios like LLM\ntoken streaming.\n\n### Why ChunkEvent?\nIn conversational or streaming AI outputs, the model might emit content in pieces rather\nthan all at once. `ChunkEvent` allows the frontend or other consumers to display partial\nresponses as they are generated, improving user experience by not forcing them to wait\nfor the entire answer.',
 } as const;
 
-export const CitableBlockSchema = {
+export const CitableBlock_InputSchema = {
   properties: {
     block_type: {
       type: "string",
@@ -4692,17 +5006,17 @@ export const CitableBlockSchema = {
             $ref: "#/components/schemas/TextBlock",
           },
           {
-            $ref: "#/components/schemas/ImageBlock",
+            $ref: "#/components/schemas/ImageBlock-Input",
           },
           {
-            $ref: "#/components/schemas/DocumentBlock",
+            $ref: "#/components/schemas/DocumentBlock-Input",
           },
         ],
         discriminator: {
           propertyName: "block_type",
           mapping: {
-            document: "#/components/schemas/DocumentBlock",
-            image: "#/components/schemas/ImageBlock",
+            document: "#/components/schemas/DocumentBlock-Input",
+            image: "#/components/schemas/ImageBlock-Input",
             text: "#/components/schemas/TextBlock",
           },
         },
@@ -4718,7 +5032,56 @@ export const CitableBlockSchema = {
     "Supports providing citable content to LLMs that have built-in citation support.",
 } as const;
 
-export const CitationBlockSchema = {
+export const CitableBlock_OutputSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "citable",
+      title: "Block Type",
+      default: "citable",
+    },
+    title: {
+      type: "string",
+      title: "Title",
+    },
+    source: {
+      type: "string",
+      title: "Source",
+    },
+    content: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/TextBlock",
+          },
+          {
+            $ref: "#/components/schemas/ImageBlock-Output",
+          },
+          {
+            $ref: "#/components/schemas/DocumentBlock-Output",
+          },
+        ],
+        discriminator: {
+          propertyName: "block_type",
+          mapping: {
+            document: "#/components/schemas/DocumentBlock-Output",
+            image: "#/components/schemas/ImageBlock-Output",
+            text: "#/components/schemas/TextBlock",
+          },
+        },
+      },
+      type: "array",
+      title: "Content",
+    },
+  },
+  type: "object",
+  required: ["title", "source", "content"],
+  title: "CitableBlock",
+  description:
+    "Supports providing citable content to LLMs that have built-in citation support.",
+} as const;
+
+export const CitationBlock_InputSchema = {
   properties: {
     block_type: {
       type: "string",
@@ -4732,14 +5095,59 @@ export const CitationBlockSchema = {
           $ref: "#/components/schemas/TextBlock",
         },
         {
-          $ref: "#/components/schemas/ImageBlock",
+          $ref: "#/components/schemas/ImageBlock-Input",
         },
       ],
       title: "Cited Content",
       discriminator: {
         propertyName: "block_type",
         mapping: {
-          image: "#/components/schemas/ImageBlock",
+          image: "#/components/schemas/ImageBlock-Input",
+          text: "#/components/schemas/TextBlock",
+        },
+      },
+    },
+    source: {
+      type: "string",
+      title: "Source",
+    },
+    title: {
+      type: "string",
+      title: "Title",
+    },
+    additional_location_info: {
+      $ref: "#/components/schemas/additional_location_info",
+      title: "Additional Location Info",
+    },
+  },
+  type: "object",
+  required: ["cited_content", "source", "title", "additional_location_info"],
+  title: "CitationBlock",
+  description: "A representation of cited content from past messages.",
+} as const;
+
+export const CitationBlock_OutputSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "citation",
+      title: "Block Type",
+      default: "citation",
+    },
+    cited_content: {
+      oneOf: [
+        {
+          $ref: "#/components/schemas/TextBlock",
+        },
+        {
+          $ref: "#/components/schemas/ImageBlock-Output",
+        },
+      ],
+      title: "Cited Content",
+      discriminator: {
+        propertyName: "block_type",
+        mapping: {
+          image: "#/components/schemas/ImageBlock-Output",
           text: "#/components/schemas/TextBlock",
         },
       },
@@ -6496,7 +6904,82 @@ export const DisplayStatisticsSchema = {
     "Statistics for a display, including its runs, intended for API response.",
 } as const;
 
-export const DocumentBlockSchema = {
+export const DocumentBlock_InputSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "document",
+      title: "Block Type",
+      default: "document",
+    },
+    data: {
+      anyOf: [
+        {
+          type: "string",
+          format: "binary",
+          contentMediaType: "application/octet-stream",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Data",
+    },
+    path: {
+      anyOf: [
+        {
+          type: "string",
+          format: "file-path",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Path",
+    },
+    url: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Url",
+    },
+    title: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Title",
+    },
+    document_mimetype: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Mimetype",
+    },
+  },
+  type: "object",
+  title: "DocumentBlock",
+  description: "A representation of a document to directly pass to the LLM.",
+} as const;
+
+export const DocumentBlock_OutputSchema = {
   properties: {
     block_type: {
       type: "string",
@@ -9852,7 +10335,85 @@ export const ImageSchema = {
     "Represents the content or the URL of an image generated by the OpenAI API.",
 } as const;
 
-export const ImageBlockSchema = {
+export const ImageBlock_InputSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "image",
+      title: "Block Type",
+      default: "image",
+    },
+    image: {
+      anyOf: [
+        {
+          type: "string",
+          format: "binary",
+          contentMediaType: "application/octet-stream",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Image",
+    },
+    path: {
+      anyOf: [
+        {
+          type: "string",
+          format: "file-path",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Path",
+    },
+    url: {
+      anyOf: [
+        {
+          type: "string",
+          minLength: 1,
+          format: "uri",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Url",
+    },
+    image_mimetype: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Image Mimetype",
+    },
+    detail: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Detail",
+    },
+  },
+  type: "object",
+  title: "ImageBlock",
+  description:
+    "A representation of image data to directly pass to/from the LLM.",
+} as const;
+
+export const ImageBlock_OutputSchema = {
   properties: {
     block_type: {
       type: "string",
@@ -12571,7 +13132,7 @@ export const LimitChatHistoryEventSchema = {
     },
     limited_history: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Limited History",
@@ -16843,6 +17404,55 @@ export const RAGFailureStopEventSchema = {
     "Stop event emitted when a RAG run failed to produce a useful answer.\n\nThe `reason` field tells the parent agent which path produced the failure — context insufficient,\nexpert declined, expert errored, or a few-shot fallback that bypassed retrieval.",
 } as const;
 
+export const RAGFailureStopEventOutputSchema = {
+  properties: {
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Description",
+      description: "Display description for the event",
+    },
+    answer: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Answer",
+      description:
+        "Final assistant answer text, populated for non-streaming consumers.",
+    },
+    reason: {
+      $ref: "#/components/schemas/RAGFailureReason",
+      description: "Why this run failed to produce a useful answer.",
+    },
+  },
+  type: "object",
+  required: ["reason"],
+  title: "RAGFailureStopEventOutput",
+} as const;
+
 export const RAGStartEventSchema = {
   properties: {
     event_id: {
@@ -16890,7 +17500,7 @@ export const RAGStartEventSchema = {
     },
     messages: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Messages",
@@ -16978,6 +17588,71 @@ export const RAGStartEventSchema = {
     "Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.",
 } as const;
 
+export const RAGStartEventInputSchema = {
+  properties: {
+    messages: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage-Input",
+      },
+      type: "array",
+      title: "Messages",
+      description:
+        "Chat history providing the context and the user query for retrieval.",
+    },
+    files: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/UserUploadedFile",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Files",
+      description: "Files uploaded alongside the query for additional context.",
+    },
+    selected_namespaces: {
+      items: {
+        $ref: "#/components/schemas/BucketNamespacePair",
+      },
+      type: "array",
+      title: "Selected Namespaces",
+      description: "List of bucket-namespace pairs restricting RAG retrieval.",
+    },
+    additional_filters: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/BucketMetadataFilters",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Filters",
+      description:
+        "Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.",
+    },
+    org_memory_namespaces: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Org Memory Namespaces",
+      description:
+        "Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.",
+    },
+  },
+  type: "object",
+  required: ["selected_namespaces"],
+  title: "RAGStartEventInput",
+} as const;
+
 export const RAGSuccessStopEventSchema = {
   properties: {
     event_id: {
@@ -17049,6 +17724,50 @@ export const RAGSuccessStopEventSchema = {
   title: "RAGSuccessStopEvent",
   description:
     "Stop event emitted when a RAG run successfully produced an answer for the user.",
+} as const;
+
+export const RAGSuccessStopEventOutputSchema = {
+  properties: {
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Description",
+      description: "Display description for the event",
+    },
+    answer: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Answer",
+      description:
+        "Final assistant answer text, populated for non-streaming consumers.",
+    },
+  },
+  type: "object",
+  title: "RAGSuccessStopEventOutput",
 } as const;
 
 export const RadioButtonSchema = {
@@ -19546,6 +20265,12 @@ export const SliderSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/Slider",
 } as const;
 
+export const SortOrderSchema = {
+  type: "integer",
+  enum: [1, -1],
+  title: "SortOrder",
+} as const;
+
 export const StandaloneQuestionCondenserEventSchema = {
   properties: {
     event_id: {
@@ -19581,7 +20306,7 @@ export const StandaloneQuestionCondenserEventSchema = {
       description: "Display description for the event",
     },
     condensed_chat_message: {
-      $ref: "#/components/schemas/ChatMessage",
+      $ref: "#/components/schemas/ChatMessage-Output",
       description:
         "Single chat message containing the condensed user question.",
     },
@@ -20374,7 +21099,50 @@ export const TextareaSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/Textarea",
 } as const;
 
-export const ThinkingBlockSchema = {
+export const ThinkingBlock_InputSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "thinking",
+      title: "Block Type",
+      default: "thinking",
+    },
+    content: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Content",
+      description: "Content of the reasoning/thinking process, if available",
+    },
+    num_tokens: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Num Tokens",
+      description: "Number of token used for reasoning/thinking, if available",
+    },
+    additional_information: {
+      $ref: "#/components/schemas/additional_information",
+      title: "Additional Information",
+    },
+  },
+  type: "object",
+  title: "ThinkingBlock",
+  description:
+    "A representation of the content streamed from reasoning/thinking processes by LLMs\n\nBecause of LLM provider's reliance on signatures for Thought Processes,\nwe do not support merging/splitting/truncating for this block, as we want to preserve the integrity of the content\nprovided by the LLM.\n\nFor the same reason, they are also not templatable.",
+} as const;
+
+export const ThinkingBlock_OutputSchema = {
   properties: {
     block_type: {
       type: "string",
@@ -21207,7 +21975,50 @@ export const TokenResponseSchema = {
   title: "TokenResponse",
 } as const;
 
-export const ToolCallBlockSchema = {
+export const ToolCallBlock_InputSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "tool_call",
+      title: "Block Type",
+      default: "tool_call",
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description: "ID of the tool call, if provided",
+    },
+    tool_name: {
+      type: "string",
+      title: "Tool Name",
+      description: "Name of the called tool",
+    },
+    tool_kwargs: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/sub0",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Tool Kwargs",
+      description: "Arguments provided to the tool, if available",
+    },
+  },
+  type: "object",
+  required: ["tool_name"],
+  title: "ToolCallBlock",
+} as const;
+
+export const ToolCallBlock_OutputSchema = {
   properties: {
     block_type: {
       type: "string",
@@ -22005,11 +22816,11 @@ export const UserAccessSchema = {
       type: "string",
       title: "Name",
       description:
-        "Name of the service/agent/process to which user has access to",
+        "Name of the service/agent/process to which access is evaluated",
     },
     level: {
       $ref: "#/components/schemas/AccessLevel",
-      description: "Users access level to service/agent/process",
+      description: "Access level to the service/agent/process",
     },
   },
   type: "object",
@@ -22176,7 +22987,7 @@ export const UserMessageEventSchema = {
     },
     messages: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Messages",
@@ -22224,6 +23035,38 @@ export const UserMessageEventSchema = {
   title: "UserMessageEvent",
   description:
     "A start event triggered directly by a user's message, bridging both display and control functionalities.\n\n### Why UserMessageEvent?\nWhile `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing\noutput, a `UserMessageEvent` marks a ChatMessage workflow start initiated by a user's input. This is common in chat\ninterfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:\n- A display event (since it may appear in the UI history).\n- A control event triggering workflow execution from a particular starting step.\n\nBy inheriting from `DisplayEvent` and `StartEvent`:\n- It ensures the event is visible in the user interface, displaying the user’s message.\n- It also sets the workflow in motion, deciding how and where the system responds or which step\n  of the workflow to begin with.\n\n### Use Case\nIn an agent workflow, you might have:\n- **UserMessageEvent**: Initiates the workflow at a certain step due to user input.\n- Another start event from an agent or a system event: Initiates the workflow at a different step\n  or with different initial conditions.\n\nThis flexible design allows mixing and matching start events to adapt how and when workflows\nare triggered, depending on the source of the event.",
+} as const;
+
+export const UserMessageEventInputSchema = {
+  properties: {
+    messages: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage-Input",
+      },
+      type: "array",
+      title: "Messages",
+      description:
+        "A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.",
+    },
+    files: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/UserUploadedFile",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Files",
+      description:
+        "A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
+    },
+  },
+  type: "object",
+  title: "UserMessageEventInput",
 } as const;
 
 export const UserUploadedFileSchema = {
@@ -22317,9 +23160,18 @@ export const UserWithAccessDTOSchema = {
       $ref: "#/components/schemas/Access",
       description: "User access levels",
     },
+    access_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Access Rules",
+      description:
+        "The user's resolved access rules (union of their roles), to drive the capability view.",
+    },
   },
   type: "object",
-  required: ["id", "name", "email", "access"],
+  required: ["id", "name", "email", "access", "access_rules"],
   title: "UserWithAccessDTO",
 } as const;
 
@@ -22564,7 +23416,96 @@ export const VectorStoreInputSchema = {
     'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
 } as const;
 
-export const VideoBlockSchema = {
+export const VideoBlock_InputSchema = {
+  properties: {
+    block_type: {
+      type: "string",
+      const: "video",
+      title: "Block Type",
+      default: "video",
+    },
+    video: {
+      anyOf: [
+        {
+          type: "string",
+          format: "binary",
+          contentMediaType: "application/octet-stream",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Video",
+    },
+    path: {
+      anyOf: [
+        {
+          type: "string",
+          format: "file-path",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Path",
+    },
+    url: {
+      anyOf: [
+        {
+          type: "string",
+          minLength: 1,
+          format: "uri",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Url",
+    },
+    video_mimetype: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Video Mimetype",
+    },
+    detail: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Detail",
+    },
+    fps: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fps",
+    },
+  },
+  type: "object",
+  title: "VideoBlock",
+  description:
+    "A representation of video data to directly pass to/from the LLM.",
+} as const;
+
+export const VideoBlock_OutputSchema = {
   properties: {
     block_type: {
       type: "string",
@@ -22702,6 +23643,23 @@ export const WorkflowGraphSchema = {
   required: ["nodes", "links"],
   title: "WorkflowGraph",
   description: "Complete workflow graph representation.",
+} as const;
+
+export const additional_informationSchema = {
+  type: "object",
+  title: "ThinkingBlock.additional_information",
+  description:
+    "Additional information related to the thinking/reasoning process, if available",
+} as const;
+
+export const additional_kwargsSchema = {
+  type: "object",
+  title: "ChatMessage.additional_kwargs",
+} as const;
+
+export const additional_location_infoSchema = {
+  type: "object",
+  title: "CitationBlock.additional_location_info",
 } as const;
 
 export const openai__types__audio__transcription_verbose__UsageSchema = {
@@ -22852,6 +23810,11 @@ export const openai__types__images_response__UsageSchema = {
     "For `gpt-image-1` only, the token usage information for the image generation.",
 } as const;
 
+export const sub0Schema = {
+  type: "object",
+  title: "ToolCallBlock.tool_kwargs.sub0",
+} as const;
+
 export const AddMemoryToChatHistoryEventWritableSchema = {
   properties: {
     event_id: {
@@ -22888,7 +23851,7 @@ export const AddMemoryToChatHistoryEventWritableSchema = {
     },
     extended_history: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Extended History",
@@ -22939,7 +23902,7 @@ export const AddOrganizationMemoryToChatHistoryEventWritableSchema = {
     },
     extended_history: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Extended History",
@@ -22990,7 +23953,7 @@ export const AddUserMemoryToChatHistoryEventWritableSchema = {
     },
     extended_history: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Extended History",
@@ -29774,7 +30737,7 @@ export const LimitChatHistoryEventWritableSchema = {
     },
     limited_history: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Limited History",
@@ -31813,7 +32776,7 @@ export const RAGStartEventWritableSchema = {
     },
     messages: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Messages",
@@ -34047,7 +35010,7 @@ export const StandaloneQuestionCondenserEventWritableSchema = {
       description: "Display description for the event",
     },
     condensed_chat_message: {
-      $ref: "#/components/schemas/ChatMessage",
+      $ref: "#/components/schemas/ChatMessage-Output",
       description:
         "Single chat message containing the condensed user question.",
     },
@@ -35365,7 +36328,7 @@ export const UserMessageEventWritableSchema = {
     },
     messages: {
       items: {
-        $ref: "#/components/schemas/ChatMessage",
+        $ref: "#/components/schemas/ChatMessage-Output",
       },
       type: "array",
       title: "Messages",
@@ -35595,4 +36558,26 @@ export const VectorStoreInputWritableSchema = {
   title: "VectorStoreInput",
   description:
     'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+} as const;
+
+export const additional_informationWritableSchema = {
+  type: "object",
+  title: "ThinkingBlock.additional_information",
+  description:
+    "Additional information related to the thinking/reasoning process, if available",
+} as const;
+
+export const additional_kwargsWritableSchema = {
+  type: "object",
+  title: "ChatMessage.additional_kwargs",
+} as const;
+
+export const additional_location_infoWritableSchema = {
+  type: "object",
+  title: "CitationBlock.additional_location_info",
+} as const;
+
+export const sub0WritableSchema = {
+  type: "object",
+  title: "ToolCallBlock.tool_kwargs.sub0",
 } as const;

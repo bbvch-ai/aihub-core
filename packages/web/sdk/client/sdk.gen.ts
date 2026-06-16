@@ -11,6 +11,7 @@ import { client } from "./client.gen";
 import {
   createDatasetResponseTransformer,
   createTokenEndpointResponseTransformer,
+  getAccessCapabilitiesResponseTransformer,
   getAgentEventTimeseriesResponseTransformer,
   getDatasetResponseTransformer,
   getDatasetsResponseTransformer,
@@ -81,6 +82,11 @@ import type {
   GenerateImageData,
   GenerateImageError,
   GenerateImageResponse,
+  GetAccessCapabilitiesData,
+  GetAccessCapabilitiesError,
+  GetAccessCapabilitiesResponse,
+  GetAccessPresetsData,
+  GetAccessPresetsResponse,
   GetAgentClassData,
   GetAgentClassError,
   GetAgentClassesData,
@@ -263,9 +269,19 @@ import type {
   SendProcessStartFormData,
   SendProcessStartFormError,
   SendProcessStartFormResponse,
+  SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostData,
+  SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostError,
+  SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse,
+  SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData,
+  SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError,
+  SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse,
   SetMyActiveTenantData,
   SetMyActiveTenantError,
   SetMyActiveTenantResponse,
+  StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostData,
+  StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostError,
+  StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData,
+  StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError,
   TranslateTextData,
   TranslateTextError,
   TranslateTextResponse,
@@ -2168,6 +2184,72 @@ export const createRole = <
   });
 
 /**
+ * Evaluate Access Capabilities
+ *
+ * Returns the catalog of concrete capabilities (per service, agent and process), each with its exact access rule and whether the supplied draft rules grant it.
+ */
+export const getAccessCapabilities = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAccessCapabilitiesResponse =
+    GetAccessCapabilitiesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAccessCapabilitiesData,
+    GetAccessCapabilitiesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    GetAccessCapabilitiesResponse | DefaultT,
+    GetAccessCapabilitiesError,
+    DefaultT
+  >({
+    responseTransformer: getAccessCapabilitiesResponseTransformer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/roles/access/capabilities",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List Access Presets
+ *
+ * Returns a curated, described library of common access rules for one-click authoring.
+ */
+export const getAccessPresets = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAccessPresetsResponse = GetAccessPresetsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAccessPresetsData,
+    GetAccessPresetsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAccessPresetsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/roles/access/presets",
+    ...options,
+  });
+
+/**
  * List Models
  *
  * Lists the currently available models, and provides basic information about each one such as the owner and availability.
@@ -3437,3 +3519,143 @@ export const receiveOpenwebuiWebhook = <
       ...options.headers,
     },
   });
+
+/**
+ * Send User Message Event To R A G Agent
+ *
+ * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
+ */
+export const sendUserMessageEventToRAGAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPost =
+  <
+    TComposable extends Composable = "$fetch",
+    DefaultT extends
+      SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse =
+      SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse,
+  >(
+    options: Options<
+      TComposable,
+      SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData,
+      SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse,
+      DefaultT
+    >,
+  ) =>
+    (options.client ?? client).post<
+      TComposable,
+      | SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse
+      | DefaultT,
+      SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError,
+      DefaultT
+    >({
+      security: [
+        { scheme: "bearer", type: "http" },
+        { scheme: "bearer", type: "http" },
+      ],
+      url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+
+/**
+ * Stream User Message Event To R A G Agent
+ *
+ * Send a specific event type to a specific agent and stream all events as SSE.
+ */
+export const streamUserMessageEventToRAGAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPost =
+  <TComposable extends Composable = "$fetch", DefaultT = undefined>(
+    options: Options<
+      TComposable,
+      StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData,
+      unknown,
+      DefaultT
+    >,
+  ) =>
+    (options.client ?? client).post<
+      TComposable,
+      unknown | DefaultT,
+      StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError,
+      DefaultT
+    >({
+      security: [
+        { scheme: "bearer", type: "http" },
+        { scheme: "bearer", type: "http" },
+      ],
+      url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+
+/**
+ * Send R A G Start Event To R A G Agent
+ *
+ * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
+ */
+export const sendRAGStartEventToRAGAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPost =
+  <
+    TComposable extends Composable = "$fetch",
+    DefaultT extends
+      SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse =
+      SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse,
+  >(
+    options: Options<
+      TComposable,
+      SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostData,
+      SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse,
+      DefaultT
+    >,
+  ) =>
+    (options.client ?? client).post<
+      TComposable,
+      | SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse
+      | DefaultT,
+      SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostError,
+      DefaultT
+    >({
+      security: [
+        { scheme: "bearer", type: "http" },
+        { scheme: "bearer", type: "http" },
+      ],
+      url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+
+/**
+ * Stream R A G Start Event To R A G Agent
+ *
+ * Send a specific event type to a specific agent and stream all events as SSE.
+ */
+export const streamRAGStartEventToRAGAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPost =
+  <TComposable extends Composable = "$fetch", DefaultT = undefined>(
+    options: Options<
+      TComposable,
+      StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostData,
+      unknown,
+      DefaultT
+    >,
+  ) =>
+    (options.client ?? client).post<
+      TComposable,
+      unknown | DefaultT,
+      StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostError,
+      DefaultT
+    >({
+      security: [
+        { scheme: "bearer", type: "http" },
+        { scheme: "bearer", type: "http" },
+      ],
+      url: "/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent/stream",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });

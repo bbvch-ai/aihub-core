@@ -1,0 +1,90 @@
+---
+presets:
+  user_everything:
+    name: Tout utiliser
+    description: Accéder et utiliser chaque service, agent et processus — sans les
+      créer ni les gérer.
+  admin_everything:
+    name: Tout administrer
+    description: Contrôle total sur chaque service, agent et processus, y compris
+      créer, configurer et supprimer.
+  use_all_agents:
+    name: Utiliser tous les agents
+    description: Discuter avec et utiliser chaque instance d'agent.
+  manage_all_agents:
+    name: Gérer tous les agents
+    description: Créer, configurer et supprimer chaque instance d'agent.
+  use_all_processes:
+    name: Utiliser tous les processus
+    description: Démarrer et participer à chaque processus.
+  manage_all_processes:
+    name: Gérer tous les processus
+    description: Créer, configurer et supprimer chaque processus.
+  manage_knowledge:
+    name: Gérer les bases de connaissances
+    description: Contrôle total sur les bases de connaissances et leurs documents.
+capabilities:
+  ops:
+    service:
+      use:
+        label: Voir & utiliser
+        description: Ouvrir ce service et utiliser ses fonctionnalités.
+      administer:
+        label: Administrer
+        description: Gérer la configuration et les données de ce service.
+    agent:
+      see:
+        label: Voir tous les assistants
+        description: Voir la liste des assistants et leurs blueprints.
+      see_class:
+        label: Voir les instances
+        description: Voir les instances de ce type d'assistant.
+      create:
+        label: Créer des instances
+        description: Créer de nouveaux assistants de ce type.
+      use:
+        label: Utiliser
+        description: Discuter avec et utiliser cet assistant.
+      manage:
+        label: Configurer & supprimer
+        description: Modifier la configuration de cet assistant ou le supprimer.
+    requires:
+      agent_admin:
+        label: Nécessite admin assistant
+        description: Ce service est protégé par un accès admin aux assistants.
+    process:
+      see:
+        label: Voir les processus
+        description: Voir la liste des processus.
+      see_admin:
+        label: Voir tous les processus
+        description: Voir chaque définition de processus.
+      see_class:
+        label: Voir les instances
+        description: Voir les instances de ce type de processus.
+      create:
+        label: Créer des instances
+        description: Créer de nouveaux processus de ce type.
+      use:
+        label: Utiliser
+        description: Démarrer et participer à ce processus.
+      manage:
+        label: Configurer & supprimer
+        description: Modifier la configuration de ce processus ou le supprimer.
+    knowledge:
+      see:
+        label: Voir les bases de connaissances
+        description: Voir la liste des bases de connaissances.
+      use:
+        label: Utiliser
+        description: Rechercher et lire ce namespace de connaissances.
+      manage:
+        label: Gérer
+        description: Configurer et ingérer des documents dans ce namespace.
+    memory:
+      org:
+        label: Utiliser la mémoire d'organisation
+        description: Lire et gérer la mémoire d'organisation partagée.
+      personal:
+        label: Utiliser la mémoire personnelle
+        description: Lire et gérer votre mémoire personnelle.
