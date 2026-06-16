@@ -55,7 +55,7 @@ class TranslationService:
         """
         Translates fields in a translatable object (LocaleString).
         """
-        source_text = getattr(locale_string, source_locale, None)
+        source_text = locale_string.in_locale(source_locale, fallback=False)
         if not source_text:
             logger.warning(f"No source text found for locale {source_locale}")
             return locale_string

@@ -54,21 +54,26 @@ class LocaleString(BaseModel):
     fr: Annotated[str | None, Field(description="French")] = None
     it: Annotated[str | None, Field(description="Italian")] = None
 
-    def in_locale(self, locale: str) -> str | None:
+    def in_locale(self, locale: str, fallback: bool = True) -> str | None:
         """Extract the string for a locale, falling back to other locales if it is unset.
 
-        Mirrors `LocaleHandler.extract_multi_locale`: requested locale → default locale →
-        first populated locale in the whitelist. Returns None only when every locale is empty.
+        With `fallback` (the default), mirrors `LocaleHandler.extract_multi_locale`:
+        requested locale → default locale → first populated locale in the whitelist;
+        unlike that method it returns None instead of raising when every locale is empty.
+
+        Pass `fallback=False` to read exactly the requested locale (no substitution) — for
+        callers that need the requested language verbatim or want their own fallback order.
         """
+        value = getattr(self, locale, None)
+        if value or not fallback:
+            return value
+
         from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
-        value = getattr(self, locale, None)
-        if value:
-            return value
-        fallback_value = getattr(self, LocaleHandler.DEFAULT_LOCALE, None)
-        if fallback_value:
-            return fallback_value
-        return next((getattr(self, field) for field in LocaleHandler.LOCALE_WHITE_LIST if getattr(self, field)), None)
+        for field in (LocaleHandler.DEFAULT_LOCALE, *LocaleHandler.LOCALE_WHITE_LIST):
+            if fallback_value := getattr(self, field, None):
+                return fallback_value
+        return None
 
     @classmethod
     def from_i18n_path(cls, path: str) -> LocaleString:
