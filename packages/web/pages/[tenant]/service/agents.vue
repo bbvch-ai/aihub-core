@@ -47,7 +47,7 @@
           :key="group.agentClass"
         >
           <div
-            v-if="group.instances.length > 0 && !showNoResults"
+            v-if="(group.instances.length > 0 || (group.isAvailable && !hasActiveFilters)) && !showNoResults"
             class="pb-4"
           >
             <div class="flex items-center gap-2 pb-2">
@@ -88,7 +88,7 @@
               @clone="handleClone"
             />
             <AgentEmptyCard
-              v-if="group.isAvailable && (!searchQuery && !status && !agentClass)"
+              v-if="group.isAvailable && !hasActiveFilters"
               @add="openCreateModal(group.agentClass)"
             />
           </div>
@@ -164,12 +164,16 @@ const statusOptions = computed(() => [
   { label: t('agent.list.filter.disabled'), value: 'disabled' },
 ])
 
+const hasActiveFilters = computed(() =>
+  !!searchQuery.value || !!agentClass.value || !!status.value,
+)
+
 const hasVisibleInstances = computed(() =>
   groupedAgents.value.some(group => group.instances.length > 0),
 )
 
 const showNoResults = computed(() =>
-  !hasVisibleInstances.value && (!!searchQuery.value || !!agentClass.value || !!status.value),
+  !hasVisibleInstances.value && hasActiveFilters.value,
 )
 
 const openWorkflowModal = (group: AgentGroup) => {
