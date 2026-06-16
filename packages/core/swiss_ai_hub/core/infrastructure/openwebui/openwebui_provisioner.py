@@ -50,9 +50,17 @@ class OpenWebuiProvisioner:
         self._redis = redis
 
     @asynccontextmanager
-    async def _sync_lock(self, key: str) -> AsyncIterator[bool]:
+    async def _sync_lock(self, key: str, *, blocking: bool = False) -> AsyncIterator[bool]:
+        """Acquires a Redis lock for the given key.
+
+        ``blocking=False`` (default): skip the work if another instance holds it — used for whole-sync
+        operations that are safe to drop because the holder already covers the same work.
+        ``blocking=True``: wait (up to the lock timeout) for the holder to finish — used for the group
+        critical section, which must run rather than be skipped, but must never run concurrently.
+        """
         lock = self._redis.lock(key, timeout=_LOCK_TIMEOUT)
-        if not await lock.acquire(blocking=False):
+        blocking_timeout = _LOCK_TIMEOUT if blocking else None
+        if not await lock.acquire(blocking=blocking, blocking_timeout=blocking_timeout):
             logger.debug("OpenWebUI %s skipped: another instance is syncing", key.rsplit(":", 1)[-1])
             yield False
             return
@@ -168,6 +176,19 @@ class OpenWebuiProvisioner:
                 await self._openwebui.update_group_members(aihub_groups[group_name].id, owui_member_ids, scim=scim)
 
     async def _sync_groups(self) -> None:
+        """Serializes group reconciliation across all callers (``provision`` and ``sync_access``).
+
+        ``create_group`` is not atomic at the SCIM layer, so two concurrent ``_sync_groups`` runs would
+        both observe a group as missing and each create it, yielding duplicate same-named groups. This
+        dedicated blocking lock guarantees the create/delete section runs one-at-a-time across processes.
+        """
+        async with self._sync_lock("openwebui:sync:groups", blocking=True) as acquired:
+            if not acquired:
+                logger.warning("OpenWebUI group sync skipped: timed out waiting for the group-sync lock")
+                return
+            await self._sync_groups_locked()
+
+    async def _sync_groups_locked(self) -> None:
         tenants = [
             {"name": t.name, "id": str(t.id), "access_rules": t.access_rules} for t in TenantMetadataEntity.objects()
         ]
