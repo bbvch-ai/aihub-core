@@ -42,5 +42,15 @@ export function useScheduledDeletions(database: MaybeRefOrGetter<string>, namesp
     store.value = next
   }
 
-  return { isScheduled, schedule }
+  function unschedule(documentIds: string[]): void {
+    const keysToRemove = new Set(
+      documentIds.map(documentId => entryKey(toValue(database), toValue(namespace), documentId)),
+    )
+    const remaining = Object.entries(store.value).filter(([key]) => !keysToRemove.has(key))
+    if (remaining.length !== Object.keys(store.value).length) {
+      store.value = Object.fromEntries(remaining)
+    }
+  }
+
+  return { isScheduled, schedule, unschedule }
 }

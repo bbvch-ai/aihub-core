@@ -44,7 +44,7 @@
             {{ data.document_title }}
           </p>
           <div
-            v-if="isScheduled(data.id)"
+            v-if="isDeleting(data)"
             class="flex items-center gap-2"
           >
             <Tag
@@ -112,7 +112,7 @@
             @click.stop="() => downloadFile(data.id)"
           />
           <Button
-            v-if="!isScheduled(data.id)"
+            v-if="!isDeleting(data)"
             v-tooltip.top="t('document.delete.button')"
             rounded
             size="small"
@@ -141,14 +141,14 @@ const { tenantId } = useTenant()
 const { getDocumentSourceUrl } = useDocumentUrl()
 const { deleteDocument, isDeleting } = useDeleteDocument()
 const { deleteDocuments, isDeleting: isBatchDeleting } = useDeleteDocuments()
-const { isScheduled, schedule } = useScheduledDeletions(
+const { isScheduled, schedule, unschedule } = useScheduledDeletions(
   () => route.params.db as string,
   () => route.params.namespace as string,
 )
 const confirm = useConfirm()
 const toast = useToast()
 
-defineProps<{
+const props = defineProps<{
   documents: DocumentDto[]
   sortField: string | null
   sortOrder: 1 | -1
@@ -164,15 +164,33 @@ const checkedDocuments = ref<DocumentDto[]>([])
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
 
+// A document is only "deleting" if it was ingested before deletion. Document ids are derived from
+// the source URI, so re-uploading a just-deleted file reuses the id; that arrives as a placeholder
+// (is_ingested === false), which we detect to clear the stale scheduled entry.
+const isDeleting = (document: DocumentDto) => isScheduled(document.id) && document.is_ingested
+
+watch(
+  () => props.documents,
+  (documents) => {
+    const reUploadedIds = (documents ?? [])
+      .filter(document => !document.is_ingested && isScheduled(document.id))
+      .map(document => document.id)
+    if (reUploadedIds.length > 0) {
+      unschedule(reUploadedIds)
+    }
+  },
+  { immediate: true },
+)
+
 const handleRowClick = (event: DataTableRowClickEvent) => {
   const document = event.data as DocumentDto
-  if (document.is_ingested && !isScheduled(document.id)) {
+  if (document.is_ingested && !isDeleting(document)) {
     emit('selected', document)
   }
 }
 
 const getRowClass = (data: DocumentDto) => {
-  if (!data.is_ingested || isScheduled(data.id)) {
+  if (!data.is_ingested || isDeleting(data)) {
     return 'opacity-50 cursor-not-allowed pointer-events-none'
   }
   return data.id === route.params.document_id ? 'bg-surface-100 dark:bg-surface-800' : ''
