@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.297.9] - 2026-06-16 - Streamlined Agent Evaluations with Enhanced Langfuse Integration
+
+### Changed
+
+- 🔄 **Updated Agent Evaluation Workflow:** The agent evaluation process has been re-architected to deeply integrate with
+  **Langfuse**, establishing it as the primary platform for conducting experiments and managing evaluators. The Swiss AI
+  Hub now auto-provisions all necessary components for a seamless Langfuse experience.
+- 📄 **Revised Evaluation Documentation:** The comprehensive documentation for agent evaluations has been completely
+  updated to guide users through the new Langfuse-centric workflow, detailing how to create datasets, configure
+  evaluators, and execute experiments effectively.
+- ⚡️ **Simplified Evaluator Configuration:** The documentation for creating evaluators has been streamlined, emphasizing
+  recommended scoring dimensions and highlighting the auto-provisioned LLM connection for judge models directly within
+  Langfuse.
+
+### Removed
+
+- 🗑️ **Deprecated Experiment UI Images:** Outdated screenshots depicting the previous in-platform UI for running
+  experiments have been removed to align with the new Langfuse-based evaluation workflow.
+
+______________________________________________________________________
+
 ## [v0.297.8] - 2026-06-16 - Refined Localization and Translation Capabilities
 
 ### Changed
