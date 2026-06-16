@@ -4609,7 +4609,7 @@ export type DocumentDeletionResult = {
    *
    * Deletion outcome for this document
    */
-  status: "deleted" | "not_found" | "failed";
+  status: "scheduled" | "not_found" | "failed";
 };
 
 /**
@@ -26564,7 +26564,7 @@ export type BatchDeleteDocumentsResponses = {
   /**
    * Successful Response
    */
-  200: BatchDeleteDocumentsResponse;
+  202: BatchDeleteDocumentsResponse;
 };
 
 export type BatchDeleteDocumentsResponse2 =
@@ -26683,11 +26683,8 @@ export type DeleteDocumentResponses = {
   /**
    * Successful Response
    */
-  204: void;
+  202: unknown;
 };
-
-export type DeleteDocumentResponse =
-  DeleteDocumentResponses[keyof DeleteDocumentResponses];
 
 export type GetDocumentByIdData = {
   body?: never;

@@ -329,7 +329,6 @@ export {
   type DeleteDocumentData,
   type DeleteDocumentError,
   type DeleteDocumentErrors,
-  type DeleteDocumentResponse,
   type DeleteDocumentResponses,
   type DeleteMemoryResponse,
   type DeleteOrganizationMemoryData,

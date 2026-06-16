@@ -71,7 +71,6 @@ import type {
   DeleteAllUserMemoriesResponse,
   DeleteDocumentData,
   DeleteDocumentError,
-  DeleteDocumentResponse,
   DeleteOrganizationMemoryData,
   DeleteOrganizationMemoryError,
   DeleteOrganizationMemoryResponse,
@@ -2620,7 +2619,7 @@ export const getDatabases = <
 /**
  * Delete multiple documents
  *
- * Best-effort deletion of multiple documents with a per-document result.
+ * Best-effort scheduling of multiple document deletions with a per-document result.
  */
 export const batchDeleteDocuments = <
   TComposable extends Composable = "$fetch",
@@ -2688,22 +2687,18 @@ export const getDocumentsForNamespace = <
 /**
  * Delete document
  *
- * Permanently deletes a document from the vector store, doc store, and data lake.
+ * Deletes the document's source file from the data lake and schedules cleanup of the
+ * doc store and vector store via the pipeline's reconciliation.
  */
 export const deleteDocument = <
   TComposable extends Composable = "$fetch",
-  DefaultT extends DeleteDocumentResponse = DeleteDocumentResponse,
+  DefaultT = undefined,
 >(
-  options: Options<
-    TComposable,
-    DeleteDocumentData,
-    DeleteDocumentResponse,
-    DefaultT
-  >,
+  options: Options<TComposable, DeleteDocumentData, unknown, DefaultT>,
 ) =>
   (options.client ?? client).delete<
     TComposable,
-    DeleteDocumentResponse | DefaultT,
+    unknown | DefaultT,
     DeleteDocumentError,
     DefaultT
   >({

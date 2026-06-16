@@ -6709,7 +6709,7 @@ export const DocumentDeletionResultSchema = {
     },
     status: {
       type: "string",
-      enum: ["deleted", "not_found", "failed"],
+      enum: ["scheduled", "not_found", "failed"],
       title: "Status",
       description: "Deletion outcome for this document",
     },
