@@ -3,3 +3,5 @@ User-agent: *
 
 # An empty disallow allows crawlers to access the entire site.
 Disallow:
+
+Sitemap: https://docs.ai-hub.bbv.ch/sitemap.xml

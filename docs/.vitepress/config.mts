@@ -9,6 +9,7 @@ export default withMermaid({
   description: "Developer focused documentation of the Swiss AI-Hub Agentic Platform",
   lastUpdated: true,
   base: '/',
+  sitemap: { hostname: 'https://docs.ai-hub.bbv.ch/' },
 
   rewrites: {
     ':path(.*)/index.en.md': ':path/index.md',
