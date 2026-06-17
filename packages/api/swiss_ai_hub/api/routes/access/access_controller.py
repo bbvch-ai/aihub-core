@@ -37,7 +37,13 @@ class AccessController(TenantScopedController):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_access_capabilities(self, route: str = "/capabilities") -> Self:
-        @self.router.post(route, tags=self.tags)
+        @self.router.post(
+            route,
+            summary="Evaluate Access Capabilities",
+            description="Returns the catalog of concrete capabilities (per service, agent and process), each with "
+            "its exact access rule and whether the supplied draft rules grant it.",
+            tags=self.tags,
+        )
         async def get_access_capabilities(
             request: Annotated[AccessCapabilitiesRequest, Body()],
             user: Annotated[
@@ -65,7 +71,12 @@ class AccessController(TenantScopedController):
         return self
 
     def get_access_presets(self, route: str = "/presets") -> Self:
-        @self.router.get(route, tags=self.tags)
+        @self.router.get(
+            route,
+            summary="List Access Presets",
+            description="Returns a curated, described library of common access rules for one-click authoring.",
+            tags=self.tags,
+        )
         async def get_access_presets(
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],

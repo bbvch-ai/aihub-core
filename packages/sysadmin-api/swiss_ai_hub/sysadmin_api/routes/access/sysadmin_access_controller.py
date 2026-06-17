@@ -20,7 +20,13 @@ class SysadminAccessController(AccessController):
     """
 
     def get_access_capabilities(self, route: str = "/capabilities") -> Self:
-        @self.router.post(route, tags=self.tags)
+        @self.router.post(
+            route,
+            summary="Evaluate Access Capabilities",
+            description="Returns the catalog of concrete capabilities (per service, agent and process), each with "
+            "its exact access rule and whether the supplied draft rules grant it.",
+            tags=self.tags,
+        )
         async def get_access_capabilities(
             request: Annotated[AccessCapabilitiesRequest, Body()],
             http_request: Request,
@@ -33,7 +39,12 @@ class SysadminAccessController(AccessController):
         return self
 
     def get_access_presets(self, route: str = "/presets") -> Self:
-        @self.router.get(route, tags=self.tags)
+        @self.router.get(
+            route,
+            summary="List Access Presets",
+            description="Returns a curated, described library of common access rules for one-click authoring.",
+            tags=self.tags,
+        )
         async def get_access_presets(
             http_request: Request,
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
