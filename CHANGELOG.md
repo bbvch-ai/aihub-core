@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.300.0] - 2026-06-17 - Streamlined Agent Instance Management with Auto-Granted Creator Access
+
+### Added
+
+- 🚀 **Automated Creator Access for Agent Instances**: Tenant administrators can now create agent instances and
+  immediately gain full admin access (open, edit, delete, chat) without requiring manual intervention from a sysadmin.
+  This significantly improves the self-service capabilities for agent instance management.
+- 📄 **Architectural Decision Record (ADR)**: A new ADR has been added, documenting the decision for automatically
+  granting per-instance access to creators and detailing the context, drivers, decision, and consequences.
+- 🔑 **New Access Control Helpers**: Introduced dedicated `AccessChecker` methods (`agent_instance_admin_rule`,
+  `agent_instance_user_rule`, `rules_grant_admin_to_agent_instance`) to precisely manage and evaluate instance-level
+  permissions.
+- 🦾 **Persistence Utilities for Access Management**: Added robust utility methods including
+  `TenantMetadataEntity.grant_access_rule`, `TenantMetadataEntity.revoke_access_rule_from_all_tenants`, and
+  `RoleEntity.delete_role_from_all_tenants` for managing tenant access ceilings and dedicated per-instance roles.
+- ✅ **Comprehensive Test Coverage**: Included extensive unit and integration tests to ensure the reliability and
+  correctness of the new auto-grant and cleanup mechanisms for agent instance access.
+
+### Changed
+
+- 🔄 **Updated Agent Instance Lifecycle in API**: The `AgentService` now orchestrates the automatic granting of
+  per-instance admin access during agent instance creation and performs thorough cleanup of associated access rules and
+  roles upon deletion, including a rollback mechanism for failed grants.
+- ⚡️ **Improved Frontend Cache Synchronization**: Frontend components now automatically invalidate relevant caches
+  (agent instances, tenant roles, user profiles) after creating or deleting agent instances, ensuring immediate
+  reflection of access changes in the UI.
+- 🖼️ **Enhanced Agent List Display Logic**: Refined the display of agent groups and empty states on the agents page,
+  improving user experience when applying filters or viewing available agent classes.
+
+### Refactor
+
+- 🧹 **Standardized Agent Rule Generation**: The `AccessChecker` now uses dedicated helper methods to generate canonical
+  user and admin rules for agent instances, improving consistency and maintainability of access control logic.
+
+______________________________________________________________________
+
 ## [v0.299.0] - 2026-06-17 - Streamlined Keycloak Management and Expanded LLM Support
 
 ### Added
