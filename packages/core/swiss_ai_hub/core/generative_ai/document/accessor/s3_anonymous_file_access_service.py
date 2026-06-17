@@ -212,3 +212,14 @@ class S3AnonymousFileAccessService:
         except Exception as e:
             logger.error(f"Failed to list files in {container} with prefix '{prefix}': {e}")
             raise Exception(f"Failed to list files: {e}")
+
+    @trace_fn
+    def delete_file(self, container: str, file_path: str) -> None:
+        """Permanently remove a single object from S3/MinIO storage."""
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+        if not file_path or not file_path.strip():
+            raise ValueError(_FILE_PATH_EMPTY_ERROR)
+
+        self._s3_client.delete_object(Bucket=container, Key=file_path)
+        logger.info(f"Deleted file: {container}/{file_path}")

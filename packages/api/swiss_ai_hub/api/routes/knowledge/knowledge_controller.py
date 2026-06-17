@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, Path, Query, Security
+from fastapi import Depends, HTTPException, Path, Query, Response, Security, status
 from mongoengine import connect
 from nats.aio.client import Client as NATS
 from pymongo import MongoClient
@@ -24,6 +24,8 @@ from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.pagination.type.page_number import PageNumber
 from swiss_ai_hub.api.pagination.type.page_size import PageSize
 from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
+from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_request import BatchDeleteDocumentsRequest
+from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import BatchDeleteDocumentsResponse
 from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.database_dto import DatabaseDTO
 from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
@@ -337,5 +339,63 @@ class KnowledgeController(TenantScopedController):
             that can be used for client-side validation.
             """
             return KnowledgeService.get_supported_file_types()
+
+        return self
+
+    def delete_document(
+        self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}"
+    ) -> Self:
+        @self.router.delete(route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete document")
+        async def delete_document(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            document_id: Annotated[str, Path(title="Document ID")],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            nc: Annotated[NATS, Depends(use_nats)],
+        ) -> Response:
+            """
+            Deletes the document's source file from the data lake and schedules cleanup of the
+            doc store and vector store via the pipeline's reconciliation.
+            """
+            if database in ["admin", "local", "config"]:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            await KnowledgeService.delete_document(
+                nc=nc,
+                db=database,
+                namespace=namespace,
+                document_id=document_id,
+                s3_service=s3_service,
+            )
+            return Response(status_code=status.HTTP_202_ACCEPTED)
+
+        return self
+
+    def batch_delete_documents(self, route: str = "/databases/{database}/namespaces/{namespace}/documents") -> Self:
+        @self.router.delete(
+            route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete multiple documents"
+        )
+        async def batch_delete_documents(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            request: BatchDeleteDocumentsRequest,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            nc: Annotated[NATS, Depends(use_nats)],
+        ) -> BatchDeleteDocumentsResponse:
+            """Best-effort scheduling of multiple document deletions with a per-document result."""
+            if database in ["admin", "local", "config"]:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            return await KnowledgeService.batch_delete_documents(
+                nc=nc,
+                db=database,
+                namespace=namespace,
+                document_ids=request.document_ids,
+                s3_service=s3_service,
+            )
 
         return self

@@ -2341,6 +2341,43 @@ export const BaseStoreMemoryEventSchema = {
     "Abstract base class for memory storage events.\n\n### Why BaseStoreMemoryEvent?\nThis event serves dual purposes in the Swiss AI Agent Protocol:\n- As a control event, it notifies downstream systems that memory state has changed\n- As a display event, it provides transparency to users about what was learned or stored\n\nAgents emit this event after persisting insights to long-term memory storage. The event captures\nboth the semantic changes (added/updated/deleted memories) and the knowledge graph updates\n(new/removed relations between entities). This transparency is crucial for user trust - they can\nsee what the agent learned and verify accuracy.\n\nThe event structure follows mem0's MemoryAdded response format, enabling real-time UI updates,\naudit trails, and triggering downstream workflows that depend on memory state.\n\nConcrete subclasses differentiate between user-scoped and organization-scoped memory storage.",
 } as const;
 
+export const BatchDeleteDocumentsRequestSchema = {
+  properties: {
+    document_ids: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      maxItems: 100,
+      minItems: 1,
+      title: "Document Ids",
+      description: "IDs of the documents to delete",
+    },
+  },
+  type: "object",
+  required: ["document_ids"],
+  title: "BatchDeleteDocumentsRequest",
+  description:
+    "Request payload for deleting multiple documents from a knowledge namespace.",
+} as const;
+
+export const BatchDeleteDocumentsResponseSchema = {
+  properties: {
+    results: {
+      items: {
+        $ref: "#/components/schemas/DocumentDeletionResult",
+      },
+      type: "array",
+      title: "Results",
+      description: "Deletion outcome per requested document",
+    },
+  },
+  type: "object",
+  required: ["results"],
+  title: "BatchDeleteDocumentsResponse",
+  description: "Per-document results of a best-effort batch deletion.",
+} as const;
+
 export const Body_create_transcription__tenant_id__openai_audio_transcriptions_postSchema =
   {
     properties: {
@@ -7154,6 +7191,26 @@ export const DocumentDTOSchema = {
     "is_ingested",
   ],
   title: "DocumentDTO",
+} as const;
+
+export const DocumentDeletionResultSchema = {
+  properties: {
+    document_id: {
+      type: "string",
+      title: "Document Id",
+      description: "ID of the document",
+    },
+    status: {
+      type: "string",
+      enum: ["scheduled", "not_found", "failed"],
+      title: "Status",
+      description: "Deletion outcome for this document",
+    },
+  },
+  type: "object",
+  required: ["document_id", "status"],
+  title: "DocumentDeletionResult",
+  description: "Outcome of a single document deletion within a batch request.",
 } as const;
 
 export const DocumentParsingMetadataSchema = {

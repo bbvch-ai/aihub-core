@@ -363,6 +363,12 @@
       "notes": "Permissive license"
     },
     {
+      "service": "keycloak-config-cli",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license (adorsys/keycloak-config-cli)"
+    },
+    {
       "service": "searxng",
       "license": "AGPL-3.0",
       "status": "✅",

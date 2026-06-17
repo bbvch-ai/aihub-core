@@ -1089,7 +1089,6 @@ services:
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
       - ./configs/keycloak/aihub-realm{{ config_variant_suffix }}.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
-      - ./configs/keycloak/identity-providers{{ config_variant_suffix }}.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
       - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
@@ -1134,6 +1133,66 @@ services:
       {%- if stage != 'dev' %}
       - proxy  # Traefik routing for auth.${DOMAIN}
       {%- endif %}
+
+  # One-shot reconciler: applies the managed realm config (clients, scopes,
+  # roles, flows, identity providers) on every stack start via the Admin API.
+  # File wins over admin-console drift; users and tenant groups are never
+  # touched. Nothing depends on it completing — a failure (non-zero exit in
+  # `docker compose ps -a`) means the realm keeps running with old config.
+  {{ service_license('keycloak-config') }}
+  keycloak-config:
+    container_name: keycloak-config
+    image: {{ global.registry_prefix }}{{ image_tags['keycloak-config-cli'] }}
+    restart: on-failure
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_USER: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_AVAILABILITYCHECK_ENABLED: "true"
+      KEYCLOAK_AVAILABILITYCHECK_TIMEOUT: 120s
+      IMPORT_FILES_LOCATIONS: /config/*.json
+      IMPORT_VARSUBSTITUTION_ENABLED: "true"
+      # Reapply on every start even when file checksums are unchanged, so
+      # admin-console drift on managed objects is always reverted.
+      IMPORT_CACHE_ENABLED: "false"
+      # Defense in depth — no managed file may contain groups (tenants are
+      # runtime data, see ADR 2026_04_15_keycloak_as_tenant_existence_authority).
+      IMPORT_MANAGED_GROUP: no-delete
+      # Defense in depth — identity providers are bootstrap-only (first-start
+      # --import-realm); no managed file declares them, so kcc must never delete
+      # the ones seeded by the realm import or configured in the admin console.
+      IMPORT_MANAGED_IDENTITYPROVIDER: no-delete
+      IMPORT_MANAGED_IDENTITYPROVIDERMAPPER: no-delete
+      {%- if stage != 'dev' %}
+      DOMAIN: ${DOMAIN}
+      {%- endif %}
+      # Client secrets (substituted into the managed config files)
+      KEYCLOAK_OPENWEBUI_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      # Azure Entra ID vars are NOT needed here — identity providers are
+      # bootstrap-only (seeded by the keycloak container's --import-realm), not
+      # reconciled by keycloak-config-cli.
+    volumes:
+      - ./configs/keycloak/managed/10-roles{{ config_variant_suffix }}.json:/config/10-roles.json:ro
+      - ./configs/keycloak/managed/20-client-scopes{{ config_variant_suffix }}.json:/config/20-client-scopes.json:ro
+      - ./configs/keycloak/managed/30-clients{{ config_variant_suffix }}.json:/config/30-clients.json:ro
+      - ./configs/keycloak/managed/40-auth-flows{{ config_variant_suffix }}.json:/config/40-auth-flows.json:ro
+      - ./configs/keycloak/managed/60-service-accounts{{ config_variant_suffix }}.json:/config/60-service-accounts.json:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data   # Keycloak Admin API access on its data-network interface
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)

@@ -24,7 +24,7 @@
           <div
             class="pb-2 pl-2 text-sm font-medium"
           >
-            {{ useChangeCase(modelType.name, 'capitalCase') }}
+            {{ capitalCase(modelType.name) }}
           </div>
           <div
             class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { ModelDTO } from '@core/sdk/client'
 

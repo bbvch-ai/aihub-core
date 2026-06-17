@@ -1,117 +1,97 @@
 ---
 title: Agenten-Evaluierungen
-source_sha: 6b9e16c7120a95ddaa10eacf1a96ac448b4bf7f28a2a0d4bfe5dcd384998cb61
+source_sha: 93ee5871be61d7a41e2d209be1a4ed9a8bcbee1cf32392cb425f59ac6de3bae2
 ---
 
 # Agenten-Evaluierungen
 
 Agenten-Evaluierungen testen und messen die Qualität von KI-Agents vor und nach dem Deployment. Sie erhalten Daten
-darüber, ob Ihre Agents präzise, vollständige und prägnante Antworten liefern.
+darüber, ob Ihre Agents genaue, vollständige und prägnante Antworten liefern.
 
-Evaluierungen testen Agents anhand vordefinierter Fragen mit bekannten korrekten Antworten. Sie stellen die Fragen und
-erwarteten Antworten bereit, und das System misst, wie gut Ihr Agent performt.
+Evaluierungen testen Agents anhand vordefinierter Fragen mit bekannten korrekten Antworten. Experimente werden in
+[Langfuse](https://langfuse.com) durchgeführt, dem integrierten LLM-Observability-Tool der Plattform. Der Swiss AI Hub
+provisioniert automatisch alles, was Langfuse benötigt — Ihre Agents, eine Agent-Aufrufverbindung, Evaluator-Modelle und
+eine Prompt-Vorlage — damit Sie sich auf drei Schritte konzentrieren können:
 
-Vorteile von Evaluierungen:
-
-- Überprüfen Sie die Agent-Performance vor und nach dem Deployment
-- Erhalten Sie messbare Bewertungen anstelle subjektiver Meinungen
-- Verfolgen Sie Qualitätsänderungen, während Sie Wissensdatenbanken und Prompts aktualisieren
-- Führen Sie Audit-Trails für regulatorische Anforderungen
-
-## Datasets
-
-Datasets sind Sammlungen von Testfragen mit Referenzantworten.
-
-Decken Sie repräsentative Fragen ab, die Ihr Agent erhalten wird. Fügen Sie klare, präzise Referenzantworten und Edge
-Cases hinzu. Beginnen Sie mit mindestens 10 Frage-Antwort-Paaren. 20-50 Paare funktionieren besser.
-
-::: details Beispiel-Dataset-Struktur
-- Frage: „Wie setze ich mein Passwort zurück?“
-- Referenzantwort: „Klicken Sie auf der Anmeldeseite auf ‚Passwort vergessen‘, geben Sie Ihre E-Mail-Adresse ein und
-  folgen Sie dem Reset-Link, der an Ihren Posteingang gesendet wird.“
-:::
-
-Um ein Dataset zu erstellen, navigieren Sie zum Evaluierungs-Service (unter `Services > Evaluations`), geben Sie einen
-Namen und eine Beschreibung an, fügen Sie Fragen und erwartete Antworten hinzu und speichern Sie dann.
-
-![Dataset Overview](../../../media/evaluation/dataset_overview.png) *Dataset-Übersicht mit allen Evaluierungs-Datasets
-und Erstellungsdaten*
-
-![Creating a Dataset](../../../media/evaluation/dataset_create.png) *Hinzufügen von Testfragen mit erwarteten Antworten*
+1. **Erstellen Sie einen Datensatz** mit Fragen und Referenzantworten.
+2. **Erstellen Sie Evaluatoren**, die Agenten-Antworten bewerten.
+3. **Führen Sie Experimente durch** gegen Ihren Agenten und überprüfen Sie die Ergebnisse.
 
 ::: tip
-Beginnen Sie mit 20-30 Fragen, die einfache und komplexe Szenarien abdecken. Aktualisieren Sie Datasets, während sich
-Ihr Agent weiterentwickelt. Organisieren Sie nach Thema oder Anwendungsfall.
+Diese Seite beschreibt nur den Workflow des Swiss AI Hub. Für Langfuse-spezifische Details (Formate für den
+Datensatz-Upload, Evaluator-Konfiguration, Experiment-Vergleich), lesen Sie die
+[Langfuse-Dokumentation](https://langfuse.com/docs).
 :::
 
-## Experimente ausführen
+## 1. Datensatz erstellen
 
-Experimente testen Ihren Agenten anhand eines Datasets und erstellen Qualitätsbewertungen.
+Datensätze sind Sammlungen von Testfragen mit Referenzantworten. Behandeln Sie repräsentative Fragen, die Ihr Agent
+erhalten wird, und fügen Sie klare Referenzantworten sowie Edge Cases hinzu. Beginnen Sie mit mindestens 10
+Frage-Antwort-Paaren; 20-50 funktionieren besser.
 
-Um ein Experiment auszuführen, wählen Sie einen Agenten aus, wählen Sie ein Test-Dataset, starten Sie das Experiment und
-überprüfen Sie dann die Bewertungen und die Analyse.
+Sie können einen Datensatz auf zwei Arten erstellen:
 
-![Creating an Experiment](../../../media/evaluation/experiment_create.png) *Erstellen eines Experiments durch Auswahl
-eines Agenten und Datasets*
+- **In der Swiss AI Hub Admin UI** — öffnen Sie `Datasets`, geben Sie einen Namen und eine Beschreibung ein, fügen Sie
+  Ihre Frage-Antwort-Paare hinzu und speichern Sie diese dann.
+- **In Langfuse** — erstellen Sie den Datensatz direkt, zum Beispiel durch das Hochladen einer CSV-Datei mit einer Zeile
+  pro Frage-Antwort-Paar.
 
-![Experiment Overview](../../../media/evaluation/experiment_overview.png) *Experiment-Übersicht, die vergangene
-Experimente auflistet – klicken Sie für Details*
+In beiden Fällen wird der Datensatz in Langfuse gespeichert und steht sofort für Experimente zur Verfügung.
 
-![Running an Experiment](../../../media/evaluation/experiment_running.png) *Experiment-Fortschritt während der
-Ausführung*
+![Dataset Overview](../../../media/evaluation/dataset_overview.png) *Datensatz-Übersicht in der Admin UI*
 
-Führen Sie Experimente aus, bevor Sie einen neuen Agenten deployen, nachdem Sie signifikante Änderungen an der
-Konfiguration oder der Wissensdatenbank vorgenommen haben, und regelmäßig (wöchentlich oder monatlich) zur
-Qualitätsüberwachung.
+![Creating a Dataset](../../../media/evaluation/dataset_create.png) *Hinzufügen von Testfragen mit Referenzantworten*
 
-### Wie KI-Richter arbeiten
-
-Jede Frage wird an Ihren Agenten gesendet. Drei KI-Richter (LLMs) bewerten die Antwort im Vergleich zur Referenzantwort.
-Die Ergebnisse werden gemittelt und als Sternebewertungen angezeigt.
-
-### Evaluierungsmetriken
-
-Drei Metriken, bewertet von 0-5 Sternen:
-
-| Metrik          | Beschreibung                                                                                                            | Bewertungsleitfaden                                                         |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Korrektheit     | Faktische Genauigkeit im Vergleich zur Referenzantwort. Frei von Fehlinformationen, Halluzinationen oder Widersprüchen. | 5: Entspricht Referenz<br/>3: Einige Fehler<br/>0: Falsch/irreführend       |
-| Vollständigkeit | Beantwortet alle Teile der Anfrage, einschließlich mehrteiliger Fragen und impliziter Bedürfnisse.                      | 5: Alle Teile beantwortet<br/>3: Einige Aspekte fehlen<br/>0: Unvollständig |
-| Prägnanz        | Effizient und direkt. Vermeidet irrelevante Abschweifungen, Redundanz oder übermäßiges Füllmaterial.                    | 5: Auf den Punkt<br/>3: Ausführlich<br/>0: Übermäßig                        |
-
-Bewertungsskalen:
-
-- 4-5 Sterne: Produktionsreif.
-- 3-4 Sterne: Funktioniert gut, kann aber kleinere Probleme aufweisen. Überprüfen Sie fehlschlagende Testfälle.
-- Unter 3 Sternen: Vor dem Deployment genau überprüfen.
-
-### Ergebnisse anzeigen
-
-![Experiment Results](../../../media/evaluation/experiment_result.png) *Experimentergebnisse, die Gesamtmetriken und
-detaillierte Aufschlüsselung pro Frage zeigen*
-
-Die Ergebnisseite zeigt Sternebewertungen für die drei Metriken oben. Darunter befindet sich eine Tabelle mit jeder
-Testfrage, Referenzantwort, der Antwort des Agenten, Bewertungen und der Antwortlatenz.
-
-Erweitern Sie Fragen, um den vollständigen Text anzuzeigen. Niedrige Korrektheitsbewertungen bedeuten in der Regel
-Lücken in der Wissensdatenbank oder Retrieval-Probleme. Niedrige Vollständigkeitsbewertungen deuten darauf hin, dass der
-Agent Teile von mehrteiligen Fragen übersieht. Niedrige Prägnanzbewertungen bedeuten übermäßig ausführliche Antworten.
-
-Aktualisieren Sie die Wissensdatenbank, System-Prompts oder Retrieval-Einstellungen Ihres Agenten basierend auf den
-Ergebnissen. Führen Sie das Experiment erneut aus, um Verbesserungen zu überprüfen.
-
-::: tip
-Langfuse kann für eine tiefere Untersuchung genutzt werden, einschließlich Konversations-Traces, Kostenattribution und
-Roh-Telemetriedaten. Während der Entwicklung können Sie Langfuse unter `http://localhost:6006` aufrufen.
+::: warning In der Admin UI erstellte Datensätze sind nur zum Anhängen
+Beim Bearbeiten in der Admin UI können Sie jederzeit neue Frage-Antwort-Paare hinzufügen, aber Sie können Elemente nach
+dem Speichern weder entfernen noch bearbeiten. Um eine Frage zu ändern, fügen Sie ein korrigiertes Element hinzu oder
+bearbeiten Sie den Datensatz in Langfuse.
 :::
+
+## 2. Evaluatoren erstellen
+
+Evaluatoren bewerten jede Agenten-Antwort, typischerweise unter Verwendung von LLM-as-a-judge. Konfigurieren Sie diese
+in Langfuse. Der Swiss AI Hub provisioniert eine dedizierte Evaluator LLM-Verbindung (`AI-Hub LLM (Evaluators)`), sodass
+Bewertungsmodelle sofort verfügbar sind.
+
+Empfohlene Bewertungsdimensionen:
+
+| Metrik          | Was gemessen wird                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Korrektheit     | Faktische Genauigkeit im Vergleich zur Referenzantwort. Frei von Fehlinformationen, Halluzinationen oder Widersprüchen. |
+| Vollständigkeit | Behandelt alle Teile der Anfrage, einschliesslich mehrteiliger Fragen und impliziter Bedürfnisse.                       |
+| Prägnanz        | Effizient und direkt. Vermeidet irrelevante Abschweifungen, Redundanzen oder übermässige Füllwörter.                    |
+
+## 3. Experimente durchführen
+
+Öffnen Sie eine Datensatzkarte in der Admin UI und klicken Sie auf **Run Experiments**, um zum Datensatz in Langfuse zu
+springen. Erstellen Sie dort ein Experiment:
+
+- **Wählen Sie den zu testenden Agenten aus.** Online-Agents erscheinen automatisch als auswählbare Modelle, benannt als
+  `<agent_class>/<agent_id>` — der Swiss AI Hub synchronisiert laufende Agents kontinuierlich mit Langfuse, sodass keine
+  manuelle Registrierung erforderlich ist.
+- **Verwenden Sie die `ai-hub-agent` Prompt-Vorlage.** Diese automatisch bereitgestellte Vorlage ordnet jede
+  Datensatzfrage einer Anfrage an den OpenAI-kompatiblen Endpunkt des Agenten zu, sodass Langfuse Ihren echten Agenten
+  über die Plattform aufruft.
+- **Fügen Sie die Evaluatoren** aus Schritt 2 hinzu und führen Sie das Experiment aus.
+
+Führen Sie Experimente durch, bevor Sie einen neuen Agenten deployen, nach wesentlichen Änderungen an dessen
+Konfiguration oder Wissensbasis und regelmässig zur Qualitätsüberwachung. Jeder Durchlauf wird in Langfuse gespeichert,
+sodass Sie die Durchläufe nebeneinander vergleichen können, um zu bestätigen, dass eine Änderung die Qualität verbessert
+hat.
+
+Bei der Interpretation der Ergebnisse: Eine geringe Korrektheit weist normalerweise auf Lücken in der Wissensbasis oder
+Retrieval-Probleme hin, eine geringe Vollständigkeit auf übersehene Teile mehrteiliger Fragen und eine geringe Prägnanz
+auf übermässig ausführliche Antworten. Passen Sie die Wissensbasis, Systemprompts oder Retrieval-Einstellungen des
+Agenten entsprechend an und führen Sie das Experiment dann erneut durch, um Verbesserungen zu überprüfen.
 
 ## Nicht implementierte Funktionen
 
 Die folgenden Funktionen sind derzeit nicht implementiert:
 
-- Bias-Monitoring und Modell-Drift-Erkennung: Keine automatisierte Bias-Erkennung, Fairness-Metriken oder
-  Drift-Erkennung. Das Evaluierungs-Framework und OpenTelemetry-Tracing bieten grundlegende Fähigkeiten, die erweitert
-  werden könnten.
+- Bias-Monitoring und Model-Drift-Erkennung: Keine automatisierte Bias-Erkennung, Fairness-Metriken oder
+  Drift-Erkennung. Langfuse-Experimente und OpenTelemetry-Tracing bieten grundlegende Funktionen, die erweitert werden
+  könnten.
 
-- Produktions-A/B-Testing: Keine integrierte Traffic-Aufteilung oder paralleles Testen von Agent-Varianten in
-  Produktion. Der Pre-Deployment-Vergleich mittels Experimenten wird unterstützt.
+- Produktions-A/B-Testing: Keine integrierte Traffic-Splitting oder parallele Tests von Agenten-Varianten in der
+  Produktion. Der Vergleich vor dem Deployment über Langfuse-Experimente wird unterstützt.

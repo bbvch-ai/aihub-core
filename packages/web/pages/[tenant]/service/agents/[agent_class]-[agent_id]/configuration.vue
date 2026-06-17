@@ -34,10 +34,6 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentConfigDtoReadable } from '@core/sdk/client'
-
-type FormElement = NonNullable<AgentConfigDtoReadable['form']>[number]
-
 const route = useRoute()
 const { tenantId } = useTenant()
 const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
@@ -47,42 +43,14 @@ const toast = useToast()
 
 const configForm = computed(() => agentInstance.value?.agent_config?.form || [])
 
-/**
- * Recursively initializes nested Group values with empty objects based on form schema.
- * FormKit Groups require object values - they cannot be null or undefined.
- * This ensures all Group elements have at least an empty object as their value.
- */
-const initializeGroupData = (
-  formElements: FormElement[],
-  data: Record<string, unknown>,
-): Record<string, unknown> => {
-  const result = { ...data }
-
-  for (const element of formElements) {
-    const elementRecord = element as Record<string, unknown>
-    const formkitType = elementRecord.formkit || elementRecord.$formkit
-
-    if (formkitType === 'group') {
-      const name = elementRecord.name as string
-      const children = elementRecord.children as FormElement[] | undefined
-
-      if (result[name] === null || result[name] === undefined) {
-        result[name] = {}
-      }
-
-      if (children && Array.isArray(children)) {
-        result[name] = initializeGroupData(children, result[name] as Record<string, unknown>)
-      }
-    }
-  }
-
-  return result
-}
-
-const configurationData = computed(() => {
-  const rawData = (agentInstance.value?.configuration || {}) as Record<string, unknown>
-  return initializeGroupData(configForm.value, rawData)
-})
+// Pass the saved configuration through unchanged. DynamicConfiguration hydrates it
+// (seedNullableToggles then seedFormDefaults): non-nullable groups are materialised to
+// objects, while nullable groups keep their saved `null` so their "Enable" toggle loads
+// off. Pre-filling `null` groups with `{}` here would make every disabled nullable group
+// (e.g. reranking_config, org_memory) load as enabled.
+const configurationData = computed(
+  () => (agentInstance.value?.configuration || {}) as Record<string, unknown>,
+)
 
 const submitConfiguration = async (formData: Record<string, unknown>) => {
   const agentClass = route.params.agent_class as string

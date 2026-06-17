@@ -10,7 +10,7 @@
           :key="database.name"
         >
           <div class="flex items-center gap-2 pb-2 pl-2">
-            <span class="text-sm font-medium">{{ database.display_name || useChangeCase(database.name, 'capitalCase') }}</span>
+            <span class="text-sm font-medium">{{ database.display_name || capitalCase(database.name) }}</span>
             <i
               v-if="database.auto_sync"
               class="pi pi-lock text-surface-400 dark:text-surface-500"
@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { DatabaseDto, NamespaceDto } from '@core/sdk/client'
 
@@ -96,8 +96,8 @@ const toNamespace = (database_name: string, namespace: NamespaceDto) => {
 const openUploadModal = (database: DatabaseDto, namespace: NamespaceDto) => {
   selectedDatabaseForUpload.value = database.name
   selectedNamespaceForUpload.value = namespace.name
-  selectedDatabaseDisplayNameForUpload.value = database.display_name || useChangeCase(database.name, 'capitalCase')
-  selectedNamespaceDisplayNameForUpload.value = namespace.display_name || useChangeCase(namespace.name, 'capitalCase')
+  selectedDatabaseDisplayNameForUpload.value = database.display_name || capitalCase(database.name)
+  selectedNamespaceDisplayNameForUpload.value = namespace.display_name || capitalCase(namespace.name)
   uploadModalVisible.value = true
 }
 
