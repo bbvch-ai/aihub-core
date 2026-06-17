@@ -52,6 +52,13 @@ export const AccessCapabilitiesRequestSchema = {
         "Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).",
       default: true,
     },
+    is_sys_admin: {
+      type: "boolean",
+      title: "Is Sys Admin",
+      description:
+        "Evaluate the catalog as a platform sysadmin (AIHubSysAdmin), who holds admin on every resource regardless of rules — the user page passes the viewed user's flag. False for rule editing.",
+      default: false,
+    },
   },
   type: "object",
   required: ["access_rules"],

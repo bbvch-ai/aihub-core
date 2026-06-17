@@ -44,6 +44,12 @@ export type AccessCapabilitiesRequest = {
    * Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).
    */
   restrict_to_tenant?: boolean;
+  /**
+   * Is Sys Admin
+   *
+   * Evaluate the catalog as a platform sysadmin (AIHubSysAdmin), who holds admin on every resource regardless of rules — the user page passes the viewed user's flag. False for rule editing.
+   */
+  is_sys_admin?: boolean;
 };
 
 /**
@@ -1506,7 +1512,7 @@ export type GetAccessCapabilitiesData = {
     tenant_id: string;
   };
   query?: never;
-  url: "/{tenant_id}/roles/access/capabilities";
+  url: "/{tenant_id}/access/capabilities";
 };
 
 export type GetAccessCapabilitiesErrors = {
@@ -1540,12 +1546,12 @@ export type GetAccessPresetsData = {
     tenant_id: string;
   };
   query?: never;
-  url: "/{tenant_id}/roles/access/presets";
+  url: "/{tenant_id}/access/presets";
 };
 
 export type GetAccessPresetsResponses = {
   /**
-   * Response Get Access Presets  Tenant Id  Roles Access Presets Get
+   * Response Get Access Presets  Tenant Id  Access Presets Get
    *
    * Successful Response
    */

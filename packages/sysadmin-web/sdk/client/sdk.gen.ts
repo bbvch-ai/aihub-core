@@ -596,7 +596,7 @@ export const getAccessCapabilities = <
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
     ],
-    url: "/{tenant_id}/roles/access/capabilities",
+    url: "/{tenant_id}/access/capabilities",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -630,7 +630,7 @@ export const getAccessPresets = <
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
     ],
-    url: "/{tenant_id}/roles/access/presets",
+    url: "/{tenant_id}/access/presets",
     ...options,
   });
 
