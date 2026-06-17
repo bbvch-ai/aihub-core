@@ -1,14 +1,12 @@
 import functools
 from collections.abc import Callable
-from typing import Annotated, Self, TypeVar
+from typing import Annotated
 
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
-
-F = TypeVar("F", bound=Callable[..., Self])
 
 # Attribute set on the route an annotated builder method registers; read by AccessCapabilityService.
 ACCESS_CATALOG_ENTRY_ATTRIBUTE = "__access_catalog_entry__"
@@ -32,7 +30,7 @@ class AccessCatalogEntryMeta(BaseModel):
         )
 
 
-def access_catalog_entry(i18n_path: str) -> Callable[[F], F]:
+def access_catalog_entry(i18n_path: str) -> Callable[[Callable], Callable]:
     """Surface a controller's fluent route-builder method as an entry in the access-capability catalog.
 
     This does NOT enforce access — the endpoint's own ``user_with_permission`` guard does, and that guard
@@ -45,7 +43,7 @@ def access_catalog_entry(i18n_path: str) -> Callable[[F], F]:
     """
     meta = AccessCatalogEntryMeta.from_i18n_path(i18n_path)
 
-    def decorator(builder_method: F) -> F:
+    def decorator[F: Callable](builder_method: F) -> F:
         @functools.wraps(builder_method)
         def wrapper(self, *args, **kwargs):
             registered_before = len(self.router.routes)
