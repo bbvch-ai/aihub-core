@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, Self
 
-from fastapi import HTTPException, Request, Security, status
+from fastapi import Body, HTTPException, Request, Security, status
 from swiss_ai_hub.api import AccessCapabilitiesRequest, AccessCapabilitiesResponse, AccessController, AccessPresetDTO
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 
@@ -20,15 +20,9 @@ class SysadminAccessController(AccessController):
     """
 
     def get_access_capabilities(self, route: str = "/capabilities") -> Self:
-        @self.router.post(
-            route,
-            summary="Evaluate Access Capabilities",
-            description="Returns the catalog of concrete capabilities (per service, agent and process), each with "
-            "its exact access rule and whether the supplied draft rules grant it.",
-            tags=self.tags,
-        )
+        @self.router.post(route, tags=self.tags)
         async def get_access_capabilities(
-            request: AccessCapabilitiesRequest,
+            request: Annotated[AccessCapabilitiesRequest, Body()],
             http_request: Request,
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> AccessCapabilitiesResponse:
@@ -39,12 +33,7 @@ class SysadminAccessController(AccessController):
         return self
 
     def get_access_presets(self, route: str = "/presets") -> Self:
-        @self.router.get(
-            route,
-            summary="List Access Presets",
-            description="Returns a curated, described library of common access rules for one-click authoring.",
-            tags=self.tags,
-        )
+        @self.router.get(route, tags=self.tags)
         async def get_access_presets(
             http_request: Request,
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],

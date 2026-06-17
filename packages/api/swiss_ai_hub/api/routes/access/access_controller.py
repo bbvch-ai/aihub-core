@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, Self
 
-from fastapi import Depends, Security
+from fastapi import Body, Depends, Security
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -37,24 +37,19 @@ class AccessController(TenantScopedController):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_access_capabilities(self, route: str = "/capabilities") -> Self:
-        @self.router.post(
-            route,
-            summary="Evaluate Access Capabilities",
-            description="Returns the catalog of concrete capabilities (per service, agent and process), each with "
-            "its exact access rule and whether the supplied draft rules grant it.",
-            tags=self.tags,
-        )
+        @self.router.post(route, tags=self.tags)
         async def get_access_capabilities(
-            request: AccessCapabilitiesRequest,
+            request: Annotated[AccessCapabilitiesRequest, Body()],
             user: Annotated[
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> AccessCapabilitiesResponse:
-            # `is_sys_admin` and `restrict_to_tenant` come from the request body, so without this gate a
-            # non-sysadmin role admin could claim sysadmin or drop the ceiling to enumerate every agent,
-            # process and knowledge namespace platform-wide. Both privileges require the *acting* user to
-            # actually be a sysadmin; everyone else is forced to a ceiling-bounded, non-sysadmin view.
+            # This endpoint only *reads* the capability catalog; it never grants access. But `is_sys_admin`
+            # and `restrict_to_tenant` arrive in the request body, and trusting them would let a non-sysadmin
+            # role admin reveal a sysadmin-level "granted" view or drop the tenant ceiling to enumerate every
+            # agent, process and knowledge namespace platform-wide. Both require the *acting* user to actually
+            # be a sysadmin; everyone else is forced to a ceiling-bounded, non-sysadmin view.
             acting_is_sys_admin = user.is_sys_admin
             subject = AccessChecker(
                 user_access_rules=request.access_rules,
@@ -70,12 +65,7 @@ class AccessController(TenantScopedController):
         return self
 
     def get_access_presets(self, route: str = "/presets") -> Self:
-        @self.router.get(
-            route,
-            summary="List Access Presets",
-            description="Returns a curated, described library of common access rules for one-click authoring.",
-            tags=self.tags,
-        )
+        @self.router.get(route, tags=self.tags)
         async def get_access_presets(
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],

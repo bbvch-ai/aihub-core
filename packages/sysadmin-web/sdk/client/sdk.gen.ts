@@ -569,9 +569,7 @@ export const createRole = <
   });
 
 /**
- * Evaluate Access Capabilities
- *
- * Returns the catalog of concrete capabilities (per service, agent and process), each with its exact access rule and whether the supplied draft rules grant it.
+ * Get Access Capabilities
  */
 export const getAccessCapabilities = <
   TComposable extends Composable = "$fetch",
@@ -605,9 +603,7 @@ export const getAccessCapabilities = <
   });
 
 /**
- * List Access Presets
- *
- * Returns a curated, described library of common access rules for one-click authoring.
+ * Get Access Presets
  */
 export const getAccessPresets = <
   TComposable extends Composable = "$fetch",

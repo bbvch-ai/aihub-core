@@ -91,6 +91,9 @@ class AccessCapabilityService:
         (zero-parameter guards), and the nested class/instance tree for enumerable resources."""
         service_name = controller.service_name
         all_templates, annotated_guards = AccessCapabilityService._introspect(controller)
+        # The service-level gates are rendered separately by `_service_gate_capabilities`, so exclude them
+        # from the per-resource guards below. `USER_PREFIX`/`ADMIN_PREFIX` already end in a dot
+        # (`"aihub.user."`), so `f"{USER_PREFIX}?>"` is `"aihub.user.?>"` — the catch-all "any access" gate.
         gate_templates = {
             f"{AccessChecker.USER_PREFIX}?>",
             f"{AccessChecker.ADMIN_PREFIX}?>",
@@ -102,16 +105,17 @@ class AccessCapabilityService:
         capabilities = AccessCapabilityService._service_gate_capabilities(
             service_name, all_templates, subject, granted_rules, ceiling, t
         )
-        capabilities += [
-            capability
-            for guard_template, meta in sorted(resource_guards.items())
-            if guard_template.count("{") == 0
-            and (
-                capability := AccessCapabilityService._capability_for_guard(
-                    meta.label, meta.description, guard_template, {}, subject, granted_rules, ceiling, t
-                )
+        # Guards with no `{path_param}` are resource-wide capabilities (e.g. "list everything"): nothing to
+        # substitute, so they render straight onto the service group. Parameterised guards are handled below
+        # by `_resource_groups`, which expands them over the service's concrete agents/processes/namespaces.
+        for guard_template, meta in sorted(resource_guards.items()):
+            if guard_template.count("{") != 0:
+                continue
+            capability = AccessCapabilityService._capability_for_guard(
+                meta.label, meta.description, guard_template, {}, subject, granted_rules, ceiling, t
             )
-        ]
+            if capability is not None:
+                capabilities.append(capability)
         subgroups = await AccessCapabilityService._resource_groups(
             service_name, resource_guards, subject, granted_rules, ceiling, t
         )
@@ -139,15 +143,14 @@ class AccessCapabilityService:
             gate_specs.append(
                 (_SERVICE_ADMIN_LABEL, _SERVICE_ADMIN_DESCRIPTION, AccessChecker.service_admin_rule(service_name))
             )
-        return [
-            capability
-            for label, description, guard_template in gate_specs
-            if (
-                capability := AccessCapabilityService._capability_for_guard(
-                    label, description, guard_template, {}, subject, granted_rules, ceiling, t
-                )
+        capabilities: list[Capability] = []
+        for label, description, guard_template in gate_specs:
+            capability = AccessCapabilityService._capability_for_guard(
+                label, description, guard_template, {}, subject, granted_rules, ceiling, t
             )
-        ]
+            if capability is not None:
+                capabilities.append(capability)
+        return capabilities
 
     @staticmethod
     def _introspect(controller: TenantScopedController) -> tuple[set[str], dict[str, AccessCatalogEntryMeta]]:
@@ -370,42 +373,41 @@ class AccessCapabilityService:
 
         groups: list[CapabilityGroup] = []
         for class_node in classes:
+            # Class-level guards carry one path param (the class): substitute it and build a row per guard,
+            # dropping any the ceiling hides (`_capability_for_guard` returns None).
             class_substitutions = {class_param: class_node.value}
-            class_capabilities = [
-                capability
-                for guard_template, meta in class_guards
-                if (
-                    capability := AccessCapabilityService._capability_for_guard(
+            class_capabilities: list[Capability] = []
+            for guard_template, meta in class_guards:
+                capability = AccessCapabilityService._capability_for_guard(
+                    meta.label,
+                    meta.description,
+                    guard_template,
+                    class_substitutions,
+                    subject,
+                    granted_rules,
+                    ceiling,
+                    t,
+                )
+                if capability is not None:
+                    class_capabilities.append(capability)
+            instance_groups: list[CapabilityGroup] = []
+            for instance_node in instances_by_class.get(class_node.value, []):
+                # Instance-level guards carry both the class and instance path params.
+                instance_substitutions = {class_param: class_node.value, instance_param: instance_node.value}
+                instance_capabilities: list[Capability] = []
+                for guard_template, meta in instance_guards:
+                    capability = AccessCapabilityService._capability_for_guard(
                         meta.label,
                         meta.description,
                         guard_template,
-                        class_substitutions,
+                        instance_substitutions,
                         subject,
                         granted_rules,
                         ceiling,
                         t,
                     )
-                )
-            ]
-            instance_groups: list[CapabilityGroup] = []
-            for instance_node in instances_by_class.get(class_node.value, []):
-                instance_substitutions = {class_param: class_node.value, instance_param: instance_node.value}
-                instance_capabilities = [
-                    capability
-                    for guard_template, meta in instance_guards
-                    if (
-                        capability := AccessCapabilityService._capability_for_guard(
-                            meta.label,
-                            meta.description,
-                            guard_template,
-                            instance_substitutions,
-                            subject,
-                            granted_rules,
-                            ceiling,
-                            t,
-                        )
-                    )
-                ]
+                    if capability is not None:
+                        instance_capabilities.append(capability)
                 instance_groups.append(
                     CapabilityGroup(
                         key=f"{service_name}:{class_node.value}:{instance_node.value}",

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -31,7 +29,7 @@ class CapabilityGroup(BaseModel):
     label: Annotated[str, Field(description="Display title for the group.")]
     icon: Annotated[str | None, Field(description="Iconify icon for the group (service or class), if any.")] = None
     capabilities: Annotated[list[Capability], Field(description="Capabilities directly on this group.")] = []
-    groups: Annotated[list[CapabilityGroup], Field(description="Nested groups (e.g. classes, then instances).")] = []
+    groups: Annotated[list["CapabilityGroup"], Field(description="Nested groups (e.g. classes, then instances).")] = []
 
 
 class AccessCapabilitiesResponse(BaseModel):

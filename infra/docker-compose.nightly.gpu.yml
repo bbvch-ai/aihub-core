@@ -2659,8 +2659,6 @@ services:
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: https://sysadmin.${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: true
-      # Server-to-server target for proxying the access-capability catalog to the main API
-      # (reachable over the shared backend network; both are on proxy+backend+data).
       AIHUB_INTERNAL_API_BASE_URL: http://api:8000
 
       # Mongo DB — durable storage for tenant metadata, roles, dashboards
