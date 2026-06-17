@@ -2,22 +2,42 @@
   <div class="flex flex-col gap-4">
     <!-- Database Selection -->
     <div>
-      <label for="vector-store-database-select" class="mb-1 block text-sm font-medium">
+      <label
+        for="vector-store-database-select"
+        class="mb-1 block text-sm font-medium"
+      >
         {{ t('lib.vectorStore.database.label') }}
       </label>
-      <Select :aria-label="t('lib.vectorStore.database.label')" v-model="selectedDatabase"
-        input-id="vector-store-database-select" :options="databaseOptions" option-label="displayName"
-        option-value="name" :placeholder="databasePlaceholder ?? t('common.selectDatabase')" :filter="filter"
-        :loading="isLoading" class="w-full">
+      <Select
+        v-model="selectedDatabase"
+        :aria-label="t('lib.vectorStore.database.label')"
+        input-id="vector-store-database-select"
+        :options="databaseOptions"
+        option-label="displayName"
+        option-value="name"
+        :placeholder="databasePlaceholder ?? t('common.selectDatabase')"
+        :filter="filter"
+        :loading="isLoading"
+        class="w-full"
+      >
         <template #option="{ option }">
           <div class="flex items-center gap-2">
-            <Icon name="mage:database" size="1.2em" />
+            <Icon
+              name="mage:database"
+              size="1.2em"
+            />
             <span>{{ option.displayName }}</span>
           </div>
         </template>
         <template #value="{ value }">
-          <div v-if="value" class="flex items-center gap-2">
-            <Icon name="mage:database" size="1.2em" />
+          <div
+            v-if="value"
+            class="flex items-center gap-2"
+          >
+            <Icon
+              name="mage:database"
+              size="1.2em"
+            />
             <span>{{ getDatabaseDisplayName(value) }}</span>
           </div>
         </template>
@@ -26,16 +46,29 @@
 
     <!-- Namespace Selection (shown when database selected) -->
     <div v-if="selectedDatabase">
-      <label for="vector-store-namespaces-select" class="mb-1 block text-sm font-medium">
+      <label
+        for="vector-store-namespaces-select"
+        class="mb-1 block text-sm font-medium"
+      >
         {{ t('lib.vectorStore.namespaces.label') }}
       </label>
-      <MultiSelect v-model="selectedNamespaces" input-id="vector-store-namespaces-select" :options="namespaceOptions"
-        option-label="displayName" option-value="name"
-        :placeholder="namespacePlaceholder ?? t('lib.vectorStore.namespaces.placeholder')" :filter="filter"
-        display="chip" class="w-full">
+      <MultiSelect
+        v-model="selectedNamespaces"
+        input-id="vector-store-namespaces-select"
+        :options="namespaceOptions"
+        option-label="displayName"
+        option-value="name"
+        :placeholder="namespacePlaceholder ?? t('lib.vectorStore.namespaces.placeholder')"
+        :filter="filter"
+        display="chip"
+        class="w-full"
+      >
         <template #option="{ option }">
           <div class="flex items-center gap-2">
-            <Icon name="mage:folder" size="1.2em" />
+            <Icon
+              name="mage:folder"
+              size="1.2em"
+            />
             <span>{{ option.displayName }}</span>
           </div>
         </template>
@@ -47,7 +80,10 @@
 
     <!-- Allowed metadata filter fields (shown when database selected) -->
     <div v-if="selectedDatabase">
-      <label for="vector-store-filter-fields-input" class="mb-1 block text-sm font-medium">
+      <label
+        for="vector-store-filter-fields-input"
+        class="mb-1 block text-sm font-medium"
+      >
         {{ t('lib.vectorStore.allowedFilterFields.label') }}
       </label>
       <ChipsInput :context="chipsInputContext" />

@@ -2,11 +2,23 @@
   <div class="flex h-full flex-col space-y-4">
     <div class="flex-1 space-y-4 overflow-y-auto">
       <div class="space-y-2">
-        <label for="memory-content-textarea" class="text-xs font-medium text-gray-700 dark:text-gray-500">{{
+        <label
+          for="memory-content-textarea"
+          class="text-xs font-medium text-gray-700 dark:text-gray-500"
+        >{{
           t('memory.edit.memory_content_label') }}</label>
-        <Textarea v-if="isEditing" id="memory-content-textarea" v-model="editedData" auto-resize rows="5"
-          class="w-full" />
-        <div v-else class="rounded border bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-950">
+        <Textarea
+          v-if="isEditing"
+          id="memory-content-textarea"
+          v-model="editedData"
+          auto-resize
+          rows="5"
+          class="w-full"
+        />
+        <div
+          v-else
+          class="rounded border bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-950"
+        >
           {{ memory.memory }}
         </div>
       </div>
@@ -24,14 +36,21 @@
 
         <!-- Agent Link - shown if agent exists -->
         <!-- Follows the AgentAvatar pattern from Thread/Info.vue but simplified -->
-        <div v-if="canNavigateToAgent" class="space-y-2">
+        <div
+          v-if="canNavigateToAgent"
+          class="space-y-2"
+        >
           <p class="text-xs font-medium text-gray-500">
             {{ t('memory.detail.agent_link_label') }}
           </p>
           <div
             class="flex cursor-pointer gap-2 rounded border border-surface-200 p-2 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
-            @click="navigateToAgent">
-            <Avatar size="normal" icon="pi pi-verified" />
+            @click="navigateToAgent"
+          >
+            <Avatar
+              size="normal"
+              icon="pi pi-verified"
+            />
             <div class="mb-1 flex flex-col justify-center">
               <p class="text-xs font-bold">
                 {{ parsedAgent.agent_class }}
@@ -45,14 +64,21 @@
 
         <!-- Thread/Display Link - shown if both thread_id and display_id exist -->
         <!-- Similar pattern to agent but with thread/conversation icon -->
-        <div v-if="canNavigateToThread" class="space-y-2">
+        <div
+          v-if="canNavigateToThread"
+          class="space-y-2"
+        >
           <p class="text-xs font-medium text-gray-500">
             {{ t('memory.detail.thread_link_label') }}
           </p>
           <div
             class="flex cursor-pointer gap-2 rounded border border-surface-200 p-2 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
-            @click="navigateToThreadDisplay">
-            <Avatar size="normal" icon="pi pi-comments" />
+            @click="navigateToThreadDisplay"
+          >
+            <Avatar
+              size="normal"
+              icon="pi pi-comments"
+            />
             <div class="mb-1 flex flex-col justify-center">
               <p class="text-xs font-bold">
                 {{ t('memory.detail.thread_title') }}
@@ -67,13 +93,35 @@
     </div>
 
     <div class="flex items-center justify-between border-t pt-4">
-      <Button v-if="!isEditing" :label="t('memory.edit.edit_button')" icon="pi pi-pencil" @click="isEditing = true" />
-      <div v-else class="flex space-x-2">
-        <Button :label="t('memory.edit.save_button')" icon="pi pi-check" @click="handleSave" />
-        <Button :label="t('memory.edit.cancel_button')" icon="pi pi-times" severity="secondary" @click="handleCancel" />
+      <Button
+        v-if="!isEditing"
+        :label="t('memory.edit.edit_button')"
+        icon="pi pi-pencil"
+        @click="isEditing = true"
+      />
+      <div
+        v-else
+        class="flex space-x-2"
+      >
+        <Button
+          :label="t('memory.edit.save_button')"
+          icon="pi pi-check"
+          @click="handleSave"
+        />
+        <Button
+          :label="t('memory.edit.cancel_button')"
+          icon="pi pi-times"
+          severity="secondary"
+          @click="handleCancel"
+        />
       </div>
 
-      <Button :label="t('memory.edit.delete_button')" icon="pi pi-trash" severity="danger" @click="handleDelete" />
+      <Button
+        :label="t('memory.edit.delete_button')"
+        icon="pi pi-trash"
+        severity="danger"
+        @click="handleDelete"
+      />
     </div>
   </div>
 </template>
