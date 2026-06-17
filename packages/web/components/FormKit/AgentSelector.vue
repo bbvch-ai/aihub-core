@@ -10,6 +10,7 @@
       </label>
       <Select
         v-model="selectedClass"
+        :aria-label="t('agent.selector.class.label')"
         input-id="agent-class-select"
         :options="filteredClassOptions"
         option-label="displayName"
@@ -53,6 +54,7 @@
       </label>
       <Select
         v-model="selectedId"
+        :aria-label="t('agent.selector.id.label')"
         input-id="agent-id-select"
         :options="idOptions"
         option-label="displayName"

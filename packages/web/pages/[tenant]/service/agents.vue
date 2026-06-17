@@ -21,6 +21,7 @@
             :options="agentClassOptions"
             option-label="label"
             option-value="value"
+            :aria-label="t('agent.list.filter.type_placeholder')"
             :placeholder="t('agent.list.filter.type_placeholder')"
             show-clear
             class="w-52"
@@ -30,6 +31,7 @@
             :options="statusOptions"
             option-label="label"
             option-value="value"
+            :aria-label="t('agent.list.filter.status_placeholder')"
             :placeholder="t('agent.list.filter.status_placeholder')"
             show-clear
             class="w-52"

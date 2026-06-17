@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.300.1] - 2026-06-17 - Enhanced User Interface Accessibility
+
+### Changed
+
+- ♿️ **Improved UI Accessibility:** Added `aria-label` attributes to numerous interactive components across the
+  application, including various `Select` dropdowns, `Textarea` inputs, `InputText` fields, and file upload inputs. This
+  enhancement significantly improves the experience for users relying on screen readers and other assistive technologies
+  by providing clearer context for UI elements.
+- ⚙️ **Refined Form Element Identification:** Updated and added `id` attributes to select form components, ensuring
+  better programmatic identification and improved accessibility.
+- 🌐 **Expanded Internationalization:** Introduced new placeholder translations for chat inputs
+  (`thread.chat.placeholder`) across multiple languages (German, English, French, Italian) to support enhanced UI
+  descriptions.
+
+______________________________________________________________________
+
 ## [v0.300.0] - 2026-06-17 - Streamlined Agent Instance Management with Auto-Granted Creator Access
 
 ### Added

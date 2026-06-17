@@ -169,6 +169,7 @@ thread:
     title: Hierarchical View on Turns
   chat:
     title: Chat view
+    placeholder: Chat input
   memories:
     title: Thread Memories
     description: Memories collected during {threadName}

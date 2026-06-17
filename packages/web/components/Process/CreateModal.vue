@@ -33,6 +33,7 @@
             {{ t('process.create.selectClass') }}
           </label>
           <Select
+            id="processClass"
             v-model="selectedClass"
             :options="processClasses"
             option-label="process_class"
