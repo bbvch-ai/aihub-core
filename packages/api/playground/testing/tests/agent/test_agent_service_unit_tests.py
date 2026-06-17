@@ -450,8 +450,6 @@ class TestCreateAgentInstanceGrantWiring:
         config_entity = Mock()
         grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
-        stack.enter_context(patch(f"{_MODULE}.normalize_empty_objects_to_none", return_value={}))
-        stack.enter_context(patch(f"{_MODULE}.normalize_empty_locale_strings", return_value={}))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
         stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
