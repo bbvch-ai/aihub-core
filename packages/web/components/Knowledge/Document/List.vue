@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="checkedDocuments.length > 0"
+    v-if="!autoSync && checkedDocuments.length > 0"
     class="mb-2 flex items-center justify-between"
   >
     <p class="text-sm">
@@ -28,6 +28,7 @@
     @sort="handleSort"
   >
     <Column
+      v-if="!autoSync"
       selection-mode="multiple"
       header-style="width: 3rem"
     />
@@ -112,7 +113,7 @@
             @click.stop="() => downloadFile(data.id)"
           />
           <Button
-            v-if="!isDocumentDeleting(data)"
+            v-if="!autoSync && !isDocumentDeleting(data)"
             v-tooltip.top="t('document.delete.button')"
             rounded
             size="small"
@@ -152,6 +153,7 @@ const props = defineProps<{
   documents: DocumentDto[]
   sortField: string | null
   sortOrder: 1 | -1
+  autoSync?: boolean
 }>()
 
 const emit = defineEmits<{
