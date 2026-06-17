@@ -1,38 +1,15 @@
 <template>
-  <Button
-    icon="pi pi-cog"
-    aria-label="Settings"
-    variant="text"
-    size="large"
-    @click="toggle"
-  />
-  <Popover
-    ref="op"
-    class="[--p-popover-background:var(--p-surface-50)] [--p-popover-border-color:var(--p-surface-200)] dark:[--p-popover-background:var(--p-surface-950)] dark:[--p-popover-border-color:var(--p-surface-800)]"
-  >
+  <Button icon="pi pi-cog" aria-label="Settings" variant="text" size="large" @click="toggle" />
+  <Popover ref="op"
+    class="[--p-popover-background:var(--p-surface-50)] [--p-popover-border-color:var(--p-surface-200)] dark:[--p-popover-background:var(--p-surface-950)] dark:[--p-popover-border-color:var(--p-surface-800)]">
     <div class="flex flex-col gap-4 p-2">
       <div class="flex flex-col gap-2">
-        <label
-          for="user-language-select"
-          class="font-medium"
-        >{{ t('user.language') }}</label>
-        <Select
-          id="user-language-select"
-          v-model="selectedLocale"
-          input-id="user-language-select"
-          :options="localeOptions"
-          option-label="name"
-          class="w-full"
-        />
+        <label for="user-language-select" class="font-medium">{{ t('user.language') }}</label>
+        <Select :aria-label="t('user.language')" v-model="selectedLocale" :options="localeOptions" option-label="name"
+          class="w-full" />
       </div>
-      <Button
-        class="w-full"
-        :label="t('user.logout')"
-        variant="text"
-        icon="pi pi-arrow-circle-right"
-        icon-pos="right"
-        @click="auth.logout"
-      />
+      <Button class="w-full" :label="t('user.logout')" variant="text" icon="pi pi-arrow-circle-right" icon-pos="right"
+        @click="auth.logout" />
       <div class="text-center text-xs text-surface-500 dark:text-surface-400">
         {{ t('user.version') }} {{ versionDisplay }}
       </div>

@@ -2,42 +2,22 @@
   <div class="flex flex-col gap-4">
     <!-- Agent Class Selection -->
     <div>
-      <label
-        for="agent-class-select"
-        class="mb-1 block text-sm font-medium"
-      >
+      <label for="agent-class-select" class="mb-1 block text-sm font-medium">
         {{ t('agent.selector.class.label') }}
       </label>
-      <Select
-        id="agent-class-select"
-        v-model="selectedClass"
-        input-id="agent-class-select"
-        :options="filteredClassOptions"
-        option-label="displayName"
-        option-value="name"
-        :placeholder="classPlaceholder ?? t('agent.selector.class.placeholder')"
-        :filter="filter"
-        :loading="isLoading"
-        class="w-full"
-      >
+      <Select v-model="selectedClass" :aria-label="t('agent.selector.class.label')" input-id="agent-class-select"
+        :options="filteredClassOptions" option-label="displayName" option-value="name"
+        :placeholder="classPlaceholder ?? t('agent.selector.class.placeholder')" :filter="filter" :loading="isLoading"
+        class="w-full">
         <template #option="{ option }">
           <div class="flex items-center gap-2">
-            <Icon
-              :name="option.icon || 'mage:robot'"
-              size="1.2em"
-            />
+            <Icon :name="option.icon || 'mage:robot'" size="1.2em" />
             <span>{{ option.displayName }}</span>
           </div>
         </template>
         <template #value="{ value }">
-          <div
-            v-if="value"
-            class="flex items-center gap-2"
-          >
-            <Icon
-              :name="getClassIcon(value)"
-              size="1.2em"
-            />
+          <div v-if="value" class="flex items-center gap-2">
+            <Icon :name="getClassIcon(value)" size="1.2em" />
             <span>{{ getClassDisplayName(value) }}</span>
           </div>
         </template>
@@ -46,42 +26,22 @@
 
     <!-- Agent ID Selection (shown when class selected) -->
     <div v-if="selectedClass">
-      <label
-        for="agent-id-select"
-        class="mb-1 block text-sm font-medium"
-      >
+      <label for="agent-id-select" class="mb-1 block text-sm font-medium">
         {{ t('agent.selector.id.label') }}
       </label>
-      <Select
-        id="agent-id-select"
-        v-model="selectedId"
-        input-id="agent-id-select"
-        :options="idOptions"
-        option-label="displayName"
-        option-value="id"
-        :placeholder="idPlaceholder ?? t('agent.selector.id.placeholder')"
-        :filter="filter"
-        :loading="isLoadingInstances"
-        class="w-full"
-      >
+      <Select v-model="selectedId" :aria-label="t('agent.selector.id.label')" input-id="agent-id-select"
+        :options="idOptions" option-label="displayName" option-value="id"
+        :placeholder="idPlaceholder ?? t('agent.selector.id.placeholder')" :filter="filter"
+        :loading="isLoadingInstances" class="w-full">
         <template #option="{ option }">
           <div class="flex items-center gap-2">
-            <Icon
-              :name="option.icon || 'mage:user'"
-              size="1.2em"
-            />
+            <Icon :name="option.icon || 'mage:user'" size="1.2em" />
             <span>{{ option.displayName }}</span>
           </div>
         </template>
         <template #value="{ value }">
-          <div
-            v-if="value"
-            class="flex items-center gap-2"
-          >
-            <Icon
-              :name="getIdIcon(value)"
-              size="1.2em"
-            />
+          <div v-if="value" class="flex items-center gap-2">
+            <Icon :name="getIdIcon(value)" size="1.2em" />
             <span>{{ getIdDisplayName(value) }}</span>
           </div>
         </template>

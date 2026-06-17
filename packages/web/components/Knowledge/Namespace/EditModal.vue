@@ -1,75 +1,41 @@
 <template>
-  <Dialog
-    :visible="modelValue"
-    modal
-    :header="t('knowledge.form.edit.title')"
-    :style="{ width: '35rem' }"
-    @update:visible="emit('update:modelValue', $event)"
-  >
+  <Dialog :visible="modelValue" modal :header="t('knowledge.form.edit.title')" :style="{ width: '35rem' }"
+    @update:visible="emit('update:modelValue', $event)">
     <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-2">
         <p class="text-sm font-medium">
           {{ t('knowledge.form.folder_name.label') }}
         </p>
-        <InputText
-          :value="namespace?.name || ''"
-          disabled
-          class="bg-surface-100 dark:bg-surface-800"
-        />
+        <InputText :value="namespace?.name || ''" disabled class="bg-surface-100 dark:bg-surface-800" />
         <small class="text-gray-500">{{ t('knowledge.form.folder_name.edit_help') }}</small>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label
-          for="edit-namespace-display-name-input"
-          class="text-sm font-medium"
-        >
+        <label for="edit-namespace-display-name-input" class="text-sm font-medium">
           {{ t('knowledge.form.display_name.label') }}
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
-        <InputText
-          id="edit-namespace-display-name-input"
-          v-model="displayName"
-          input-id="edit-namespace-display-name-input"
-          :placeholder="t('knowledge.form.display_name.placeholder')"
-        />
+        <InputText id="edit-namespace-display-name-input" v-model="displayName"
+          :placeholder="t('knowledge.form.display_name.placeholder')" />
         <small class="text-gray-500">{{ t('knowledge.form.display_name.help') }}</small>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label
-          for="edit-namespace-description-textarea"
-          class="text-sm font-medium"
-        >
+        <label for="edit-namespace-description-textarea" class="text-sm font-medium">
           {{ t('knowledge.form.description.label') }}
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
-        <Textarea
-          v-model="description"
-          input-id="edit-namespace-description-textarea"
-          :placeholder="t('knowledge.form.description.placeholder')"
-          rows="3"
-        />
+        <Textarea v-model="description" input-id="edit-namespace-description-textarea"
+          :placeholder="t('knowledge.form.description.placeholder')" rows="3" />
         <small class="text-gray-500">{{ t('knowledge.form.description.help') }}</small>
       </div>
 
-      <small
-        v-if="error"
-        class="text-red-500"
-      >{{ error }}</small>
+      <small v-if="error" class="text-red-500">{{ error }}</small>
     </div>
     <template #footer>
       <div class="flex justify-end gap-2">
-        <Button
-          :label="t('knowledge.actions.cancel')"
-          severity="secondary"
-          outlined
-          @click="closeModal"
-        />
-        <Button
-          :label="t('knowledge.actions.save')"
-          @click="handleSave"
-        />
+        <Button :label="t('knowledge.actions.cancel')" severity="secondary" outlined @click="closeModal" />
+        <Button :label="t('knowledge.actions.save')" @click="handleSave" />
       </div>
     </template>
   </Dialog>
