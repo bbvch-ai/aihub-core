@@ -1,5 +1,12 @@
 # Restrict Langfuse Access to AIHubSysAdmin via a Keycloak Authentication-Flow Gate
 
+> **Partially superseded** by
+> [`2026_06_12_declarative_keycloak_realm_reconciliation`](./2026_06_12_declarative_keycloak_realm_reconciliation.md):
+> the gate is no longer reconciled imperatively via `kcadm` in `keycloak-entrypoint.sh` (see Decision → "Reconciliation
+> on running instances" below). Its flows, marker scope, client attachment, and the realm `browserFlow` binding are now
+> declarative **managed** config reconciled by keycloak-config-cli on every start. The decision to restrict Langfuse to
+> `AIHubSysAdmin` and the authentication-flow design below are unchanged — only the reconciliation mechanism moved.
+
 ## Context
 
 Langfuse is exposed at `langfuse.<domain>` and uses its native Keycloak SSO integration for login (see

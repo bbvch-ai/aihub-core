@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.299.0] - 2026-06-17 - Streamlined Keycloak Management and Expanded LLM Support
+
+### Added
+
+- ✨ New LLM models, **Fable** and **Fable 1M**, are now available for use.
+- 🚀 A new `keycloak-config` service has been introduced to enable declarative, idempotent management of Keycloak realm
+  configurations, ensuring consistency across deployments.
+- 📄 A new Architecture Decision Record (ADR) detailing the **Declarative Keycloak Realm Reconciliation** outlines the
+  strategy for the updated configuration management system.
+- 📦 Keycloak configuration templates are now organized into `bootstrap/` (first-start only) and `managed/` (reconciled
+  on every start) directories for clearer lifecycle management.
+
+### Changed
+
+- 🔄 The **Keycloak configuration management** workflow has been fundamentally revised, transitioning from mixed
+  first-start imports and imperative `kcadm` scripts to a fully declarative approach using the new `keycloak-config`
+  service.
+- 📄 **Keycloak documentation** has been extensively updated to clearly define the new two-phase configuration lifecycle
+  (bootstrap vs. managed) and its implications for operators, including how changes are applied and maintained.
+- 🔑 **Azure Entra ID setup instructions** for platform roles have been clarified, specifying that `AIHubAccess` and
+  `AIHubSysAdmin` are the only Keycloak realm roles to be mapped from the Identity Provider. Other platform roles are
+  now explicitly stated to be managed internally by the platform.
+- 🔐 Access to **SeaweedFS Filer** and other admin tool UIs now consistently requires the `AIHubSysAdmin` realm role,
+  enhancing security and aligning access control across administrative interfaces.
+- 📚 The **Environment Variables documentation** has been thoroughly revised to reflect the new Keycloak configuration
+  structure and the services consuming each variable.
+- 📝 German documentation for **Platform vs. SDK** and the **Ecosystem Model** has been updated with minor wording
+  improvements and corrected license references to `AGPL-3.0-or-later`.
+
+### Removed
+
+- 🗑️ The monolithic `keycloak-realm.json.j2` and `keycloak-identity-providers.json.j2` templates have been retired,
+  replaced by the new modular `bootstrap/` and `managed/` Keycloak configuration files.
+- 🗑️ Imperative `kcadm` commands for identity provider and Langfuse sysadmin gate reconciliation have been removed from
+  the `keycloak-entrypoint.sh` script, as these are now handled declaratively by the `keycloak-config` service.
+
+### Refactor
+
+- 🧹 The **Keycloak entrypoint script (`keycloak-entrypoint.sh`)** has been significantly simplified by delegating
+  managed configuration reconciliation to the `keycloak-config` service.
+- 🛠️ The internal `generate_compose.py` tooling has been refactored to support the new modular Keycloak configuration
+  structure, including logic to merge bootstrap and managed documents for the initial realm import.
+- ⚙️ Keycloak's realm definition has been restructured across multiple, smaller JSON files within `bootstrap/` and
+  `managed/` to improve modularity and maintainability.
+
+______________________________________________________________________
+
 ## [v0.298.3] - 2026-06-16 - Configuration Forms: Robustness and User Experience Improvements
 
 ### Fixed

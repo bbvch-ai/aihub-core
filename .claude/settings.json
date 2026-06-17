@@ -298,6 +298,8 @@
   },
   "model": "opus[1m]",
   "availableModels": [
+    "fable[1m]",
+    "fable",
     "opus[1m]",
     "opus",
     "sonnet"

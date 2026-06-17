@@ -17,11 +17,30 @@
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
-  "browserFlow": "browser-aihub",
-
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
-
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xFrameOptions": "",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' https://$(env:DOMAIN) https://*.$(env:DOMAIN); object-src 'none';"
+  },
+  "smtpServer": {},
+  "eventsEnabled": true,
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "LOGOUT",
+    "LOGOUT_ERROR",
+    "CODE_TO_TOKEN",
+    "CODE_TO_TOKEN_ERROR"
+  ],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
   "components": {
     "org.keycloak.userprofile.UserProfileProvider": [
       {
@@ -35,7 +54,151 @@
       }
     ]
   },
-
+  "defaultRoles": [],
+  "groups": [
+    {
+      "name": "tenants",
+      "subGroups": [
+        {
+          "name": "$(env:AIHUB_STARTUP_TENANT_ID)"
+        }
+      ]
+    }
+  ],
+  "defaultGroups": [
+    "/tenants/$(env:AIHUB_STARTUP_TENANT_ID)"
+  ],
+  "users": [
+    {
+      "username": "$(env:SUPERUSER_USERNAME)",
+      "email": "$(env:SUPERUSER_EMAIL)",
+      "firstName": "$(env:SUPERUSER_FIRSTNAME)",
+      "lastName": "$(env:SUPERUSER_LASTNAME)",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "$(env:SUPERUSER_PASSWORD)",
+          "temporary": false
+        }
+      ],
+      "realmRoles": "$(envjson:SUPERUSER_ROLES_JSON)"
+    },
+    {
+      "username": "service-account-aihub-api-service",
+      "enabled": true,
+      "serviceAccountClientId": "aihub-api-service",
+      "clientRoles": {
+        "realm-management": [
+          "view-identity-providers",
+          "manage-users",
+          "view-users",
+          "query-users",
+          "query-groups",
+          "view-groups",
+          "view-realm",
+          "view-clients"
+        ]
+      }
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "azure-ad",
+      "displayName": "Microsoft Entra ID",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "postBrokerLoginFlowAlias": "Post Broker Login - AIHubAccess Check",
+      "config": {
+        "clientId": "$(env:KEYCLOAK_AZURE_CLIENT_ID)",
+        "clientSecret": "$(env:KEYCLOAK_AZURE_CLIENT_SECRET)",
+        "tokenUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/oauth2/v2.0/token",
+        "authorizationUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/oauth2/v2.0/authorize",
+        "logoutUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/oauth2/v2.0/logout",
+        "userInfoUrl": "https://graph.microsoft.com/oidc/userinfo",
+        "issuer": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/v2.0",
+        "jwksUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_AZURE_TENANT_ID)/discovery/v2.0/keys",
+        "defaultScope": "openid email profile",
+        "validateSignature": "true",
+        "useJwksUrl": "true",
+        "pkceEnabled": "true",
+        "pkceMethod": "S256",
+        "syncMode": "FORCE",
+        "clientAuthMethod": "client_secret_post",
+        "hideOnLoginPage": "false",
+        "backchannelSupported": "false",
+        "icon": "pi-microsoft"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "email-mapper",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "email",
+        "user.attribute": "email"
+      }
+    },
+    {
+      "name": "first-name-mapper",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "given_name",
+        "user.attribute": "firstName"
+      }
+    },
+    {
+      "name": "last-name-mapper",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "family_name",
+        "user.attribute": "lastName"
+      }
+    },
+    {
+      "name": "username-mapper",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-username-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "template": "${CLAIM.preferred_username}"
+      }
+    },
+    {
+      "name": "role-mapper-access",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-role-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "roles",
+        "claim.value": "AIHubAccess",
+        "role": "AIHubAccess"
+      }
+    },
+    {
+      "name": "role-mapper-sysadmin",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-role-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "roles",
+        "claim.value": "AIHubSysAdmin",
+        "role": "AIHubSysAdmin"
+      }
+    }
+  ],
   "roles": {
     "realm": [
       {
@@ -48,361 +211,6 @@
       }
     ]
   },
-
-  "defaultRoles": [],
-
-  "groups": [
-    {
-      "name": "tenants",
-      "subGroups": [
-        {
-          "name": "${AIHUB_STARTUP_TENANT_ID}"
-        }
-      ]
-    }
-  ],
-
-  "defaultGroups": ["/tenants/${AIHUB_STARTUP_TENANT_ID}"],
-
-  "clients": [
-    {
-      "clientId": "aihub-frontend",
-      "name": "AI-Hub Admin UI",
-      "description": "Frontend application for AI-Hub administration (covers both ${DOMAIN} for @swiss-ai-hub/web and sysadmin.${DOMAIN} for @swiss-ai-hub/sysadmin-web — same realm, shared SSO session via Keycloak's realm cookie).",
-      "enabled": true,
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "authorizationServicesEnabled": false,
-      "rootUrl": "https://${DOMAIN}",
-      "baseUrl": "/",
-      "redirectUris": [
-        "https://${DOMAIN}/*",
-        "https://sysadmin.${DOMAIN}/*"
-      ],
-      "webOrigins": ["+"],
-      "protocol": "openid-connect",
-      "attributes": {
-        "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "https://${DOMAIN}/*##https://sysadmin.${DOMAIN}/*"
-      },
-      "defaultClientScopes": [
-        "openid",
-        "profile",
-        "email",
-        "roles",
-        "tenants"
-      ],
-      "protocolMappers": [
-        {
-          "name": "realm-roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        },
-        {
-          "name": "account-audience",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "account",
-            "id.token.claim": "false",
-            "access.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "openwebui",
-      "name": "Open WebUI",
-      "description": "Chat interface for AI-Hub",
-      "enabled": true,
-      "publicClient": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}",
-      "rootUrl": "https://openwebui.${DOMAIN}",
-      "baseUrl": "/",
-      "redirectUris": [
-        "https://openwebui.${DOMAIN}/oauth/oidc/callback"
-      ],
-      "webOrigins": ["+"],
-      "protocol": "openid-connect",
-      "attributes": {
-        "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "https://openwebui.${DOMAIN}/*"
-      },
-      "defaultClientScopes": [
-        "openid",
-        "profile",
-        "email",
-        "roles"
-      ],
-      "protocolMappers": [
-        {
-          "name": "email-claim",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-property-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "email",
-            "user.attribute": "email",
-            "jsonType.label": "String",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        },
-        {
-          "name": "realm-roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "oauth2-proxy-dagster",
-      "name": "Dagster UI",
-      "description": "OAuth2 proxy client for Dagster pipeline management UI",
-      "enabled": true,
-      "publicClient": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}",
-      "protocol": "openid-connect",
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "rootUrl": "https://dagster.${DOMAIN}",
-      "redirectUris": [
-        "https://dagster.${DOMAIN}/*"
-      ],
-      "webOrigins": ["+"],
-      "defaultClientScopes": [
-        "openid",
-        "profile",
-        "email",
-        "roles"
-      ],
-      "protocolMappers": [
-        {
-          "name": "realm-roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "oauth2-proxy-datalake",
-      "name": "Data Lake (SeaweedFS)",
-      "description": "OAuth2 proxy client for SeaweedFS Filer data lake UI",
-      "enabled": true,
-      "publicClient": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}",
-      "protocol": "openid-connect",
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "rootUrl": "https://datalake.${DOMAIN}",
-      "redirectUris": [
-        "https://datalake.${DOMAIN}/*"
-      ],
-      "webOrigins": ["+"],
-      "defaultClientScopes": [
-        "openid",
-        "profile",
-        "email",
-        "roles"
-      ],
-      "protocolMappers": [
-        {
-          "name": "realm-roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "oauth2-proxy-attu",
-      "name": "Attu (Milvus Admin)",
-      "description": "OAuth2 proxy client for Attu Milvus vector database admin UI",
-      "enabled": true,
-      "publicClient": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}",
-      "protocol": "openid-connect",
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "rootUrl": "https://attu.${DOMAIN}",
-      "redirectUris": [
-        "https://attu.${DOMAIN}/*"
-      ],
-      "webOrigins": ["+"],
-      "defaultClientScopes": [
-        "openid",
-        "profile",
-        "email",
-        "roles"
-      ],
-      "protocolMappers": [
-        {
-          "name": "realm-roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "oauth2-proxy-backup",
-      "name": "Backup Dagster UI",
-      "description": "OAuth2 proxy client for the backup Dagster admin UI",
-      "enabled": true,
-      "publicClient": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}",
-      "protocol": "openid-connect",
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "rootUrl": "https://backup.${DOMAIN}",
-      "redirectUris": [
-        "https://backup.${DOMAIN}/*"
-      ],
-      "webOrigins": ["+"],
-      "defaultClientScopes": [
-        "openid",
-        "profile",
-        "email",
-        "roles"
-      ],
-      "protocolMappers": [
-        {
-          "name": "realm-roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "langfuse",
-      "name": "Langfuse (LLM Observability)",
-      "description": "OIDC client for Langfuse native Keycloak SSO",
-      "enabled": true,
-      "publicClient": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_LANGFUSE_CLIENT_SECRET}",
-      "protocol": "openid-connect",
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "rootUrl": "https://langfuse.${DOMAIN}",
-      "redirectUris": [
-        "https://langfuse.${DOMAIN}/*"
-      ],
-      "webOrigins": ["+"],
-      "defaultClientScopes": [
-        "openid",
-        "profile",
-        "email",
-        "langfuse-sysadmin-gate"
-      ]
-    },
-    {
-      "clientId": "aihub-api-service",
-      "name": "AI-Hub API Service Account",
-      "description": "Service account for API backend with user and group management permissions.",
-      "enabled": true,
-      "publicClient": false,
-      "standardFlowEnabled": false,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": true,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_API_SERVICE_CLIENT_SECRET}",
-      "protocol": "openid-connect"
-    }
-  ],
-
   "clientScopes": [
     {
       "name": "openid",
@@ -598,42 +406,359 @@
       }
     }
   ],
-
-  "users": [
+  "clients": [
     {
-      "username": "${SUPERUSER_USERNAME}",
-      "email": "${SUPERUSER_EMAIL}",
-      "firstName": "${SUPERUSER_FIRSTNAME}",
-      "lastName": "${SUPERUSER_LASTNAME}",
+      "clientId": "aihub-frontend",
+      "name": "AI-Hub Admin UI",
+      "description": "Frontend application for AI-Hub administration (covers both the main domain for @swiss-ai-hub/web and the sysadmin subdomain for @swiss-ai-hub/sysadmin-web \u2014 same realm, shared SSO session via Keycloak's realm cookie).",
       "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "${SUPERUSER_PASSWORD}",
-          "temporary": false
-        }
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "rootUrl": "https://$(env:DOMAIN)",
+      "baseUrl": "/",
+      "redirectUris": [
+        "https://$(env:DOMAIN)/*",
+        "https://sysadmin.$(env:DOMAIN)/*"
       ],
-      "realmRoles": ${SUPERUSER_ROLES_JSON}
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://$(env:DOMAIN)/*##https://sysadmin.$(env:DOMAIN)/*"
+      },
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles",
+        "tenants"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "account-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "account",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
     },
     {
-      "username": "service-account-aihub-api-service",
+      "clientId": "openwebui",
+      "name": "Open WebUI",
+      "description": "Chat interface for AI-Hub",
       "enabled": true,
-      "serviceAccountClientId": "aihub-api-service",
-      "clientRoles": {
-        "realm-management": ["view-identity-providers", "manage-users", "view-users", "query-users", "query-groups", "view-groups", "view-realm", "view-clients"]
-      }
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:KEYCLOAK_OPENWEBUI_CLIENT_SECRET)",
+      "rootUrl": "https://openwebui.$(env:DOMAIN)",
+      "baseUrl": "/",
+      "redirectUris": [
+        "https://openwebui.$(env:DOMAIN)/oauth/oidc/callback"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://openwebui.$(env:DOMAIN)/*"
+      },
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+      ],
+      "protocolMappers": [
+        {
+          "name": "email-claim",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "email",
+            "user.attribute": "email",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "oauth2-proxy-dagster",
+      "name": "Dagster UI",
+      "description": "OAuth2 proxy client for Dagster pipeline management UI",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "rootUrl": "https://dagster.$(env:DOMAIN)",
+      "redirectUris": [
+        "https://dagster.$(env:DOMAIN)/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "oauth2-proxy-datalake",
+      "name": "Data Lake (SeaweedFS)",
+      "description": "OAuth2 proxy client for SeaweedFS Filer data lake UI",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "rootUrl": "https://datalake.$(env:DOMAIN)",
+      "redirectUris": [
+        "https://datalake.$(env:DOMAIN)/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "oauth2-proxy-attu",
+      "name": "Attu (Milvus Admin)",
+      "description": "OAuth2 proxy client for Attu Milvus vector database admin UI",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "rootUrl": "https://attu.$(env:DOMAIN)",
+      "redirectUris": [
+        "https://attu.$(env:DOMAIN)/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "oauth2-proxy-backup",
+      "name": "Backup Dagster UI",
+      "description": "OAuth2 proxy client for the backup Dagster admin UI",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "rootUrl": "https://backup.$(env:DOMAIN)",
+      "redirectUris": [
+        "https://backup.$(env:DOMAIN)/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "langfuse",
+      "name": "Langfuse (LLM Observability)",
+      "description": "OIDC client for Langfuse native Keycloak SSO",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:KEYCLOAK_LANGFUSE_CLIENT_SECRET)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "rootUrl": "https://langfuse.$(env:DOMAIN)",
+      "redirectUris": [
+        "https://langfuse.$(env:DOMAIN)/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "langfuse-sysadmin-gate"
+      ]
+    },
+    {
+      "clientId": "aihub-api-service",
+      "name": "AI-Hub API Service Account",
+      "description": "Service account for API backend with user and group management permissions.",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:KEYCLOAK_API_SERVICE_CLIENT_SECRET)",
+      "protocol": "openid-connect"
     }
   ],
-
-  "browserSecurityHeaders": {
-    "contentSecurityPolicyReportOnly": "",
-    "xContentTypeOptions": "nosniff",
-    "xRobotsTag": "none",
-    "xFrameOptions": "",
-    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' https://${DOMAIN} https://*.${DOMAIN}; object-src 'none';"
-  },
-
+  "browserFlow": "browser-aihub",
   "authenticationFlows": [
     {
       "alias": "Post Broker Login - AIHubAccess Check",
@@ -856,7 +981,6 @@
       ]
     }
   ],
-
   "authenticatorConfig": [
     {
       "alias": "aihub-access-role-condition",
@@ -911,20 +1035,5 @@
         "error_message": "Access denied. Langfuse is restricted to system administrators (AIHubSysAdmin). Please contact your administrator."
       }
     }
-  ],
-
-  "smtpServer": {},
-
-  "eventsEnabled": true,
-  "eventsListeners": ["jboss-logging"],
-  "enabledEventTypes": [
-    "LOGIN",
-    "LOGIN_ERROR",
-    "LOGOUT",
-    "LOGOUT_ERROR",
-    "CODE_TO_TOKEN",
-    "CODE_TO_TOKEN_ERROR"
-  ],
-  "adminEventsEnabled": true,
-  "adminEventsDetailsEnabled": true
+  ]
 }

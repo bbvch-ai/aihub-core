@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-process"
-version = "0.298.3"
+version = "0.299.0"
 description = "Swiss AI Hub Process SDK: orchestrate multi-entity business processes across agents, humans, and programs."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -23,14 +23,14 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.298.3",
+    "swiss-ai-hub-core==0.299.0",
     "uvicorn[standard]>=0.34.0",
     "httpx>=0.28.1",
 ]
 
 [dependency-groups]
 dev = [
-    "swiss-ai-hub-agent==0.298.3",
+    "swiss-ai-hub-agent==0.299.0",
     "asgi-lifespan>=2.1.0",
 ]
 

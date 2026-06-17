@@ -49,31 +49,31 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_INFO_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
-| `DOMAIN` | `keycloak-realm.json` | `api`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `keycloak`, `langfuse-web`, `litellm`, `llm_wrapping_agent`, `namespace_selection_agent`, `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed`, `open-webui`, `rag_agent`, `retrieval_agent`, `seaweedfs-s3`, `shared_rag_pipeline`, `sysadmin-api`, `sysadmin-web`, `traefik`, `web` |  |
+| `DOMAIN` | `30-clients.json`, `realm-settings.json` | `api`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `keycloak`, `keycloak-config`, `langfuse-web`, `litellm`, `llm_wrapping_agent`, `namespace_selection_agent`, `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed`, `open-webui`, `rag_agent`, `retrieval_agent`, `seaweedfs-s3`, `shared_rag_pipeline`, `sysadmin-api`, `sysadmin-web`, `traefik`, `web` |  |
 | `ENV` |  | `api`, `open-webui`, `sysadmin-api` |  |
 | `ETCD_TOKEN` |  | `etcd`, `etcd-init`, `milvus-standalone`, `seaweedfs-filer` |  |
 | `EXPERT_ASKING_CHANNEL_TYPE` |  | `expert_asking_agent` |  |
 | `GEMINI_API_KEY` |  | `litellm` |  |
 | `HUGGINGFACE_API_KEY` |  | `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` |  |
 | `JUPYTER_TOKEN` |  | `api`, `jupyter`, `open-webui` |  |
-| `KEYCLOAK_ADMIN_PASSWORD` |  | `keycloak` |  |
-| `KEYCLOAK_ADMIN_USER` |  | `keycloak` |  |
-| `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `keycloak`, `sysadmin-api` | Client secret for the API service account |
-| `KEYCLOAK_AZURE_CLIENT_ID` | `keycloak-identity-providers.json` | `keycloak` |  |
-| `KEYCLOAK_AZURE_CLIENT_SECRET` | `keycloak-identity-providers.json` | `keycloak` |  |
-| `KEYCLOAK_AZURE_TENANT_ID` | `keycloak-identity-providers.json` | `keycloak` |  |
-| `KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET` | `keycloak-realm.json` | `keycloak`, `oauth2proxy-attu` |  |
-| `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `keycloak-realm.json` | `oauth2proxy-backup` |  |
-| `KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET` | `keycloak-realm.json` | `keycloak`, `oauth2proxy-dagster` |  |
-| `KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET` | `keycloak-realm.json` | `keycloak`, `oauth2proxy-seaweed` |  |
-| `KEYCLOAK_OPENWEBUI_CLIENT_SECRET` | `keycloak-realm.json` | `keycloak`, `open-webui` |  |
+| `KEYCLOAK_ADMIN_PASSWORD` |  | `keycloak`, `keycloak-config` |  |
+| `KEYCLOAK_ADMIN_USER` |  | `keycloak`, `keycloak-config` |  |
+| `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `keycloak`, `keycloak-config`, `sysadmin-api` | Client secret for the API service account |
+| `KEYCLOAK_AZURE_CLIENT_ID` | `identity-providers.json` | `keycloak` |  |
+| `KEYCLOAK_AZURE_CLIENT_SECRET` | `identity-providers.json` | `keycloak` |  |
+| `KEYCLOAK_AZURE_TENANT_ID` | `identity-providers.json` | `keycloak` |  |
+| `KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-attu` |  |
+| `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-backup` |  |
+| `KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-dagster` |  |
+| `KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-seaweed` |  |
+| `KEYCLOAK_OPENWEBUI_CLIENT_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `open-webui` |  |
 | `KEYCLOAK_SHOW_KEYCLOAK_LOGIN` | `KeycloakSettings.SHOW_KEYCLOAK_LOGIN` | `api`, `sysadmin-api` | Show a direct Keycloak login button alongside federated IDPs |
 | `LANGFUSE_ALLOWED_ORGANIZATION_CREATORS` |  | `langfuse-web` |  |
 | `LANGFUSE_CLICKHOUSE_PASSWORD` |  | `backup-code`, `clickhouse`, `langfuse-web`, `langfuse-worker` |  |
 | `LANGFUSE_ENCRYPTION_KEY` |  | `langfuse-web`, `langfuse-worker` |  |
 | `LANGFUSE_INIT_USER_EMAIL` |  | `langfuse-web` |  |
 | `LANGFUSE_INIT_USER_PASSWORD` |  | `langfuse-web` |  |
-| `LANGFUSE_KEYCLOAK_CLIENT_SECRET` |  | `keycloak`, `langfuse-web` |  |
+| `LANGFUSE_KEYCLOAK_CLIENT_SECRET` |  | `keycloak`, `keycloak-config`, `langfuse-web` |  |
 | `LANGFUSE_NEXTAUTH_SECRET` |  | `langfuse-web` |  |
 | `LANGFUSE_PUBLIC_KEY` | `LangfuseSettings.PUBLIC_KEY` | `api`, `langfuse-web`, `otel-collector` | Langfuse public API key |
 | `LANGFUSE_SALT` |  | `langfuse-web`, `langfuse-worker` |  |
@@ -133,9 +133,9 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SLACK_CHANNEL_ID` |  | `expert_asking_agent` |  |
 | `SLACK_SERVICE_URL` |  | `expert_asking_agent` |  |
 | `SUPERUSER_EMAIL` | `SuperuserSettings.EMAIL` | `api`, `keycloak`, `sysadmin-api` | Keycloak email used to look up the superuser. |
-| `SUPERUSER_FIRSTNAME` | `keycloak-realm.json` | `keycloak` |  |
-| `SUPERUSER_LASTNAME` | `keycloak-realm.json` | `keycloak` |  |
-| `SUPERUSER_PASSWORD` | `keycloak-realm.json` | `keycloak` |  |
+| `SUPERUSER_FIRSTNAME` | `users-superuser.json` | `keycloak` |  |
+| `SUPERUSER_LASTNAME` | `users-superuser.json` | `keycloak` |  |
+| `SUPERUSER_PASSWORD` | `users-superuser.json` | `keycloak` |  |
 | `SUPERUSER_ROLES_JSON` | `SuperuserSettings.ROLES_JSON` | `api`, `keycloak`, `sysadmin-api` | JSON array of realm roles assigned to the superuser, shared verbatim with the Keycloak realm import via the same environment variable. Must include AIHubSysAdmin. |
 | `SUPERUSER_TOKEN` | `SuperuserSettings.TOKEN` | `api`, `open-webui`, `sysadmin-api` | Static bearer token for machine-to-machine API calls. Must start with 'sk-'. |
 | `SUPERUSER_USERNAME` | `SuperuserSettings.USERNAME` | `api`, `keycloak`, `sysadmin-api` | Keycloak username of the seeded superuser. |
@@ -215,7 +215,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `KEYCLOAK_API_SERVICE_CLIENT_ID` | `KeycloakSettings.API_SERVICE_CLIENT_ID` | `'aihub-api-service'` |  | Client ID for the API service account |
 | `KEYCLOAK_EXTERNAL_URL` | `KeycloakSettings.EXTERNAL_URL` | `None` | `api`, `bot`, `sysadmin-api` | Keycloak external URL as seen by browsers, used for issuer validation |
 | `KEYCLOAK_REALM` | `KeycloakSettings.REALM` | `'aihub'` | `api`, `bot`, `sysadmin-api` | Keycloak realm name |
-| `KEYCLOAK_URL` | `KeycloakSettings.URL` | _(supplied by compose)_ | `api`, `bot`, `sysadmin-api` | Keycloak internal URL for direct access (e.g., http://keycloak:8080) |
+| `KEYCLOAK_URL` | `KeycloakSettings.URL` | _(supplied by compose)_ | `api`, `bot`, `keycloak-config`, `sysadmin-api` | Keycloak internal URL for direct access (e.g., http://keycloak:8080) |
 | `LANGFUSE_BASE_URL` | `LangfuseSettings.BASE_URL` | _(supplied by compose)_ | `api` | Langfuse server base URL |
 | `LANGFUSE_PROJECT_ID` | `LangfuseSettings.PROJECT_ID` | `None` | `api` | Langfuse project ID for constructing dataset URLs |
 | `LANGFUSE_PUBLIC_URL` | `LangfuseSettings.PUBLIC_URL` | `None` | `api` | Public-facing Langfuse URL for browser links (e.g. https://langfuse.example.com) |

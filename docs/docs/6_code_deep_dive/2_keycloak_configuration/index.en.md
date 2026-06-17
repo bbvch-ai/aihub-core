@@ -5,15 +5,35 @@ description: High-level overview of the aihub realm — clients, scopes, roles, 
 
 # Keycloak Configuration
 
-Keycloak is the identity and access management component of the platform. All of its configuration is code: three Jinja2
-templates under `infra/deployment/templates/configs/` are rendered per deployment stage into `infra/configs/keycloak/`
-and mounted into the Keycloak container.
+Keycloak is the identity and access management component of the platform. All of its configuration is code: Jinja2
+templates under `infra/deployment/templates/configs/keycloak/` are rendered per deployment stage into
+`infra/configs/keycloak/` and applied to the Keycloak container through **two distinct lifecycles**. Understanding which
+lifecycle a piece of config belongs to is the single most important thing before changing it, because it determines
+whether an edit reaches an *already-running* deployment on the next AI-Hub upgrade or only a *freshly-initialized* one.
 
-| File                                  | Contains                                                         | Applied                                            |
-| ------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
-| `keycloak-realm.json.j2`              | The `aihub` realm: clients, scopes, roles, flows, …              | First container start only (`--import-realm`)      |
-| `keycloak-identity-providers.json.j2` | External IdPs (Azure AD) and their mappers                       | Every container start (`partialImport`, overwrite) |
-| `keycloak-entrypoint.sh.j2`           | Env-var substitution, import orchestration, kcadm reconciliation | Every container start                              |
+| Lifecycle     | Template folder       | Applied                                                                                                                                                      | Reaches existing deployments on upgrade?                                                                                                                                                        |
+| ------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bootstrap** | `keycloak/bootstrap/` | First container start only — merged into `aihub-realm.{stage}.json` and imported via `--import-realm`                                                        | **No.** Keycloak skips already-existing realms by design. Operator/admin-console edits survive; file changes reach an existing deployment only via the admin console or a fresh realm database. |
+| **Managed**   | `keycloak/managed/`   | Every container start — by the one-shot `keycloak-config` service ([keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli)) over the admin API | **Yes.** File wins, including deletions; admin-console drift on these objects is reverted on the next restart.                                                                                  |
+
+`keycloak-entrypoint.sh.j2` orchestrates the first-start import (env-var substitution + `--import-realm`) and applies
+the session-lifespan migration via `kcadm`; it no longer reconciles clients, flows, or identity providers — that is the
+`keycloak-config` service's job. The decision and mechanics are recorded in ADR
+`2026_06_12_declarative_keycloak_realm_reconciliation`.
+
+### What lives in each lifecycle
+
+| Lifecycle     | Realm objects                                                                                                                                                                                                                    |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bootstrap** | Realm-level settings (login theme, brute-force protection, session lifespans, SMTP), the user-profile component, the startup **tenant group** seed, the **superuser** seed, and the **identity providers** (Azure AD + mappers). |
+| **Managed**   | Realm **roles**, **client scopes**, **clients**, custom **authentication flows** (incl. the Langfuse sysadmin gate and its `browserFlow` binding), and the `aihub-api-service` **service account**.                              |
+
+::: tip Rule of thumb
+If you change something in `bootstrap/` and need it on an existing deployment, you must apply it manually (admin
+console) or reset the realm database. If you change something in `managed/`, a stack restart rolls it out automatically.
+Runtime data — real users, tenant-group memberships, and operator-tuned identity-provider edits — is never touched by
+either path.
+:::
 
 ## The `aihub` realm
 
@@ -86,12 +106,30 @@ Two custom mechanisms extend the built-in flows:
 
 ## How configuration reaches running instances
 
-The entrypoint script substitutes environment variables into the JSON templates (pure-bash `envsubst`; the Keycloak
-image ships no template tooling), then applies three layers with different lifecycles:
+The `generate_compose.py` renderer produces two outputs from the templates: it JSON-merges **all** documents (bootstrap
 
-1. **Realm JSON** — imported via `--import-realm` on the *first* start only. Keycloak never re-imports an existing
-   realm, so realm-file changes do not reach already-initialized databases by themselves.
-2. **Identity providers** — applied on *every* start via the admin API (`partialImport` with overwrite), so IdP and
-   mapper changes roll out with a container restart.
-3. **Langfuse sysadmin gate** — authentication flows are not supported by `partialImport`, so the entrypoint reconciles
-   the gate idempotently via `kcadm` on every start (details in [Langfuse Sysadmin Gate](1_langfuse_sysadmin_gate/)).
+- managed) into a single `aihub-realm.{stage}.json` for the first-start import, and it renders each **managed** document
+  separately as an input file for the `keycloak-config` service. At runtime the two lifecycles apply as follows:
+
+1. **First start (bootstrap + managed seed).** The Keycloak entrypoint substitutes environment variables into the merged
+   realm JSON (pure-bash `envsubst`; the Keycloak image ships no template tooling) and imports it via `--import-realm`.
+   This creates the complete realm in one shot — realm settings, tenant group, superuser, identity providers, roles,
+   scopes, clients, and flows — so dependent services (oauth2-proxies, Open WebUI, Langfuse) come up without waiting for
+   the reconciler. Keycloak **never re-imports an existing realm**, so on later starts this step is a no-op.
+2. **Every start (managed reconcile = the upgrade path).** Once Keycloak is healthy, the one-shot `keycloak-config`
+   service reconciles the `managed/` documents over the admin API: roles, client scopes, clients, authentication flows
+   (including the Langfuse gate and the `browserFlow` binding), and the API service account. **This is what an AI-Hub
+   version upgrade updates** — file wins, deletions included, admin-console drift reverted. It adopts the entities the
+   first-start import already created, so fresh and existing deployments converge to the same state.
+
+What this means in practice when upgrading AI-Hub:
+
+- **Managed** changes (a new client, a changed redirect URI, a new realm role, an altered auth flow) **roll out
+  automatically** on the next stack start.
+- **Bootstrap** changes (realm settings, the tenant-group seed, the superuser, **identity providers**) do **not** reach
+  an already-initialized realm. Apply them in the Keycloak admin console, or re-seed by resetting the realm database.
+  Conversely, this is exactly why operator edits to those objects (e.g. rotating an Azure client secret in the console,
+  tuning session lifespans) survive upgrades.
+
+The Langfuse sysadmin gate follows the managed path (its flows live in `managed/40-auth-flows.json.j2`); details in
+[Langfuse Sysadmin Gate](1_langfuse_sysadmin_gate/).
