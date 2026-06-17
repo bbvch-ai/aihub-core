@@ -153,6 +153,38 @@ class TenantMetadataEntity(Document):
 
     @classmethod
     @trace_fn
+    def grant_access_rule(cls, tenant_id: str, access_rule: str) -> Self:
+        """Adds a single access rule to a tenant's ceiling. Idempotent.
+
+        Uses read-modify-write ``.save()`` (not an atomic update) so ``AccessChangeHook``
+        post_save signals fire and OpenWebUI access re-syncs. Raises if the tenant has no
+        metadata row, so callers can roll back a dependent operation.
+        """
+        tenant = cls.get_metadata_by_tenant_id(tenant_id)
+        if not tenant:
+            raise ValueError(f"No tenant metadata for '{tenant_id}'; cannot grant access rule.")
+
+        if access_rule not in tenant.access_rules:
+            tenant.access_rules.append(access_rule)
+            tenant.updated_at = datetime.now(UTC)
+            tenant.save()
+        return tenant
+
+    @classmethod
+    @trace_fn
+    def revoke_access_rule_from_all_tenants(cls, access_rules: list[str]) -> None:
+        """Removes the given access rules from every tenant ceiling that holds any of them.
+
+        Uses ``.save()`` per modified row so ``AccessChangeHook`` re-syncs OpenWebUI.
+        """
+        rules_to_remove = set(access_rules)
+        for tenant in cls.objects(access_rules__in=list(rules_to_remove)):
+            tenant.access_rules = [rule for rule in tenant.access_rules if rule not in rules_to_remove]
+            tenant.updated_at = datetime.now(UTC)
+            tenant.save()
+
+    @classmethod
+    @trace_fn
     def delete_tenant_metadata(cls, tenant_id: str) -> bool:
         """Atomically deletes the metadata row. Returns True if a row was removed, False otherwise.
 
