@@ -44,7 +44,12 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.discovery.agent_config_specs import AgentConfigSpecs
     from swiss_ai_hub.core.events.agent.discovery.agent_config_specs_entity import AgentConfigSpecsEntity
     from swiss_ai_hub.core.events.agent.display.chunk_event import ChunkEvent
+    from swiss_ai_hub.core.events.agent.display.conversation_tags_event import ConversationTagsEvent
+    from swiss_ai_hub.core.events.agent.display.conversation_title_event import ConversationTitleEvent
     from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
+    from swiss_ai_hub.core.events.agent.display.suggested_follow_up_questions_event import (
+        SuggestedFollowUpQuestionsEvent,
+    )
     from swiss_ai_hub.core.events.agent.display.thought_event import ThoughtEvent
     from swiss_ai_hub.core.events.agent.guard.agent_suitability_accept_event import AgentSuitabilityAcceptEvent
     from swiss_ai_hub.core.events.agent.guard.agent_suitability_reject_event import AgentSuitabilityRejectEvent
@@ -146,6 +151,8 @@ __all__ = [
     "ContextSufficientAcceptEvent",
     "ControlAndDisplayEvent",
     "ControlEvent",
+    "ConversationTagsEvent",
+    "ConversationTitleEvent",
     "CostEvent",
     "DisplayEvent",
     "Embedding",
@@ -196,6 +203,7 @@ __all__ = [
     "StandaloneQuestionCondenserEvent",
     "StartEvent",
     "StopEvent",
+    "SuggestedFollowUpQuestionsEvent",
     "StoreOrganizationMemoryEvent",
     "StoreUserMemoryEvent",
     "TeamsConfig",
@@ -229,6 +237,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "BotInTheLoopResponseEvent": "swiss_ai_hub.core.events.agent.bitl.response.bot_in_the_loop_response_event",
     "ChainEvent": "swiss_ai_hub.core.events.agent.semantic.chain.chain_event",
     "ChunkEvent": "swiss_ai_hub.core.events.agent.display.chunk_event",
+    "ConversationTagsEvent": "swiss_ai_hub.core.events.agent.display.conversation_tags_event",
+    "ConversationTitleEvent": "swiss_ai_hub.core.events.agent.display.conversation_title_event",
     "ContextInsufficientRejectEvent": "swiss_ai_hub.core.events.agent.guard.context_insufficient_reject_event",
     "ContextSufficientAcceptEvent": "swiss_ai_hub.core.events.agent.guard.context_sufficient_accept_event",
     "ControlAndDisplayEvent": "swiss_ai_hub.core.events.agent.control_and_display_event",
@@ -283,6 +293,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "StandaloneQuestionCondenserEvent": "swiss_ai_hub.core.events.agent.common.standalone_question_condenser_event",
     "StartEvent": "swiss_ai_hub.core.events.agent.control.start.start_event",
     "StopEvent": "swiss_ai_hub.core.events.agent.control.stop.stop_event",
+    "SuggestedFollowUpQuestionsEvent": ("swiss_ai_hub.core.events.agent.display.suggested_follow_up_questions_event"),
     "StoreOrganizationMemoryEvent": "swiss_ai_hub.core.events.agent.memory.store.store_organization_memory_event",
     "StoreUserMemoryEvent": "swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event",
     "TeamsConfig": "swiss_ai_hub.core.events.agent.bitl.request.bot_in_the_loop_request_event",

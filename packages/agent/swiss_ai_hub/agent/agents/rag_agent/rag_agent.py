@@ -5,6 +5,8 @@ from swiss_ai_hub.core.events.agent import (
     AddMemoryToChatHistoryEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
+    ConversationTagsEvent,
+    ConversationTitleEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
     LimitChatHistoryEvent,
@@ -21,6 +23,7 @@ from swiss_ai_hub.core.events.agent import (
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
     StoreUserMemoryEvent,
+    SuggestedFollowUpQuestionsEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -45,6 +48,11 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
+    do_generate_tags,
+    do_generate_title_once,
+    do_suggest_follow_up_questions,
+)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.preconditions import (
     check_context_ready_for_history_limit,
@@ -168,6 +176,24 @@ async def ready_for_stop(
 ) -> bool:
     """Precondition to ensure all required steps are complete before stopping."""
     return check_ready_for_stop(config, store_memory_event)
+
+
+@precondition()
+async def title_generation_enabled(event: LLMEvent, config: RAGAgentConfig) -> bool:
+    """Precondition to check if conversation title generation is enabled."""
+    return config.conversation_metadata.generate_title
+
+
+@precondition()
+async def tag_generation_enabled(event: LLMEvent, config: RAGAgentConfig) -> bool:
+    """Precondition to check if conversation tag generation is enabled."""
+    return config.conversation_metadata.generate_tags
+
+
+@precondition()
+async def follow_up_suggestion_enabled(event: LLMEvent, config: RAGAgentConfig) -> bool:
+    """Precondition to check if follow-up question suggestion is enabled."""
+    return config.conversation_metadata.suggest_follow_ups
 
 
 class RAGAgent(Agent):
@@ -548,6 +574,71 @@ class RAGAgent(Agent):
             displayer,
             t,
             as_stop_step=False,
+        )
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
+        icon="mdi:format-title",
+        precondition=title_generation_enabled,
+    )
+    async def generate_conversation_title_step(
+        self,
+        llm_event: LLMEvent,
+        agent_config: RAGAgentConfig,
+        thread_context: ThreadContext,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> ConversationTitleEvent | None:
+        """Generate a stable conversation title once a topic is identifiable; emit nothing otherwise."""
+        return await do_generate_title_once(
+            chat_messages=llm_event.chat_messages,
+            thread_context=thread_context,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+        )
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.tags.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.tags.description"),
+        icon="mdi:tag-multiple",
+        precondition=tag_generation_enabled,
+    )
+    async def generate_conversation_tags_step(
+        self,
+        llm_event: LLMEvent,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> ConversationTagsEvent | None:
+        """Generate category tags for the conversation each turn; emit nothing when no topic is identifiable."""
+        return await do_generate_tags(
+            chat_messages=llm_event.chat_messages,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+        )
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.description"),
+        icon="mdi:comment-question-outline",
+        precondition=follow_up_suggestion_enabled,
+    )
+    async def suggest_follow_up_questions_step(
+        self,
+        llm_event: LLMEvent,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> SuggestedFollowUpQuestionsEvent | None:
+        """Suggest follow-up questions for the latest answer; emit nothing when none are appropriate."""
+        return await do_suggest_follow_up_questions(
+            chat_messages=llm_event.chat_messages,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
         )
 
     @step(
