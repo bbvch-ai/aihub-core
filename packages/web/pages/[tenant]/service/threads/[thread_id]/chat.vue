@@ -1,27 +1,11 @@
 <template>
-  <StructuralColumn
-    :title="t('thread.chat.title')"
-    close-route="/service/threads"
-    :loading="threadIsLoading || threadEventsAreLoading"
-  >
-    <ChatThread
-      :events="threadEvents"
-      :thread="thread"
-    />
+  <StructuralColumn :title="t('thread.chat.title')" close-route="/service/threads"
+    :loading="threadIsLoading || threadEventsAreLoading">
+    <ChatThread :events="threadEvents" :thread="thread" />
     <div class="pt-16">
-      <Textarea
-        v-model="userInput"
-        aria-label="Chat input"
-        class="w-full"
-        auto-resize
-        rows="5"
-        cols="30"
-      />
-      <Button
-        label="Send new Message"
-        class="w-full"
-        @click="submitMessage"
-      />
+      <Textarea v-model="userInput" :aria-label="t('thread.chat.placeholder')" class="w-full" auto-resize rows="5"
+        cols="30" />
+      <Button label="Send new Message" class="w-full" @click="submitMessage" />
     </div>
   </StructuralColumn>
 </template>
