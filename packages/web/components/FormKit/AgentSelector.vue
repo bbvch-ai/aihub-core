@@ -93,7 +93,7 @@
 
 <script setup lang="ts">
 import { getAgentClasses, getAgentClassInstances } from '@core/sdk/client'
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { AgentClassDto, FullAgentInstanceDto, LocaleString } from '@core/sdk/client'
 
@@ -200,7 +200,7 @@ function emitValue(agentClass: string, agentId: string) {
 const classOptions = computed<ClassOption[]>(() =>
   agentClasses.value.map(cls => ({
     name: cls.agent_class,
-    displayName: getLocalizedValue(cls.name, locale.value) || useChangeCase(cls.agent_class, 'capitalCase'),
+    displayName: getLocalizedValue(cls.name, locale.value) || capitalCase(cls.agent_class),
     icon: cls.icon || 'mage:robot',
   })),
 )

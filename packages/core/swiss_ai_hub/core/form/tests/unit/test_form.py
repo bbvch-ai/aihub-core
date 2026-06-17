@@ -881,6 +881,20 @@ class FormWithNullableLeaf(Form):
     count: Annotated[int | InputNumber | None, Field(description="Count")] = None
 
 
+class FormWithDefaultedNullableLeaf(Form):
+    """Optional scalar leaf whose data default is a concrete non-null value."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    count: Annotated[int | InputNumber | None, Field(description="Count")] = 5
+
+
+class FormWithDefaultedNullableSubForm(Form):
+    """Optional nested form whose data default is a concrete (non-null) instance."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[NullableInnerForm | None, Field(description="Inner", title="Inner")] = NullableInnerForm(value=5)
+
+
 class TestNullableFlag:
     """Tests for the nullable flag on sub-forms and leaf elements."""
 
@@ -925,6 +939,35 @@ class TestNullableFlag:
         )
         for element in form.to_formkit_form():
             assert element.nullable is False
+            assert element.default_enabled is None
+
+    def test_nullable_leaf_default_enabled_reflects_default(self) -> None:
+        # default is None -> toggle should start off
+        none_default = FormWithNullableLeaf(
+            name=InputText(label=LocaleString(en="Name")),
+            count=InputNumber(label=LocaleString(en="Count")),
+        ).to_formkit_form()
+        assert next(e for e in none_default if e.name == "count").default_enabled is False
+
+        # default is a concrete value -> toggle should start on
+        value_default = FormWithDefaultedNullableLeaf(
+            name=InputText(label=LocaleString(en="Name")),
+            count=InputNumber(label=LocaleString(en="Count")),
+        ).to_formkit_form()
+        assert next(e for e in value_default if e.name == "count").default_enabled is True
+
+    def test_nullable_subform_default_enabled_reflects_default(self) -> None:
+        none_default = FormWithNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        ).to_formkit_form()
+        assert next(e for e in none_default if e.name == "inner").default_enabled is False
+
+        value_default = FormWithDefaultedNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        ).to_formkit_form()
+        assert next(e for e in value_default if e.name == "inner").default_enabled is True
 
     def test_nullable_subform_submission_accepts_null(self) -> None:
         Model = FormWithNullableSubForm.to_form_submission_model()

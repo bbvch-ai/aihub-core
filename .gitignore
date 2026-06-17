@@ -49,3 +49,6 @@ CLAUDE.local.md
 /models/
 /dist/
 /data/
+
+# Local-only manual test runbook (kept out of the PR)
+/keycloak-config-lifecycle-test.md

@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { CreateNamespaceRequest, DatabaseDto } from '@core/sdk/client'
 
@@ -146,7 +146,7 @@ const databaseOptions = computed(() =>
     .filter(db => !db.auto_sync)
     .map(db => ({
       name: db.name,
-      displayName: useChangeCase(db.name, 'capitalCase'),
+      displayName: capitalCase(db.name),
     })),
 )
 const nameValidationError = computed(() => {

@@ -141,39 +141,32 @@ The client secret value is displayed only once immediately after creation. If th
 created. Store in a password manager or secure vault.
 :::
 
-**Step 5: Configure app roles (optional)**
+**Step 5: Configure app roles**
 
-::: tip
-App roles in Azure Entra ID are **optional** for the Swiss AI Hub platform. Platform roles (AIHubAdmin, AIHubUser) are
-managed locally through the admin interface, not synced from the identity provider. These Azure app roles are only
-needed if you want to control access to integrated services (Dagster, SeaweedFS, Attu) that use their own OAuth2 flows.
+The `aihub` realm consumes exactly **two** app roles from the IdP, mapped by name from the Azure `roles` claim to
+Keycloak realm roles of the same name:
+
+- `AIHubAccess` — **required to log in.** Users without it are denied at the Keycloak login flow.
+- `AIHubSysAdmin` — platform administrator; gates the oauth2-proxy admin tools (Dagster, SeaweedFS, Attu, Backup) and
+  Langfuse, and marks platform superusers.
+
+::: tip Platform roles are not Azure app roles
+`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, … are **platform** roles — tenant-scoped and managed inside the platform,
+not synced from Entra ID. Do **not** create Azure app roles for them; they have no effect at the Keycloak realm level.
+The roles a new user receives are controlled by the `AIHUB_USER_SIGNUP_*` environment variables.
 :::
 
-Create four app roles following this process:
+Create the two app roles:
 
 1. Navigate to **"App roles"** → **"Create app role"**
 2. Create each of the following roles:
 
-**Administrator role:**
+**Access role (required for login):**
 
-- **Display name**: `AIHubAdmin`
+- **Display name**: `AIHubAccess`
 - **Allowed member types**: `Users/Groups`
-- **Value**: `AIHubAdmin`
-- **Description**: `Administrator access to Swiss AI Hub platform`
-
-**User role:**
-
-- **Display name**: `AIHubUser`
-- **Allowed member types**: `Users/Groups`
-- **Value**: `AIHubUser`
-- **Description**: `Standard user access to Swiss AI Hub platform`
-
-**Developer role:**
-
-- **Display name**: `AIHubDeveloper`
-- **Allowed member types**: `Users/Groups`
-- **Value**: `AIHubDeveloper`
-- **Description**: `Developer access to Swiss AI Hub platform services`
+- **Value**: `AIHubAccess`
+- **Description**: `Required to log in to Swiss AI Hub`
 
 **System Administrator role:**
 
@@ -184,8 +177,8 @@ Create four app roles following this process:
 
 ::: tip
 The `AIHubSysAdmin` role is required to access the Dagster pipeline orchestration dashboard, the SeaweedFS data lake
-console at `datalake.${DOMAIN}`, and the Attu Milvus admin UI. Users without this role can still use the main Swiss AI
-Hub interface and OpenWebUI.
+console at `datalake.${DOMAIN}`, and the Attu Milvus admin UI. Users with only `AIHubAccess` can still use the main
+Swiss AI Hub interface and OpenWebUI.
 :::
 
 **Step 6: Configure SPA redirect URIs**

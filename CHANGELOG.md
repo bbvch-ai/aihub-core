@@ -5,6 +5,110 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.299.0] - 2026-06-17 - Streamlined Keycloak Management and Expanded LLM Support
+
+### Added
+
+- ✨ New LLM models, **Fable** and **Fable 1M**, are now available for use.
+- 🚀 A new `keycloak-config` service has been introduced to enable declarative, idempotent management of Keycloak realm
+  configurations, ensuring consistency across deployments.
+- 📄 A new Architecture Decision Record (ADR) detailing the **Declarative Keycloak Realm Reconciliation** outlines the
+  strategy for the updated configuration management system.
+- 📦 Keycloak configuration templates are now organized into `bootstrap/` (first-start only) and `managed/` (reconciled
+  on every start) directories for clearer lifecycle management.
+
+### Changed
+
+- 🔄 The **Keycloak configuration management** workflow has been fundamentally revised, transitioning from mixed
+  first-start imports and imperative `kcadm` scripts to a fully declarative approach using the new `keycloak-config`
+  service.
+- 📄 **Keycloak documentation** has been extensively updated to clearly define the new two-phase configuration lifecycle
+  (bootstrap vs. managed) and its implications for operators, including how changes are applied and maintained.
+- 🔑 **Azure Entra ID setup instructions** for platform roles have been clarified, specifying that `AIHubAccess` and
+  `AIHubSysAdmin` are the only Keycloak realm roles to be mapped from the Identity Provider. Other platform roles are
+  now explicitly stated to be managed internally by the platform.
+- 🔐 Access to **SeaweedFS Filer** and other admin tool UIs now consistently requires the `AIHubSysAdmin` realm role,
+  enhancing security and aligning access control across administrative interfaces.
+- 📚 The **Environment Variables documentation** has been thoroughly revised to reflect the new Keycloak configuration
+  structure and the services consuming each variable.
+- 📝 German documentation for **Platform vs. SDK** and the **Ecosystem Model** has been updated with minor wording
+  improvements and corrected license references to `AGPL-3.0-or-later`.
+
+### Removed
+
+- 🗑️ The monolithic `keycloak-realm.json.j2` and `keycloak-identity-providers.json.j2` templates have been retired,
+  replaced by the new modular `bootstrap/` and `managed/` Keycloak configuration files.
+- 🗑️ Imperative `kcadm` commands for identity provider and Langfuse sysadmin gate reconciliation have been removed from
+  the `keycloak-entrypoint.sh` script, as these are now handled declaratively by the `keycloak-config` service.
+
+### Refactor
+
+- 🧹 The **Keycloak entrypoint script (`keycloak-entrypoint.sh`)** has been significantly simplified by delegating
+  managed configuration reconciliation to the `keycloak-config` service.
+- 🛠️ The internal `generate_compose.py` tooling has been refactored to support the new modular Keycloak configuration
+  structure, including logic to merge bootstrap and managed documents for the initial realm import.
+- ⚙️ Keycloak's realm definition has been restructured across multiple, smaller JSON files within `bootstrap/` and
+  `managed/` to improve modularity and maintainability.
+
+______________________________________________________________________
+
+## [v0.298.3] - 2026-06-16 - Configuration Forms: Robustness and User Experience Improvements
+
+### Fixed
+
+- 🐛 **Configuration Form Defaults:** Resolved an issue where nullable fields with default values were not correctly
+  initialized on new form creation, leading to silent data loss of defaults. Forms now consistently apply declared
+  default values, ensuring a predictable user experience.
+- 🐛 **Repeater Row Stability:** Eliminated data corruption and UI inconsistencies in repeater components by implementing
+  stable, unique keys for each row. This prevents issues caused by re-indexing when non-last rows are removed from a
+  list.
+- 🐛 **Fractional Input Fields:** Corrected the behavior of numeric input fields (`InputNumber`) to properly accept and
+  display decimal values for fractional properties (e.g., LLM `temperature`), which previously rejected decimal points.
+- 🐛 **Form Rendering Robustness:** Enhanced the dynamic form builder to handle malformed schema elements gracefully. A
+  single invalid field will now be skipped and logged without causing the entire form section to disappear or become
+  unusable.
+- 🐛 **UI Performance & Stability:** Addressed intermittent blank or broken form displays by refactoring label and option
+  resolvers to use synchronous case conversion, eliminating reactive effect leakage and improving rendering stability.
+
+### Changed
+
+- 🔄 **Unified Form Data Handling:** The agent and process configuration forms now utilize a single, consistent pipeline
+  for hydrating initial data and serializing submissions. This ensures identical behavior and data integrity across both
+  creation and editing workflows.
+- 📄 **Nullable Field Toggle Logic:** Extended the backend form schema to include a `default_enabled` flag for nullable
+  elements. This accurately indicates whether a field with a non-null default value should appear enabled by default on
+  a fresh form.
+- ⚡️ **Symmetric Backend Normalization:** Agent and process creation endpoints now apply the same server-side
+  configuration normalization as update operations. This prevents internal UI artifacts (like FormKit `__validate__`
+  keys) from persisting in the configuration data.
+
+### Refactor
+
+- 🧹 **Case Conversion Utility:** Replaced the `useChangeCase` composable with a direct, synchronous `capitalCase`
+  utility across various UI components, contributing to the overall stability and performance of form rendering.
+
+______________________________________________________________________
+
+## [v0.298.2] - 2026-06-16 - Documentation Site Migration to Custom Domain
+
+### Added
+
+- 📄 **Custom Domain Configuration:** Integrated support for a custom domain (`docs.ai-hub.bbv.ch`) for the documentation
+  site, enhancing branding and direct access.
+- 🌐 **Sitemap Generation:** Enabled sitemap generation for the documentation portal, improving search engine
+  optimization and content discoverability.
+- 🤖 **Crawler Access:** Updated the `robots.txt` file to allow web crawlers to access and index the entire documentation
+  site.
+
+### Changed
+
+- 🚀 **Documentation Base Path:** Modified the documentation site's base path to be served from the root `/` (instead of
+  `/aihub-core/`), aligning with the new custom domain setup.
+- 🔗 **Live URL and Deployment Details:** Revised internal configuration and documentation to reflect the new live URL
+  (`https://docs.ai-hub.bbv.ch/`) and updated deployment specifics.
+
+______________________________________________________________________
+
 ## [v0.298.1] - 2026-06-16 - Enhanced Agent List Display and Filtering
 
 ### Changed

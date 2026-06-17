@@ -1,5 +1,12 @@
 # Keycloak SSO Session Lifespans
 
+> **Revised** by
+> [`2026_06_12_declarative_keycloak_realm_reconciliation`](./2026_06_12_declarative_keycloak_realm_reconciliation.md):
+> that ADR restructured the realm-config templates, so the `keycloak-realm.json.j2` referenced below was split into
+> `bootstrap/` + `managed/` templates and merged into `aihub-realm.{stage}.json` for the first-start import (the
+> lifespans now live in `bootstrap/realm-settings.json.j2`). The session-lifespan decision and mechanism described here
+> (first-start bootstrap seed + the entrypoint `kcadm` default-migration) are unchanged.
+
 ## Context
 
 The Keycloak realm import never set any session or token lifetime values, so every deployment ran on Keycloak's

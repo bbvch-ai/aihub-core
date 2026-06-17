@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const DEFAULT_LOCALE = 'en';
 export const DOCS_ROOT = path.resolve(__dirname, '../');
-export const BASE_URL = '/swiss-ai-hub';
+export const BASE_URL = 'https://docs.ai-hub.bbv.ch';
 
 const SORT_ORDER = {
   ROOT: 0,

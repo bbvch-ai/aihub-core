@@ -6,8 +6,10 @@ description: How the custom browser flow and the Langfuse sysadmin gate are buil
 # Langfuse Sysadmin Gate
 
 Langfuse logins are restricted to users with the `AIHubSysAdmin` realm role through custom authentication flows in the
-`aihub` realm. The enforcement happens entirely inside Keycloak (no oauth2-proxy) and is defined in
-`infra/deployment/templates/configs/keycloak-realm.json.j2` — see [Keycloak Configuration](../) for the realm overview.
+`aihub` realm. The enforcement happens entirely inside Keycloak (no oauth2-proxy). It is **managed** config (see
+[Keycloak Configuration](../) for the lifecycle model): the flows, the `browserFlow` binding and the authenticator
+configs live in `infra/deployment/templates/configs/keycloak/managed/40-auth-flows.json.j2`, the marker scope in
+`managed/20-client-scopes.json.j2`, and the scope's attachment to the `langfuse` client in `managed/30-clients.json.j2`.
 The decision rationale is recorded in the ADR
 `docs/arc42/decisions/2026_06_11_langfuse_access_restricted_to_sysadmins.md`.
 
@@ -67,8 +69,11 @@ the copy explicitly.
 
 ## How the gate reaches running instances
 
-The realm JSON is only imported on the **first** Keycloak start, and Keycloak's `partialImport` API does not support
-authentication flows. `infra/deployment/templates/configs/keycloak-entrypoint.sh.j2` therefore reconciles the gate
-idempotently via `kcadm` on every container start: create the marker scope → attach it to the `langfuse` client → build
-the flows → bind the realm browser flow. Each step is existence-checked, so fresh imports no-op and already-initialized
-databases converge on the next container restart with no manual steps.
+The gate is **managed** config, so it reconciles on every container start without any bespoke scripting. The `aihub`
+realm import seeds it on a fresh start (the flows are part of the merged realm JSON), and on every start the one-shot
+`keycloak-config` service ([keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli)) re-applies the
+`managed/` documents over the admin API — the marker scope, its attachment to the `langfuse` client, the flows, and the
+realm `browserFlow` binding. Because the realm-level `browserFlow` is set in `managed/40-auth-flows.json.j2` (not in the
+bootstrap realm settings), keycloak-config-cli rebinds the custom browser flow on **every** start, which is what
+activates the gate on already-initialized deployments — not just on the first `--import-realm`. Earlier revisions
+reconciled the gate imperatively via `kcadm` in the entrypoint; that is retired now that the whole gate is declarative.
