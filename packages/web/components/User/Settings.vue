@@ -17,6 +17,7 @@
           class="font-medium"
         >{{ t('user.language') }}</label>
         <Select
+          id="user-language-select"
           v-model="selectedLocale"
           input-id="user-language-select"
           :options="localeOptions"

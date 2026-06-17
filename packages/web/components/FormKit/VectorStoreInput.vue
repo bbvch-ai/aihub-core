@@ -9,6 +9,7 @@
         {{ t('lib.vectorStore.database.label') }}
       </label>
       <Select
+        id="vector-store-database-select"
         v-model="selectedDatabase"
         input-id="vector-store-database-select"
         :options="databaseOptions"

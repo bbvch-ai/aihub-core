@@ -46,6 +46,7 @@
       <Textarea
         v-else
         v-model="currentValue"
+        :aria-label="localizedPlaceholder"
         :placeholder="localizedPlaceholder"
         :rows="rows"
         class="w-full"

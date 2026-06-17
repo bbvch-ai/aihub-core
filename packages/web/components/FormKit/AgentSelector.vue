@@ -9,6 +9,7 @@
         {{ t('agent.selector.class.label') }}
       </label>
       <Select
+        id="agent-class-select"
         v-model="selectedClass"
         input-id="agent-class-select"
         :options="filteredClassOptions"
@@ -52,6 +53,7 @@
         {{ t('agent.selector.id.label') }}
       </label>
       <Select
+        id="agent-id-select"
         v-model="selectedId"
         input-id="agent-id-select"
         :options="idOptions"

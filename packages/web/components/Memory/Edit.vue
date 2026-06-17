@@ -5,9 +5,11 @@
         <label
           for="memory-content-textarea"
           class="text-xs font-medium text-gray-700 dark:text-gray-500"
-        >{{ t('memory.edit.memory_content_label') }}</label>
+        >{{
+          t('memory.edit.memory_content_label') }}</label>
         <Textarea
           v-if="isEditing"
+          id="memory-content-textarea"
           v-model="editedData"
           input-id="memory-content-textarea"
           auto-resize
