@@ -272,14 +272,15 @@ class OpenWebuiProvisioner:
     ) -> tuple[list[OnlineAgent], list[OnlineAgent], set[str]]:
         """Returns (models_to_create, models_to_update, model_ids_to_delete).
 
-        An agent is updated when its workspace model exists but the stored name drifted from
-        the current agent name (e.g. after a rename) — the only mutable field on the model.
+        An agent is updated when its workspace model exists but the stored name drifted from the
+        current agent name (e.g. after a rename) — the only field this diff reconciles. Access
+        grants are reconciled separately by _sync_access_grants.
         """
         desired_ids: set[str] = set()
         to_create: list[OnlineAgent] = []
         to_update: list[OnlineAgent] = []
         for agent in online_agents:
-            model_id = f"{AIHUB_MODEL_PREFIX}{agent.agent_class}-{agent.agent_id}"
+            model_id = OpenWebuiProvisioner._workspace_model_id(agent.agent_class, agent.agent_id)
             desired_ids.add(model_id)
             existing = existing_models.get(model_id)
             if existing is None:
