@@ -138,6 +138,17 @@ model_list:
       mode: audio_transcription
       base_model: openai/whisper-1
       input_cost_per_second: 0.00004083
+  # ===================================================================
+  # Image Generation Model (Cloud)
+  # ===================================================================
+  - model_name: image-generation/flux
+    litellm_params:
+      model: openai/flux
+      api_base: os.environ/SWISS_LLM_CLOUD_API_V1_BASE_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_V1_KEY
+      drop_params: true
+    model_info:
+      mode: image_generation
 # ===================================================================
 # Guardrails Configuration
 # ===================================================================
