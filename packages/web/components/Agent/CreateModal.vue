@@ -33,6 +33,7 @@
             {{ t('agent.create.selectClass') }}
           </label>
           <Select
+            id="agentClass"
             v-model="selectedClass"
             :options="agentClasses"
             option-label="agent_class"

@@ -23,6 +23,7 @@
             :options="statusOptions"
             option-label="label"
             option-value="value"
+            :aria-label="t('thread.list.filter.status_placeholder')"
             :placeholder="t('thread.list.filter.status_placeholder')"
             show-clear
             class="w-48"
@@ -32,6 +33,7 @@
             :options="agentInstanceOptions"
             option-label="label"
             option-value="value"
+            :aria-label="t('thread.list.filter.agent_name_placeholder')"
             :placeholder="t('thread.list.filter.agent_name_placeholder')"
             show-clear
             class="w-48"
@@ -41,6 +43,7 @@
             :options="userOptions"
             option-label="label"
             option-value="value"
+            :aria-label="t('thread.list.filter.user_name_placeholder')"
             :placeholder="t('thread.list.filter.user_name_placeholder')"
             show-clear
             class="w-48"

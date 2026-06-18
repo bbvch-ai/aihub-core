@@ -20,6 +20,10 @@ export const useDeleteAgentInstance = defineMutation(() => {
 
       queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-instances'] })
       queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-class-instances', agentClass] })
+      // Deleting an instance removes its per-instance admin role, so the tenant roles list and the
+      // creator's own account (roles + accessible services) are now stale
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'roles'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'my_user'] })
     },
   })
 
