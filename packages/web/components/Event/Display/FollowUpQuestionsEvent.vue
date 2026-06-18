@@ -17,10 +17,10 @@
 </template>
 
 <script setup lang="ts">
-import type { SuggestedFollowUpQuestionsEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
+import type { FollowUpQuestionsEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: ContextualizedAgentEvent & { event: SuggestedFollowUpQuestionsEvent }
+  event: ContextualizedAgentEvent & { event: FollowUpQuestionsEvent }
   thread: ThreadDto
 }>()
 </script>

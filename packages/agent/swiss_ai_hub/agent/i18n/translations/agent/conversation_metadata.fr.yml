@@ -4,18 +4,13 @@ steps:
     name: Générer le titre de la conversation
     description: Génère un titre court et stable résumant le sujet de la conversation
       dès qu'un sujet devient identifiable.
-  tags:
-    name: Générer les étiquettes de la conversation
-    description: Génère des étiquettes de catégorie décrivant la conversation, actualisées
-      à chaque tour pour suivre les changements de sujet.
   follow_ups:
     name: Suggérer des questions de suivi
     description: Suggère des questions de suivi que l'utilisateur pourrait vouloir
       poser ensuite, en fonction de la dernière réponse.
 thoughts:
   generating_title: Je réfléchis à un titre pour cette conversation
-  generating_tags: Je catégorise cette conversation
-  suggesting_follow_ups: Je réfléchis à des questions de suivi
+  generating_follow_ups: Je réfléchis à des questions de suivi
 prompts:
   title: |
     Génère un titre concis (3-6 mots) résumant le sujet de la conversation suivante.
@@ -25,14 +20,6 @@ prompts:
     salutations ou des banalités — renvoie null au lieu de deviner.
     Conversation :
     {conversation}
-  tags: |
-    Génère entre une et cinq courtes étiquettes de catégorie décrivant le sujet de la conversation
-    suivante. Rédige les étiquettes dans la langue de la conversation. Chaque étiquette doit comporter
-    un ou deux mots.
-    Si la conversation n'a pas encore de sujet identifiable — par exemple si elle ne contient que des
-    salutations ou des banalités — renvoie une liste vide au lieu de deviner.
-    Conversation :
-    {conversation}
   follow_ups: |
     À partir de la conversation suivante, suggère entre une et trois questions de suivi que
     l'utilisateur pourrait vouloir poser ensuite. Formule-les du point de vue de l'utilisateur et dans
@@ -40,17 +27,3 @@ prompts:
     Renvoie une liste vide si aucune question de suivi utile n'existe.
     Conversation :
     {conversation}
-config:
-  generate_title:
-    label: Générer le titre de la conversation
-    help: Permet à l'agent de générer un titre stable pour la conversation. Le titre
-      est défini une fois qu'un sujet est identifiable, puis conservé pour la conversation.
-  generate_tags:
-    label: Générer les étiquettes de la conversation
-    help: Permet à l'agent de générer des étiquettes de catégorie décrivant la conversation.
-      Les étiquettes sont actualisées à chaque tour pour refléter les changements
-      de sujet.
-  suggest_follow_ups:
-    label: Suggérer des questions de suivi
-    help: Permet à l'agent de suggérer des questions de suivi que l'utilisateur pourrait
-      vouloir poser ensuite après chaque réponse.

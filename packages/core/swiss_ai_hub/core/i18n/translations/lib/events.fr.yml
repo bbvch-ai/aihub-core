@@ -6,11 +6,8 @@ display_event:
 conversation_title_event:
   name: Titre de la Conversation
   description: L'agent a généré un titre résumant le sujet de la conversation.
-conversation_tags_event:
-  name: Étiquettes de la Conversation
-  description: L'agent a généré des étiquettes de catégorie décrivant la conversation.
-suggested_follow_up_questions_event:
-  name: Questions de Suivi Suggérées
+follow_up_questions_event:
+  name: Questions de Suivi
   description: L'agent a suggéré des questions de suivi que l'utilisateur pourrait
     vouloir poser ensuite.
 aitl_exception_event:

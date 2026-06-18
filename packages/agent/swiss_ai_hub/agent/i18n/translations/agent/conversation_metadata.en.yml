@@ -4,18 +4,13 @@ steps:
     name: Generate Conversation Title
     description: Generates a short, stable title summarizing the topic of the conversation
       once a topic becomes identifiable.
-  tags:
-    name: Generate Conversation Tags
-    description: Generates category tags describing the conversation, refreshed each
-      turn to track topic shifts.
   follow_ups:
     name: Suggest Follow-up Questions
     description: Suggests follow-up questions the user might want to ask next, based
       on the latest answer.
 thoughts:
   generating_title: Thinking of a title for this conversation
-  generating_tags: Categorizing this conversation
-  suggesting_follow_ups: Thinking of follow-up questions
+  generating_follow_ups: Thinking of follow-up questions
 prompts:
   title: |
     Generate a concise title (3-6 words) summarizing the topic of the following conversation.
@@ -25,14 +20,6 @@ prompts:
     small talk — return null instead of guessing.
     Conversation:
     {conversation}
-  tags: |
-    Generate between one and five short category tags describing the topic of the following
-    conversation. Write the tags in the language of the conversation. Each tag should be one or two
-    words.
-    If the conversation has no identifiable topic yet — for example it contains only greetings or
-    small talk — return an empty list instead of guessing.
-    Conversation:
-    {conversation}
   follow_ups: |
     Based on the following conversation, suggest between one and three follow-up questions the user
     might want to ask next. Phrase them from the user's perspective and in the language of the
@@ -40,16 +27,3 @@ prompts:
     Return an empty list if no useful follow-up question exists.
     Conversation:
     {conversation}
-config:
-  generate_title:
-    label: Generate conversation title
-    help: Let the agent generate a stable title for the conversation. The title is
-      set once a topic is identifiable and then kept for the conversation.
-  generate_tags:
-    label: Generate conversation tags
-    help: Let the agent generate category tags describing the conversation. Tags are
-      refreshed each turn to reflect topic changes.
-  suggest_follow_ups:
-    label: Suggest follow-up questions
-    help: Let the agent suggest follow-up questions the user might want to ask next
-      after each answer.

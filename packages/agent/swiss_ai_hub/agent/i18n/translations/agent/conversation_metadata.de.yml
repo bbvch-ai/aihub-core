@@ -4,18 +4,13 @@ steps:
     name: Gesprächstitel erstellen
     description: Erstellt einen kurzen, stabilen Titel, der das Thema des Gesprächs
       zusammenfasst, sobald ein Thema erkennbar ist.
-  tags:
-    name: Gesprächs-Tags erstellen
-    description: Erstellt Kategorie-Tags, die das Gespräch beschreiben, und aktualisiert
-      sie in jeder Runde, um Themenwechsel zu erfassen.
   follow_ups:
     name: Folgefragen vorschlagen
     description: Schlägt Folgefragen vor, die der Benutzer als Nächstes stellen könnte,
       basierend auf der letzten Antwort.
 thoughts:
   generating_title: Ich überlege mir einen Titel für dieses Gespräch
-  generating_tags: Ich kategorisiere dieses Gespräch
-  suggesting_follow_ups: Ich überlege mir Folgefragen
+  generating_follow_ups: Ich überlege mir Folgefragen
 prompts:
   title: |
     Erstelle einen prägnanten Titel (3-6 Wörter), der das Thema des folgenden Gesprächs zusammenfasst.
@@ -25,13 +20,6 @@ prompts:
     gib null zurück, anstatt zu raten.
     Gespräch:
     {conversation}
-  tags: |
-    Erstelle ein bis fünf kurze Kategorie-Tags, die das Thema des folgenden Gesprächs beschreiben.
-    Schreibe die Tags in der Sprache des Gesprächs. Jedes Tag sollte aus ein oder zwei Wörtern bestehen.
-    Wenn das Gespräch noch kein erkennbares Thema hat — zum Beispiel nur Begrüßungen oder Smalltalk —
-    gib eine leere Liste zurück, anstatt zu raten.
-    Gespräch:
-    {conversation}
   follow_ups: |
     Schlage basierend auf dem folgenden Gespräch ein bis drei Folgefragen vor, die der Benutzer als
     Nächstes stellen könnte. Formuliere sie aus der Perspektive des Benutzers und in der Sprache des
@@ -39,17 +27,3 @@ prompts:
     Gib eine leere Liste zurück, wenn keine sinnvolle Folgefrage existiert.
     Gespräch:
     {conversation}
-config:
-  generate_title:
-    label: Gesprächstitel erstellen
-    help: Lässt den Agenten einen stabilen Titel für das Gespräch erstellen. Der Titel
-      wird einmal festgelegt, sobald ein Thema erkennbar ist, und dann für das Gespräch
-      beibehalten.
-  generate_tags:
-    label: Gesprächs-Tags erstellen
-    help: Lässt den Agenten Kategorie-Tags erstellen, die das Gespräch beschreiben.
-      Die Tags werden in jeder Runde aktualisiert, um Themenänderungen widerzuspiegeln.
-  suggest_follow_ups:
-    label: Folgefragen vorschlagen
-    help: Lässt den Agenten nach jeder Antwort Folgefragen vorschlagen, die der Benutzer
-      als Nächstes stellen könnte.

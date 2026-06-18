@@ -3,21 +3,14 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import (
-    ConversationTagsEvent,
-    ConversationTitleEvent,
-    SuggestedFollowUpQuestionsEvent,
-)
+from swiss_ai_hub.core.events.agent import ConversationTitleEvent, FollowUpQuestionsEvent
 
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    CONVERSATION_TITLE_KEY,
-    do_generate_tags,
+    TITLE_GENERATED_KEY,
+    do_generate_follow_up_questions,
     do_generate_title,
-    do_generate_title_once,
-    do_suggest_follow_up_questions,
 )
 from swiss_ai_hub.agent.conversation_metadata.follow_up_questions_result import FollowUpQuestionsResult
-from swiss_ai_hub.agent.conversation_metadata.tags_result import TagsResult
 from swiss_ai_hub.agent.conversation_metadata.title_result import TitleResult
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
@@ -42,6 +35,7 @@ def locale_handler() -> AgentLocaleHandler:
 def displayer() -> MagicMock:
     d = MagicMock()
     d.display_thought = AsyncMock()
+    d.display_event = AsyncMock()
     d.display_llm_costs = AsyncMock()
     return d
 
@@ -71,102 +65,69 @@ def _conversation() -> list[ChatMessage]:
     ]
 
 
-@pytest.mark.asyncio
-async def test_generate_title_returns_event(displayer, locale_handler):
-    llm = _llm_returning(TitleResult(title="Weather in Ho Chi Minh City"))
-
-    result = await do_generate_title(_conversation(), _llm_config(llm), displayer, locale_handler)
-
-    assert isinstance(result, ConversationTitleEvent)
-    assert result.title == "Weather in Ho Chi Minh City"
-    displayer.display_thought.assert_awaited_once()
+def _emitted(displayer: MagicMock):
+    return displayer.display_event.call_args.args[0]
 
 
 @pytest.mark.asyncio
-async def test_generate_title_defers_when_no_topic(displayer, locale_handler):
-    """A greeting-only turn yields no determinable title."""
-    llm = _llm_returning(TitleResult(title=None))
-
-    result = await do_generate_title(
-        [ChatMessage(role=MessageRole.USER, content="hello")], _llm_config(llm), displayer, locale_handler
-    )
-
-    assert result is None
-
-
-@pytest.mark.asyncio
-async def test_generate_title_once_stores_and_emits_first_time(displayer, locale_handler):
+async def test_title_emitted_and_flag_set_first_time(displayer, locale_handler):
     thread_context = FakeThreadContext()
     llm = _llm_returning(TitleResult(title="Weather in Ho Chi Minh City"))
 
-    result = await do_generate_title_once(_conversation(), thread_context, _llm_config(llm), displayer, locale_handler)
+    await do_generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context)
 
-    assert isinstance(result, ConversationTitleEvent)
-    assert await thread_context.get(CONVERSATION_TITLE_KEY) == "Weather in Ho Chi Minh City"
+    displayer.display_event.assert_awaited_once()
+    emitted = _emitted(displayer)
+    assert isinstance(emitted, ConversationTitleEvent)
+    assert emitted.title == "Weather in Ho Chi Minh City"
+    assert await thread_context.get(TITLE_GENERATED_KEY) is True
 
 
 @pytest.mark.asyncio
-async def test_generate_title_once_is_immutable_when_already_set(displayer, locale_handler):
-    thread_context = FakeThreadContext({CONVERSATION_TITLE_KEY: "Existing Title"})
+async def test_title_is_immutable_when_flag_set(displayer, locale_handler):
+    thread_context = FakeThreadContext({TITLE_GENERATED_KEY: True})
     llm = _llm_returning(TitleResult(title="A Different Title"))
 
-    result = await do_generate_title_once(_conversation(), thread_context, _llm_config(llm), displayer, locale_handler)
+    await do_generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context)
 
-    assert result is None
+    displayer.display_event.assert_not_awaited()
     llm.astructured_predict.assert_not_called()
-    assert await thread_context.get(CONVERSATION_TITLE_KEY) == "Existing Title"
 
 
 @pytest.mark.asyncio
-async def test_generate_title_once_does_not_store_when_undeterminable(displayer, locale_handler):
+async def test_title_deferred_when_no_topic(displayer, locale_handler):
+    """A greeting-only turn yields no determinable title and leaves the flag unset for a retry."""
     thread_context = FakeThreadContext()
     llm = _llm_returning(TitleResult(title=None))
 
-    result = await do_generate_title_once(
+    await do_generate_title(
         [ChatMessage(role=MessageRole.USER, content="hello")],
-        thread_context,
         _llm_config(llm),
         displayer,
         locale_handler,
+        thread_context,
     )
 
-    assert result is None
-    assert await thread_context.get(CONVERSATION_TITLE_KEY) is None
+    displayer.display_event.assert_not_awaited()
+    assert await thread_context.get(TITLE_GENERATED_KEY) is None
 
 
 @pytest.mark.asyncio
-async def test_generate_tags_returns_event(displayer, locale_handler):
-    llm = _llm_returning(TagsResult(tags=["Weather", "Travel"]))
-
-    result = await do_generate_tags(_conversation(), _llm_config(llm), displayer, locale_handler)
-
-    assert isinstance(result, ConversationTagsEvent)
-    assert result.tags == ["Weather", "Travel"]
-
-
-@pytest.mark.asyncio
-async def test_generate_tags_returns_none_when_empty(displayer, locale_handler):
-    llm = _llm_returning(TagsResult(tags=[]))
-
-    result = await do_generate_tags(_conversation(), _llm_config(llm), displayer, locale_handler)
-
-    assert result is None
-
-
-@pytest.mark.asyncio
-async def test_suggest_follow_ups_returns_event(displayer, locale_handler):
+async def test_follow_ups_emitted(displayer, locale_handler):
     llm = _llm_returning(FollowUpQuestionsResult(questions=["What is the forecast for tomorrow?"]))
 
-    result = await do_suggest_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
+    await do_generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
 
-    assert isinstance(result, SuggestedFollowUpQuestionsEvent)
-    assert result.questions == ["What is the forecast for tomorrow?"]
+    displayer.display_event.assert_awaited_once()
+    emitted = _emitted(displayer)
+    assert isinstance(emitted, FollowUpQuestionsEvent)
+    assert emitted.questions == ["What is the forecast for tomorrow?"]
 
 
 @pytest.mark.asyncio
-async def test_suggest_follow_ups_returns_none_when_empty(displayer, locale_handler):
+async def test_follow_ups_not_emitted_when_empty(displayer, locale_handler):
     llm = _llm_returning(FollowUpQuestionsResult(questions=[]))
 
-    result = await do_suggest_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
+    await do_generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
 
-    assert result is None
+    displayer.display_event.assert_not_awaited()

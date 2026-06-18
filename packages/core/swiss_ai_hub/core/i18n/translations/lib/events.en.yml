@@ -6,11 +6,8 @@ display_event:
 conversation_title_event:
   name: Conversation Title
   description: The agent generated a title summarizing the topic of the conversation.
-conversation_tags_event:
-  name: Conversation Tags
-  description: The agent generated category tags describing the conversation.
-suggested_follow_up_questions_event:
-  name: Suggested Follow-up Questions
+follow_up_questions_event:
+  name: Follow-up Questions
   description: The agent suggested follow-up questions the user might want to ask
     next.
 aitl_exception_event:

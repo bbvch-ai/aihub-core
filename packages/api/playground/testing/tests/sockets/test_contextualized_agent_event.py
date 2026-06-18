@@ -1,14 +1,13 @@
 from swiss_ai_hub.core.events.agent import (
-    ConversationTagsEvent,
     ConversationTitleEvent,
     DisplayEvent,
+    FollowUpQuestionsEvent,
     HumanInTheLoopChatRequestEvent,
     HumanInTheLoopChatResponseEvent,
     HumanInTheLoopConfirmationRequestEvent,
     HumanInTheLoopConfirmationResponseEvent,
     HumanInTheLoopInputRequestEvent,
     HumanInTheLoopInputResponseEvent,
-    SuggestedFollowUpQuestionsEvent,
 )
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 from swiss_ai_hub.core.topics import PartialAgentTopic
@@ -129,8 +128,7 @@ def test_display_events_union_tags_conversation_metadata_events():
     valid_tags = {arg.__metadata__[0].tag for arg in DisplayEvents.__args__}
     assert {
         "ConversationTitleEvent",
-        "ConversationTagsEvent",
-        "SuggestedFollowUpQuestionsEvent",
+        "FollowUpQuestionsEvent",
     }.issubset(valid_tags)
 
 
@@ -140,12 +138,8 @@ def test_conversation_metadata_events_preserved_through_contextualized_dump():
     assert title["_event_name"] == "ConversationTitleEvent"
     assert title["title"] == "Weather in Ho Chi Minh City"
 
-    tags = _wrap(ConversationTagsEvent(tags=["Weather", "Travel"])).model_dump()["event"]
-    assert tags["_event_name"] == "ConversationTagsEvent"
-    assert tags["tags"] == ["Weather", "Travel"]
-
-    follow_ups = _wrap(SuggestedFollowUpQuestionsEvent(questions=["What is the forecast?"])).model_dump()["event"]
-    assert follow_ups["_event_name"] == "SuggestedFollowUpQuestionsEvent"
+    follow_ups = _wrap(FollowUpQuestionsEvent(questions=["What is the forecast?"])).model_dump()["event"]
+    assert follow_ups["_event_name"] == "FollowUpQuestionsEvent"
     assert follow_ups["questions"] == ["What is the forecast?"]
 
 

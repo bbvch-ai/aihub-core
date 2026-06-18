@@ -14,9 +14,6 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
-from swiss_ai_hub.agent.steps.conversation_metadata.conversation_metadata_step_config import (
-    ConversationMetadataStepConfig,
-)
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
 )
@@ -88,13 +85,6 @@ class RAGAgentConfig(AgentConfig):
             title="Organization Memory",
         ),
     ] = OrgMemoryReadConfig()
-    conversation_metadata: Annotated[
-        ConversationMetadataStepConfig,
-        Field(
-            description="Configuration for the conversation-metadata steps (title, tags, follow-up questions).",
-            title="Conversation Metadata",
-        ),
-    ] = ConversationMetadataStepConfig()
 
     @classmethod
     def as_form(cls) -> Self:
@@ -130,5 +120,4 @@ class RAGAgentConfig(AgentConfig):
             ),
             user_memory=UserMemoryConfig.as_form(),
             org_memory=OrgMemoryReadConfig.as_form(),
-            conversation_metadata=ConversationMetadataStepConfig.as_form(),
         )

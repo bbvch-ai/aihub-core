@@ -6,11 +6,8 @@ display_event:
 conversation_title_event:
   name: Gesprächstitel
   description: Der Agent hat einen Titel erstellt, der das Thema des Gesprächs zusammenfasst.
-conversation_tags_event:
-  name: Gesprächs-Tags
-  description: Der Agent hat Kategorie-Tags erstellt, die das Gespräch beschreiben.
-suggested_follow_up_questions_event:
-  name: Vorgeschlagene Folgefragen
+follow_up_questions_event:
+  name: Folgefragen
   description: Der Agent hat Folgefragen vorgeschlagen, die der Benutzer als Nächstes
     stellen könnte.
 aitl_exception_event:
