@@ -48,8 +48,8 @@ config:
   generate_tags:
     label: Générer les étiquettes de la conversation
     help: Permet à l'agent de générer des étiquettes de catégorie décrivant la conversation.
-      Les étiquettes sont actualisées à chaque tour pour refléter les changements de
-      sujet.
+      Les étiquettes sont actualisées à chaque tour pour refléter les changements
+      de sujet.
   suggest_follow_ups:
     label: Suggérer des questions de suivi
     help: Permet à l'agent de suggérer des questions de suivi que l'utilisateur pourrait
