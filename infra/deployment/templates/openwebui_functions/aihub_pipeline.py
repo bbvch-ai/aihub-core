@@ -1546,7 +1546,7 @@ class Pipe:
             description="Prefix added to agent names in the UI",
         )
         OPENWEBUI_MODEL_NAME_LOCALE: str = Field(
-            default=os.getenv("OPENWEBUI_MODEL_NAME_LOCALE", "en"),
+            default=os.getenv("OPENWEBUI_MODEL_NAME_LOCALE") or "en",
             description="Locale used to resolve agent names, kept in sync with the "
             "workspace-model name the provisioner writes under the same setting",
         )
