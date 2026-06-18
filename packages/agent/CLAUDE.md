@@ -340,7 +340,7 @@ the relevant steps.
 
 | Agent                       | Purpose                          | Key Pattern                                                                                         |
 | --------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) |
+| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) + conversation metadata (title/tags/follow-ups) |
 | **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                                                               |
 | **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory                                                    |
 | **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop                                                      |
