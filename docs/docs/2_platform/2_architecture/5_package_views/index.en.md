@@ -83,9 +83,9 @@ Layer that *extends* `@swiss-ai-hub/web`, reusing its components, composables, a
 sysadmin-only pages. It is hosted at `sysadmin.${DOMAIN}/*`.
 
 **Why it's a separate package.** Same reasoning as the Sysadmin API: it is a separate deploy artifact with its own
-security boundary on the `sysadmin.${DOMAIN}` subdomain. Both `packages/web` and the sysadmin plane ship under AGPL-3.0-or-later,
-so the separation is architectural rather than a licensing boundary. The Nuxt Layer mechanism lets it inherit nearly
-everything from the open-source UI without copying code.
+security boundary on the `sysadmin.${DOMAIN}` subdomain. Both `packages/web` and the sysadmin plane ship under
+AGPL-3.0-or-later, so the separation is architectural rather than a licensing boundary. The Nuxt Layer mechanism lets it
+inherit nearly everything from the open-source UI without copying code.
 
 **What it contains.** Tenant CRUD pages and the sysadmin route guard, layered on top of the inherited Admin UI. Its SDK
 and most API calls resolve same-origin against the Sysadmin API; the only cross-origin call is the role check that

@@ -85,6 +85,10 @@ steps:
   context_sufficient_guard:
     name: Context Sufficient Guard
     description: Guards the context to ensure it is sufficient for generating a response.
+  persist_grounding_nodes:
+    name: Persist Grounding Nodes
+    description: Persists this turn's top grounding documents so a follow-up question
+      can reuse them.
   limit_chat_history_with_context:
     name: Limit Chat History with Context
     description: Includes the combined context and truncates chat history again.

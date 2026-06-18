@@ -60,3 +60,28 @@ def test_download_file_rejects_empty_params(container: str, file_path: str):
 
     with pytest.raises(ValueError):
         service.download_file(container, file_path)
+
+
+def test_delete_file_calls_delete_object():
+    s3_client = MagicMock()
+    service = _create_service(s3_client)
+
+    service.delete_file("my-bucket", "namespace/file.pdf")
+
+    s3_client.delete_object.assert_called_once_with(Bucket="my-bucket", Key="namespace/file.pdf")
+
+
+@pytest.mark.parametrize(
+    ("container", "file_path"),
+    [
+        ("", "path/to/file.txt"),
+        ("  ", "path/to/file.txt"),
+        ("my-bucket", ""),
+        ("my-bucket", "  "),
+    ],
+)
+def test_delete_file_rejects_empty_params(container: str, file_path: str):
+    service = _create_service()
+
+    with pytest.raises(ValueError):
+        service.delete_file(container, file_path)

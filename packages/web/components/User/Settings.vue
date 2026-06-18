@@ -19,6 +19,7 @@
         <Select
           v-model="selectedLocale"
           input-id="user-language-select"
+          :aria-label="t('user.language')"
           :options="localeOptions"
           option-label="name"
           class="w-full"

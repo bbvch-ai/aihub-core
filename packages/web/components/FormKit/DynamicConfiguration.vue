@@ -27,6 +27,7 @@
         :label="rep.label"
         :add-label="rep.addLabel"
         :children-schema="rep.childrenSchema"
+        :default-item="rep.defaultItem"
         :min="rep.min"
         :max="rep.max"
         @update:model-value="setRepeaterData(rep.path, $event)"
@@ -38,12 +39,10 @@
 <script setup lang="ts">
 import {
   buildFormKitSchema,
-  coerceNullableToggles,
   extractRepeaterConfigs,
   getNestedValue,
-  normalizeFormLocaleStrings,
-  seedFormDefaults,
-  seedNullableToggles,
+  hydrateFormData,
+  serializeFormData,
   setNestedValue,
   type FormElement,
   type RepeaterConfig,
@@ -61,8 +60,7 @@ const props = defineProps<{
 }>()
 
 function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
-  const seeded = seedNullableToggles(raw, props.form as FormElement[])
-  return seedFormDefaults(seeded, props.form as FormElement[])
+  return hydrateFormData(raw, props.form as FormElement[])
 }
 
 const data = ref<Record<string, unknown>>(hydrate(props.initialData || {}))
@@ -110,9 +108,7 @@ function setRepeaterData(path: string, value: Record<string, unknown>[]): void {
 }
 
 async function submitHandler() {
-  const coerced = coerceNullableToggles(data.value, props.form as FormElement[])
-  const normalizedData = normalizeFormLocaleStrings(coerced)
-  emit('submit', normalizedData)
+  emit('submit', serializeFormData(data.value, props.form as FormElement[]))
 }
 </script>
 

@@ -2199,6 +2199,43 @@ export const BaseStoreMemoryEventSchema = {
     "Abstract base class for memory storage events.\n\n### Why BaseStoreMemoryEvent?\nThis event serves dual purposes in the Swiss AI Agent Protocol:\n- As a control event, it notifies downstream systems that memory state has changed\n- As a display event, it provides transparency to users about what was learned or stored\n\nAgents emit this event after persisting insights to long-term memory storage. The event captures\nboth the semantic changes (added/updated/deleted memories) and the knowledge graph updates\n(new/removed relations between entities). This transparency is crucial for user trust - they can\nsee what the agent learned and verify accuracy.\n\nThe event structure follows mem0's MemoryAdded response format, enabling real-time UI updates,\naudit trails, and triggering downstream workflows that depend on memory state.\n\nConcrete subclasses differentiate between user-scoped and organization-scoped memory storage.",
 } as const;
 
+export const BatchDeleteDocumentsRequestSchema = {
+  properties: {
+    document_ids: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      maxItems: 100,
+      minItems: 1,
+      title: "Document Ids",
+      description: "IDs of the documents to delete",
+    },
+  },
+  type: "object",
+  required: ["document_ids"],
+  title: "BatchDeleteDocumentsRequest",
+  description:
+    "Request payload for deleting multiple documents from a knowledge namespace.",
+} as const;
+
+export const BatchDeleteDocumentsResponseSchema = {
+  properties: {
+    results: {
+      items: {
+        $ref: "#/components/schemas/DocumentDeletionResult",
+      },
+      type: "array",
+      title: "Results",
+      description: "Deletion outcome per requested document",
+    },
+  },
+  type: "object",
+  required: ["results"],
+  title: "BatchDeleteDocumentsResponse",
+  description: "Per-document results of a best-effort batch deletion.",
+} as const;
+
 export const Body_create_transcription__tenant_id__openai_audio_transcriptions_postSchema =
   {
     properties: {
@@ -5324,6 +5361,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/LLMStopEvent",
         },
         {
+          $ref: "#/components/schemas/MetaQuestionDetectedEvent",
+        },
+        {
           $ref: "#/components/schemas/RerankerEvent",
         },
         {
@@ -6661,6 +6701,26 @@ export const DocumentDTOSchema = {
     "is_ingested",
   ],
   title: "DocumentDTO",
+} as const;
+
+export const DocumentDeletionResultSchema = {
+  properties: {
+    document_id: {
+      type: "string",
+      title: "Document Id",
+      description: "ID of the document",
+    },
+    status: {
+      type: "string",
+      enum: ["scheduled", "not_found", "failed"],
+      title: "Status",
+      description: "Deletion outcome for this document",
+    },
+  },
+  type: "object",
+  required: ["document_id", "status"],
+  title: "DocumentDeletionResult",
+  description: "Outcome of a single document deletion within a batch request.",
 } as const;
 
 export const DocumentParsingMetadataSchema = {
@@ -13591,6 +13651,91 @@ export const MessageRoleSchema = {
   description: "Message role.",
 } as const;
 
+export const MetaQuestionCategorySchema = {
+  type: "string",
+  enum: ["identity", "capabilities", "behavior"],
+} as const;
+
+export const MetaQuestionDetectedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    user_query: {
+      type: "string",
+      title: "User Query",
+      description: "The user message classified as a meta question.",
+    },
+    category: {
+      $ref: "#/components/schemas/MetaQuestionCategory",
+      description: "Which aspect of the agent the question is about.",
+    },
+    reasoning: {
+      type: "string",
+      title: "Reasoning",
+      description: "Why the message was classified as a meta question.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "user_query",
+    "category",
+    "reasoning",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "MetaQuestionDetectedEvent",
+  description:
+    "Emitted when the user's message is a meta question about the agent itself —\nits identity, its capabilities, or why it behaved a certain way — rather than a\ntask for the agent to perform. Routes the run to the self-awareness answer step\ninstead of the agent's normal workflow.",
+} as const;
+
 export const MetadataSchema = {
   properties: {
     thread_id: {
@@ -19456,6 +19601,12 @@ export const SliderSchema = {
   required: ["label", "validation"],
   title: "Slider",
   description: "https://formkit-primevue.netlify.app/inputs/Slider",
+} as const;
+
+export const SortOrderSchema = {
+  type: "integer",
+  enum: [1, -1],
+  title: "SortOrder",
 } as const;
 
 export const StandaloneQuestionCondenserEventSchema = {
@@ -25385,6 +25536,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/LLMStopEventWritable",
         },
         {
+          $ref: "#/components/schemas/MetaQuestionDetectedEventWritable",
+        },
+        {
           $ref: "#/components/schemas/RerankerEventWritable",
         },
         {
@@ -30196,6 +30350,63 @@ export const MessageWritableSchema = {
   type: "object",
   required: ["role"],
   title: "Message",
+} as const;
+
+export const MetaQuestionDetectedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    user_query: {
+      type: "string",
+      title: "User Query",
+      description: "The user message classified as a meta question.",
+    },
+    category: {
+      $ref: "#/components/schemas/MetaQuestionCategory",
+      description: "Which aspect of the agent the question is about.",
+    },
+    reasoning: {
+      type: "string",
+      title: "Reasoning",
+      description: "Why the message was classified as a meta question.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["user_query", "category", "reasoning"],
+  title: "MetaQuestionDetectedEvent",
+  description:
+    "Emitted when the user's message is a meta question about the agent itself —\nits identity, its capabilities, or why it behaved a certain way — rather than a\ntask for the agent to perform. Routes the run to the self-awareness answer step\ninstead of the agent's normal workflow.",
 } as const;
 
 export const MinimalAgentInstanceDTOWritableSchema = {

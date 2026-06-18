@@ -32,7 +32,12 @@ deployment/
 │       ├── s3-entrypoint.sh.j2        # SeaweedFS S3 gateway startup
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
-│       └── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
+│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
+│       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
+│           ├── bootstrap/             # First-start-only seeds: realm-settings, components, groups, users-superuser,
+│           │                          #   identity-providers
+│           └── managed/               # Reconciled every start by keycloak-config-cli: 10-roles, 20-client-scopes,
+│                                      #   30-clients, 40-auth-flows, 60-service-accounts
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py
     ├── openai_pipeline.py
@@ -151,10 +156,38 @@ storage+backend, `milvus-standalone` on data+storage, `api` on proxy+backend+dat
 
 See ADR: `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`
 
-## Keycloak Realm Import (Operator Notes)
+## Keycloak Realm Configuration (Operator Notes)
 
-The Keycloak realm template (`templates/configs/keycloak-realm.json.j2`) defines the `aihub-api-service` service account
-with a fixed set of `realm-management` client roles. The current minimum required for the API to function correctly is:
+The realm config lives in standalone JSON templates under `templates/configs/keycloak/`, split by lifecycle (see ADR
+`2026_06_12_declarative_keycloak_realm_reconciliation`):
+
+- **`bootstrap/`** — applied via `--import-realm` on **first start only**, never reconciled: realm-level settings
+  (themes, brute force, session lifespans, SMTP), the user-profile component, the startup tenant group seed, the
+  superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the admin
+  console survive restarts — and updating identity-provider config on an already-initialized deployment requires the
+  admin console (or a fresh realm DB), since they do not reconcile automatically.
+- **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
+  (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
+  service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config
+  are deleted from running realms. Users, tenant groups, and identity providers are never touched
+  (`IMPORT_MANAGED_IDENTITYPROVIDER`/`IMPORT_MANAGED_GROUP` are set to `no-delete` as defense in depth).
+
+Rules when editing:
+
+- All entities of one type MUST stay in their single managed file — keycloak-config-cli processes each file as a
+  separate full-managed import, so a second file containing e.g. `clients` would delete the first file's clients. The
+  numeric prefixes encode the import order (roles → scopes → clients → flows → service accounts).
+- Placeholders use keycloak-config-cli syntax: `$(env:VAR)` inside JSON strings, and the quoted `"$(envjson:VAR)"`
+  sentinel for raw JSON injection (superuser roles). The entrypoint's bash envsubst handles the same syntax for the
+  first-start import. Never use `${VAR}` — it collides with Keycloak-internal placeholders.
+- `generate_compose.py` renders the managed templates 1:1 as keycloak-config-cli inputs AND JSON-merges bootstrap +
+  managed into `aihub-realm.{stage}.json` for `--import-realm` (fresh boots come up complete without waiting for the
+  reconciler). Run `make generate-compose` after any edit and commit the regenerated files.
+- The `keycloak-config-cli` image tag in `compose-config.yml` must be bumped together with the Keycloak image (tag
+  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`).
+
+The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
+`realm-management` client roles. The current minimum required for the API to function correctly is:
 
 ```
 view-identity-providers, manage-users, view-users, query-users,
@@ -162,7 +195,22 @@ query-groups, view-groups, view-realm, view-clients
 ```
 
 `view-realm` and `view-clients` are required by the realm-role-members endpoint
-(`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status.
+(`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status. Role changes here now reach running
+deployments on the next start.
+
+**Langfuse sysadmin gate**: the `langfuse` client carries the marker client scope `langfuse-sysadmin-gate` (default
+scope, no mappers). It activates a conditional deny sub-flow — deny unless the user has `AIHubSysAdmin` — in the custom
+`browser-aihub` flow (bound as the realm browser flow) and in the `Post Broker Login - AIHubAccess Check` flow. The
+whole gate is **managed** config: the flows, the authenticator configs and the realm `browserFlow` binding live in
+`managed/40-auth-flows.json.j2`, the marker scope in `managed/20-client-scopes.json.j2`, and its attachment to the
+`langfuse` client in `managed/30-clients.json.j2`. keycloak-config-cli reconciles them on every start (no `kcadm` in the
+entrypoint), so already-running instances converge on the next restart. The `browserFlow` binding lives in the managed
+auth-flows file (not bootstrap realm settings) precisely so kcc rebinds it every start — activating the gate on existing
+deployments, not just on the first `--import-realm`. See ADR
+`docs/arc42/decisions/2026_06_11_langfuse_access_restricted_to_sysadmins.md`. The `browser-aihub` flow replicates the
+built-in browser flow and must be reviewed on Keycloak major upgrades. Structural caveat: the authentication
+alternatives (cookie, IdP redirector, forms) are nested in a REQUIRED sub-flow — never place a CONDITIONAL sub-flow at
+the same level as ALTERNATIVE executions, or Keycloak ignores the alternatives and login breaks for all clients.
 
 ## Env Var Conventions
 

@@ -90,6 +90,10 @@ steps:
     name: Garde de contexte suffisant
     description: Protège le contexte pour s'assurer qu'il est suffisant pour générer
       une réponse.
+  persist_grounding_nodes:
+    name: Conserver les documents de référence
+    description: Conserve les principaux documents ayant fondé cette réponse afin
+      qu'une question de suivi puisse les réutiliser.
   limit_chat_history_with_context:
     name: Limiter l'historique avec contexte
     description: Inclut le contexte combiné et tronque à nouveau l'historique du chat.

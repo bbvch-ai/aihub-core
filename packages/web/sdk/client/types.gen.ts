@@ -1689,6 +1689,34 @@ export type BaseStoreMemoryEvent = {
 };
 
 /**
+ * BatchDeleteDocumentsRequest
+ *
+ * Request payload for deleting multiple documents from a knowledge namespace.
+ */
+export type BatchDeleteDocumentsRequest = {
+  /**
+   * Document Ids
+   *
+   * IDs of the documents to delete
+   */
+  document_ids: Array<string>;
+};
+
+/**
+ * BatchDeleteDocumentsResponse
+ *
+ * Per-document results of a best-effort batch deletion.
+ */
+export type BatchDeleteDocumentsResponse = {
+  /**
+   * Results
+   *
+   * Deletion outcome per requested document
+   */
+  results: Array<DocumentDeletionResult>;
+};
+
+/**
  * Body_create_transcription__tenant_id__openai_audio_transcriptions_post
  */
 export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
@@ -3634,6 +3662,7 @@ export type ContextualizedAgentEvent = {
     | EmbeddingEvent
     | LlmEvent
     | LlmStopEvent
+    | MetaQuestionDetectedEvent
     | RerankerEvent
     | RetrieverEvent
     | ToolEvent
@@ -4562,6 +4591,26 @@ export type DocumentDto = {
    * Document title.
    */
   document_title?: string | null;
+};
+
+/**
+ * DocumentDeletionResult
+ *
+ * Outcome of a single document deletion within a batch request.
+ */
+export type DocumentDeletionResult = {
+  /**
+   * Document Id
+   *
+   * ID of the document
+   */
+  document_id: string;
+  /**
+   * Status
+   *
+   * Deletion outcome for this document
+   */
+  status: "scheduled" | "not_found" | "failed";
 };
 
 /**
@@ -9138,6 +9187,74 @@ export const MessageRole = {
  */
 export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
 
+export const MetaQuestionCategory = {
+  IDENTITY: "identity",
+  CAPABILITIES: "capabilities",
+  BEHAVIOR: "behavior",
+} as const;
+
+export type MetaQuestionCategory =
+  (typeof MetaQuestionCategory)[keyof typeof MetaQuestionCategory];
+
+/**
+ * MetaQuestionDetectedEvent
+ *
+ * Emitted when the user's message is a meta question about the agent itself —
+ * its identity, its capabilities, or why it behaved a certain way — rather than a
+ * task for the agent to perform. Routes the run to the self-awareness answer step
+ * instead of the agent's normal workflow.
+ */
+export type MetaQuestionDetectedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Query
+   *
+   * The user message classified as a meta question.
+   */
+  user_query: string;
+  /**
+   * Which aspect of the agent the question is about.
+   */
+  category: MetaQuestionCategory;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a meta question.
+   */
+  reasoning: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
 /**
  * Metadata
  */
@@ -13100,6 +13217,16 @@ export type Slider = {
   readonly validation: string;
   [key: string]: unknown;
 };
+
+/**
+ * SortOrder
+ */
+export const SortOrder = { 1: 1, "-1": -1 } as const;
+
+/**
+ * SortOrder
+ */
+export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
 
 /**
  * StandaloneQuestionCondenserEvent
@@ -17243,6 +17370,7 @@ export type ContextualizedAgentEventWritable = {
     | EmbeddingEventWritable
     | LlmEventWritable
     | LlmStopEventWritable
+    | MetaQuestionDetectedEventWritable
     | RerankerEventWritable
     | RetrieverEventWritable
     | ToolEventWritable
@@ -20238,6 +20366,52 @@ export type MessageWritable = {
    * The message contents as an array of content blocks (text, image, audio).
    */
   contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
+
+/**
+ * MetaQuestionDetectedEvent
+ *
+ * Emitted when the user's message is a meta question about the agent itself —
+ * its identity, its capabilities, or why it behaved a certain way — rather than a
+ * task for the agent to perform. Routes the run to the self-awareness answer step
+ * instead of the agent's normal workflow.
+ */
+export type MetaQuestionDetectedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Query
+   *
+   * The user message classified as a meta question.
+   */
+  user_query: string;
+  /**
+   * Which aspect of the agent the question is about.
+   */
+  category: MetaQuestionCategory;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a meta question.
+   */
+  reasoning: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -24340,13 +24514,13 @@ export type GetUserThreadsData = {
      *
      * Filter threads created from this date
      */
-    from?: string | null;
+    from?: Date | null;
     /**
      * To
      *
      * Filter threads created up to this date
      */
-    to?: string | null;
+    to?: Date | null;
     /**
      * Page Number
      *
@@ -24366,11 +24540,9 @@ export type GetUserThreadsData = {
      */
     sort_field?: string;
     /**
-     * Sort Order
-     *
      * Sort order: 1 for ascending, -1 for descending
      */
-    sort_order?: -1 | 1;
+    sort_order?: SortOrder;
   };
   url: "/{tenant_id}/threads/";
 };
@@ -26472,6 +26644,48 @@ export type GetDatabasesResponses = {
 export type GetDatabasesResponse =
   GetDatabasesResponses[keyof GetDatabasesResponses];
 
+export type BatchDeleteDocumentsData = {
+  body: BatchDeleteDocumentsRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents";
+};
+
+export type BatchDeleteDocumentsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type BatchDeleteDocumentsError =
+  BatchDeleteDocumentsErrors[keyof BatchDeleteDocumentsErrors];
+
+export type BatchDeleteDocumentsResponses = {
+  /**
+   * Successful Response
+   */
+  202: BatchDeleteDocumentsResponse;
+};
+
+export type BatchDeleteDocumentsResponse2 =
+  BatchDeleteDocumentsResponses[keyof BatchDeleteDocumentsResponses];
+
 export type GetDocumentsForNamespaceData = {
   body?: never;
   path: {
@@ -26544,6 +26758,49 @@ export type GetDocumentsForNamespaceResponses = {
 
 export type GetDocumentsForNamespaceResponse =
   GetDocumentsForNamespaceResponses[keyof GetDocumentsForNamespaceResponses];
+
+export type DeleteDocumentData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+    /**
+     * Document ID
+     */
+    document_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}";
+};
+
+export type DeleteDocumentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteDocumentError =
+  DeleteDocumentErrors[keyof DeleteDocumentErrors];
+
+export type DeleteDocumentResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
 
 export type GetDocumentByIdData = {
   body?: never;

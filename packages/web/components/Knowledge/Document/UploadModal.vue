@@ -58,7 +58,9 @@
         <p class="text-sm font-medium">
           {{ t('knowledge.documents.upload.target_location.label') }}
         </p>
-        <div class="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800">
+        <div
+          class="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800"
+        >
           <i
             class="pi pi-database text-surface-400"
             style="font-size: 1rem"
@@ -122,6 +124,7 @@
       type="file"
       multiple
       :accept="acceptedFileTypesString"
+      :aria-label="t('knowledge.documents.upload.actions.upload')"
       class="hidden"
       @change="handleFileSelect"
     >
@@ -129,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 interface Props {
   visible: boolean
@@ -146,11 +149,11 @@ const props = withDefaults(defineProps<Props>(), {
 const { t } = useI18n()
 
 const databaseDisplayName = computed(() => {
-  return props.databaseDisplayName || useChangeCase(props.database, 'capitalCase').value
+  return props.databaseDisplayName || capitalCase(props.database)
 })
 
 const namespaceDisplayName = computed(() => {
-  return props.namespaceDisplayName || useChangeCase(props.namespace, 'capitalCase').value
+  return props.namespaceDisplayName || capitalCase(props.namespace)
 })
 
 const emit = defineEmits<{

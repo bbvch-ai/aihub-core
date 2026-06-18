@@ -7,6 +7,8 @@ from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityRejectEvent,
     LimitChatHistoryEvent,
     LLMStopEvent,
+    MetaQuestionDetectedEvent,
+    NotAMetaQuestionEvent,
     StopEvent,
     UserMessageEvent,
 )
@@ -25,6 +27,11 @@ from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_questio
 )
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
+from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
+    do_answer_meta_question,
+    do_detect_meta_question,
+)
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
@@ -49,6 +56,51 @@ class FewShotAgent(Agent):
     icon: ClassVar[str] = "mage:book"
 
     @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
+        icon="mdi:help-circle-outline",
+    )
+    async def detect_meta_question_step(
+        self,
+        event: UserMessageEvent,
+        agent_config: FewShotAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
+        """Gate every chat message: classify it as a meta question or release the normal pipeline."""
+        return await do_detect_meta_question(
+            user_query=event.user_query,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+        )
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
+        icon="mdi:account-voice",
+    )
+    async def answer_meta_question_step(
+        self,
+        event: MetaQuestionDetectedEvent,
+        user_message_event: UserMessageEvent,
+        agent_config: FewShotAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> LLMStopEvent:
+        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
+        return await do_answer_meta_question(
+            event=event,
+            agent_name=t.extract(agent_config.name),
+            agent_description=t.extract(agent_config.description),
+            workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
+            chat_history=user_message_event.messages,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+        )
+
+    @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.name"),
         description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.description"),
         icon="mage:edit",
@@ -57,6 +109,7 @@ class FewShotAgent(Agent):
         self,
         event: UserMessageEvent,
         agent_config: FewShotAgentConfig,
+        _clear: NotAMetaQuestionEvent,
     ) -> LimitChatHistoryEvent:
         """
         Truncates incoming chat messages to fit within the configured token limit

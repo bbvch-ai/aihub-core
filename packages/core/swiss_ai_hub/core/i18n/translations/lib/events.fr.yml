@@ -55,6 +55,11 @@ guard_rejection_event:
   name: Demande Rejetée
   description: La demande a été rejetée pour des raisons de sécurité ou en raison
     de violations de politique.
+meta_question_detected_event:
+  name: Méta-question détectée
+  description: L'utilisateur a posé une question sur l'assistant lui-même — son identité,
+    ses capacités ou son comportement — l'assistant répond donc à partir de sa propre
+    configuration au lieu d'exécuter son flux de travail normal.
 few_shot_guard_accept_event:
   name: Garde Few-Shot Accepté
   description: La demande correspond aux modèles des exemples few-shot et est autorisée

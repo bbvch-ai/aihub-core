@@ -169,6 +169,7 @@ thread:
     title: Vue hiérarchique des tours
   chat:
     title: Vue Chat
+    placeholder: Saisie du chat
   memories:
     title: Mémoires du fil de discussion
     description: Mémoires collectées pendant {threadName}
@@ -265,6 +266,11 @@ event:
     assistant: Assistant
     system: Système
     user: Utilisateur
+  metaQuestionDetected:
+    category:
+      identity: Identité
+      capabilities: Capacités
+      behavior: Comportement
   standaloneQuestionCondenser:
     summary: Question affinée et condensée
     condensedQuestion: Question Condensée
@@ -424,6 +430,21 @@ document:
     number_of_pages: Nombre de pages
     download: Télécharger
     is_processing: Traitement en cours
+    actions: Actions
+    selected_count: '{count} document(s) sélectionné(s)'
+  delete:
+    title: Supprimer le document
+    deleting: Suppression en cours
+    button: Supprimer
+    button_selected: Supprimer la sélection
+    confirmMessage: Voulez-vous vraiment supprimer ce document ? Il sera définitivement
+      retiré de la base de connaissances. Cette action est irréversible.
+    confirmMessageBatch: Voulez-vous vraiment supprimer {count} document(s) ? Ils
+      seront définitivement retirés de la base de connaissances. Cette action est
+      irréversible.
+    success: Suppression du document planifiée
+    partial: Suppression de {deleted} document(s) planifiée, {failed} en échec
+    error: Échec de la suppression du document
 knowledge:
   title: Bases de connaissances
   created_at: 'Créé le:'
@@ -678,6 +699,7 @@ bar:
   show_notifications: Afficher les notifications
 process:
   title: Processus
+  no_results: Aucun processus trouvé
   overview:
     name: Nom
     class: Classe
@@ -753,8 +775,10 @@ memory:
   title: Souvenirs
   graph:
     title: Graphe de connaissances
+    no_results: Aucun souvenir trouvé
   list:
     title: Liste des souvenirs
+    no_results: Aucun souvenir trouvé
   detail:
     title: Détails du souvenir
     created_at: Créé le

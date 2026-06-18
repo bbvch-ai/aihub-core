@@ -169,6 +169,7 @@ thread:
     title: Hierarchical View on Turns
   chat:
     title: Chat view
+    placeholder: Chat input
   memories:
     title: Thread Memories
     description: Memories collected during {threadName}
@@ -264,6 +265,11 @@ event:
     noChunksFound: No chunks found
     noChunksFoundDescription: The retrieval search didn't find any relevant content
       chunks.
+  metaQuestionDetected:
+    category:
+      identity: Identity
+      capabilities: Capabilities
+      behavior: Behaviour
   standaloneQuestionCondenser:
     summary: Question refined and condensed
     condensedQuestion: Condensed Question
@@ -421,6 +427,20 @@ document:
     number_of_pages: Number of Pages
     download: Download
     is_processing: Processing
+    actions: Actions
+    selected_count: '{count} document(s) selected'
+  delete:
+    title: Delete Document
+    deleting: Deleting
+    button: Delete
+    button_selected: Delete selected
+    confirmMessage: Are you sure you want to delete this document? It will be permanently
+      removed from the knowledge base. This action cannot be undone.
+    confirmMessageBatch: Are you sure you want to delete {count} document(s)? They
+      will be permanently removed from the knowledge base. This action cannot be undone.
+    success: Document scheduled for deletion
+    partial: '{deleted} document(s) scheduled for deletion, {failed} failed'
+    error: Failed to delete document
 knowledge:
   title: Knowledge Databases
   created_at: 'Created:'
@@ -670,6 +690,7 @@ bar:
   show_notifications: Show notifications
 process:
   title: Processes
+  no_results: No processes found
   overview:
     name: Name
     class: Class
@@ -745,8 +766,10 @@ memory:
   title: Memories
   graph:
     title: Knowledge Graph
+    no_results: No memories found
   list:
     title: Memory List
+    no_results: No memories found
   detail:
     title: Memory Details
     created_at: Created At

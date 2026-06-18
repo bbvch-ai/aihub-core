@@ -8,12 +8,14 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.workflow.annotations.extractors.extract_function_events import extract_function_events
     from swiss_ai_hub.core.workflow.annotations.extractors.extract_return_events import extract_return_events
     from swiss_ai_hub.core.workflow.dispatchable_workflow import DispatchableWorkflow
+    from swiss_ai_hub.core.workflow.visualizers.workflow_mermaid_serializer import WorkflowMermaidSerializer
     from swiss_ai_hub.core.workflow.visualizers.workflow_visualizer import WorkflowVisualizer
 
 __all__ = [
     "FixedList",
     "DispatchableWorkflow",
     "ListOfSize",
+    "WorkflowMermaidSerializer",
     "WorkflowVisualizer",
     "extract_event_classes",
     "extract_function_events",
@@ -24,6 +26,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "FixedList": "swiss_ai_hub.core.workflow.annotations.custom_types.list_of_size",
     "DispatchableWorkflow": "swiss_ai_hub.core.workflow.dispatchable_workflow",
     "ListOfSize": "swiss_ai_hub.core.workflow.annotations.custom_types.list_of_size",
+    "WorkflowMermaidSerializer": "swiss_ai_hub.core.workflow.visualizers.workflow_mermaid_serializer",
     "WorkflowVisualizer": "swiss_ai_hub.core.workflow.visualizers.workflow_visualizer",
     "extract_event_classes": "swiss_ai_hub.core.workflow.annotations.extractors.extract_event_classes",
     "extract_function_events": "swiss_ai_hub.core.workflow.annotations.extractors.extract_function_events",

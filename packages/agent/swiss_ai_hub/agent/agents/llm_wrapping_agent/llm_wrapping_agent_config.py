@@ -18,9 +18,9 @@ class LLMWrappingAgentConfig(AgentConfig):
     """
 
     system_prompt: Annotated[
-        LocaleString | LocaleInput | None,
-        Field(description="System prompt that sets the context for few-shot learning."),
-    ] = None
+        LocaleString | LocaleInput,
+        Field(description="System prompt that sets the agent's behaviour for the wrapped LLM."),
+    ]
     number_of_input_tokens: Annotated[
         int | InputNumber,
         Field(description="Maximum tokens allowed in input to manage context size or cost."),

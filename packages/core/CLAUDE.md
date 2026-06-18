@@ -195,11 +195,15 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   ├── HumanInTheLoopRequest/Response (HITL)                     [events/agent/hitl/]
 │   ├── AgentInTheLoopRequest/Response (AITL)                     [events/agent/aitl/]
 │   ├── BotInTheLoopRequest/Response (BITL)                       [events/agent/bitl/]
-│   └── SemanticEvent (OpenInference tracing)                     [events/agent/semantic/]
-│       ├── LLMEvent, RetrieverEvent, EmbeddingEvent
-│       ├── RerankerEvent, ToolEvent, ChainEvent
-│       ├── GuardEvent, AgentEvent
-│       └── ExceptionEvent
+│   ├── SemanticEvent (OpenInference tracing)                     [events/agent/semantic/]
+│   │   ├── LLMEvent, RetrieverEvent, EmbeddingEvent
+│   │   ├── RerankerEvent, ToolEvent, ChainEvent
+│   │   ├── GuardEvent, AgentEvent
+│   │   └── ExceptionEvent
+│   └── MetaQuestionDetectedEvent (meta-question classification)  [events/agent/self_awareness/]
+│
+├── ControlEvent (drives workflow execution)
+│   └── NotAMetaQuestionEvent (all-clear gate for normal pipeline) [events/agent/self_awareness/]
 │
 ├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
@@ -210,12 +214,13 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 
 Events are organized by which system they belong to:
 
-| Scope               | Directory          | What belongs here                                         |
-| ------------------- | ------------------ | --------------------------------------------------------- |
-| Agent events        | `events/agent/`    | All agent workflow events (control, display, HITL, etc.)  |
-| Process events      | `events/process/`  | Process orchestration, work delegation, process discovery |
-| Pipeline events     | `events/pipeline/` | Data pipeline events (SourceUpdatedEvent)                 |
-| Shared base classes | `events/`          | BaseEvent, shared discovery (ClassDiscoveryRequestEvent)  |
+| Scope                 | Directory                      | What belongs here                                                                   |
+| --------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
+| Agent events          | `events/agent/`                | All agent workflow events (control, display, HITL, etc.)                            |
+| Process events        | `events/process/`              | Process orchestration, work delegation, process discovery                           |
+| Pipeline events       | `events/pipeline/`             | Data pipeline events (SourceUpdatedEvent)                                           |
+| Self-awareness events | `events/agent/self_awareness/` | Meta-question detection gate (`MetaQuestionDetectedEvent`, `NotAMetaQuestionEvent`) |
+| Shared base classes   | `events/`                      | BaseEvent, shared discovery (ClassDiscoveryRequestEvent)                            |
 
 ### Creating a New Event
 

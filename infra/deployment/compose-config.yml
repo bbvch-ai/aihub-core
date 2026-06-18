@@ -51,6 +51,7 @@ image_tags:
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
   keycloak: keycloak:26.5.4
+  keycloak-config-cli: keycloak-config-cli:6.5.0-26.5.4
   searxng: searxng:2026.4.29-cba0cffa8
 
   # --- Custom Application Services ---
@@ -144,8 +145,8 @@ notifications:
   title_prefix: Swiss AI Hub Pipeline
   min_interval_seconds: 30
 # -------------------------------------------------------------------
-# Keycloak realm session lifespans (seconds), shared by
-# keycloak-realm.json.j2 (first-start import) and
+# Keycloak realm session lifespans (seconds), shared by the merged
+# aihub-realm.{stage}.json (first-start import) and
 # keycloak-entrypoint.sh.j2 (kcadm update on every start, so existing
 # deployments converge without re-importing the realm).
 # Keycloak defaults (30 min idle / 10 h max) force daily re-logins.
