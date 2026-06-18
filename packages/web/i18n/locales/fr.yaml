@@ -169,6 +169,7 @@ thread:
     title: Vue hiérarchique des tours
   chat:
     title: Vue Chat
+    placeholder: Saisie du chat
   memories:
     title: Mémoires du fil de discussion
     description: Mémoires collectées pendant {threadName}

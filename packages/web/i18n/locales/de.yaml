@@ -170,6 +170,7 @@ thread:
     title: Hierarchische Ansicht der Turns
   chat:
     title: Chat-Ansicht
+    placeholder: Chat-Eingabe
   memories:
     title: Thread-Erinnerungen
     description: Während {threadName} gesammelte Erinnerungen

@@ -10,6 +10,7 @@
       </label>
       <Select
         v-model="selectedDatabase"
+        :aria-label="t('lib.vectorStore.database.label')"
         input-id="vector-store-database-select"
         :options="databaseOptions"
         option-label="displayName"

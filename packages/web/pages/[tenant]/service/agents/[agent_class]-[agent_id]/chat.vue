@@ -13,6 +13,7 @@
             auto-resize
             rows="5"
             cols="30"
+            :aria-label="t('agent.chat.placeholder')"
             :placeholder="t('agent.chat.placeholder')"
             @keydown.enter="submitMessage"
           />

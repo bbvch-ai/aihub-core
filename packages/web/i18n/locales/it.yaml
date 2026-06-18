@@ -169,6 +169,7 @@ thread:
     title: Vista gerarchica sui turni
   chat:
     title: Vista Chat
+    placeholder: Input chat
   memories:
     title: Memorie del thread
     description: Memorie raccolte durante {threadName}
