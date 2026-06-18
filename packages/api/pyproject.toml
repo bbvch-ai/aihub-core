@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-api"
-version = "0.300.1"
+version = "0.300.3"
 description = "Swiss AI Hub REST API, WebSocket gateway, and MCP server (FastAPI) for the Swiss AI Agent Protocol."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.300.1",
+    "swiss-ai-hub-core==0.300.3",
     "azure-identity>=1.19.0",
     "azure-mgmt-cosmosdb>=9.7.0",
     "azure-mgmt-resource>=23.2.0",
