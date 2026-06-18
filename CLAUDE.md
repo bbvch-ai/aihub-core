@@ -102,11 +102,11 @@ Code shared by 2+ services belongs in `packages/core`. Service-specific code sta
 - **`packages/process`**: High-level business process orchestration (agents + humans + external programs).
 - **`packages/api`**: REST API + WebSocket gateway (FastAPI). Apache-2.0.
 - **`packages/sysadmin-api`**: System-administration API — sysadmin-gated tenant lifecycle endpoints (FastAPI,
-  proprietary).
-- **`packages/web`**: Frontend UI (Nuxt 3, Vue 3, PrimeVue, Tailwind). Apache-2.0.
-- **`packages/sysadmin-web`**: System-administration UI — Nuxt Layer extending `packages/web` (proprietary).
+  AGPL-3.0-or-later).
+- **`packages/web`**: Frontend UI (Nuxt 3, Vue 3, PrimeVue, Tailwind). AGPL-3.0-or-later.
+- **`packages/sysadmin-web`**: System-administration UI — Nuxt Layer extending `packages/web` (AGPL-3.0-or-later).
 - **`packages/bot`**: Collaboration platform integrations (MS Teams, Slack).
-- **`packages/backup`**: Centralized backup/restore service (independent Dagster instance).
+- **`packages/backup`**: Centralized backup/restore service (independent Dagster instance). AGPL-3.0-or-later.
 - **`.github/actions`**: Reusable GitHub Actions for CI/CD.
 - **`docs`**: arc42 documentation + ADRs (VitePress).
 

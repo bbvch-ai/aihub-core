@@ -57,6 +57,11 @@ guard_rejection_event:
   name: Richiesta Respinta
   description: La richiesta è stata respinta per motivi di sicurezza o a causa di
     violazioni delle politiche.
+meta_question_detected_event:
+  name: Meta-domanda rilevata
+  description: L'utente ha chiesto informazioni sull'assistente stesso — identità,
+    capacità o comportamento — quindi l'assistente risponde dalla propria configurazione
+    invece di eseguire il suo normale flusso di lavoro.
 few_shot_guard_accept_event:
   name: Guardia Few-Shot Accettato
   description: La richiesta corrisponde ai modelli degli esempi few-shot ed è autorizzata

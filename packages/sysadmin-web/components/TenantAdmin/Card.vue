@@ -1,4 +1,3 @@
-<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <div
     class="flex flex-col gap-3 rounded-xl border border-surface-200 p-4 dark:border-surface-800"
@@ -116,7 +115,7 @@ const confirmDelete = () => {
     },
     accept: async () => {
       if (isActive.value) {
-        await router.push(localePath('/sysadmin/tenants'))
+        await router.push(localePath('/tenants'))
       }
       await deleteTenantMetadata({ tenantId: props.tenant.id })
       toast.add({ severity: 'success', summary: t('tenant_admin.tenant_deleted.summary'), detail: t('tenant_admin.tenant_deleted.detail'), life: 3000 })

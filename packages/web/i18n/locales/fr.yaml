@@ -39,7 +39,9 @@ models:
     outputCostAbove128k: Coût de sortie (au-dessus de 128K)
     outputCostAbove200k: Coût de sortie (au-dessus de 200K)
     imageCost: Coût d'image
-    searchContextCost: Coût du contexte de recherche
+    searchContextCostLow: Coût du contexte de recherche (Faible)
+    searchContextCostMedium: Coût du contexte de recherche (Moyen)
+    searchContextCostHigh: Coût du contexte de recherche (Élevé)
     rateLimits: Limites de taux
     tokensPerMinute: Jetons par minute
     requestsPerMinute: Requêtes par minute
@@ -89,6 +91,7 @@ user:
   title: Utilisateurs
   logout: Déconnexion
   language: Langue
+  version: Version
   role_chips:
     no_roles: Aucun rôle assigné
     assign: Assigner un rôle
@@ -136,6 +139,15 @@ thread:
     numEvents: Nombre d'événements
     status: Statut
     pending: En attente
+    search_placeholder: Rechercher par nom
+    filter:
+      status_placeholder: Filtrer par statut
+      active: Actif
+      completed: Terminé
+      failed: Échoué
+      agent_name_placeholder: Filtrer par agent
+      user_name_placeholder: Filtrer par utilisateur
+      date_range_placeholder: Filtrer par date
   utils:
     pendingTypes:
       hitl: Humain dans la boucle
@@ -157,6 +169,7 @@ thread:
     title: Vue hiérarchique des tours
   chat:
     title: Vue Chat
+    placeholder: Saisie du chat
   memories:
     title: Mémoires du fil de discussion
     description: Mémoires collectées pendant {threadName}
@@ -253,6 +266,11 @@ event:
     assistant: Assistant
     system: Système
     user: Utilisateur
+  metaQuestionDetected:
+    category:
+      identity: Identité
+      capabilities: Capacités
+      behavior: Comportement
   standaloneQuestionCondenser:
     summary: Question affinée et condensée
     condensedQuestion: Question Condensée
@@ -335,6 +353,13 @@ agent:
     online: En ligne
     offline: Hors ligne
     clone: Cloner
+    search_placeholder: Rechercher par nom
+    no_results: Aucun agent trouvé
+    filter:
+      type_placeholder: Filtrer par type d'agent
+      status_placeholder: Filtrer par statut
+      enabled: Activé
+      disabled: Désactivé
   workflow:
     title: Flux de travail agentique
     view_tooltip: Afficher le flux de travail
@@ -405,6 +430,21 @@ document:
     number_of_pages: Nombre de pages
     download: Télécharger
     is_processing: Traitement en cours
+    actions: Actions
+    selected_count: '{count} document(s) sélectionné(s)'
+  delete:
+    title: Supprimer le document
+    deleting: Suppression en cours
+    button: Supprimer
+    button_selected: Supprimer la sélection
+    confirmMessage: Voulez-vous vraiment supprimer ce document ? Il sera définitivement
+      retiré de la base de connaissances. Cette action est irréversible.
+    confirmMessageBatch: Voulez-vous vraiment supprimer {count} document(s) ? Ils
+      seront définitivement retirés de la base de connaissances. Cette action est
+      irréversible.
+    success: Suppression du document planifiée
+    partial: Suppression de {deleted} document(s) planifiée, {failed} en échec
+    error: Échec de la suppression du document
 knowledge:
   title: Bases de connaissances
   created_at: 'Créé le:'
@@ -659,6 +699,7 @@ bar:
   show_notifications: Afficher les notifications
 process:
   title: Processus
+  no_results: Aucun processus trouvé
   overview:
     name: Nom
     class: Classe
@@ -734,8 +775,10 @@ memory:
   title: Souvenirs
   graph:
     title: Graphe de connaissances
+    no_results: Aucun souvenir trouvé
   list:
     title: Liste des souvenirs
+    no_results: Aucun souvenir trouvé
   detail:
     title: Détails du souvenir
     created_at: Créé le

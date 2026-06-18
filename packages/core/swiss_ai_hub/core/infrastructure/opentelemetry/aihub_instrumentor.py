@@ -81,7 +81,7 @@ def redis_request_hook(span: Span, instance: Redis, *args, **kwargs):
             }
         )
     except Exception:  # pylint: disable=W0718
-        logger.error(traceback.format_exc())
+        logger.exception(traceback.format_exc())
 
 
 def httpx_request_hook(span: Span, request: RequestInfo):
@@ -99,11 +99,16 @@ def httpx_response_hook(span: Span, request: RequestInfo, response: ResponseInfo
     span.set_status(StatusCode.ERROR if response.status_code >= status.HTTP_400_BAD_REQUEST else StatusCode.OK)
 
 
-async def httpx_async_request_hook(span: Span, request: RequestInfo):
+# The two hooks below must remain `async def` even though their bodies do no
+# async work: OpenTelemetry's httpx instrumentor calls `iscoroutinefunction()`
+# on these and silently drops them if they aren't coroutine functions, which
+# would disable httpx async telemetry. The underlying work (setting span
+# attributes) is pure-CPU so there's nothing to await.
+async def httpx_async_request_hook(span: Span, request: RequestInfo):  # noqa: S7503
     httpx_request_hook(span, request)
 
 
-async def httpx_async_response_hook(span: Span, request: RequestInfo, response: ResponseInfo):
+async def httpx_async_response_hook(span: Span, request: RequestInfo, response: ResponseInfo):  # noqa: S7503
     httpx_response_hook(span, request, response)
 
 

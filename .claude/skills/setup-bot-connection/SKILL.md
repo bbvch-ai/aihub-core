@@ -174,40 +174,171 @@ ______________________________________________________________________
 
 ## Local Development Setup
 
-### Using Azure DevTunnel
+You can drive the bot locally from the Microsoft **Bot Framework Emulator** with **no Azure registration**, using the
+testing playground. (For an authentic Teams/Slack test with real identities, see *Real channel via DevTunnel + Azure* at
+the end.)
+
+### Step 0 — The testing playground runner (`main.py`)
+
+The runner is **`packages/bot/playground/testing/main.py`** — read that file for the full implementation. It is
+**local-only — never an entry point for a deployed bot**. It does three things so a live emulator can drive the bot
+without Azure:
+
+1. **Forces the SDK's unauthenticated mode** — monkeypatches `RestChannelServiceClientFactory.create_connector_client`
+   and `create_user_token_client` to pass `use_anonymous=True`. Without it the `CloudAdapter` requires MSAL: you hit
+   `TENANT_ID is not set` on inbound and a `401` (rejected token) on the outbound reply.
+2. **Binds `0.0.0.0:8001`** (not the runner's hard-coded `localhost`) so a Windows-hosted emulator can reach it across
+   the WSL2 boundary, and calls **`runner.start_simulation()` before serving** — that starts the simulated agent's NATS
+   subscribers; skip it and every chat times out waiting for a reply.
+3. **Optionally stubs the user email** via `BOT_DEV_FAKE_EMAIL` (see Step 4) — a no-op when unset, so it never affects
+   real connector-based resolution.
+
+### Step 1 — Seed a PathEntity for the endpoint
+
+The runner serves the agent at `/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json`. Seed a matching
+`PathEntity` (empty credentials are fine — the runner is unauthenticated):
 
 ```bash
-# Install DevTunnel CLI (one-time)
-# https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started
-
-# Create tunnel
-devtunnel create --allow-anonymous
-devtunnel port create -p 8001
-devtunnel host
-
-# Output: https://abc123-8001.devtunnels.ms
-# Use as bot endpoint: https://abc123-8001.devtunnels.ms/api/v1/active/agent/chat/completions/...
+cd packages/bot
+uv run python - <<'PY'
+from dotenv import load_dotenv; load_dotenv("../../.env")
+from mongoengine import connect
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
+from swiss_ai_hub.bot.persistence.entities.path_entity import Credentials, PathEntity
+connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value(), uuidRepresentation="standard")
+path = "/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json"
+PathEntity.objects(path=path).delete()
+PathEntity(path=path, credentials=Credentials(APP_TYPE="MultiTenant"),
+           system_message="You are a helpful local dev assistant.").save()
+print("seeded", path)
+PY
 ```
 
-### Using Bot Framework Emulator (No Azure Required)
+> ⚠️ Keep the `system_message` free of placeholders, or use **only one** of `{username}` / `{assistant_name}`.
+> `CompletionHandler.get_system_message` calls `.format()` twice, so a message containing **both** placeholders raises
+> `KeyError`.
 
-1. Download: https://github.com/microsoft/BotFramework-Emulator
-2. Start bot locally:
-   ```bash
-   cd packages/bot/playground/testing
-   uv run python main.py
-   ```
-3. Connect emulator to: `http://localhost:8000/api/v1/active/messages`
-4. Leave App ID and Password **empty** for local testing
-5. Send messages and inspect Activity JSON
-
-### Using Playground Web Chat
+### Step 2 — Start (or restart) the runner
 
 ```bash
+# 1. stop any running playground instance (no-op if none; matches any python "main.py")
+pkill -f main.py
+
+# 2. go to the testing playground
 cd packages/bot/playground/testing
-uv run python main.py
-# Open http://localhost:8000 in browser
+
+# 3. start it, backgrounded, logging to /tmp/bot_local.log  (serves on 0.0.0.0:8001)
+uv run python main.py > /tmp/bot_local.log 2>&1 &
 ```
+
+Watch logs with `tail -f /tmp/bot_local.log`. Requires the dev stack's MongoDB/FerretDB, NATS, and Keycloak to be
+running. Re-run these three commands after changing `BOT_DEV_FAKE_EMAIL` (Step 4) — env vars are read once at startup.
+
+**Always confirm exactly one clean instance after (re)starting** — `uv run` spawns two processes, and if you start a new
+one before the old releases port 8001, the new one dies with `address already in use` while the **old instance keeps
+serving** (so your `.env` change silently has no effect):
+
+```bash
+tail -5 /tmp/bot_local.log     # GOOD: "Uvicorn running on http://0.0.0.0:8001"
+                               # BAD:  "address already in use" -> an old instance is still up
+ss -ltnp | grep :8001          # must show exactly ONE listener
+```
+
+If you see `address already in use`, run `pkill -9 -f main.py`, wait until `ss -ltnp | grep :8001` is empty, then start
+again.
+
+### Step 3 — Connect the Bot Framework Emulator
+
+Download from https://github.com/microsoft/BotFramework-Emulator/releases. **Open Bot** → URL:
+
+```
+http://localhost:8001/api/v1/agent/chat/completions/my_agent_class/my_agent_id/json
+```
+
+Leave **App ID / Password empty** → Connect → send a message.
+
+#### WSL2 note (Windows + WSL2 only)
+
+On **native Linux/macOS**, the emulator and bot share `localhost` — skip this section; the URL above and replies just
+work. On **WSL2** (bot in Linux, emulator on Windows), `localhost` bridges neither direction:
+
+1. **Emulator → bot:** connect via the WSL2 IP, not `localhost`. Get it with `hostname -I` (e.g. `172.23.171.112`) and
+   use `http://<WSL_IP>:8001/...`. (The runner already binds `0.0.0.0`.)
+
+2. **Bot → emulator (replies):** the emulator's reply URL is its own Windows `localhost`, unreachable from WSL2
+   (`Cannot connect to localhost:<port>`). Bridge it with a devtunnel:
+
+   a. **Find the emulator's listening port.** In the emulator's **Live Chat** tab, open the **Log** panel (right side)
+   and read the line `Emulator listening on http://[::]:<port>` — e.g. `…:57705`. This port is assigned per emulator
+   session, so re-check it whenever you restart the emulator. (The emulator's **Settings → Configure Tunnel** section
+   also prints the exact command pre-filled with the current port, e.g. `devtunnel host -a -p 57705`.)
+
+   b. **Host the tunnel on that port** (run **on Windows**):
+
+   ```powershell
+   # One-time only — skip if devtunnel is already installed (check with: devtunnel --version)
+   winget install Microsoft.devtunnel
+
+   # One-time only — skip if already logged in (check with: devtunnel user show)
+   devtunnel user login
+
+   # Every session — host the tunnel on the emulator's current port from step (a)
+   devtunnel host -a -p <emulator-port>   # e.g. 57705
+   ```
+
+   c. **Paste the public URL into the emulator.** `devtunnel host` prints two URLs — copy the **"Connect via browser"**
+   one (NOT the `-inspect` one):
+
+   ```text
+   Hosting port: 57705
+   Connect via browser: https://g25mmhp5-57705.asse.devtunnels.ms          ← copy THIS
+   Inspect network activity: https://g25mmhp5-57705-inspect.asse.devtunnels.ms   ← NOT this (causes 401)
+
+   Ready to accept connections for tunnel: jolly-cat-1xpgknv.asse
+   ```
+
+   Paste it into **Settings → Configure Tunnel → Tunnel Url** → Save. Keep the `devtunnel host` window running; replies
+   now route back through the tunnel.
+
+### Step 4 — Drive the user identity (`BOT_DEV_FAKE_EMAIL`)
+
+The bot resolves the user's email via the Teams connector (`get_conversation_member`), which the emulator does not
+implement (returns `404`). To exercise identity-dependent logic (auth, Keycloak provisioning) from the emulator, set
+`BOT_DEV_FAKE_EMAIL` in `.env` — the runner resolves that email directly:
+
+```bash
+# .env (gitignored, DEV ONLY)
+BOT_DEV_FAKE_EMAIL='admin@your-company.com'   # a provisioned Keycloak user  -> happy path
+# BOT_DEV_FAKE_EMAIL='ghost@example.com'      # an unknown email             -> UserNotProvisionedError
+```
+
+Restart the runner after changing it; leave it unset for real connector-based resolution. To fake other identity fields
+for future features, add another env-gated monkeypatch in the runner (same pattern) — never in `swiss_ai_hub/`
+production code.
+
+### Emulator troubleshooting
+
+| Symptom                                           | Cause                                         | Fix                                                                 |
+| ------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------- |
+| `No credentials found for path`                   | PathEntity missing                            | Seed it (Step 1)                                                    |
+| Emulator `POST 400`, nothing in the bot log       | Emulator can't reach the bot (WSL2)           | Connect via the WSL2 IP, not `localhost`                            |
+| Reply fails: `Cannot connect to localhost:<port>` | Bot (WSL2) can't reach the emulator reply URL | Set up the devtunnel and paste the Tunnel Url                       |
+| Reply `401` to `*.devtunnels.ms`                  | Pasted the `-inspect` tunnel URL              | Use the "Connect via browser" URL, not the `-inspect` one           |
+| `KeyError: 'assistant_name'`                      | `system_message` uses both placeholders       | Use ≤1 placeholder in the seeded system_message                     |
+| Bot 404s on `.../members/...` → generic error     | Emulator can't do the Teams member lookup     | Set `BOT_DEV_FAKE_EMAIL` to drive identity (Step 4)                 |
+| 60s typing then "taking too long"                 | The simulated agent didn't reply (harness)    | Identity resolved fine; use a real agent or test a pre-agent branch |
+
+### Real channel via DevTunnel + Azure (authentic Teams/Slack)
+
+For a true end-to-end test (real display names, real connector emails, genuinely unprovisioned users), expose the local
+bot and register it as an Azure Bot:
+
+```bash
+devtunnel host -a -p 8001     # public URL for the bot itself
+```
+
+Use that URL as the Azure Bot resource's messaging endpoint (see *Option A: Automated Setup* / `setup_azure_bot.py`
+above) and enable the Teams/Slack channel in the Azure portal.
 
 ______________________________________________________________________
 

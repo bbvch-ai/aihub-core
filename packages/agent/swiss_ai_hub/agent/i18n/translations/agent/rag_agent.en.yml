@@ -35,7 +35,7 @@ config:
       within these documents provides crucial insights relevant to the given context.\n\
       \nBelow are the relevant documents:\n\n<context_documents>\n{% for block in\
       \ context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
-      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction: Using the information\
       \ from the provided documents, generate a detailed and well-structured response\n\
       to the user's question.\n{% endchat %}\n"
@@ -85,6 +85,10 @@ steps:
   context_sufficient_guard:
     name: Context Sufficient Guard
     description: Guards the context to ensure it is sufficient for generating a response.
+  persist_grounding_nodes:
+    name: Persist Grounding Nodes
+    description: Persists this turn's top grounding documents so a follow-up question
+      can reuse them.
   limit_chat_history_with_context:
     name: Limit Chat History with Context
     description: Includes the combined context and truncates chat history again.

@@ -24,7 +24,7 @@ Hier ist ein kurzes Video, das Ihnen zeigt, wie Sie zum Chat gelangen:
 
 <video controls="controls" src="../../../../media/platform/your_first_conversation/RAG_Agent-Frontend.webm" type="video/webm" />
 
-Nutzen Sie den Chat wie jeden anderen auch. Eine detaillierte Übersicht aller Chat-Funktionen finden Sie [hier](/de/docs/10_chat_ui/1_feature_overview/).
+Nutzen Sie den Chat wie jeden anderen auch. Eine detaillierte Übersicht aller Chat-Funktionen finden Sie [hier](../../10_chat_ui/1_feature_overview/).
 
 ## Agent
 

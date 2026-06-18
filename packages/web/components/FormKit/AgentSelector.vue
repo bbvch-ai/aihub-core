@@ -10,6 +10,7 @@
       </label>
       <Select
         v-model="selectedClass"
+        :aria-label="t('agent.selector.class.label')"
         input-id="agent-class-select"
         :options="filteredClassOptions"
         option-label="displayName"
@@ -53,6 +54,7 @@
       </label>
       <Select
         v-model="selectedId"
+        :aria-label="t('agent.selector.id.label')"
         input-id="agent-id-select"
         :options="idOptions"
         option-label="displayName"
@@ -93,7 +95,7 @@
 
 <script setup lang="ts">
 import { getAgentClasses, getAgentClassInstances } from '@core/sdk/client'
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { AgentClassDto, FullAgentInstanceDto, LocaleString } from '@core/sdk/client'
 
@@ -200,7 +202,7 @@ function emitValue(agentClass: string, agentId: string) {
 const classOptions = computed<ClassOption[]>(() =>
   agentClasses.value.map(cls => ({
     name: cls.agent_class,
-    displayName: getLocalizedValue(cls.name, locale.value) || useChangeCase(cls.agent_class, 'capitalCase'),
+    displayName: getLocalizedValue(cls.name, locale.value) || capitalCase(cls.agent_class),
     icon: cls.icon || 'mage:robot',
   })),
 )

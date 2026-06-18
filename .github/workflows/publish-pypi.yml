@@ -1,0 +1,89 @@
+---
+name: Publish Python packages to PyPI
+run-name: Publish PyPI - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}
+# Publishes the Swiss AI Hub Python distributions to PyPI via OIDC trusted publishing on release.
+# Excludes swiss-ai-hub-sysadmin-api, which ships as a Docker image rather than a PyPI library. The
+# jambo fork (swiss-ai-hub-jambo) is published from its own repository, not here.
+on:
+  repository_dispatch:
+    types: [release-ready]
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Release version tag to publish (e.g., v0.290.12)
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: publish-pypi-${{ github.event.client_payload.release_version || github.event.inputs.release_version }}
+  cancel-in-progress: false
+jobs:
+  publish-pypi:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: pypi
+    steps:
+      - name: Extract version
+        id: version
+        env:
+          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+          CLIENT_PAYLOAD_VERSION: ${{ github.event.client_payload.release_version }}
+        run: |
+          if [ -n "$RELEASE_VERSION" ]; then
+            VERSION="$RELEASE_VERSION"
+          elif [ -n "$CLIENT_PAYLOAD_VERSION" ]; then
+            VERSION="$CLIENT_PAYLOAD_VERSION"
+          else
+            echo "No release_version provided. Failing."
+            exit 1
+          fi
+          # Strict tag check: client_payload feeds checkout `ref` (injection guard).
+          if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Refusing to publish: '$VERSION' is not a valid vX.Y.Z release tag."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Checkout at release tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ steps.version.outputs.version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+        with:
+          enable-cache: true
+      - name: Build distributions
+        env:
+          TAG: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Publishable distributions only — sysadmin-api ships as a Docker image, not a PyPI library.
+          PACKAGES=(
+            swiss-ai-hub-core
+            swiss-ai-hub-agent
+            swiss-ai-hub-api
+            swiss-ai-hub-bot
+            swiss-ai-hub-pipeline
+            swiss-ai-hub-process
+            swiss-ai-hub-backup
+            swiss-ai-hub
+          )
+          for pkg in "${PACKAGES[@]}"; do
+            echo "::group::build $pkg"
+            uv build --package "$pkg" --no-sources
+            echo "::endgroup::"
+          done
+          # Guard: every built wheel must carry the release-tag version (checkout ↔ pyproject match).
+          EXPECTED="${TAG#v}"
+          for pkg in "${PACKAGES[@]}"; do
+            dist_name="${pkg//-/_}"
+            if [ ! -f "dist/${dist_name}-${EXPECTED}-py3-none-any.whl" ]; then
+              echo "::error::expected dist/${dist_name}-${EXPECTED}-py3-none-any.whl not found — version mismatch with tag ${TAG}."
+              exit 1
+            fi
+          done
+      - name: Validate distributions (namespace + secrets)
+        run: uv run --no-project python infra/release/check_dist.py dist
+      - name: Publish to PyPI (OIDC trusted publishing)
+        run: uv publish --trusted-publishing always --check-url https://pypi.org/simple/

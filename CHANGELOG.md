@@ -5,6 +5,1243 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.300.2] - 2026-06-18 - Homepage Navigation Refinement
+
+### Changed
+
+- 📄 **Updated Platform Overview Navigation:** Streamlined the "Platform Overview" link on the homepage for both English
+  and German versions, directing users to the broader architecture section for an improved overview of platform
+  documentation.
+
+______________________________________________________________________
+
+## [v0.300.1] - 2026-06-17 - Enhanced User Interface Accessibility
+
+### Changed
+
+- ♿️ **Improved UI Accessibility:** Added `aria-label` attributes to numerous interactive components across the
+  application, including various `Select` dropdowns, `Textarea` inputs, `InputText` fields, and file upload inputs. This
+  enhancement significantly improves the experience for users relying on screen readers and other assistive technologies
+  by providing clearer context for UI elements.
+- ⚙️ **Refined Form Element Identification:** Updated and added `id` attributes to select form components, ensuring
+  better programmatic identification and improved accessibility.
+- 🌐 **Expanded Internationalization:** Introduced new placeholder translations for chat inputs
+  (`thread.chat.placeholder`) across multiple languages (German, English, French, Italian) to support enhanced UI
+  descriptions.
+
+______________________________________________________________________
+
+## [v0.300.0] - 2026-06-17 - Streamlined Agent Instance Management with Auto-Granted Creator Access
+
+### Added
+
+- 🚀 **Automated Creator Access for Agent Instances**: Tenant administrators can now create agent instances and
+  immediately gain full admin access (open, edit, delete, chat) without requiring manual intervention from a sysadmin.
+  This significantly improves the self-service capabilities for agent instance management.
+- 📄 **Architectural Decision Record (ADR)**: A new ADR has been added, documenting the decision for automatically
+  granting per-instance access to creators and detailing the context, drivers, decision, and consequences.
+- 🔑 **New Access Control Helpers**: Introduced dedicated `AccessChecker` methods (`agent_instance_admin_rule`,
+  `agent_instance_user_rule`, `rules_grant_admin_to_agent_instance`) to precisely manage and evaluate instance-level
+  permissions.
+- 🦾 **Persistence Utilities for Access Management**: Added robust utility methods including
+  `TenantMetadataEntity.grant_access_rule`, `TenantMetadataEntity.revoke_access_rule_from_all_tenants`, and
+  `RoleEntity.delete_role_from_all_tenants` for managing tenant access ceilings and dedicated per-instance roles.
+- ✅ **Comprehensive Test Coverage**: Included extensive unit and integration tests to ensure the reliability and
+  correctness of the new auto-grant and cleanup mechanisms for agent instance access.
+
+### Changed
+
+- 🔄 **Updated Agent Instance Lifecycle in API**: The `AgentService` now orchestrates the automatic granting of
+  per-instance admin access during agent instance creation and performs thorough cleanup of associated access rules and
+  roles upon deletion, including a rollback mechanism for failed grants.
+- ⚡️ **Improved Frontend Cache Synchronization**: Frontend components now automatically invalidate relevant caches
+  (agent instances, tenant roles, user profiles) after creating or deleting agent instances, ensuring immediate
+  reflection of access changes in the UI.
+- 🖼️ **Enhanced Agent List Display Logic**: Refined the display of agent groups and empty states on the agents page,
+  improving user experience when applying filters or viewing available agent classes.
+
+### Refactor
+
+- 🧹 **Standardized Agent Rule Generation**: The `AccessChecker` now uses dedicated helper methods to generate canonical
+  user and admin rules for agent instances, improving consistency and maintainability of access control logic.
+
+______________________________________________________________________
+
+## [v0.299.0] - 2026-06-17 - Streamlined Keycloak Management and Expanded LLM Support
+
+### Added
+
+- ✨ New LLM models, **Fable** and **Fable 1M**, are now available for use.
+- 🚀 A new `keycloak-config` service has been introduced to enable declarative, idempotent management of Keycloak realm
+  configurations, ensuring consistency across deployments.
+- 📄 A new Architecture Decision Record (ADR) detailing the **Declarative Keycloak Realm Reconciliation** outlines the
+  strategy for the updated configuration management system.
+- 📦 Keycloak configuration templates are now organized into `bootstrap/` (first-start only) and `managed/` (reconciled
+  on every start) directories for clearer lifecycle management.
+
+### Changed
+
+- 🔄 The **Keycloak configuration management** workflow has been fundamentally revised, transitioning from mixed
+  first-start imports and imperative `kcadm` scripts to a fully declarative approach using the new `keycloak-config`
+  service.
+- 📄 **Keycloak documentation** has been extensively updated to clearly define the new two-phase configuration lifecycle
+  (bootstrap vs. managed) and its implications for operators, including how changes are applied and maintained.
+- 🔑 **Azure Entra ID setup instructions** for platform roles have been clarified, specifying that `AIHubAccess` and
+  `AIHubSysAdmin` are the only Keycloak realm roles to be mapped from the Identity Provider. Other platform roles are
+  now explicitly stated to be managed internally by the platform.
+- 🔐 Access to **SeaweedFS Filer** and other admin tool UIs now consistently requires the `AIHubSysAdmin` realm role,
+  enhancing security and aligning access control across administrative interfaces.
+- 📚 The **Environment Variables documentation** has been thoroughly revised to reflect the new Keycloak configuration
+  structure and the services consuming each variable.
+- 📝 German documentation for **Platform vs. SDK** and the **Ecosystem Model** has been updated with minor wording
+  improvements and corrected license references to `AGPL-3.0-or-later`.
+
+### Removed
+
+- 🗑️ The monolithic `keycloak-realm.json.j2` and `keycloak-identity-providers.json.j2` templates have been retired,
+  replaced by the new modular `bootstrap/` and `managed/` Keycloak configuration files.
+- 🗑️ Imperative `kcadm` commands for identity provider and Langfuse sysadmin gate reconciliation have been removed from
+  the `keycloak-entrypoint.sh` script, as these are now handled declaratively by the `keycloak-config` service.
+
+### Refactor
+
+- 🧹 The **Keycloak entrypoint script (`keycloak-entrypoint.sh`)** has been significantly simplified by delegating
+  managed configuration reconciliation to the `keycloak-config` service.
+- 🛠️ The internal `generate_compose.py` tooling has been refactored to support the new modular Keycloak configuration
+  structure, including logic to merge bootstrap and managed documents for the initial realm import.
+- ⚙️ Keycloak's realm definition has been restructured across multiple, smaller JSON files within `bootstrap/` and
+  `managed/` to improve modularity and maintainability.
+
+______________________________________________________________________
+
+## [v0.298.3] - 2026-06-16 - Configuration Forms: Robustness and User Experience Improvements
+
+### Fixed
+
+- 🐛 **Configuration Form Defaults:** Resolved an issue where nullable fields with default values were not correctly
+  initialized on new form creation, leading to silent data loss of defaults. Forms now consistently apply declared
+  default values, ensuring a predictable user experience.
+- 🐛 **Repeater Row Stability:** Eliminated data corruption and UI inconsistencies in repeater components by implementing
+  stable, unique keys for each row. This prevents issues caused by re-indexing when non-last rows are removed from a
+  list.
+- 🐛 **Fractional Input Fields:** Corrected the behavior of numeric input fields (`InputNumber`) to properly accept and
+  display decimal values for fractional properties (e.g., LLM `temperature`), which previously rejected decimal points.
+- 🐛 **Form Rendering Robustness:** Enhanced the dynamic form builder to handle malformed schema elements gracefully. A
+  single invalid field will now be skipped and logged without causing the entire form section to disappear or become
+  unusable.
+- 🐛 **UI Performance & Stability:** Addressed intermittent blank or broken form displays by refactoring label and option
+  resolvers to use synchronous case conversion, eliminating reactive effect leakage and improving rendering stability.
+
+### Changed
+
+- 🔄 **Unified Form Data Handling:** The agent and process configuration forms now utilize a single, consistent pipeline
+  for hydrating initial data and serializing submissions. This ensures identical behavior and data integrity across both
+  creation and editing workflows.
+- 📄 **Nullable Field Toggle Logic:** Extended the backend form schema to include a `default_enabled` flag for nullable
+  elements. This accurately indicates whether a field with a non-null default value should appear enabled by default on
+  a fresh form.
+- ⚡️ **Symmetric Backend Normalization:** Agent and process creation endpoints now apply the same server-side
+  configuration normalization as update operations. This prevents internal UI artifacts (like FormKit `__validate__`
+  keys) from persisting in the configuration data.
+
+### Refactor
+
+- 🧹 **Case Conversion Utility:** Replaced the `useChangeCase` composable with a direct, synchronous `capitalCase`
+  utility across various UI components, contributing to the overall stability and performance of form rendering.
+
+______________________________________________________________________
+
+## [v0.298.2] - 2026-06-16 - Documentation Site Migration to Custom Domain
+
+### Added
+
+- 📄 **Custom Domain Configuration:** Integrated support for a custom domain (`docs.ai-hub.bbv.ch`) for the documentation
+  site, enhancing branding and direct access.
+- 🌐 **Sitemap Generation:** Enabled sitemap generation for the documentation portal, improving search engine
+  optimization and content discoverability.
+- 🤖 **Crawler Access:** Updated the `robots.txt` file to allow web crawlers to access and index the entire documentation
+  site.
+
+### Changed
+
+- 🚀 **Documentation Base Path:** Modified the documentation site's base path to be served from the root `/` (instead of
+  `/aihub-core/`), aligning with the new custom domain setup.
+- 🔗 **Live URL and Deployment Details:** Revised internal configuration and documentation to reflect the new live URL
+  (`https://docs.ai-hub.bbv.ch/`) and updated deployment specifics.
+
+______________________________________________________________________
+
+## [v0.298.1] - 2026-06-16 - Enhanced Agent List Display and Filtering
+
+### Changed
+
+- 🖼️ **Refined Agent Group Display:** The Agents page now intelligently shows or hides agent group headers based on
+  active filters. When filters are applied, only groups with instances matching the criteria will display a header,
+  providing a cleaner and more relevant overview. When no filters are active, all available agent classes will show
+  their headers.
+
+______________________________________________________________________
+
+## [v0.298.0] - 2026-06-16 - Introducing Document Deletion and Enhanced Management for Knowledge Bases
+
+### Added
+
+- ✨ **Document Deletion API Endpoints:** Introduced new API endpoints for deleting individual documents and performing
+  batch deletions from knowledge bases.
+- 🗑️ **Core S3 File Deletion:** Added foundational S3 service capabilities to permanently remove source files from data
+  lakes as part of the document deletion process.
+- 🚀 **Asynchronous Document Cleanup:** Implemented service logic to schedule the cleanup of document and vector stores
+  via pipeline reconciliation after a document's source file is removed.
+- 📄 **Batch Deletion Data Transfer Objects:** Introduced new DTOs for requests and responses to support the new batch
+  document deletion functionality, providing clear status for each document.
+- 🖼️ **Interactive Document Deletion UI:** Added user interface elements to the document list for both single and
+  multi-select document deletion, including confirmation dialogs and progress indicators.
+- ⚡️ **Real-time Deletion Status Tracking:** Developed front-end composables to manage the state of scheduled document
+  deletions, providing visual feedback to users even after page refreshes.
+- 🌐 **Localized Deletion Messages:** Integrated comprehensive localization for all new document deletion features across
+  multiple languages.
+- 🧪 **Extensive Deletion Service Tests:** Added a new suite of unit tests to ensure the reliability and correctness of
+  the knowledge document deletion service.
+
+### Fixed
+
+- 🐛 **Robust Metadata Table Generation:** Corrected an issue in the pipeline's metadata utility to ensure consistent and
+  valid table structures when displaying heterogeneous document metadata, preventing errors in Dagster reports.
+
+### Changed
+
+- 🔄 **Updated Document List Experience:** Enhanced the document list to clearly indicate documents pending deletion and
+  integrated hooks for refreshing data after deletion events.
+- ✍️ **Clarified Source Update Event Purpose:** Updated the documentation for the `SourceUpdatedEvent` to explicitly
+  state its role in triggering both ingestion and cleanup processes within the pipeline.
+
+### Refactor
+
+- 🧹 **Standardized S3 URI Handling:** Centralized the definition and usage of the S3 URI scheme within the knowledge
+  service for improved consistency and maintainability.
+
+______________________________________________________________________
+
+## [v0.297.9] - 2026-06-16 - Streamlined Agent Evaluations with Enhanced Langfuse Integration
+
+### Changed
+
+- 🔄 **Updated Agent Evaluation Workflow:** The agent evaluation process has been re-architected to deeply integrate with
+  **Langfuse**, establishing it as the primary platform for conducting experiments and managing evaluators. The Swiss AI
+  Hub now auto-provisions all necessary components for a seamless Langfuse experience.
+- 📄 **Revised Evaluation Documentation:** The comprehensive documentation for agent evaluations has been completely
+  updated to guide users through the new Langfuse-centric workflow, detailing how to create datasets, configure
+  evaluators, and execute experiments effectively.
+- ⚡️ **Simplified Evaluator Configuration:** The documentation for creating evaluators has been streamlined, emphasizing
+  recommended scoring dimensions and highlighting the auto-provisioned LLM connection for judge models directly within
+  Langfuse.
+
+### Removed
+
+- 🗑️ **Deprecated Experiment UI Images:** Outdated screenshots depicting the previous in-platform UI for running
+  experiments have been removed to align with the new Langfuse-based evaluation workflow.
+
+______________________________________________________________________
+
+## [v0.297.8] - 2026-06-16 - Refined Localization and Translation Capabilities
+
+### Changed
+
+- ✨ **Enhanced Locale String Handling:** The `LocaleString` utility has been significantly improved with a more robust
+  `in_locale` method, now offering intelligent fallback logic to ensure the best available translation is always
+  retrieved. This includes prioritizing the exact requested locale, falling back to a default, and then to other
+  available languages.
+- 🔄 **Precision in Translation Service:** The `TranslationService` now explicitly requests translations for the exact
+  source locale without automatic fallbacks, ensuring greater control and precision in the translation process,
+  leveraging the new `LocaleString` enhancements.
+
+### Added
+
+- ✅ **Expanded Unit Tests for Localization:** New, comprehensive unit tests have been introduced for the `LocaleString`
+  class, rigorously validating the new fallback logic and precise locale retrieval mechanisms to ensure the reliability
+  of internationalization features.
+
+______________________________________________________________________
+
+## [v0.297.7] - 2026-06-16 - Dashboard UI and Chart Display Improvements
+
+### Fixed
+
+- 🖼️ **Dashboard Grid Filters:** Resolved potential display and layering issues for dropdown menus within the
+  **Dashboard Grid** by ensuring proper rendering of event data type and agent selection options.
+- 📈 **Event Timeseries Chart:** Enhanced the visual layout and readability of the **Event Timeseries Chart** by
+  fine-tuning chart and data label vertical positioning, including responsive adjustments for smaller screens.
+
+______________________________________________________________________
+
+## [v0.297.6] - 2026-06-16 - Strengthened OpenWebUI Group Management and Sync Reliability
+
+### Added
+
+- 📄 **Improved logging:** Added logging capabilities to the OpenWebUI client for better operational visibility during
+  interactions with the OpenWebUI API.
+
+### Fixed
+
+- 🐛 **Prevented duplicate OpenWebUI groups:** The `create_group` operation is now idempotent. It intelligently reuses an
+  existing OpenWebUI group if one with the same display name is found, preventing the creation of duplicate groups that
+  could disrupt role-to-group synchronization.
+- 🔐 **Enhanced group synchronization reliability:** Implemented a dedicated, blocking Redis lock for OpenWebUI group
+  reconciliation. This prevents concurrent synchronization processes from creating duplicate groups or causing
+  inconsistent states, ensuring robust group management.
+- ⚡️ **Increased group sync lock timeout:** The maximum duration for the group synchronization lock has been
+  significantly extended from 60 to 600 seconds. This prevents premature lock expiration for potentially long-running
+  group reconciliation operations on large tenants.
+
+### Changed
+
+- 🔄 **Improved Redis lock robustness:** The Redis lock acquisition and release mechanism has been enhanced to gracefully
+  handle scenarios where a lock auto-expires before it can be explicitly released. This prevents failures and provides
+  warnings for better operational insights.
+
+### Refactor
+
+- 🧹 **Refactored group synchronization logic:** The core group reconciliation logic within the provisioner has been
+  extracted into a new method (`_sync_groups_locked`), improving code clarity and better isolating the critical section
+  protected by the dedicated synchronization lock.
+
+______________________________________________________________________
+
+## [v0.297.5] - 2026-06-15 - Enhanced Error Reporting for Clearer Notifications
+
+### Fixed
+
+- 🐛 **Improved Error Message Display:** Enhanced the client-side error handling to correctly parse and display detailed
+  error messages received as arrays, ensuring users receive comprehensive and readable notifications in toast alerts.
+
+______________________________________________________________________
+
+## [v0.297.4] - 2026-06-15 - Enhanced Empty State Feedback
+
+### Added
+
+- ✨ **Improved Empty State Feedback:** Introduced clear "no results" messages for the Processes, Memory Graph, and
+  Memory List pages, ensuring users receive visual feedback when no items are available.
+- 📄 **New Localization Strings:** Added new translation keys for "no results" messages across multiple languages
+  (German, English, French, Italian) to support the improved empty state feedback.
+
+______________________________________________________________________
+
+## [v0.297.3] - 2026-06-15 - Streamlined Sysadmin Tenant Routing
+
+### Changed
+
+- 🔄 **Simplified Sysadmin Tenant Paths:** The `/sysadmin` URL prefix has been removed from all tenant administration
+  routes. Sysadmin functionality is now directly accessible under `/tenants`, making the URL structure more concise and
+  aligned with the sysadmin application's primary function.
+- 🧹 **Refined `useTenantPath` Logic:** The `useTenantPath` composable now explicitly focuses on generating paths for
+  tenant-scoped `/[tenant]/...` routes. Sysadmin routes (`/tenants/...`) are now treated as absolute and no longer
+  require dynamic tenant injection through this composable, clarifying and streamlining path generation logic.
+- 📄 **Updated Sysadmin Documentation:** The project documentation has been updated to reflect the new, simplified
+  sysadmin routing structure, providing clearer guidance on tenant administration paths.
+
+______________________________________________________________________
+
+## [v0.297.2] - 2026-06-15 - Improved LiteLLM User & Key Management
+
+### Fixed
+
+- 🐛 **Enhanced LiteLLM provisioning resilience:** Improved the user and API key generation process to gracefully handle
+  concurrent requests and race conditions by treating `409 Conflict` responses for user or key creation as successful,
+  pre-existing entities. This makes the service more robust in high-concurrency environments.
+
+### Refactor
+
+- 🧹 **Streamlined LiteLLM key provisioning:** The internal logic for managing LiteLLM users and API keys has been
+  refactored into distinct, more focused methods (`_create_user_if_absent`, `_generate_key`) to improve clarity,
+  maintainability, and error handling.
+
+### Added
+
+- 🧪 **Comprehensive LiteLLM service unit tests:** Introduced a new suite of unit tests for the `LiteLLMService` covering
+  various scenarios, including existing users, new user creation, and handling of concurrency conflicts during user and
+  key provisioning.
+
+______________________________________________________________________
+
+## [v0.297.1] - 2026-06-15 - Stricter Langfuse Access Control and Local Dev Setup Enhancements
+
+### Security
+
+- 🔑 **Restricted Langfuse UI Access:** Implemented Keycloak-level access control for the Langfuse UI, ensuring that only
+  users with the `AIHubSysAdmin` realm role can log in. This prevents unauthorized users from viewing sensitive trace
+  data by denying access directly at the Keycloak login flow.
+- 🔑 **Idempotent Keycloak Flow Reconciliation:** Added robust scripting to the Keycloak entrypoint that idempotently
+  applies authentication flow configurations, including the new Langfuse access gate, on every container start. This
+  ensures security policies are consistently enforced across all deployments, especially existing ones.
+- 📄 **Documented Langfuse Sysadmin Gate:** Introduced new architecture decision records (ADRs) and comprehensive
+  deep-dive documentation explaining the detailed mechanism, rationale, and structural rules for the Langfuse sysadmin
+  gate within Keycloak.
+- 📄 **Updated Observability and Authentication Documentation:** Enhanced platform documentation in both English and
+  German to clearly reflect the new Langfuse access restrictions and the role of the `AIHubSysAdmin` in controlling
+  access to administrative tools.
+
+### Fixed
+
+- 🐛 **Langfuse OIDC Callback in Local Environments:** Resolved an issue where Langfuse's OIDC backchannel to Keycloak
+  would fail in local and build environments when using self-signed `mkcert` certificates. The Langfuse container now
+  correctly trusts the `mkcert` root CA, allowing successful OIDC authentication.
+
+### Added
+
+- 🛠️ **Automated `mkcert` Root CA Copy:** The `make local-cert` command now automatically copies the `mkcert` root CA
+  certificate into the Traefik certificates directory, streamlining local development setup for secure communication.
+- 📄 **Keycloak Configuration Deep-Dive:** Added new, comprehensive documentation sections providing an overview of the
+  `aihub` Keycloak realm, including its clients, scopes, roles, tenant groups, identity brokering, and the mechanisms by
+  which configuration changes are applied to running instances.
+
+### Changed
+
+- ⚙️ **Keycloak Realm Configuration Update:** Modified the Keycloak realm configuration across all deployment stages to
+  bind a custom browser flow and introduce a new marker client scope (`langfuse-sysadmin-gate`), enabling the
+  conditional access denial logic for Langfuse.
+- 🧹 **Documentation Sync Exclusions:** Updated the documentation synchronization script and `.gitignore` to specifically
+  preserve hand-authored Keycloak configuration deep-dive documentation sections during automated content updates.
+
+### Refactor
+
+- 📄 **Minor Documentation Adjustments:** Performed various minor formatting and wording adjustments across several
+  existing documentation files to improve clarity and readability.
+
+______________________________________________________________________
+
+## [v0.297.0] - 2026-06-15 - Self-Aware Agents: Sm🧠rter Conversations and Robust Workflows
+
+### Added
+
+- 🦾 **Agent Self-Awareness Feature:** Introduced the ability for conversational agents to detect and answer
+  meta-questions about themselves (e.g., "What can you do?", "Who are you?") based on their identity, capabilities, and
+  behavior, instead of running their normal pipeline.
+- ✨ **New Self-Awareness Events:** Created `MetaQuestionDetectedEvent` to signal when a user's query is a meta-question
+  about the agent, and `NotAMetaQuestionEvent` to act as an "all-clear" gate, releasing the agent's normal workflow.
+- 💬 **Localized Meta-Question Handling:** Added comprehensive i18n support for self-awareness steps, detection prompts,
+  and answer prompts, enabling agents to respond to meta-questions in multiple languages.
+- 📄 **Workflow Mermaid Flowchart Generation:** Implemented a new utility to generate Mermaid flowcharts of an agent's
+  workflow (excluding self-awareness steps) to help ground the agent's answers to meta-questions about its processes.
+- 🧪 **Comprehensive Self-Awareness Testing:** Introduced a suite of unit and integration tests, including a compliance
+  test, to ensure self-awareness features are correctly wired into conversational agents and prevent common pitfalls
+  like race conditions.
+- 🖼️ **UI Support for Meta-Question Events:** Added a new Vue component to display `MetaQuestionDetectedEvent` in the
+  UI, providing visual feedback when an agent is handling a meta-question.
+
+### Changed
+
+- 🔄 **Conversational Agents Integrated with Self-Awareness:** The `RAGAgent`, `ExpertRAGAgent`, `FewShotAgent`,
+  `LLMWrappingAgent`, `McpReactAgent`, and `NamespaceSelectionAgent` blueprints now explicitly define steps for
+  detecting and answering meta-questions, and their entry points are gated to prevent conflicts.
+- 📝 **Updated Agent Documentation and Guidance:** Refreshed the `SKILL.md` and `CLAUDE.md` documents with detailed
+  guidelines on integrating and testing self-awareness in new and existing conversational agents.
+
+### Fixed
+
+- 🐛 **Robust Chat History Limiting:** Enhanced the chat history limiting mechanism to proactively filter out empty chat
+  messages, preventing potential 400 errors from LLM providers and improving overall agent reliability.
+
+### Refactor
+
+- 🧹 **Decoupled Self-Awareness Implementation:** Architecturally decided to implement self-awareness as explicit,
+  per-agent steps rather than a shared base-class mixin. This keeps agent workflows transparent and avoids invasive
+  changes to core `Agent` machinery, ensuring cleaner integration and easier debugging.
+
+______________________________________________________________________
+
+## [v0.296.5] - 2026-06-15 - Improved RAG Agent Context Persistence for Follow-up Questions
+
+### Fixed
+
+- 🐛 **RAG Agent follow-up context loss**: Addressed a critical bug where the RAG agent would fail to answer affirmative
+  replies to offered follow-up questions due to the loss of essential grounding context between conversation turns.
+
+### Added
+
+- ✨ **Grounding node persistence**: Introduced a new mechanism to automatically persist and carry over the most relevant
+  grounding documents from a previous turn into the current conversation turn, ensuring continuous context for follow-up
+  questions.
+- 📄 **`grounding_nodes` to `InOrderNodeCombinerEvent`**: Added a new field to the `InOrderNodeCombinerEvent` to
+  explicitly track and expose the complete set of nodes (comprising both fresh retrieval and carried prior-turn nodes)
+  that collectively ground the agent's answer.
+- 🚀 **Dedicated RAG agent steps**: Implemented new workflow steps (`persist_grounding_nodes_step`,
+  `do_read_carried_grounding_nodes`, `do_persist_grounding_nodes`) within the RAG agent to manage the lifecycle and
+  integration of carried grounding nodes.
+- 🧪 **Regression test for follow-up affirmation**: Introduced a comprehensive regression test to validate the fix and
+  prevent future regressions related to context retention in multi-turn follow-up scenarios.
+
+### Changed
+
+- 🔄 **Enhanced context combination logic**: Modified the `order_nodes_by_documents_step` to seamlessly integrate carried
+  grounding nodes alongside newly retrieved content, creating a more robust and complete context for generating
+  responses to follow-up questions.
+
+______________________________________________________________________
+
+## [v0.296.4] - 2026-06-15 - Enhanced LLM Parameter Precision
+
+### Changed
+
+- 🎨 Improved the display precision of the **LLM temperature parameter** slider in the UI, ensuring it shows a maximum of
+  one decimal place for better readability and user experience.
+
+______________________________________________________________________
+
+## [v0.296.3] - 2026-06-15 - Enhanced Prompt Configuration for Agents and Steps
+
+### Changed
+
+- 🔗 **Mandatory System Prompts:** The `system_prompt` field for both the **`LLMWrappingAgent`** and **`FewShotStep`** is
+  now mandatory, ensuring that these components always have a defined behavioral context.
+- 📄 **LLMWrappingAgent Prompt Clarity:** The description for the **`LLMWrappingAgent`'s system prompt** has been updated
+  to more accurately reflect its purpose in setting the agent's behavior for the wrapped LLM.
+
+______________________________________________________________________
+
+## [v0.296.2] - 2026-06-12 - Expanded Security Configuration for Backup Services
+
+### Added
+
+- 🔑 **Added Keycloak OAuth2 Proxy Secret for Backup Service:** Introduced support for a new
+  `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` environment variable across all Docker Compose configurations, enabling secure
+  access to a dedicated backup service via Keycloak OAuth2 Proxy.
+
+______________________________________________________________________
+
+## [v0.296.1] - 2026-06-11 - Deployment: Enhanced Traefik Network Integration
+
+### Changed
+
+- 🌐 **Enhanced Traefik network configuration:** Explicitly assigned the Langfuse service to the `proxy` network for
+  Traefik, improving routing and integration in self-hosted Docker deployments.
+
+______________________________________________________________________
+
+## [v0.296.0] - 2026-06-11 - Empowering Data Discovery: Advanced Filtering, Search, and Sorting for Agents and Threads
+
+### Added
+
+- ✨ **Agent Instance Filtering and Search:** Introduced new API capabilities and corresponding UI elements allowing
+  users to filter agent instances by **class** and search by **name**, significantly improving agent discovery.
+- 🚀 **Advanced Thread Management:** Implemented comprehensive filtering options for threads, including search by
+  **name**, filtering by associated **agent ID**, specific **user ID**, run **status** (active, completed, failed), and
+  a flexible **date range**.
+- 📈 **Thread Sorting Capabilities:** Added the ability to sort threads by **name** or **creation date** in both
+  ascending and descending order, providing more control over how threads are organized and viewed.
+- 🦾 **Thread Status Classification:** Introduced robust backend logic to accurately classify threads into `active`,
+  `completed`, or `failed` states based on their agent event history, enabling precise status filtering.
+
+### Changed
+
+- 🔄 **API Query Parameter Expansion:** The `getAllAgentInstances` and `getPaginatedThreadsForUser` API endpoints have
+  been extended to support the new filtering, searching, and sorting parameters, providing more powerful data retrieval.
+- 🌐 **UI Enhancements for Agents and Threads:** The web interface for both Agent Instances and Threads has been
+  significantly updated to expose and utilize all new filtering, search, and sorting functionalities, improving user
+  experience and data navigation.
+
+### Refactor
+
+- 🧹 **Optimized Agent Configuration Search:** Refactored the agent configuration search logic to support multilingual,
+  case-insensitive substring matching for agent names, enhancing search flexibility.
+- ⚙️ **Streamlined Thread Query Logic:** Introduced dedicated helper methods (`_apply_filters`, `get_order_by`) within
+  the `ThreadEntity` for more modular, efficient, and maintainable query construction.
+
+______________________________________________________________________
+
+## [v0.295.4] - 2026-06-11 - Improved Authentication Flow and Persistent User Sessions
+
+### Added
+
+- ✨ **Architectural Decision Record for Keycloak Sessions:** Documented the rationale, drivers, and implementation
+  details for extending Keycloak Single Sign-On (SSO) session lifespans, outlining the benefits for user experience and
+  system behavior.
+- ⚙️ **Centralized Keycloak Session Configuration:** Introduced new configuration parameters (`sso_session_idle_timeout`
+  and `sso_session_max_lifespan`) in `compose-config.yml`, providing a single source of truth for Keycloak realm session
+  settings.
+
+### Changed
+
+- 🚀 **Extended Keycloak SSO Session Lifespans:** Increased Keycloak SSO session idle timeout to 5 days and maximum
+  lifespan to 30 days. This significantly reduces the frequency of forced re-logins, allowing users to stay logged in
+  across nights and weekends for a smoother experience.
+- 🔄 **Automatic Keycloak Session Lifespan Migration:** Implemented logic within the Keycloak entrypoint script to
+  automatically update SSO session lifespans for existing deployments. This ensures that environments originally
+  configured with Keycloak's default short lifespans are automatically upgraded to the new, longer durations without
+  overwriting manual operator customizations.
+- ⚡️ **Optimized Home Page Redirection:** Enhanced the login experience by implementing smart redirection. Users are now
+  automatically directed to their last active tenant after successful login or silent token renewal, leveraging
+  persisted active tenant information.
+
+______________________________________________________________________
+
+## [v0.295.3] - 2026-06-11 - Improved Streaming State and Richer Responses
+
+### Refactor
+
+- 🧹 **Enhanced Streaming State Management Initialization:** The `StreamingStateManager` is now initialized earlier in
+  the processing pipeline, ensuring comprehensive state capture from the very beginning of a request.
+
+### Changed
+
+- ⚡️ **Richer Output for Successful Operations:** The pipeline now consistently returns serialized HTML content from the
+  streaming state manager upon successful completion, providing more detailed and structured results to the user
+  interface.
+- 📄 **Contextual Error Reporting:** Error messages now include any available partial streaming state (serialized as
+  HTML) alongside the error details. This provides users with more context and partial results, making it easier to
+  understand and debug issues.
+
+______________________________________________________________________
+
+## [v0.295.2] - 2026-06-11 - Improved Tenant Management and Documentation Clarity
+
+### Added
+
+- 🖼️ **New Visual Aids for Tenant Creation:** Integrated several new screenshots to provide clear, step-by-step guidance
+  for Keycloak group creation and navigating the Tenant Administration UI.
+- 🔑 **Dedicated `AIHubSysAdmin` Role:** Introduced the `AIHubSysAdmin` Keycloak realm role, which is now required for
+  creating and configuring tenants, enhancing security and control over multi-tenancy lifecycle management.
+
+### Changed
+
+- 📄 **Revamped Tenant Creation Documentation:** The "Creating Tenants" guide has been significantly updated with a
+  detailed, step-by-step process, clarifying the interplay between Keycloak groups and platform metadata, tenant states,
+  and in-tenant role assignments.
+- 📚 **Enhanced German Architecture Documentation:** Made minor textual improvements and clarifications across various
+  German architecture documents, including system context, containers, and package-centric views, for improved
+  readability and accuracy.
+
+______________________________________________________________________
+
+## [v0.295.1] - 2026-06-11 - Enhanced AI-Driven GitHub Issue Management
+
+### Added
+
+- ✨ **New AI Skill: `write-issue`**: Introduced a powerful new AI skill that enables automated authoring, creation, and
+  management of GitHub issues within the `bbvch-ai/aihub-core` repository. This skill ensures adherence to established
+  project conventions for titles, body structure, labels, and project board integration.
+- 📄 **Comprehensive Issue Creation Guidelines**: Detailed a comprehensive set of conventions and steps for drafting
+  GitHub issues, covering everything from title formatting (Epic/Story vs. Task/Bug), structured body content
+  (`In scope`, `Out of scope`, `Accepted when`), required `area:*` and optional `version` labels, to setting project
+  board fields like Item Type, Priority, and Status.
+- ⚙️ **Automated Issue Validation Script**: Implemented a new Bash script (`validate-issue.sh`) to automatically verify
+  that newly created GitHub issues conform to project standards. This script checks for correct labeling, the presence
+  of specific body sections, checkbox acceptance criteria, and proper placement on the AI-Scrum board with an assigned
+  Item Type.
+
+______________________________________________________________________
+
+## [v0.295.0] - 2026-06-11 - Streamlined Bot Setup and Clearer User Provisioning
+
+### Added
+
+- ✨ **New Architecture Decision Record (ADR)**: Documented the decision to prevent bot-first Keycloak provisioning,
+  requiring users to log in to the web portal once before interacting with the bot. This clarifies the user onboarding
+  process and ensures consistent identity management.
+- 🦾 **`UserNotProvisionedError`**: Introduced a specific exception for users attempting to interact with the bot before
+  their Keycloak account has been provisioned via web login, allowing for targeted error handling.
+- 📄 **Localized Bot Messages**: Added new internationalized messages across German, English, French, and Italian,
+  providing clear and actionable guidance to users who are not yet provisioned in Keycloak.
+- ⚙️ **`BOT_DEV_FAKE_EMAIL` Environment Variable**: Introduced a new environment variable for local development to
+  simulate user identity for the bot, bypassing the Teams connector and enabling comprehensive testing of authentication
+  flows without Azure.
+- ⚡️ **`primary_frontend_origin` Setting**: Added a convenience property to `AIHubSettings` to easily retrieve the
+  primary web portal URL, used for directing unprovisioned users to the login page.
+
+### Changed
+
+- 🚀 **Overhauled Bot Local Development Setup**: Significantly revised the local development documentation for the bot,
+  providing detailed, step-by-step instructions for using the Bot Framework Emulator, including support for WSL2 and
+  anonymous authentication.
+- 🔄 **Bot User Identity Resolution**: Modified the bot's identity resolution logic to raise a specific
+  `UserNotProvisionedError` when a user's email is not found in Keycloak, replacing a generic `ValueError`.
+- 💬 **Actionable Error Handling for Unprovisioned Users**: The bot now gracefully handles `UserNotProvisionedError` by
+  replying with a clear, localized message instructing users to perform a one-time web portal login, rather than
+  displaying an opaque error.
+- 🌎 **WSL2 Compatibility for Local Bot Runner**: Updated the local bot runner (`main.py`) to bind to `0.0.0.0:8001`,
+  enabling seamless connectivity from the Bot Framework Emulator running on Windows when the bot is hosted in WSL2.
+- 🔑 **Anonymous Authentication for Local Bot Runner**: The local bot runner now monkeypatches the Microsoft Agents SDK
+  to force unauthenticated mode, allowing the Bot Framework Emulator to drive the bot without requiring Azure
+  credentials.
+
+### Removed
+
+- 🗑️ **Bot-Driven User Provisioning Capability**: The `create_user` method in `KeycloakAdminService` and its
+  corresponding integration test were removed, aligning with the architectural decision to exclusively provision
+  Keycloak users via the web portal's first-broker-login flow.
+
+______________________________________________________________________
+
+## [v0.294.0] - 2026-06-11 - Swiss AI Hub Now Fully Open-Source with AGPL-3.0-or-later Sysadmin Plane
+
+### Added
+
+- 📄 **New Architectural Decision Record (ADR):** Introduced a comprehensive ADR detailing the strategic decision to
+  relicense the multi-tenant administration plane to AGPL-3.0-or-later, outlining its context, decision drivers, and
+  consequences.
+
+### Changed
+
+- 🔄 **Relicensed Multi-Tenant Administration Plane:** The `packages/sysadmin-api` and `packages/sysadmin-web`
+  components, previously proprietary, are now open-source under the **GNU Affero General Public License v3.0 or later
+  (AGPL-3.0-or-later)**. This change completes the transition of Swiss AI Hub to a fully open-source platform.
+- 🔑 **Updated Licensing Model Documentation:** All project documentation, including the root `README.md`, `LICENSES.md`,
+  `CONTRIBUTING.md`, and internal architecture documents, has been thoroughly revised to reflect the new dual-license
+  model (Apache-2.0 for backend/SDK and AGPL-3.0-or-later for UI/administration).
+- ⚡️ **Refined Sysadmin Package Rationale:** The justification for `sysadmin-api` and `sysadmin-web` existing as
+  separate packages now focuses purely on architectural and security boundaries, rather than licensing, as both the main
+  application and administration plane share the AGPL-3.0-or-later license.
+- ⚙️ **Deployment Configuration Updates:** Docker Compose templates and generation scripts have been updated to reflect
+  the AGPL-3.0-or-later license for `sysadmin-api` and `sysadmin-web`, ensuring accurate license annotations in
+  deployment artifacts.
+
+### Removed
+
+- 🗑️ **Deprecated Proprietary License Identifiers:** All per-file `SPDX-License-Identifier` headers denoting proprietary
+  licenses have been removed from source files within `packages/sysadmin-api` and `packages/sysadmin-web` for
+  consistency with the rest of the monorepo, which relies on package-level `LICENSE` files.
+- 🗑️ **Removed Proprietary Tags from Architecture:** The `#proprietary` tag has been eliminated from architecture
+  specifications and container definitions, aligning these views with the platform's fully open-source status.
+
+______________________________________________________________________
+
+## [v0.293.2] - 2026-06-10 - Improved Configuration Generation and Placeholders
+
+### Added
+
+- ✨ **Introduced UUID generation for environment setup:** Added a new `gen_uuid` function and `REPLACE_WITH_RANDOM_UUID`
+  placeholder to the `setup-env.sh` script, enabling automatic generation of UUIDs for configuration values.
+
+### Changed
+
+- 🔄 **Updated Rclone RC credential placeholders:** Renamed the default placeholders for Rclone RC user and password in
+  `.env.prod` to `REPLACE_WITH_RANDOM_STRING` for consistency and clarity with the automated generation process.
+
+______________________________________________________________________
+
+## [v0.293.0] - 2026-06-10 - Enhanced Version Visibility for API and UI
+
+### Added
+
+- ✨ **Service Version Reporting**: The API's `/health` and `/ready` endpoints now include the running service version in
+  their responses, improving operational visibility.
+- ✨ **UI Version Display**: The web application now fetches and displays both its own and the API's service versions in
+  the user settings, clearly indicating if the UI and API are running on different versions.
+- ✨ **OpenAPI Version Documentation**: The API's OpenAPI specification has been updated to include the service version,
+  making it programmatically accessible for clients.
+
+### Changed
+
+- 🔄 **Health Response Structure**: The core `HealthResponse` data transfer object has been extended to include a
+  dedicated `version` field.
+- 🔄 **Web Build Process**: The web application's Dockerfile and Nuxt configuration have been updated to bake the service
+  version into the static bundle during build time, ensuring accurate version reporting.
+
+______________________________________________________________________
+
+## [v0.292.3] - 2026-06-10 - Enhanced Reliability for Agent Event Streams
+
+### Fixed
+
+- 🐛 Resolved a race condition that could cause **agent output streaming chunks** to be dropped, leading to incomplete or
+  blank answers in chat clients. This fix ensures all `DisplayEvent`s are processed before consumer teardown.
+- 🔗 Guaranteed the **delivery of complete agent answers** by implementing a durable backstop that reconciles any missing
+  content from the final stop event, preventing empty assistant turns and associated errors.
+
+### Added
+
+- ✨ Introduced shared utility methods, **`iter_streamed_display_events`** and **`wait_for_stop_then_drain`**, in
+  `ChatService` to ensure all display events are gracefully drained and processed after an agent run completes.
+- 📄 Documented the architectural decision for robust streaming in a new ADR: **"Drain Display-Event Streams Before
+  Consumer Teardown"**.
+- 🧪 Added new **unit tests** to validate the correctness and resilience of the event draining and answer reconciliation
+  logic.
+
+### Changed
+
+- 🔄 Refactored **all streaming event consumers** (including OpenAI SSE, JSON, and native event streams) to utilize the
+  new graceful draining mechanisms, improving the consistency and reliability of agent output.
+- 🚀 Updated **final content resolution** for OpenAI and JSON responses to include delta reconciliation, using the
+  terminal `StopEvent` as a source of truth to complete partially streamed or lost answers.
+
+______________________________________________________________________
+
+## [v0.292.2] - 2026-06-09 - Infrastructure Network Enhancements
+
+### Changed
+
+- 🚀 **Improved Backend Network Connectivity:** The core backend services are now connected to a dedicated `egress`
+  network across all deployment configurations, enhancing support for secure and managed outbound connections.
+
+______________________________________________________________________
+
+## [v0.292.0] - 2026-06-08 - Streamlined Python Distribution: PyPI Launch and Enhanced Documentation
+
+### Added
+
+- 🚀 **PyPI Publishing Workflow:** Introduced a new automated GitHub Actions workflow for building and publishing all
+  public Python SDK packages to PyPI, enabling wider distribution and easier installation.
+- 🔐 **Distribution Artifact Validation:** Added a new Python script (`check_dist.py`) to enforce namespace integrity,
+  prevent secret leaks, and flag unexpectedly large files within PyPI packages, significantly enhancing release security
+  and quality.
+- 📦 **`swiss-ai-hub` Meta-Package:** A new meta-package, `swiss-ai-hub`, has been added to simplify the installation of
+  the entire Swiss AI Hub Python SDK with a single command.
+- 📄 **Package License Files:** Explicit `LICENSE` files have been added to each Python package (`agent`, `api`, `bot`,
+  `core`, `meta`, `pipeline`, `process`), ensuring clear license compliance for distributed artifacts (Apache-2.0 for
+  most, AGPL-3.0-or-later for `backup`).
+
+### Changed
+
+- 📝 **Comprehensive Package READMEs:** The `README.md` files for all Python SDK packages have been significantly
+  expanded and improved to provide detailed purpose, installation, usage, development, and production guidance, tailored
+  for PyPI consumers.
+- ⚙️ **Standardized PyPI Metadata:** All `pyproject.toml` files across the Python SDK packages have been enhanced with
+  detailed descriptions, relevant PyPI classifiers, and comprehensive project URLs (Homepage, Repository, Documentation,
+  Issues) for improved discoverability and information.
+- 🔗 **Pinned Internal Dependencies:** Python `pyproject.toml` files now explicitly pin inter-package dependencies (e.g.,
+  `swiss-ai-hub-agent` depending on `swiss-ai-hub-core`) to their exact version, ensuring consistent and predictable
+  builds.
+- 🛠️ **Build System Configuration:** Adjusted `uv_build` settings in `pyproject.toml` for all Python packages to
+  correctly handle PEP 420 native namespaces during artifact creation, ensuring proper module loading.
+- 🌐 **Public Image URLs in README:** All image references in the root `README.md` have been updated to use absolute
+  GitHub raw URLs, guaranteeing they display correctly on external platforms like PyPI.
+- 🔒 **NPM Publish Workflow Environment:** The `publish-npm.yml` GitHub Actions workflow now uses an explicit `npm`
+  environment for enhanced security context during package publication.
+- 📖 **Environment Variables Documentation:** The formatting and readability of the environment variables reference
+  documentation have been updated for better clarity.
+- ⬆️ **Core Dependency Updates:** Several key dependencies in `swiss-ai-hub-core` have been upgraded, including
+  `mem0ai`, `langchain-neo4j`, `neo4j`, `rank-bm25`, and `starlette` (with a security floor to `1.0.1`), enhancing
+  functionality and addressing known vulnerabilities.
+- 🐍 **`jambo` Internal Dependency:** The `jambo` dependency in `swiss-ai-hub-api` has been migrated to
+  `swiss-ai-hub-jambo`, reflecting an internal packaging change for consistent namespace usage.
+- ⚡️ **Version Bump Script:** The `Makefile`'s `version-bump` target now correctly updates inter-package dependencies to
+  ensure all internal `swiss-ai-hub-*` packages reference the new version.
+
+### Refactor
+
+- 🧹 **Form Default Seeding Logic:** The web UI's `seedFormDefaults` function has been refactored by extracting dedicated
+  helper functions for handling group and repeater elements, improving code clarity and maintainability.
+
+______________________________________________________________________
+
+## [v0.291.13] - 2026-06-08 - Enhanced OpenAI Service Iframe Permissions
+
+### Changed
+
+- ⚡️ **Expanded OpenAI service iframe capabilities:** The embedded OpenAI service now supports additional browser
+  features such as **clipboard access**, **camera**, **screen capture**, **fullscreen mode**, **geolocation**, and
+  **autoplay**, alongside refined **microphone access**.
+
+______________________________________________________________________
+
+## [v0.291.12] - 2026-06-08 - Refined Skill Permissions for Enhanced Control
+
+### Changed
+
+- ⚡️ **Refined Skill Permissions:** The broad `mcp__*` skill wildcard has been replaced with a specific, enumerated list
+  of allowed `mcp` skills, enhancing control and clarity over which tools are accessible.
+
+______________________________________________________________________
+
+## [v0.291.11] - 2026-06-08 - Enhanced Changelog Documentation
+
+### Changed
+
+- ⚡️ **Improved Changelog Documentation Handling**: The documentation build script now correctly processes changelog
+  content by wrapping its body in a `v-pre` container. This change prevents build errors caused by special syntax (e.g.,
+  GitHub Actions expressions) within release notes, ensuring that content is rendered verbatim on the documentation site
+  while preserving the functionality of dynamic elements like copy/download buttons.
+
+______________________________________________________________________
+
+## [v0.291.10] - 2026-06-08 - Enhanced Security and Code Quality
+
+### Added
+
+- ✨ **Introduced CodeQL Analysis workflow:** A new GitHub Actions workflow has been added to perform automated static
+  code analysis, enhancing the security and overall code quality of the Python and JavaScript/TypeScript codebases.
+
+______________________________________________________________________
+
+## [v0.291.9] - 2026-06-08 - Simplified Access Control and Enhanced Identity Provider Setup
+
+### Added
+
+- 📄 **New Identity Provider Setup Documentation**: Introduced comprehensive guides for connecting external identity
+  providers to the Swiss AI Hub via Keycloak, starting with detailed instructions for Microsoft Entra ID (Azure AD).
+- 🔐 **Azure App Registration Guide**: Provided step-by-step documentation for configuring Azure App Registrations,
+  including redirect URIs, required API permissions (`openid`, `email`, `profile`), and client secret management.
+- 👥 **Azure User and Role Management Guide**: Added clear instructions on defining and assigning `AIHubAccess`
+  (mandatory for platform login) and `AIHubSysAdmin` app roles within Azure Entra ID to control user access.
+
+### Changed
+
+- 🔑 **Updated Superuser Role Configuration**: Modified default superuser roles (`SUPERUSER_ROLES_JSON`) to explicitly
+  include `AIHubAccess` as the base role for platform usage, aligning with the refined access control model.
+- 📖 **Enhanced Authentication & Authorization Documentation**: Significantly updated the security documentation to
+  clarify the distinction between Keycloak Realm roles (`AIHubAccess`, `AIHubSysAdmin`) and platform-managed
+  tenant-scoped roles, providing a clearer understanding of the permission hierarchy.
+
+### Removed
+
+- 🗑️ **Streamlined Keycloak Realm Roles**: Deprecated and removed `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` from
+  the Keycloak realm configuration. These roles are now intended to be managed as tenant-specific roles within the
+  platform's internal access management system.
+- 🧹 **Simplified Identity Provider Mappers**: Removed corresponding identity provider mappers for the deprecated
+  `AIHubAdmin`, `AIHubUser`, and `AIHubDeveloper` roles, streamlining the IdP integration process.
+
+______________________________________________________________________
+
+## [v0.291.8] - 2026-06-08 - Streamlined Initial Navigation and Enhanced Authentication
+
+### Added
+
+- ✨ **Seamless Initial Navigation:** Introduced a new, dedicated middleware for the home route (`/`) to intelligently
+  determine and redirect users to their appropriate tenant, tenant selection, or previously visited page immediately
+  after login, ensuring a smoother start to their session.
+- 🚀 **Global Loading Overlay:** Implemented a full-screen loading spinner that instantly appears when the initial
+  navigation logic is resolving, eliminating content flicker and providing clear visual feedback during critical
+  redirects.
+- ⚙️ **Centralized Home Resolution State:** Added a shared state management system and client-side plugin to accurately
+  manage the global loading indicator, ensuring it correctly displays during initial route resolution and dismisses on
+  navigation completion or errors.
+
+### Changed
+
+- 🛡️ **Robust Authentication Handling:** Enhanced the authentication flow to automatically invalidate and remove
+  problematic user sessions when silent sign-in or token renewal encounters errors, improving stability and preventing
+  repeated authentication failures.
+
+### Refactor
+
+- 🧹 **Refined Initial Login Flow:** Streamlined the application's startup by relocating the logic for checking and
+  renewing user sessions from the OIDC client plugin to a global authentication middleware, allowing for more efficient
+  and non-blocking initialization.
+- ⬆️ **Modernized Homepage Implementation:** Replaced the client-side `onMounted` logic for tenant fetching and
+  redirection on the homepage with a server-side (or early client-side) middleware, significantly improving the
+  responsiveness and consistency of the initial user experience.
+
+______________________________________________________________________
+
+## [v0.291.7] - 2026-06-03 - Enhanced Model Cost Reporting and API Robustness
+
+### Added
+
+- ✨ **Introduced Granular Search Context Cost Reporting:** Added a new data transfer object
+  (`SearchContextCostPerQueryDTO`) to capture and display search context costs broken down by low, medium, and high
+  context sizes, providing more detailed pricing information.
+- 🦾 **Enhanced API Robustness for Model Information:** Implemented a new data validation mechanism that gracefully
+  handles unexpected data shapes in external model metadata feeds by logging warnings and dropping malformed fields,
+  preventing parsing failures for the entire model information.
+
+### Changed
+
+- 📊 **Updated Model Details Panel:** The **Model Details Panel** now presents search context costs with a more granular
+  breakdown (low, medium, and high context sizes), offering clearer insights into model pricing.
+- 🌍 **Localized Search Context Cost Labels:** Updated internationalization files to include specific labels for low,
+  medium, and high search context costs in various languages (English, German, French, Italian).
+- 🔄 **Revised Model Information Schema:** Modified the **`ModelInfoDTO`** to incorporate the new granular
+  `SearchContextCostPerQueryDTO` for search context costs and made the `mode` field optional, reflecting more flexible
+  model metadata.
+
+______________________________________________________________________
+
+## [v0.291.6] - 2026-06-03 - Core System Refinements and Performance Enhancements
+
+### Changed
+
+- 🚀 **Enhanced LLM Guard Performance:** Switched agent description and few-shot guards to use asynchronous structured
+  prediction, improving responsiveness and concurrency with Large Language Models.
+- ⚡️ **Improved Concurrency for Reranking Nodes:** Blocking reranking operations are now offloaded to a separate thread
+  using `asyncio.to_thread`, preventing event loop starvation and boosting application performance.
+- 📄 **Refined Error Logging:** Updated `MineruLoader` and Redis request hooks to use `logger.exception`, ensuring
+  comprehensive exception details are automatically included in logs for better debugging.
+- 🛠️ **Corrected OpenTelemetry HTTPX Instrumentation:** Ensured asynchronous HTTPX request and response hooks are
+  properly defined as coroutine functions, enabling full observability for async HTTP communications.
+
+### Refactor
+
+- 🧹 **Optimized Dispatcher Event Handling:** The `_build_event_kwargs` method in agent and process dispatchers, as well
+  as the base dispatcher, has been made synchronous, streamlining event argument construction.
+- 🔄 **Standardized Access Rule Prefixes:** Consolidated `aihub.admin` and `aihub.user` access rule prefixes into
+  dedicated constants, enhancing maintainability and clarity across authentication logic.
+- 🔑 **Centralized Authentication Error Messages:** Moved common error messages in the authentication handler to
+  constants, improving consistency and simplifying future updates.
+- ☁️ **Standardized S3 Service Error Messages:** Consolidated error messages for S3 anonymous file access service
+  operations into constants, improving consistency and maintainability.
+- ⚙️ **Refined SonarQube Configuration:** Added specific ignore rules to `sonar-project.properties` to suppress
+  `python:S1192` (duplicated string literals) warnings for known-good patterns, such as lazy imports and MongoDB query
+  syntax, reducing false positives in code quality scans.
+- 📝 **Improved RPC Success Attribute Handling:** Standardized the `rpc.success` attribute for NATS requester tracing
+  using a dedicated constant.
+- 📚 **Improved Test Mock Clarity:** Added `noqa` comments to asynchronous mock methods in authentication utilities and
+  Milvus vector store tests to explicitly state why they remain async for testing purposes, improving code clarity for
+  linters.
+- 🧹 **Minor Python Idiom Improvements:** Updated set creation from `set(generator_expression)` to `{comprehension}` in
+  `base_event` and `dispatchable_workflow` for more idiomatic Python.
+
+______________________________________________________________________
+
+## [v0.291.5] - 2026-06-02 - Enhanced FormKit Data Handling for Stability
+
+### Changed
+
+- 🔄 **Refined `getNestedValue` utility:** The `getNestedValue` function has been refactored to operate as a pure
+  read-only function, specifically for retrieving nested arrays. This change prevents unintended mutations of form data
+  during render-time and mitigates potential recursive render loops in reactive contexts. It now strictly returns an
+  array or an empty array if the specified path does not lead to an array.
+
+### Fixed
+
+- 🛠️ **Improved Repeater Initialization:** FormKit repeater fields now correctly materialize as an empty array during
+  form loading if their default value is `undefined`. This proactive initialization ensures a consistent array structure
+  for repeaters, preventing unexpected behavior and improving stability in reactive render contexts.
+
+______________________________________________________________________
+
+## [v0.291.4] - 2026-06-02 - Enhanced Prompt Reliability for Image Rendering
+
+### Fixed
+
+- 🐛 **Image Rendering in Prompts**: Resolved a Jinja `SecurityError` that occurred when attempting to render image URLs
+  (`pydantic.AnyUrl`) within RAG agent and guard context prompts. The rendering now correctly uses the `| string` filter
+  to safely convert URLs, ensuring images are displayed as intended across all supported languages.
+
+______________________________________________________________________
+
+## [v0.291.3] - 2026-06-02 - Stricter OAuth Role Defaults
+
+### Changed
+
+- 🔑 **Updated OAuth Allowed Roles Default:** The default `OAUTH_ALLOWED_ROLES` configuration for Open WebUI has been
+  updated across all deployment configurations. It now explicitly requires `AIHubAccess` and any configured admin roles
+  (`${OAUTH_ADMIN_ROLES_OPENWEBUI}`) instead of a wildcard (`*`), enhancing access control and improving the security
+  posture for OAuth integrations.
+
+______________________________________________________________________
+
+## [v0.291.2] - 2026-06-02 - GitHub Actions Reliability Improvement
+
+### Fixed
+
+- 🐛 **Corrected GitHub Actions `if` condition parsing:** Ensured proper evaluation of the `claude-code-review`
+  workflow's trigger conditions by explicitly wrapping the complex expression in `${{ ... }}`.
+
+______________________________________________________________________
+
+## [v0.291.1] - 2026-06-02 - Improved Code Quality Checks with SonarCloud Action v6
+
+### Changed
+
+- 🚀 **Updated SonarCloud Scan Action:** The GitHub Action for running SonarCloud code quality scans has been upgraded to
+  `v6.0.0`, enhancing reliability and ensuring compatibility with the latest SonarCloud features.
+- 📄 **Documentation Refresh:** Internal documentation (`CLAUDE.md`) was updated to reflect the new version of the
+  SonarCloud scan action used in CI/CD workflows.
+
+______________________________________________________________________
+
+## [v0.291.0] - 2026-06-02 - 🚀 Web Package Stability, Deployment, and Publishing Overhaul
+
+### Added
+
+- 🚀 **Automated npm publishing workflow**: Introduced a dedicated GitHub Actions workflow (`publish-npm.yml`) to
+  streamline and automate the publishing of the `@swiss-ai-hub/web` package to npm, utilizing OIDC trusted publishing
+  for enhanced security.
+- 🧪 **Web package build and pack verification**: Added a new GitHub Actions workflow (`verify-web-package.yml`) to
+  automatically build and validate the packaging of `@swiss-ai-hub/web` on every pull request, ensuring package
+  integrity and publishability before merge.
+
+### Changed
+
+- ⚙️ **Streamlined CI/CD branch triggering**: Modified several core CI/CD workflows (`analyze-test-pr`, `lint-pr`,
+  `semantic-pr`, `test-backup-e2e`) to exclusively trigger on the `main` branch, simplifying branching strategy and
+  pipeline execution.
+- 📄 **Enhanced web package installation and dependency management documentation**: Significantly updated the
+  `packages/web/README.md` with detailed guidance on required dependency overrides (specifically for `vue` and
+  `primevue`) to prevent common runtime issues caused by multiple framework instances.
+- 🔄 **Redesigned runtime configuration for static builds**: Introduced a new, more robust runtime configuration
+  mechanism for the `@swiss-ai-hub/web` layer, moving away from `NUXT_PUBLIC_*` environment variables to a dynamic
+  `/config.js` file generated at container startup, offering greater deployment flexibility for static single-page
+  applications.
+- 🐳 **Updated Dockerfile and deployment examples**: Provided comprehensive and up-to-date Dockerfile and
+  `nuxt.config.ts` examples in the `packages/web/README.md` that reflect the new best practices for building, serving,
+  and configuring the static web package in production environments.
+- ✨ **Integrated FormKit PrimeVue**: Added `@sfxcode/formkit-primevue` as a new dependency within the `packages/web`
+  package, enhancing its form building capabilities with PrimeVue components.
+- ⬆️ **Updated PrimeVue peer dependency**: Bumped the recommended `primevue` peer dependency version to `4.5.5` to
+  ensure compatibility and leverage the latest updates for the UI component library.
+
+______________________________________________________________________
+
+## [v0.290.13] - 2026-06-02 - OAuth Default Role Access Update
+
+### Added
+
+- ✨ **Introduced `OAUTH_ALLOWED_ROLES` configuration:** Added the `OAUTH_ALLOWED_ROLES` environment variable, set to `*`
+  by default across Docker Compose configurations, to explicitly allow all roles from the OAuth provider, simplifying
+  initial setup for role-based access.
+
+______________________________________________________________________
+
+## [v0.290.12] - 2026-06-02 - Documentation Refinements and Link Consistency
+
+### Changed
+
+- 🔗 **Updated External README Links:** Transformed relative paths for licenses and contributing guidelines in the main
+  `README.md` to absolute GitHub URLs, ensuring links function correctly across all platforms.
+- 📄 **Minor Documentation Formatting:** Improved the display of the Dagster UI URL in the `packages/backup` README for
+  better readability.
+
+### Refactor
+
+- 🧹 **Standardized Internal Documentation Paths:** Performed a comprehensive review and adjustment of numerous relative
+  links throughout the German and English documentation, enhancing navigation and consistency within the platform guides
+  and SDK.
+- 📚 **Streamlined Authentication Documentation:** Removed outdated architectural decision record (ADR) links from
+  authentication-related documentation, simplifying the content and focusing on current implementation details.
+
+______________________________________________________________________
+
+## [v0.290.11] - 2026-06-01 - Enhanced Documentation and Licensing Clarity
+
+### Added
+
+- 📄 **New API Tokens Documentation**: A dedicated guide has been added explaining how to generate, use, and revoke
+  personal API tokens for REST API authentication, including steps within the Swagger UI.
+- ✨ **Comprehensive SDK Licensing Rationale**: New documentation now details the platform's mixed-license model,
+  clarifying the rationale behind using Apache 2.0 for the backend and AGPLv3 for the user interface, and its
+  implications for proprietary agent development and community contributions.
+- 📄 **Licensing Clarifications**: The `LICENSES.md` and `README.md` files have been updated with explicit explanations
+  of the mixed-license model, emphasizing the permissive backend and copyleft UI.
+- 🔑 **UI Extensibility Licensing Note**: A new licensing note has been added to the UI extensibility documentation,
+  explicitly detailing the AGPL-3.0 implications for modifying and offering the UI as a network service.
+
+### Changed
+
+- 🔄 **Refined Ecosystem Model Documentation**: The documentation for the ecosystem model has been significantly revised
+  to provide a clearer and more in-depth explanation of the platform's collaborative approach and licensing strategy.
+- 📝 **Clarified Agent Behaviors**: Extensive updates have been made across several agent documentation pages (**Company
+  Knowledge Agent**, **Instructed Assistant**, **Teachable Assistant**, **Retrieval Agent**, **Document Navigation
+  Assistant**, and **MCP Tool Agent**) to provide clearer descriptions of their purpose, workflows, capabilities,
+  limitations, and setup instructions.
+- 📝 **Improved UI Extensibility Guide**: The UI extensibility documentation has been substantially rewritten to offer
+  more detailed insights into architectural foundations, custom service implementation, development workflows,
+  deployment, and strategic value.
+- 📝 **Updated MCP Tools Usage in SDK**: The SDK documentation for using MCP tools has been rephrased for better clarity,
+  particularly regarding connection configuration and authentication modes.
+- 📄 **Minor Documentation Updates**: Small adjustments and rephrasing have been applied to the **Web Search** and
+  **Environment Variables** documentation pages for improved readability and consistency.
+- 📝 **API Tokens Documentation Enhancement**: The English version of the API Tokens documentation has been updated to
+  include the revoke endpoint in its lifecycle table.
+
+______________________________________________________________________
+
+## [v0.290.10] - 2026-06-01 - Enhancing Project Governance: CLA and Contributor Guidelines
+
+### Added
+
+- ✨ **Contributor License Agreement (CLA):** Introduced a formal Individual Contributor License Agreement
+  (`CONTRIBUTOR_AGREEMENT.md`) to clarify intellectual property rights for contributions.
+- 🚀 **Automated CLA Checks:** Implemented a new GitHub Actions workflow (`cla.yml`) to automatically verify CLA
+  signatures for pull requests, streamlining the contribution process.
+- 📄 **Pull Request Template:** Added a standard pull request template (`pull_request_template.md`) to guide contributors
+  in providing necessary information, improving PR quality and review efficiency.
+
+### Changed
+
+- ✍️ **Updated Contributing Guidelines:** Expanded `CONTRIBUTING.md` with a new section detailing the Contributor
+  License Agreement process and instructions for signing it.
+- ⚖️ **Refined Licensing Notice:** Updated the project's `NOTICE` file to provide a more general description of the
+  mixed-license model, referencing `LICENSES.md` for full details.
+
+______________________________________________________________________
+
+## [v0.290.9] - 2026-06-01 - Next-Gen Agents and Operational Excellence
+
+### Added
+
+- 🦾 **New Agent Blueprints**: Introduced a suite of powerful, pre-built agent blueprints for diverse use cases:
+  - 📄 **Document Intelligence Assistant**: A highly configurable Retrieval-Augmented Generation (RAG) agent that answers
+    questions from internal documents with citations, replacing the previous generic RAG agent with advanced
+    capabilities including context-sufficiency guards and user/organization memory.
+  - 🤝 **Company Knowledge Agent**: An extension of the Document Intelligence Assistant that incorporates
+    human-in-the-loop for user consent and bot-in-the-loop for expert consultation, capturing human replies as
+    organizational knowledge.
+  - 🧑‍💻 **Expert Coordinator Agent**: Designed to relay questions to human experts via Slack or Teams, verify their
+    responses, and store them as reusable organizational knowledge. Channel configuration is now managed directly within
+    the agent's profile.
+  - 🧠 **Instructed Assistant**: A foundational chat assistant that follows plain-text system prompts for focused tasks
+    like drafting, translation, or style-guided responses without document retrieval.
+  - 📚 **Teachable Assistant**: An agent that learns behavior from a few examples (few-shot prompting), making it ideal
+    for tasks requiring specific response styles or formats.
+  - 🔍 **Retrieval Agent**: A headless, composable building block that performs document retrieval from a knowledge base
+    without generating an answer, providing raw context for custom workflows.
+  - 🧭 **Document Navigation Assistant**: A routing agent that intelligently identifies the most relevant knowledge
+    bases/namespaces for a user's question, confirms the selection with the user, and then delegates to a RAG agent.
+  - 🛠️ **MCP Tool Agent**: Enables agents to connect to external Model Context Protocol (MCP) servers and execute
+    actions in other systems, such as creating tickets, querying databases, or sending messages.
+- ⚙️ **Automated PostgreSQL Maintenance**: Integrated continuous weekly cleanup and monthly repack jobs for the Dagster
+  PostgreSQL database, ensuring long-term operational stability by managing log growth and freeing disk space.
+- 📄 **Comprehensive Environment Variable Reference**: Added a new, automatically generated documentation page listing
+  all environment variables, their purpose, and consumer services, clarifying setup and configuration.
+- 🌐 **Self-Hosted Web Search**: Documented the new privacy-focused web search feature, powered by a self-hosted SearXNG
+  meta-search instance for Open-WebUI, including its default search engine list and customization options.
+- 🔗 **MCP Tooling for SDK Agents**: Provided detailed SDK guidance on connecting custom agents to external MCP servers
+  and invoking their tools, including `McpClientConfig` and various authentication modes.
+- 💬 **External Tool Connectivity Overview**: Expanded the Agents overview documentation to include a new section
+  explaining how agents can interact with external systems using the Model Context Protocol (MCP).
+
+### Changed
+
+- 🔄 **Updated Documentation Structure**: Significantly reorganized the agent documentation, reordering blueprint pages
+  for improved logical flow and discoverability.
+- 📝 **Refined German Translations**: Numerous minor textual and stylistic improvements across German documentation for
+  enhanced clarity and consistency.
+- 🔑 **Clarified Tenant Deletion Rules**: Updated multi-tenancy documentation to state that any tenant can be deleted as
+  long as at least one remains, clarifying the lack of special deletion protection for the initial startup tenant.
+- ⚙️ **Standardized Startup Tenant Variables**: Renamed environment variables related to initial tenant configuration
+  (e.g., `AIHUB_DEFAULT_TENANT_NAME` to `AIHUB_STARTUP_TENANT_NAME`) for clearer semantics.
+- 🌐 **Updated Network Egress Requirements**: Removed Jina AI from the list of external service dependencies in the
+  network requirements documentation.
+- 📄 **Improved Main Page Tagline**: Updated the tagline on the main documentation landing page for better clarity and
+  impact.
+- 🔄 **Refined Docs Sync Script**: Improved the `sync-docs.sh` script to precisely control which `README.md` files are
+  synchronized into the `docs/6_code_deep_dive` section, preventing unintended content.
+
+### Removed
+
+- 🗑️ **Deprecated Agent Documentation**: Removed the outdated "RAG Agent" and "Expert Asking Agent" documentation, as
+  their functionalities have been superseded and enhanced by the new agent blueprints.
+- 🗑️ **Removed Internal Tooling Documentation**: Cleaned up documentation pages previously generated from internal
+  `.claude`, `.github/actions`, and `infra/deployment` directories, streamlining the documentation scope.
+
+______________________________________________________________________
+
+## [v0.290.8] - 2026-06-01 - Introducing a Mixed-License Model and Enhanced Contribution Guidelines
+
+### Added
+
+- 📄 **New `NOTICE` File:** Introduced a new `NOTICE` file to formally outline the project's mixed-license model,
+  providing clear attribution and a detailed license breakdown for different components.
+- 👨‍💻 **Author Information for Web Package:** Explicitly added the author (`bbv Software Services AG`) to the
+  `packages/web/package.json` metadata.
+
+### Changed
+
+- ⚖️ **Revised Project Licensing Model:** The project now operates under a mixed-license model; `packages/web` and
+  `packages/backup` are explicitly licensed under AGPL-3.0-or-later, while most other packages remain Apache-2.0 and
+  `sysadmin-*` packages are proprietary.
+- 📝 **Updated Contribution Guidelines:** The `CONTRIBUTING.md` file has been significantly updated to reflect the new
+  mixed-license model, detailing that contributions are subject to the target package's license and requiring
+  contributors to sign a Contributor License Agreement (CLA).
+- 📅 **Extended Copyright Information:** Updated the root `LICENSE` file and relevant package `README.md` files to extend
+  the copyright period to `2026` and specify `bbv Software Services AG` as the copyright holder.
+- 🔗 **Enhanced License Documentation:** `CLAUDE.md`, `LICENSES.md`, `packages/backup/README.md`, and
+  `packages/web/README.md` have been updated to accurately reflect and reference the detailed per-package licensing
+  matrix and the new `NOTICE` file, ensuring greater transparency.
+
+______________________________________________________________________
+
 ## [v0.290.7] - 2026-05-29 - Introducing API Token Management and Documentation
 
 ### Added

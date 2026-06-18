@@ -1,7 +1,9 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import httpx
 import pytest
+from scim2_models import Group
 
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
 
@@ -114,3 +116,34 @@ class TestErrorPropagation:
 
         with pytest.raises(httpx.HTTPStatusError):
             await owui_client.delete_model(mock_client, "nonexistent")
+
+
+def _scim_group(display_name: str, group_id: str) -> Group:
+    group = Group(display_name=display_name)
+    group.id = group_id
+    return group
+
+
+class TestCreateGroupIdempotent:
+    @pytest.mark.asyncio
+    async def test_reuses_existing_group_with_same_name(self, owui_client: OpenWebuiClient) -> None:
+        existing = _scim_group("aihub:T:R", "grp-existing")
+        scim = AsyncMock()
+        scim.query.return_value = SimpleNamespace(resources=[existing])
+
+        result = await owui_client.create_group("aihub:T:R", scim=scim)
+
+        assert result is existing
+        scim.create.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_creates_when_no_group_with_that_name_exists(self, owui_client: OpenWebuiClient) -> None:
+        created = _scim_group("aihub:T:R", "grp-new")
+        scim = AsyncMock()
+        scim.query.return_value = SimpleNamespace(resources=[_scim_group("aihub:Other:Role", "grp-other")])
+        scim.create.return_value = created
+
+        result = await owui_client.create_group("aihub:T:R", scim=scim)
+
+        assert result is created
+        scim.create.assert_awaited_once()

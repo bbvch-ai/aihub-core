@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import logging
 from asyncio import sleep
@@ -40,6 +39,7 @@ from swiss_ai_hub.core.persistence import (
     User,
 )
 from swiss_ai_hub.core.publishers import NCPublisher
+from swiss_ai_hub.core.routes import ChatService
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
@@ -519,23 +519,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
             async def sse_event_generator():
                 """Generator that yields raw events as SSE without conversion"""
-                while True:
-                    if resources.stop_signal.is_set() and resources.chunk_queue.empty():
-                        logger.debug("Stop streaming due to stop_event and empty queue")
-                        break
-                    try:
-                        event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
-
-                        # Dump the raw event as JSON for SSE
-                        event_data = event.model_dump_json()
-                        yield f"data: {event_data}\n\n"
-
-                        resources.chunk_queue.task_done()
-                    except TimeoutError:
-                        # No new event yet; keep waiting
-                        continue
-                    except asyncio.CancelledError:
-                        break
+                async for event in ChatService.iter_streamed_display_events(resources):
+                    yield f"data: {event.model_dump_json()}\n\n"
 
                 # Final event to signal stream end
                 yield "data: [DONE]\n\n"

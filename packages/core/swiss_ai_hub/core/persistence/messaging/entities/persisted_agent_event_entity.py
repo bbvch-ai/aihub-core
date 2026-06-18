@@ -151,6 +151,72 @@ class PersistedAgentEventEntity(Document):
 
     @classmethod
     @trace_fn
+    def thread_ids_by_status(cls, status: str, thread_ids: list[str] | None = None) -> list[str]:
+        """
+        Classify each thread by run status from its events and return the thread_ids
+        matching the requested status ("active" | "completed" | "failed").
+
+        Precedence: failed (any ExceptionEvent) > active (more StartEvents than
+        StopEvent + ExceptionEvent) > completed. Mirrors the has_errors / has_pending
+        logic in ThreadService._calculate_overall_thread_stats.
+        """
+        pipeline = [
+            *([{"$match": {"thread_id": {"$in": thread_ids}}}] if thread_ids is not None else []),
+            # De-duplicate events by id (an event may be persisted more than once),
+            # same as get_aggregated_run_statistics.
+            {
+                "$group": {
+                    "_id": {"thread_id": "$thread_id", "event_id": "$event_id"},
+                    "thread_id_val": {"$first": "$thread_id"},
+                    "event_parents": {"$first": "$event_parents"},
+                    "event_type": {"$first": "$event_type"},
+                }
+            },
+            # Count terminal/start events per thread.
+            {
+                "$group": {
+                    "_id": "$thread_id_val",
+                    "start_events": {
+                        "$sum": {
+                            "$cond": [
+                                {
+                                    "$and": [
+                                        {"$in": ["StartEvent", "$event_parents"]},
+                                        {"$eq": ["$event_type", AgentTopicManager.CONTROL_EVENT]},
+                                    ]
+                                },
+                                1,
+                                0,
+                            ]
+                        }
+                    },
+                    "stop_events": {"$sum": {"$cond": [{"$in": ["StopEvent", "$event_parents"]}, 1, 0]}},
+                    "exception_events": {"$sum": {"$cond": [{"$in": ["ExceptionEvent", "$event_parents"]}, 1, 0]}},
+                }
+            },
+            # Classify each thread.
+            {
+                "$addFields": {
+                    "status": {
+                        "$switch": {
+                            "branches": [
+                                {"case": {"$gt": ["$exception_events", 0]}, "then": "failed"},
+                                {
+                                    "case": {"$gt": ["$start_events", {"$add": ["$stop_events", "$exception_events"]}]},
+                                    "then": "active",
+                                },
+                            ],
+                            "default": "completed",
+                        }
+                    }
+                }
+            },
+            {"$match": {"status": status}},
+        ]
+        return [doc["_id"] for doc in cls.objects.aggregate(pipeline)]
+
+    @classmethod
+    @trace_fn
     def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
         return list(
             cls.objects()

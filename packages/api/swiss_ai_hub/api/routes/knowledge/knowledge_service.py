@@ -32,6 +32,10 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
 
+from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import (
+    BatchDeleteDocumentsResponse,
+    DocumentDeletionResult,
+)
 from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.database_dto import DatabaseDTO
 from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
@@ -46,6 +50,8 @@ from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import Updat
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
 
 logger = logging.getLogger(__name__)
+
+_S3_URI_SCHEME = "s3://"
 
 
 class KnowledgeService:
@@ -345,10 +351,10 @@ class KnowledgeService:
         file_path: Annotated[str, Field(description="Path to the uploaded file")],
     ) -> None:
         """
-        Publishes a SourceUpdatedEvent to NATS when a file is successfully uploaded.
+        Publishes a SourceUpdatedEvent to NATS after a source file is added or removed.
 
-        This event triggers downstream pipeline processing via Dagster sensors that
-        listen for file upload events on the pipeline stream.
+        The Dagster observe job reacts by scanning the data lake, so the same event drives
+        both ingestion (file uploaded) and cleanup (file deleted, picked up as an orphan).
         """
         topic_manager = PipelineInstanceTopicManager(
             source_type="datalake",
@@ -399,7 +405,7 @@ class KnowledgeService:
 
         if exists:
             KnowledgeService._ensure_db_exists(database)
-            source = f"s3://{container}/{object_key}"
+            source = f"{_S3_URI_SCHEME}{container}/{object_key}"
             document_title = object_key.split("/")[-1]
 
             try:
@@ -439,7 +445,7 @@ class KnowledgeService:
         except DoesNotExist:
             raise HTTPException(status_code=404, detail="Document not found")
         source = ref_doc.data.metadata.source
-        source = source.removeprefix("s3://")
+        source = source.removeprefix(_S3_URI_SCHEME)
         parts = source.split("/", 1)
         container = parts[0]
         file_path = parts[1] if len(parts) > 1 else ""
@@ -448,3 +454,69 @@ class KnowledgeService:
     @staticmethod
     def get_supported_file_types() -> list[str]:
         return FileTypeConfig().get_unique_extensions()
+
+    @staticmethod
+    @trace_fn
+    async def delete_document(
+        nc: NATS,
+        db: str,
+        namespace: str,
+        document_id: str,
+        s3_service: S3AnonymousFileAccessService,
+    ) -> None:
+        """
+        Schedules permanent deletion of a document by removing its source file from the data lake.
+
+        Only the S3 file (and its figures) is deleted directly. The published SourceUpdatedEvent
+        triggers the pipeline's observe job, which drops the partition; the chained remove job
+        then cleans the doc store and vector store. Keeping the pipeline as the single writer for
+        those stores avoids races with in-flight ingestion runs.
+        """
+        KnowledgeService._ensure_db_exists(db)
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        source = ref_doc.data.metadata.source
+        container, file_path = KnowledgeService._delete_source_from_data_lake(s3_service, source)
+        await KnowledgeService._publish_source_updated_event(
+            nc=nc, database=db, container=container, file_path=file_path
+        )
+
+    @staticmethod
+    def _delete_source_from_data_lake(s3_service: S3AnonymousFileAccessService, source: str) -> tuple[str, str]:
+        if not source.startswith(_S3_URI_SCHEME):
+            raise HTTPException(status_code=500, detail=f"Document source '{source}' is not an {_S3_URI_SCHEME} URI")
+
+        parts = source.removeprefix(_S3_URI_SCHEME).split("/", 1)
+        container = parts[0]
+        file_path = parts[1] if len(parts) > 1 else ""
+        if not file_path:
+            raise HTTPException(status_code=500, detail=f"Document source '{source}' has no object key")
+
+        s3_service.delete_file(container=container, file_path=file_path)
+        return container, file_path
+
+    @staticmethod
+    @trace_fn
+    async def batch_delete_documents(
+        nc: NATS,
+        db: str,
+        namespace: str,
+        document_ids: list[str],
+        s3_service: S3AnonymousFileAccessService,
+    ) -> BatchDeleteDocumentsResponse:
+        """Best-effort batch deletion: each document is scheduled independently with a per-document result."""
+        results = []
+        for document_id in document_ids:
+            try:
+                await KnowledgeService.delete_document(nc, db, namespace, document_id, s3_service)
+                status = "scheduled"
+            except HTTPException as e:
+                status = "not_found" if e.status_code == 404 else "failed"
+            except Exception:
+                logger.exception(f"Failed to schedule deletion of document {document_id} in {db}/{namespace}")
+                status = "failed"
+            results.append(DocumentDeletionResult(document_id=document_id, status=status))
+        return BatchDeleteDocumentsResponse(results=results)

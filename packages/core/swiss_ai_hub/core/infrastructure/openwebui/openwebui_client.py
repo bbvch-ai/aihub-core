@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -8,6 +9,8 @@ from scim2_models import Group, GroupMember, User
 
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
+
+logger = logging.getLogger(__name__)
 
 SCIM_BASE_PATH = "/api/v1/scim/v2"
 MODELS_ENDPOINT = "/api/v1/models"
@@ -54,10 +57,28 @@ class OpenWebuiClient:
             return list(response.resources)
 
     async def create_group(self, name: str, scim: AsyncSCIMClient | None = None) -> Group:
+        """Creates a group, or returns the existing one if a group with this display name already exists.
+
+        OpenWebUI/SCIM does not enforce unique display names, so a blind create can produce duplicate
+        same-named groups (which breaks role-to-group sync). This makes creation idempotent.
+        """
+
+        async def _create(client: AsyncSCIMClient) -> Group:
+            response = await client.query(Group)
+            for group in response.resources:
+                if group.display_name == name:
+                    logger.warning(
+                        "OpenWebUI group '%s' already exists (id=%s); reusing it instead of creating a duplicate",
+                        name,
+                        group.id,
+                    )
+                    return group
+            return await client.create(Group(display_name=name))
+
         if scim:
-            return await scim.create(Group(display_name=name))
+            return await _create(scim)
         async with self.scim_session() as s:
-            return await s.create(Group(display_name=name))
+            return await _create(s)
 
     async def delete_group(self, group_id: str, scim: AsyncSCIMClient | None = None) -> None:
         if scim:

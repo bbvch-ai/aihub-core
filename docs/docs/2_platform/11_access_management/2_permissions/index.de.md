@@ -239,4 +239,4 @@ aihub.[user|admin].[resource_type].[resource_category].[resource_identifier]
 - `aihub.user.agent.?>` – Benutzerzugriff auf beliebigen Agenten (Wildcard)
 
 Für weitere Details zu Multi-Tenancy und Zugriffssteuerung siehe die Dokumentation zu
-[Multi-Tenancy-Zugriffssteuerung](/de/docs/16_multi_tenancy/4_access_control/).
+[Multi-Tenancy-Zugriffssteuerung](../../16_multi_tenancy/4_access_control/).

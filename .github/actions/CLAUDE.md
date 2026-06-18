@@ -73,7 +73,7 @@ artifacts from `test_backend`, posts formatted coverage report as PR comment via
 `MishaKav/pytest-coverage-comment@main`.
 
 **sonarcloud_scan**: Downloads `{working_directory}-coverage-report` artifact when `report_coverage: true`. Runs
-`SonarSource/sonarqube-scan-action@v5`. Requires `sonar_token` and `sonar_project_key` inputs. Default organization:
+`SonarSource/sonarqube-scan-action@v6`. Requires `sonar_token` and `sonar_project_key` inputs. Default organization:
 `bbv-ai`.
 
 ## Local vs Remote References

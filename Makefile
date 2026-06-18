@@ -103,7 +103,7 @@ pr-ready:
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.290.7
+TAG ?= v0.300.3
 
 changelog:
 	@echo "Generating changelog"
@@ -153,6 +153,7 @@ local-cert:
 	mkcert -key-file infra/configs/traefik/certs/dev-key.pem -cert-file infra/configs/traefik/certs/dev-cert.pem \
 		"localhost" "*.localhost" \
 		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
+	cp "$$(mkcert -CAROOT)/rootCA.pem" infra/configs/traefik/certs/rootCA.pem
 	@echo "Certificates written to infra/configs/traefik/certs/"
 
 install-ffmpeg:
@@ -197,8 +198,9 @@ up-local-gpu: local-cert
 VERSION ?= 0.263.0
 version-bump:
 	@echo "Bumping version to $(VERSION) across all packages..."
-	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/sysadmin-api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml packages/backup/pyproject.toml; do \
+	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/sysadmin-api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml packages/backup/pyproject.toml packages/meta/pyproject.toml; do \
 		sed -i '/^\[project\]/,/^version =/ s/version = "[^"]*"/version = "$(VERSION)"/' $$f; \
+		sed -i -E 's/(swiss-ai-hub-(core|agent|api|bot|pipeline|process))==[^"]*/\1==$(VERSION)/g' $$f; \
 	done
 	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/web/package.json
 	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/sysadmin-web/package.json

@@ -13,6 +13,7 @@ docs/.vitepress/dist
 docs/swiss-ai-hub
 /infra/configs/traefik/certs/dev-cert.pem
 /infra/configs/traefik/certs/dev-key.pem
+/infra/configs/traefik/certs/rootCA.pem
 .idea/copilot*
 .idea/compiler.xml
 .idea/misc.xml
@@ -48,3 +49,6 @@ CLAUDE.local.md
 /models/
 /dist/
 /data/
+
+# Local-only manual test runbook (kept out of the PR)
+/keycloak-config-lifecycle-test.md

@@ -33,12 +33,33 @@ GPU_MODES = {False: "", True: ".gpu"}
 CONFIG_SPECS = [
     # Docker Compose - always required
     ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{stage}{hardware}.yml"),
-    # Keycloak configs - realm (platform) and identity providers (customer)
-    ("templates/configs/keycloak-realm.json.j2", "configs/keycloak", "aihub-realm.{stage}{hardware}.json"),
+    # Keycloak bootstrap configs (realm settings, user profile, startup tenant
+    # group, superuser, identity providers) are first-start-only seeds. They are
+    # NOT rendered standalone here — they are emitted solely through the merged
+    # aihub-realm file consumed by --import-realm (see generate_keycloak_realm /
+    # KEYCLOAK_BOOTSTRAP_TEMPLATES). Bootstrap changes stay reviewable via the
+    # diff of the merged aihub-realm.{stage}.json output.
+    # Keycloak managed configs - reconciled on every start by keycloak-config-cli.
+    ("templates/configs/keycloak/managed/10-roles.json.j2", "configs/keycloak/managed", "10-roles.{stage}{hardware}.json"),
     (
-        "templates/configs/keycloak-identity-providers.json.j2",
-        "configs/keycloak",
-        "identity-providers.{stage}{hardware}.json",
+        "templates/configs/keycloak/managed/20-client-scopes.json.j2",
+        "configs/keycloak/managed",
+        "20-client-scopes.{stage}{hardware}.json",
+    ),
+    (
+        "templates/configs/keycloak/managed/30-clients.json.j2",
+        "configs/keycloak/managed",
+        "30-clients.{stage}{hardware}.json",
+    ),
+    (
+        "templates/configs/keycloak/managed/40-auth-flows.json.j2",
+        "configs/keycloak/managed",
+        "40-auth-flows.{stage}{hardware}.json",
+    ),
+    (
+        "templates/configs/keycloak/managed/60-service-accounts.json.j2",
+        "configs/keycloak/managed",
+        "60-service-accounts.{stage}{hardware}.json",
     ),
     # Service configs - optional, skipped if template missing
     ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{stage}{hardware}.yml"),
@@ -64,6 +85,28 @@ CONFIG_SPECS = [
     # Keycloak theme - static files (no stage/hardware variations)
     ("templates/configs/keycloak-theme-properties.j2", "configs/keycloak/themes/aihub/login", "theme.properties"),
     ("templates/configs/keycloak-theme-login.css.j2", "configs/keycloak/themes/aihub/login/resources/css", "login.css"),
+]
+
+# Keycloak realm documents merged into the single aihub-realm file consumed by
+# --import-realm on first start. Bootstrap documents are first-start-only seeds
+# (realm settings, user profile, groups, superuser, identity providers);
+# managed documents are also reconciled on every start by keycloak-config-cli,
+# but must appear in the merged file too so fresh boots come up complete without
+# waiting for the reconciler (kcc adopts the pre-created entities into its
+# remote state).
+KEYCLOAK_BOOTSTRAP_TEMPLATES = [
+    "templates/configs/keycloak/bootstrap/realm-settings.json.j2",
+    "templates/configs/keycloak/bootstrap/components.json.j2",
+    "templates/configs/keycloak/bootstrap/groups.json.j2",
+    "templates/configs/keycloak/bootstrap/users-superuser.json.j2",
+    "templates/configs/keycloak/bootstrap/identity-providers.json.j2",
+]
+KEYCLOAK_MANAGED_TEMPLATES = [
+    "templates/configs/keycloak/managed/10-roles.json.j2",
+    "templates/configs/keycloak/managed/20-client-scopes.json.j2",
+    "templates/configs/keycloak/managed/30-clients.json.j2",
+    "templates/configs/keycloak/managed/40-auth-flows.json.j2",
+    "templates/configs/keycloak/managed/60-service-accounts.json.j2",
 ]
 
 # Static directories copied verbatim (no Jinja2 rendering).
@@ -105,8 +148,8 @@ OWN_IMAGE_LICENSES = {
     "bot": "Apache-2.0",
     "web": "AGPL-3.0-or-later",
     "backup": "AGPL-3.0-or-later",
-    "sysadmin-api": "LicenseRef-Proprietary",
-    "sysadmin-web": "LicenseRef-Proprietary",
+    "sysadmin-api": "AGPL-3.0-or-later",
+    "sysadmin-web": "AGPL-3.0-or-later",
     "llm_wrapping_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
@@ -142,6 +185,7 @@ DOCKER_LICENSE_ALIASES = {
     "backup-daemon": "dagster",
     "otel-collector": "opentelemetry-collector-contrib",
     "openwebui-init": "open-webui",
+    "keycloak-config": "keycloak-config-cli",
 }
 
 
@@ -193,6 +237,25 @@ def generate_config(template, context, output_path):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     rendered = template.render(context)
     output_path.write_text(rendered, encoding="utf-8")
+
+
+def generate_keycloak_realm(env, context, output_path):
+    """Merge the bootstrap + managed Keycloak documents into the single realm file
+    consumed by --import-realm on first start. Duplicate top-level keys must either
+    carry identical values (e.g. "realm") or both be lists, which are concatenated
+    (e.g. "users" from the superuser seed and the managed service accounts)."""
+    merged = {}
+    for template_path in KEYCLOAK_BOOTSTRAP_TEMPLATES + KEYCLOAK_MANAGED_TEMPLATES:
+        document = json.loads(env.get_template(template_path).render(context))
+        for key, value in document.items():
+            if key not in merged:
+                merged[key] = value
+            elif isinstance(merged[key], list) and isinstance(value, list):
+                merged[key] = merged[key] + value
+            elif merged[key] != value:
+                raise ValueError(f"Conflicting values for realm key '{key}' in {template_path}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
 
 
 def _strip_stage_hardware(name_pattern):
@@ -266,6 +329,14 @@ def generate_default(env, config_data):
 
             generate_config(template, context, output_path)
             stats[config_name] += 1
+
+    stats["keycloak-realm"] = 0
+    for gpu_enabled, hardware in GPU_MODES.items():
+        for stage in STAGES:
+            context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
+            output_path = ROOT_DIR / "configs/keycloak" / f"aihub-realm.{stage}{hardware}.json"
+            generate_keycloak_realm(env, context, output_path)
+            stats["keycloak-realm"] += 1
 
     stats["static-copies"] = 0
     for src_rel, dst_rel in STATIC_COPY_DIRS:
@@ -410,6 +481,10 @@ def generate_release(env, config_data, version, output_dir, project):
             output_path = out_dir / filename
             generate_config(template, context, output_path)
             stats[config_name] += 1
+
+        realm_context = {"stage": "latest", "gpu_enabled": gpu_enabled, "config_file_suffix": "", **config_data}
+        generate_keycloak_realm(env, realm_context, variant_dir / "configs/keycloak/aihub-realm.json")
+        stats["keycloak-realm"] = stats.get("keycloak-realm", 0) + 1
 
         # Copy static directories and files into the release bundle
         for src_rel, dst_rel in STATIC_COPY_DIRS:

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/media/logo.png" alt="Swiss AI-Hub" width="120">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/logo.png" alt="Swiss AI-Hub" width="120">
 
 # Swiss AI-Hub
 
@@ -10,7 +10,7 @@ Connect, orchestrate, and monitor best-in-class open-source tools to deliver\
 what cloud AI platforms promise, but where you own every layer.
 
 [![GitHub Release](https://img.shields.io/github/v/release/bbvch-ai/aihub-core?style=flat-square)](https://github.com/bbvch-ai/aihub-core/releases)
-[![License](https://img.shields.io/badge/license-Apache%202.0%20%2F%20AGPL%20%2F%20Proprietary-blue?style=flat-square)](LICENSES.md)
+[![License](https://img.shields.io/badge/license-Apache%202.0%20%2F%20AGPL-blue?style=flat-square)](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/swiss-ai-hub-core?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/swiss-ai-hub-core/)
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
@@ -78,7 +78,7 @@ One `docker compose up` starts ~30 containers, fully integrated. Every component
 wired together.
 
 <p align="center" width="100%">
-<img src="docs/media/architecture/low_level/tier_2.png" width="100%" alt="Architecture overview">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/architecture/low_level/tier_2.png" width="100%" alt="Architecture overview">
 <em>Tier 2 architecture: every component connected, from LLM providers to data sources</em><br><br>
 </p>
 
@@ -214,7 +214,7 @@ PPTX, XLSX, and plain text. For production, connect SharePoint, OneDrive, Google
 Rclone for continuous sync.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-knowledge-demo.webp" width="80%" alt="Knowledge ingestion demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-knowledge-demo.webp" width="80%" alt="Knowledge ingestion demo">
 </p>
 
 ### Track every step of the data pipeline
@@ -223,7 +223,7 @@ Dagster provides full lineage from source document to vector embedding: which fi
 chunked, when embeddings were created, what ended up in Milvus. Automatic retry and failure handling included.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-dagster-demo.webp" width="80%" alt="Dagster pipeline demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-dagster-demo.webp" width="80%" alt="Dagster pipeline demo">
 </p>
 
 ### Create agents without writing code
@@ -234,7 +234,7 @@ and the agent goes live. One blueprint powers many profiles. An "Expert RAG Agen
 agent, legal FAQ agent, and IT support agent, each with different knowledge bases and instructions.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-create-agent-demo.webp" width="80%" alt="Agent configurator demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-create-agent-demo.webp" width="80%" alt="Agent configurator demo">
 </p>
 
 ### Ask questions grounded in your data
@@ -244,7 +244,7 @@ Every interaction is traced end-to-end in Langfuse, from the user's question thr
 generation.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-agent-interaction-demo.webp" width="80%" alt="Agent interaction demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-agent-interaction-demo.webp" width="80%" alt="Agent interaction demo">
 </p>
 
 ### Control costs and model routing
@@ -253,7 +253,7 @@ LiteLLM provides a unified dashboard for all LLM usage. Set spending limits per 
 between local and cloud models. Monitor token consumption, latency, and cost per request from a single pane.
 
 <p align="center" width="100%">
-<img src="docs/media/demos/aihub-litellm-demo.webp" width="80%" alt="LiteLLM cost control demo">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/demos/aihub-litellm-demo.webp" width="80%" alt="LiteLLM cost control demo">
 </p>
 
 ______________________________________________________________________
@@ -441,7 +441,7 @@ ______________________________________________________________________
 ## Contributing
 
 Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and open to contributions. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the full guide, or jump in:
+[CONTRIBUTING.md](https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTING.md) for the full guide, or jump in:
 
 |                                                                |                                                              |
 | -------------------------------------------------------------- | ------------------------------------------------------------ |
@@ -451,18 +451,20 @@ Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and ope
 
 ## License
 
-Swiss AI Hub uses a **mixed-license model** — each published artifact carries its own license, and the per-package
-`LICENSE` file is authoritative for its subtree:
+Swiss AI Hub is **fully open-source** under a **dual-license model** — each published artifact carries its own license,
+and the per-package `LICENSE` file is authoritative for its subtree:
 
 - **Apache-2.0** — the platform runtime and shared code (`packages/core`, `agent`, `api`, `bot`, `pipeline`, `process`,
-  and the repository root). See [LICENSE](LICENSE).
-- **AGPL-3.0-or-later** — the frontend (`packages/web`) and backup service (`packages/backup`).
-- **Proprietary — All Rights Reserved** — multi-tenant administration (`packages/sysadmin-api`,
-  `packages/sysadmin-web`): no use granted. Public visibility in this repository does not grant any right to use, copy,
-  modify, run, or distribute these packages. A commercial license is required for any use; contact bbv Software Services
-  AG.
+  and the repository root). See [LICENSE](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSE).
+- **AGPL-3.0-or-later** — the frontend (`packages/web`), the multi-tenant administration plane (`packages/sysadmin-api`,
+  `packages/sysadmin-web`), and the backup service (`packages/backup`).
 
-See [LICENSES.md](LICENSES.md) for the full per-package matrix and rationale.
+The split is intentional: the backend stays **permissive** so you can build and run proprietary agents and extensions
+without any obligation to disclose them, while the **copyleft** components (the UI, the administration plane, and the
+backup service) keep improvements flowing back to the community and block proprietary SaaS rehosts.
+
+See [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the full per-package matrix and
+rationale.
 
 ______________________________________________________________________
 

@@ -1,7 +1,12 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.routes.chat.chat_service import ChatService, JsonResources, StreamingResources
+    from swiss_ai_hub.core.routes.chat.chat_service import (
+        DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+        ChatService,
+        JsonResources,
+        StreamingResources,
+    )
     from swiss_ai_hub.core.routes.controller import Controller
     from swiss_ai_hub.core.routes.health.dto.health_response import ApiHealthChecks, HealthResponse, ProcessHealthChecks
     from swiss_ai_hub.core.routes.health.health_checks import (
@@ -31,6 +36,7 @@ __all__ = [
     "HealthResponse",
     "ApiHealthChecks",
     "ChatService",
+    "DISPLAY_STREAM_DRAIN_GRACE_SECONDS",
     "Controller",
     "HealthCheckProvider",
     "HealthController",
@@ -52,6 +58,7 @@ _LAZY_IMPORTS = {
     "HealthResponse": "swiss_ai_hub.core.routes.health.dto.health_response",
     "ApiHealthChecks": "swiss_ai_hub.core.routes.health.dto.health_response",
     "ChatService": "swiss_ai_hub.core.routes.chat.chat_service",
+    "DISPLAY_STREAM_DRAIN_GRACE_SECONDS": "swiss_ai_hub.core.routes.chat.chat_service",
     "Controller": "swiss_ai_hub.core.routes.controller",
     "HealthCheckProvider": "swiss_ai_hub.core.routes.health.health_server",
     "HealthController": "swiss_ai_hub.core.routes.health.health_controller",

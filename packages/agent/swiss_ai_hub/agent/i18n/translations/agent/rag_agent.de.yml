@@ -37,7 +37,7 @@ config:
       \ für den gegebenen Kontext relevant sind.\n\nNachfolgend finden Sie die relevanten\
       \ Dokumente:\n\n<context_documents>\n{% for block in context_blocks %}\n{% if\
       \ block.block_type == 'text' %}\n{{ block.text }}\n{% endif %}\n{% if block.block_type\
-      \ == 'image' %}\n{{ block.url.__str__() | image}}\n{% endif %}\n{% endfor %}\n\
+      \ == 'image' %}\n{{ block.url | string | image}}\n{% endif %}\n{% endfor %}\n\
       </context_documents>\n\nAnweisung: Erstellen Sie anhand der Informationen aus\
       \ den bereitgestellten Dokumenten eine detaillierte und gut strukturierte Antwort\n\
       auf die Frage des Benutzers.\n{% endchat %}\n"
@@ -91,6 +91,10 @@ steps:
     name: Kontext-Ausreichend-Schutz
     description: Schützt den Kontext, um sicherzustellen, dass er für eine Antwort
       ausreicht.
+  persist_grounding_nodes:
+    name: Grundlagen-Dokumente speichern
+    description: Speichert die wichtigsten Grundlagen-Dokumente dieser Antwort, damit
+      eine Folgefrage sie wiederverwenden kann.
   limit_chat_history_with_context:
     name: Chat-Verlauf mit Kontext begrenzen
     description: Fügt den kombinierten Kontext hinzu und kürzt den Chat-Verlauf erneut.

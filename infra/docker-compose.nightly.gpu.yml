@@ -13,7 +13,7 @@
 # distributed under the Apache License 2.0 (see the root LICENSE).
 #
 # The SERVICES it orchestrates carry their OWN licenses — Apache-2.0, AGPL-3.0,
-# proprietary, and various permissive third-party terms. Each service block
+# and various permissive third-party terms. Each service block
 # below is annotated with `# License: <SPDX>` for at-a-glance reference.
 #
 # Authoritative sources for license details:
@@ -857,6 +857,7 @@ services:
         max-file: 2
     labels:
       - traefik.enable=true
+      - traefik.docker.network=proxy
       - traefik.http.routers.langfuse.rule=Host(`langfuse.${DOMAIN}`)
       - traefik.http.routers.langfuse.priority=4000
       - traefik.http.routers.langfuse.entrypoints=websecure
@@ -913,6 +914,7 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
@@ -922,7 +924,6 @@ services:
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
       - ./configs/keycloak/aihub-realm.nightly.gpu.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
-      - ./configs/keycloak/identity-providers.nightly.gpu.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
       - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
     healthcheck:
       test:
@@ -964,6 +965,64 @@ services:
     networks:
       - data  # PostgreSQL access for Keycloak database
       - proxy  # Traefik routing for auth.${DOMAIN}
+
+  # One-shot reconciler: applies the managed realm config (clients, scopes,
+  # roles, flows, identity providers) on every stack start via the Admin API.
+  # File wins over admin-console drift; users and tenant groups are never
+  # touched. Nothing depends on it completing — a failure (non-zero exit in
+  # `docker compose ps -a`) means the realm keeps running with old config.
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  keycloak-config:
+    container_name: keycloak-config
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak-config-cli:6.5.0-26.5.4
+    restart: on-failure
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_USER: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_AVAILABILITYCHECK_ENABLED: 'true'
+      KEYCLOAK_AVAILABILITYCHECK_TIMEOUT: 120s
+      IMPORT_FILES_LOCATIONS: /config/*.json
+      IMPORT_VARSUBSTITUTION_ENABLED: 'true'
+      # Reapply on every start even when file checksums are unchanged, so
+      # admin-console drift on managed objects is always reverted.
+      IMPORT_CACHE_ENABLED: 'false'
+      # Defense in depth — no managed file may contain groups (tenants are
+      # runtime data, see ADR 2026_04_15_keycloak_as_tenant_existence_authority).
+      IMPORT_MANAGED_GROUP: no-delete
+      # Defense in depth — identity providers are bootstrap-only (first-start
+      # --import-realm); no managed file declares them, so kcc must never delete
+      # the ones seeded by the realm import or configured in the admin console.
+      IMPORT_MANAGED_IDENTITYPROVIDER: no-delete
+      IMPORT_MANAGED_IDENTITYPROVIDERMAPPER: no-delete
+      DOMAIN: ${DOMAIN}
+      # Client secrets (substituted into the managed config files)
+      KEYCLOAK_OPENWEBUI_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      # Azure Entra ID vars are NOT needed here — identity providers are
+      # bootstrap-only (seeded by the keycloak container's --import-realm), not
+      # reconciled by keycloak-config-cli.
+    volumes:
+      - ./configs/keycloak/managed/10-roles.nightly.gpu.json:/config/10-roles.json:ro
+      - ./configs/keycloak/managed/20-client-scopes.nightly.gpu.json:/config/20-client-scopes.json:ro
+      - ./configs/keycloak/managed/30-clients.nightly.gpu.json:/config/30-clients.json:ro
+      - ./configs/keycloak/managed/40-auth-flows.nightly.gpu.json:/config/40-auth-flows.json:ro
+      - ./configs/keycloak/managed/60-service-accounts.nightly.gpu.json:/config/60-service-accounts.json:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data  # Keycloak Admin API access on its data-network interface
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -1761,6 +1820,7 @@ services:
         max-file: 2
     networks:
       - backend
+      - egress
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1829,6 +1889,7 @@ services:
       ENABLE_OAUTH_SIGNUP: true
       ENABLE_OAUTH_ROLE_MANAGEMENT: true
       OAUTH_ROLES_CLAIM: roles
+      OAUTH_ALLOWED_ROLES: AIHubAccess,${OAUTH_ADMIN_ROLES_OPENWEBUI}
       OAUTH_ADMIN_ROLES: ${OAUTH_ADMIN_ROLES_OPENWEBUI}
       OAUTH_PROVIDER_NAME: Keycloak
       OAUTH_CLIENT_ID: openwebui
@@ -2540,14 +2601,14 @@ services:
       - traefik.http.services.web.loadbalancer.server.port=8080
       - traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file
   # ===================================================================
-  # Sysadmin API (Proprietary)
+  # Sysadmin API (AGPL-3.0-or-later)
   # ===================================================================
   # FastAPI service for system-administrator-only operations (multi-tenant
   # management). Routed at sysadmin.${DOMAIN}/api/v1/*. Independent of the
   # main `api` service — uses its own lightweight lifespan that only wires
   # MongoDB and Keycloak (no NATS / Milvus / Redis / S3 / WebSocket).
   # ===================================================================
-  # License: LicenseRef-Proprietary — own image (see LICENSES.md)
+  # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   sysadmin-api:
     container_name: sysadmin-api
     restart: always
@@ -2653,12 +2714,12 @@ services:
       - backend
       - data
   # ===================================================================
-  # Sysadmin Web UI (Proprietary)
+  # Sysadmin Web UI (AGPL-3.0-or-later)
   # ===================================================================
   # Nuxt 3 SPA dedicated to system administration. Routed at
   # sysadmin.${DOMAIN}/* (path /api/v1 goes to sysadmin-api by priority).
   # ===================================================================
-  # License: LicenseRef-Proprietary — own image (see LICENSES.md)
+  # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   sysadmin-web:
     container_name: sysadmin-web
     restart: always
