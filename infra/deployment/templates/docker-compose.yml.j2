@@ -2209,7 +2209,8 @@ services:
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
 
-      # --- Image Generation ---
+      {%- if not gpu_enabled %}
+      # --- Image Generation (cloud-only; GPU stages have no local image model yet) ---
       IMAGE_GENERATION_MODEL: image-generation/flux
       IMAGES_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
@@ -2217,6 +2218,7 @@ services:
       ENABLE_IMAGE_GENERATION: True
       # Infomaniak flux rejects prompts > 400 chars; disable LLM prompt expansion so raw prompts pass through
       ENABLE_IMAGE_PROMPT_GENERATION: False
+      {%- endif %}
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai

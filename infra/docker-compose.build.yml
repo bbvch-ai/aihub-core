@@ -1749,8 +1749,7 @@ services:
       TASK_MODEL_EXTERNAL: text-generation/gemma-4-31B-it
       ENABLE_OLLAMA_API: false
       ENABLE_OPENAI_API: true
-
-      # --- Image Generation ---
+      # --- Image Generation (cloud-only; GPU stages have no local image model yet — see follow-up issue) ---
       IMAGE_GENERATION_MODEL: image-generation/flux
       IMAGES_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}

@@ -1928,15 +1928,6 @@ services:
       ENABLE_OLLAMA_API: false
       ENABLE_OPENAI_API: true
 
-      # --- Image Generation ---
-      IMAGE_GENERATION_MODEL: image-generation/flux
-      IMAGES_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
-      IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      IMAGE_SIZE: 1024x1024
-      ENABLE_IMAGE_GENERATION: true
-      # Infomaniak flux rejects prompts > 400 chars; disable LLM prompt expansion so raw prompts pass through
-      ENABLE_IMAGE_PROMPT_GENERATION: false
-
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
       AUDIO_STT_MODEL: transcription
