@@ -248,6 +248,14 @@ def observe_source(context, client: ResourceParam[SourceResource]) -> DataVersio
 `replace_partition_keys(context, partition_name, keys, max_partitions)` in `util/partition_utils.py`. Default max: 1000
 partitions added/deleted per tick.
 
+**Partition definition naming convention**: `DynamicPartitionsDefinition` names are global within a single Dagster
+instance — two factories using the same name will collide and share partition state. All
+`default_*_to_datalake_definitions` builders therefore derive the name from both the data lake container and the source,
+in the form `{datalake_container_name}_{source_name}_rclone_partitions` (and the analogous shape for sharepoint,
+local_fs, etc.). Never hard-code a partition definition name in a factory: when multiple pipelines (e.g. two
+rclone-backed sources for different tenants) are registered in the same Dagster code location, the name must be unique
+per pipeline.
+
 ## Automation & Triggering
 
 Four triggering mechanisms work together:
