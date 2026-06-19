@@ -12,6 +12,7 @@ from scim2_models import Group, User
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
@@ -21,6 +22,7 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +118,17 @@ class OpenWebuiProvisioner:
                 await self._sync_groups()
                 await self._sync_access_grants(http)
 
-    @staticmethod
-    def _get_known_online_agents() -> list[OnlineAgent]:
+    @property
+    def model_name_locale(self) -> str:
+        """Locale used to render the single name OpenWebUI stores per workspace model."""
+        return self._settings.MODEL_NAME_LOCALE
+
+    def _resolve_display_name(self, name: LocaleStringEntity, agent_id: str) -> str:
+        if not (name.de or name.en or name.fr or name.it):
+            return agent_id
+        return LocaleHandler(self.model_name_locale).extract(name)
+
+    def _get_known_online_agents(self) -> list[OnlineAgent]:
         """Queries the DB for agent instances whose class was recently discovered."""
         class_entities = AgentClassEntity.get_online_conversational()
         if not class_entities:
@@ -126,17 +137,14 @@ class OpenWebuiProvisioner:
         agent_classes = [ce.agent_class for ce in class_entities]
         all_configs = AgentConfigEntityDocument.find_for_classes(agent_classes)
 
-        agents: list[OnlineAgent] = []
-        for config in all_configs:
-            display_name = config.name.en or config.name.de or config.agent_id
-            agents.append(
-                OnlineAgent(
-                    agent_class=config.agent_class,
-                    agent_id=config.agent_id,
-                    display_name=display_name,
-                )
+        return [
+            OnlineAgent(
+                agent_class=config.agent_class,
+                agent_id=config.agent_id,
+                display_name=self._resolve_display_name(config.name, config.agent_id),
             )
-        return agents
+            for config in all_configs
+        ]
 
     # ------------------------------------------------------------------
     # Group sync
@@ -250,35 +258,53 @@ class OpenWebuiProvisioner:
     def _base_model_id(agent_class: str, agent_id: str) -> str:
         return f"aihub-pipeline.{agent_class}.{agent_id}"
 
+    def _build_model_data(self, agent: OnlineAgent) -> dict[str, Any]:
+        return {
+            "id": self._workspace_model_id(agent.agent_class, agent.agent_id),
+            "name": agent.display_name,
+            "base_model_id": self._base_model_id(agent.agent_class, agent.agent_id),
+            "meta": {"description": f"AI-Hub agent: {agent.agent_class}/{agent.agent_id}"},
+        }
+
     @staticmethod
     def _compute_model_diff(
-        online_agents: list[OnlineAgent], existing_model_ids: set[str]
-    ) -> tuple[list[OnlineAgent], set[str]]:
-        """Returns (models_to_create, model_ids_to_delete)."""
-        desired_ids = {f"{AIHUB_MODEL_PREFIX}{agent.agent_class}-{agent.agent_id}" for agent in online_agents}
-        to_create = [
-            agent
-            for agent in online_agents
-            if f"{AIHUB_MODEL_PREFIX}{agent.agent_class}-{agent.agent_id}" not in existing_model_ids
-        ]
-        to_delete = existing_model_ids - desired_ids
-        return to_create, to_delete
+        online_agents: list[OnlineAgent], existing_models: dict[str, dict[str, Any]]
+    ) -> tuple[list[OnlineAgent], list[OnlineAgent], set[str]]:
+        """Returns (models_to_create, models_to_update, model_ids_to_delete).
+
+        An agent is updated when its workspace model exists but the stored name drifted from the
+        current agent name (e.g. after a rename) — the only field this diff reconciles. Access
+        grants are reconciled separately by _sync_access_grants.
+        """
+        desired_ids: set[str] = set()
+        to_create: list[OnlineAgent] = []
+        to_update: list[OnlineAgent] = []
+        for agent in online_agents:
+            model_id = OpenWebuiProvisioner._workspace_model_id(agent.agent_class, agent.agent_id)
+            desired_ids.add(model_id)
+            existing = existing_models.get(model_id)
+            if existing is None:
+                to_create.append(agent)
+            elif existing.get("name") != agent.display_name:
+                to_update.append(agent)
+        to_delete = set(existing_models) - desired_ids
+        return to_create, to_update, to_delete
 
     async def _sync_workspace_models(self, http: httpx.AsyncClient, online_agents: list[OnlineAgent]) -> None:
         existing_models = await self._openwebui.list_models(http)
-        existing_aihub = {m["id"] for m in existing_models if m.get("id", "").startswith(AIHUB_MODEL_PREFIX)}
+        existing_aihub = {m["id"]: m for m in existing_models if m.get("id", "").startswith(AIHUB_MODEL_PREFIX)}
 
-        to_create, to_delete = self._compute_model_diff(online_agents, existing_aihub)
+        to_create, to_update, to_delete = self._compute_model_diff(online_agents, existing_aihub)
 
         for agent in to_create:
-            model_data = {
-                "id": self._workspace_model_id(agent.agent_class, agent.agent_id),
-                "name": agent.display_name,
-                "base_model_id": self._base_model_id(agent.agent_class, agent.agent_id),
-                "meta": {"description": f"AI-Hub agent: {agent.agent_class}/{agent.agent_id}"},
-            }
+            model_data = self._build_model_data(agent)
             await self._openwebui.create_model(http, model_data)
             logger.info(f"OpenWebUI: Created workspace model '{model_data['id']}'")
+
+        for agent in to_update:
+            model_data = self._build_model_data(agent)
+            await self._openwebui.update_model(http, model_data)
+            logger.info(f"OpenWebUI: Updated workspace model '{model_data['id']}' name to '{agent.display_name}'")
 
         for model_id in to_delete:
             await self._openwebui.delete_model(http, model_id)
