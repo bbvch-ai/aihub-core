@@ -338,15 +338,15 @@ the relevant steps.
 
 ## Pre-Built Agents
 
-| Agent                       | Purpose                          | Key Pattern                                                                                         |
-| --------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Agent                       | Purpose                          | Key Pattern                                                                                                                                               |
+| --------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) + conversation metadata (title + follow-up questions) |
-| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                                                               |
-| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory                                                    |
-| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop                                                      |
-| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection                                                      |
-| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate                                              |
-| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context                                                          |
+| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                                                                                                                     |
+| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory                                                                                                          |
+| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop                                                                                                            |
+| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection                                                                                                            |
+| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate                                                                                                    |
+| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context                                                                                                                |
 
 Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.py` (entry point),
 `agents/{snake_name}/tests/` (BDD tests).

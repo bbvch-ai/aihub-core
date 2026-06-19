@@ -75,13 +75,15 @@ excluded agents reference neither.
   thread name (mitigated, not eliminated, by the drain grace). Unifying the two fan-out agents onto inline would remove
   that race at the cost of serializing the metadata calls ahead of the stop (post-answer latency, since the answer has
   already streamed); deferred as a follow-up.
-- **Inline couples metadata to the answer.** A metadata-generation failure inside the terminal step propagates and can
-  fail the run (the fan-out path isolates it to a separate step). Generation reuses the run's LLM and runs post-answer,
-  so this is an accepted trade-off for the inline agents; if it proves fragile, the inline `gather` can be made
-  best-effort.
+- **Metadata generation is best-effort in both shapes**, because it is a non-essential post-answer enhancement that must
+  never fail the user's answer. Inline agents call the shared `generate_conversation_metadata` helper, which runs the
+  two generators with `asyncio.gather(return_exceptions=True)` and logs (not raises) any failure. Fan-out steps set
+  `stop_on_error=False`, so a generator failure is logged and produces no event instead of an `ExceptionEvent`. Either
+  way a title/follow-up failure degrades to "no metadata this turn"; the answer and its terminal stop event are
+  untouched.
 - Excluded by design: non-conversational blueprints (`RetrievalAgent`) and routing/escalation front-ends that do not own
   the final answer (`NamespaceSelectionAgent`, `ExpertAskingAgent`).
-- The self-awareness meta-answer branch (`answer_meta_question_step` → `LLMStopEvent`) also produces no metadata, for the
-  same stop-event reason; left as-is so meta-only conversations keep the default thread name.
+- The self-awareness meta-answer branch (`answer_meta_question_step` → `LLMStopEvent`) also produces no metadata, for
+  the same stop-event reason; left as-is so meta-only conversations keep the default thread name.
 - Reusing the run's LLM (rather than a dedicated cheaper task model) keeps configuration simple; a task model can be
   added later as a non-breaking option.

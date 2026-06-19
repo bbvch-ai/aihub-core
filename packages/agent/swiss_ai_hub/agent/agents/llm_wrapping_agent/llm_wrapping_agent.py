@@ -1,4 +1,3 @@
-import asyncio
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -17,8 +16,7 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    do_generate_follow_up_questions,
-    do_generate_title,
+    generate_conversation_metadata,
 )
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
@@ -131,9 +129,7 @@ class LLMWrappingAgent(Agent):
         # Generate conversation metadata inline before the run terminates: this agent's answer is a
         # terminal stop event, and the dispatcher does not dispatch steps waiting on stop events, so a
         # separate @step cannot consume it. Emitting here guarantees the events reach the wire before
-        # the stop event is published. See ADR 2026_06_18_conversation_metadata_as_explicit_per_agent_steps.
-        await asyncio.gather(
-            do_generate_title(stop_event.chat_messages, agent_config.llm, displayer, t, thread_context),
-            do_generate_follow_up_questions(stop_event.chat_messages, agent_config.llm, displayer, t),
-        )
+        # the stop event is published, and the helper is best-effort so a metadata failure never fails
+        # the run. See ADR 2026_06_18_conversation_metadata_as_explicit_per_agent_steps.
+        await generate_conversation_metadata(stop_event.chat_messages, agent_config.llm, displayer, t, thread_context)
         return stop_event

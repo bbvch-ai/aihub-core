@@ -558,6 +558,7 @@ class RAGAgent(Agent):
         name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
         description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
         icon="mdi:format-title",
+        stop_on_error=False,
     )
     async def generate_conversation_title_step(
         self,
@@ -580,6 +581,7 @@ class RAGAgent(Agent):
         name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.name"),
         description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.description"),
         icon="mdi:comment-question-outline",
+        stop_on_error=False,
     )
     async def generate_follow_up_questions_step(
         self,

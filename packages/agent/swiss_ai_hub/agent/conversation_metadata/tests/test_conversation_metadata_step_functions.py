@@ -9,6 +9,7 @@ from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functio
     TITLE_GENERATED_KEY,
     do_generate_follow_up_questions,
     do_generate_title,
+    generate_conversation_metadata,
 )
 from swiss_ai_hub.agent.conversation_metadata.follow_up_questions_result import FollowUpQuestionsResult
 from swiss_ai_hub.agent.conversation_metadata.title_result import TitleResult
@@ -131,3 +132,18 @@ async def test_follow_ups_not_emitted_when_empty(displayer, locale_handler):
     await do_generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
 
     displayer.display_event.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_generate_metadata_is_best_effort_on_failure(displayer, locale_handler):
+    """A failing generator must not propagate — metadata is non-essential and must never fail the run."""
+    llm = MagicMock()
+    llm.metadata.is_function_calling_model = True
+    llm.astructured_predict = AsyncMock(side_effect=RuntimeError("LLM unavailable"))
+    thread_context = FakeThreadContext()
+
+    # Must not raise.
+    await generate_conversation_metadata(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context)
+
+    displayer.display_event.assert_not_awaited()
+    assert await thread_context.get(TITLE_GENERATED_KEY) is None

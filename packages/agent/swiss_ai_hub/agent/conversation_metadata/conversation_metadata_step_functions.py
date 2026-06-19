@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from llama_index.core import PromptTemplate
@@ -94,3 +95,28 @@ async def do_generate_follow_up_questions(
         return
 
     await displayer.display_event(FollowUpQuestionsEvent(questions=questions))
+
+
+async def generate_conversation_metadata(
+    chat_messages: list[ChatMessage],
+    llm_config: LLMConfig,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+    thread_context: ThreadContext,
+) -> None:
+    """Generate title + follow-up questions best-effort, for agents that emit inline before a stop event.
+
+    Conversation metadata is a non-essential, post-answer enhancement. Agents whose answer is a terminal
+    stop event must generate it inside that step (the dispatcher won't dispatch steps waiting on a stop
+    event), which would otherwise couple a metadata failure to the run. Running both generators with
+    ``return_exceptions=True`` keeps a failure in either from propagating: it is logged and the run still
+    terminates normally with its answer intact.
+    """
+    results = await asyncio.gather(
+        do_generate_title(chat_messages, llm_config, displayer, t, thread_context),
+        do_generate_follow_up_questions(chat_messages, llm_config, displayer, t),
+        return_exceptions=True,
+    )
+    for result in results:
+        if isinstance(result, Exception):
+            logger.warning("Conversation metadata generation failed: %s", result, exc_info=result)
