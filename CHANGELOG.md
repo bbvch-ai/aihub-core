@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.301.1] - 2026-06-19 - Enhanced Router Stability and Dependency Management
+
+### Fixed
+
+- 🐛 **Ensured `vue-router` Consistency:** Addressed critical runtime errors, such as
+  `TypeError: Invalid value used as weak map key` and `useRouter()` returning `undefined`, which occurred due to
+  `@vueuse/router` resolving to a different major version of `vue-router` than the Nuxt application. This is resolved by
+  explicitly declaring `vue-router@4.6.4` as a direct dependency, guaranteeing consistent injection keys.
+- 📄 **Updated `vue-router` Pinning Guidance:** Significantly updated the `README.md` with crucial instructions on how to
+  reliably pin `vue-router` as a direct dependency. This new guidance clarifies why previous override methods were
+  insufficient and provides a robust solution to prevent dependency resolution conflicts and ensure application
+  stability.
+
+______________________________________________________________________
+
 ## [v0.301.0] - 2026-06-19 - Enhanced OpenWebUI Agent Display Names with Locale Support
 
 ### Added

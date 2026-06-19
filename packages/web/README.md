@@ -138,16 +138,25 @@ npm ls @vue/runtime-core                # must print exactly one version: 3.5.17
 The same single-instance requirement applies to **PrimeVue** (its theme system is a global singleton); pinning the
 `primevue` peer to one version is enough — it does not need an override.
 
-> **Optional — silence a `vue-router` peer warning.** `@vueuse/router` declares a `vue-router@^4` peer, but some
-> transitive dependencies may pull in `vue-router` 5.x, which can surface a peer-range warning on install. It is
-> harmless (the layer does not depend on that resolution), but if you want it gone, pin `vue-router` to `4.6.4` **scoped
-> to `@vueuse/router`** so it never affects the router Nuxt itself uses:
+> **Important — pin `vue-router` so `@vueuse/router` uses Nuxt's router.** `@vueuse/router` declares a `vue-router` peer
+> whose range also accepts `vue-router` 5.x, which some transitive deps (e.g. `@nuxtjs/i18n` / `unplugin-vue-router`)
+> legitimately pull in. If `@vueuse/router` resolves to that 5.x copy while the Nuxt app runs `vue-router` 4.x, the two
+> use **different injection keys**: `useRouter()` returns `undefined` inside `@vueuse/router`, and `useRouteQuery` then
+> throws `TypeError: Invalid value used as weak map key` (notably inside Pinia-Colada `defineQuery` setups, which run
+> outside component inject context). This is **not** harmless — it white-screens the affected pages.
+>
+> pnpm `overrides` do **not** constrain peerDependency resolution, so a `@vueuse/router>vue-router` override is not
+> enough (it silently stops working the moment a higher `vue-router` lands in range). Pin it reliably by declaring
+> `vue-router` as a **direct dependency** of your app package at the version Nuxt uses — the peer then binds to that
+> copy, while the other major can remain for `@nuxtjs/i18n`:
 >
 > ```jsonc
-> // npm:  "overrides":  { "@vueuse/router": { "vue-router": "4.6.4" } }
-> // Yarn: "resolutions": { "@vueuse/router/vue-router": "4.6.4" }
-> // pnpm: "pnpm": { "overrides": { "@vueuse/router>vue-router": "4.6.4" } }
+> // packages/web/package.json
+> { "dependencies": { "vue-router": "4.6.4" } }
 > ```
+>
+> Verify with `pnpm why vue-router` (`@vueuse/router` must show `4.6.4`) and `pnpm build` (`nuxt generate` must succeed —
+> forcing a single `vue-router` major instead breaks `@nuxtjs/i18n`, which needs 5.x).
 
 ## Quick start
 
