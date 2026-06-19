@@ -13,17 +13,45 @@ thoughts:
   generating_follow_ups: Ich überlege mir Folgefragen
 prompts:
   title: |
+    {% chat role="user" %}
     Erstelle einen prägnanten Titel (3-6 Wörter), der das Thema des folgenden Gesprächs zusammenfasst.
-    Schreibe den Titel in der Sprache des Gesprächs. Verwende keine Anführungszeichen oder
-    abschließende Satzzeichen.
-    Wenn das Gespräch noch kein erkennbares Thema hat — zum Beispiel nur Begrüßungen oder Smalltalk —
-    gib null zurück, anstatt zu raten.
-    Gespräch:
-    {conversation}
-  follow_ups: |
+    Schreibe den Titel in der Sprache des Gesprächs. Verwende keine Anführungszeichen oder abschließende
+    Satzzeichen. Wenn das Gespräch noch kein erkennbares Thema hat — zum Beispiel nur Begrüßungen oder
+    Smalltalk — gib null zurück, anstatt zu raten.
+    <Conversation>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+    {% for block in message.blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url | string | image }}
+    {% endif %}
+    {% endfor %}
+    </message>
+    {% endfor %}
+    </Conversation>
+    Antworte, indem du das bereitgestellte Werkzeug für strukturierte Ausgabe aufrufst.
+    {% endchat %}
+  follow_ups: |-
+    {% chat role="user" %}
     Schlage basierend auf dem folgenden Gespräch ein bis drei Folgefragen vor, die der Benutzer als
     Nächstes stellen könnte. Formuliere sie aus der Perspektive des Benutzers und in der Sprache des
-    Gesprächs.
-    Gib eine leere Liste zurück, wenn keine sinnvolle Folgefrage existiert.
-    Gespräch:
-    {conversation}
+    Gesprächs. Gib eine leere Liste zurück, wenn keine sinnvolle Folgefrage existiert.
+    <Conversation>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+    {% for block in message.blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url | string | image }}
+    {% endif %}
+    {% endfor %}
+    </message>
+    {% endfor %}
+    </Conversation>
+    Antworte, indem du das bereitgestellte Werkzeug für strukturierte Ausgabe aufrufst.
+    {% endchat %}

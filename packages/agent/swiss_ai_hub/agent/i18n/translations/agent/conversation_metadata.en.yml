@@ -13,17 +13,45 @@ thoughts:
   generating_follow_ups: Thinking of follow-up questions
 prompts:
   title: |
-    Generate a concise title (3-6 words) summarizing the topic of the following conversation.
-    Write the title in the language of the conversation. Do not use quotation marks or trailing
-    punctuation.
-    If the conversation has no identifiable topic yet — for example it contains only greetings or
-    small talk — return null instead of guessing.
-    Conversation:
-    {conversation}
-  follow_ups: |
+    {% chat role="user" %}
+    Generate a concise title (3-6 words) summarizing the topic of the following conversation. Write the
+    title in the language of the conversation. Do not use quotation marks or trailing punctuation. If
+    the conversation has no identifiable topic yet — for example it contains only greetings or small
+    talk — return null instead of guessing.
+    <Conversation>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+    {% for block in message.blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url | string | image }}
+    {% endif %}
+    {% endfor %}
+    </message>
+    {% endfor %}
+    </Conversation>
+    Respond by invoking the provided structured-output tool.
+    {% endchat %}
+  follow_ups: |-
+    {% chat role="user" %}
     Based on the following conversation, suggest between one and three follow-up questions the user
     might want to ask next. Phrase them from the user's perspective and in the language of the
-    conversation.
-    Return an empty list if no useful follow-up question exists.
-    Conversation:
-    {conversation}
+    conversation. Return an empty list if no useful follow-up question exists.
+    <Conversation>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+    {% for block in message.blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url | string | image }}
+    {% endif %}
+    {% endfor %}
+    </message>
+    {% endfor %}
+    </Conversation>
+    Respond by invoking the provided structured-output tool.
+    {% endchat %}

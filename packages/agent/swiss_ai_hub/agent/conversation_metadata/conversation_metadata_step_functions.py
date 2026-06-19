@@ -1,9 +1,9 @@
 import asyncio
 import logging
 
-from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms import LLM
+from llama_index.core.prompts import RichPromptTemplate
 from openai import NOT_GIVEN
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ConversationTitleEvent, FollowUpQuestionsEvent
@@ -17,16 +17,6 @@ from swiss_ai_hub.agent.conversation_metadata.title_result import TitleResult
 logger = logging.getLogger(__name__)
 
 TITLE_GENERATED_KEY = "title_generated"
-
-
-def _format_conversation(chat_messages: list[ChatMessage]) -> str:
-    """Render the conversation as a plain transcript for the metadata prompts."""
-    lines = [
-        f"{message.role.value}: {content}"
-        for message in chat_messages
-        if (content := str(message.content or "").strip())
-    ]
-    return "\n".join(lines)
 
 
 def _structured_predict_kwargs(llm: LLM) -> dict:
@@ -53,12 +43,12 @@ async def do_generate_title(
     await displayer.display_thought(t("agent.conversation_metadata.thoughts.generating_title"))
 
     async with llm_config.cost_reporting_llm(displayer) as llm:
-        prompt = PromptTemplate(t("agent.conversation_metadata.prompts.title"))
+        prompt = RichPromptTemplate(t("agent.conversation_metadata.prompts.title"))
         result: TitleResult = await llm.astructured_predict(
             TitleResult,
             prompt,
             llm_kwargs=_structured_predict_kwargs(llm),
-            conversation=_format_conversation(chat_messages),
+            chat_history=chat_messages,
         )
 
     title = (result.title or "").strip()
@@ -82,12 +72,12 @@ async def do_generate_follow_up_questions(
     await displayer.display_thought(t("agent.conversation_metadata.thoughts.generating_follow_ups"))
 
     async with llm_config.cost_reporting_llm(displayer) as llm:
-        prompt = PromptTemplate(t("agent.conversation_metadata.prompts.follow_ups"))
+        prompt = RichPromptTemplate(t("agent.conversation_metadata.prompts.follow_ups"))
         result: FollowUpQuestionsResult = await llm.astructured_predict(
             FollowUpQuestionsResult,
             prompt,
             llm_kwargs=_structured_predict_kwargs(llm),
-            conversation=_format_conversation(chat_messages),
+            chat_history=chat_messages,
         )
 
     questions = [question.strip() for question in result.questions if question.strip()]

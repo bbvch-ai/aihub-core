@@ -13,16 +13,45 @@ thoughts:
   generating_follow_ups: Sto pensando a domande di approfondimento
 prompts:
   title: |
-    Genera un titolo conciso (3-6 parole) che riassume l'argomento della seguente conversazione.
-    Scrivi il titolo nella lingua della conversazione. Non usare virgolette o punteggiatura finale.
-    Se la conversazione non ha ancora un argomento identificabile — per esempio contiene solo saluti o
+    {% chat role="user" %}
+    Genera un titolo conciso (3-6 parole) che riassume l'argomento della seguente conversazione. Scrivi
+    il titolo nella lingua della conversazione. Non usare virgolette o punteggiatura finale. Se la
+    conversazione non ha ancora un argomento identificabile — per esempio contiene solo saluti o
     convenevoli — restituisci null invece di indovinare.
-    Conversazione:
-    {conversation}
-  follow_ups: |
-    In base alla seguente conversazione, suggerisci da una a tre domande di approfondimento che
-    l'utente potrebbe voler porre in seguito. Formulale dal punto di vista dell'utente e nella lingua
-    della conversazione.
-    Restituisci una lista vuota se non esiste alcuna domanda di approfondimento utile.
-    Conversazione:
-    {conversation}
+    <Conversation>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+    {% for block in message.blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url | string | image }}
+    {% endif %}
+    {% endfor %}
+    </message>
+    {% endfor %}
+    </Conversation>
+    Rispondi invocando lo strumento di output strutturato fornito.
+    {% endchat %}
+  follow_ups: |-
+    {% chat role="user" %}
+    In base alla seguente conversazione, suggerisci da una a tre domande di approfondimento che l'utente
+    potrebbe voler porre in seguito. Formulale dal punto di vista dell'utente e nella lingua della
+    conversazione. Restituisci una lista vuota se non esiste alcuna domanda di approfondimento utile.
+    <Conversation>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+    {% for block in message.blocks %}
+    {% if block.block_type == 'text' %}
+    {{ block.text }}
+    {% endif %}
+    {% if block.block_type == 'image' %}
+    {{ block.url | string | image }}
+    {% endif %}
+    {% endfor %}
+    </message>
+    {% endfor %}
+    </Conversation>
+    Rispondi invocando lo strumento di output strutturato fornito.
+    {% endchat %}
