@@ -32,8 +32,15 @@ agent**.
 
 Conversation metadata is wired **explicitly in each adopting blueprint**, mirroring self-awareness exactly.
 
-**1 — Each adopting agent defines two thin `@step` methods**: `generate_conversation_title_step` and
-`generate_follow_up_questions_step`. The bodies delegate to the shared free functions, passing `agent_config.llm`.
+**1 — Each adopting agent invokes the two shared generators, in one of two shapes depending on its answer event.**
+
+- **Fan-out `@step` wrappers** — for agents whose final answer is a *non-terminal* `LLMEvent`, two thin `@step` methods
+  (`generate_conversation_title_step`, `generate_follow_up_questions_step`) hook on it and delegate to the shared
+  functions. Used by `RAGAgent` and `ExpertRAGAgent`.
+- **Inline in the terminal step** — for agents whose answer *is* a stop event (`LLMStopEvent` / `StopEvent`), the
+  generators are `await`ed (via `asyncio.gather`) **inside the terminal step, before returning the stop event**. Used by
+  `LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`. This is necessary because the dispatcher returns on stop events
+  before dispatching steps waiting on them (see Consequences), so a separate `@step` could never run.
 
 **2 — Display events, not control events.** Both metadata events subclass `DisplayEvent` and are emitted via
 `EventDisplayer.display_event`. They never gate the workflow. Each is registered in the WebSocket `DisplayEvents`
@@ -50,21 +57,31 @@ bridge (`AgentService.send_agent_input_event_stream`) and the non-streaming JSON
 `ConversationTitleEvent` is observed on the thread's display events, replacing the hardcoded `"chat"` name. The admin
 thread list then shows the generated title.
 
-**5 — No base-class machinery.** An agent produces conversation metadata iff it defines the steps. A wiring test
-(`conversation_metadata/tests/test_conversation_metadata_wiring.py`) pins the adoption set.
+**5 — No base-class machinery.** An agent produces conversation metadata iff it wires in the generators (fan-out or
+inline). A wiring test (`conversation_metadata/tests/test_conversation_metadata_wiring.py`) pins the adoption set: the
+five adopting agents reference both generators, the two fan-out agents additionally define the `@step` wrappers, and the
+excluded agents reference neither.
 
 ## Consequences
 
-- Adoption is a few lines per agent for blueprints whose final answer is a **non-terminal** event the steps can hook on
-  (`LLMEvent`). `RAGAgent` and `ExpertRAGAgent` adopt the steps this way.
-- **Dispatcher stop-event constraint.** `AgentDispatcher.handle_event` cleans up and returns on stop/exception events
-  **before** dispatching steps waiting for that event, so no step can consume a stop event. Blueprints whose answer is a
-  stop event (`LLMWrappingAgent`, `FewShotAgent` → `LLMStopEvent`; `McpReactAgent` → `StopEvent`) therefore cannot adopt
-  the steps as thin wrappers without first restructuring their terminal step to emit a non-terminal answer event plus a
-  separate stop step (as `RAGAgent` already does). That restructuring changes their emitted event stream (consumed by
-  bot / OpenWebUI integrations) and is deferred pending a decision with the issue owner. The wiring test asserts these
-  agents do **not** define half-working metadata steps in the meantime.
+- **Dispatcher stop-event constraint** is the reason for the two shapes. `AgentDispatcher.handle_event` cleans up and
+  returns on stop/exception events **before** dispatching steps waiting for that event, so no `@step` can consume a stop
+  event. Agents whose answer is a non-terminal `LLMEvent` (`RAGAgent`, `ExpertRAGAgent`) use fan-out steps; agents whose
+  answer is a stop event (`LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`) generate inline before returning it.
+- **Inline ordering is stronger than fan-out.** Inline emits the metadata display events *during* the step body, so they
+  are on the wire **before** the stop event is published and before teardown — no dependence on the
+  drain-before-teardown ADR. The fan-out path runs the metadata steps concurrently with the stop step, so a metadata
+  event can be emitted *after* the `StopEvent`; for the title this is a race with the API observer that updates the
+  thread name (mitigated, not eliminated, by the drain grace). Unifying the two fan-out agents onto inline would remove
+  that race at the cost of serializing the metadata calls ahead of the stop (post-answer latency, since the answer has
+  already streamed); deferred as a follow-up.
+- **Inline couples metadata to the answer.** A metadata-generation failure inside the terminal step propagates and can
+  fail the run (the fan-out path isolates it to a separate step). Generation reuses the run's LLM and runs post-answer,
+  so this is an accepted trade-off for the inline agents; if it proves fragile, the inline `gather` can be made
+  best-effort.
 - Excluded by design: non-conversational blueprints (`RetrievalAgent`) and routing/escalation front-ends that do not own
   the final answer (`NamespaceSelectionAgent`, `ExpertAskingAgent`).
+- The self-awareness meta-answer branch (`answer_meta_question_step` → `LLMStopEvent`) also produces no metadata, for the
+  same stop-event reason; left as-is so meta-only conversations keep the default thread name.
 - Reusing the run's LLM (rather than a dedicated cheaper task model) keeps configuration simple; a task model can be
   added later as a non-breaking option.
