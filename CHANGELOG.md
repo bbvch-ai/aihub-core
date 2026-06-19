@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.300.4] - 2026-06-18 - Improved Data Lake Partition Naming for Enhanced Isolation
+
+### Fixed
+
+- 🐛 **Resolved `DynamicPartitionsDefinition` Name Collisions**: Updated the `default_rclone_to_datalake_definitions`
+  utility to dynamically generate unique names for `DynamicPartitionsDefinition` instances. This prevents unintended
+  sharing of partition state when multiple rclone-backed sources are registered in the same Dagster instance, ensuring
+  proper data isolation.
+
+### Added
+
+- 📄 **Documented Partition Naming Conventions**: Added clear guidelines for `DynamicPartitionsDefinition` naming,
+  emphasizing the importance of deriving unique names from the data lake container and source to prevent state
+  collisions.
+- 🧪 **Introduced Partition Naming Regression Test**: Added a new test case to verify that
+  `default_rclone_to_datalake_definitions` correctly produces distinct partition definition names, safeguarding against
+  future naming conflicts.
+
+______________________________________________________________________
+
+## [v0.300.3] - 2026-06-18 - Package Version Synchronization
+
+### Changed
+
+- 🔄 **Synchronized Package Versions:** All core Python packages (`agent`, `api`, `backup`, `bot`, `core`, `meta`,
+  `pipeline`, `process`, `sysadmin-api`) and JavaScript packages (`sysadmin-web`, `web`) have been updated to
+  `v0.300.3`. This ensures consistent versioning across the entire Swiss AI Hub platform.
+
+______________________________________________________________________
+
+## [v0.300.2] - 2026-06-18 - Homepage Navigation Refinement
+
+### Changed
+
+- 📄 **Updated Platform Overview Navigation:** Streamlined the "Platform Overview" link on the homepage for both English
+  and German versions, directing users to the broader architecture section for an improved overview of platform
+  documentation.
+
+______________________________________________________________________
+
 ## [v0.300.1] - 2026-06-17 - Enhanced User Interface Accessibility
 
 ### Changed
