@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.301.5] - 2026-06-22 - Agent Event API Refinements and Structural Updates
+
+### Changed
+
+- 🔄 **Event API Streamlining:** Refactored the core event system, consolidating various agent-related events such as
+  `UserMessageEvent`, `LLMStopEvent`, `StopEvent`, `RetrieverEvent`, and `BotInTheLoop` into a unified
+  `swiss_ai_hub.core.events.agent` module for improved organization and discoverability.
+- ⚡️ **Enhanced Guard Event Clarity:** Renamed `ContextSufficientEvent` to **`ContextSufficientAcceptEvent`** and
+  `ContextInsufficientEvent` to **`ContextInsufficientRejectEvent`** to explicitly communicate their acceptance or
+  rejection semantics, making agent logic clearer.
+- 📂 **Module Structure Alignment:** Relocated core components like `AgentConfig` and `KnowledgeRetriever` to more
+  logical paths within the `swiss_ai_hub.core` and `swiss_ai_hub.core.generative_ai` modules, respectively, enhancing
+  the overall package structure.
+- 📄 **Updated Documentation Examples:** Modified the `README.md` example to reflect the latest event names and module
+  paths, ensuring up-to-date guidance for agent development.
+
+______________________________________________________________________
+
 ## [v0.301.4] - 2026-06-22 - Enhanced Infrastructure Image Sourcing and Configuration
 
 ### Added

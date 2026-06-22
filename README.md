@@ -287,14 +287,16 @@ This agent retrieves documents from the knowledge base, answers with an LLM when
 human expert via Teams or Slack when it is not, pausing the workflow until the expert responds:
 
 ```python
-from swiss_ai_hub.agent import Agent, AgentConfig, AgentRunner, step
-from swiss_ai_hub.core.events import UserMessageEvent, LLMStopEvent, StopEvent
-from swiss_ai_hub.core.events.semantic import RetrieverEvent
-from swiss_ai_hub.core.events.guard import ContextSufficientEvent, ContextInsufficientEvent
-from swiss_ai_hub.core.events.botl import BotInTheLoop
+from swiss_ai_hub.agent import Agent, AgentRunner, step
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.events.agent import (
+    UserMessageEvent, LLMStopEvent, StopEvent, RetrieverEvent,
+    ContextSufficientAcceptEvent, ContextInsufficientRejectEvent, BotInTheLoop,
+)
 from swiss_ai_hub.core.displayers import EventDisplayer
-from swiss_ai_hub.core.retrievers import KnowledgeRetriever
+from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever import KnowledgeRetriever
 from swiss_ai_hub.core.i18n import LocaleString, LocaleHandler
+from llama_index.core.base.llms.types import ChatMessage
 
 class ExpertQAAgent(Agent):
     name = LocaleString(en="Expert QA")
@@ -311,16 +313,16 @@ class ExpertQAAgent(Agent):
 
     # Step 2: emit a guard event — the runtime routes each type to a different step
     @step()
-    async def check_context(self, event: RetrieverEvent) -> ContextSufficientEvent | ContextInsufficientEvent:
+    async def check_context(self, event: RetrieverEvent) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent:
         if event.nodes:
-            return ContextSufficientEvent()  # documents found → routes to respond()
-        return ContextInsufficientEvent()  # no documents → routes to escalate()
+            return ContextSufficientAcceptEvent()  # documents found → routes to respond()
+        return ContextInsufficientRejectEvent()  # no documents → routes to escalate()
 
-    # Step 3a: only triggered by ContextSufficientEvent
+    # Step 3a: only triggered by ContextSufficientAcceptEvent
     # the runtime also injects RetrieverEvent and UserMessageEvent from earlier in the run
     @step()
     async def respond(
-        self, _: ContextSufficientEvent, retrieval: RetrieverEvent, start: UserMessageEvent,
+        self, _: ContextSufficientAcceptEvent, retrieval: RetrieverEvent, start: UserMessageEvent,
         config: AgentConfig, displayer: EventDisplayer,
     ) -> LLMStopEvent:
         context = "\n\n".join(node.content for node in retrieval.nodes)  # build context from documents
@@ -328,11 +330,11 @@ class ExpertQAAgent(Agent):
         async with config.llm.cost_reporting_llm(displayer) as llm:  # tracks token usage and cost
             return await displayer.display_llm_stream(config.llm, llm, messages, as_stop_step=True)  # stream to chat UI
 
-    # Step 3b: only triggered by ContextInsufficientEvent — sends question to a Teams/Slack channel
+    # Step 3b: only triggered by ContextInsufficientRejectEvent — sends question to a Teams/Slack channel
     # BotInTheLoop pauses the workflow until the expert responds
     @step()
     async def escalate(
-        self, _: ContextInsufficientEvent, start: UserMessageEvent, config: AgentConfig,
+        self, _: ContextInsufficientRejectEvent, start: UserMessageEvent, config: AgentConfig,
     ) -> BotInTheLoop.request:
         return BotInTheLoop.invoke(question=start.user_query, user=start.user, channel_config=config.channel)
 
@@ -348,8 +350,8 @@ await runner.run_forever()
 ```
 
 On startup the agent registers itself: it appears in the chat UI, gets a configuration form in the admin panel, and
-receives full distributed tracing through Langfuse. The runtime routes `ContextSufficientEvent` to `respond` and
-`ContextInsufficientEvent` to `escalate`; steps never call each other. `BotInTheLoop` sends the question to a configured
+receives full distributed tracing through Langfuse. The runtime routes `ContextSufficientAcceptEvent` to `respond` and
+`ContextInsufficientRejectEvent` to `escalate`; steps never call each other. `BotInTheLoop` sends the question to a configured
 Teams or Slack expert channel and pauses the workflow; when the expert responds, the dispatcher resumes at
 `relay_expert`.
 
