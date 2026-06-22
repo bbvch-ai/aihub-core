@@ -175,6 +175,7 @@ updates:
       - /packages/sysadmin-api
       - /packages/sysadmin-web
       - /infra/deployment/docker/playwright
+      - /infra/deployment/docker/open-terminal
     schedule:
       interval: monthly
     # docker/github-actions ecosystems only support cooldown.default-days —
