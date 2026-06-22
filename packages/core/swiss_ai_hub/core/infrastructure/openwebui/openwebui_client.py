@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 import httpx
 from scim2_client.engines.httpx import AsyncSCIMClient
@@ -16,10 +16,12 @@ SCIM_BASE_PATH = "/api/v1/scim/v2"
 MODELS_ENDPOINT = "/api/v1/models"
 
 # SCIM list endpoints are paginated; OpenWebUI defaults to a small page size, so a
-# bare query returns only the first page. Fetch in batches of this size until done.
+# bare query returns only the first page. Request this many per page (the server may
+# still cap it lower — pagination keys off the response, not this value).
 SCIM_PAGE_SIZE = 100
 
-R = TypeVar("R", bound=Resource)
+# Backstop so a server that ignores startIndex can't spin the provisioner forever.
+MAX_SCIM_PAGES = 10_000
 
 
 class OpenWebuiClient:
@@ -51,17 +53,21 @@ class OpenWebuiClient:
         return {"Authorization": f"Bearer {token}"}
 
     @staticmethod
-    async def _query_all(client: AsyncSCIMClient, model: type[R]) -> list[R]:
+    async def _query_all[R: Resource](client: AsyncSCIMClient, model: type[R]) -> list[R]:
         """Returns every resource of ``model``, following SCIM pagination.
 
         ``client.query(model)`` returns a single page, and OpenWebUI's SCIM default
         page size is small — so a bare query silently drops every resource past the
         first page (e.g. users/groups never get synced once the directory grows).
-        Loop on ``startIndex`` until all ``totalResults`` are retrieved.
+        Loop on ``startIndex`` until every resource is retrieved.
+
+        Termination keys off the server's reported ``itemsPerPage``/``totalResults``,
+        not our requested ``count``: the server may cap the page size below what we
+        ask, so ``len(batch) < SCIM_PAGE_SIZE`` would stop early and drop the rest.
         """
         results: list[R] = []
         start = 1
-        while True:
+        for _ in range(MAX_SCIM_PAGES):
             response = cast(
                 ListResponse[R],
                 await client.query(model, search_request=SearchRequest(start_index=start, count=SCIM_PAGE_SIZE)),
@@ -69,9 +75,15 @@ class OpenWebuiClient:
             batch = list(response.resources or [])
             results.extend(batch)
             total = response.total_results
-            if not batch or len(batch) < SCIM_PAGE_SIZE or (total is not None and len(results) >= total):
+            if total is not None and len(results) >= total:
+                break
+            # Server-reported page size — fall back to the batch length if absent.
+            page_size = response.items_per_page or len(batch)
+            if not batch or len(batch) < page_size:
                 break
             start += len(batch)
+        else:
+            raise RuntimeError(f"SCIM pagination for {model.__name__} exceeded {MAX_SCIM_PAGES} pages")
         return results
 
     # ------------------------------------------------------------------

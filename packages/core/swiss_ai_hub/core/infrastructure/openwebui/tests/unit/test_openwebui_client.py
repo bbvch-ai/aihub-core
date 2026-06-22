@@ -124,12 +124,44 @@ def _scim_group(display_name: str, group_id: str) -> Group:
     return group
 
 
+def _list_response(
+    resources: list, *, total_results: int | None = -1, items_per_page: int | None = -1
+) -> SimpleNamespace:
+    """A SCIM ListResponse stub carrying the fields `_query_all` reads.
+
+    `total_results`/`items_per_page` default to `len(resources)`; pass `None`
+    explicitly to simulate a server that omits them.
+    """
+    return SimpleNamespace(
+        resources=resources,
+        total_results=len(resources) if total_results == -1 else total_results,
+        items_per_page=len(resources) if items_per_page == -1 else items_per_page,
+    )
+
+
+def _paged_query(pages: list[list]):
+    """side_effect returning each page in turn, keyed on the requested startIndex."""
+    offsets = {}
+    cursor = 1
+    for page in pages:
+        offsets[cursor] = page
+        cursor += len(page)
+    total = sum(len(p) for p in pages)
+    page_size = max((len(p) for p in pages), default=0)
+
+    async def fake_query(model: type, search_request=None, **kwargs):  # noqa: ANN001
+        page = offsets.get(search_request.start_index, [])
+        return _list_response(page, total_results=total, items_per_page=page_size)
+
+    return fake_query
+
+
 class TestCreateGroupIdempotent:
     @pytest.mark.asyncio
     async def test_reuses_existing_group_with_same_name(self, owui_client: OpenWebuiClient) -> None:
         existing = _scim_group("aihub:T:R", "grp-existing")
         scim = AsyncMock()
-        scim.query.return_value = SimpleNamespace(resources=[existing], total_results=1)
+        scim.query.return_value = _list_response([existing])
 
         result = await owui_client.create_group("aihub:T:R", scim=scim)
 
@@ -140,9 +172,7 @@ class TestCreateGroupIdempotent:
     async def test_creates_when_no_group_with_that_name_exists(self, owui_client: OpenWebuiClient) -> None:
         created = _scim_group("aihub:T:R", "grp-new")
         scim = AsyncMock()
-        scim.query.return_value = SimpleNamespace(
-            resources=[_scim_group("aihub:Other:Role", "grp-other")], total_results=1
-        )
+        scim.query.return_value = _list_response([_scim_group("aihub:Other:Role", "grp-other")])
         scim.create.return_value = created
 
         result = await owui_client.create_group("aihub:T:R", scim=scim)
@@ -150,30 +180,76 @@ class TestCreateGroupIdempotent:
         assert result is created
         scim.create.assert_awaited_once()
 
+    @pytest.mark.asyncio
+    async def test_dedup_scan_walks_all_pages(self, owui_client: OpenWebuiClient) -> None:
+        # Target group lives on the SECOND page; create must still find it, not duplicate.
+        page1 = [_scim_group(f"aihub:X:{i}", f"g{i}") for i in range(SCIM_PAGE_SIZE)]
+        target = _scim_group("aihub:T:R", "grp-target")
+        scim = AsyncMock()
+        scim.query.side_effect = _paged_query([page1, [target]])
+
+        result = await owui_client.create_group("aihub:T:R", scim=scim)
+
+        assert result is target
+        scim.create.assert_not_called()
+        assert scim.query.await_count == 2
+
 
 class TestScimPagination:
     @pytest.mark.asyncio
     async def test_list_users_follows_all_pages(self, owui_client: OpenWebuiClient) -> None:
-        total = SCIM_PAGE_SIZE + 25  # spans two pages
         page1 = [User(user_name=f"u{i}@x") for i in range(SCIM_PAGE_SIZE)]
-        page2 = [User(user_name=f"u{i}@x") for i in range(SCIM_PAGE_SIZE, total)]
+        page2 = [User(user_name=f"u{i}@x") for i in range(SCIM_PAGE_SIZE, SCIM_PAGE_SIZE + 25)]
+        scim = AsyncMock()
+        scim.query.side_effect = _paged_query([page1, page2])
+
+        result = await owui_client.list_users(scim=scim)
+
+        assert len(result) == SCIM_PAGE_SIZE + 25
+        assert scim.query.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_list_users_respects_server_capped_page_size(self, owui_client: OpenWebuiClient) -> None:
+        # We ask for SCIM_PAGE_SIZE but the server caps each page at 20 (itemsPerPage=20).
+        # Termination must follow the server's page size, not our requested count.
+        cap = 20
+        total = 45
+        users = [User(user_name=f"u{i}@x") for i in range(total)]
         scim = AsyncMock()
 
         async def fake_query(model: type, search_request=None, **kwargs):  # noqa: ANN001
-            resources = page1 if search_request.start_index == 1 else page2
-            return SimpleNamespace(resources=resources, total_results=total)
+            start = search_request.start_index - 1
+            return _list_response(users[start : start + cap], total_results=total, items_per_page=cap)
 
         scim.query.side_effect = fake_query
 
         result = await owui_client.list_users(scim=scim)
 
         assert len(result) == total
+        assert scim.query.await_count == 3  # 20 + 20 + 5
+
+    @pytest.mark.asyncio
+    async def test_list_users_handles_missing_total_results(self, owui_client: OpenWebuiClient) -> None:
+        # Server omits totalResults; termination relies on a short page.
+        page1 = [User(user_name=f"u{i}@x") for i in range(SCIM_PAGE_SIZE)]
+        page2 = [User(user_name=f"u{i}@x") for i in range(SCIM_PAGE_SIZE, SCIM_PAGE_SIZE + 10)]
+        scim = AsyncMock()
+
+        async def fake_query(model: type, search_request=None, **kwargs):  # noqa: ANN001
+            page = page1 if search_request.start_index == 1 else page2
+            return _list_response(page, total_results=None, items_per_page=SCIM_PAGE_SIZE)
+
+        scim.query.side_effect = fake_query
+
+        result = await owui_client.list_users(scim=scim)
+
+        assert len(result) == SCIM_PAGE_SIZE + 10
         assert scim.query.await_count == 2
 
     @pytest.mark.asyncio
     async def test_list_groups_stops_on_short_page(self, owui_client: OpenWebuiClient) -> None:
         scim = AsyncMock()
-        scim.query.return_value = SimpleNamespace(resources=[_scim_group("aihub:T:R", "g1")], total_results=1)
+        scim.query.return_value = _list_response([_scim_group("aihub:T:R", "g1")])
 
         result = await owui_client.list_groups(scim=scim)
 
