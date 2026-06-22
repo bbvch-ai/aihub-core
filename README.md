@@ -178,12 +178,13 @@ wired together.
 <details>
 <summary><strong>Integrations & utilities</strong></summary>
 
-| Component              | Powered by                                                             | Role                                                                 |
-| ---------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| MS Teams & Slack bots  | [Microsoft Agents SDK](https://github.com/microsoft/Agents-for-python) | Connects agents to Teams, Slack, and web chat channels               |
-| Code execution sandbox | [Jupyter](https://jupyter.org/)                                        | Isolated Python environment for Open-WebUI's code interpreter        |
-| Browser automation     | [Playwright](https://playwright.dev/)                                  | Headless browser for agent web search and page parsing               |
-| Docker socket proxy    | [Tecnativa](https://github.com/Tecnativa/docker-socket-proxy)          | Read-only Docker API access for Traefik, preventing container escape |
+| Component               | Powered by                                                             | Role                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| MS Teams & Slack bots   | [Microsoft Agents SDK](https://github.com/microsoft/Agents-for-python) | Connects agents to Teams, Slack, and web chat channels                                                                 |
+| Code execution sandbox  | [Open Terminal](https://github.com/open-webui/open-terminal)           | Sandboxed Python runtime for OpenWebUI code execution (plain LLM models); per-user isolation, downloadable file output |
+| Code execution (legacy) | [Jupyter](https://jupyter.org/)                                        | Retained in the stack but no longer used by OpenWebUI for code execution                                               |
+| Browser automation      | [Playwright](https://playwright.dev/)                                  | Headless browser for agent web search and page parsing                                                                 |
+| Docker socket proxy     | [Tecnativa](https://github.com/Tecnativa/docker-socket-proxy)          | Read-only Docker API access for Traefik, preventing container escape                                                   |
 
 </details>
 

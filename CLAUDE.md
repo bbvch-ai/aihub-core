@@ -89,8 +89,9 @@ backup/restore
 
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
-**Utility**: Jupyter Lab (:8888, code execution sandbox), Playwright (:3036, browser automation), Attu (:3003, Milvus
-admin UI)
+**Utility**: Open Terminal (:8200 in dev, code execution sandbox for OpenWebUI — plain LLM models only), Jupyter Lab
+(:8888, retained in stack but no longer the OpenWebUI code path), Playwright (:3036, browser automation), Attu (:3003,
+Milvus admin UI)
 
 ## Package Architecture
 

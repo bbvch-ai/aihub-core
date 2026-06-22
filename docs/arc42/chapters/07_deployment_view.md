@@ -36,7 +36,8 @@ graph TB
             MinerU2["MinerU :8002 (GPU only)"]
             Pres["Presidio :3001"]
             OTELc["OTEL Collector"]
-            Jupy["Jupyter :8888"]
+            OpenTerm["Open Terminal :8200 (dev)"]
+            Jupy["Jupyter :8888 (retained)"]
             AgentC["Agent containers"]
             PipeC["Pipeline workers"]
         end
@@ -69,6 +70,8 @@ graph TB
     Traefik --> API
     Traefik --> OWUI
     Traefik --> LfWeb
+
+    OWUI --- OpenTerm
 
     API --- NATS2
     API --- FDB
@@ -116,9 +119,11 @@ routes requests to backend services. Services that need to be directly reachable
 web UI, SeaweedFS S3 gateway) attach to this network.
 
 The **backend** network connects application services that process requests but should not be directly reachable from
-outside. LiteLLM, the vLLM inference servers (GPU only), Speaches, Presidio, MinerU, OTEL Collector, Jupyter, and all
-agents and pipeline workers communicate over this network. Traefik also attaches to backend so it can forward proxied
-requests.
+outside. LiteLLM, the vLLM inference servers (GPU only), Speaches, Presidio, MinerU, OTEL Collector, Open Terminal
+(code-execution sandbox for OpenWebUI), Jupyter (retained; no longer the OpenWebUI code path), and all agents and
+pipeline workers communicate over this network. Traefik also attaches to backend so it can forward proxied requests.
+Open Terminal is attached to `backend` only — it has no path to the `data` network (NATS, databases), which is the key
+security property of the sandbox. See ADR `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
 The **data** network connects databases, caches, and the message broker: PostgreSQL (both instances), FerretDB, Milvus,
 Neo4j, ClickHouse, NATS, Valkey, and etcd. Services that need database access (API, Langfuse, Dagster, LiteLLM) attach

@@ -49,7 +49,9 @@ Internal application and processing services:
 - **presidio-analyzer/anonymizer**: PII detection and anonymization
 - **vLLM**: Local LLM inference (chat, embedding, reranking) — GPU deployments only
 - **speaches**: Speech-to-text and text-to-speech
-- **jupyter**: Code execution environment
+- **open-terminal**: Code execution sandbox for OpenWebUI (plain LLM models; per-user isolation, no `data`/NATS path —
+  see ADR `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`)
+- **jupyter**: Code execution environment (retained; no longer used by OpenWebUI)
 - **playwright**: Web scraping and automation (also on `egress` for internet access)
 - **agents**: All agent workers (rag, expert, wrapping)
 - **pipelines**: Data processing pipelines
@@ -115,6 +117,7 @@ flowchart TB
         presidio[presidio]
         vllm[vLLM]
         agents[agents]
+        open-terminal[open-terminal]
         jupyter[jupyter]
         playwright[playwright]
         dagster[dagster-*]
@@ -153,6 +156,7 @@ flowchart TB
     api --> litellm
     api --> agents
     openwebui --> litellm
+    openwebui --> open-terminal
     openwebui --> playwright
     agents --> nats
     agents --> milvus

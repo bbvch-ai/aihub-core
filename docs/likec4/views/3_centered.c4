@@ -72,7 +72,7 @@ views {
 
   view centered_openwebui of hub {
     title       "OpenWebUI — Direct Neighbours"
-    description "What OpenWebUI calls and what calls it. Includes the custom aihub-pipeline path (Swiss AI Agent Protocol via SSE → API), OpenAI-compat fallback for non-chat, direct LiteLLM for raw models, plus tool services (Jupyter, Playwright, SearXNG)."
+    description "What OpenWebUI calls and what calls it. Includes the custom aihub-pipeline path (Swiss AI Agent Protocol via SSE → API), OpenAI-compat fallback for non-chat, direct LiteLLM for raw models, plus tool services (Open Terminal for code execution, Playwright, SearXNG)."
 
     include -> hub.openwebui ->
   }

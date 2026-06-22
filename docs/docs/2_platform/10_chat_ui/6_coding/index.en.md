@@ -4,12 +4,20 @@ title: Coding / Software Development
 
 # Coding / Software Development
 
-When it comes to coding with the help of a model, there are two main ways to do this.
+OpenWebUI integrates with **Open Terminal** — a sandboxed Linux environment with Python and common document libraries
+(pandas, openpyxl, python-docx, reportlab, fpdf2, weasyprint, matplotlib, xlsxwriter). Code runs in an isolated per-user
+environment; files created during execution appear in OpenWebUI's Files panel for download.
 
-1. Either the model writes the code, which can be hinted by metioning the "Pydiode environment" which is used to execute
-   the code. This gives the model the indication the user wants to work with code and will try to answer the request by
-   writing code.
-2. Alternatively the chat can also be used to run and further develop existing code.
+::: warning
+Code execution via Open Terminal is available for **plain LLM models only** (those with native function calling
+enabled). AI-Hub agent chats do not currently support code execution — this is a planned follow-up.
+:::
+
+There are two main ways to use code execution.
+
+1. Ask the model to write and run code. Mentioning a specific goal (e.g. "create a chart", "process this data") gives
+   the model the context to generate and execute Python code that produces the result directly in the chat.
+2. Provide existing code and ask the model to run or improve it.
 
 ## Coding with the LLM
 
@@ -38,3 +46,8 @@ Encase the code in back-ticks to mark it as code for execution.
 When the code has run through the result is printed out.
 
 ![Code Execution Output](../../../../media/open_webui/code_execution_output.jpeg)
+
+## Generated files
+
+Files written during code execution (reports, spreadsheets, charts, etc.) automatically appear in OpenWebUI's Files
+panel, where users can download them. After creating a file the model will confirm the filename.

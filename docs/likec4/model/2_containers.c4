@@ -273,12 +273,20 @@ model {
       description "Privacy-focused meta-search engine. Web-search tool for OpenWebUI and agent workflows."
     }
 
+    open_terminal = container "Open Terminal" {
+      #tier-utility
+      technology "Open Terminal"
+      icon bootstrap:terminal
+      style { color gray }
+      description "Code execution sandbox for OpenWebUI (plain LLM models). Per-user isolation; generated files surfaced to users via OpenWebUI's Files panel. Backend-network only — no data/NATS path."
+    }
+
     jupyter = container "Jupyter" {
       #tier-utility
       technology "Jupyter Lab"
       icon tech:jupyter
       style { color gray }
-      description "Code execution sandbox for agent/OpenWebUI tool use."
+      description "Code execution sandbox — retained in the stack but no longer used by OpenWebUI for code execution."
     }
 
     playwright = container "Playwright" {
@@ -439,9 +447,9 @@ model {
     otel_collector -[async]-> observability_sink "Exports to customer collector (env-gated, non-dev only)"
 
     // OpenWebUI uses utility tools
-    openwebui -> jupyter    "Code interpreter"
-    openwebui -> playwright "Web automation"
-    openwebui -> searxng    "Web search"
+    openwebui -> open_terminal "Code execution (plain LLM models via TERMINAL_SERVER_CONNECTIONS; bearer auth)"
+    openwebui -> playwright    "Web automation"
+    openwebui -> searxng       "Web search"
 
     // Admin UI embeds OpenWebUI as the primary chat surface (iframe + bidirectional
     // postMessage), not merely a hyperlink.

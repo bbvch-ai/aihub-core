@@ -119,6 +119,19 @@ Dockerfile and published manually via `make -C infra/deployment build-and-push-p
 After publishing, non-build stages pick up the new image automatically via `docker compose pull`. The `build` stage
 continues to build locally so developers test Dockerfile edits without round-tripping through the registry.
 
+### Publishing the open-terminal image
+
+The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
+libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/python-docx/weasyprint/matplotlib/xlsxwriter) and
+is published manually via `make -C infra/deployment build-and-push-open-terminal-image` (requires
+`docker login ghcr.io`). Re-publish whenever:
+
+- The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
+- A new Python library dependency must be baked into the image
+
+After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
+`docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
+
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
 
@@ -139,13 +152,13 @@ routes through Traefik.
 
 ## Network Isolation (5 Zones)
 
-| Network   | Purpose                           | Internal | ICC | Key Services                                                  |
-| --------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
-| `proxy`   | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend` | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), jupyter, otel   |
-| `data`    | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
-| `storage` | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
-| `egress`  | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |
+| Network   | Purpose                           | Internal | ICC | Key Services                                                               |
+| --------- | --------------------------------- | -------- | --- | -------------------------------------------------------------------------- |
+| `proxy`   | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                                |
+| `backend` | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), open-terminal, jupyter, otel |
+| `data`    | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click                     |
+| `storage` | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                                         |
+| `egress`  | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other)              |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
