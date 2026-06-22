@@ -22,6 +22,7 @@ def mock_settings() -> MagicMock:
     settings.SCIM_TOKEN = MagicMock()
     settings.SCIM_TOKEN.get_secret_value.return_value = "scim-test-token"
     settings.SERVICE_ACCOUNT_ID = "00000000-0000-4000-a000-000000000001"
+    settings.MODEL_NAME_LOCALE = "en"
     return settings
 
 

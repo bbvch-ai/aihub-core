@@ -3,7 +3,7 @@
   "license": "AGPL-3.0-or-later",
   "author": "bbv Software Services AG (https://www.bbv.ch)",
   "type": "module",
-  "version": "0.300.4",
+  "version": "0.301.1",
   "description": "Swiss AI Hub - Admin & Management UI (Nuxt 3 layer)",
   "main": "./nuxt.config.ts",
   "repository": {
@@ -89,6 +89,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tailwindcss-primeui": "^0.6.1",
     "uuid": "^11.1.1",
+    "vue-router": "4.6.4",
     "vue3-apexcharts": "^1.11.1"
   },
   "devDependencies": {

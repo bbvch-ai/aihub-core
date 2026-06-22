@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.301.1] - 2026-06-19 - Enhanced Router Stability and Dependency Management
+
+### Fixed
+
+- 🐛 **Ensured `vue-router` Consistency:** Addressed critical runtime errors, such as
+  `TypeError: Invalid value used as weak map key` and `useRouter()` returning `undefined`, which occurred due to
+  `@vueuse/router` resolving to a different major version of `vue-router` than the Nuxt application. This is resolved by
+  explicitly declaring `vue-router@4.6.4` as a direct dependency, guaranteeing consistent injection keys.
+- 📄 **Updated `vue-router` Pinning Guidance:** Significantly updated the `README.md` with crucial instructions on how to
+  reliably pin `vue-router` as a direct dependency. This new guidance clarifies why previous override methods were
+  insufficient and provides a robust solution to prevent dependency resolution conflicts and ensure application
+  stability.
+
+______________________________________________________________________
+
+## [v0.301.0] - 2026-06-19 - Enhanced OpenWebUI Agent Display Names with Locale Support
+
+### Added
+
+- ✨ **New Environment Variable `OPENWEBUI_MODEL_NAME_LOCALE`**: Introduced to allow configuring the preferred locale for
+  displaying agent names within OpenWebUI, providing a more localized user experience.
+- 🌍 **Locale-Aware Agent Display Names**: Implemented the ability for OpenWebUI to resolve and display agent names based
+  on the configured locale, with intelligent fallbacks to other available translations or the agent ID.
+- 🔄 **OpenWebUI Workspace Model Update Capability**: Added functionality to the OpenWebUI provisioner to update existing
+  workspace models, specifically enabling seamless name changes in response to agent renames or locale adjustments.
+
+### Changed
+
+- 🚀 **OpenWebUI Agent Discovery Language Negotiation**: The OpenWebUI `aihub_pipeline` now includes an `Accept-Language`
+  header during agent discovery API calls, ensuring that agent details are fetched in the configured locale.
+- 📡 **Robust Agent Name Synchronization**: The agent synchronization mechanism has been enhanced to detect and propagate
+  changes to agent names, ensuring that OpenWebUI workspace models accurately reflect the latest, locale-resolved agent
+  names.
+- 🛠️ **Agent Hash Calculation**: The algorithm for computing agent hashes now incorporates the agent's display name,
+  making synchronization more sensitive to name-only changes and preventing stale entries in OpenWebUI.
+
+### Refactor
+
+- 🧹 **Streamlined OpenWebUI Model Reconciliation**: The logic for determining changes in OpenWebUI workspace models has
+  been refined to explicitly distinguish between models that need to be created, updated, or deleted, improving
+  provisioning efficiency and clarity.
+
+______________________________________________________________________
+
 ## [v0.300.4] - 2026-06-18 - Improved Data Lake Partition Naming for Enhanced Isolation
 
 ### Fixed

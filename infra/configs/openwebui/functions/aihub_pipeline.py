@@ -1322,11 +1322,13 @@ class AgentDiscoveryService:
         api_key: Annotated[str, "API key"],
         prefix: Annotated[str, "UI prefix for agent names"],
         timeout: Annotated[int, "Request timeout"],
+        locale: Annotated[str, "Locale for resolving agent names"],
     ):
         self._base_url = base_url
         self._api_key = api_key
         self._prefix = prefix
         self._timeout = timeout
+        self._locale = locale
 
     async def discover_agents(
         self,
@@ -1336,6 +1338,7 @@ class AgentDiscoveryService:
             headers = {
                 "Authorization": f"Bearer {self._api_key}",
                 "Accept": "application/json",
+                "Accept-Language": self._locale,
             }
 
             async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
@@ -1542,6 +1545,11 @@ class Pipe:
             default=os.getenv("AIHUB_PIPELINE_PREFIX", "agent/"),
             description="Prefix added to agent names in the UI",
         )
+        OPENWEBUI_MODEL_NAME_LOCALE: str = Field(
+            default=os.getenv("OPENWEBUI_MODEL_NAME_LOCALE") or "en",
+            description="Locale used to resolve agent names, kept in sync with the "
+            "workspace-model name the provisioner writes under the same setting",
+        )
         AIHUB_REQUEST_TIMEOUT: int = Field(
             default=int(os.getenv("AIHUB_REQUEST_TIMEOUT", "60")),
             description="Request timeout in seconds",
@@ -1587,6 +1595,7 @@ class Pipe:
             self.valves.AIHUB_SUPERUSER_API_KEY,
             self.valves.AIHUB_PIPELINE_PREFIX,
             self.valves.AIHUB_REQUEST_TIMEOUT,
+            self.valves.OPENWEBUI_MODEL_NAME_LOCALE,
         )
 
         # Streaming

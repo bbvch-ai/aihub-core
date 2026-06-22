@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub"
-version = "0.300.4"
+version = "0.301.1"
 description = "Meta-package that installs the full Swiss AI Hub Python SDK (core, agent, api, bot, pipeline, process)."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -26,12 +26,12 @@ classifiers = [
 # Apache-2.0 meta-package would propagate AGPL obligations to every consumer of `pip install
 # swiss-ai-hub`. Install it explicitly with `pip install swiss-ai-hub-backup` when needed.
 dependencies = [
-    "swiss-ai-hub-core==0.300.4",
-    "swiss-ai-hub-agent==0.300.4",
-    "swiss-ai-hub-api==0.300.4",
-    "swiss-ai-hub-bot==0.300.4",
-    "swiss-ai-hub-pipeline==0.300.4",
-    "swiss-ai-hub-process==0.300.4",
+    "swiss-ai-hub-core==0.301.1",
+    "swiss-ai-hub-agent==0.301.1",
+    "swiss-ai-hub-api==0.301.1",
+    "swiss-ai-hub-bot==0.301.1",
+    "swiss-ai-hub-pipeline==0.301.1",
+    "swiss-ai-hub-process==0.301.1",
 ]
 
 [project.urls]
