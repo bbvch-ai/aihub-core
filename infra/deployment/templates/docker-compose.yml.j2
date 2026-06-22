@@ -1142,7 +1142,7 @@ services:
   {{ service_license('keycloak-config') }}
   keycloak-config:
     container_name: keycloak-config
-    image: {{ global.registry_prefix }}{{ image_tags['keycloak-config-cli'] }}
+    image: {{ global.registry_prefix }}{{ image_tags.keycloak_config_cli }}
     restart: on-failure
     environment:
       KEYCLOAK_URL: http://keycloak:8080
@@ -1271,7 +1271,7 @@ services:
   {{ service_license('rclone') }}
   rclone:
     container_name: rclone
-    image: {{ image_tags.rclone }}
+    image: {{ global.registry_prefix }}{{ image_tags.rclone }}
     restart: unless-stopped
     command:
       - "rcd"
@@ -1711,7 +1711,7 @@ services:
   {{ service_license('speaches') }}
   speaches:
     container_name: speaches
-    image: {{ image_tags.speaches }}
+    image: {{ global.registry_prefix }}{{ image_tags.speaches }}
     restart: unless-stopped
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
@@ -2099,7 +2099,7 @@ services:
   {{ service_license('otel-collector') }}
   otel-collector:
     container_name: otel-collector
-    image: {{ image_tags.otel_collector }}
+    image: {{ global.registry_prefix }}{{ image_tags.otel_collector }}
     restart: always
     command: [ "--config=/etc/otel-config.yml" ]
     environment:
@@ -2451,7 +2451,7 @@ services:
   {{ service_license('openwebui-init') }}
   openwebui-init:
     container_name: openwebui-init
-    image: {{ global.registry_prefix }}postgres:17
+    image: {{ global.registry_prefix }}{{ image_tags.open_webui_init }}
     restart: on-failure
     depends_on:
       open-webui:
@@ -2635,7 +2635,7 @@ services:
   {{ service_license('docker-socket-proxy') }}
   docker-socket-proxy:
     container_name: docker-socket-proxy
-    image: "{{ image_tags.docker_socket_proxy }}"
+    image: "{{ global.registry_prefix }}{{ image_tags.docker_socket_proxy }}"
     restart: always
     # Required for Docker socket access in SELinux/AppArmor environments
     privileged: true

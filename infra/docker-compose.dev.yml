@@ -1345,7 +1345,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
-    image: otel/opentelemetry-collector-contrib:latest
+    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.154.0
     restart: always
     command: [--config=/etc/otel-config.yml]
     environment:
@@ -1609,7 +1609,7 @@ services:
         max-size: 10m
         max-file: 2
 
-  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   openwebui-init:
     container_name: openwebui-init
     image: ghcr.io/bbvch-ai/aihub-core/postgres:17

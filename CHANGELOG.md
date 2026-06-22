@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.301.5] - 2026-06-22 - Agent Event API Refinements and Structural Updates
+
+### Changed
+
+- 🔄 **Event API Streamlining:** Refactored the core event system, consolidating various agent-related events such as
+  `UserMessageEvent`, `LLMStopEvent`, `StopEvent`, `RetrieverEvent`, and `BotInTheLoop` into a unified
+  `swiss_ai_hub.core.events.agent` module for improved organization and discoverability.
+- ⚡️ **Enhanced Guard Event Clarity:** Renamed `ContextSufficientEvent` to **`ContextSufficientAcceptEvent`** and
+  `ContextInsufficientEvent` to **`ContextInsufficientRejectEvent`** to explicitly communicate their acceptance or
+  rejection semantics, making agent logic clearer.
+- 📂 **Module Structure Alignment:** Relocated core components like `AgentConfig` and `KnowledgeRetriever` to more
+  logical paths within the `swiss_ai_hub.core` and `swiss_ai_hub.core.generative_ai` modules, respectively, enhancing
+  the overall package structure.
+- 📄 **Updated Documentation Examples:** Modified the `README.md` example to reflect the latest event names and module
+  paths, ensuring up-to-date guidance for agent development.
+
+______________________________________________________________________
+
+## [v0.301.4] - 2026-06-22 - Enhanced Infrastructure Image Sourcing and Configuration
+
+### Added
+
+- ✨ **Introduced `Open WebUI Init` Service Configuration:** Added explicit image tag definition and usage for the
+  `Open WebUI Init` service, enabling central management of its PostgreSQL base image.
+
+### Changed
+
+- 🔄 **Standardized Third-Party Image Sourcing:** Implemented consistent registry prefixing for several critical
+  third-party Docker images, including **`OpenTelemetry Collector`**, **`rclone`**, **`Speaches`**, and
+  **`Docker Socket Proxy`**, to ensure all images are sourced from the designated internal registry.
+- ⚡️ **Updated `OpenTelemetry Collector` Image:** Pinned the `OpenTelemetry Collector` image to a specific version
+  (`0.154.0`) for improved stability and security.
+- 📄 **Refined `OpenWebUI Init` License Alias:** Updated the internal license alias mapping for the `OpenWebUI Init`
+  service to accurately reflect its `postgres` base image.
+
+### Refactor
+
+- 🧹 **Standardized `Keycloak Config CLI` Variable Name:** Renamed the internal configuration variable for
+  `Keycloak Config CLI` to `keycloak_config_cli` (snake_case) for improved consistency across the deployment
+  configuration.
+
+______________________________________________________________________
+
 ## [v0.301.3] - 2026-06-22 - Keycloak Superuser Configuration Alignment
 
 ### Changed
