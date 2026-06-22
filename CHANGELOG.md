@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.301.4] - 2026-06-22 - Enhanced Infrastructure Image Sourcing and Configuration
+
+### Added
+
+- ✨ **Introduced `Open WebUI Init` Service Configuration:** Added explicit image tag definition and usage for the
+  `Open WebUI Init` service, enabling central management of its PostgreSQL base image.
+
+### Changed
+
+- 🔄 **Standardized Third-Party Image Sourcing:** Implemented consistent registry prefixing for several critical
+  third-party Docker images, including **`OpenTelemetry Collector`**, **`rclone`**, **`Speaches`**, and
+  **`Docker Socket Proxy`**, to ensure all images are sourced from the designated internal registry.
+- ⚡️ **Updated `OpenTelemetry Collector` Image:** Pinned the `OpenTelemetry Collector` image to a specific version
+  (`0.154.0`) for improved stability and security.
+- 📄 **Refined `OpenWebUI Init` License Alias:** Updated the internal license alias mapping for the `OpenWebUI Init`
+  service to accurately reflect its `postgres` base image.
+
+### Refactor
+
+- 🧹 **Standardized `Keycloak Config CLI` Variable Name:** Renamed the internal configuration variable for
+  `Keycloak Config CLI` to `keycloak_config_cli` (snake_case) for improved consistency across the deployment
+  configuration.
+
+______________________________________________________________________
+
 ## [v0.301.3] - 2026-06-22 - Keycloak Superuser Configuration Alignment
 
 ### Changed
