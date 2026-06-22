@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.301.2] - 2026-06-22 - Default Chat TTS Permission Adjustment
+
+### Changed
+
+- 🎚️ **Updated Default Chat TTS Permission:** The default setting for Text-to-Speech (TTS) functionality in chat has
+  been changed from enabled (`True`) to disabled (`False`) across all Docker Compose configurations. Users can still
+  explicitly enable this permission if desired.
+
+______________________________________________________________________
+
 ## [v0.301.1] - 2026-06-19 - Enhanced Router Stability and Dependency Management
 
 ### Fixed
