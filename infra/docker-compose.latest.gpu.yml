@@ -1682,7 +1682,11 @@ services:
       test: [CMD, curl, -f, http://localhost:8000/docs]
       interval: 15s
       timeout: 3s
-      start_period: 20s
+      # Generous cold-start window: the ~1.2 GB image after `docker compose pull` on a
+      # slow disk can miss a tighter window and flap unhealthy on first boot (open-webui
+      # gates on this via depends_on: service_healthy). Open Terminal documents no health
+      # endpoint, so we probe the Swagger /docs route (200 on the pinned 0.11.34 tag).
+      start_period: 40s
       retries: 3
     logging:
       driver: json-file
@@ -2020,6 +2024,10 @@ services:
       # --- Code Execution (Open Terminal) ---
       # OpenWebUI orchestrates the native execute_code tool against this connection.
       # Works for plain LLM models (native function calling); AI-Hub agent support is a follow-up.
+      # access_grants.permission "read" is the connection-ACCESS grant from Open Terminal's
+      # documented connecting example (who may use the connection) — it is NOT a filesystem
+      # mode; do not "fix" it to "write". OPEN_TERMINAL_API_KEY must be alphanumeric/hex: it is
+      # interpolated into this single-quoted JSON literal, so a " or \ in the key corrupts it.
       TERMINAL_SERVER_CONNECTIONS: '[{"id":"open-terminal","name":"Open Terminal","enabled":true,"url":"http://open-terminal:8000","key":"${OPEN_TERMINAL_API_KEY}","auth_type":"bearer","config":{"access_grants":[{"principal_type":"user","principal_id":"*","permission":"read"}]}}]'
 
       # --- Vector DB ---

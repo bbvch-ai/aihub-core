@@ -29,6 +29,13 @@ Using the "Run" button the code can be tested directly inside the chat.
 
 ![Code with Run Button](../../../../media/open_webui/code_with_run_button.jpeg)
 
+::: tip Two execution paths
+**Model-driven execution** — where the model decides to run code to compute an answer or produce a file — runs in the
+**Open Terminal** sandbox (server-side, with the document libraries above; generated files appear in the Files panel).
+The manual **"Run" button** on a code block uses OpenWebUI's built-in **Pyodide** engine (in-browser WebAssembly), which
+is lightweight but limited to its bundled packages and does not write files to the server.
+:::
+
 After running the code snippet prints the result below the cell.
 
 ![Code Execution Result](../../../../media/open_webui/code_execution_result.jpeg)

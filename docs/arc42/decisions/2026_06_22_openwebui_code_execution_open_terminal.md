@@ -50,8 +50,20 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 
 - **Positive** — the code-execution sandbox can no longer reach NATS/databases and isolates users per home directory;
   generated files are downloadable via Open Terminal's file browser; the integration is the OpenWebUI-native, maintained
-  path; the image is reproducible and runs with no egress.
-- **Trade-offs** — only plain-LLM chats gain code execution this iteration (agent support deferred); native function
-  calling must be enabled per model and multi-step reliability varies by model; the image is ~1.19 GB; the Jupyter
-  container keeps running, unused, until a later cleanup. See network isolation
-  (`2025_12_22_docker_network_isolation.md`).
+  path; the image is reproducible and requires no outbound internet to function (libraries are baked in at build time).
+- **Trade-offs**
+  - Only plain-LLM chats gain code execution this iteration (agent support deferred); native function calling must be
+    enabled per model and multi-step reliability varies by model.
+  - **Lateral reach within `backend`.** "No NATS/database access" holds, but a sandbox breakout can still reach other
+    `backend` services (LiteLLM, vLLM, MinerU, Speaches, Presidio, OTEL) over their internal ports. A dedicated
+    code-sandbox network attached only to `open-webui ↔ open-terminal` would make it a true single-tenant zone —
+    tracked as a follow-up.
+  - **"No egress" is an image property, not a network guarantee.** The image needs no internet, but in `dev` the
+    `backend` network is non-internal, so code in the sandbox can still reach the public internet. Egress can be
+    firewalled per-deployment via `OPEN_TERMINAL_ALLOWED_DOMAINS` if required.
+  - **Cross-user side channels.** `OPEN_TERMINAL_MULTI_USER=true` isolates per-user *files*, but users still share CPU,
+    memory, `/tmp`, and the process list on one host — accepted under the current threat model.
+  - **`/home` persistence.** `${VOLUME_ROOT}/open-terminal:/home` accumulates per-user artifacts on the host with no
+    retention/quota policy yet — a janitor/TTL is a follow-up.
+  - The image is ~1.19 GB; the Jupyter container keeps running, unused, until a later cleanup. See network isolation
+    (`2025_12_22_docker_network_isolation.md`).
