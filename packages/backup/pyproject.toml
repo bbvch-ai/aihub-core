@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-backup"
-version = "0.301.5"
+version = "0.301.6"
 description = "Backup and restore orchestration for AI-Hub data services"
 requires-python = ">=3.13, <3.14"
 authors = [
