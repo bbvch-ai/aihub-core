@@ -3,6 +3,13 @@ display_event:
   name: Événement d'Affichage
   description: Un événement qui affiche des informations à l'utilisateur sans affecter
     le flux de travail.
+conversation_title_event:
+  name: Titre de la Conversation
+  description: L'agent a généré un titre résumant le sujet de la conversation.
+follow_up_questions_event:
+  name: Questions de Suivi
+  description: L'agent a suggéré des questions de suivi que l'utilisateur pourrait
+    vouloir poser ensuite.
 aitl_exception_event:
   name: Erreur de Délégation de Tâche
   description: Un autre agent à qui une tâche a été déléguée a signalé une erreur

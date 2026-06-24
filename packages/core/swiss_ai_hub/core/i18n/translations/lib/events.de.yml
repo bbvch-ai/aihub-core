@@ -3,6 +3,13 @@ display_event:
   name: Anzeigeereignis
   description: Ein Ereignis, das dem Benutzer Informationen anzeigt, ohne den Arbeitsablauf
     zu beeinflussen.
+conversation_title_event:
+  name: Gesprächstitel
+  description: Der Agent hat einen Titel erstellt, der das Thema des Gesprächs zusammenfasst.
+follow_up_questions_event:
+  name: Folgefragen
+  description: Der Agent hat Folgefragen vorgeschlagen, die der Benutzer als Nächstes
+    stellen könnte.
 aitl_exception_event:
   name: Fehler bei Aufgabendelegation
   description: Ein anderer Agent, an den eine Aufgabe delegiert wurde, hat einen Fehler

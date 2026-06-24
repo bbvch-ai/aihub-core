@@ -1025,6 +1025,12 @@ export type AgentSelector = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Agent selector element.
@@ -1882,6 +1888,12 @@ export type CascadeSelect = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -2922,6 +2934,12 @@ export type Checkbox = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Checkbox element.
@@ -3057,6 +3075,12 @@ export type ChipsInput = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -3320,6 +3344,12 @@ export type ColorPicker = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -3653,6 +3683,8 @@ export type ContextualizedAgentEvent = {
     | LlmCostEvent
     | ChunkEvent
     | ThoughtEvent
+    | ConversationTitleEvent
+    | FollowUpQuestionsEvent
     | GuardEvent
     | RouterEvent
     | GuardRejectionEvent
@@ -3716,6 +3748,57 @@ export type ControlEvent = {
    * The time (in ns since epoch) the event was stored in the event store
    */
   created_at?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ConversationTitleEvent
+ *
+ * Carries a generated title for the whole conversation (thread), produced by the agent once a
+ * topic becomes identifiable. The agent has the richest context about the conversation, so it
+ * owns this metadata instead of leaving it to the chat UI's task model.
+ *
+ * A thread receives a single, stable title: the agent emits this event only on the turn where a
+ * title is first determined and never again for that thread.
+ */
+export type ConversationTitleEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Title
+   *
+   * The generated title for the conversation.
+   */
+  title: string;
   /**
    * Event Name
    *
@@ -4197,6 +4280,12 @@ export type DatePicker = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -5267,6 +5356,56 @@ export type FileFile = {
 };
 
 /**
+ * FollowUpQuestionsEvent
+ *
+ * Carries follow-up questions the user might want to ask next, produced by the agent after each
+ * answer. These are non-blocking UI suggestions — unlike the namespace-selection
+ * ``FollowUpQuestion`` HITL events, the user is never required to answer them.
+ *
+ * Regenerated every turn since they depend on the latest answer.
+ */
+export type FollowUpQuestionsEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Questions
+   *
+   * The suggested follow-up questions for the user.
+   */
+  questions: Array<string>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * FullAgentInstanceDTO
  *
  * A data transfer object for representing FULL agent INSTANCE information in responses.
@@ -5557,6 +5696,12 @@ export type Group = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * $Formkit
    *
    * FormKit group element
@@ -5846,6 +5991,12 @@ export type HtmlElement = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * $El
    *
@@ -6724,6 +6875,12 @@ export type IconSelector = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Icon selector element.
@@ -7207,6 +7364,12 @@ export type InputMask = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue InputMask element.
@@ -7349,6 +7512,12 @@ export type InputNumber = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue InputNumber element.
@@ -7446,13 +7615,13 @@ export type InputNumber = {
    *
    * Minimum number of fraction digits
    */
-  minFractionDigits?: number | null;
+  minFractionDigits?: number;
   /**
    * Maxfractiondigits
    *
    * Maximum number of fraction digits
    */
-  maxFractionDigits?: number | null;
+  maxFractionDigits?: number;
   /**
    * Locale
    *
@@ -7532,6 +7701,12 @@ export type InputOtp = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -7656,6 +7831,12 @@ export type InputText = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -7813,6 +7994,12 @@ export type Knob = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -7999,6 +8186,12 @@ export type KnowledgeDatabaseSelector = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -8479,6 +8672,12 @@ export type Listbox = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Listbox element.
@@ -8648,6 +8847,12 @@ export type LocaleInput = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -9790,6 +9995,12 @@ export type ModelSelect = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Model select element.
@@ -9925,6 +10136,12 @@ export type MultiSelect = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -10382,6 +10599,12 @@ export type OrgMemoryTenantInput = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Organization-memory tenant_id input element.
@@ -10768,6 +10991,12 @@ export type Password = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -11598,6 +11827,12 @@ export type RadioButton = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue RadioButton element.
@@ -11723,6 +11958,12 @@ export type Rating = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -11875,6 +12116,12 @@ export type Repeater = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * $Formkit
    *
@@ -12586,6 +12833,12 @@ export type Select = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Select element.
@@ -12735,6 +12988,12 @@ export type SelectButton = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -13118,6 +13377,12 @@ export type Slider = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -13755,6 +14020,12 @@ export type Textarea = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Textarea element.
@@ -14145,6 +14416,12 @@ export type ToggleButton = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue ToggleButton element.
@@ -14274,6 +14551,12 @@ export type ToggleSwitch = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -15325,6 +15608,12 @@ export type VectorStoreInput = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Vector store input element.
@@ -16200,6 +16489,12 @@ export type AgentSelectorWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Agent selector element.
@@ -16659,6 +16954,12 @@ export type CascadeSelectWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue CascadeSelect element.
@@ -16838,6 +17139,12 @@ export type CheckboxWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Checkbox element.
@@ -16969,6 +17276,12 @@ export type ChipsInputWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -17106,6 +17419,12 @@ export type ColorPickerWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -17361,6 +17680,8 @@ export type ContextualizedAgentEventWritable = {
     | LlmCostEventWritable
     | ChunkEventWritable
     | ThoughtEventWritable
+    | ConversationTitleEventWritable
+    | FollowUpQuestionsEventWritable
     | GuardEventWritable
     | RouterEventWritable
     | GuardRejectionEventWritable
@@ -17428,6 +17749,44 @@ export type ControlEventWritable = {
 };
 
 /**
+ * ConversationTitleEvent
+ *
+ * Carries a generated title for the whole conversation (thread), produced by the agent once a
+ * topic becomes identifiable. The agent has the richest context about the conversation, so it
+ * owns this metadata instead of leaving it to the chat UI's task model.
+ *
+ * A thread receives a single, stable title: the agent emits this event only on the turn where a
+ * title is first determined and never again for that thread.
+ */
+export type ConversationTitleEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Title
+   *
+   * The generated title for the conversation.
+   */
+  title: string;
+  [key: string]: unknown;
+};
+
+/**
  * DatePicker
  *
  * https://formkit-primevue.netlify.app/inputs/DatePicker
@@ -17457,6 +17816,12 @@ export type DatePickerWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -17860,6 +18225,43 @@ export type FewShotRejectEventWritable = {
 };
 
 /**
+ * FollowUpQuestionsEvent
+ *
+ * Carries follow-up questions the user might want to ask next, produced by the agent after each
+ * answer. These are non-blocking UI suggestions — unlike the namespace-selection
+ * ``FollowUpQuestion`` HITL events, the user is never required to answer them.
+ *
+ * Regenerated every turn since they depend on the latest answer.
+ */
+export type FollowUpQuestionsEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Questions
+   *
+   * The suggested follow-up questions for the user.
+   */
+  questions: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * FullAgentInstanceDTO
  *
  * A data transfer object for representing FULL agent INSTANCE information in responses.
@@ -18088,6 +18490,12 @@ export type GroupWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * $Formkit
    *
@@ -18814,6 +19222,12 @@ export type IconSelectorWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Icon selector element.
@@ -18909,6 +19323,12 @@ export type InputMaskWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -19048,6 +19468,12 @@ export type InputNumberWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue InputNumber element.
@@ -19145,13 +19571,13 @@ export type InputNumberWritable = {
    *
    * Minimum number of fraction digits
    */
-  minFractionDigits?: number | null;
+  minFractionDigits?: number;
   /**
    * Maxfractiondigits
    *
    * Maximum number of fraction digits
    */
-  maxFractionDigits?: number | null;
+  maxFractionDigits?: number;
   /**
    * Locale
    *
@@ -19227,6 +19653,12 @@ export type InputOtpWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -19347,6 +19779,12 @@ export type InputTextWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -19473,6 +19911,12 @@ export type KnobWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -19655,6 +20099,12 @@ export type KnowledgeDatabaseSelectorWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -20079,6 +20529,12 @@ export type ListboxWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Listbox element.
@@ -20244,6 +20700,12 @@ export type LocaleInputWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -20531,6 +20993,12 @@ export type ModelSelectWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Model select element.
@@ -20662,6 +21130,12 @@ export type MultiSelectWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -20814,6 +21288,12 @@ export type OrgMemoryTenantInputWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -21014,6 +21494,12 @@ export type PasswordWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -21485,6 +21971,12 @@ export type RadioButtonWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue RadioButton element.
@@ -21606,6 +22098,12 @@ export type RatingWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -21754,6 +22252,12 @@ export type RepeaterWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * $Formkit
    *
@@ -22242,6 +22746,12 @@ export type SelectWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Select element.
@@ -22387,6 +22897,12 @@ export type SelectButtonWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -22665,6 +23181,12 @@ export type SliderWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -23029,6 +23551,12 @@ export type TextareaWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Textarea element.
@@ -23335,6 +23863,12 @@ export type ToggleButtonWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue ToggleButton element.
@@ -23460,6 +23994,12 @@ export type ToggleSwitchWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -23755,6 +24295,12 @@ export type VectorStoreInputWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
