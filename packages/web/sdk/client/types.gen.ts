@@ -3833,6 +3833,8 @@ export type ContextualizedAgentEvent = {
     | LlmCostEvent
     | ChunkEvent
     | ThoughtEvent
+    | ConversationTitleEvent
+    | FollowUpQuestionsEvent
     | GuardEvent
     | RouterEvent
     | GuardRejectionEvent
@@ -3896,6 +3898,57 @@ export type ControlEvent = {
    * The time (in ns since epoch) the event was stored in the event store
    */
   created_at?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ConversationTitleEvent
+ *
+ * Carries a generated title for the whole conversation (thread), produced by the agent once a
+ * topic becomes identifiable. The agent has the richest context about the conversation, so it
+ * owns this metadata instead of leaving it to the chat UI's task model.
+ *
+ * A thread receives a single, stable title: the agent emits this event only on the turn where a
+ * title is first determined and never again for that thread.
+ */
+export type ConversationTitleEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Title
+   *
+   * The generated title for the conversation.
+   */
+  title: string;
   /**
    * Event Name
    *
@@ -5449,6 +5502,56 @@ export type FileFile = {
    * Filename
    */
   filename?: string;
+  [key: string]: unknown;
+};
+
+/**
+ * FollowUpQuestionsEvent
+ *
+ * Carries follow-up questions the user might want to ask next, produced by the agent after each
+ * answer. These are non-blocking UI suggestions — unlike the namespace-selection
+ * ``FollowUpQuestion`` HITL events, the user is never required to answer them.
+ *
+ * Regenerated every turn since they depend on the latest answer.
+ */
+export type FollowUpQuestionsEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Questions
+   *
+   * The suggested follow-up questions for the user.
+   */
+  questions: Array<string>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -17733,6 +17836,8 @@ export type ContextualizedAgentEventWritable = {
     | LlmCostEventWritable
     | ChunkEventWritable
     | ThoughtEventWritable
+    | ConversationTitleEventWritable
+    | FollowUpQuestionsEventWritable
     | GuardEventWritable
     | RouterEventWritable
     | GuardRejectionEventWritable
@@ -17796,6 +17901,44 @@ export type ControlEventWritable = {
    * The time (in ns since epoch) the event was stored in the event store
    */
   created_at?: number;
+  [key: string]: unknown;
+};
+
+/**
+ * ConversationTitleEvent
+ *
+ * Carries a generated title for the whole conversation (thread), produced by the agent once a
+ * topic becomes identifiable. The agent has the richest context about the conversation, so it
+ * owns this metadata instead of leaving it to the chat UI's task model.
+ *
+ * A thread receives a single, stable title: the agent emits this event only on the turn where a
+ * title is first determined and never again for that thread.
+ */
+export type ConversationTitleEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Title
+   *
+   * The generated title for the conversation.
+   */
+  title: string;
   [key: string]: unknown;
 };
 
@@ -18234,6 +18377,43 @@ export type FewShotRejectEventWritable = {
    * Reason why the Guard rejected the request.
    */
   reason: string;
+  [key: string]: unknown;
+};
+
+/**
+ * FollowUpQuestionsEvent
+ *
+ * Carries follow-up questions the user might want to ask next, produced by the agent after each
+ * answer. These are non-blocking UI suggestions — unlike the namespace-selection
+ * ``FollowUpQuestion`` HITL events, the user is never required to answer them.
+ *
+ * Regenerated every turn since they depend on the latest answer.
+ */
+export type FollowUpQuestionsEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Questions
+   *
+   * The suggested follow-up questions for the user.
+   */
+  questions: Array<string>;
   [key: string]: unknown;
 };
 

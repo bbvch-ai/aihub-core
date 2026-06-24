@@ -1215,7 +1215,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   speaches:
     container_name: speaches
-    image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
+    image: ghcr.io/bbvch-ai/aihub-core/speaches-ai/speaches:latest-cuda-12.6.3
     restart: unless-stopped
     ports: [8185:8000]
     volumes:
@@ -1302,6 +1302,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
+      SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
@@ -1525,7 +1527,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
-    image: otel/opentelemetry-collector-contrib:latest
+    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.154.0
     restart: always
     command: [--config=/etc/otel-config.yml]
     environment:
@@ -1657,13 +1659,6 @@ services:
       ENABLE_OLLAMA_API: false
       ENABLE_OPENAI_API: true
 
-      # --- Image Generation ---
-      IMAGE_GENERATION_MODEL: image-generation
-      IMAGES_OPENAI_API_BASE_URL: http://localhost:8000/api/v1/active/openai
-      IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      IMAGE_SIZE: 1024x1024
-      ENABLE_IMAGE_GENERATION: true
-
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
       AUDIO_STT_MODEL: transcription
@@ -1684,6 +1679,7 @@ services:
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: aihub/
       AIHUB_REQUEST_TIMEOUT: 60
+      OPENWEBUI_MODEL_NAME_LOCALE: ${OPENWEBUI_MODEL_NAME_LOCALE}
 
       # --- Database & Cache ---
       DATABASE_TYPE: postgres
@@ -1771,7 +1767,7 @@ services:
       USER_PERMISSIONS_CHAT_SHARE: false
       USER_PERMISSIONS_CHAT_EXPORT: false
       USER_PERMISSIONS_CHAT_STT: true
-      USER_PERMISSIONS_CHAT_TTS: true
+      USER_PERMISSIONS_CHAT_TTS: false
       USER_PERMISSIONS_CHAT_CALL: true
       USER_PERMISSIONS_CHAT_MULTIPLE_MODELS: true
       USER_PERMISSIONS_CHAT_TEMPORARY: true
@@ -1793,7 +1789,7 @@ services:
         max-size: 10m
         max-file: 2
 
-  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   openwebui-init:
     container_name: openwebui-init
     image: ghcr.io/bbvch-ai/aihub-core/postgres:17

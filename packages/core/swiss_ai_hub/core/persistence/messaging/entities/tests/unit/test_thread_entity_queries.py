@@ -128,3 +128,11 @@ class TestCountThreadsByUser:
         _thread("Other", user_id="u1")
         assert ThreadEntity.count_threads_by_user("u1") == 3
         assert ThreadEntity.count_threads_by_user("u1", filters=ThreadFilters(search="budget")) == 2
+
+
+class TestUpdateThreadName:
+    def test_update_thread_name_overrides_the_default_name(self):
+        thread = _thread("chat")
+        updated = ThreadEntity.update_thread_name(str(thread.id), "Weather in Ho Chi Minh City")
+        assert updated.name == "Weather in Ho Chi Minh City"
+        assert ThreadEntity.get_thread_by_id(str(thread.id)).name == "Weather in Ho Chi Minh City"

@@ -1390,6 +1390,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
+      SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
@@ -1581,7 +1583,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
-    image: otel/opentelemetry-collector-contrib:latest
+    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.154.0
     restart: always
     command: [--config=/etc/otel-config.yml]
     environment:
@@ -1710,13 +1712,14 @@ services:
       TASK_MODEL_EXTERNAL: text-generation/gemma-4-31B-it
       ENABLE_OLLAMA_API: false
       ENABLE_OPENAI_API: true
-
-      # --- Image Generation ---
-      IMAGE_GENERATION_MODEL: image-generation
+      # --- Image Generation (cloud-only; GPU stages have no local image model yet) ---
+      IMAGE_GENERATION_MODEL: image-generation/flux
       IMAGES_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       IMAGE_SIZE: 1024x1024
       ENABLE_IMAGE_GENERATION: true
+      # Infomaniak flux rejects prompts > 400 chars; disable LLM prompt expansion so raw prompts pass through
+      ENABLE_IMAGE_PROMPT_GENERATION: false
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
@@ -1738,6 +1741,7 @@ services:
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: aihub/
       AIHUB_REQUEST_TIMEOUT: 60
+      OPENWEBUI_MODEL_NAME_LOCALE: ${OPENWEBUI_MODEL_NAME_LOCALE}
 
       # --- Database & Cache ---
       DATABASE_TYPE: postgres
@@ -1825,7 +1829,7 @@ services:
       USER_PERMISSIONS_CHAT_SHARE: false
       USER_PERMISSIONS_CHAT_EXPORT: false
       USER_PERMISSIONS_CHAT_STT: true
-      USER_PERMISSIONS_CHAT_TTS: true
+      USER_PERMISSIONS_CHAT_TTS: false
       USER_PERMISSIONS_CHAT_CALL: true
       USER_PERMISSIONS_CHAT_MULTIPLE_MODELS: true
       USER_PERMISSIONS_CHAT_TEMPORARY: true
@@ -1899,7 +1903,7 @@ services:
       - data
       - storage
 
-  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   openwebui-init:
     container_name: openwebui-init
     image: ghcr.io/bbvch-ai/aihub-core/postgres:17
@@ -2060,7 +2064,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   docker-socket-proxy:
     container_name: docker-socket-proxy
-    image: tecnativa/docker-socket-proxy:0.3
+    image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
     restart: always
     # Required for Docker socket access in SELinux/AppArmor environments
     privileged: true

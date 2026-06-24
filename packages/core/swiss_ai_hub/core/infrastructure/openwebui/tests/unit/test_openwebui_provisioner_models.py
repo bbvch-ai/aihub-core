@@ -8,37 +8,75 @@ from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
     AIHUB_MODEL_PREFIX,
     OpenWebuiProvisioner,
 )
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 _RAG_AGENT = OnlineAgent(agent_class="rag", agent_id="default", display_name="RAG Agent")
+
+
+class TestResolveDisplayName:
+    def test_uses_configured_locale(self, provisioner: OpenWebuiProvisioner) -> None:
+        provisioner._settings.MODEL_NAME_LOCALE = "en"
+        name = LocaleStringEntity(de="Such-Agent", en="Search Agent", fr="Agent", it="Agente")
+
+        assert provisioner._resolve_display_name(name, "rag") == "Search Agent"
+
+    def test_falls_back_to_other_locale_when_target_missing(self, provisioner: OpenWebuiProvisioner) -> None:
+        provisioner._settings.MODEL_NAME_LOCALE = "fr"
+        name = LocaleStringEntity(de="Such-Agent", en="Search Agent")
+
+        # fr missing -> platform default locale (de) before any other available translation
+        assert provisioner._resolve_display_name(name, "rag") == "Such-Agent"
+
+    def test_falls_back_to_agent_id_when_all_empty(self, provisioner: OpenWebuiProvisioner) -> None:
+        provisioner._settings.MODEL_NAME_LOCALE = "en"
+        name = LocaleStringEntity()
+
+        assert provisioner._resolve_display_name(name, "rag") == "rag"
+
+
+_RAG_MODEL_ID = f"{AIHUB_MODEL_PREFIX}rag-default"
 
 
 class TestComputeModelDiff:
     def test_compute_models_to_create(self) -> None:
         online = [_RAG_AGENT]
-        existing: set[str] = set()
+        existing: dict[str, dict] = {}
 
-        to_create, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
+        to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
 
         assert len(to_create) == 1
         assert to_create[0] == _RAG_AGENT
+        assert to_update == []
         assert to_delete == set()
 
     def test_compute_models_to_delete(self) -> None:
         online: list[OnlineAgent] = []
-        existing = {f"{AIHUB_MODEL_PREFIX}rag-default"}
+        existing = {_RAG_MODEL_ID: {"id": _RAG_MODEL_ID, "name": "RAG Agent"}}
 
-        to_create, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
+        to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
 
         assert to_create == []
-        assert to_delete == {f"{AIHUB_MODEL_PREFIX}rag-default"}
+        assert to_update == []
+        assert to_delete == {_RAG_MODEL_ID}
 
     def test_compute_models_unchanged(self) -> None:
         online = [_RAG_AGENT]
-        existing = {f"{AIHUB_MODEL_PREFIX}rag-default"}
+        existing = {_RAG_MODEL_ID: {"id": _RAG_MODEL_ID, "name": "RAG Agent"}}
 
-        to_create, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
+        to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
 
         assert to_create == []
+        assert to_update == []
+        assert to_delete == set()
+
+    def test_compute_models_to_update_on_rename(self) -> None:
+        online = [_RAG_AGENT]
+        existing = {_RAG_MODEL_ID: {"id": _RAG_MODEL_ID, "name": "Old Name"}}
+
+        to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
+
+        assert to_create == []
+        assert to_update == [_RAG_AGENT]
         assert to_delete == set()
 
 
@@ -79,6 +117,49 @@ class TestSyncWorkspaceModels:
 
             mock_create.assert_not_called()
             mock_delete.assert_called_once_with(mock_client, "aihub-agent-rag-default")
+
+    @pytest.mark.asyncio
+    async def test_sync_updates_model_name_on_rename(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": "aihub-agent-rag-default", "name": "Old Name"}],
+            ),
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "update_model") as mock_update,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
+
+            mock_create.assert_not_called()
+            mock_delete.assert_not_called()
+            mock_update.assert_called_once()
+            update_data = mock_update.call_args[0][1]
+            assert update_data["id"] == "aihub-agent-rag-default"
+            assert update_data["name"] == "RAG Agent"
+
+    @pytest.mark.asyncio
+    async def test_sync_does_not_update_when_name_unchanged(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": "aihub-agent-rag-default", "name": "RAG Agent"}],
+            ),
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "update_model") as mock_update,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
+
+            mock_create.assert_not_called()
+            mock_update.assert_not_called()
+            mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_sync_ignores_non_aihub_models(self, provisioner: OpenWebuiProvisioner) -> None:

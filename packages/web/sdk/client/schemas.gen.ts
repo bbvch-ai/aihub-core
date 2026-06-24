@@ -5584,6 +5584,12 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/ThoughtEvent",
         },
         {
+          $ref: "#/components/schemas/ConversationTitleEvent",
+        },
+        {
+          $ref: "#/components/schemas/FollowUpQuestionsEvent",
+        },
+        {
           $ref: "#/components/schemas/GuardEvent",
         },
         {
@@ -5748,6 +5754,71 @@ export const ControlEventSchema = {
   title: "ControlEvent",
   description:
     "Represents a system-level or workflow-level signal, often used to coordinate steps,\nindicate state changes, or trigger specific actions in the event-driven architecture.\n\n### Why ControlEvent?\nWhile `BaseEvent` covers the general structure for any event, `ControlEvent` marks an event as\nparticularly important for controlling the flow of a system. Hence, all events taken as inputs to\nworkflow steps must be of type `ControlEvent`. Even though other type of events can be returned\nfrom workflow steps, only 'ControlEvent' influence the flow of the system.\n\nBy subclassing `BaseEvent`, `ControlEvent` benefits from automatic type registration and\nserialization, ensuring that control signals are as easy to produce and consume as any other event.",
+} as const;
+
+export const ConversationTitleEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    title: {
+      type: "string",
+      title: "Title",
+      description: "The generated title for the conversation.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["title", "_event_name", "_parent_event_names"],
+  title: "ConversationTitleEvent",
+  description:
+    "Carries a generated title for the whole conversation (thread), produced by the agent once a\ntopic becomes identifiable. The agent has the richest context about the conversation, so it\nowns this metadata instead of leaving it to the chat UI's task model.\n\nA thread receives a single, stable title: the agent emits this event only on the turn where a\ntitle is first determined and never again for that thread.",
 } as const;
 
 export const CreateAgentInstanceRequestSchema = {
@@ -7824,6 +7895,74 @@ export const FileFileSchema = {
   additionalProperties: true,
   type: "object",
   title: "FileFile",
+} as const;
+
+export const FollowUpQuestionsEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    questions: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Questions",
+      description: "The suggested follow-up questions for the user.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["questions", "_event_name", "_parent_event_names"],
+  title: "FollowUpQuestionsEvent",
+  description:
+    "Carries follow-up questions the user might want to ask next, produced by the agent after each\nanswer. These are non-blocking UI suggestions — unlike the namespace-selection\n``FollowUpQuestion`` HITL events, the user is never required to answer them.\n\nRegenerated every turn since they depend on the latest answer.",
 } as const;
 
 export const FullAgentInstanceDTOSchema = {
@@ -26159,6 +26298,12 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/ThoughtEventWritable",
         },
         {
+          $ref: "#/components/schemas/ConversationTitleEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/FollowUpQuestionsEventWritable",
+        },
+        {
           $ref: "#/components/schemas/GuardEventWritable",
         },
         {
@@ -26305,6 +26450,54 @@ export const ControlEventWritableSchema = {
   title: "ControlEvent",
   description:
     "Represents a system-level or workflow-level signal, often used to coordinate steps,\nindicate state changes, or trigger specific actions in the event-driven architecture.\n\n### Why ControlEvent?\nWhile `BaseEvent` covers the general structure for any event, `ControlEvent` marks an event as\nparticularly important for controlling the flow of a system. Hence, all events taken as inputs to\nworkflow steps must be of type `ControlEvent`. Even though other type of events can be returned\nfrom workflow steps, only 'ControlEvent' influence the flow of the system.\n\nBy subclassing `BaseEvent`, `ControlEvent` benefits from automatic type registration and\nserialization, ensuring that control signals are as easy to produce and consume as any other event.",
+} as const;
+
+export const ConversationTitleEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    title: {
+      type: "string",
+      title: "Title",
+      description: "The generated title for the conversation.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["title"],
+  title: "ConversationTitleEvent",
+  description:
+    "Carries a generated title for the whole conversation (thread), produced by the agent once a\ntopic becomes identifiable. The agent has the richest context about the conversation, so it\nowns this metadata instead of leaving it to the chat UI's task model.\n\nA thread receives a single, stable title: the agent emits this event only on the turn where a\ntitle is first determined and never again for that thread.",
 } as const;
 
 export const DatePickerWritableSchema = {
@@ -26924,6 +27117,57 @@ export const FewShotRejectEventWritableSchema = {
   title: "FewShotRejectEvent",
   description:
     "Event indicating that the few-shot guard rejected the request.\n\nThis event is triggered when the few-shot guard determines that\nthe user query is inappropriate based on analysis of provided examples.\nIt signifies that the request does not match the patterns of acceptable queries\ndemonstrated in the few-shot examples and should be blocked.",
+} as const;
+
+export const FollowUpQuestionsEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    questions: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Questions",
+      description: "The suggested follow-up questions for the user.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["questions"],
+  title: "FollowUpQuestionsEvent",
+  description:
+    "Carries follow-up questions the user might want to ask next, produced by the agent after each\nanswer. These are non-blocking UI suggestions — unlike the namespace-selection\n``FollowUpQuestion`` HITL events, the user is never required to answer them.\n\nRegenerated every turn since they depend on the latest answer.",
 } as const;
 
 export const FullAgentInstanceDTOWritableSchema = {

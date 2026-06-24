@@ -5,6 +5,210 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.303.0] - 2026-06-24 - Enhanced Image Generation Capabilities with Cloud Integration
+
+### Added
+
+- 🖼️ **New Cloud Image Generation Model:** Integrated the `image-generation/flux` model, enabling cloud-based image
+  generation capabilities via the Swiss LLM Cloud.
+- ⚙️ **Swiss LLM Cloud Image API Configuration:** Added new environment variables (`SWISS_LLM_CLOUD_IMAGE_API_BASE_URL`,
+  `SWISS_LLM_CLOUD_IMAGE_API_KEY`) to configure access to the new image generation service.
+
+### Changed
+
+- 🚀 **Image Generation Model Prioritization:** Updated Docker Compose configurations to prioritize the new cloud-based
+  `image-generation/flux` model for non-GPU environments.
+- 📝 **Image Prompt Expansion Logic:** Disabled LLM-powered prompt expansion for image generation when using the `flux`
+  model to accommodate its prompt length restrictions, ensuring raw prompts are passed directly.
+
+### Removed
+
+- 🗑️ **GPU-Specific Image Generation Model Placeholder:** Removed the generic `IMAGE_GENERATION_MODEL` setting from GPU
+  deployment configurations, streamlining image generation to utilize the new cloud model for non-GPU stages while GPU
+  stages await dedicated local integration.
+
+______________________________________________________________________
+
+## [v0.302.0] - 2026-06-24 - Smarter Conversations: Agents Now Generate Titles and Follow-up Questions
+
+### Added
+
+- 🦾 **Agent-Generated Conversation Metadata:** Agents now autonomously generate concise **conversation titles** (once
+  per thread, when a clear topic emerges) and **suggested follow-up questions** (after each response), enriching the
+  user experience by providing more contextual chat summaries and interaction prompts.
+- 📄 **Architectural Decision Record for Conversation Metadata:** A new ADR
+  (`2026_06_18_conversation_metadata_as_explicit_per_agent_steps.md`) has been added, detailing the design and
+  implementation strategy for agents producing conversation titles and follow-up questions.
+- ✨ **New Display Events for Conversation Metadata:** Introduced `ConversationTitleEvent` and `FollowUpQuestionsEvent`
+  to transmit agent-generated metadata, ensuring these insights are seamlessly communicated through the event pipeline.
+- 🚀 **Integration Across Key Agents:** The new conversation metadata generation has been integrated into several core
+  conversational agents, including **RAGAgent**, **ExpertRAGAgent**, **LLMWrappingAgent**, **FewShotAgent**, and
+  **McpReactAgent**, making these features widely available.
+- 🌍 **Multilingual Prompts and UI Elements for Metadata:** Added comprehensive internationalization support for the new
+  conversation metadata features, including prompts for title and follow-up question generation, and localized display
+  names for the events in the UI.
+- 🖼️ **Web UI Components for Conversation Metadata:** New web UI components (`ConversationTitleEvent.vue`,
+  `FollowUpQuestionsEvent.vue`) have been added to visually display the agent-generated conversation titles and
+  suggested follow-up questions to users.
+
+### Changed
+
+- 🔄 **Dynamic Thread Naming:** Conversation threads are now dynamically named by observing agent-generated
+  `ConversationTitleEvent`s, replacing generic "chat" names with topic-relevant titles derived from the conversation
+  content.
+- ⚡️ **Enhanced Agent Workflows for Metadata:** Existing agent workflows have been updated to incorporate conversation
+  metadata generation, either through dedicated `step` decorators for non-terminal LLM answers or inline calls for
+  terminal stop events, ensuring robust, best-effort generation.
+- 📡 **API and WebSocket Event Schema Updates:** The API and WebSocket event schemas have been extended to include the
+  new `ConversationTitleEvent` and `FollowUpQuestionsEvent` within the `DisplayEvents` discriminated union, ensuring
+  proper serialization and deserialization.
+
+______________________________________________________________________
+
+## [v0.301.7] - 2026-06-24 - Enhancements to Data Handling and Integration Consistency
+
+### Fixed
+
+- 🐛 **Improved Dataset Query Robustness:** Enhanced the dataset fetching logic to prevent errors by ensuring a dataset
+  ID is present before attempting to retrieve data, leading to a more stable user experience.
+
+### Refactor
+
+- 🧹 **Standardized Langfuse Configuration:** Aligned the Langfuse integration with the latest SDK conventions by
+  updating the host parameter name, improving internal consistency and maintainability.
+
+______________________________________________________________________
+
+## [v0.301.6] - 2026-06-23 - Improved OpenWebUI SCIM Client for Complete Data Sync
+
+### Fixed
+
+- 🐛 **Incomplete OpenWebUI SCIM Data Retrieval:** Resolved an issue where the OpenWebUI client would only retrieve the
+  first page of users or groups from the SCIM API, leading to incomplete data synchronization. The client now correctly
+  fetches all resources across multiple pages.
+
+### Added
+
+- ✨ **SCIM Pagination Mechanism:** Introduced a robust pagination logic (`_query_all`) for the OpenWebUI SCIM client,
+  ensuring all users and groups are retrieved, even when they span multiple pages.
+- 🧪 **Comprehensive SCIM Pagination Tests:** Added new unit tests to thoroughly validate the SCIM pagination logic,
+  covering multi-page retrieval, server-capped page sizes, and scenarios where `totalResults` is omitted.
+
+### Changed
+
+- 🔄 **Updated SCIM Resource Listing:** Modified `list_users` and `list_groups` methods to leverage the new pagination
+  mechanism, ensuring they always return a complete list of all users and groups from OpenWebUI.
+- 🔒 **Idempotent Group Creation Scan:** Enhanced the `create_group` method's check for existing groups to scan across
+  all SCIM pages, preventing duplicate group creation when the target group resides on a subsequent page.
+
+______________________________________________________________________
+
+## [v0.301.5] - 2026-06-22 - Agent Event API Refinements and Structural Updates
+
+### Changed
+
+- 🔄 **Event API Streamlining:** Refactored the core event system, consolidating various agent-related events such as
+  `UserMessageEvent`, `LLMStopEvent`, `StopEvent`, `RetrieverEvent`, and `BotInTheLoop` into a unified
+  `swiss_ai_hub.core.events.agent` module for improved organization and discoverability.
+- ⚡️ **Enhanced Guard Event Clarity:** Renamed `ContextSufficientEvent` to **`ContextSufficientAcceptEvent`** and
+  `ContextInsufficientEvent` to **`ContextInsufficientRejectEvent`** to explicitly communicate their acceptance or
+  rejection semantics, making agent logic clearer.
+- 📂 **Module Structure Alignment:** Relocated core components like `AgentConfig` and `KnowledgeRetriever` to more
+  logical paths within the `swiss_ai_hub.core` and `swiss_ai_hub.core.generative_ai` modules, respectively, enhancing
+  the overall package structure.
+- 📄 **Updated Documentation Examples:** Modified the `README.md` example to reflect the latest event names and module
+  paths, ensuring up-to-date guidance for agent development.
+
+______________________________________________________________________
+
+## [v0.301.4] - 2026-06-22 - Enhanced Infrastructure Image Sourcing and Configuration
+
+### Added
+
+- ✨ **Introduced `Open WebUI Init` Service Configuration:** Added explicit image tag definition and usage for the
+  `Open WebUI Init` service, enabling central management of its PostgreSQL base image.
+
+### Changed
+
+- 🔄 **Standardized Third-Party Image Sourcing:** Implemented consistent registry prefixing for several critical
+  third-party Docker images, including **`OpenTelemetry Collector`**, **`rclone`**, **`Speaches`**, and
+  **`Docker Socket Proxy`**, to ensure all images are sourced from the designated internal registry.
+- ⚡️ **Updated `OpenTelemetry Collector` Image:** Pinned the `OpenTelemetry Collector` image to a specific version
+  (`0.154.0`) for improved stability and security.
+- 📄 **Refined `OpenWebUI Init` License Alias:** Updated the internal license alias mapping for the `OpenWebUI Init`
+  service to accurately reflect its `postgres` base image.
+
+### Refactor
+
+- 🧹 **Standardized `Keycloak Config CLI` Variable Name:** Renamed the internal configuration variable for
+  `Keycloak Config CLI` to `keycloak_config_cli` (snake_case) for improved consistency across the deployment
+  configuration.
+
+______________________________________________________________________
+
+## [v0.301.3] - 2026-06-22 - Keycloak Superuser Configuration Alignment
+
+### Changed
+
+- ⚙️ **Keycloak Superuser Configuration:** Standardized the superuser's username in Keycloak realms and bootstrap
+  configurations to consistently use the `SUPERUSER_EMAIL` environment variable instead of `SUPERUSER_USERNAME`.
+
+______________________________________________________________________
+
+## [v0.301.2] - 2026-06-22 - Default Chat TTS Permission Adjustment
+
+### Changed
+
+- 🎚️ **Updated Default Chat TTS Permission:** The default setting for Text-to-Speech (TTS) functionality in chat has
+  been changed from enabled (`True`) to disabled (`False`) across all Docker Compose configurations. Users can still
+  explicitly enable this permission if desired.
+
+______________________________________________________________________
+
+## [v0.301.1] - 2026-06-19 - Enhanced Router Stability and Dependency Management
+
+### Fixed
+
+- 🐛 **Ensured `vue-router` Consistency:** Addressed critical runtime errors, such as
+  `TypeError: Invalid value used as weak map key` and `useRouter()` returning `undefined`, which occurred due to
+  `@vueuse/router` resolving to a different major version of `vue-router` than the Nuxt application. This is resolved by
+  explicitly declaring `vue-router@4.6.4` as a direct dependency, guaranteeing consistent injection keys.
+- 📄 **Updated `vue-router` Pinning Guidance:** Significantly updated the `README.md` with crucial instructions on how to
+  reliably pin `vue-router` as a direct dependency. This new guidance clarifies why previous override methods were
+  insufficient and provides a robust solution to prevent dependency resolution conflicts and ensure application
+  stability.
+
+______________________________________________________________________
+
+## [v0.301.0] - 2026-06-19 - Enhanced OpenWebUI Agent Display Names with Locale Support
+
+### Added
+
+- ✨ **New Environment Variable `OPENWEBUI_MODEL_NAME_LOCALE`**: Introduced to allow configuring the preferred locale for
+  displaying agent names within OpenWebUI, providing a more localized user experience.
+- 🌍 **Locale-Aware Agent Display Names**: Implemented the ability for OpenWebUI to resolve and display agent names based
+  on the configured locale, with intelligent fallbacks to other available translations or the agent ID.
+- 🔄 **OpenWebUI Workspace Model Update Capability**: Added functionality to the OpenWebUI provisioner to update existing
+  workspace models, specifically enabling seamless name changes in response to agent renames or locale adjustments.
+
+### Changed
+
+- 🚀 **OpenWebUI Agent Discovery Language Negotiation**: The OpenWebUI `aihub_pipeline` now includes an `Accept-Language`
+  header during agent discovery API calls, ensuring that agent details are fetched in the configured locale.
+- 📡 **Robust Agent Name Synchronization**: The agent synchronization mechanism has been enhanced to detect and propagate
+  changes to agent names, ensuring that OpenWebUI workspace models accurately reflect the latest, locale-resolved agent
+  names.
+- 🛠️ **Agent Hash Calculation**: The algorithm for computing agent hashes now incorporates the agent's display name,
+  making synchronization more sensitive to name-only changes and preventing stale entries in OpenWebUI.
+
+### Refactor
+
+- 🧹 **Streamlined OpenWebUI Model Reconciliation**: The logic for determining changes in OpenWebUI workspace models has
+  been refined to explicitly distinguish between models that need to be created, updated, or deleted, improving
+  provisioning efficiency and clarity.
+
+______________________________________________________________________
+
 ## [v0.300.4] - 2026-06-18 - Improved Data Lake Partition Naming for Enhanced Isolation
 
 ### Fixed

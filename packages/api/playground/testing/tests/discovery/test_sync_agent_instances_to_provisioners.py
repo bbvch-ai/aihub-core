@@ -21,6 +21,7 @@ def _make_service(*, redis: AsyncMock) -> AgentEndpointsDiscoveryService:
     service = object.__new__(AgentEndpointsDiscoveryService)
     service._redis = redis
     service.locale_handler = AsyncMock()
+    service._openwebui_provisioner = SimpleNamespace(model_name_locale="en")
     return service
 
 
@@ -33,7 +34,9 @@ class TestSyncAgentInstancesToProvisioners:
         redis = AsyncMock()
         service = _make_service(redis=redis)
 
-        expected_hash = service._compute_agents_hash({(inst.agent_class, inst.agent_id) for inst in _INSTANCES})
+        expected_hash = service._compute_agents_hash(
+            {(inst.agent_class, inst.agent_id, inst.name) for inst in _INSTANCES}
+        )
         redis.get.return_value = expected_hash.encode()
 
         with (
@@ -46,6 +49,34 @@ class TestSyncAgentInstancesToProvisioners:
 
             mock_langfuse.assert_not_called()
             mock_openwebui.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_resyncs_when_only_name_changed(self) -> None:
+        """A rename keeps (class, id) constant but must still trigger a re-sync."""
+        redis = AsyncMock()
+        service = _make_service(redis=redis)
+
+        old_hash = service._compute_agents_hash({(inst.agent_class, inst.agent_id, inst.name) for inst in _INSTANCES})
+        redis.get.return_value = old_hash.encode()
+
+        renamed = [_make_instance("rag", "default"), _make_instance("chat", "main")]
+        renamed[0].name = "Renamed Agent"
+
+        with (
+            patch.object(
+                AgentEndpointsDiscoveryService, "_sync_agent_instances_to_langfuse", return_value=True
+            ) as mock_langfuse,
+            patch.object(
+                AgentEndpointsDiscoveryService, "_sync_agent_instances_to_openwebui", return_value=True
+            ) as mock_openwebui,
+            patch("swiss_ai_hub.api.services.agent_endpoints_discovery_service.AgentService") as mock_agent_svc,
+        ):
+            mock_agent_svc.get_all_agent_instances = AsyncMock(return_value=renamed)
+            await service._sync_agent_instances_to_provisioners()
+
+            mock_langfuse.assert_awaited_once()
+            mock_openwebui.assert_awaited_once()
+            redis.set.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_syncs_and_stores_hash_when_changed(self) -> None:

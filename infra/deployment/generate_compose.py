@@ -184,7 +184,7 @@ DOCKER_LICENSE_ALIASES = {
     "backup-webserver": "dagster",
     "backup-daemon": "dagster",
     "otel-collector": "opentelemetry-collector-contrib",
-    "openwebui-init": "open-webui",
+    "openwebui-init": "postgres",
     "keycloak-config": "keycloak-config-cli",
 }
 

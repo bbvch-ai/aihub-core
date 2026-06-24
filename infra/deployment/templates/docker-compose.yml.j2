@@ -1142,7 +1142,7 @@ services:
   {{ service_license('keycloak-config') }}
   keycloak-config:
     container_name: keycloak-config
-    image: {{ global.registry_prefix }}{{ image_tags['keycloak-config-cli'] }}
+    image: {{ global.registry_prefix }}{{ image_tags.keycloak_config_cli }}
     restart: on-failure
     environment:
       KEYCLOAK_URL: http://keycloak:8080
@@ -1271,7 +1271,7 @@ services:
   {{ service_license('rclone') }}
   rclone:
     container_name: rclone
-    image: {{ image_tags.rclone }}
+    image: {{ global.registry_prefix }}{{ image_tags.rclone }}
     restart: unless-stopped
     command:
       - "rcd"
@@ -1711,7 +1711,7 @@ services:
   {{ service_license('speaches') }}
   speaches:
     container_name: speaches
-    image: {{ image_tags.speaches }}
+    image: {{ global.registry_prefix }}{{ image_tags.speaches }}
     restart: unless-stopped
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
@@ -1805,6 +1805,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
+      SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
@@ -2055,7 +2057,7 @@ services:
   {{ service_license('otel-collector') }}
   otel-collector:
     container_name: otel-collector
-    image: {{ image_tags.otel_collector }}
+    image: {{ global.registry_prefix }}{{ image_tags.otel_collector }}
     restart: always
     command: [ "--config=/etc/otel-config.yml" ]
     environment:
@@ -2207,12 +2209,16 @@ services:
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
 
-      # --- Image Generation ---
-      IMAGE_GENERATION_MODEL: image-generation
+      {%- if not gpu_enabled %}
+      # --- Image Generation (cloud-only; GPU stages have no local image model yet) ---
+      IMAGE_GENERATION_MODEL: image-generation/flux
       IMAGES_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       IMAGE_SIZE: 1024x1024
       ENABLE_IMAGE_GENERATION: True
+      # Infomaniak flux rejects prompts > 400 chars; disable LLM prompt expansion so raw prompts pass through
+      ENABLE_IMAGE_PROMPT_GENERATION: False
+      {%- endif %}
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
@@ -2234,6 +2240,7 @@ services:
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
       AIHUB_REQUEST_TIMEOUT: 60
+      OPENWEBUI_MODEL_NAME_LOCALE: ${OPENWEBUI_MODEL_NAME_LOCALE}
 
       # --- Database & Cache ---
       DATABASE_TYPE: postgres
@@ -2325,7 +2332,7 @@ services:
       USER_PERMISSIONS_CHAT_SHARE: False
       USER_PERMISSIONS_CHAT_EXPORT: False
       USER_PERMISSIONS_CHAT_STT: True
-      USER_PERMISSIONS_CHAT_TTS: True
+      USER_PERMISSIONS_CHAT_TTS: False
       USER_PERMISSIONS_CHAT_CALL: True
       USER_PERMISSIONS_CHAT_MULTIPLE_MODELS: True
       USER_PERMISSIONS_CHAT_TEMPORARY: True
@@ -2411,7 +2418,7 @@ services:
   {{ service_license('openwebui-init') }}
   openwebui-init:
     container_name: openwebui-init
-    image: {{ global.registry_prefix }}postgres:17
+    image: {{ global.registry_prefix }}{{ image_tags.open_webui_init }}
     restart: on-failure
     depends_on:
       open-webui:
@@ -2595,7 +2602,7 @@ services:
   {{ service_license('docker-socket-proxy') }}
   docker-socket-proxy:
     container_name: docker-socket-proxy
-    image: "{{ image_tags.docker_socket_proxy }}"
+    image: "{{ global.registry_prefix }}{{ image_tags.docker_socket_proxy }}"
     restart: always
     # Required for Docker socket access in SELinux/AppArmor environments
     privileged: true
