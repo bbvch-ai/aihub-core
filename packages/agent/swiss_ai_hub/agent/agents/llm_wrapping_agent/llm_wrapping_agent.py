@@ -126,10 +126,6 @@ class LLMWrappingAgent(Agent):
                 agent_config.llm, llm, event.limited_history, as_stop_step=True
             )
 
-        # Generate conversation metadata inline before the run terminates: this agent's answer is a
-        # terminal stop event, and the dispatcher does not dispatch steps waiting on stop events, so a
-        # separate @step cannot consume it. Emitting here guarantees the events reach the wire before
-        # the stop event is published, and the helper is best-effort so a metadata failure never fails
-        # the run. See ADR 2026_06_18_conversation_metadata_as_explicit_per_agent_steps.
+        # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
         await generate_conversation_metadata(stop_event.chat_messages, agent_config.llm, displayer, t, thread_context)
         return stop_event

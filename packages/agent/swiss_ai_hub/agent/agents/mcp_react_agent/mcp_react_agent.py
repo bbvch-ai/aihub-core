@@ -196,10 +196,7 @@ class McpReactAgent(Agent):
                 output_messages=[assistant],
                 chat_model_name=config.llm.model_name,
             )
-            # Inline conversation metadata before returning the terminal stop event (see ADR
-            # 2026_06_18_conversation_metadata_as_explicit_per_agent_steps): a step cannot consume a
-            # stop event, so emitting here guarantees delivery before the run terminates. The helper is
-            # best-effort, so a metadata failure never fails the run.
+            # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
             await generate_conversation_metadata(stop_event.chat_messages, config.llm, displayer, t, thread_context)
             return stop_event
 

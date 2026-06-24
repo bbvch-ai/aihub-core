@@ -135,6 +135,25 @@ async def test_follow_ups_not_emitted_when_empty(displayer, locale_handler):
 
 
 @pytest.mark.asyncio
+async def test_metadata_uses_only_user_assistant_messages(displayer, locale_handler):
+    """System prompts and tool turns (e.g. McpReactAgent noise) must be filtered before titling."""
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are an agent. Available tools: weather_lookup ..."),
+        ChatMessage(role=MessageRole.USER, content="What's the weather in Ho Chi Minh City?"),
+        ChatMessage(role=MessageRole.ASSISTANT, content=""),  # tool-call turn, no text
+        ChatMessage(role=MessageRole.TOOL, content="weather_lookup(...) -> 33C"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="It is hot and humid, around 33°C."),
+    ]
+    llm = _llm_returning(TitleResult(title="Weather in Ho Chi Minh City"))
+
+    await do_generate_title(messages, _llm_config(llm), displayer, locale_handler, FakeThreadContext())
+
+    forwarded = llm.astructured_predict.call_args.kwargs["chat_history"]
+    assert [m.role for m in forwarded] == [MessageRole.USER, MessageRole.ASSISTANT]
+    assert all(str(m.content or "").strip() for m in forwarded)
+
+
+@pytest.mark.asyncio
 async def test_generate_metadata_is_best_effort_on_failure(displayer, locale_handler):
     """A failing generator must not propagate — metadata is non-essential and must never fail the run."""
     llm = MagicMock()

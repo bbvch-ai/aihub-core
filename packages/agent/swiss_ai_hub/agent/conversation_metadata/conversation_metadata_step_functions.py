@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import RichPromptTemplate
 from openai import NOT_GIVEN
@@ -22,6 +22,21 @@ TITLE_GENERATED_KEY = "title_generated"
 def _structured_predict_kwargs(llm: LLM) -> dict:
     """Force tool use on function-calling models so structured output stays reliable."""
     return {"tool_choice": "required" if llm.metadata.is_function_calling_model else NOT_GIVEN}
+
+
+def _conversation_messages(chat_messages: list[ChatMessage]) -> list[ChatMessage]:
+    """Keep only the real user/assistant exchange for metadata generation.
+
+    ``chat_messages`` carries the full LLM input + output — system prompts, injected context/memory, and
+    (for tool-using agents like McpReactAgent) tool-call and tool-result turns. Summarizing that
+    technical noise produces wrong titles/follow-ups (e.g. a tool name as the topic), so we restrict to
+    user/assistant turns with actual text content.
+    """
+    return [
+        message
+        for message in chat_messages
+        if message.role in (MessageRole.USER, MessageRole.ASSISTANT) and str(message.content or "").strip()
+    ]
 
 
 async def do_generate_title(
@@ -48,7 +63,7 @@ async def do_generate_title(
             TitleResult,
             prompt,
             llm_kwargs=_structured_predict_kwargs(llm),
-            chat_history=chat_messages,
+            chat_history=_conversation_messages(chat_messages),
         )
 
     title = (result.title or "").strip()
@@ -77,7 +92,7 @@ async def do_generate_follow_up_questions(
             FollowUpQuestionsResult,
             prompt,
             llm_kwargs=_structured_predict_kwargs(llm),
-            chat_history=chat_messages,
+            chat_history=_conversation_messages(chat_messages),
         )
 
     questions = [question.strip() for question in result.questions if question.strip()]
@@ -94,13 +109,18 @@ async def generate_conversation_metadata(
     t: LocaleHandler,
     thread_context: ThreadContext,
 ) -> None:
-    """Generate title + follow-up questions best-effort, for agents that emit inline before a stop event.
+    """Generate title + follow-up questions inline, best-effort, for agents whose answer is a stop event.
 
     Conversation metadata is a non-essential, post-answer enhancement. Agents whose answer is a terminal
-    stop event must generate it inside that step (the dispatcher won't dispatch steps waiting on a stop
-    event), which would otherwise couple a metadata failure to the run. Running both generators with
-    ``return_exceptions=True`` keeps a failure in either from propagating: it is logged and the run still
-    terminates normally with its answer intact.
+    stop event (``LLMWrappingAgent``, ``FewShotAgent``, ``McpReactAgent``) cannot adopt it as a separate
+    ``@step``: ``AgentDispatcher.handle_event`` cleans up and returns on a stop event **before** it
+    dispatches steps waiting on that event, so such a step would never run. Calling the generators here —
+    inside the terminal step, before it returns the stop event — emits the display events while the step
+    body runs, i.e. on the wire **before** the stop event is published and before teardown. (See ADR
+    ``2026_06_18_conversation_metadata_as_explicit_per_agent_steps``.)
+
+    Running both generators with ``asyncio.gather(return_exceptions=True)`` keeps a failure in either from
+    propagating: it is logged and the run still terminates normally with its answer intact.
     """
     results = await asyncio.gather(
         do_generate_title(chat_messages, llm_config, displayer, t, thread_context),
