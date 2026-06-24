@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.303.0] - 2026-06-24 - Enhanced Image Generation Capabilities with Cloud Integration
+
+### Added
+
+- 🖼️ **New Cloud Image Generation Model:** Integrated the `image-generation/flux` model, enabling cloud-based image
+  generation capabilities via the Swiss LLM Cloud.
+- ⚙️ **Swiss LLM Cloud Image API Configuration:** Added new environment variables (`SWISS_LLM_CLOUD_IMAGE_API_BASE_URL`,
+  `SWISS_LLM_CLOUD_IMAGE_API_KEY`) to configure access to the new image generation service.
+
+### Changed
+
+- 🚀 **Image Generation Model Prioritization:** Updated Docker Compose configurations to prioritize the new cloud-based
+  `image-generation/flux` model for non-GPU environments.
+- 📝 **Image Prompt Expansion Logic:** Disabled LLM-powered prompt expansion for image generation when using the `flux`
+  model to accommodate its prompt length restrictions, ensuring raw prompts are passed directly.
+
+### Removed
+
+- 🗑️ **GPU-Specific Image Generation Model Placeholder:** Removed the generic `IMAGE_GENERATION_MODEL` setting from GPU
+  deployment configurations, streamlining image generation to utilize the new cloud model for non-GPU stages while GPU
+  stages await dedicated local integration.
+
+______________________________________________________________________
+
 ## [v0.302.0] - 2026-06-24 - Smarter Conversations: Agents Now Generate Titles and Follow-up Questions
 
 ### Added
