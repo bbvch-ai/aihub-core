@@ -19,6 +19,10 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config import McpReactAgentConfig
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
+from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
+    generate_conversation_metadata,
+)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
@@ -173,6 +177,8 @@ class McpReactAgent(Agent):
         config: McpReactAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
+        thread_context: ThreadContext,
+        t: LocaleHandler,
     ) -> list[ToolEvent] | StopEvent:
         """Ask the LLM what to do next — call a tool or respond to the user."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
@@ -185,11 +191,14 @@ class McpReactAgent(Agent):
 
         if not assistant.tool_calls:
             await displayer.display_chunk(assistant.content, config.llm.model_name)
-            return LLMStopEvent(
+            stop_event = LLMStopEvent(
                 input_messages=event.input_messages,
                 output_messages=[assistant],
                 chat_model_name=config.llm.model_name,
             )
+            # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
+            await generate_conversation_metadata(stop_event.chat_messages, config.llm, displayer, t, thread_context)
+            return stop_event
 
         await run_context.set(CONVERSATION_KEY, [m.model_dump() for m in [*event.input_messages, assistant]])
 

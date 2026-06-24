@@ -3,6 +3,13 @@ display_event:
   name: Display Event
   description: An event that displays information to the user without affecting the
     workflow.
+conversation_title_event:
+  name: Conversation Title
+  description: The agent generated a title summarizing the topic of the conversation.
+follow_up_questions_event:
+  name: Follow-up Questions
+  description: The agent suggested follow-up questions the user might want to ask
+    next.
 aitl_exception_event:
   name: Error in Task Delegation
   description: Another agent to which a task was delegated reported an error and couldn't

@@ -26,6 +26,10 @@ from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_questio
     FewShotStandaloneQuestionCondenserEvent,
 )
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
+from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
+    generate_conversation_metadata,
+)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
@@ -226,13 +230,20 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        thread_context: ThreadContext,
     ) -> LLMStopEvent:
         """
         Generates a response using the configured LLM.
         """
         await displayer.display_thought(t("agent.thought.write_answer_based_on_few_shot_examples"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.full_context, as_stop_step=True)
+            stop_event = await displayer.display_llm_stream(
+                agent_config.llm, llm, event.full_context, as_stop_step=True
+            )
+
+        # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
+        await generate_conversation_metadata(stop_event.chat_messages, agent_config.llm, displayer, t, thread_context)
+        return stop_event
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.stop.name"),

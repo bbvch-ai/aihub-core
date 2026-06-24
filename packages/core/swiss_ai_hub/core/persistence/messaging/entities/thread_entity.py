@@ -175,6 +175,14 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
+    def update_thread_name(cls, thread_id: str, name: str) -> Self:
+        thread = cls.get_thread_by_id(thread_id)
+        thread.name = name
+        thread.save()
+        return thread
+
+    @classmethod
+    @trace_fn
     def add_user_to_thread(cls, thread_id: str, user: User) -> Self:
         thread = cls.get_thread_by_id(thread_id)
         thread.users.append(user)

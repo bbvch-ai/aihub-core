@@ -3,6 +3,13 @@ display_event:
   name: Evento di Visualizzazione
   description: Un evento che mostra informazioni all'utente senza influenzare il flusso
     di lavoro.
+conversation_title_event:
+  name: Titolo della Conversazione
+  description: L'agente ha generato un titolo che riassume l'argomento della conversazione.
+follow_up_questions_event:
+  name: Domande di Approfondimento
+  description: L'agente ha suggerito domande di approfondimento che l'utente potrebbe
+    voler porre in seguito.
 aitl_exception_event:
   name: Errore nella Delega del Compito
   description: Un altro agente a cui è stato delegato un compito ha segnalato un errore
