@@ -99,6 +99,13 @@ async def _(agent_runner: AgentTestRunner):
             "swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent.do_detect_meta_question",
             AsyncMock(return_value=NotAMetaQuestionEvent(reasoning="not a meta question")),
         ),
+        # McpReactAgent generates conversation metadata inline in its terminal step; stub the helper here
+        # (its logic is covered by conversation_metadata unit tests) so this test stays focused on the
+        # tool-calling pipeline and the LLM mock need not script the structured-output calls.
+        patch(
+            "swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent.generate_conversation_metadata",
+            AsyncMock(return_value=None),
+        ),
     ):
         async with agent_runner.test_run() as topic:
             await agent_runner.send_event_from_topic(

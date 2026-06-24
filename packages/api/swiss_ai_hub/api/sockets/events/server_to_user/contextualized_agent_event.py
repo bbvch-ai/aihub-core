@@ -18,11 +18,13 @@ from swiss_ai_hub.core.events.agent import (
     ChunkEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
+    ConversationTitleEvent,
     DisplayEvent,
     EmbeddingEvent,
     ExceptionEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
+    FollowUpQuestionsEvent,
     GuardAcceptEvent,
     GuardEvent,
     GuardRejectionEvent,
@@ -84,6 +86,8 @@ DisplayEvents = (
     | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
     | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
+    | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
+    | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]
     | Annotated[RouterEvent, Tag("RouterEvent")]
     | Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")]

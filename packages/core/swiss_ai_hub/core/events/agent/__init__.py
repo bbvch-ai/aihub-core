@@ -44,7 +44,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.discovery.agent_config_specs import AgentConfigSpecs
     from swiss_ai_hub.core.events.agent.discovery.agent_config_specs_entity import AgentConfigSpecsEntity
     from swiss_ai_hub.core.events.agent.display.chunk_event import ChunkEvent
+    from swiss_ai_hub.core.events.agent.display.conversation_title_event import ConversationTitleEvent
     from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
+    from swiss_ai_hub.core.events.agent.display.follow_up_questions_event import FollowUpQuestionsEvent
     from swiss_ai_hub.core.events.agent.display.thought_event import ThoughtEvent
     from swiss_ai_hub.core.events.agent.guard.agent_suitability_accept_event import AgentSuitabilityAcceptEvent
     from swiss_ai_hub.core.events.agent.guard.agent_suitability_reject_event import AgentSuitabilityRejectEvent
@@ -146,6 +148,7 @@ __all__ = [
     "ContextSufficientAcceptEvent",
     "ControlAndDisplayEvent",
     "ControlEvent",
+    "ConversationTitleEvent",
     "CostEvent",
     "DisplayEvent",
     "Embedding",
@@ -154,6 +157,7 @@ __all__ = [
     "ExpertRejectEvent",
     "FewShotAcceptEvent",
     "FewShotRejectEvent",
+    "FollowUpQuestionsEvent",
     "GuardAcceptEvent",
     "GuardEvent",
     "GuardRejectionEvent",
@@ -229,6 +233,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "BotInTheLoopResponseEvent": "swiss_ai_hub.core.events.agent.bitl.response.bot_in_the_loop_response_event",
     "ChainEvent": "swiss_ai_hub.core.events.agent.semantic.chain.chain_event",
     "ChunkEvent": "swiss_ai_hub.core.events.agent.display.chunk_event",
+    "ConversationTitleEvent": "swiss_ai_hub.core.events.agent.display.conversation_title_event",
     "ContextInsufficientRejectEvent": "swiss_ai_hub.core.events.agent.guard.context_insufficient_reject_event",
     "ContextSufficientAcceptEvent": "swiss_ai_hub.core.events.agent.guard.context_sufficient_accept_event",
     "ControlAndDisplayEvent": "swiss_ai_hub.core.events.agent.control_and_display_event",
@@ -241,6 +246,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ExpertRejectEvent": "swiss_ai_hub.core.events.agent.guard.expert_reject_event",
     "FewShotAcceptEvent": "swiss_ai_hub.core.events.agent.guard.few_shot_accept_event",
     "FewShotRejectEvent": "swiss_ai_hub.core.events.agent.guard.few_shot_reject_event",
+    "FollowUpQuestionsEvent": "swiss_ai_hub.core.events.agent.display.follow_up_questions_event",
     "GuardAcceptEvent": "swiss_ai_hub.core.events.agent.guard.guard_accept_event",
     "GuardEvent": "swiss_ai_hub.core.events.agent.semantic.guard.guard_event",
     "GuardRejectionEvent": "swiss_ai_hub.core.events.agent.guard.guard_rejection_event",
