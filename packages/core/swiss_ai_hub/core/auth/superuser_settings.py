@@ -33,8 +33,8 @@ class SuperuserSettings(EnvironmentSettings):
         str,
         Field(
             description=(
-                "Display username recorded for the seeded superuser. Not used for Keycloak login — the realm "
-                "seeds the username equal to SUPERUSER_EMAIL (registrationEmailAsUsername), so login is by email."
+                "Log-only label for the seeded superuser in API startup logs. Not persisted in Keycloak — the "
+                "Keycloak username is SUPERUSER_EMAIL (registrationEmailAsUsername), so login is by email."
             ),
         ),
     ]
