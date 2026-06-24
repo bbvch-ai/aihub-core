@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.301.7] - 2026-06-24 - Enhancements to Data Handling and Integration Consistency
+
+### Fixed
+
+- 🐛 **Improved Dataset Query Robustness:** Enhanced the dataset fetching logic to prevent errors by ensuring a dataset
+  ID is present before attempting to retrieve data, leading to a more stable user experience.
+
+### Refactor
+
+- 🧹 **Standardized Langfuse Configuration:** Aligned the Langfuse integration with the latest SDK conventions by
+  updating the host parameter name, improving internal consistency and maintainability.
+
+______________________________________________________________________
+
+## [v0.301.6] - 2026-06-23 - Improved OpenWebUI SCIM Client for Complete Data Sync
+
+### Fixed
+
+- 🐛 **Incomplete OpenWebUI SCIM Data Retrieval:** Resolved an issue where the OpenWebUI client would only retrieve the
+  first page of users or groups from the SCIM API, leading to incomplete data synchronization. The client now correctly
+  fetches all resources across multiple pages.
+
+### Added
+
+- ✨ **SCIM Pagination Mechanism:** Introduced a robust pagination logic (`_query_all`) for the OpenWebUI SCIM client,
+  ensuring all users and groups are retrieved, even when they span multiple pages.
+- 🧪 **Comprehensive SCIM Pagination Tests:** Added new unit tests to thoroughly validate the SCIM pagination logic,
+  covering multi-page retrieval, server-capped page sizes, and scenarios where `totalResults` is omitted.
+
+### Changed
+
+- 🔄 **Updated SCIM Resource Listing:** Modified `list_users` and `list_groups` methods to leverage the new pagination
+  mechanism, ensuring they always return a complete list of all users and groups from OpenWebUI.
+- 🔒 **Idempotent Group Creation Scan:** Enhanced the `create_group` method's check for existing groups to scan across
+  all SCIM pages, preventing duplicate group creation when the target group resides on a subsequent page.
+
+______________________________________________________________________
+
 ## [v0.301.5] - 2026-06-22 - Agent Event API Refinements and Structural Updates
 
 ### Changed
