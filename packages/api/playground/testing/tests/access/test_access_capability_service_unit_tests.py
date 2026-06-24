@@ -70,20 +70,73 @@ _AGENT_ROUTES = [
 ]
 _ROLE_ROUTES = [("aihub.admin.service.role", None)]
 _OPENAI_ROUTES = [("aihub.user.?>", None)]
+# Guards mirror the real Process/Knowledge controllers: process "Create" is a class-level read-only guard
+# (`{process_class}.?>`), while knowledge has only namespace-level (two-parameter) guards — no class-level row.
+_PROCESS_ROUTES = [
+    ("aihub.user.process.?>", f"{_OPS}.process.see"),
+    ("aihub.admin.process.{process_class}.?>", f"{_OPS}.process.create"),
+    ("aihub.user.process.{process_class}.{process_id}", f"{_OPS}.process.use"),
+    ("aihub.admin.process.{process_class}.{process_id}", f"{_OPS}.process.manage"),
+]
+_KNOWLEDGE_ROUTES = [
+    ("aihub.user.knowledge.?>", f"{_OPS}.knowledge.see"),
+    ("aihub.user.knowledge.{database}.{namespace}", f"{_OPS}.knowledge.use"),
+    ("aihub.admin.knowledge.{database}.{namespace}", f"{_OPS}.knowledge.manage"),
+]
+
+
+class _PopulatedProcessService:
+    @staticmethod
+    async def get_process_classes(t):
+        return [SimpleNamespace(process_class="Onboarding", name=LocaleString(en="Onboarding"))]
+
+    @staticmethod
+    async def get_all_process_instances(t):
+        return [
+            SimpleNamespace(
+                process_class="Onboarding", process_id="run1", process_config=SimpleNamespace(name="Q3 Onboarding")
+            )
+        ]
+
+
+class _PopulatedKnowledgeService:
+    @staticmethod
+    def get_databases(t):
+        return [
+            SimpleNamespace(
+                name="corp",
+                display_name="Corporate Wiki",
+                namespaces=[SimpleNamespace(name="hr", display_name="HR Policies")],
+            )
+        ]
+
+
+async def _catalog(
+    rules: list[str],
+    controllers,
+    tenant_rules=None,
+    is_sys_admin=False,
+    agent_service=_AgentService,
+    process_service=_ProcessService,
+    knowledge_service=_KnowledgeService,
+):
+    """Builds the catalog, returning the raw response so tests can assert the group hierarchy. The three
+    resource services are patched so the agent/process/knowledge resolvers enumerate fakes, not real data."""
+    runner = SimpleNamespace(controllers=controllers)
+    subject = AccessChecker(user_access_rules=rules, tenant_access_rules=rules, is_sys_admin=is_sys_admin)
+    ceiling = AccessChecker(tenant_rules, tenant_rules) if tenant_rules is not None else None
+    with (
+        patch(_AGENT, agent_service),
+        patch(_PROCESS, process_service),
+        patch(_KNOWLEDGE, knowledge_service),
+    ):
+        return await AccessCapabilityService.build_capabilities(subject, runner, LocaleHandler("en"), ceiling)
 
 
 async def _capabilities(
     rules: list[str], controllers, tenant_rules=None, is_sys_admin=False
 ) -> dict[str, SimpleNamespace]:
-    runner = SimpleNamespace(controllers=controllers)
-    subject = AccessChecker(user_access_rules=rules, tenant_access_rules=rules, is_sys_admin=is_sys_admin)
-    ceiling = AccessChecker(tenant_rules, tenant_rules) if tenant_rules is not None else None
-    with (
-        patch(_AGENT, _AgentService),
-        patch(_PROCESS, _ProcessService),
-        patch(_KNOWLEDGE, _KnowledgeService),
-    ):
-        response = await AccessCapabilityService.build_capabilities(subject, runner, LocaleHandler("en"), ceiling)
+    response = await _catalog(rules, controllers, tenant_rules=tenant_rules, is_sys_admin=is_sys_admin)
 
     flat: dict[str, SimpleNamespace] = {}
 
@@ -100,6 +153,10 @@ async def _capabilities(
 
 def _by_rule(caps: dict[str, SimpleNamespace], rule: str) -> SimpleNamespace:
     return next(cap for cap in caps.values() if cap.rule == rule)
+
+
+def _group_by_key(groups, key: str) -> SimpleNamespace:
+    return next(group for group in groups if group.key == key)
 
 
 @pytest.mark.asyncio
@@ -230,3 +287,72 @@ def test_presets_cover_curated_rules_with_localized_names():
     rules = {preset.rule for preset in presets}
     assert {"aihub.user.>", "aihub.admin.>", "aihub.user.agent.>"} <= rules
     assert all(preset.name and preset.description for preset in presets)
+
+
+@pytest.mark.asyncio
+async def test_capabilities_nest_under_their_service_class_and_instance():
+    # The other tests flatten the tree away; this one asserts the actual nesting, so a capability landing
+    # at the wrong level (hoisted onto the service, or a class rule duplicated onto its instances) fails.
+    response = await _catalog(
+        ["aihub.user.agent.WeatherAgent.inst1"], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)]
+    )
+
+    service = _group_by_key(response.groups, "service:agent")
+    assert service.label == "AI Assistants"
+
+    weather = _group_by_key(service.groups, "agent:WeatherAgent")
+    assert weather.label == "Weather Agent"
+    # "Create" is a class-level guard: it belongs on the class group, never on the service or the instance.
+    assert "aihub.admin.agent.WeatherAgent" in {cap.rule for cap in weather.capabilities}
+    assert "aihub.admin.agent.WeatherAgent" not in {cap.rule for cap in service.capabilities}
+
+    instance = _group_by_key(weather.groups, "agent:WeatherAgent:inst1")
+    assert instance.label == "Prod Weather"
+    instance_rules = {cap.rule for cap in instance.capabilities}
+    assert {"aihub.user.agent.WeatherAgent.inst1", "aihub.admin.agent.WeatherAgent.inst1"} <= instance_rules
+    # The instance-level rule must live only under the instance, not be hoisted onto its class group.
+    assert "aihub.user.agent.WeatherAgent.inst1" not in {cap.rule for cap in weather.capabilities}
+
+
+@pytest.mark.asyncio
+async def test_process_resolver_builds_class_and_instance_groups():
+    # Exercises the `process` resolver branch with real data (the default fakes return empty lists, so the
+    # process subtree was never built before). Mirrors the agent assertions for a second service.
+    response = await _catalog(
+        ["aihub.user.process.>"],
+        [_controller("Workflows", "ProcessController", _PROCESS_ROUTES)],
+        process_service=_PopulatedProcessService,
+    )
+
+    service = _group_by_key(response.groups, "service:process")
+    onboarding = _group_by_key(service.groups, "process:Onboarding")
+    assert onboarding.label == "Onboarding"
+    # "Create" (`aihub.admin.process.{process_class}.?>`) is class-level AND an existence query → read-only.
+    create = next(cap for cap in onboarding.capabilities if cap.label and not cap.toggleable)
+    assert create.rule is None
+
+    run = _group_by_key(onboarding.groups, "process:Onboarding:run1")
+    assert run.label == "Q3 Onboarding"
+    use = _by_rule({cap.key: cap for cap in run.capabilities}, "aihub.user.process.Onboarding.run1")
+    assert use.granted and use.toggleable  # granted via the broad `aihub.user.process.>` rule
+
+
+@pytest.mark.asyncio
+async def test_knowledge_resolver_nests_namespaces_under_databases():
+    # Exercises the `knowledge` resolver branch: databases are the class level, namespaces the instances,
+    # and knowledge has no class-level guard, so the database group carries no rows of its own.
+    response = await _catalog(
+        ["aihub.admin.knowledge.>"],
+        [_controller("Knowledge", "KnowledgeController", _KNOWLEDGE_ROUTES)],
+        knowledge_service=_PopulatedKnowledgeService,
+    )
+
+    service = _group_by_key(response.groups, "service:knowledge")
+    database = _group_by_key(service.groups, "knowledge:corp")
+    assert database.label == "Corporate Wiki"
+    assert database.capabilities == []  # knowledge has no class-level guard → the database group carries no rows
+
+    namespace = _group_by_key(database.groups, "knowledge:corp:hr")
+    assert namespace.label == "HR Policies"
+    namespace_rules = {cap.rule for cap in namespace.capabilities}
+    assert {"aihub.user.knowledge.corp.hr", "aihub.admin.knowledge.corp.hr"} <= namespace_rules
