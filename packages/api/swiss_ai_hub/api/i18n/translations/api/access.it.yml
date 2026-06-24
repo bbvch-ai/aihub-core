@@ -8,19 +8,19 @@ presets:
     name: Amministra tutto
     description: Controllo completo su ogni servizio, agente e processo, inclusi creazione,
       configurazione ed eliminazione.
-  use_all_agents:
+  user_all_agents:
     name: Usa tutti gli agenti
     description: Chatta e usa ogni istanza di agente.
-  manage_all_agents:
+  admin_all_agents:
     name: Gestisci tutti gli agenti
     description: Crea, configura ed elimina ogni istanza di agente.
-  use_all_processes:
+  user_all_processes:
     name: Usa tutti i processi
     description: Avvia e partecipa a ogni processo.
-  manage_all_processes:
+  admin_all_processes:
     name: Gestisci tutti i processi
     description: Crea, configura ed elimina ogni processo.
-  manage_knowledge:
+  admin_knowledge:
     name: Gestisci le basi di conoscenza
     description: Controllo completo sulle basi di conoscenza e i loro documenti.
 capabilities:

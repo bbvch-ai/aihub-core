@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Annotated, NamedTuple
 
 from fastapi.routing import APIRoute
@@ -30,6 +31,52 @@ _SERVICE_ADMIN_DESCRIPTION = ApiLocaleString.from_i18n_path(
 )
 
 
+class _Guard(NamedTuple):
+    """A concrete, fully-substituted permission rule (e.g. ``aihub.user.agent.WeatherAgent.inst1``) — what
+    the subject's ``AccessChecker`` is actually queried with."""
+
+    rule: str
+
+    @property
+    def is_existence_query(self) -> bool:
+        """A ``?>``/``?*`` query asks "is there *any* access" — it has no single satisfying rule, so its
+        capability row is read-only rather than a grantable checkbox."""
+        return "?" in self.rule
+
+    def __str__(self) -> str:
+        return self.rule
+
+
+class _GuardTemplate(NamedTuple):
+    """A route's raw ``user_with_permission`` template before its ``{path_params}`` are filled in. Its
+    *arity* — the number of placeholders — classifies it: resource-wide guards (``aihub.admin.agent.>``)
+    render straight onto the service, class-level guards expand over each class, instance-level over each
+    instance."""
+
+    raw: str
+
+    @property
+    def arity(self) -> int:
+        return self.raw.count("{")
+
+    @property
+    def is_resource_wide(self) -> bool:
+        return self.arity == 0
+
+    @property
+    def is_class_level(self) -> bool:
+        return self.arity == 1
+
+    @property
+    def is_instance_level(self) -> bool:
+        return self.arity == 2
+
+    def substitute(self, **path_param_values: str) -> _Guard:
+        """Fills the template's ``{path_params}`` with concrete resource values (none for resource-wide
+        guards) to produce the queryable :class:`_Guard`."""
+        return _Guard(self.raw.format(**path_param_values))
+
+
 class _ResourceNode(NamedTuple):
     """One concrete resource a templated guard is expanded over — an agent or process class, a class
     instance, a knowledge database or a namespace. ``value`` is substituted for the guard's path
@@ -38,6 +85,16 @@ class _ResourceNode(NamedTuple):
     value: str
     label: str
     icon: str | None = None
+
+
+class _ResourceTree(NamedTuple):
+    """The enumerable resources of one service, in the two-level shape the capability tree mirrors:
+    top-level ``classes`` (agent/process classes, knowledge databases), their ``instances_by_class``
+    (instances, namespaces), and the guard's ``(class, instance)`` path-parameter names."""
+
+    classes: list[_ResourceNode]
+    instances_by_class: dict[str, list[_ResourceNode]]
+    param_names: tuple[str, str]
 
 
 class AccessCapabilityService:
@@ -50,6 +107,10 @@ class AccessCapabilityService:
     short-circuit and the tenant ceiling are honoured for free. A guard containing a ``?`` query has no
     single satisfying rule, so its row is read-only; templated guards are enumerated over the concrete
     resources of the service.
+
+    The per-request assembly — which is stateful in ``subject``/``ceiling``/``t`` — lives on
+    :class:`_CapabilityCatalogBuilder`; this class is the stateless facade plus the pure route-introspection
+    helpers (``_introspect``/``_route_template``) that need no request state.
     """
 
     @staticmethod
@@ -68,89 +129,7 @@ class AccessCapabilityService:
             "never reveal access the tenant itself lacks. ``None`` when editing the ceiling (full catalog).",
         ] = None,
     ) -> AccessCapabilitiesResponse:
-        granted_rules = subject.access_rules
-        groups: list[CapabilityGroup] = []
-        for controller in runner.controllers:
-            if not isinstance(controller, TenantScopedController):
-                continue
-            group = await AccessCapabilityService._service_group(controller, subject, granted_rules, ceiling, t)
-            if AccessCapabilityService._prune(group):
-                groups.append(group)
-        groups.sort(key=lambda group: group.label.lower())
-        return AccessCapabilitiesResponse(groups=groups)
-
-    @staticmethod
-    async def _service_group(
-        controller: TenantScopedController,
-        subject: AccessChecker,
-        granted_rules: set[str],
-        ceiling: AccessChecker | None,
-        t: LocaleHandler,
-    ) -> CapabilityGroup:
-        """Builds one top-level group for a service: its service-level gate, any resource-wide capabilities
-        (zero-parameter guards), and the nested class/instance tree for enumerable resources."""
-        service_name = controller.service_name
-        all_templates, annotated_guards = AccessCapabilityService._introspect(controller)
-        # The service-level gates are rendered separately by `_service_gate_capabilities`, so exclude them
-        # from the per-resource guards below. `USER_PREFIX`/`ADMIN_PREFIX` already end in a dot
-        # (`"aihub.user."`), so `f"{USER_PREFIX}?>"` is `"aihub.user.?>"` — the catch-all "any access" gate.
-        gate_templates = {
-            f"{AccessChecker.USER_PREFIX}?>",
-            f"{AccessChecker.ADMIN_PREFIX}?>",
-            AccessChecker.service_user_rule(service_name),
-            AccessChecker.service_admin_rule(service_name),
-        }
-        resource_guards = {tmpl: meta for tmpl, meta in annotated_guards.items() if tmpl not in gate_templates}
-
-        capabilities = AccessCapabilityService._service_gate_capabilities(
-            service_name, all_templates, subject, granted_rules, ceiling, t
-        )
-        # Guards with no `{path_param}` are resource-wide capabilities (e.g. "list everything"): nothing to
-        # substitute, so they render straight onto the service group. Parameterised guards are handled below
-        # by `_resource_groups`, which expands them over the service's concrete agents/processes/namespaces.
-        for guard_template, meta in sorted(resource_guards.items()):
-            if guard_template.count("{") != 0:
-                continue
-            capability = AccessCapabilityService._capability_for_guard(
-                meta.label, meta.description, guard_template, {}, subject, granted_rules, ceiling, t
-            )
-            if capability is not None:
-                capabilities.append(capability)
-        subgroups = await AccessCapabilityService._resource_groups(
-            service_name, resource_guards, subject, granted_rules, ceiling, t
-        )
-        return CapabilityGroup(
-            key=f"service:{service_name}",
-            label=t.extract(controller.name),
-            icon=getattr(controller, "icon", None),
-            capabilities=capabilities,
-            groups=subgroups,
-        )
-
-    @staticmethod
-    def _service_gate_capabilities(
-        service_name: str,
-        all_templates: set[str],
-        subject: AccessChecker,
-        granted_rules: set[str],
-        ceiling: AccessChecker | None,
-        t: LocaleHandler,
-    ) -> list[Capability]:
-        """The implicit per-service gate: every service has a "Use" capability; "Administer" is surfaced
-        only when the controller actually exposes an ``aihub.admin.service.<name>`` endpoint."""
-        gate_specs = [(_SERVICE_USE_LABEL, _SERVICE_USE_DESCRIPTION, AccessChecker.service_user_rule(service_name))]
-        if AccessChecker.service_admin_rule(service_name) in all_templates:
-            gate_specs.append(
-                (_SERVICE_ADMIN_LABEL, _SERVICE_ADMIN_DESCRIPTION, AccessChecker.service_admin_rule(service_name))
-            )
-        capabilities: list[Capability] = []
-        for label, description, guard_template in gate_specs:
-            capability = AccessCapabilityService._capability_for_guard(
-                label, description, guard_template, {}, subject, granted_rules, ceiling, t
-            )
-            if capability is not None:
-                capabilities.append(capability)
-        return capabilities
+        return await _CapabilityCatalogBuilder(subject=subject, ceiling=ceiling, t=t).build(runner)
 
     @staticmethod
     def _introspect(controller: TenantScopedController) -> tuple[set[str], dict[str, AccessCatalogEntryMeta]]:
@@ -210,40 +189,117 @@ class AccessCapabilityService:
                 return value
         return None
 
-    @staticmethod
+
+class _CapabilityCatalogBuilder:
+    """Assembles one capability catalog for a single ``(subject, ceiling, locale)``. Holding these as state
+    keeps them off every method signature — each capability row only needs the guard and its labels — and
+    makes the recursion (service → class → instance) read as the tree it builds."""
+
+    def __init__(self, *, subject: AccessChecker, ceiling: AccessChecker | None, t: LocaleHandler):
+        self._subject = subject
+        self._ceiling = ceiling
+        self._t = t
+        self._granted_rules = subject.access_rules
+
+    async def build(self, runner: "Runner") -> AccessCapabilitiesResponse:
+        groups: list[CapabilityGroup] = []
+        for controller in runner.controllers:
+            if not isinstance(controller, TenantScopedController):
+                continue
+            group = await self._service_group(controller)
+            if self._prune(group):
+                groups.append(group)
+        groups.sort(key=lambda group: group.label.lower())
+        return AccessCapabilitiesResponse(groups=groups)
+
+    async def _service_group(self, controller: TenantScopedController) -> CapabilityGroup:
+        """Builds one top-level group for a service: its service-level gate, any resource-wide capabilities
+        (zero-parameter guards), and the nested class/instance tree for enumerable resources."""
+        service_name = controller.service_name
+        all_templates, annotated_guards = AccessCapabilityService._introspect(controller)
+        # The service-level gates are rendered separately by `_service_gate_capabilities`, so exclude them
+        # from the per-resource guards below. `USER_PREFIX`/`ADMIN_PREFIX` already end in a dot
+        # (`"aihub.user."`), so `f"{USER_PREFIX}?>"` is `"aihub.user.?>"` — the catch-all "any access" gate.
+        gate_templates = {
+            f"{AccessChecker.USER_PREFIX}?>",
+            f"{AccessChecker.ADMIN_PREFIX}?>",
+            AccessChecker.service_user_rule(service_name),
+            AccessChecker.service_admin_rule(service_name),
+        }
+        resource_guards = {
+            _GuardTemplate(template): meta
+            for template, meta in annotated_guards.items()
+            if template not in gate_templates
+        }
+
+        capabilities = self._service_gate_capabilities(service_name, all_templates)
+        # Resource-wide guards have no `{path_param}` to substitute (e.g. "list everything"), so they render
+        # straight onto the service group. Parameterised guards are expanded by `_resource_groups` over the
+        # service's concrete agents/processes/namespaces.
+        resource_wide = sorted(
+            (template, meta) for template, meta in resource_guards.items() if template.is_resource_wide
+        )
+        capabilities += self._capabilities_for(resource_wide)
+        subgroups = await self._resource_groups(service_name, resource_guards)
+        return CapabilityGroup(
+            key=f"service:{service_name}",
+            label=self._t.extract(controller.name),
+            icon=getattr(controller, "icon", None),
+            capabilities=capabilities,
+            groups=subgroups,
+        )
+
+    def _service_gate_capabilities(self, service_name: str, all_templates: set[str]) -> list[Capability]:
+        """The implicit per-service gate: every service has a "Use" capability; "Administer" is surfaced
+        only when the controller actually exposes an ``aihub.admin.service.<name>`` endpoint."""
+        gate_specs = [(_SERVICE_USE_LABEL, _SERVICE_USE_DESCRIPTION, AccessChecker.service_user_rule(service_name))]
+        if AccessChecker.service_admin_rule(service_name) in all_templates:
+            gate_specs.append(
+                (_SERVICE_ADMIN_LABEL, _SERVICE_ADMIN_DESCRIPTION, AccessChecker.service_admin_rule(service_name))
+            )
+        capabilities: list[Capability] = []
+        for label, description, rule in gate_specs:
+            capability = self._capability_for_guard(label, description, _Guard(rule))
+            if capability is not None:
+                capabilities.append(capability)
+        return capabilities
+
+    def _capabilities_for(
+        self, guards: list[tuple[_GuardTemplate, AccessCatalogEntryMeta]], **path_param_values: str
+    ) -> list[Capability]:
+        """Substitutes ``path_param_values`` into each guard template and builds its capability row, dropping
+        any the ceiling hides (``_capability_for_guard`` returns ``None``)."""
+        capabilities: list[Capability] = []
+        for template, meta in guards:
+            capability = self._capability_for_guard(
+                meta.label, meta.description, template.substitute(**path_param_values)
+            )
+            if capability is not None:
+                capabilities.append(capability)
+        return capabilities
+
     def _capability_for_guard(
-        label_locale: LocaleString,
-        description_locale: LocaleString,
-        guard_template: str,
-        path_param_values: Annotated[
-            dict[str, str],
-            "Concrete values for the guard's ``{path_params}`` (e.g. ``{'agent_class': 'WeatherAgent'}``); "
-            "empty for guards without parameters.",
-        ],
-        subject: AccessChecker,
-        granted_rules: set[str],
-        ceiling: AccessChecker | None,
-        t: LocaleHandler,
+        self, label_locale: LocaleString, description_locale: LocaleString, guard: _Guard
     ) -> Capability | None:
         """Builds one capability row. ``granted`` comes from ``subject.has_access`` — the same call the
         endpoint's guard makes — so the row matches enforcement (sysadmin short-circuit and ceiling included).
 
-        A guard containing ``?`` (a ``?>``/``?*`` existence query) has no single satisfying rule, so the row is
-        read-only; a concrete guard *is* the grantable rule and is toggleable, and is ``locked`` when access
-        comes from a broader rule than the one this checkbox would add. Returns ``None`` when a ``ceiling`` is
-        given that cannot grant the capability — it is then hidden, never merely disabled (no information leak).
+        An existence-query guard (``?>``/``?*``) has no single satisfying rule, so the row is read-only; a
+        concrete guard *is* the grantable rule and is toggleable, and is ``locked`` when access comes from a
+        broader rule than the one this checkbox would add. Returns ``None`` when a ``ceiling`` is given that
+        cannot grant the capability — it is then hidden, never merely disabled (no information leak).
         """
-        guard = guard_template.format(**path_param_values)
-        if ceiling is not None and not ceiling.has_access(guard):
+        rule = str(guard)
+        if self._ceiling is not None and not self._ceiling.has_access(rule):
             return None
 
-        label = t.extract(label_locale)
-        description = t.extract(description_locale)
-        granted = subject.has_access(guard)
+        label = self._t.extract(label_locale)
+        description = self._t.extract(description_locale)
+        granted = self._subject.has_access(rule)
 
-        if "?" in guard_template:
+        if guard.is_existence_query:
             return Capability(
-                key=f"ro:{guard}",
+                key=f"ro:{rule}",
                 label=label,
                 description=description,
                 rule=None,
@@ -252,177 +308,152 @@ class AccessCapabilityService:
                 toggleable=False,
             )
         return Capability(
-            key=guard,
+            key=rule,
             label=label,
             description=description,
-            rule=guard,
+            rule=rule,
             granted=granted,
-            locked=granted and guard not in granted_rules,
+            locked=granted and rule not in self._granted_rules,
             toggleable=True,
         )
 
     @staticmethod
     def _prune(group: CapabilityGroup) -> bool:
         """Drops nested groups emptied by ceiling-filtering; returns whether ``group`` still shows anything."""
-        group.groups = [sub for sub in group.groups if AccessCapabilityService._prune(sub)]
+        group.groups = [sub for sub in group.groups if _CapabilityCatalogBuilder._prune(sub)]
         return bool(group.capabilities or group.groups)
 
-    @staticmethod
     async def _resource_groups(
-        service_name: str,
-        resource_guards: dict[str, AccessCatalogEntryMeta],
-        subject: AccessChecker,
-        granted_rules: set[str],
-        ceiling: AccessChecker | None,
-        t: LocaleHandler,
+        self, service_name: str, resource_guards: dict[_GuardTemplate, AccessCatalogEntryMeta]
     ) -> list[CapabilityGroup]:
         """Expands the controller's ``{path_param}`` guards over the concrete resources of enumerable services
-        (agents, processes, knowledge) into the class → instance group tree. Other services have no subtree."""
+        (agents, processes, knowledge) into the class → instance group tree. Services without a resolver have
+        no subtree."""
+        resolver = self._resource_resolvers().get(service_name)
+        if resolver is None:
+            return []
+        tree = await resolver()
+        return self._class_instance_groups(service_name, tree, resource_guards)
+
+    def _resource_resolvers(self) -> dict[str, Callable[[], Awaitable[_ResourceTree]]]:
+        """Maps a service to the loader that enumerates its resources. Adding a new enumerable service is a
+        new entry here plus its ``_*_resources`` method — no branching in ``_resource_groups``."""
+        return {
+            "agent": self._agent_resources,
+            "process": self._process_resources,
+            "knowledge": self._knowledge_resources,
+        }
+
+    async def _agent_resources(self) -> _ResourceTree:
         # Imported here, not at module load, to break the import cycle (these services import API DTOs that
         # transitively reach this module).
         from swiss_ai_hub.api.routes.agent.agent_service import AgentService
-        from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
+
+        classes = [
+            _ResourceNode(
+                agent_class.agent_class, self._t.extract(agent_class.name), getattr(agent_class, "icon", None)
+            )
+            for agent_class in await AgentService.get_agent_classes(self._t)
+        ]
+        instances_by_class: dict[str, list[_ResourceNode]] = {}
+        for instance in await AgentService.get_all_agent_instances(self._t):
+            instances_by_class.setdefault(instance.agent_class, []).append(
+                _ResourceNode(instance.agent_id, instance.name)
+            )
+        return _ResourceTree(classes, instances_by_class, ("agent_class", "agent_id"))
+
+    async def _process_resources(self) -> _ResourceTree:
         from swiss_ai_hub.api.routes.process.process_service import ProcessService
 
-        if service_name == "agent":
-            classes = [
-                _ResourceNode(agent_class.agent_class, t.extract(agent_class.name), getattr(agent_class, "icon", None))
-                for agent_class in await AgentService.get_agent_classes(t)
-            ]
-            instances_by_class: dict[str, list[_ResourceNode]] = {}
-            for instance in await AgentService.get_all_agent_instances(t):
-                instances_by_class.setdefault(instance.agent_class, []).append(
-                    _ResourceNode(instance.agent_id, instance.name)
-                )
-            return AccessCapabilityService._class_instance_groups(
-                service_name,
-                classes,
-                instances_by_class,
-                ("agent_class", "agent_id"),
-                resource_guards,
-                subject,
-                granted_rules,
-                ceiling,
-                t,
+        classes = [
+            _ResourceNode(
+                process_class.process_class, self._t.extract(process_class.name), getattr(process_class, "icon", None)
             )
-        if service_name == "process":
-            classes = [
-                _ResourceNode(
-                    process_class.process_class, t.extract(process_class.name), getattr(process_class, "icon", None)
-                )
-                for process_class in await ProcessService.get_process_classes(t)
-            ]
-            instances_by_class = {}
-            for instance in await ProcessService.get_all_process_instances(t):
-                instances_by_class.setdefault(instance.process_class, []).append(
-                    _ResourceNode(instance.process_id, instance.process_config.name)
-                )
-            return AccessCapabilityService._class_instance_groups(
-                service_name,
-                classes,
-                instances_by_class,
-                ("process_class", "process_id"),
-                resource_guards,
-                subject,
-                granted_rules,
-                ceiling,
-                t,
+            for process_class in await ProcessService.get_process_classes(self._t)
+        ]
+        instances_by_class: dict[str, list[_ResourceNode]] = {}
+        for instance in await ProcessService.get_all_process_instances(self._t):
+            instances_by_class.setdefault(instance.process_class, []).append(
+                _ResourceNode(instance.process_id, instance.process_config.name)
             )
-        if service_name == "knowledge":
-            databases = []
-            namespaces_by_database: dict[str, list[_ResourceNode]] = {}
-            for database in KnowledgeService.get_databases(t):
-                databases.append(_ResourceNode(database.name, database.display_name or database.name))
-                namespaces_by_database[database.name] = [
-                    _ResourceNode(namespace.name, namespace.display_name or namespace.name)
-                    for namespace in database.namespaces
-                ]
-            return AccessCapabilityService._class_instance_groups(
-                service_name,
-                databases,
-                namespaces_by_database,
-                ("database", "namespace"),
-                resource_guards,
-                subject,
-                granted_rules,
-                ceiling,
-                t,
-            )
-        return []
+        return _ResourceTree(classes, instances_by_class, ("process_class", "process_id"))
 
-    @staticmethod
+    async def _knowledge_resources(self) -> _ResourceTree:
+        from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
+
+        databases: list[_ResourceNode] = []
+        namespaces_by_database: dict[str, list[_ResourceNode]] = {}
+        for database in KnowledgeService.get_databases(self._t):
+            databases.append(_ResourceNode(database.name, database.display_name or database.name))
+            namespaces_by_database[database.name] = [
+                _ResourceNode(namespace.name, namespace.display_name or namespace.name)
+                for namespace in database.namespaces
+            ]
+        return _ResourceTree(databases, namespaces_by_database, ("database", "namespace"))
+
     def _class_instance_groups(
-        service_name: str,
-        classes: list[_ResourceNode],
-        instances_by_class: dict[str, list[_ResourceNode]],
-        param_names: Annotated[
-            tuple[str, str],
-            "The guard's (class-level, instance-level) path-parameter names, e.g. ``('agent_class', 'agent_id')``.",
-        ],
-        resource_guards: dict[str, AccessCatalogEntryMeta],
-        subject: AccessChecker,
-        granted_rules: set[str],
-        ceiling: AccessChecker | None,
-        t: LocaleHandler,
+        self, service_name: str, tree: _ResourceTree, resource_guards: dict[_GuardTemplate, AccessCatalogEntryMeta]
     ) -> list[CapabilityGroup]:
-        """Builds the two-level class → instance tree. Guards with one ``{param}`` are class-level capabilities
-        (e.g. "Create instance"); guards with two are instance-level (e.g. "Use this instance")."""
-        class_param, instance_param = param_names
-        class_guards = sorted((tmpl, meta) for tmpl, meta in resource_guards.items() if tmpl.count("{") == 1)
-        instance_guards = sorted((tmpl, meta) for tmpl, meta in resource_guards.items() if tmpl.count("{") == 2)
+        """Builds the two-level class → instance tree. Class-level guards (one ``{param}``) become the class
+        group's rows; instance-level guards (two) become each instance subgroup's rows."""
+        class_param, instance_param = tree.param_names
+        class_guards = sorted((template, meta) for template, meta in resource_guards.items() if template.is_class_level)
+        instance_guards = sorted(
+            (template, meta) for template, meta in resource_guards.items() if template.is_instance_level
+        )
 
-        groups: list[CapabilityGroup] = []
-        for class_node in classes:
-            # Class-level guards carry one path param (the class): substitute it and build a row per guard,
-            # dropping any the ceiling hides (`_capability_for_guard` returns None).
-            class_substitutions = {class_param: class_node.value}
-            class_capabilities: list[Capability] = []
-            for guard_template, meta in class_guards:
-                capability = AccessCapabilityService._capability_for_guard(
-                    meta.label,
-                    meta.description,
-                    guard_template,
-                    class_substitutions,
-                    subject,
-                    granted_rules,
-                    ceiling,
-                    t,
-                )
-                if capability is not None:
-                    class_capabilities.append(capability)
-            instance_groups: list[CapabilityGroup] = []
-            for instance_node in instances_by_class.get(class_node.value, []):
-                # Instance-level guards carry both the class and instance path params.
-                instance_substitutions = {class_param: class_node.value, instance_param: instance_node.value}
-                instance_capabilities: list[Capability] = []
-                for guard_template, meta in instance_guards:
-                    capability = AccessCapabilityService._capability_for_guard(
-                        meta.label,
-                        meta.description,
-                        guard_template,
-                        instance_substitutions,
-                        subject,
-                        granted_rules,
-                        ceiling,
-                        t,
-                    )
-                    if capability is not None:
-                        instance_capabilities.append(capability)
-                instance_groups.append(
-                    CapabilityGroup(
-                        key=f"{service_name}:{class_node.value}:{instance_node.value}",
-                        label=instance_node.label,
-                        capabilities=instance_capabilities,
-                    )
-                )
-            groups.append(
-                CapabilityGroup(
-                    key=f"{service_name}:{class_node.value}",
-                    label=class_node.label,
-                    icon=class_node.icon,
-                    capabilities=class_capabilities,
-                    groups=instance_groups,
-                )
+        groups = [
+            self._class_group(
+                service_name,
+                class_node,
+                tree.instances_by_class.get(class_node.value, []),
+                class_guards,
+                instance_guards,
+                class_param,
+                instance_param,
             )
+            for class_node in tree.classes
+        ]
         groups.sort(key=lambda group: group.label.lower())
         return groups
+
+    def _class_group(
+        self,
+        service_name: str,
+        class_node: _ResourceNode,
+        instance_nodes: list[_ResourceNode],
+        class_guards: list[tuple[_GuardTemplate, AccessCatalogEntryMeta]],
+        instance_guards: list[tuple[_GuardTemplate, AccessCatalogEntryMeta]],
+        class_param: str,
+        instance_param: str,
+    ) -> CapabilityGroup:
+        class_capabilities = self._capabilities_for(class_guards, **{class_param: class_node.value})
+        instance_groups = [
+            self._instance_group(service_name, class_node, instance_node, instance_guards, class_param, instance_param)
+            for instance_node in instance_nodes
+        ]
+        return CapabilityGroup(
+            key=f"{service_name}:{class_node.value}",
+            label=class_node.label,
+            icon=class_node.icon,
+            capabilities=class_capabilities,
+            groups=instance_groups,
+        )
+
+    def _instance_group(
+        self,
+        service_name: str,
+        class_node: _ResourceNode,
+        instance_node: _ResourceNode,
+        instance_guards: list[tuple[_GuardTemplate, AccessCatalogEntryMeta]],
+        class_param: str,
+        instance_param: str,
+    ) -> CapabilityGroup:
+        instance_capabilities = self._capabilities_for(
+            instance_guards, **{class_param: class_node.value, instance_param: instance_node.value}
+        )
+        return CapabilityGroup(
+            key=f"{service_name}:{class_node.value}:{instance_node.value}",
+            label=instance_node.label,
+            capabilities=instance_capabilities,
+        )

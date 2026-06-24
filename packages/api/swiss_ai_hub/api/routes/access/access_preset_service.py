@@ -15,11 +15,11 @@ class _PresetDefinition(NamedTuple):
 _PRESET_DEFINITIONS: list[_PresetDefinition] = [
     _PresetDefinition("aihub.user.>", "user_everything", "everything"),
     _PresetDefinition("aihub.admin.>", "admin_everything", "everything"),
-    _PresetDefinition("aihub.user.agent.>", "use_all_agents", "agents"),
-    _PresetDefinition("aihub.admin.agent.>", "manage_all_agents", "agents"),
-    _PresetDefinition("aihub.user.process.>", "use_all_processes", "processes"),
-    _PresetDefinition("aihub.admin.process.>", "manage_all_processes", "processes"),
-    _PresetDefinition("aihub.admin.knowledge.>", "manage_knowledge", "knowledge"),
+    _PresetDefinition("aihub.user.agent.>", "user_all_agents", "agents"),
+    _PresetDefinition("aihub.admin.agent.>", "admin_all_agents", "agents"),
+    _PresetDefinition("aihub.user.process.>", "user_all_processes", "processes"),
+    _PresetDefinition("aihub.admin.process.>", "admin_all_processes", "processes"),
+    _PresetDefinition("aihub.admin.knowledge.>", "admin_knowledge", "knowledge"),
 ]
 
 
