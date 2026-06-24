@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.301.7] - 2026-06-24 - Enhancements to Data Handling and Integration Consistency
+
+### Fixed
+
+- 🐛 **Improved Dataset Query Robustness:** Enhanced the dataset fetching logic to prevent errors by ensuring a dataset
+  ID is present before attempting to retrieve data, leading to a more stable user experience.
+
+### Refactor
+
+- 🧹 **Standardized Langfuse Configuration:** Aligned the Langfuse integration with the latest SDK conventions by
+  updating the host parameter name, improving internal consistency and maintainability.
+
+______________________________________________________________________
+
 ## [v0.301.6] - 2026-06-23 - Improved OpenWebUI SCIM Client for Complete Data Sync
 
 ### Fixed
