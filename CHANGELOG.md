@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.303.1] - 2026-06-24 - Superuser Configuration Streamlining
+
+### Changed
+
+- 📄 **Clarified Superuser Account Configuration:** The platform's superuser account now consistently uses
+  `SUPERUSER_EMAIL` as its Keycloak username, aligning with Keycloak's `registrationEmailAsUsername` enforcement for
+  login. The `SUPERUSER_USERNAME` variable has been re-designated as a log-only label for internal tracking, removing
+  its previous role in setting the Keycloak username. This update simplifies superuser provisioning and enhances clarity
+  in documentation across deployment guides and access control sections.
+
+______________________________________________________________________
+
 ## [v0.303.0] - 2026-06-24 - Enhanced Image Generation Capabilities with Cloud Integration
 
 ### Added

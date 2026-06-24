@@ -169,9 +169,10 @@ seine Aktionen in Langfuse nachvollziehbar bleiben und sie in Mandanten-Mitglied
 erscheinen.
 
 Weisen Sie die Keycloak Realm-Rolle `AIHubSysAdmin` direkt oder über Identity Provider Mapper zu. Die Plattform legt
-auch ein dediziertes Superuser-Konto aus `SUPERUSER_USERNAME` / `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` an und
-materialisiert `SUPERUSER_TOKEN` als Bearer-Token für diesen Benutzer, damit interne Services die API ohne
-Browsersitzung aufrufen können.
+auch ein dediziertes Superuser-Konto aus `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` an (der Benutzername wird gleich
+`SUPERUSER_EMAIL` gesetzt, sodass sich dieses Konto mit seiner E-Mail-Adresse anmeldet) und materialisiert
+`SUPERUSER_TOKEN` als Bearer-Token für diesen Benutzer, damit interne Services die API ohne Browsersitzung aufrufen
+können.
 
 Sparsam verwenden – der Sysadmin-Zugriff dient der Plattformadministration, nicht dem Tagesgeschäft.
 

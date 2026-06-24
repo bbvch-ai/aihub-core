@@ -161,8 +161,9 @@ UI. Every sysadmin is a real Keycloak user with a real user id, so their actions
 appear in tenant member listings like any other user.
 
 Assign the `AIHubSysAdmin` realm role in Keycloak directly or via identity provider mappers. The platform also seeds a
-dedicated Superuser account from `SUPERUSER_USERNAME` / `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` and materializes
-`SUPERUSER_TOKEN` as a bearer token for that user so internal services can call the API without a browser session.
+dedicated Superuser account from `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` (the username is seeded equal to
+`SUPERUSER_EMAIL`, so this account logs in with its email) and materializes `SUPERUSER_TOKEN` as a bearer token for that
+user so internal services can call the API without a browser session.
 
 Use sparingly — sysadmin access exists for platform administration, not day-to-day operations.
 

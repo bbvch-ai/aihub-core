@@ -11,10 +11,12 @@ class SuperuserSettings(EnvironmentSettings):
     """
     Configuration for the platform superuser.
 
-    The superuser is an ordinary Keycloak-seeded user (``SUPERUSER_USERNAME`` /
-    ``SUPERUSER_EMAIL``) whose realm roles — including ``AIHubSysAdmin`` — grant
-    sysadmin access through the normal OAuth2 flow. No special auth handler is
-    involved; there is no synthetic identity or "virtual tenant".
+    The superuser is an ordinary Keycloak-seeded user whose username is seeded
+    equal to ``SUPERUSER_EMAIL`` (the realm enforces ``registrationEmailAsUsername``,
+    so login is by email — see ADR ``2026_04_14_superuser_via_keycloak_realm_role``).
+    Its realm roles — including ``AIHubSysAdmin`` — grant sysadmin access through the
+    normal OAuth2 flow. No special auth handler is involved; there is no synthetic
+    identity or "virtual tenant".
 
     ``SUPERUSER_TOKEN`` is a static bearer token that internal services
     (OpenWebUI, RAG, images, audio, the external document loader, the Langfuse
@@ -27,7 +29,15 @@ class SuperuserSettings(EnvironmentSettings):
 
     model_config = EnvironmentSettings.create_settings_config("SUPERUSER_")
 
-    USERNAME: Annotated[str, Field(description="Keycloak username of the seeded superuser.")]
+    USERNAME: Annotated[
+        str,
+        Field(
+            description=(
+                "Log-only label for the seeded superuser in API startup logs. Not persisted in Keycloak — the "
+                "Keycloak username is SUPERUSER_EMAIL (registrationEmailAsUsername), so login is by email."
+            ),
+        ),
+    ]
     EMAIL: Annotated[str, Field(description="Keycloak email used to look up the superuser.")]
     ROLES_JSON: Annotated[
         str,
