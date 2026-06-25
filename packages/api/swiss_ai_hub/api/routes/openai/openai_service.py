@@ -19,6 +19,7 @@ from opentelemetry.propagate import inject
 from pydantic import BaseModel
 from pydub import AudioSegment
 from starlette.responses import StreamingResponse
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
@@ -183,6 +184,11 @@ class OpenaiService:
         Delegates to the underlying chat model; supports both synchronous and streaming responses.
         """
         await OpenaiService.get_model(model_name)  # Ensures model exists
+        capability, _, name = model_name.partition("/")
+        if not AccessChecker.from_user(user).has_access_to_model(capability, name):
+            raise HTTPException(
+                status_code=403, detail=f"User {user.id} does not have permission to access model {model_name}"
+            )
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
@@ -250,10 +256,17 @@ class OpenaiService:
                 user=user,
                 t=t,
             )
-        except HTTPException:
-            pass
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise
 
         agent_class, agent_id = model_name.split("/")
+        if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
+            raise HTTPException(
+                status_code=403,
+                detail=f"User {user.id} does not have permission to access assistant {model_name}",
+            )
+
         agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
