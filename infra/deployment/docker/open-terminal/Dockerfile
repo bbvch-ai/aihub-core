@@ -5,7 +5,7 @@
 # already ships Python with pandas, openpyxl, python-docx, weasyprint, matplotlib
 # and xlsxwriter — only reportlab and fpdf2 are missing, so we add just those.
 # Everything installs from binary wheels at build time, so the running container
-# needs NO outbound internet (it stays network-isolated on `backend`).
+# needs NO outbound internet (it stays network-isolated on `code-sandbox`).
 #
 # The full variant (`0.11.34`, not `0.11.34-slim`) is used so OPEN_TERMINAL_MULTI_USER
 # works: it ships sudo + useradd and runs as the non-root `user` with passwordless
