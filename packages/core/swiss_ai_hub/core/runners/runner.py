@@ -98,6 +98,17 @@ class Runner(abc.ABC):
 
         return app
 
+    @property
+    def platform_api_base_url(self) -> str | None:
+        """Internal base URL of the authoritative platform API, or ``None`` when this runner IS it.
+
+        A runner that serves the full platform surface (the main API) returns ``None`` — endpoints
+        whose answer depends on the *deployed* controller set build it locally. A runner that mounts
+        only a curated subset (the sysadmin plane) overrides this to point at the main API, so those
+        endpoints proxy to it rather than report a misleadingly narrow catalog.
+        """
+        return None
+
     def mount(self, *controllers: Controller) -> Self:
         """
         Mounts one or more controllers (each subclass of Controller) onto the API application.

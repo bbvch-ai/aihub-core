@@ -621,6 +621,22 @@ role:
   access_rules_help_agent_instances: All instances of MyAgent
   access_rules_help_service: Knowledge service
   access_rules_help_admin: Admin access to everything
+  presets_button: Presets
+  presets_title: Access presets
+  preset_category_everything: Everything
+  preset_category_agents: Agents
+  preset_category_processes: Processes
+  preset_category_knowledge: Knowledge
+  capabilities_title: What these rules grant
+  capabilities_subtitle: Tick a capability to grant it. Locked items are covered by
+    a broader rule.
+  capabilities_readonly_title: Effective access
+  capabilities_readonly_subtitle: What this user can do, based on their roles and
+    within the tenant's limits.
+  capabilities_empty: This user has no access.
+  capability_locked: Granted by a broader rule — remove that rule to change this.
+  capability_readonly: No single rule grants this on its own — use a preset or a broader
+    rule.
   pattern_help_intro: 'Patterns use wildcards to match agents:'
   pattern_help_all: All agents
   pattern_help_wildcard: All instances of MyAgent

@@ -626,6 +626,23 @@ role:
   access_rules_help_agent_instances: Tutte le istanze di MyAgent
   access_rules_help_service: Servizio Knowledge
   access_rules_help_admin: Accesso admin a tutto
+  presets_button: Modelli
+  presets_title: Modelli di accesso
+  preset_category_everything: Tutto
+  preset_category_agents: Agenti
+  preset_category_processes: Processi
+  preset_category_knowledge: Conoscenza
+  capabilities_title: Cosa concedono queste regole
+  capabilities_subtitle: Seleziona una capacità per concederla. Gli elementi bloccati
+    sono coperti da una regola più ampia.
+  capabilities_readonly_title: Accesso effettivo
+  capabilities_readonly_subtitle: Cosa può fare questo utente, in base ai suoi ruoli
+    e nei limiti del tenant.
+  capabilities_empty: Questo utente non ha accesso.
+  capability_locked: Concesso da una regola più ampia — rimuovi quella regola per
+    cambiare questo.
+  capability_readonly: Nessuna singola regola lo concede — usa un modello o una regola
+    più ampia.
   pattern_help_intro: 'I modelli usano caratteri jolly per gli agenti:'
   pattern_help_all: Tutti gli agenti
   pattern_help_wildcard: Tutte le istanze di MyAgent

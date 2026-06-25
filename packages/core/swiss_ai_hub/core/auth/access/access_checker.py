@@ -38,6 +38,11 @@ class AccessChecker:
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match, user will enter with AccessLevel.ACCESS_ADMIN
     """
 
+    # Public aliases of the permission-template prefixes, so callers building or recognizing
+    # rules (e.g. the access-capability catalog) reuse the grammar instead of restating literals.
+    USER_PREFIX = _USER_PREFIX
+    ADMIN_PREFIX = _ADMIN_PREFIX
+
     def __init__(self, user_access_rules: list[str], tenant_access_rules: list[str], is_sys_admin: bool = False):
         # Sysadmin short-circuit — the ``AIHubSysAdmin`` realm role grants implicit
         # admin access to every resource in every tenant. This sidesteps the normal
@@ -283,6 +288,26 @@ class AccessChecker:
         """Convenience method to check if a user has access to a specific resource."""
         return self.access_level(permission_template) != AccessLevel.ACCESS_DENIED
 
+    @staticmethod
+    def process_user_rule(process_class: str, process_id: str) -> str:
+        """Canonical user-level permission rule for a specific process instance."""
+        return f"{_USER_PREFIX}process.{process_class}.{process_id}"
+
+    @staticmethod
+    def process_admin_rule(process_class: str, process_id: str) -> str:
+        """Canonical admin-level permission rule for a specific process instance."""
+        return f"{_ADMIN_PREFIX}process.{process_class}.{process_id}"
+
+    @staticmethod
+    def service_user_rule(service_name: str) -> str:
+        """Canonical user-level permission rule for a platform service."""
+        return f"{_USER_PREFIX}service.{service_name}"
+
+    @staticmethod
+    def service_admin_rule(service_name: str) -> str:
+        """Canonical admin-level permission rule for a platform service."""
+        return f"{_ADMIN_PREFIX}service.{service_name}"
+
     def access_level_for_agent(self, agent_class: str, agent_id: str) -> AccessLevel:
         """Convenience method to check access level for a specific agent."""
         return self.access_level(self.agent_instance_user_rule(agent_class, agent_id))
@@ -293,7 +318,7 @@ class AccessChecker:
 
     def has_access_to_agent_class(self, agent_class: str) -> bool:
         """Convenience method to check access level for a specific agent."""
-        return self.access_level(f"aihub.user.agent.{agent_class}.?*") != AccessLevel.ACCESS_DENIED
+        return self.access_level(f"{_USER_PREFIX}agent.{agent_class}.?*") != AccessLevel.ACCESS_DENIED
 
     def access_level_for_model(self, model_capability: str, model_name: str) -> AccessLevel:
         """Convenience method to check access level for a specific model."""
@@ -308,7 +333,7 @@ class AccessChecker:
 
     def access_level_for_process(self, process_class: str, process_id: str) -> AccessLevel:
         """Convenience method to check access level for a specific process."""
-        return self.access_level(f"aihub.user.process.{process_class}.{process_id}")
+        return self.access_level(self.process_user_rule(process_class, process_id))
 
     def has_access_to_process(self, process_class: str, process_id: str) -> bool:
         """Convenience method to check access level for a specific process."""
@@ -316,11 +341,11 @@ class AccessChecker:
 
     def has_access_to_process_class(self, process_class: str) -> bool:
         """Convenience method to check access level for a specific process."""
-        return self.access_level(f"aihub.user.process.{process_class}.?*") != AccessLevel.ACCESS_DENIED
+        return self.access_level(f"{_USER_PREFIX}process.{process_class}.?*") != AccessLevel.ACCESS_DENIED
 
     def access_level_for_service(self, service_name) -> AccessLevel:
         """Convenience method to check access level for a specific service."""
-        return self.access_level(f"aihub.user.service.{service_name}")
+        return self.access_level(self.service_user_rule(service_name))
 
     def has_access_to_service(self, service_name) -> bool:
         """Convenience method to check access level for a specific service."""

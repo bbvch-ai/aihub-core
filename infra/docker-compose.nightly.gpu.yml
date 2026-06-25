@@ -2655,6 +2655,7 @@ services:
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: https://sysadmin.${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: true
+      AIHUB_INTERNAL_API_BASE_URL: http://api:8000
 
       # Mongo DB — durable storage for tenant metadata, roles, dashboards
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/

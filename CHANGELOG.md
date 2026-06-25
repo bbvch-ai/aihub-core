@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.304.0] - 2026-06-25 - Empowering Access Management: Introducing the Dynamic Capability Catalog
+
+### Added
+
+- ✨ **Dynamic Access Capability Catalog**: Introduced a powerful new system that generates a human-readable catalog of
+  grantable capabilities directly from API endpoint permissions at runtime. This ensures that the displayed permissions
+  always match what the system enforces, eliminating drift and simplifying authorization management for operators.
+- 🔑 **Access Presets**: Added a curated library of common access rule combinations (presets) to facilitate one-click
+  assignment of broad permissions like "Use everything" or "Administer all agents."
+- 🦾 **`@access_catalog_entry` Decorator**: New decorator for API controllers, allowing endpoints to easily opt into the
+  access capability catalog by providing localized labels and descriptions. The actual access rule is derived from the
+  endpoint's `user_with_permission` guard, making divergence structurally impossible.
+- ⚙️ **`AIHUB_INTERNAL_API_BASE_URL` Configuration**: Introduced a new environment variable and Docker Compose
+  configuration to specify the internal base URL of the main platform API. This enables server-to-server communication,
+  crucial for the sysadmin plane to proxy the full access capability catalog.
+- 🧭 **Canonical Access Rule Builders**: Added static helper methods (`process_user_rule`, `service_admin_rule`, etc.) to
+  `AccessChecker` for consistently building common permission templates, improving clarity and reducing errors.
+- 📄 **New Architecture Decision Record (ADR)**: Documented the rationale and design behind the "Runtime-Derived Access
+  Capability Catalog" to provide comprehensive context on this significant feature.
+- 🌐 **Comprehensive Localization for Access Management**: Added extensive internationalization (i18n) support for the
+  new access capabilities and presets, ensuring a localized experience for role and tenant-ceiling editors.
+- 🧪 **Dedicated Access Capability Tests**: Introduced a new suite of unit and API tests to thoroughly validate the
+  functionality and security of the access capability catalog, including sysadmin and tenant ceiling considerations.
+
+### Changed
+
+- 🔄 **Redesigned Role and User Access Views**: The UI for managing roles and viewing user access now leverages the new
+  dynamic capability catalog, providing a detailed, hierarchical, and interactive representation of permissions instead
+  of a flat list of rules.
+- 🖼️ **User Access Information**: The `UserWithAccessDTO` now includes the user's resolved `access_rules` and utilizes
+  the new `AccessCatalogService` to provide a more granular and accurate overview of effective access.
+- 📚 **Documentation Updates**: Clarified guidelines for creating epics in the `write-issue` skill documentation and
+  updated `CLAUDE.md` regarding generated files, reflecting recent development practices.
+- 📝 **Agent, Process, Knowledge, and Memory Endpoints**: Existing controller methods across various services (e.g.,
+  Agent, Process, Knowledge, Organization Memory, User Memory) have been updated with `@access_catalog_entry` decorators
+  to expose their operations in the new access capability catalog.
+
+### Refactor
+
+- 🧹 **Unified User Access Logic**: Refactored the internal logic for building user access information, moving it into a
+  dedicated `AccessCatalogService` to centralize and improve the consistency of access evaluation across different UI
+  components.
+- ⚙️ **Core AccessChecker Enhancements**: Updated `AccessChecker` to use new canonical rule-building methods, improving
+  maintainability and consistency in permission checks.
+
+______________________________________________________________________
+
 ## [v0.303.1] - 2026-06-24 - Superuser Configuration Streamlining
 
 ### Changed

@@ -51,6 +51,7 @@
       <AccessRulesEditor
         v-model:rules="accessRules"
         :initial-rules="[]"
+        :restrict-to-tenant="false"
       />
 
       <div class="flex justify-end gap-2">

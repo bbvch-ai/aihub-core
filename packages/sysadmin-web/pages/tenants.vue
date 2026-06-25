@@ -49,7 +49,7 @@
           v-model:visible="configureModalOpen"
           modal
           :header="t('tenant_admin.configure.title')"
-          class="w-full max-w-xl"
+          class="w-full max-w-2xl"
         >
           <TenantAdminConfigure
             @close="configureModalOpen = false"

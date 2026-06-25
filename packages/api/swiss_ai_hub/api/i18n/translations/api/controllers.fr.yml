@@ -35,6 +35,10 @@ openai:
 process:
   name: Flux de travail
   description: Gérez les processus métier automatisés
+access:
+  name: Catalogue d'accès
+  description: Catalogue des capacités d'accès et des modèles pour créer des règles
+    d'accès
 role:
   name: Rôles d'utilisateur
   description: Configurez les autorisations d'accès et les rôles
