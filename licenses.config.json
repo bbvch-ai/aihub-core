@@ -258,7 +258,7 @@
       "service": "open-terminal",
       "license": "MIT",
       "status": "✅",
-      "notes": "Standard MIT (License-Expression: MIT in the wheel; LICENSE file © 2026 Open WebUI Inc.). Unlike open-webui, open-terminal carries NO 'Open WebUI' branding clause and NO end-user threshold — permissive, OSI-approved."
+      "notes": "Permissive license"
     },
     {
       "service": "open-webui",
