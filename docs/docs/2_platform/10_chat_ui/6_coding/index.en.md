@@ -8,9 +8,13 @@ OpenWebUI integrates with **Open Terminal** — a sandboxed Linux environment wi
 (pandas, openpyxl, python-docx, reportlab, fpdf2, weasyprint, matplotlib, xlsxwriter). Code runs in an isolated per-user
 environment; files created during execution appear in OpenWebUI's Files panel for download.
 
-::: warning
-Code execution via Open Terminal is available for **plain LLM models only** (those with native function calling
-enabled). AI-Hub agent chats do not currently support code execution — this is a planned follow-up.
+::: warning Requirements & current limitations
+- **Plain LLM models only.** Code execution is driven by OpenWebUI's native `execute_code` tool, so it works only with
+  plain chat models that **support function (tool) calling**, and **Native Function Calling must be enabled** for the
+  model (Admin → Settings → Models → the model's advanced params). Models without function-calling support cannot
+  trigger the sandbox.
+- **AI-Hub agents are not supported yet.** Agent chats own their own generation and do not expose OpenWebUI's
+  tool-calling handshake, so code execution does **not** engage for them. This is a planned follow-up.
 :::
 
 There are two main ways to use code execution.
@@ -58,3 +62,20 @@ When the code has run through the result is printed out.
 
 Files written during code execution (reports, spreadsheets, charts, etc.) automatically appear in OpenWebUI's Files
 panel, where users can download them. After creating a file the model will confirm the filename.
+
+## Isolation and limitations
+
+::: warning Shared-container, per-user isolation
+Open Terminal runs in **a single shared container** with `OPEN_TERMINAL_MULTI_USER` enabled: each user gets a separate
+Linux account and home directory (`/home/<user>`), and standard filesystem permissions keep one user's files private
+from another. This is **per-user isolation inside one container**, not a container-per-user model — all users share the
+same kernel, CPU, memory, `/tmp`, and process list. It suits small, trusted groups; it is **not** a hard multi-tenant
+security boundary. Treat the sandbox as a convenience for collaborators, not as a barrier between mutually untrusted
+parties.
+:::
+
+::: tip Stored files grow over time
+Each user's generated files persist on the host (the `open-terminal` `/home` volume) and are **not** cleaned up
+automatically — there is currently no retention or quota policy. Disk usage grows with use; operators should monitor the
+volume and prune old per-user data manually until an automated cleanup/TTL is added.
+:::

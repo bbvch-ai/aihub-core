@@ -256,9 +256,9 @@
     },
     {
       "service": "open-terminal",
-      "license": "Open WebUI License (modified BSD-3-Clause)",
-      "status": "⚠️",
-      "notes": "Same custom license as open-webui: BSD-3-Clause base + 'Open WebUI' branding clause, exempt for deployments serving ≤50 end-users in any rolling 30-day window. Not OSI-approved."
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Standard MIT (License-Expression: MIT in the wheel; LICENSE file © 2026 Open WebUI Inc.). Unlike open-webui, open-terminal carries NO 'Open WebUI' branding clause and NO end-user threshold — permissive, OSI-approved."
     },
     {
       "service": "open-webui",

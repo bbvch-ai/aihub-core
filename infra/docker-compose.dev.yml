@@ -1195,7 +1195,7 @@ services:
     networks:
       - backend
 
-  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
+  # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
     image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
@@ -1204,13 +1204,8 @@ services:
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
     environment:
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
-      # Per-user home isolation (/home/<user>). The full image variant supports this
-      # (ships sudo + useradd, runs as the non-root `user` with passwordless sudo).
-      OPEN_TERMINAL_MULTI_USER: 'true'
-      # Guidance injected into the model's tool context (overrides the generic
-      # default). Tells the model that created files surface in OpenWebUI's Files
-      # panel for download, and to use the read-file tool (which extracts text)
-      # for documents instead of display — both observed gaps with smaller models.
+      OPEN_TERMINAL_MULTI_USER: 'true'  # Per-user home directories (/home/<user>)
+      # Tool-context guidance: files surface in the Files panel; use read-file for documents
       OPEN_TERMINAL_SYSTEM_PROMPT: >-
         You have access to a sandboxed Linux computer with Python and common
         document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
@@ -1222,14 +1217,11 @@ services:
         filename. To read the contents of a document such as a PDF, DOCX or XLSX,
         use the read-file tool, which extracts the text; do not use display for that.
     healthcheck:
+      # No documented health endpoint; probe the Swagger /docs route instead
       test: [CMD, curl, -f, http://localhost:8000/docs]
       interval: 15s
       timeout: 3s
-      # Generous cold-start window: the ~1.2 GB image after `docker compose pull` on a
-      # slow disk can miss a tighter window and flap unhealthy on first boot (open-webui
-      # gates on this via depends_on: service_healthy). Open Terminal documents no health
-      # endpoint, so we probe the Swagger /docs route (200 on the pinned 0.11.34 tag).
-      start_period: 40s
+      start_period: 40s  # Generous cold-start for the ~1.2 GB image
       retries: 3
     logging:
       driver: json-file
@@ -1237,7 +1229,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
+      - code-sandbox  # Isolated single-tenant zone (callers join it to reach this sandbox)
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
@@ -1535,12 +1527,8 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
       # --- Code Execution (Open Terminal) ---
-      # OpenWebUI orchestrates the native execute_code tool against this connection.
-      # Works for plain LLM models (native function calling); AI-Hub agent support is a follow-up.
-      # access_grants.permission "read" is the connection-ACCESS grant from Open Terminal's
-      # documented connecting example (who may use the connection) — it is NOT a filesystem
-      # mode; do not "fix" it to "write". OPEN_TERMINAL_API_KEY must be alphanumeric/hex: it is
-      # interpolated into this single-quoted JSON literal, so a " or \ in the key corrupts it.
+      # Native execute_code connection (plain LLM models). "permission":"read" is the
+      # connection-access grant, NOT a filesystem mode; key must be alphanumeric/hex (single-quoted JSON).
       TERMINAL_SERVER_CONNECTIONS: '[{"id":"open-terminal","name":"Open Terminal","enabled":true,"url":"http://localhost:8200","key":"${OPEN_TERMINAL_API_KEY}","auth_type":"bearer","config":{"access_grants":[{"principal_type":"user","principal_id":"*","permission":"read"}]}}]'
 
       # --- Vector DB ---
@@ -1686,6 +1674,10 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: 'false'
+  # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
+  code-sandbox:
+    name: code-sandbox
+    driver: bridge
 # ===================================================================
 # Named Volumes
 # ===================================================================

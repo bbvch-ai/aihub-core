@@ -2,16 +2,16 @@
 
 ## Context
 
-OpenWebUI's code execution and code interpreter features ran through the **Jupyter** service
-(`minimal-notebook`). Three problems motivated a change (issue #1117):
+OpenWebUI's code execution and code interpreter features ran through the **Jupyter** service (`minimal-notebook`). Three
+problems motivated a change (issue #1117):
 
 - **Weak isolation.** Jupyter sits on the `backend` network alongside application services and executes user code in a
   single, shared kernel. The network isolation policy permits `backend → data`, so a successful container breakout has a
   path toward NATS and the databases — an unacceptable blast radius for arbitrary user-submitted code.
 - **No file delivery.** The Jupyter engine has no mechanism to hand a generated file (doc/excel/pdf) to the end user;
   the model emits `sandbox:/…` links that do not resolve, so files were only reachable from the Jupyter UI.
-- **Upstream direction.** OpenWebUI now classifies Jupyter as a *legacy* code-execution engine and recommends
-  **Open Terminal**, its sandboxed, natively-integrated runtime with a file browser.
+- **Upstream direction.** OpenWebUI now classifies Jupyter as a *legacy* code-execution engine and recommends **Open
+  Terminal**, its sandboxed, natively-integrated runtime with a file browser.
 
 ## Decision Drivers
 
@@ -25,14 +25,13 @@ OpenWebUI's code execution and code interpreter features ran through the **Jupyt
 
 Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 
-- **Image** — a project-managed `open-terminal-office:0.11.34`, built `FROM ghcr.io/open-webui/open-terminal:0.11.34`
-  plus `reportlab` and `fpdf2` (the base already ships pandas, openpyxl, python-docx, weasyprint, matplotlib,
-  xlsxwriter). All libraries install from binary wheels at build time, so the running container needs **no outbound
-  internet**. Published out-of-band like the postgres/playwright images
-  (`make -C infra/deployment build-and-push-open-terminal-image`).
-- **Isolation** — `OPEN_TERMINAL_MULTI_USER=true` for per-user home directories; attached to the **`backend` network
-  only** (no `data`/NATS path — verified: NATS is unreachable from the container); host port exposed only in
-  `dev`/`local`/`build`.
+(the base already ships pandas, openpyxl, python-docx, weasyprint, matplotlib, xlsxwriter)
+
+- **Isolation** — `OPEN_TERMINAL_MULTI_USER=true` for per-user home directories; attached to a **dedicated
+  `code-sandbox` network only**, whose sole residents are the sandbox and its callers (`open-webui`; AI-Hub agents as a
+  follow-up). Because Docker networks are bidirectional, keeping the sandbox off `backend` is what severs lateral reach
+  to the application/processing services as well as `data`/NATS. The network is `internal: true` in non-dev stages (no
+  outbound internet); host port exposed only in `dev`/`local`/`build`.
 - **Wiring** — OpenWebUI connects via the Integrations env `TERMINAL_SERVER_CONNECTIONS` (bearer auth with
   `OPEN_TERMINAL_API_KEY`), replacing the Jupyter `CODE_EXECUTION_*` / `CODE_INTERPRETER_*` engine variables.
 - **Scope — plain LLM models only.** OpenWebUI orchestrates Open Terminal through native `execute_code` tool-calling;
@@ -48,22 +47,35 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 
 ## Consequences
 
-- **Positive** — the code-execution sandbox can no longer reach NATS/databases and isolates users per home directory;
-  generated files are downloadable via Open Terminal's file browser; the integration is the OpenWebUI-native, maintained
-  path; the image is reproducible and requires no outbound internet to function (libraries are baked in at build time).
+- **Positive** — the code-execution sandbox sits alone in `code-sandbox` and can reach only its callers, so a breakout
+  reaches neither NATS/databases nor the other `backend` services (LiteLLM, vLLM, MinerU, Speaches, Presidio, OTEL); it
+  isolates users per home directory; generated files are downloadable via Open Terminal's file browser; the integration
+  is the OpenWebUI-native, maintained path; the image is reproducible and requires no outbound internet to function
+  (libraries are baked in at build time).
 - **Trade-offs**
   - Only plain-LLM chats gain code execution this iteration (agent support deferred); native function calling must be
     enabled per model and multi-step reliability varies by model.
-  - **Lateral reach within `backend`.** "No NATS/database access" holds, but a sandbox breakout can still reach other
-    `backend` services (LiteLLM, vLLM, MinerU, Speaches, Presidio, OTEL) over their internal ports. A dedicated
-    code-sandbox network attached only to `open-webui ↔ open-terminal` would make it a true single-tenant zone —
-    tracked as a follow-up.
-  - **"No egress" is an image property, not a network guarantee.** The image needs no internet, but in `dev` the
-    `backend` network is non-internal, so code in the sandbox can still reach the public internet. Egress can be
-    firewalled per-deployment via `OPEN_TERMINAL_ALLOWED_DOMAINS` if required.
-  - **Cross-user side channels.** `OPEN_TERMINAL_MULTI_USER=true` isolates per-user *files*, but users still share CPU,
-    memory, `/tmp`, and the process list on one host — accepted under the current threat model.
-  - **`/home` persistence.** `${VOLUME_ROOT}/open-terminal:/home` accumulates per-user artifacts on the host with no
-    retention/quota policy yet — a janitor/TTL is a follow-up.
+  - **Agents become a bridge node (future).** When the agents service later joins `code-sandbox` to use the sandbox, it
+    will sit on `code-sandbox` + `backend` + `data`. At the network layer the sandbox still cannot ride *through* an
+    agent to `backend`, but a compromised agent process would be a pivot point — so `code-sandbox` membership is kept
+    minimal (sandbox + callers only).
+  - **Dev stays non-internal.** `code-sandbox` is `internal: true` only in non-dev stages; in `dev` it is non-internal
+    for localhost access, so the no-internet / no-lateral-reach guarantees apply to `local`/`build`/`nightly`/`latest`,
+    not `dev`. Egress can additionally be firewalled per-deployment via `OPEN_TERMINAL_ALLOWED_DOMAINS` if required.
+  - **Single shared container, per-user isolation only.** `OPEN_TERMINAL_MULTI_USER=true` gives each user a separate
+    Linux account and home directory with standard filesystem permissions, but it is **one shared container** — all
+    users share the same kernel, CPU, memory, `/tmp`, and process list. This is a convenience for small, trusted groups,
+    not a hard multi-tenant boundary; a container-per-user model would be required for that. Accepted under the current
+    threat model.
+  - **`/home` persistence and unbounded growth.** `${VOLUME_ROOT}/open-terminal:/home` accumulates per-user artifacts on
+    the host with no retention/quota policy yet, so disk usage grows over time — operators must monitor and prune
+    manually until a janitor/TTL is added (a follow-up).
   - The image is ~1.19 GB; the Jupyter container keeps running, unused, until a later cleanup. See network isolation
     (`2025_12_22_docker_network_isolation.md`).
+- **Deployment prerequisite** — publish `open-terminal-office:0.11.34` to ghcr **before any non-dev stage pulls it**
+  (`make -C infra/deployment build-and-push-open-terminal-image`). `nightly`/`latest` pull this exact tag; if it is
+  absent, `open-webui`'s `depends_on: open-terminal (service_healthy)` gate fails and the stack will not start. Bump the
+  tag deliberately and re-publish whenever the base tag or baked-in libraries change.
+- **Licensing** — Open Terminal is **MIT** (standard, OSI-approved; no branding clause and no end-user threshold). This
+  is distinct from `open-webui`, whose modified-BSD "Open WebUI License" carries the branding/≤50-user clause — that
+  obligation comes from open-webui, not from adding this sandbox.

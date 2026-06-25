@@ -278,7 +278,7 @@ model {
       technology "Open Terminal"
       icon bootstrap:terminal
       style { color gray }
-      description "Code execution sandbox for OpenWebUI (plain LLM models). Per-user isolation; generated files surfaced to users via OpenWebUI's Files panel. Backend-network only — no data/NATS path."
+      description "Code execution sandbox for OpenWebUI (plain LLM models). Per-user isolation; generated files surfaced to users via OpenWebUI's Files panel. Lives alone in the dedicated code-sandbox network (callers only) — no path to backend/data/NATS."
     }
 
     jupyter = container "Jupyter" {

@@ -57,9 +57,10 @@ Langfuse adds AI-specific observability on top — full prompt/response capture,
 tracing, and evaluation datasets. Both integrate via the same trace context, providing end-to-end visibility from user
 request to LLM response.
 
-**Network Isolation**: Docker Compose defines five network zones: `proxy` (external ingress via Traefik), `backend`
-(application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), and `egress`
-(outbound internet with inter-container communication disabled). Services are assigned only the networks they require.
+**Network Isolation**: Docker Compose defines six network zones: `proxy` (external ingress via Traefik), `backend`
+(application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), `egress` (outbound
+internet with inter-container communication disabled), and `code-sandbox` (single-tenant zone for the `open-terminal`
+code-execution sandbox plus exactly its callers). Services are assigned only the networks they require.
 
 ## Dev Stack Services
 

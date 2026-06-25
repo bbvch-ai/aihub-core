@@ -10,19 +10,27 @@ privilege at the network layer.
 
 ## Network Zones
 
-The platform uses five isolated Docker networks:
+The platform uses six isolated Docker networks:
 
-| Network   | Purpose                       | External Access  | ICC Enabled |
-| --------- | ----------------------------- | ---------------- | ----------- |
-| `proxy`   | External traffic via Traefik  | Ingress + Egress | Yes         |
-| `backend` | Internal application services | No               | Yes         |
-| `data`    | Databases and message broker  | No               | Yes         |
-| `storage` | SeaweedFS object storage      | No               | Yes         |
-| `egress`  | Outbound internet access only | Egress only      | No          |
+| Network        | Purpose                              | External Access  | ICC Enabled |
+| -------------- | ------------------------------------ | ---------------- | ----------- |
+| `proxy`        | External traffic via Traefik         | Ingress + Egress | Yes         |
+| `backend`      | Internal application services        | No               | Yes         |
+| `data`         | Databases and message broker         | No               | Yes         |
+| `storage`      | SeaweedFS object storage             | No               | Yes         |
+| `egress`       | Outbound internet access only        | Egress only      | No          |
+| `code-sandbox` | Code-execution sandbox + its callers | No               | Yes         |
 
 The `egress` network is designed for services that need to reach the internet (outbound) but should not be reachable
 from the internet (no ingress). Inter-Container Communication (ICC) is disabled on this network, meaning containers
 cannot communicate with each other via this network—they can only use it for outbound internet access.
+
+The `code-sandbox` network is a single-tenant zone for the `open-terminal` code-execution sandbox, which runs arbitrary
+user-submitted code. Its membership is the sandbox plus **exactly its callers** (`open-webui`; the AI-Hub agents as a
+follow-up). Because Docker networks are bidirectional, keeping the sandbox off `backend` is what prevents a sandbox
+breakout from laterally reaching `litellm`, `vLLM`, `mineru`, `presidio`, `speaches`, or `otel-collector`. ICC stays
+enabled (the callers must reach `open-terminal:8000`), and `internal: true` in non-dev stages also denies the sandbox
+any outbound internet.
 
 ## Service Network Assignments
 
@@ -49,8 +57,6 @@ Internal application and processing services:
 - **presidio-analyzer/anonymizer**: PII detection and anonymization
 - **vLLM**: Local LLM inference (chat, embedding, reranking) — GPU deployments only
 - **speaches**: Speech-to-text and text-to-speech
-- **open-terminal**: Code execution sandbox for OpenWebUI (plain LLM models; per-user isolation, no `data`/NATS path —
-  see ADR `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`)
 - **jupyter**: Code execution environment (retained; no longer used by OpenWebUI)
 - **playwright**: Web scraping and automation (also on `egress` for internet access)
 - **agents**: All agent workers (rag, expert, wrapping)
@@ -93,6 +99,19 @@ This network has ICC (Inter-Container Communication) disabled, preventing latera
 network. Services use `egress` solely for outbound internet access and must use other networks (e.g., `backend`) for
 inter-service communication.
 
+### Code-Sandbox Network Services
+
+The single-tenant zone for the code-execution sandbox:
+
+- **open-terminal**: Code execution sandbox for OpenWebUI (plain LLM models; per-user home isolation — see ADR
+  `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`)
+
+The sandbox is the **only** resident; its callers join this network in addition to their own. `open-webui` is attached
+to `code-sandbox` (alongside `proxy`/`backend`/`data`/`storage`) so it can reach `open-terminal:8000`, and the AI-Hub
+agents will join as a follow-up when agent tool-calling lands. Because the sandbox shares a network only with its
+callers, a breakout has no network path to the `backend` or `data` tiers. In dev, `open-webui` uses `network_mode: host`
+and reaches the sandbox via the published `localhost:8200` port instead.
+
 ## Network Topology
 
 ```mermaid
@@ -117,7 +136,6 @@ flowchart TB
         presidio[presidio]
         vllm[vLLM]
         agents[agents]
-        open-terminal[open-terminal]
         jupyter[jupyter]
         playwright[playwright]
         dagster[dagster-*]
@@ -128,6 +146,11 @@ flowchart TB
 
     subgraph egress[EGRESS NETWORK - ICC Disabled]
         playwright_egress[playwright]
+    end
+
+    subgraph code-sandbox[CODE-SANDBOX NETWORK - sandbox + callers only]
+        open-terminal[open-terminal]
+        openwebui_cs[open-webui]
     end
 
     subgraph data[DATA NETWORK]
@@ -156,7 +179,7 @@ flowchart TB
     api --> litellm
     api --> agents
     openwebui --> litellm
-    openwebui --> open-terminal
+    openwebui_cs --> open-terminal
     openwebui --> playwright
     agents --> nats
     agents --> milvus
@@ -197,16 +220,23 @@ flowchart TB
 
 ### Service Visibility Matrix
 
-| From \\ To | proxy | backend | data | storage | egress | Internet |
-| ---------- | ----- | ------- | ---- | ------- | ------ | -------- |
-| External   | ✓     | ✗       | ✗    | ✗       | ✗      | -        |
-| proxy      | ✓     | ✓       | ✗    | ✗       | ✗      | ✓        |
-| backend    | ✗     | ✓       | ✓    | ✓       | ✗      | ✗        |
-| data       | ✗     | ✗       | ✓    | ✓       | ✗      | ✗        |
-| storage    | ✗     | ✗       | ✗    | ✓       | ✗      | ✗        |
-| egress     | ✗     | ✗       | ✗    | ✗       | ✗\*    | ✓        |
+| From \\ To   | proxy | backend | data | storage | egress | code-sandbox | Internet |
+| ------------ | ----- | ------- | ---- | ------- | ------ | ------------ | -------- |
+| External     | ✓     | ✗       | ✗    | ✗       | ✗      | ✗            | -        |
+| proxy        | ✓     | ✓       | ✗    | ✗       | ✗      | ✗            | ✓        |
+| backend      | ✗     | ✓       | ✓    | ✓       | ✗      | ✗            | ✗        |
+| data         | ✗     | ✗       | ✓    | ✓       | ✗      | ✗            | ✗        |
+| storage      | ✗     | ✗       | ✗    | ✓       | ✗      | ✗            | ✗        |
+| egress       | ✗     | ✗       | ✗    | ✗       | ✗\*    | ✗            | ✓        |
+| code-sandbox | ✗     | ✗       | ✗    | ✗       | ✗      | ✓\*\*        | ✗\*\*\*  |
 
 \*ICC disabled on egress network - containers cannot communicate with each other via this network.
+
+\*\*Only `open-terminal` and its callers (`open-webui`; agents as a follow-up) reside on `code-sandbox`, so the sandbox
+can reach its callers but no other tier.
+
+\*\*\*`internal: true` in non-dev stages blocks outbound internet from the sandbox; in `dev` the network is non-internal
+(localhost access), so this guarantee applies to `local`/`build`/`nightly`/`latest` only.
 
 ## Operational Considerations
 
