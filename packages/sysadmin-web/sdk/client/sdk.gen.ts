@@ -9,6 +9,7 @@ import type {
 import { client } from "./client.gen";
 import {
   createTenantMetadataResponseTransformer,
+  getAccessCapabilitiesResponseTransformer,
   getTenantResponseTransformer,
   listTenantsResponseTransformer,
   updateTenantMetadataResponseTransformer,
@@ -29,6 +30,11 @@ import type {
   DeleteTenantMetadataData,
   DeleteTenantMetadataError,
   DeleteTenantMetadataResponse,
+  GetAccessCapabilitiesData,
+  GetAccessCapabilitiesError,
+  GetAccessCapabilitiesResponse,
+  GetAccessPresetsData,
+  GetAccessPresetsResponse,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
   GetHealthData,
@@ -560,6 +566,72 @@ export const createRole = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Evaluate Access Capabilities
+ *
+ * Returns the catalog of concrete capabilities (per service, agent and process), each with its exact access rule and whether the supplied draft rules grant it.
+ */
+export const getAccessCapabilities = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAccessCapabilitiesResponse =
+    GetAccessCapabilitiesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAccessCapabilitiesData,
+    GetAccessCapabilitiesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    GetAccessCapabilitiesResponse | DefaultT,
+    GetAccessCapabilitiesError,
+    DefaultT
+  >({
+    responseTransformer: getAccessCapabilitiesResponseTransformer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/capabilities",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List Access Presets
+ *
+ * Returns a curated, described library of common access rules for one-click authoring.
+ */
+export const getAccessPresets = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAccessPresetsResponse = GetAccessPresetsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAccessPresetsData,
+    GetAccessPresetsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAccessPresetsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/presets",
+    ...options,
   });
 
 /**

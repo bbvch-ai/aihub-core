@@ -29,6 +29,42 @@ export type Access = {
 };
 
 /**
+ * AccessCapabilitiesRequest
+ */
+export type AccessCapabilitiesRequest = {
+  /**
+   * Access Rules
+   *
+   * Draft access rules to evaluate the capability catalog against.
+   */
+  access_rules: Array<string>;
+  /**
+   * Restrict To Tenant
+   *
+   * Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).
+   */
+  restrict_to_tenant?: boolean;
+  /**
+   * Is Sys Admin
+   *
+   * Evaluate the catalog as a platform sysadmin (AIHubSysAdmin), who holds admin on every resource regardless of rules — the user page passes the viewed user's flag. False for rule editing.
+   */
+  is_sys_admin?: boolean;
+};
+
+/**
+ * AccessCapabilitiesResponse
+ */
+export type AccessCapabilitiesResponse = {
+  /**
+   * Groups
+   *
+   * Top-level groups, one per controller/service.
+   */
+  groups: Array<CapabilityGroup>;
+};
+
+/**
  * AccessLevel
  *
  * Defines the possible outcomes of a permission check.
@@ -45,6 +81,36 @@ export const AccessLevel = {
  * Defines the possible outcomes of a permission check.
  */
 export type AccessLevel = (typeof AccessLevel)[keyof typeof AccessLevel];
+
+/**
+ * AccessPresetDTO
+ */
+export type AccessPresetDto = {
+  /**
+   * Rule
+   *
+   * The access rule string this preset adds.
+   */
+  rule: string;
+  /**
+   * Name
+   *
+   * Short, human-readable name for the preset.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What this preset grants.
+   */
+  description: string;
+  /**
+   * Category
+   *
+   * Stable category key for grouping in the UI.
+   */
+  category: string;
+};
 
 /**
  * ActiveTenantDTO
@@ -1856,6 +1922,90 @@ export type CachePoint = {
    */
   block_type?: "cache";
   cache_control: CacheControl;
+};
+
+/**
+ * Capability
+ */
+export type Capability = {
+  /**
+   * Key
+   *
+   * Stable identifier for this capability.
+   */
+  key: string;
+  /**
+   * Label
+   *
+   * Short human-readable action label.
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * What holding this capability lets the user do.
+   */
+  description: string;
+  /**
+   * Rule
+   *
+   * Exact access rule that grants this capability, or null for read-only capabilities.
+   */
+  rule: string | null;
+  /**
+   * Granted
+   *
+   * Whether the draft rules grant this capability.
+   */
+  granted: boolean;
+  /**
+   * Locked
+   *
+   * Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here.
+   */
+  locked: boolean;
+  /**
+   * Toggleable
+   *
+   * Whether ticking the box can add a rule. False for ?-wildcard guards with no concrete grant.
+   */
+  toggleable: boolean;
+};
+
+/**
+ * CapabilityGroup
+ */
+export type CapabilityGroup = {
+  /**
+   * Key
+   *
+   * Stable identifier (a controller/service, a class, an instance, ...).
+   */
+  key: string;
+  /**
+   * Label
+   *
+   * Display title for the group.
+   */
+  label: string;
+  /**
+   * Icon
+   *
+   * Iconify icon for the group (service or class), if any.
+   */
+  icon?: string | null;
+  /**
+   * Capabilities
+   *
+   * Capabilities directly on this group.
+   */
+  capabilities?: Array<Capability>;
+  /**
+   * Groups
+   *
+   * Nested groups (e.g. classes, then instances).
+   */
+  groups?: Array<CapabilityGroup>;
 };
 
 /**
@@ -15244,11 +15394,11 @@ export type UserAccess = {
   /**
    * Name
    *
-   * Name of the service/agent/process to which user has access to
+   * Name of the service/agent/process to which access is evaluated
    */
   name: string;
   /**
-   * Users access level to service/agent/process
+   * Access level to the service/agent/process
    */
   level: AccessLevel;
 };
@@ -15501,6 +15651,12 @@ export type UserWithAccessDto = {
    * User access levels
    */
   access: Access;
+  /**
+   * Access Rules
+   *
+   * The user's resolved access rules (union of their roles), to drive the capability view.
+   */
+  access_rules: Array<string>;
 };
 
 /**
@@ -26716,6 +26872,66 @@ export type CreateRoleResponses = {
 };
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
+
+export type GetAccessCapabilitiesData = {
+  body: AccessCapabilitiesRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/capabilities";
+};
+
+export type GetAccessCapabilitiesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAccessCapabilitiesError =
+  GetAccessCapabilitiesErrors[keyof GetAccessCapabilitiesErrors];
+
+export type GetAccessCapabilitiesResponses = {
+  /**
+   * Successful Response
+   */
+  200: AccessCapabilitiesResponse;
+};
+
+export type GetAccessCapabilitiesResponse =
+  GetAccessCapabilitiesResponses[keyof GetAccessCapabilitiesResponses];
+
+export type GetAccessPresetsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/presets";
+};
+
+export type GetAccessPresetsResponses = {
+  /**
+   * Response Get Access Presets  Tenant Id  Access Presets Get
+   *
+   * Successful Response
+   */
+  200: Array<AccessPresetDto>;
+};
+
+export type GetAccessPresetsResponse =
+  GetAccessPresetsResponses[keyof GetAccessPresetsResponses];
 
 export type GetModelsData = {
   body?: never;

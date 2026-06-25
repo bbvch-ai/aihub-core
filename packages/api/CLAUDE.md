@@ -148,6 +148,19 @@ permission validation + OpenTelemetry span enrichment (user ID, email, roles, re
 **Service-level checks**: `AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)` for fine-grained
 authorization beyond endpoint-level permissions.
 
+**Access capability catalog**: `AccessController` (`routes/access/`, served at `/access/capabilities` &
+`/access/presets`) builds the human-readable capability table shown in the role and tenant-ceiling editors (and
+read-only on the user page). It introspects each controller's routes at runtime and derives each capability's access
+rule from the route's own `user_with_permission` guard — the single source of truth, never restated. To surface an
+endpoint in the catalog, annotate its **fluent builder method** with
+`@access_catalog_entry(i18n_path="api.access.capabilities.ops.<key>")` (the decorator lives in `api/decorators/`;
+label/description only — the rule is derived). A guard containing `?` (`?>`/`?*`) has no single satisfying rule, so its
+capability is read-only. The service gate (`aihub.user.service.X`) is synthesized from `service_name`; "Administer"
+appears when an `aihub.admin.service.X` endpoint exists. The permission-string grammar (prefixes +
+`agent_/process_/service_{user,admin}_rule` builders) lives on `AccessChecker`, not restated here. A curated plane
+(sysadmin-api) that can't build the catalog locally subclasses `AccessController` and overrides the endpoints to proxy
+them to the main API.
+
 ## Dynamic Endpoint Registration
 
 The API doesn't hardcode agent or process endpoints. Discovery services dynamically register/deregister FastAPI routes

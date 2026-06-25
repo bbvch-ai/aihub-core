@@ -36,6 +36,16 @@ class AIHubSettings(EnvironmentSettings):
         ),
     ] = "http://api:8000/api/v1/active/openai"
 
+    INTERNAL_API_BASE_URL: Annotated[
+        str,
+        Field(
+            pattern=r"^https?://[^/]+$",
+            description="Internal base URL of the main platform API (no path), used for server-to-server calls "
+            "such as the sysadmin plane proxying the access-capability catalog. Predictable per deployment: "
+            "the Docker service name in compose, localhost in local dev.",
+        ),
+    ] = "http://api:8000"
+
     FRONTEND_ORIGIN: Annotated[str, Field(description="Comma separated list of origins to allow CORS")]
 
     _STARTUP_BANNER = """\

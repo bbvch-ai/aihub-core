@@ -36,8 +36,11 @@ Carry the answers into the body (Step 3) and the board fields (Step 5).
 
 Every board item is an **Epic**, **Story**, or **Task**. This drives title style, body shape, and the project field.
 
-- **Epic** — a large theme that will hold sub-issues (e.g. #1056–#1072). Plain descriptive title, no conventional-commit
-  prefix.
+- **Epic** — a large theme that holds sub-issues. **The epic set is fixed (#1056–#1072) — do NOT author new epics.** New
+  work is always a **Story** or **Task** filed under an existing epic. Pick the parent epic from the fixed set (e.g.
+  #1065 "Security, Privacy & Compliance") and wire it via `addSubIssue` (Step 6). List the open epics to choose from:
+  `gh issue list -R bbvch-ai/aihub-core --state open --search "in:title Epic:" --json number,title`. Only file an epic
+  yourself if the user explicitly asks to create a new epic.
 - **Story** — one user-facing unit of work (e.g. #1452 "Per-user overall LLM spend limits"). Plain descriptive title.
 - **Task** — a technical/chore/bug unit. Title uses the `<type>(<scope>): <Subject>` form.
 

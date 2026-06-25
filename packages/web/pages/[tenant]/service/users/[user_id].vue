@@ -57,55 +57,19 @@
           </div>
         </div>
       </Panel>
-      <div class="flex flex-col gap-8">
-        <div class="flex flex-col gap-3">
-          <h3 class="text-2xl">
-            Services
-          </h3>
-          <div class="flex flex-wrap gap-2">
-            <Tag
-              v-for="service in user.access.services"
-              :key="service.name"
-              v-tooltip.top="service.level === 2 ? 'Admin' : 'User'"
-              :value="service.name"
-              :icon="service.level === 2 ? 'pi pi-crown' : undefined"
-            />
-          </div>
-        </div>
-        <div class="flex flex-col gap-3">
-          <h3 class="text-2xl">
-            Agents
-          </h3>
-          <div class="flex flex-wrap gap-2">
-            <Tag
-              v-for="agent in user.access.agents"
-              :key="agent.name"
-              v-tooltip.top="agent.level === 2 ? 'Admin' : 'User'"
-              :value="agent.name"
-              :icon="agent.level === 2 ? 'pi pi-crown' : undefined"
-            />
-          </div>
-        </div>
-        <div class="flex flex-col gap-3">
-          <h3 class="text-2xl">
-            {{ t('process.title') }}
-          </h3>
-          <div class="flex flex-wrap gap-2">
-            <Tag
-              v-for="process in user.access.processes"
-              :key="process.name"
-              v-tooltip.top="process.level === 2 ? 'Admin' : 'User'"
-              :value="process.name"
-              :icon="process.level === 2 ? 'pi pi-crown' : undefined"
-            />
-          </div>
-        </div>
-      </div>
+      <AccessCapabilities
+        :rules="user.access_rules"
+        :is-sys-admin="user.is_sys_admin"
+        :restrict-to-tenant="!user.is_sys_admin"
+        readonly
+      />
     </div>
   </StructuralColumn>
 </template>
 
 <script setup lang="ts">
+import AccessCapabilities from '@/components/Role/AccessCapabilities.vue'
+
 const { user, userIsLoading } = useUser()
 const { t } = useI18n()
 </script>
