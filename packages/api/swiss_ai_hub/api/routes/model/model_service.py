@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from httpx import Client
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure import LiteLLMService, trace_fn
 
@@ -19,9 +20,16 @@ class ModelService:
         response = client.get(url="v1/model/info")
         data = response.json()["data"]
         models: list[ModelDTO] = []
+        access_checker = AccessChecker.from_user(user)
 
         for model_data in data:
             model = ModelDTO.model_validate(model_data)
+
+            capability, _, name = model.model_name.partition("/")
+
+            if not name or not access_checker.has_access_to_model(capability, name):
+                continue
+
             updated_model_info = model.convert_costs_to_microunits()
 
             updated_model = model.model_copy(update={"model_info": updated_model_info})
