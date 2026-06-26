@@ -717,7 +717,6 @@ class ExpertRAGAgent(Agent):
             as_stop_step=False,
         )
 
-
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.name"),
         description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.description"),
