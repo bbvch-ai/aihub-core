@@ -67,9 +67,16 @@ function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
 
 const data = ref<Record<string, unknown>>(hydrate(props.initialData || {}))
 
+// Seed from `initialData` only once. A save refetches the query, so `initialData` becomes a new
+// object; re-hydrating then would reassign `data`, which FormKit's `v-model` re-commits in a
+// slightly different shape and reassigns again — an infinite render loop that froze the tab.
+let formSeeded = !!(props.initialData && Object.keys(props.initialData).length > 0)
+
 watch(() => props.initialData, (newData) => {
+  if (formSeeded) return
   if (newData && Object.keys(newData).length > 0) {
     data.value = hydrate(newData)
+    formSeeded = true
   }
 })
 
