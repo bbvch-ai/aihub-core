@@ -6,7 +6,7 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from mcp.types import TextContent, Tool
 from pytest_bdd import given, scenarios, then, when
 from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.agent import NotAMetaQuestionEvent, ToolEvent, UserMessageEvent
+from swiss_ai_hub.core.events.agent import ToolEvent, UserMessageEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
@@ -93,12 +93,6 @@ async def _(agent_runner: AgentTestRunner):
     with (
         patch("swiss_ai_hub.agent.mcp.mcp_client_factory.McpClientFactory.create", side_effect=_fake_mcp_create),
         patch.object(LLMConfig, "cost_reporting_llm", fake_cost_reporting_llm),
-        # McpReactAgent now opts into self-awareness: force the non-meta branch so this test exercises
-        # the tool-calling pipeline rather than the (separately tested) meta-question classifier.
-        patch(
-            "swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent.do_detect_meta_question",
-            AsyncMock(return_value=NotAMetaQuestionEvent(reasoning="not a meta question")),
-        ),
         # McpReactAgent generates conversation metadata inline in its terminal step; stub the helper here
         # (its logic is covered by conversation_metadata unit tests) so this test stays focused on the
         # tool-calling pipeline and the LLM mock need not script the structured-output calls.
