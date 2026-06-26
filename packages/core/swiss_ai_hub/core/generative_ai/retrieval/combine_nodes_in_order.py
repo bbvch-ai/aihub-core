@@ -107,7 +107,9 @@ def combine_nodes_in_order(
                     # Azure format: container/path
                     container, blob_path = image_path.split("/", 1)
 
-                image_url = create_s3_service().generate_sas_url(container, blob_path, lifetime_hours=1)
+                image_url = create_s3_service().generate_sas_url(
+                    container, blob_path, lifetime_hours=1, internal=True
+                )
                 context_blocks.append(ImageBlock(url=image_url))
             else:
                 tag = n.type if n.type else NODE_TYPE_CONTENT

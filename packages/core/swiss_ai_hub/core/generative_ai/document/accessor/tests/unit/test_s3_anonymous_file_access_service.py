@@ -15,6 +15,42 @@ def _create_service(s3_client: MagicMock | None = None) -> S3AnonymousFileAccess
     )
 
 
+def test_generate_sas_url_uses_public_client_by_default():
+    public_client = MagicMock()
+    public_client.generate_presigned_url.return_value = "https://public/url"
+    internal_client = MagicMock()
+
+    service = S3AnonymousFileAccessService(
+        s3_client=internal_client,
+        s3_public_client=public_client,
+        s3_settings=MagicMock(),
+    )
+
+    result = service.generate_sas_url("my-bucket", "path/to/figure.jpg", lifetime_hours=1)
+
+    assert result == "https://public/url"
+    public_client.generate_presigned_url.assert_called_once()
+    internal_client.generate_presigned_url.assert_not_called()
+
+
+def test_generate_sas_url_uses_internal_client_when_internal():
+    public_client = MagicMock()
+    internal_client = MagicMock()
+    internal_client.generate_presigned_url.return_value = "http://seaweedfs-s3:9000/url"
+
+    service = S3AnonymousFileAccessService(
+        s3_client=internal_client,
+        s3_public_client=public_client,
+        s3_settings=MagicMock(),
+    )
+
+    result = service.generate_sas_url("my-bucket", "path/to/figure.jpg", lifetime_hours=1, internal=True)
+
+    assert result == "http://seaweedfs-s3:9000/url"
+    internal_client.generate_presigned_url.assert_called_once()
+    public_client.generate_presigned_url.assert_not_called()
+
+
 def test_download_file_returns_raw_bytes():
     content = b"hello world"
     body_mock = MagicMock()
