@@ -13,9 +13,6 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    generate_conversation_metadata,
-)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -73,6 +70,4 @@ class LLMWrappingAgent(Agent):
                 agent_config.llm, llm, event.limited_history, as_stop_step=True
             )
 
-        # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-        await generate_conversation_metadata(stop_event.chat_messages, agent_config.llm, displayer, t, thread_context)
         return stop_event

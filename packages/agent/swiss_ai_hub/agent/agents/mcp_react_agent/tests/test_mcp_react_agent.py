@@ -93,13 +93,6 @@ async def _(agent_runner: AgentTestRunner):
     with (
         patch("swiss_ai_hub.agent.mcp.mcp_client_factory.McpClientFactory.create", side_effect=_fake_mcp_create),
         patch.object(LLMConfig, "cost_reporting_llm", fake_cost_reporting_llm),
-        # McpReactAgent generates conversation metadata inline in its terminal step; stub the helper here
-        # (its logic is covered by conversation_metadata unit tests) so this test stays focused on the
-        # tool-calling pipeline and the LLM mock need not script the structured-output calls.
-        patch(
-            "swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent.generate_conversation_metadata",
-            AsyncMock(return_value=None),
-        ),
     ):
         async with agent_runner.test_run() as topic:
             await agent_runner.send_event_from_topic(

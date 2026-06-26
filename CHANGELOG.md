@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.304.1] - 2026-06-26 - Temporary Adjustment to Agent Metadata Features
+
+### Changed
+
+- 🔄 **Conversation Metadata Generation Temporarily Disabled:** To enable further investigation and refinement, the
+  automatic generation of conversation titles and follow-up questions has been temporarily paused across `RAGAgent`,
+  `ExpertRAGAgent`, `FewShotAgent`, `LLMWrappingAgent`, and `McpReactAgent`. This aims to ensure a more robust and
+  reliable agent experience in future iterations.
+
+______________________________________________________________________
+
 ## [v0.304.0] - 2026-06-25 - Empowering Access Management: Introducing the Dynamic Capability Catalog
 
 ### Added
