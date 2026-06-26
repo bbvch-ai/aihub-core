@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.0] - 2026-06-26 - Simplifying Agent Workflows: Meta-Question Detection Removed
+
+### Removed
+
+- 🗑️ **Meta-question detection and answering functionality** has been completely removed from all agents (Expert RAG,
+  Few-Shot, LLM Wrapping, MCP React, Namespace Selection, and RAG agents). This simplifies their internal architecture
+  and streamlines execution by removing the initial classification step.
+- 🗑️ **Associated event types and internal logic** related to meta-question handling, such as
+  `MetaQuestionDetectedEvent` and `NotAMetaQuestionEvent`, have been deprecated from core agent events and the
+  self-awareness module.
+- 🗑️ **Dedicated test infrastructure** for meta-question routing, including specific feature scenarios and integration
+  tests, has been removed in alignment with the deprecation of this functionality.
+
+### Refactor
+
+- 🧹 **Agent preconditions** for various steps (e.g., memory retrieval, chat history management) have been simplified by
+  removing their dependency on meta-question detection logic, leading to more direct and efficient workflow execution.
+
+______________________________________________________________________
+
+## [v0.304.1] - 2026-06-26 - Temporary Adjustment to Agent Metadata Features
+
+### Changed
+
+- 🔄 **Conversation Metadata Generation Temporarily Disabled:** To enable further investigation and refinement, the
+  automatic generation of conversation titles and follow-up questions has been temporarily paused across `RAGAgent`,
+  `ExpertRAGAgent`, `FewShotAgent`, `LLMWrappingAgent`, and `McpReactAgent`. This aims to ensure a more robust and
+  reliable agent experience in future iterations.
+
+______________________________________________________________________
+
 ## [v0.304.0] - 2026-06-25 - Empowering Access Management: Introducing the Dynamic Capability Catalog
 
 ### Added
