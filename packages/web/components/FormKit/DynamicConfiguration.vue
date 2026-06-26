@@ -59,11 +59,8 @@ const props = defineProps<{
   initialData?: Record<string, unknown>
 }>()
 
-// Clone before hydrating so the form model never shares object references with the
-// Pinia-Colada query cache (`initialData` is the live cached `agent_config.configuration`).
-// Without the clone, FormKit's write-backs into `data` mutate the cached object, which a
-// `deep` watcher here would observe and re-hydrate from — an infinite loop that freezes the
-// tab after a save refetch.
+// Clone so the form model never shares references with the Pinia-Colada cache: otherwise
+// FormKit's write-backs mutate the cached object and the watcher loops on its own mutations.
 function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
   return hydrateFormData(cloneDeep(raw), props.form as FormElement[])
 }
