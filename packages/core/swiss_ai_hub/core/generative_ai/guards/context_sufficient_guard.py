@@ -1,13 +1,16 @@
+import logging
 from typing import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import RichPromptTemplate
 from openai import NOT_GIVEN
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from swiss_ai_hub.core.generative_ai.guards.guard_result import GuardResult
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+
+logger = logging.getLogger(__name__)
 
 
 class ContextGuardResult(GuardResult):
@@ -62,16 +65,21 @@ async def context_sufficient_guard(
     else:
         llm_kwargs["tool_choice"] = NOT_GIVEN
 
-    result = await llm.astructured_predict(
-        context_guard_result_factory(t=t, more_hops_available=more_hops_available),
-        sufficiency_prompt,
-        llm_kwargs=llm_kwargs,
-        user_query=user_query,
-        context_blocks=context_blocks,
-        prev_queries=prev_queries_str,
-        chat_history=chat_history,
-    )
-
-    guard_result = ContextGuardResult.model_validate(result)
-
-    return guard_result
+    try:
+        result = await llm.astructured_predict(
+            context_guard_result_factory(t=t, more_hops_available=more_hops_available),
+            sufficiency_prompt,
+            llm_kwargs=llm_kwargs,
+            user_query=user_query,
+            context_blocks=context_blocks,
+            prev_queries=prev_queries_str,
+            chat_history=chat_history,
+        )
+        return ContextGuardResult.model_validate(result)
+    except (ValidationError, ValueError) as malformed_structured_output:
+        # Flaky reasoning models can't always return parseable output; treat context as sufficient
+        # so the run answers with what it has instead of failing.
+        logger.warning(
+            "Context-sufficiency guard failed; treating context as sufficient: %s", malformed_structured_output
+        )
+        return ContextGuardResult(success=True, reasoning="Guard unavailable; treating context as sufficient.")
