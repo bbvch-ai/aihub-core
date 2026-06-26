@@ -52,11 +52,13 @@ Feature: RAG Agent
     * a StopEvent is present
     * a RAGSuccessStopEvent is present
 
-  Scenario: Test RAGAgent answers a meta question about itself without retrieval
-    Given a RAGAgent runner with a valid self hosted configuration
-    When the start event is sent with a user query "What can you do?"
-    Then a MetaQuestionDetectedEvent is present
-    * an LLMEvent is present with a generated response
-    * a StopEvent is present
-    * no RetrieverEvent is present
+# TEMP: meta-question detection disabled pending investigation — agent always routes to the normal
+# pipeline, so this scenario cannot hold. Re-enable alongside detect_meta_question_step.
+#  Scenario: Test RAGAgent answers a meta question about itself without retrieval
+#    Given a RAGAgent runner with a valid self hosted configuration
+#    When the start event is sent with a user query "What can you do?"
+#    Then a MetaQuestionDetectedEvent is present
+#    * an LLMEvent is present with a generated response
+#    * a StopEvent is present
+#    * no RetrieverEvent is present
 

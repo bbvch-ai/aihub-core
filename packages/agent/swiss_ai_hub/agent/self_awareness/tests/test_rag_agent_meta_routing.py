@@ -55,6 +55,7 @@ def _user_message(text: str) -> UserMessageEvent:
     )
 
 
+@pytest.mark.skip(reason="TEMP: meta-question detection disabled — agent always routes to the normal pipeline")
 @async_test
 async def test_meta_question_answers_without_retrieval(monkeypatch):
     async def fake_detect(*, user_query, **_):

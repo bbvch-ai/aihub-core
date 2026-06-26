@@ -72,6 +72,12 @@ class FewShotAgent(Agent):
         t: LocaleHandler,
     ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
+        # TEMP: meta-question detection disabled pending investigation. The if/else below always routes
+        # to the normal pipeline (still emits the NotAMetaQuestionEvent gate token, so downstream
+        # gating/preconditions are unaffected). Flip META_QUESTION_DETECTION_ENABLED to re-enable.
+        META_QUESTION_DETECTION_ENABLED = False
+        if not META_QUESTION_DETECTION_ENABLED:
+            return NotAMetaQuestionEvent(reasoning="meta-question detection temporarily disabled")
         return await do_detect_meta_question(
             user_query=event.user_query,
             llm_config=agent_config.llm,
