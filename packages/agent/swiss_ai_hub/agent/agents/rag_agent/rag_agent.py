@@ -550,53 +550,6 @@ class RAGAgent(Agent):
             as_stop_step=False,
         )
 
-    # TEMP: conversation title + follow-up question steps disabled pending investigation. They are
-    # fire-and-forget (stop_on_error=False) with no downstream consumers, so commenting them out only
-    # drops the title/follow-up display events. Re-enable by uncommenting both @step methods below and
-    # restoring the `do_generate_title` / `do_generate_follow_up_questions` imports.
-    # @step(
-    #     name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
-    #     description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
-    #     icon="mdi:format-title",
-    #     stop_on_error=False,
-    # )
-    # async def generate_conversation_title_step(
-    #     self,
-    #     llm_event: LLMEvent,
-    #     agent_config: RAGAgentConfig,
-    #     thread_context: ThreadContext,
-    #     displayer: EventDisplayer,
-    #     t: LocaleHandler,
-    # ) -> None:
-    #     """Generate a stable conversation title once per thread (deferred until a topic is identifiable)."""
-    #     await do_generate_title(
-    #         chat_messages=llm_event.chat_messages,
-    #         llm_config=agent_config.llm,
-    #         displayer=displayer,
-    #         t=t,
-    #         thread_context=thread_context,
-    #     )
-
-    # @step(
-    #     name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.name"),
-    #     description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.description"),
-    #     icon="mdi:comment-question-outline",
-    #     stop_on_error=False,
-    # )
-    # async def generate_follow_up_questions_step(
-    #     self,
-    #     llm_event: LLMEvent,
-    #     agent_config: RAGAgentConfig,
-    #     displayer: EventDisplayer,
-    #     t: LocaleHandler,
-    # ) -> None:
-    #     """Suggest follow-up questions for the latest answer."""
-    #     await do_generate_follow_up_questions(
-    #         chat_messages=llm_event.chat_messages,
-    #         llm_config=agent_config.llm,
-    #         displayer=displayer,
-    #         t=t,
-    #     )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.name"),

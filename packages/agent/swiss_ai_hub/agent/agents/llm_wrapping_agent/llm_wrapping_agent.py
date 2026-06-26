@@ -123,8 +123,4 @@ class LLMWrappingAgent(Agent):
                 agent_config.llm, llm, event.limited_history, as_stop_step=True
             )
 
-        # TEMP: conversation metadata (title + follow-up) generation disabled pending investigation.
-        # Re-enable by restoring the call below and its `generate_conversation_metadata` import.
-        # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-        # await generate_conversation_metadata(stop_event.chat_messages, agent_config.llm, displayer, t, thread_context)
         return stop_event
