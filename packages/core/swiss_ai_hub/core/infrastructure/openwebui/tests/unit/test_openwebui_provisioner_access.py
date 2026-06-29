@@ -6,7 +6,7 @@ from scim2_models import Group
 
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
-    AIHUB_MODEL_PREFIX,
+    AIHUB_AGENT_PREFIX,
     OpenWebuiProvisioner,
 )
 
@@ -97,17 +97,17 @@ class TestComputeAccessForModel:
 
 class TestParseAgentFromModel:
     def test_parses_from_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": "aihub-pipeline.cls.id"}
+        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": "aihub-pipeline.cls.id"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result == ("cls", "id")
 
     def test_returns_none_without_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": ""}
+        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": ""}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result is None
 
     def test_returns_none_for_malformed_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": "aihub-pipeline.nodot"}
+        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": "aihub-pipeline.nodot"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result is None
 
@@ -122,7 +122,7 @@ class TestSyncAccessGrants:
                 provisioner._openwebui,
                 "list_models",
                 return_value=[
-                    {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
+                    {"id": f"{AIHUB_AGENT_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
                 ],
             ),
             patch.object(
@@ -150,7 +150,7 @@ class TestSyncAccessGrants:
 
             mock_update.assert_called_once()
             call_args = mock_update.call_args
-            assert call_args[0][1] == f"{AIHUB_MODEL_PREFIX}rag-default"
+            assert call_args[0][1] == f"{AIHUB_AGENT_PREFIX}rag-default"
             grants = call_args[0][2]
             assert AccessGrant(principal_type="group", principal_id="grp-1", permission="read") in grants
 
@@ -164,7 +164,7 @@ class TestSyncAccessGrants:
                 provisioner._openwebui,
                 "list_models",
                 return_value=[
-                    {"id": f"{AIHUB_MODEL_PREFIX}my-rag-default", "base_model_id": "aihub-pipeline.my-rag.default"}
+                    {"id": f"{AIHUB_AGENT_PREFIX}my-rag-default", "base_model_id": "aihub-pipeline.my-rag.default"}
                 ],
             ),
             patch.object(
@@ -203,7 +203,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._openwebui,
                 "list_models",
-                return_value=[{"id": f"{AIHUB_MODEL_PREFIX}rag-default"}],
+                return_value=[{"id": f"{AIHUB_AGENT_PREFIX}rag-default"}],
             ),
             patch.object(
                 provisioner._openwebui,
@@ -239,7 +239,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._openwebui,
                 "list_models",
-                return_value=[{"id": f"{AIHUB_MODEL_PREFIX}broken", "base_model_id": "aihub-pipeline.nodot"}],
+                return_value=[{"id": f"{AIHUB_AGENT_PREFIX}broken", "base_model_id": "aihub-pipeline.nodot"}],
             ),
             patch.object(
                 provisioner._openwebui,
@@ -275,7 +275,7 @@ class TestSyncAccessGrants:
                 provisioner._openwebui,
                 "list_models",
                 return_value=[
-                    {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
+                    {"id": f"{AIHUB_AGENT_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
                 ],
             ),
             patch.object(
