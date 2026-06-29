@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.2] - 2026-06-29 - Enhanced Stability and Reliability
+
+### Fixed
+
+- 🐛 **Resolved infinite render loop** in the `DynamicConfiguration` component, preventing UI freezes and ensuring stable
+  form interaction after data updates.
+- ⏱️ **Improved `FewShotAgent` test reliability** by extending the test runner's delay, preventing premature test
+  termination and accommodating longer execution times, especially in self-hosted LLM environments.
+
+______________________________________________________________________
+
 ## [v0.305.1] - 2026-06-29 - Enhanced Form Data Stability
 
 ### Fixed
