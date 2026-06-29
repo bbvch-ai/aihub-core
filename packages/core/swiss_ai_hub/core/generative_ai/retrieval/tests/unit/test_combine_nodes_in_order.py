@@ -158,6 +158,49 @@ def _(the_result, docstring):
     assert actual == expected, f"\nExpected:\n{expected}\n\nBut got:\n{actual}\n"
 
 
+def test_figure_node_downloads_bytes_and_creates_image_block():
+    """Regression: figure nodes must use download_file (internal S3 call) instead of a
+    presigned URL so the image bytes are embedded before reaching LiteLLM.  Presigned
+    URLs point at the public domain which is unresolvable from internal-only Docker networks."""
+    from unittest.mock import MagicMock, patch
+
+    from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
+    from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
+    from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+    from swiss_ai_hub.core.i18n.locale_string import LocaleString
+    from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
+
+    fake_bytes = b"\xff\xd8\xff\xe0fake-jpeg"
+    mock_service = MagicMock()
+    mock_service.download_file.return_value = fake_bytes
+
+    node = IngestedNode(
+        id="doc1-0",
+        content="![figure](s3://my-bucket/figures/doc/figure_abc.jpg)",
+        document_id="doc1",
+        source="doc1",
+        namespace="test",
+        content_type=NODE_CONTENT_TYPE_FIGURE,
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        inserted_at="2024-01-01T00:00:00Z",
+    )
+
+    t = LocaleHandler(locale="en")
+    prompt = LocaleString(
+        en="{% chat role='user' %}{% for b in context_blocks %}{% if b.block_type == 'text' %}{{ b.text }}{% endif %}{% endfor %}{% endchat %}"
+    )
+
+    with patch(
+        "swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order.create_s3_service",
+        return_value=mock_service,
+    ):
+        combine_nodes_in_order(context_nodes=[node], t=t, context_prompt=prompt)
+
+    mock_service.download_file.assert_called_once_with("my-bucket", "figures/doc/figure_abc.jpg")
+    mock_service.generate_sas_url.assert_not_called()
+
+
 def test_image_block_renders_without_sandbox_security_error():
     """Regression: the context prompt must render an image block whose ``url`` is a
     pydantic ``AnyUrl`` without tripping the Jinja ``SandboxedEnvironment``.
