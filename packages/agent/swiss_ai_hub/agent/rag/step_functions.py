@@ -90,12 +90,12 @@ async def do_respond_with_llm(
         prompt_text = t("agent.prompt.guard.reject").format(
             prompt=context_insufficient_prompt_text, reason=event.reason
         )
-        messages = limited_history_without_context + [
+        messages = [
             ChatMessage(
                 role=MessageRole.SYSTEM,
                 content=prompt_text,
             ),
-        ]
+        ] + limited_history_without_context
     else:
         messages = event.limited_history_with_context
 
