@@ -5,8 +5,6 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LLMStopEvent,
     Message,
-    MetaQuestionDetectedEvent,
-    NotAMetaQuestionEvent,
     StopEvent,
     ToolEvent,
     UserMessageEvent,
@@ -20,19 +18,11 @@ from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config im
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    generate_conversation_metadata,
-)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
 from swiss_ai_hub.agent.mcp.mcp_resource_schemas import fetch_static_resources, resource_read_tool_schema
 from swiss_ai_hub.agent.mcp.mcp_tool_schemas import execute_single_tool_call, to_openai_tool_schemas, to_tool_events
-from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
-from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
-    do_answer_meta_question,
-    do_detect_meta_question,
-)
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -68,51 +58,6 @@ class McpReactAgent(Agent):
     icon: ClassVar[str] = "mage:plug"
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
-        icon="mdi:help-circle-outline",
-    )
-    async def detect_meta_question_step(
-        self,
-        event: UserMessageEvent,
-        agent_config: McpReactAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
-        """Gate every chat message: classify it as a meta question or release the normal pipeline."""
-        return await do_detect_meta_question(
-            user_query=event.user_query,
-            llm_config=agent_config.llm,
-            displayer=displayer,
-            t=t,
-        )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
-        icon="mdi:account-voice",
-    )
-    async def answer_meta_question_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: McpReactAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> LLMStopEvent:
-        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        return await do_answer_meta_question(
-            event=event,
-            agent_name=t.extract(agent_config.name),
-            agent_description=t.extract(agent_config.description),
-            workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
-            chat_history=user_message_event.messages,
-            llm_config=agent_config.llm,
-            displayer=displayer,
-            t=t,
-        )
-
-    @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),
         description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.description"),
         icon="mage:search",
@@ -123,7 +68,6 @@ class McpReactAgent(Agent):
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         run_context: RunContext,
-        _clear: NotAMetaQuestionEvent,
     ) -> McpReasoningEvent:
         """Discover MCP tools and resources, seed conversation with system prompt, trigger first reasoning iteration."""
         user_token = await McpAuthResolver.resolve_user_token(run_context)
@@ -196,8 +140,6 @@ class McpReactAgent(Agent):
                 output_messages=[assistant],
                 chat_model_name=config.llm.model_name,
             )
-            # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-            await generate_conversation_metadata(stop_event.chat_messages, config.llm, displayer, t, thread_context)
             return stop_event
 
         await run_context.set(CONVERSATION_KEY, [m.model_dump() for m in [*event.input_messages, assistant]])
