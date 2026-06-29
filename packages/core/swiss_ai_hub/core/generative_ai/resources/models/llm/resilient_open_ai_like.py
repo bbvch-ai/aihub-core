@@ -22,32 +22,30 @@ class ResilientOpenAILike(OpenAILike):
 
     @override
     async def astructured_predict(self, *args: Any, **kwargs: Any) -> Any:
-        last_error: Exception | None = None
         for attempt in range(1, STRUCTURED_OUTPUT_ATTEMPTS + 1):
             try:
                 return await super().astructured_predict(*args, **kwargs)
             except (ValidationError, ValueError) as malformed_structured_output:
-                last_error = malformed_structured_output
                 logger.warning(
                     "Structured prediction returned malformed output (attempt %d/%d): %s",
                     attempt,
                     STRUCTURED_OUTPUT_ATTEMPTS,
                     malformed_structured_output,
                 )
-        raise last_error
+                if attempt == STRUCTURED_OUTPUT_ATTEMPTS:
+                    raise
 
     @override
     def structured_predict(self, *args: Any, **kwargs: Any) -> Any:
-        last_error: Exception | None = None
         for attempt in range(1, STRUCTURED_OUTPUT_ATTEMPTS + 1):
             try:
                 return super().structured_predict(*args, **kwargs)
             except (ValidationError, ValueError) as malformed_structured_output:
-                last_error = malformed_structured_output
                 logger.warning(
                     "Structured prediction returned malformed output (attempt %d/%d): %s",
                     attempt,
                     STRUCTURED_OUTPUT_ATTEMPTS,
                     malformed_structured_output,
                 )
-        raise last_error
+                if attempt == STRUCTURED_OUTPUT_ATTEMPTS:
+                    raise
