@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.1] - 2026-06-29 - Enhanced Form Data Stability
+
+### Fixed
+
+- 🐛 **Resolved dynamic form data mutation issues:** Implemented deep cloning during data hydration in the
+  `DynamicConfiguration` component. This prevents FormKit's write-backs from inadvertently mutating shared cached
+  objects (e.g., from Pinia-Colada) and eliminates potential infinite reactivity loops, leading to more stable and
+  predictable form behavior.
+
+______________________________________________________________________
+
 ## [v0.305.0] - 2026-06-26 - Simplifying Agent Workflows: Meta-Question Detection Removed
 
 ### Removed
