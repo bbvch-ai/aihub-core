@@ -3,6 +3,7 @@ import logging
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
+from openai import BadRequestError
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.self_awareness.meta_question_classification import MetaQuestionClassification
@@ -53,11 +54,17 @@ async def detect_meta_question(llm: LLM, t: LocaleHandler, user_query: str) -> M
 
     try:
         # Disable reasoning: this is a trivial single-token classification, so the model's thinking is
-        # pure latency (≈4-5s on Infomaniak reasoning models). Harmless for non-reasoning models.
-        response = await llm.achat([message], extra_body={"chat_template_kwargs": {"thinking": False}})
+        # pure latency (≈4-5s on Infomaniak reasoning models). Mistral-tokenizer models reject
+        # chat_template_kwargs, so fall back to a plain call (they have no reasoning to disable anyway).
+        try:
+            response = await llm.achat([message], extra_body={"chat_template_kwargs": {"thinking": False}})
+        except BadRequestError:
+            response = await llm.achat([message])
         label = _parse_label(str(response.message.content))
     except (ValueError, TypeError) as unparseable_response:
-        logger.warning("Meta-question detection failed (%s); treating as a normal question.", type(unparseable_response).__name__)
+        logger.warning(
+            "Meta-question detection failed (%s); treating as a normal question.", type(unparseable_response).__name__
+        )
         label = None
 
     category = _LABEL_TO_CATEGORY.get(label or "")
