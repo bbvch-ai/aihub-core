@@ -272,6 +272,7 @@ const handleUpload = async () => {
       namespace,
       database,
       tenantId: tenantId.value!,
+      onProgress: (p) => { uploadProgress.value = p },
     })
   }
 
