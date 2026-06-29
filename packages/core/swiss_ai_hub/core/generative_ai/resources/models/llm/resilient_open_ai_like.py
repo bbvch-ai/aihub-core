@@ -34,6 +34,7 @@ class ResilientOpenAILike(OpenAILike):
                 )
                 if attempt == STRUCTURED_OUTPUT_ATTEMPTS:
                     raise
+        raise RuntimeError("STRUCTURED_OUTPUT_ATTEMPTS must be >= 1.")
 
     @override
     def structured_predict(self, *args: Any, **kwargs: Any) -> Any:
@@ -49,3 +50,4 @@ class ResilientOpenAILike(OpenAILike):
                 )
                 if attempt == STRUCTURED_OUTPUT_ATTEMPTS:
                     raise
+        raise RuntimeError("STRUCTURED_OUTPUT_ATTEMPTS must be >= 1.")
