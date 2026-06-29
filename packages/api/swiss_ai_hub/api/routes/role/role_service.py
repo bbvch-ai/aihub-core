@@ -68,8 +68,11 @@ class RoleService:
                 UsageLimit(pattern=ul.pattern, limit=ul.limit, period=ul.period) for ul in data.usage_limits
             ]
 
-        role.modify(**update_data)
-        role.reload()
+        # Use save() (not the atomic modify()) so the MongoEngine post_save signal fires and
+        # AccessChangeHook re-syncs OpenWebUI access grants when a role's rules change.
+        for field, value in update_data.items():
+            setattr(role, field, value)
+        role.save()
         return RoleResponse.from_role_entity(role)
 
     @staticmethod
