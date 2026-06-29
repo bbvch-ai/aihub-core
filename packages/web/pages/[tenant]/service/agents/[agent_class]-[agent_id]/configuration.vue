@@ -43,9 +43,8 @@ const { updateAgentInstance } = useUpdateAgentInstance()
 const { t } = useI18n()
 const toast = useToast()
 
-// agent_id is the immutable instance key. Lock it on the edit form so a changed value can't
-// desync config_data["agent_id"] from the key — a mismatch silently breaks the SSE stop signal
-// and the chat never finishes (the backend also pins it on save; see update_agent_instance).
+// Lock agent_id on edit: it is the immutable instance key, and a divergent value silently breaks
+// the SSE completion check so the chat never finishes. The backend pins it on save too; this is UX.
 const configForm = computed<FormkitElement[]>(() =>
   (agentInstance.value?.agent_config?.form || []).map(element =>
     (element.name === 'agent_id' ? { ...element, disabled: true } : element) as FormkitElement,

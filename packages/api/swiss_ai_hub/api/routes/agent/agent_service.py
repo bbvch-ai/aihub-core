@@ -377,10 +377,9 @@ class AgentService:
 
         config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
 
-        # agent_id is the immutable instance key. An edited form value must never diverge from it:
-        # the running agent builds its NATS topic from config_data["agent_id"], while the API and
-        # OpenWebUI address the instance by the entity key — a mismatch silently breaks the SSE stop
-        # signal (is_primary_agent), leaving the chat spinning forever with no title/follow-up.
+        # Pin agent_id to the immutable instance key: the agent publishes under config_data["agent_id"]
+        # while the SSE handler addresses it by the entity key, and a mismatch silently fails the
+        # is_primary_agent stop check (stream never closes -> no title/follow-up). Mirrors create.
         configuration["agent_id"] = agent_id
         config_entity.config_data = configuration
         config_entity.save()
