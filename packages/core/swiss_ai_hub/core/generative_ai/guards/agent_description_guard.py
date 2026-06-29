@@ -60,5 +60,5 @@ async def agent_description_guard(
     except (ValidationError, ValueError) as malformed_structured_output:
         # Flaky reasoning models can't always return parseable output; accept the request rather
         # than blocking the user on an unparseable suitability verdict.
-        logger.warning("Agent-description guard failed; accepting the request: %s", malformed_structured_output)
+        logger.warning("Agent-description guard failed (%s); accepting the request.", type(malformed_structured_output).__name__)
         return GuardResult(success=True, reasoning="Guard unavailable; accepting the request.")

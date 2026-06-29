@@ -61,5 +61,5 @@ async def few_shot_guard(
     except (ValidationError, ValueError) as malformed_structured_output:
         # Flaky reasoning models can't always return parseable output; accept the request rather
         # than blocking the user on an unparseable guard verdict.
-        logger.warning("Few-shot guard failed; accepting the request: %s", malformed_structured_output)
+        logger.warning("Few-shot guard failed (%s); accepting the request.", type(malformed_structured_output).__name__)
         return GuardResult(success=True, reasoning="Guard unavailable; accepting the request.")

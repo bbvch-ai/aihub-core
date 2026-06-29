@@ -57,7 +57,7 @@ async def detect_meta_question(llm: LLM, t: LocaleHandler, user_query: str) -> M
         response = await llm.achat([message], extra_body={"chat_template_kwargs": {"thinking": False}})
         label = _parse_label(str(response.message.content))
     except (ValueError, TypeError) as unparseable_response:
-        logger.warning("Meta-question detection failed; treating as a normal question: %s", unparseable_response)
+        logger.warning("Meta-question detection failed (%s); treating as a normal question.", type(unparseable_response).__name__)
         label = None
 
     category = _LABEL_TO_CATEGORY.get(label or "")

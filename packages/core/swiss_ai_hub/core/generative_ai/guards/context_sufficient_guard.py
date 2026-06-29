@@ -80,6 +80,7 @@ async def context_sufficient_guard(
         # Flaky reasoning models can't always return parseable output; treat context as sufficient
         # so the run answers with what it has instead of failing.
         logger.warning(
-            "Context-sufficiency guard failed; treating context as sufficient: %s", malformed_structured_output
+            "Context-sufficiency guard failed (%s); treating context as sufficient.",
+            type(malformed_structured_output).__name__,
         )
         return ContextGuardResult(success=True, reasoning="Guard unavailable; treating context as sufficient.")
