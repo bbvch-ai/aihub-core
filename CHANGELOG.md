@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.4] - 2026-06-30 - Improved Agent Configuration Stability
+
+### Fixed
+
+- 🐛 **Agent ID Immutability:** Corrected an issue where changes to an agent's **agent ID** during an update could lead
+  to silent failures in real-time communication (SSE). The system now explicitly ensures the agent ID remains immutable,
+  aligning with the instance key and preventing chat completion issues.
+- 🖼️ **UI Enhancement:** Disabled the **agent ID** field in the agent configuration form on the web interface, clearly
+  indicating its immutable nature and preventing users from inadvertently attempting to change it when editing an
+  existing agent.
+
+______________________________________________________________________
+
+## [v0.305.3] - 2026-06-29 - Fortifying AI Agents Against Flaky LLM Structured Output
+
+### Added
+
+- 🦾 **Introduced `ResilientOpenAILike` for Robust LLM Interactions**: A new wrapper for `OpenAILike` models that
+  automatically retries structured prediction calls multiple times. This significantly improves the reliability of
+  agents interacting with Large Language Models (LLMs) that may intermittently produce malformed structured output.
+- 📄 **New Architecture Decision Record (ADR) on Reasoning Model Resilience**: Documented the challenges with structured
+  output from specific reasoning models (Kimi-K2.6, Qwen3.5) on Infomaniak and detailed the architectural decisions to
+  mitigate these issues, including the adoption of plain-text verdicts and retry mechanisms.
+- ⚡️ **New `text_verdict` Utility Module**: A dedicated module providing helpers for requesting and parsing plain-text
+  verdicts from LLMs, which is now used by several guard and detection functions for improved reliability and speed.
+
+### Changed
+
+- 🔄 **Relevance Guards Now Use Plain-Text Verdicts**: The `agent_description_guard`, `few_shot_guard`, and
+  `context_sufficient_guard` have been converted from expecting structured JSON output to requesting and parsing simple
+  plain-text verdicts (e.g., `ALLOW`/`BLOCK`, `SUFFICIENT`/`INSUFFICIENT`). This change dramatically increases their
+  reliability with reasoning models.
+- 🚀 **Faster and More Reliable Meta-Question Detection**: The `detect_meta_question` function now uses a streamlined,
+  single-token plain-text classification (e.g., `NORMAL`, `META_IDENTITY`) with reasoning disabled, reducing latency
+  from ~4-5 seconds to sub-second on reasoning models without compromising accuracy.
+- 🛡️ **Guards Fail Open on Unrecognizable Responses**: Relevance guards (`agent_description_guard`, `few_shot_guard`,
+  `context_sufficient_guard`) now gracefully degrade by accepting a request if the LLM returns an unparseable verdict,
+  preventing agent crashes and improving user experience.
+- 💬 **Strict System Message Placement for Qwen3.5 Compatibility**: The `do_answer_meta_question` and `RAGAgent`'s
+  guard-reject branch now ensure that system messages always lead the message list, resolving a
+  `400 - System message must be at the beginning` error with Qwen3.5.
+- ⚙️ **Centralized Retry Mechanism for All Structured Predictions**: All structured prediction calls are now routed
+  through the new `ResilientOpenAILike` wrapper by default, providing a single point of failure mitigation for all
+  agents without requiring individual call-site changes.
+
+### Fixed
+
+- 🐛 **Resolved Agent Crashes Due to Flaky LLM Structured Output**: Addressed a critical issue where agents would crash
+  when reasoning models like Kimi-K2.6 or Qwen3.5 failed to produce reliably parseable structured output (e.g., empty
+  tool calls, malformed JSON).
+- 🔒 **Prevented Sensitive Information Leaks in Guard Logs**: Guard-failure logs no longer include raw model output,
+  queries, or retrieved context, enhancing privacy and security.
+
+______________________________________________________________________
+
 ## [v0.305.2] - 2026-06-29 - Enhanced Stability and Reliability
 
 ### Fixed
