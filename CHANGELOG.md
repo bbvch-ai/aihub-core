@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.4] - 2026-06-30 - Improved Agent Configuration Stability
+
+### Fixed
+
+- 🐛 **Agent ID Immutability:** Corrected an issue where changes to an agent's **agent ID** during an update could lead
+  to silent failures in real-time communication (SSE). The system now explicitly ensures the agent ID remains immutable,
+  aligning with the instance key and preventing chat completion issues.
+- 🖼️ **UI Enhancement:** Disabled the **agent ID** field in the agent configuration form on the web interface, clearly
+  indicating its immutable nature and preventing users from inadvertently attempting to change it when editing an
+  existing agent.
+
+______________________________________________________________________
+
 ## [v0.305.3] - 2026-06-29 - Fortifying AI Agents Against Flaky LLM Structured Output
 
 ### Added

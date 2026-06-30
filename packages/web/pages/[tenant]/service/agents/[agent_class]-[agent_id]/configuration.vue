@@ -34,6 +34,8 @@
 </template>
 
 <script setup lang="ts">
+import type { FormkitElement } from '@core/sdk/client'
+
 const route = useRoute()
 const { tenantId } = useTenant()
 const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
@@ -41,7 +43,13 @@ const { updateAgentInstance } = useUpdateAgentInstance()
 const { t } = useI18n()
 const toast = useToast()
 
-const configForm = computed(() => agentInstance.value?.agent_config?.form || [])
+// Lock agent_id on edit: it is the immutable instance key, and a divergent value silently breaks
+// the SSE completion check so the chat never finishes. The backend pins it on save too; this is UX.
+const configForm = computed<FormkitElement[]>(() =>
+  (agentInstance.value?.agent_config?.form || []).map(element =>
+    (element.name === 'agent_id' ? { ...element, disabled: true } : element) as FormkitElement,
+  ),
+)
 
 // Pass the saved configuration through unchanged. DynamicConfiguration hydrates it
 // (seedNullableToggles then seedFormDefaults): non-nullable groups are materialised to
