@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.6] - 2026-06-30 - Enhanced Document Processing and User Experience
+
+### Added
+
+- ✨ **Enhanced Document Page Counting:** The MarkItDown loader now accurately determines the page count for Microsoft
+  Word (.docx), PowerPoint (.pptx), and Excel (.xlsx) files, providing more precise document metadata.
+- 🚀 **Implemented File Upload Progress Tracking:** Users will now see real-time progress indicators during document
+  uploads, improving visibility and user experience, especially for larger files.
+
+______________________________________________________________________
+
 ## [v0.305.5] - 2026-06-30 - Enhanced CI/CD Workflow Resilience
 
 ### Fixed

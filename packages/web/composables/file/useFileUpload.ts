@@ -11,7 +11,7 @@ export interface UploadFileOptions {
   namespace: string
   database: string
   tenantId: string
-  onProgress?: () => void
+  onProgress?: (percent: number) => void
 }
 
 // Map extensions to MIME types for files where browser fails
@@ -54,12 +54,18 @@ export const useFileUpload = defineMutation(() => {
         },
       })
 
-      await fetch(initiateResponse.upload_url, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': contentType,
-        },
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+
+        xhr.open('PUT', initiateResponse.upload_url)
+        xhr.setRequestHeader('Content-Type', contentType)
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) options.onProgress?.(Math.round((e.loaded / e.total) * 100))
+        }
+        xhr.onload = () => (xhr.status < 400 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`)))
+        xhr.onerror = () => reject(new Error('Upload network error'))
+
+        xhr.send(file)
       })
 
       const validationRequest: DocumentUploadValidationRequest = {
