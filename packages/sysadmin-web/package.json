@@ -2,7 +2,7 @@
   "name": "@swiss-ai-hub/sysadmin-web",
   "license": "AGPL-3.0-or-later",
   "type": "module",
-  "version": "0.305.4",
+  "version": "0.305.5",
   "description": "Swiss AI Hub - System administration UI (Nuxt 3 layer over @swiss-ai-hub/web)",
   "main": "./nuxt.config.ts",
   "private": false,
