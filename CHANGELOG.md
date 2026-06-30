@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.6] - 2026-06-30 - Enhanced Document Processing and User Experience
+
+### Added
+
+- ✨ **Enhanced Document Page Counting:** The MarkItDown loader now accurately determines the page count for Microsoft
+  Word (.docx), PowerPoint (.pptx), and Excel (.xlsx) files, providing more precise document metadata.
+- 🚀 **Implemented File Upload Progress Tracking:** Users will now see real-time progress indicators during document
+  uploads, improving visibility and user experience, especially for larger files.
+
+______________________________________________________________________
+
+## [v0.305.5] - 2026-06-30 - Enhanced CI/CD Workflow Resilience
+
+### Fixed
+
+- 🐛 **CI Workflow Failures:** Prevented potential CI/CD pipeline failures during Docker image pre-pull login by ensuring
+  that an expired or absent GitHub token no longer causes the job to fail, significantly improving overall workflow
+  stability.
+
+### Changed
+
+- 🔄 **Best-Effort Docker Login:** Modified the `ghcr.io` Docker login process in CI workflows to be best-effort; if
+  authentication fails (e.g., due to an expired token), the system will now proceed with anonymous pulls for public
+  images, guaranteeing job continuity.
+- 📄 **Internal Documentation:** Updated internal documentation for GitHub Actions (`CLAUDE.md`) to explicitly reflect
+  the new best-effort login behavior and its rationale, providing clearer guidance for pipeline operations.
+
+______________________________________________________________________
+
 ## [v0.305.4] - 2026-06-30 - Improved Agent Configuration Stability
 
 ### Fixed
