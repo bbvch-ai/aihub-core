@@ -67,6 +67,9 @@ cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
 - `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to `.env.dev`
 - `regenerate_compose`: runs `make generate-compose` before starting Docker services
 - Health check polling: waits up to 10 minutes for Docker services to become healthy
+- Pre-pull login is **best-effort**: the `docker login ghcr.io` in the pre-pull step must not fail the job
+  (`|| echo "::warning::..."`). The mirrored images under `ghcr.io/bbvch-ai/aihub-core/*` are public, so an
+  expired/absent `PAT_GITHUB_READ_PACKAGES` still lets anonymous pulls succeed. Do NOT make this login fatal again.
 
 **pytest_coverage_comment**: Downloads `{working_directory}-pytest-report` and `{working_directory}-coverage-report`
 artifacts from `test_backend`, posts formatted coverage report as PR comment via
