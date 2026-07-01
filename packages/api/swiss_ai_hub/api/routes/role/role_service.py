@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from mongoengine.errors import DoesNotExist
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity, UsageLimit
 
@@ -21,7 +22,7 @@ class RoleService:
         role = RoleEntity.create_tenant_role(
             name=data.name,
             description=data.description,
-            access_rules=data.access_rules,
+            access_rules=[AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules],
             tenant_id=tenant_id,
             usage_limits=[UsageLimit(pattern=ul.pattern, limit=ul.limit, period=ul.period) for ul in data.usage_limits],
         )
@@ -62,6 +63,11 @@ class RoleService:
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
             return RoleResponse.from_role_entity(role)
+
+        if "access_rules" in update_data and data.access_rules is not None:
+            update_data["access_rules"] = [
+                AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules
+            ]
 
         if "usage_limits" in update_data and data.usage_limits is not None:
             update_data["usage_limits"] = [
