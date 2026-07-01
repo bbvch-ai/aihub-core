@@ -44,8 +44,12 @@ type AiHubToOwuiUserIdMapping = dict[str, str]
 type TenantAccessRules = dict[str, list[str]]
 """Maps tenant name to its access rule strings."""
 
-type RoleAccessRules = dict[str, list[str]]
-"""Maps role name to its access rule strings."""
+type RoleAccessRules = dict[tuple[str, str], list[str]]
+"""Maps (tenant display name, role name) to that role's access rule strings.
+
+Keyed by the pair because role names are only unique per tenant (index ``(tenant_id, name)``):
+the same name (``AIHubUser``, a shared ``TestRole``, …) exists in every tenant with its own rules,
+so a name-only key would collapse them and let one tenant's rules mask another's."""
 
 
 class OpenWebuiProvisioner:
@@ -401,7 +405,7 @@ class OpenWebuiProvisioner:
 
             tenant_name, role_name = parts
             t_rules = tenant_rules.get(tenant_name, [])
-            r_rules = role_rules.get(role_name, [])
+            r_rules = role_rules.get((tenant_name, role_name), [])
 
             checker = AccessChecker(user_access_rules=r_rules, tenant_access_rules=t_rules)
             if checker.has_access_to_agent(agent_class, agent_id):
@@ -431,7 +435,7 @@ class OpenWebuiProvisioner:
 
             tenant_name, role_name = parts
             t_rules = tenant_rules.get(tenant_name, [])
-            r_rules = role_rules.get(role_name, [])
+            r_rules = role_rules.get((tenant_name, role_name), [])
 
             checker = AccessChecker(user_access_rules=r_rules, tenant_access_rules=t_rules)
             if checker.has_access_to_model(capability, name):
@@ -473,7 +477,15 @@ class OpenWebuiProvisioner:
 
     @staticmethod
     def _build_role_rules() -> RoleAccessRules:
-        return {role.name: list(role.access_rules) for role in RoleEntity.objects()}
+        """Keys rules by (tenant display name, role name) so same-named roles in different tenants
+        stay distinct. The tenant display name matches the ``aihub:{tenant}:{role}`` group naming and
+        the ``tenant_rules`` keying, so the lookup in ``_compute_access_for_*`` lines up."""
+        tenant_name_by_id = {str(tenant.id): tenant.name for tenant in TenantMetadataEntity.objects()}
+        return {
+            (tenant_name_by_id[role.tenant_id], role.name): list(role.access_rules)
+            for role in RoleEntity.objects()
+            if role.tenant_id in tenant_name_by_id
+        }
 
     async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
         existing_models = await self._openwebui.list_models(http)

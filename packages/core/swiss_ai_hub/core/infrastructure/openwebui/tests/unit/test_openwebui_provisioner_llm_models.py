@@ -178,7 +178,7 @@ class TestComputeAccessForLlmModel:
     def test_group_with_matching_rules_gets_access(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.model.text-generation.*"]}
-        role_rules = {"R1": ["aihub.user.model.text-generation.*"]}
+        role_rules = {("T1", "R1"): ["aihub.user.model.text-generation.*"]}
 
         result = OpenWebuiProvisioner._compute_access_for_llm_model(
             "text-generation", "gemma-4-31B-it", groups, tenant_rules, role_rules
@@ -189,7 +189,7 @@ class TestComputeAccessForLlmModel:
     def test_other_capability_denied(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.model.embedding.*"]}
-        role_rules = {"R1": ["aihub.user.model.embedding.*"]}
+        role_rules = {("T1", "R1"): ["aihub.user.model.embedding.*"]}
 
         result = OpenWebuiProvisioner._compute_access_for_llm_model(
             "text-generation", "gemma-4-31B-it", groups, tenant_rules, role_rules
@@ -200,7 +200,7 @@ class TestComputeAccessForLlmModel:
     def test_tenant_ceiling_blocks_role_access(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.model.embedding.*"]}
-        role_rules = {"R1": ["aihub.user.model.text-generation.*"]}
+        role_rules = {("T1", "R1"): ["aihub.user.model.text-generation.*"]}
 
         result = OpenWebuiProvisioner._compute_access_for_llm_model(
             "text-generation", "gemma-4-31B-it", groups, tenant_rules, role_rules
@@ -211,7 +211,7 @@ class TestComputeAccessForLlmModel:
     def test_wildcard_grants_broad_access(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.model.>"]}
-        role_rules = {"R1": ["aihub.user.model.>"]}
+        role_rules = {("T1", "R1"): ["aihub.user.model.>"]}
 
         result = OpenWebuiProvisioner._compute_access_for_llm_model(
             "text-generation", "gemma-4-31B-it", groups, tenant_rules, role_rules
@@ -226,7 +226,7 @@ class TestComputeAccessForLlmModel:
             _group("aihub:T1:R1", "grp-good"),
         ]
         tenant_rules = {"T1": ["aihub.user.model.>"]}
-        role_rules = {"R1": ["aihub.user.model.>"]}
+        role_rules = {("T1", "R1"): ["aihub.user.model.>"]}
 
         result = OpenWebuiProvisioner._compute_access_for_llm_model(
             "text-generation", "gemma-4-31B-it", groups, tenant_rules, role_rules
@@ -239,7 +239,7 @@ class TestComputeGrantsForManagedModel:
     def test_dispatches_llm_model_to_model_access(self, provisioner: OpenWebuiProvisioner) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.model.>"]}
-        role_rules = {"R1": ["aihub.user.model.>"]}
+        role_rules = {("T1", "R1"): ["aihub.user.model.>"]}
         model = {"id": _GEMMA_ID, "base_model_id": "text-generation/gemma-4-31B-it"}
 
         result = provisioner._compute_grants_for_managed_model(model, groups, tenant_rules, role_rules)
@@ -249,7 +249,7 @@ class TestComputeGrantsForManagedModel:
     def test_dispatches_agent_model_to_agent_access(self, provisioner: OpenWebuiProvisioner) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
-        role_rules = {"R1": ["aihub.user.agent.>"]}
+        role_rules = {("T1", "R1"): ["aihub.user.agent.>"]}
         model = {"id": "aihub-agent-rag-default", "base_model_id": "aihub-pipeline.rag.default"}
 
         result = provisioner._compute_grants_for_managed_model(model, groups, tenant_rules, role_rules)
@@ -284,12 +284,14 @@ class TestSyncAccessGrantsLlm:
             patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
         ):
             tenant = MagicMock()
+            tenant.id = "T1"
             tenant.name = "T1"
             tenant.access_rules = ["aihub.user.model.>"]
             mock_tenant.objects.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
+            role.tenant_id = "T1"
             role.access_rules = ["aihub.user.model.text-generation.*"]
             mock_role.objects.return_value = [role]
 
