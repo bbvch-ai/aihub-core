@@ -12,15 +12,15 @@ dependencies = [
 [dependency-groups]
 dev = [
     # Testing
-    "pytest>=9.0.3",
-    "pytest-asyncio>=0.24.0",
+    "pytest>=9.1.0",
+    "pytest-asyncio>=1.4.0",
     "pytest-bdd>=8.1.0",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.14.0",
     # Linting & formatting
     "black[jupyter]>=26.1.0",
-    "ty>=0.0.34",
-    "ruff>=0.15.12",
+    "ty>=0.0.53",
+    "ruff>=0.15.19",
     "toml-sort>=0.24.4",
     # Utilities
     "pip-licenses>=5.5.5",
@@ -30,7 +30,7 @@ dev = [
     "mdformat-pyproject>=0.0.2",
     "mdformat-vuepress>=0.1.0",
     "mdformat-myst>=0.2.1",
-    "huggingface-hub>=0.36.2",
+    "huggingface-hub>=1.19.0",
     "tomlkit>=0.13.3",
     "yamlfix>=1.19.1",
 ]
