@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.7] - 2026-07-01 - Streamlined Dataset Details UI
+
+### Removed
+
+- 🗑️ **Dataset Details Page:** Removed an unnecessary `ConfirmPopup` component from the dataset details view,
+  simplifying the UI.
+
+______________________________________________________________________
+
 ## [v0.305.6] - 2026-06-30 - Enhanced Document Processing and User Experience
 
 ### Added
