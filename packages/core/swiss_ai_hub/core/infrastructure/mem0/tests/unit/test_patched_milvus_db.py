@@ -29,6 +29,5 @@ def test_mixed_filters_join_with_and():
         }
     )
     assert expression == (
-        '(metadata["_type"] == "organization_memory") '
-        'and (metadata["_tenant_namespace"] in ["dept-x", "dept-y"])'
+        '(metadata["_type"] == "organization_memory") and (metadata["_tenant_namespace"] in ["dept-x", "dept-y"])'
     )
