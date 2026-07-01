@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.305.8] - 2026-07-01 - Enhanced Mem0 Milvus Filtering
+
+### Added
+
+- ✨ Introduced **`PatchedMilvusDB`** to extend the filtering capabilities of mem0's Milvus vector store, enabling more
+  complex query operations.
+- 🧪 Added comprehensive **unit tests** for `PatchedMilvusDB` to ensure accurate and robust generation of Milvus query
+  filters, especially for advanced operators.
+
+### Fixed
+
+- 🐛 Resolved an issue where **`mem0`'s MilvusDB vector store** failed to correctly process advanced metadata filters,
+  particularly the `in` operator, which led to Milvus query parsing errors.
+
+### Changed
+
+- 🔄 The **`Mem0Service`** now integrates the `PatchedMilvusDB` wrapper for its internal Milvus vector store,
+  transparently applying the enhanced filter logic.
+
+______________________________________________________________________
+
 ## [v0.305.7] - 2026-07-01 - Streamlined Dataset Details UI
 
 ### Removed
