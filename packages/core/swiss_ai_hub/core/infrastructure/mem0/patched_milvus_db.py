@@ -1,9 +1,6 @@
-import logging
 from typing import Self, override
 
 from mem0.vector_stores.milvus import MilvusDB
-
-logger = logging.getLogger(__name__)
 
 
 class PatchedMilvusDB(MilvusDB):
@@ -15,6 +12,10 @@ class PatchedMilvusDB(MilvusDB):
     literally into the expression as `metadata["k"] == {'in': [...]}`, which
     Milvus rejects with a query-plan parse error. This patch translates the
     `in` operator into a valid Milvus `in [...]` expression.
+
+    Written against mem0 1.0.11: this @override replaces MilvusDB._create_filter
+    wholesale, so re-diff the upstream method on any mem0 bump — a fix or new
+    operator added there would otherwise be silently lost.
     """
 
     @classmethod
@@ -36,5 +37,6 @@ class PatchedMilvusDB(MilvusDB):
         return " and ".join(operands)
 
     @staticmethod
-    def _render_scalar(value: object) -> str:
-        return f'"{value}"' if isinstance(value, str) else f"{value}"
+    def _render_scalar(value: str) -> str:
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'

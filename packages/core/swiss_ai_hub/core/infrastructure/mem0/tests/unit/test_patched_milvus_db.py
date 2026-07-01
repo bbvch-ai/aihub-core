@@ -21,6 +21,14 @@ def test_in_operator_renders_milvus_in_clause():
     assert expression == '(metadata["_tenant_namespace"] in ["bbv vietnam", "QC Community"])'
 
 
+def test_string_values_escape_quotes():
+    assert _filter({"_tenant_namespace": 'say "hi"'}) == '(metadata["_tenant_namespace"] == "say \\"hi\\"")'
+
+
+def test_string_values_escape_backslashes():
+    assert _filter({"_tenant_namespace": "a\\b"}) == '(metadata["_tenant_namespace"] == "a\\\\b")'
+
+
 def test_mixed_filters_join_with_and():
     expression = _filter(
         {
