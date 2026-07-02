@@ -43,13 +43,19 @@ const { updateAgentInstance } = useUpdateAgentInstance()
 const { t } = useI18n()
 const toast = useToast()
 
-// Latch: once the instance has loaded, keep the form mounted. A background refetch (or a
-// transient `enabled` flip while the tenant query revalidates) must not tear the form out
-// of the DOM and re-seed it from server data, which would drop unsaved edits (issue #38).
+// Latch so a background refetch or transient `enabled` flip can't remount the form and
+// re-seed it from server data, dropping unsaved edits (issue #38).
 const hasLoaded = ref(false)
 watch(agentInstance, (value) => {
   if (value) hasLoaded.value = true
 }, { immediate: true })
+
+// Nuxt reuses this instance across param changes; drop the latch on route identity change so
+// the loading state shows until the new agent resolves, instead of the previous form lingering.
+watch(
+  () => `${route.params.agent_class}/${route.params.agent_id}`,
+  () => { hasLoaded.value = false },
+)
 
 // Lock agent_id on edit: it is the immutable instance key, and a divergent value silently breaks
 // the SSE completion check so the chat never finishes. The backend pins it on save too; this is UX.

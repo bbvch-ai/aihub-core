@@ -94,9 +94,8 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
     setNestedValue(formData.value, path, value)
   }
 
-  // Reseed only when the chosen class actually changes. A background refetch of the class
-  // list hands back a new `selectedClassData` reference for the *same* class; reseeding on
-  // that reference churn would wipe everything the user has typed (issue #38).
+  // Reseed only when the chosen class changes; a refetch hands back a new reference for the
+  // same class, and reseeding on that churn would wipe the user's input (issue #38).
   let seededForClass: string | null = null
   watch([selectedClass, selectedClassData], () => {
     if (seededForClass === selectedClass.value) return

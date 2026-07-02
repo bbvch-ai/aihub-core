@@ -7,7 +7,7 @@ export const useAgentInstance = defineQuery(() => {
   const { tenantId } = useTenant()
 
   const { data: agentInstance, isPending: agentInstanceIsLoading } = useQuery<FullAgentInstanceDto>({
-    key: () => ['tenant', tenantId.value as string, 'agent-instances', route.params.agent_class as string, route.params.agent_id as string],
+    key: () => ['tenant', tenantId.value, 'agent-instances', route.params.agent_class as string, route.params.agent_id as string],
     staleTime: minutesToMilliseconds(5),
     // A focus refetch after leaving the tab would flip the loading/enabled state and remount
     // the configuration form, discarding unsaved edits (issue #38). Keep the cached value.
