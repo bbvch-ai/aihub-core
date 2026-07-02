@@ -119,6 +119,24 @@ Dockerfile and published manually via `make -C infra/deployment build-and-push-p
 After publishing, non-build stages pick up the new image automatically via `docker compose pull`. The `build` stage
 continues to build locally so developers test Dockerfile edits without round-tripping through the registry.
 
+### Publishing the open-terminal image
+
+The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
+libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/python-docx/weasyprint/matplotlib/xlsxwriter) and
+is published manually via `make -C infra/deployment build-and-push-open-terminal-image` (requires
+`docker login ghcr.io`). Re-publish whenever:
+
+- The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
+- A new Python library dependency must be baked into the image
+
+After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
+`docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
+
+> **Deployment checklist:** Publish `open-terminal-office:0.11.34` to ghcr **before any non-dev stage pulls it**.
+> Non-dev stages (`local`/`build` build locally, but `nightly`/`latest` pull from the registry) reference this exact
+> tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
+> stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.
+
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
 
@@ -137,20 +155,28 @@ The template conditionally includes services based on stage and GPU mode:
 Port exposure: direct localhost ports (`8080:8080`) only in `dev`, `local`, `build`. In `nightly`/`latest`, all traffic
 routes through Traefik.
 
-## Network Isolation (5 Zones)
+## Network Isolation (6 Zones)
 
-| Network   | Purpose                           | Internal | ICC | Key Services                                                  |
-| --------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
-| `proxy`   | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend` | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), jupyter, otel   |
-| `data`    | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
-| `storage` | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
-| `egress`  | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |
+| Network        | Purpose                           | Internal | ICC | Key Services                                                  |
+| -------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
+| `proxy`        | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
+| `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), jupyter, otel   |
+| `data`         | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
+| `storage`      | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
+| `egress`       | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |
+| `code-sandbox` | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
 **Cross-network bridges**: Services needing multiple zones get multiple networks (e.g., `seaweedfs-s3` on
-storage+backend, `milvus-standalone` on data+storage, `api` on proxy+backend+data+storage).
+storage+backend, `milvus-standalone` on data+storage, `api` on proxy+backend+data+storage, `open-webui` on
+proxy+backend+data+storage+code-sandbox).
+
+**`code-sandbox` rationale**: `open-terminal` runs arbitrary user code, so it lives **alone** in `code-sandbox` (not
+`backend`). Docker networks are bidirectional — sharing `backend` would let a sandbox breakout reach every backend
+service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` to their own network list; the sandbox
+itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
+internet.
 
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 

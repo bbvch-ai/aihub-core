@@ -57,9 +57,10 @@ Langfuse adds AI-specific observability on top — full prompt/response capture,
 tracing, and evaluation datasets. Both integrate via the same trace context, providing end-to-end visibility from user
 request to LLM response.
 
-**Network Isolation**: Docker Compose defines five network zones: `proxy` (external ingress via Traefik), `backend`
-(application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), and `egress`
-(outbound internet with inter-container communication disabled). Services are assigned only the networks they require.
+**Network Isolation**: Docker Compose defines six network zones: `proxy` (external ingress via Traefik), `backend`
+(application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), `egress` (outbound
+internet with inter-container communication disabled), and `code-sandbox` (single-tenant zone for the `open-terminal`
+code-execution sandbox plus exactly its callers). Services are assigned only the networks they require.
 
 ## Dev Stack Services
 
@@ -89,8 +90,9 @@ backup/restore
 
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
-**Utility**: Jupyter Lab (:8888, code execution sandbox), Playwright (:3036, browser automation), Attu (:3003, Milvus
-admin UI)
+**Utility**: Open Terminal (:8200 in dev, code execution sandbox for OpenWebUI — plain LLM models only), Jupyter Lab
+(:8888, retained in stack but no longer the OpenWebUI code path), Playwright (:3036, browser automation), Attu (:3003,
+Milvus admin UI)
 
 ## Package Architecture
 
