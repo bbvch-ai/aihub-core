@@ -1,8 +1,11 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
+from fastapi.routing import APIRoute
 from swiss_ai_hub.core.auth import AccessChecker
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
 
 from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
@@ -17,6 +20,15 @@ _TENANT_FULL = ["aihub.admin.>"]
 
 def _checker(user_rules: list[str]) -> AccessChecker:
     return AccessChecker(user_rules, tenant_access_rules=_TENANT_FULL)
+
+
+def _route_endpoint(builder_method: str):
+    """Builds a controller with only ``builder_method`` mounted and returns its single route's raw
+    endpoint, so a route handler closure can be unit-tested directly (Security/Depends bypassed)."""
+    controller = OpenaiController(auth=TestAuthHandler())
+    getattr(controller, builder_method)()
+    route = next(r for r in controller.router.routes if isinstance(r, APIRoute))
+    return route.endpoint
 
 
 class TestAssertModelAccessHelper:
@@ -101,3 +113,89 @@ class TestChatCompletionWithAssistantsBranching:
                 await self._call_with_assistants("text-generation/gemma-4-31B-it")
         assert exc.value.status_code == 403
         assert exc.value.detail == "no access to model"
+
+
+class TestGetModelsControllerFilter:
+    """The `/v1/models` list filter — a different code path from ModelService (partition/slice)."""
+
+    @pytest.mark.asyncio
+    async def test_filters_by_capability_and_skips_bare_ids(self):
+        endpoint = _route_endpoint("get_models")
+        models = SimpleNamespace(
+            data=[
+                SimpleNamespace(id="text-generation/gemma-4-31B-it"),  # granted
+                SimpleNamespace(id="embedding/bge-m3"),  # other capability -> denied
+                SimpleNamespace(id="bare-id-without-slash"),  # empty name -> must be skipped, not crash
+            ]
+        )
+        with (
+            patch.object(OpenaiService, "get_models", new=AsyncMock(return_value=models)),
+            patch(
+                f"{_CONTROLLER}.AccessChecker.from_user",
+                return_value=_checker(["aihub.user.model.text-generation.*"]),
+            ),
+        ):
+            result = await endpoint(user=fake_user())
+
+        assert [m.id for m in result.data] == ["text-generation/gemma-4-31B-it"]
+
+
+class TestGetModelWithAssistantsControllerAccess:
+    """The `/v1/models/{name}` detail endpoint — model vs assistant access, 403 (not 500) on denial."""
+
+    async def _call(self, model, user_rules: list[str]):
+        endpoint = _route_endpoint("get_model_with_assistants")
+        with (
+            patch.object(OpenaiService, "get_model_with_assistants", new=AsyncMock(return_value=model)),
+            patch(f"{_CONTROLLER}.AccessChecker.from_user", return_value=_checker(user_rules)),
+        ):
+            return await endpoint(full_path=model.id, user=fake_user(), t=Mock())
+
+    @pytest.mark.asyncio
+    async def test_denies_unpermitted_model_with_403(self):
+        model = SimpleNamespace(id="text-generation/gemma-4-31B-it", object="model", agent_class=None, agent_id=None)
+        with pytest.raises(HTTPException) as exc:
+            await self._call(model, user_rules=[])
+        assert exc.value.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_denies_unpermitted_assistant_with_403(self):
+        model = SimpleNamespace(
+            id="ResearchAgent/inst1", object="assistant", agent_class="ResearchAgent", agent_id="inst1"
+        )
+        with pytest.raises(HTTPException) as exc:
+            await self._call(model, user_rules=[])
+        assert exc.value.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_allows_permitted_model(self):
+        model = SimpleNamespace(id="text-generation/gemma-4-31B-it", object="model", agent_class=None, agent_id=None)
+        result = await self._call(model, user_rules=["aihub.user.model.text-generation.*"])
+        assert result is model
+
+
+class TestGetModelWithAssistantsServiceFallback:
+    """Service-level: only a 404 from the model lookup may fall through to the agent branch."""
+
+    @pytest.mark.asyncio
+    async def test_non_404_from_model_lookup_propagates(self):
+        with patch.object(
+            OpenaiService, "get_model", new=AsyncMock(side_effect=HTTPException(status_code=403, detail="denied"))
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await OpenaiService.get_model_with_assistants(model_name="text-generation/gemma-4-31B-it", t=Mock())
+        assert exc.value.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_404_falls_through_to_agent_branch(self):
+        agent = SimpleNamespace(agent_class="ResearchAgent", agent_id="inst1", is_conversational=True)
+        with (
+            patch.object(
+                OpenaiService, "get_model", new=AsyncMock(side_effect=HTTPException(status_code=404, detail="nf"))
+            ),
+            patch(f"{_SERVICE}.AgentService.get_agent_instance", new=AsyncMock(return_value=agent)),
+        ):
+            result = await OpenaiService.get_model_with_assistants(model_name="ResearchAgent/inst1", t=Mock())
+
+        assert result.object == "assistant"
+        assert result.agent_id == "inst1"

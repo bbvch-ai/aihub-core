@@ -122,8 +122,11 @@ class OpenaiService:
         """
         try:
             return await OpenaiService.get_model(model_name)
-        except HTTPException:
-            pass
+        except HTTPException as model_lookup_error:
+            # Only a 404 ("not a known model") should fall through to the agent branch; any other error
+            # (e.g. a future 403) must propagate rather than be masked as an assistant lookup.
+            if model_lookup_error.status_code != 404:
+                raise
         agent_class, agent_id = model_name.split("/")
         agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 

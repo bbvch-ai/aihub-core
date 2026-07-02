@@ -69,9 +69,15 @@ class OpenaiController(TenantScopedController):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     @staticmethod
+    def _has_model_access(access_checker: AccessChecker, model_id: str) -> bool:
+        """Whether the checker grants the ``capability/name`` model. Guards bare ids (no ``/``): an empty
+        name cannot form a valid permission rule, so it is denied rather than raising in the template check."""
+        capability, _, name = model_id.partition("/")
+        return bool(name) and access_checker.has_access_to_model(capability, name)
+
+    @staticmethod
     def _assert_model_access(user: UserIdentity, model_name: str) -> None:
-        capability, _, name = model_name.partition("/")
-        if not (name and AccessChecker.from_user(user).has_access_to_model(capability, name)):
+        if not OpenaiController._has_model_access(AccessChecker.from_user(user), model_name):
             raise HTTPException(
                 status_code=403,
                 detail=f"User {user.id} does not have permission to access model {model_name}",
@@ -92,9 +98,7 @@ class OpenaiController(TenantScopedController):
             access_checker = AccessChecker.from_user(user)
             model_response = await OpenaiService.get_models()
 
-            model_response.data = [
-                m for m in model_response.data if access_checker.has_access_to_model(*m.id.partition("/")[::2])
-            ]
+            model_response.data = [m for m in model_response.data if self._has_model_access(access_checker, m.id)]
 
             return model_response
 
@@ -161,8 +165,7 @@ class OpenaiController(TenantScopedController):
             if model.object == "assistant":
                 permitted = access_checker.has_access_to_agent(model.agent_class, model.agent_id)
             else:
-                capability, _, name = model.id.partition("/")
-                permitted = bool(name) and access_checker.has_access_to_model(capability, name)
+                permitted = self._has_model_access(access_checker, model.id)
 
             if not permitted:
                 raise HTTPException(
