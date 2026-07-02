@@ -1,4 +1,5 @@
 import html
+import os
 from collections import defaultdict
 
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
@@ -44,6 +45,12 @@ def combine_nodes_in_order(
 ) -> ChatMessage:
     if context_prompt is None:
         context_prompt = LocaleString.from_i18n_path("lib.prompt.rag.context_prompt")
+
+    # When inlining is enabled the figure URL is signed internally so the LiteLLM gateway
+    # hook can fetch and base64-inline it; when disabled we fall back to the public
+    # presigned URL (pre-inlining behaviour) for the provider to fetch directly.
+    inline_enabled = os.environ.get("RAG_IMAGE_INLINE_ENABLED", "true").strip().lower() in ("1", "true", "yes", "on")
+
     nodes_per_document: dict[str, list[IngestedNode]] = defaultdict(list)
 
     for context_node in context_nodes:
@@ -107,7 +114,14 @@ def combine_nodes_in_order(
                     # Azure format: container/path
                     container, blob_path = image_path.split("/", 1)
 
-                image_url = create_s3_service().generate_sas_url(container, blob_path, lifetime_hours=1)
+                # Internal-signed when inlining is on (the gateway hook fetches it
+                # in-cluster and base64-inlines it, since the provider dereferences image
+                # URLs server-side and cannot reach our storage); public-signed when off
+                # (the provider fetches it directly). Either way the message stays tiny —
+                # just the URL, no base64 rides on NATS events.
+                image_url = create_s3_service().generate_sas_url(
+                    container, blob_path, lifetime_hours=1, internal=inline_enabled
+                )
                 context_blocks.append(ImageBlock(url=image_url))
             else:
                 tag = n.type if n.type else NODE_TYPE_CONTENT

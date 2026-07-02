@@ -53,10 +53,19 @@ def create_s3_service() -> S3AnonymousFileAccessService:
         region_name=settings.REGION,
         config=Config(signature_version="s3v4"),
     )
+    s3_internal_client = boto3.client(
+        "s3",
+        endpoint_url=settings.get_internal_endpoint(),
+        aws_access_key_id=settings.ACCESS_KEY,
+        aws_secret_access_key=settings.SECRET_KEY.get_secret_value(),
+        region_name=settings.REGION,
+        config=Config(signature_version="s3v4"),
+    )
     return S3AnonymousFileAccessService(
         s3_client=s3_client,
         s3_public_client=s3_public_client,
         s3_settings=settings,
+        s3_internal_client=s3_internal_client,
     )
 
 
