@@ -20,6 +20,9 @@ presets:
   admin_all_processes:
     name: Gérer tous les processus
     description: Créer, configurer et supprimer chaque processus.
+  user_all_models:
+    name: Utiliser tous les modèles
+    description: Utiliser chaque modèle disponible.
   admin_knowledge:
     name: Gérer les bases de connaissances
     description: Contrôle total sur les bases de connaissances et leurs documents.
@@ -81,6 +84,9 @@ capabilities:
       manage:
         label: Gérer
         description: Configurer et ingérer des documents dans ce namespace.
+    model:
+      use:
+        description: Utiliser ce modèle.
     memory:
       org:
         label: Utiliser la mémoire d'organisation
