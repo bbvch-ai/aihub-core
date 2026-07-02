@@ -2,7 +2,7 @@
   <StructuralColumn
     :title="t('agent.configuration.title')"
     close-route="/service/agents"
-    :loading="agentInstanceIsLoading"
+    :loading="agentInstanceIsLoading && !hasLoaded"
     size="normal"
   >
     <div class="flex flex-col gap-3">
@@ -10,7 +10,7 @@
         {{ t('agent.configuration.description') }}
       </p>
       <AgentConfiguration
-        v-if="configForm && configForm.length > 0 && !agentInstanceIsLoading"
+        v-if="hasLoaded && configForm && configForm.length > 0"
         :title="t('agent.configuration.runtimeSettings')"
         :description="agentInstance?.agent_config.description || ''"
         :form="configForm"
@@ -18,7 +18,7 @@
         @submit="submitConfiguration"
       />
       <div
-        v-else-if="agentInstanceIsLoading"
+        v-else-if="!hasLoaded"
         class="text-center text-sm text-surface-500 dark:text-surface-400"
       >
         {{ t('common.loading') }}
@@ -42,6 +42,14 @@ const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
 const { updateAgentInstance } = useUpdateAgentInstance()
 const { t } = useI18n()
 const toast = useToast()
+
+// Latch: once the instance has loaded, keep the form mounted. A background refetch (or a
+// transient `enabled` flip while the tenant query revalidates) must not tear the form out
+// of the DOM and re-seed it from server data, which would drop unsaved edits (issue #38).
+const hasLoaded = ref(false)
+watch(agentInstance, (value) => {
+  if (value) hasLoaded.value = true
+}, { immediate: true })
 
 // Lock agent_id on edit: it is the immutable instance key, and a divergent value silently breaks
 // the SSE completion check so the chat never finishes. The backend pins it on save too; this is UX.
