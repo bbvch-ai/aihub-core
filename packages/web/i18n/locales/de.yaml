@@ -636,6 +636,7 @@ role:
   preset_category_everything: Alles
   preset_category_agents: Agenten
   preset_category_processes: Prozesse
+  preset_category_models: Modelle
   preset_category_knowledge: Wissen
   capabilities_title: Was diese Regeln gewähren
   capabilities_subtitle: Aktiviere eine Fähigkeit, um sie zu gewähren. Gesperrte Einträge
