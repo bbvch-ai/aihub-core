@@ -71,28 +71,29 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
 ### `ports` — Show all exposed service URLs
 
-| Service        | Port   | Purpose                         |
-| -------------- | ------ | ------------------------------- |
-| API            | :8000  | REST API + WebSocket (local)    |
-| OpenWebUI      | :8080  | Chat interface                  |
-| Admin UI       | :3333  | Nuxt management UI (local)      |
-| Dagster        | :3000  | Pipeline orchestrator (local)   |
-| LiteLLM        | :4000  | LLM proxy                       |
-| Langfuse       | :6006  | LLM observability               |
-| MinerU         | :5001  | Document parsing                |
-| PostgreSQL     | :5432  | Relational DB (4 databases)     |
-| FerretDB       | :27017 | MongoDB-compatible              |
-| Milvus         | :19530 | Vector DB                       |
-| Neo4j          | :7474  | Graph DB (web), :7687 (bolt)    |
-| Valkey         | :6379  | Redis-compatible cache          |
-| NATS           | :4222  | Message broker, :8222 (monitor) |
-| SeaweedFS      | :8889  | Filer UI, :9000 (S3 gateway)    |
-| Rclone         | :5572  | Cloud sync RC API               |
-| Speaches       | :8185  | STT/TTS                         |
-| Jupyter        | :8888  | Code execution sandbox          |
-| Playwright     | :3036  | Browser automation              |
-| Attu           | :3003  | Milvus admin UI                 |
-| OTEL Collector | :4317  | gRPC receiver, :4318 (HTTP)     |
+| Service        | Port   | Purpose                                 |
+| -------------- | ------ | --------------------------------------- |
+| API            | :8000  | REST API + WebSocket (local)            |
+| OpenWebUI      | :8080  | Chat interface                          |
+| Admin UI       | :3333  | Nuxt management UI (local)              |
+| Dagster        | :3000  | Pipeline orchestrator (local)           |
+| LiteLLM        | :4000  | LLM proxy                               |
+| Langfuse       | :6006  | LLM observability                       |
+| MinerU         | :5001  | Document parsing                        |
+| PostgreSQL     | :5432  | Relational DB (4 databases)             |
+| FerretDB       | :27017 | MongoDB-compatible                      |
+| Milvus         | :19530 | Vector DB                               |
+| Neo4j          | :7474  | Graph DB (web), :7687 (bolt)            |
+| Valkey         | :6379  | Redis-compatible cache                  |
+| NATS           | :4222  | Message broker, :8222 (monitor)         |
+| SeaweedFS      | :8889  | Filer UI, :9000 (S3 gateway)            |
+| Rclone         | :5572  | Cloud sync RC API                       |
+| Speaches       | :8185  | STT/TTS                                 |
+| Open Terminal  | :8200  | Code execution sandbox (OpenWebUI)      |
+| Jupyter        | :8888  | Retained; no longer OpenWebUI code path |
+| Playwright     | :3036  | Browser automation                      |
+| Attu           | :3003  | Milvus admin UI                         |
+| OTEL Collector | :4317  | gRPC receiver, :4318 (HTTP)             |
 
 Note: API (:8000), Admin UI (:3333), and Dagster (:3000) run **locally outside Docker** in dev — they're not in
 `infra/docker-compose.dev.yml`.

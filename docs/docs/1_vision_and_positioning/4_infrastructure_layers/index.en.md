@@ -56,14 +56,14 @@ debug files (requires the `AIHubSysAdmin` realm role). MongoDB persists conversa
 application data, and event history. These choices provide cloud-native storage patterns that work identically whether
 deployed on-premise or in cloud environments.
 
-The platform includes integrated AI tools that enhance the chat experience. **Jupyter Lab** enables code interpretation
-and execution when users ask the LLM to analyze data or run calculations. The LLM can write Python code that executes
-securely in an isolated Jupyter environment, returning results directly in the conversation. **SearXNG** provides web
-search capabilities when users need current information, aggregating results from multiple search engines while
-preserving privacy. **Playwright** scrapes content from websites discovered through search, extracting full text when
-search snippets aren't sufficient. **MinerU** parses documents users upload to the chat, extracting text and structure
-from PDFs, Word documents, and presentations while preserving tables and formatting needed for accurate
-question-answering.
+The platform includes integrated AI tools that enhance the chat experience. **Open Terminal** enables code execution
+when users ask a plain LLM model to analyze data or run calculations. The model writes Python code that executes in an
+isolated per-user sandbox with common document libraries pre-installed; generated files (reports, spreadsheets, charts)
+appear in the chat for download. **SearXNG** provides web search capabilities when users need current information,
+aggregating results from multiple search engines while preserving privacy. **Playwright** scrapes content from websites
+discovered through search, extracting full text when search snippets aren't sufficient. **MinerU** parses documents
+users upload to the chat, extracting text and structure from PDFs, Word documents, and presentations while preserving
+tables and formatting needed for accurate question-answering.
 
 Observability starts from day one with **OpenTelemetry** collecting metrics, traces, and logs from every component. The
 data flows to appropriate backends: metrics to Prometheus, traces to Jaeger, logs to Loki. This standardized

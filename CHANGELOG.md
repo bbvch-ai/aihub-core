@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.306.0] - 2026-07-02 - Major Upgrade: Secure Open Terminal for OpenWebUI Code Interpreter
+
+### Added
+
+- 🦾 **Open Terminal Service**: Introduced a new `open-terminal` service dedicated to sandboxed code execution for
+  OpenWebUI's plain LLM models. This new service offers per-user isolation and downloadable file output.
+- 🔑 **`OPEN_TERMINAL_API_KEY`**: Added a new environment variable for authenticating OpenWebUI's connections to the Open
+  Terminal sandbox, enhancing security.
+- 🌐 **`code-sandbox` Network Zone**: Established a new, isolated Docker network specifically for the `open-terminal`
+  sandbox and its direct callers (OpenWebUI), preventing lateral reach to other backend or data services.
+- 📄 **Architectural Decision Record**: A detailed ADR (`2026_06_22_openwebui_code_execution_open_terminal.md`) was added
+  to document the architectural shift from Jupyter to Open Terminal, outlining the rationale, decision, and
+  consequences.
+- ⚙️ **Open Terminal Dockerfile & Build Process**: Added a custom Dockerfile for `open-terminal` to include essential
+  document-processing libraries (reportlab, fpdf2) and integrated its build and push into the deployment Makefile.
+
+### Changed
+
+- 🔄 **OpenWebUI Code Execution Backend**: OpenWebUI now exclusively uses the new `open-terminal` service for
+  model-driven code execution, replacing the previous Jupyter integration.
+- 📄 **Jupyter Role Clarification**: The Jupyter service is now explicitly designated as "retained in stack but no longer
+  the OpenWebUI code path," signifying its deprecation for this use case.
+- 🗺️ **Network Topology**: Updated the system's network architecture from five to six isolated Docker networks to
+  incorporate the new `code-sandbox` zone, enhancing overall system isolation.
+- 📚 **Documentation Updates**: Comprehensive revisions across the project documentation (skills, README, architecture,
+  deployment guides, environment variables) to reflect the integration of Open Terminal, its features, and the updated
+  network and deployment model.
+- 🚦 **OpenWebUI Service Dependencies**: Changed OpenWebUI's health check dependency from `jupyter` to the new
+  `open-terminal` service.
+
+### Security
+
+- 🔒 **Enhanced Code Execution Isolation**: Arbitrary user-submitted code executed via Open Terminal now runs in a
+  dedicated `code-sandbox` network, which is internal (no outbound internet in non-dev stages) and only allows
+  communication with its direct callers, significantly reducing the blast radius in case of a sandbox escape.
+- 🛡️ **Per-User Sandbox Isolation**: The Open Terminal service is configured for multi-user support, providing separate
+  Linux accounts and home directories for each user, improving data privacy and preventing users from accessing each
+  other's files within the sandbox.
+
+______________________________________________________________________
+
 ## [v0.305.8] - 2026-07-01 - Enhanced Mem0 Milvus Filtering
 
 ### Added
