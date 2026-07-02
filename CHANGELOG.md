@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.306.1] - 2026-07-02 - Improved Agent Form Reliability
+
+### Fixed
+
+- 🐛 **Agent configuration forms** now reliably preserve unsaved edits, preventing data loss even during background data
+  refreshes or transient loading states.
+- 🧩 **Agent creation forms** no longer reset user input when the selected agent class data is refreshed, ensuring a
+  smoother creation process.
+- 🔄 **Enhanced form stability** by preventing automatic refetches of agent class and instance data on window focus,
+  safeguarding ongoing user input.
+
+______________________________________________________________________
+
 ## [v0.306.0] - 2026-07-02 - Major Upgrade: Secure Open Terminal for OpenWebUI Code Interpreter
 
 ### Added
