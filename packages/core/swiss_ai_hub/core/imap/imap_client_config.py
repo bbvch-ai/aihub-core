@@ -33,6 +33,11 @@ class ImapClientConfig(StepConfig):
         str | InputText,
         Field(default="INBOX", description="Mailbox folder to read incoming mail from."),
     ]
+    max_messages: Annotated[
+        int | InputNumber,
+        Field(default=50, description="Maximum number of unread messages listed per run — keeps events small."),
+        Gt(0),
+    ]
     drafts_folder: Annotated[
         str | InputText,
         Field(default="Drafts", description="Mailbox folder drafts are written to (used by the draft-reply story)."),
@@ -67,6 +72,13 @@ class ImapClientConfig(StepConfig):
             inbox_folder=InputText(
                 label=LocaleString.from_i18n_path("lib.imap.config.inbox_folder.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.inbox_folder.help"),
+            ),
+            max_messages=InputNumber(
+                label=LocaleString.from_i18n_path("lib.imap.config.max_messages.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.max_messages.help"),
+                min=1,
+                max=500,
+                step=1,
             ),
             drafts_folder=InputText(
                 label=LocaleString.from_i18n_path("lib.imap.config.drafts_folder.label"),

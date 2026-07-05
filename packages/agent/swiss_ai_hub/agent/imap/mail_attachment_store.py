@@ -1,10 +1,8 @@
 import asyncio
 from uuid import uuid4
 
-import boto3
-from botocore.config import Config
-from swiss_ai_hub.core.events.agent import MailAttachmentRef, UserUploadedFile
-from swiss_ai_hub.core.infrastructure.s3.s3_storage_settings import S3StorageSettings
+from swiss_ai_hub.core.events.agent import MailAttachmentRef
+from swiss_ai_hub.core.infrastructure import create_s3_client
 
 from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment
 
@@ -26,25 +24,17 @@ class MailAttachmentStore:
         if not attachments:
             return []
 
-        settings = S3StorageSettings()
-        client = boto3.client(
-            "s3",
-            endpoint_url=settings.ENDPOINT,
-            aws_access_key_id=settings.ACCESS_KEY,
-            aws_secret_access_key=settings.SECRET_KEY.get_secret_value(),
-            region_name=settings.REGION,
-            config=Config(signature_version="s3v4"),
-        )
+        client = create_s3_client()
 
         refs: list[MailAttachmentRef] = []
         for attachment in attachments:
-            file_id = str(uuid4())
-            uploaded = UserUploadedFile(
+            ref = MailAttachmentRef(
                 filename=attachment.filename,
-                file_type=attachment.content_type,
-                file_id=file_id,
+                content_type=attachment.content_type,
+                file_id=str(uuid4()),
+                size_bytes=len(attachment.content),
             )
-            bucket, key = uploaded.resolve_s3_location(agent_class, agent_id)
+            bucket, key = ref.resolve_s3_location(agent_class, agent_id)
             await asyncio.to_thread(
                 client.put_object,
                 Bucket=bucket,
@@ -52,12 +42,5 @@ class MailAttachmentStore:
                 Body=attachment.content,
                 ContentType=attachment.content_type,
             )
-            refs.append(
-                MailAttachmentRef(
-                    filename=attachment.filename,
-                    content_type=attachment.content_type,
-                    file_id=file_id,
-                    size_bytes=len(attachment.content),
-                )
-            )
+            refs.append(ref)
         return refs

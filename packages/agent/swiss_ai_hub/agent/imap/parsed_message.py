@@ -1,12 +1,10 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class ParsedAttachment(BaseModel):
     """An attachment parsed out of a MIME message, carrying its raw bytes before they are stored in S3."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     filename: str
     content_type: str

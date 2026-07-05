@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.agent.imap.imap_client import ImapClient, ImapClientFactory
+    from swiss_ai_hub.agent.imap.imap_command_error import ImapCommandError
     from swiss_ai_hub.agent.imap.mail_attachment_store import MailAttachmentStore
     from swiss_ai_hub.agent.imap.mail_parser import MailParser
     from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment, ParsedMessage
@@ -9,6 +10,7 @@ if TYPE_CHECKING:
 __all__ = [
     "ImapClient",
     "ImapClientFactory",
+    "ImapCommandError",
     "MailAttachmentStore",
     "MailParser",
     "ParsedAttachment",
@@ -21,6 +23,7 @@ _PARSED_MESSAGE_MODULE = "swiss_ai_hub.agent.imap.parsed_message"
 _LAZY_IMPORTS = {
     "ImapClient": _IMAP_CLIENT_MODULE,
     "ImapClientFactory": _IMAP_CLIENT_MODULE,
+    "ImapCommandError": "swiss_ai_hub.agent.imap.imap_command_error",
     "MailAttachmentStore": "swiss_ai_hub.agent.imap.mail_attachment_store",
     "MailParser": "swiss_ai_hub.agent.imap.mail_parser",
     "ParsedAttachment": _PARSED_MESSAGE_MODULE,

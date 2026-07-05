@@ -18,6 +18,9 @@ config:
   inbox_folder:
     label: Inbox Folder
     help: Mailbox folder to read incoming mail from.
+  max_messages:
+    label: Max Unread Messages
+    help: Maximum number of unread messages listed per run.
   drafts_folder:
     label: Drafts Folder
     help: Mailbox folder drafts are written to.

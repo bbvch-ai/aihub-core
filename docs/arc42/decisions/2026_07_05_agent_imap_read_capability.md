@@ -58,7 +58,14 @@ contract, which references files by `file_id` and derives the S3 location at run
 - **New dependency**: `aioimaplib` for async IMAP. MIME/attachment parsing uses the Python standard-library `email`
   module — no additional dependency.
 - **Read-only scope**: no SMTP, no sending — ever. Sending is explicitly out of scope for the whole email capability,
-  not just this story.
+  not just this story. Read-only extends to the protocol level: listing and fetching use `BODY.PEEK[...]` so the
+  `\Seen` flag is never set, and every server response is status-checked (`ImapCommandError`) instead of trusting
+  aioimaplib's non-raising `NO`/`BAD` responses.
+- **Stable message identity**: messages are addressed by IMAP UID (`UID SEARCH` / `UID FETCH`), not sequence numbers —
+  list and fetch run on separate connections (possibly separate servers), and sequence numbers shift when another
+  client expunges mail in between.
+- **Bounded listing**: `ImapClientConfig.max_messages` (default 50) caps how many unread summaries a single
+  `UnreadMailListedEvent` carries, keeping the persisted/streamed event small even for overflowing inboxes.
 
 A playground demonstrator agent (`playground/minimal_workflow/imap_workflow`) exercises the capability end to end
 (`list_unread_step` → `fetch_mail_step` → stop) and hosts the BDD tests.
@@ -86,3 +93,6 @@ A playground demonstrator agent (`playground/minimal_workflow/imap_workflow`) ex
   secret-indirection mechanism (Key Vault / references) for agent configs remains a possible follow-up if the security
   posture needs to tighten.
 - **`aioimaplib` is a new runtime dependency** in `packages/agent`, adding to the maintenance and supply-chain surface.
+- **Mail bodies are protocol payloads.** `MailFetchedEvent` carries `body_text`/`body_html` of arbitrary inbound mail
+  into the audit trail (FerretDB) and to the frontend over WebSocket; Presidio only guards the LLM path. Frontends must
+  never render `body_html` as raw HTML (XSS from a hostile sender).

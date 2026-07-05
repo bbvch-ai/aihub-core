@@ -1,13 +1,14 @@
 import email
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from email.message import EmailMessage
 from email.policy import default as default_policy
 
 import aioimaplib
 from swiss_ai_hub.core.events.agent import UnreadMailSummary
-from swiss_ai_hub.core.imap.imap_client_config import ImapClientConfig
+from swiss_ai_hub.core.imap import ImapClientConfig
 
+from swiss_ai_hub.agent.imap.imap_command_error import ImapCommandError
 from swiss_ai_hub.agent.imap.mail_parser import MailParser
 from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 
@@ -15,30 +16,33 @@ from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 class ImapClient:
     """High-level async IMAP reader over aioimaplib — returns parsed domain objects, not raw protocol lines."""
 
-    def __init__(self, connection: aioimaplib.IMAP4, inbox_folder: str) -> None:
+    def __init__(self, connection: aioimaplib.IMAP4, inbox_folder: str, max_messages: int) -> None:
         self._connection = connection
         self._inbox_folder = inbox_folder
+        self._max_messages = max_messages
 
     async def list_unread(self) -> list[UnreadMailSummary]:
-        """List unread messages in the inbox as lightweight header summaries."""
-        await self._connection.select(self._inbox_folder)
-        search = await self._connection.search("UNSEEN")
-        message_ids = search.lines[0].split() if search.lines and search.lines[0] else []
+        """List unread messages as header summaries, identified by UID so ids stay valid across connections."""
+        ImapCommandError.check("SELECT", await self._connection.select(self._inbox_folder))
+        search = ImapCommandError.check("UID SEARCH", await self._connection.uid_search("UNSEEN"))
+        uids = search.lines[0].split() if search.lines and search.lines[0] else []
 
         summaries: list[UnreadMailSummary] = []
-        for raw_id in message_ids:
-            message_id = raw_id.decode()
-            fetched = await self._connection.fetch(message_id, "(FLAGS BODY.PEEK[HEADER])")
-            header_bytes = self._extract_literal(fetched.lines)
-            message = self._parse_bytes(header_bytes)
-            flags = self._extract_flags(fetched.lines)
-            summaries.append(MailParser.parse_summary(message_id, message, flags))
+        for raw_uid in uids[: self._max_messages]:
+            uid = raw_uid.decode()
+            fetched = ImapCommandError.check(
+                "UID FETCH", await self._connection.uid("fetch", uid, "(FLAGS BODY.PEEK[HEADER])")
+            )
+            message = self._parse_bytes(self._extract_literal(fetched.lines))
+            summaries.append(MailParser.parse_summary(uid, message, self._extract_flags(fetched.lines)))
         return summaries
 
     async def fetch_message(self, message_id: str) -> ParsedMessage:
-        """Fetch a single message by id, including body and attachments."""
-        await self._connection.select(self._inbox_folder)
-        fetched = await self._connection.fetch(message_id, "(RFC822)")
+        """Fetch a single message by UID, including body and attachments, without setting the Seen flag."""
+        ImapCommandError.check("SELECT", await self._connection.select(self._inbox_folder))
+        fetched = ImapCommandError.check(
+            "UID FETCH", await self._connection.uid("fetch", message_id, "(BODY.PEEK[])")
+        )
         message = self._parse_bytes(self._extract_literal(fetched.lines))
         return MailParser.parse_message(message_id, message)
 
@@ -80,9 +84,11 @@ class ImapClientFactory:
         else:
             connection = aioimaplib.IMAP4(host=config.host, port=config.port)
 
-        await connection.wait_hello_from_server()
-        await connection.login(config.username, config.password)
         try:
-            yield ImapClient(connection, config.inbox_folder)
+            await connection.wait_hello_from_server()
+            ImapCommandError.check("LOGIN", await connection.login(config.username, config.password))
+            yield ImapClient(connection, config.inbox_folder, config.max_messages)
         finally:
-            await connection.logout()
+            # Best-effort cleanup — a failed logout must never mask the original step failure.
+            with suppress(Exception):
+                await connection.logout()

@@ -16,7 +16,7 @@ class MailFetchedEvent(ControlAndDisplayEvent):
         "lib.events.mail_fetched_event.description"
     )
 
-    message_id: Annotated[str, Field(description="IMAP message identifier of the fetched message.")]
+    message_id: Annotated[str, Field(description="IMAP UID of the fetched message within the inbox folder.")]
     sender: Annotated[str, Field(description="Raw From header of the message.")]
     subject: Annotated[str, Field(description="Subject header of the message.")]
     date: Annotated[datetime | None, Field(default=None, description="Date header of the message, if parseable.")]

@@ -18,6 +18,9 @@ config:
   inbox_folder:
     label: Posteingang-Ordner
     help: Postfach-Ordner, aus dem eingehende E-Mails gelesen werden.
+  max_messages:
+    label: Max. ungelesene E-Mails
+    help: Maximale Anzahl ungelesener Nachrichten, die pro Lauf aufgelistet werden.
   drafts_folder:
     label: Entwürfe-Ordner
     help: Postfach-Ordner, in den Entwürfe geschrieben werden.

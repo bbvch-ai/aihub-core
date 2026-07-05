@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, scenarios, then, when
 from swiss_ai_hub.core.events import BaseEvent
@@ -26,6 +27,7 @@ scenarios("./features/imap_agent.feature")
 
 _FACTORY = "swiss_ai_hub.agent.imap.imap_client.ImapClientFactory.create"
 _STORE = "swiss_ai_hub.agent.imap.mail_attachment_store.MailAttachmentStore.store"
+_FILE_ID = "0d5f7a1c-3b2e-4c8d-9a6f-1e2d3c4b5a6f"
 
 
 def _config() -> ImapAgentConfig:
@@ -57,32 +59,31 @@ async def _fake_create(client: AsyncMock, _config: ImapClientConfig) -> AsyncIte
     yield client
 
 
-@given("an ImapAgent runner with a mocked IMAP inbox", target_fixture="agent_runner")
-def _():
+@pytest.fixture
+def agent_runner() -> AgentTestRunner:
     return AgentTestRunner(agent_type=ImapAgent, agent_config=_config())
 
 
-@given("an ImapAgent runner with an empty IMAP inbox", target_fixture="agent_runner")
-def _empty():
-    runner = AgentTestRunner(agent_type=ImapAgent, agent_config=_config())
-    runner._unread = []  # type: ignore[attr-defined]
-    return runner
+@given("an ImapAgent runner with a mocked IMAP inbox", target_fixture="unread_mail")
+def _() -> list[UnreadMailSummary]:
+    return [UnreadMailSummary(message_id="1", sender="alice@test", subject="Quarterly report")]
+
+
+@given("an ImapAgent runner with an empty IMAP inbox", target_fixture="unread_mail")
+def _empty() -> list[UnreadMailSummary]:
+    return []
 
 
 @when("the user asks to read mail")
 @async_test
-async def _(agent_runner: AgentTestRunner):
-    unread = getattr(agent_runner, "_unread", None)
-    if unread is None:
-        unread = [UnreadMailSummary(message_id="1", sender="alice@test", subject="Quarterly report")]
-
-    client = _make_client(unread)
+async def _(agent_runner: AgentTestRunner, unread_mail: list[UnreadMailSummary]):
+    client = _make_client(unread_mail)
 
     def create_side_effect(config: ImapClientConfig):
         return _fake_create(client, config)
 
     stored_refs = [
-        MailAttachmentRef(filename="report.pdf", content_type="application/pdf", file_id="fid", size_bytes=8)
+        MailAttachmentRef(filename="report.pdf", content_type="application/pdf", file_id=_FILE_ID, size_bytes=8)
     ]
 
     with (

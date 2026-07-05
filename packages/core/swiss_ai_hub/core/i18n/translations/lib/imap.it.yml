@@ -18,6 +18,9 @@ config:
   inbox_folder:
     label: Cartella Posta in arrivo
     help: Cartella della casella da cui leggere la posta in arrivo.
+  max_messages:
+    label: Numero max di e-mail non lette
+    help: Numero massimo di messaggi non letti elencati per esecuzione.
   drafts_folder:
     label: Cartella Bozze
     help: Cartella della casella in cui vengono scritte le bozze.

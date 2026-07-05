@@ -18,6 +18,9 @@ config:
   inbox_folder:
     label: Dossier de réception
     help: Dossier de la boîte aux lettres à partir duquel lire les e-mails entrants.
+  max_messages:
+    label: Nombre max d'e-mails non lus
+    help: Nombre maximal de messages non lus répertoriés par exécution.
   drafts_folder:
     label: Dossier des brouillons
     help: Dossier de la boîte aux lettres où les brouillons sont écrits.
