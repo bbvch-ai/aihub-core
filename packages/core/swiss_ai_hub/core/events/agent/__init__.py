@@ -85,6 +85,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
         HumanInTheLoopResponseEvent,
     )
+    from swiss_ai_hub.core.events.agent.imap.mail_attachment_ref import MailAttachmentRef
+    from swiss_ai_hub.core.events.agent.imap.mail_fetched_event import MailFetchedEvent
+    from swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event import UnreadMailListedEvent
+    from swiss_ai_hub.core.events.agent.imap.unread_mail_summary import UnreadMailSummary
     from swiss_ai_hub.core.events.agent.memory.history.add_memory_to_chat_history_event import (
         AddMemoryToChatHistoryEvent,
     )
@@ -179,6 +183,8 @@ __all__ = [
     "LLMStopEvent",
     "LanguageEvent",
     "LimitChatHistoryEvent",
+    "MailAttachmentRef",
+    "MailFetchedEvent",
     "Message",
     "MetaQuestionDetectedEvent",
     "NotAMetaQuestionEvent",
@@ -206,6 +212,8 @@ __all__ = [
     "TextContent",
     "ThoughtEvent",
     "ToolEvent",
+    "UnreadMailListedEvent",
+    "UnreadMailSummary",
     "UserMessageEvent",
     "UserUploadedFile",
 ]
@@ -268,6 +276,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "LLMStopEvent": "swiss_ai_hub.core.events.agent.semantic.llm.llm_stop_event",
     "LanguageEvent": "swiss_ai_hub.core.events.agent.common.language_event",
     "LimitChatHistoryEvent": "swiss_ai_hub.core.events.agent.common.limit_chat_history_event",
+    "MailAttachmentRef": "swiss_ai_hub.core.events.agent.imap.mail_attachment_ref",
+    "MailFetchedEvent": "swiss_ai_hub.core.events.agent.imap.mail_fetched_event",
     "Message": "swiss_ai_hub.core.events.agent.semantic.llm.message",
     "MetaQuestionDetectedEvent": "swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event",
     "NotAMetaQuestionEvent": "swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event",
@@ -295,6 +305,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "TextContent": "swiss_ai_hub.core.events.agent.semantic.llm.message",
     "ThoughtEvent": "swiss_ai_hub.core.events.agent.display.thought_event",
     "ToolEvent": "swiss_ai_hub.core.events.agent.semantic.tool.tool_event",
+    "UnreadMailListedEvent": "swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event",
+    "UnreadMailSummary": "swiss_ai_hub.core.events.agent.imap.unread_mail_summary",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
 }

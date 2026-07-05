@@ -1,0 +1,23 @@
+---
+config:
+  host:
+    label: IMAP-Host
+    help: Hostname des IMAP-Servers (z. B. imap.example.com).
+  port:
+    label: IMAP-Port
+    help: Port des IMAP-Servers. 993 für implizites TLS verwenden.
+  username:
+    label: Benutzername
+    help: Postfach-Login, üblicherweise die vollständige E-Mail-Adresse.
+  password:
+    label: Passwort
+    help: Postfach-Passwort oder anwendungsspezifisches Token.
+  use_tls:
+    label: TLS verwenden
+    help: Verbindung über implizites TLS. Nur für Klartext-Testserver deaktivieren.
+  inbox_folder:
+    label: Posteingang-Ordner
+    help: Postfach-Ordner, aus dem eingehende E-Mails gelesen werden.
+  drafts_folder:
+    label: Entwürfe-Ordner
+    help: Postfach-Ordner, in den Entwürfe geschrieben werden.

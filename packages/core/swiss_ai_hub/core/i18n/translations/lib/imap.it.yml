@@ -1,0 +1,23 @@
+---
+config:
+  host:
+    label: Host IMAP
+    help: Nome host del server IMAP (es. imap.example.com).
+  port:
+    label: Porta IMAP
+    help: Porta del server IMAP. Usare 993 per il TLS implicito.
+  username:
+    label: Nome utente
+    help: Login della casella di posta, di solito l'indirizzo e-mail completo.
+  password:
+    label: Password
+    help: Password della casella di posta o token specifico dell'applicazione.
+  use_tls:
+    label: Usa TLS
+    help: Connessione tramite TLS implicito. Disattivare solo per server di test in chiaro.
+  inbox_folder:
+    label: Cartella Posta in arrivo
+    help: Cartella della casella da cui leggere la posta in arrivo.
+  drafts_folder:
+    label: Cartella Bozze
+    help: Cartella della casella in cui vengono scritte le bozze.

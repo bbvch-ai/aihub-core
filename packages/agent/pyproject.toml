@@ -28,6 +28,7 @@ dependencies = [
     "llama-index-llms-openai>=0.6.12",
     "llama-index-llms-azure-openai>=0.4.2",
     "stringcase>=1.2.0",
+    "aioimaplib>=2.0.1",
 ]
 
 [dependency-groups]

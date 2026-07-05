@@ -1,0 +1,23 @@
+---
+config:
+  host:
+    label: IMAP Host
+    help: Hostname of the IMAP server (e.g. imap.example.com).
+  port:
+    label: IMAP Port
+    help: Port of the IMAP server. Use 993 for implicit TLS.
+  username:
+    label: Username
+    help: Mailbox login, usually the full email address.
+  password:
+    label: Password
+    help: Mailbox password or app-specific token.
+  use_tls:
+    label: Use TLS
+    help: Connect over implicit TLS. Disable only for plaintext test servers.
+  inbox_folder:
+    label: Inbox Folder
+    help: Mailbox folder to read incoming mail from.
+  drafts_folder:
+    label: Drafts Folder
+    help: Mailbox folder drafts are written to.

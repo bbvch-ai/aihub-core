@@ -1,0 +1,23 @@
+---
+config:
+  host:
+    label: Hôte IMAP
+    help: Nom d'hôte du serveur IMAP (par ex. imap.example.com).
+  port:
+    label: Port IMAP
+    help: Port du serveur IMAP. Utiliser 993 pour le TLS implicite.
+  username:
+    label: Nom d'utilisateur
+    help: Identifiant de la boîte aux lettres, généralement l'adresse e-mail complète.
+  password:
+    label: Mot de passe
+    help: Mot de passe de la boîte aux lettres ou jeton spécifique à l'application.
+  use_tls:
+    label: Utiliser TLS
+    help: Se connecter via TLS implicite. À désactiver uniquement pour les serveurs de test en clair.
+  inbox_folder:
+    label: Dossier de réception
+    help: Dossier de la boîte aux lettres à partir duquel lire les e-mails entrants.
+  drafts_folder:
+    label: Dossier des brouillons
+    help: Dossier de la boîte aux lettres où les brouillons sont écrits.
