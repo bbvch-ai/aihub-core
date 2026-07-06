@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.306.2] - 2026-07-06 - Refined LLM Parameter Defaults
+
+### Changed
+
+- ⚙️ **LLM parameter default value:** Adjusted the default value for a specific LLM parameter (e.g., temperature) from
+  `0.1` to `0.0` to refine model configuration defaults and potentially promote more deterministic initial outputs.
+
+______________________________________________________________________
+
 ## [v0.306.1] - 2026-07-02 - Improved Agent Form Reliability
 
 ### Fixed
