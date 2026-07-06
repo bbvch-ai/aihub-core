@@ -68,21 +68,6 @@ class OpenaiController(TenantScopedController):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    @staticmethod
-    def _has_model_access(access_checker: AccessChecker, model_id: str) -> bool:
-        """Whether the checker grants the ``capability/name`` model. Guards bare ids (no ``/``): an empty
-        name cannot form a valid permission rule, so it is denied rather than raising in the template check."""
-        capability, _, name = model_id.partition("/")
-        return bool(name) and access_checker.has_access_to_model(capability, name)
-
-    @staticmethod
-    def _assert_model_access(user: UserIdentity, model_name: str) -> None:
-        if not OpenaiController._has_model_access(AccessChecker.from_user(user), model_name):
-            raise HTTPException(
-                status_code=403,
-                detail=f"User {user.id} does not have permission to access model {model_name}",
-            )
-
     def get_models(self, route: str = "/models") -> Self:
         @self.router.get(
             route,
@@ -98,7 +83,9 @@ class OpenaiController(TenantScopedController):
             access_checker = AccessChecker.from_user(user)
             model_response = await OpenaiService.get_models()
 
-            model_response.data = [m for m in model_response.data if self._has_model_access(access_checker, m.id)]
+            model_response.data = [
+                m for m in model_response.data if OpenaiService._has_model_access(access_checker, m.id)
+            ]
 
             return model_response
 
@@ -165,7 +152,7 @@ class OpenaiController(TenantScopedController):
             if model.object == "assistant":
                 permitted = access_checker.has_access_to_agent(model.agent_class, model.agent_id)
             else:
-                permitted = self._has_model_access(access_checker, model.id)
+                permitted = OpenaiService._has_model_access(access_checker, model.id)
 
             if not permitted:
                 raise HTTPException(
@@ -188,7 +175,6 @@ class OpenaiController(TenantScopedController):
             req: Annotated[EmbeddingsRequest, Body],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> EmbeddingsResponse:
-            self._assert_model_access(user, req.model)
             return await OpenaiService.get_embeddings(
                 model_name=req.model,
                 input_text=req.input,
@@ -273,8 +259,6 @@ class OpenaiController(TenantScopedController):
             generation_request: Annotated[ImageGenerationRequest, Body],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ImagesResponse:
-            if generation_request.model:
-                self._assert_model_access(user, generation_request.model)
             return await OpenaiService.generate_image(
                 model_name=str(generation_request.model),
                 image_generation_request=generation_request,
@@ -304,7 +288,6 @@ class OpenaiController(TenantScopedController):
                 "only used with verbose_json response_format",
             ),
         ) -> Transcription | TranscriptionVerbose | str:
-            self._assert_model_access(user, f"transcription/{model}")
             return await OpenaiService.stt(
                 model_name=model,
                 file=file,
@@ -326,7 +309,6 @@ class OpenaiController(TenantScopedController):
             speech_request: Annotated[TextToSpeechRequest, Body],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> StreamingResponse:
-            self._assert_model_access(user, f"speech/{speech_request.model}")
             tts_response = await OpenaiService.tts(
                 model_name=speech_request.model,
                 input_text=speech_request.input,
