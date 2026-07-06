@@ -347,7 +347,11 @@ class _CapabilityCatalogBuilder:
         ``AccessChecker.model_user_rule`` — the same normalized template enforcement checks with — so a
         checkbox can never grant a rule that would fail to match, and dotted names are collapsed for free.
         ``_capability_for_guard`` applies the ceiling and ``granted`` state exactly as for route-derived
-        rows, so a model the ceiling cannot grant is hidden rather than shown disabled."""
+        rows, so a model the ceiling cannot grant is hidden rather than shown disabled.
+
+        Unlike the ``_resource_resolvers`` services (agents, processes, knowledge), models are gated in the
+        service layer and have no per-model route guard for that machinery to expand, so their rows are built
+        here directly rather than by substituting a route template."""
         models_by_capability = await AccessCapabilityService.available_models_by_capability()
         groups: list[CapabilityGroup] = []
         for capability in sorted(models_by_capability):
