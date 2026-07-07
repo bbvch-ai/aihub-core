@@ -12,6 +12,7 @@ from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import LiteLLMBase
+from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 
@@ -62,7 +63,7 @@ class LLMParameter(Form):
                 min=0.0,
                 max=2.0,
                 step=0.1,
-                value=0.1,
+                value=0.0,
                 min_fraction_digits=0,
                 max_fraction_digits=1,
             ),
@@ -144,7 +145,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         if extra_headers:
             default_headers.update(extra_headers)
 
-        open_ai_like = OpenAILike(
+        open_ai_like = ResilientOpenAILike(
             model=self.model_name,
             api_base=config.BASE_URL,
             api_key=config.API_KEY.get_secret_value(),

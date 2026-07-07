@@ -5,6 +5,236 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.306.2] - 2026-07-06 - Refined LLM Parameter Defaults
+
+### Changed
+
+- ⚙️ **LLM parameter default value:** Adjusted the default value for a specific LLM parameter (e.g., temperature) from
+  `0.1` to `0.0` to refine model configuration defaults and potentially promote more deterministic initial outputs.
+
+______________________________________________________________________
+
+## [v0.306.1] - 2026-07-02 - Improved Agent Form Reliability
+
+### Fixed
+
+- 🐛 **Agent configuration forms** now reliably preserve unsaved edits, preventing data loss even during background data
+  refreshes or transient loading states.
+- 🧩 **Agent creation forms** no longer reset user input when the selected agent class data is refreshed, ensuring a
+  smoother creation process.
+- 🔄 **Enhanced form stability** by preventing automatic refetches of agent class and instance data on window focus,
+  safeguarding ongoing user input.
+
+______________________________________________________________________
+
+## [v0.306.0] - 2026-07-02 - Major Upgrade: Secure Open Terminal for OpenWebUI Code Interpreter
+
+### Added
+
+- 🦾 **Open Terminal Service**: Introduced a new `open-terminal` service dedicated to sandboxed code execution for
+  OpenWebUI's plain LLM models. This new service offers per-user isolation and downloadable file output.
+- 🔑 **`OPEN_TERMINAL_API_KEY`**: Added a new environment variable for authenticating OpenWebUI's connections to the Open
+  Terminal sandbox, enhancing security.
+- 🌐 **`code-sandbox` Network Zone**: Established a new, isolated Docker network specifically for the `open-terminal`
+  sandbox and its direct callers (OpenWebUI), preventing lateral reach to other backend or data services.
+- 📄 **Architectural Decision Record**: A detailed ADR (`2026_06_22_openwebui_code_execution_open_terminal.md`) was added
+  to document the architectural shift from Jupyter to Open Terminal, outlining the rationale, decision, and
+  consequences.
+- ⚙️ **Open Terminal Dockerfile & Build Process**: Added a custom Dockerfile for `open-terminal` to include essential
+  document-processing libraries (reportlab, fpdf2) and integrated its build and push into the deployment Makefile.
+
+### Changed
+
+- 🔄 **OpenWebUI Code Execution Backend**: OpenWebUI now exclusively uses the new `open-terminal` service for
+  model-driven code execution, replacing the previous Jupyter integration.
+- 📄 **Jupyter Role Clarification**: The Jupyter service is now explicitly designated as "retained in stack but no longer
+  the OpenWebUI code path," signifying its deprecation for this use case.
+- 🗺️ **Network Topology**: Updated the system's network architecture from five to six isolated Docker networks to
+  incorporate the new `code-sandbox` zone, enhancing overall system isolation.
+- 📚 **Documentation Updates**: Comprehensive revisions across the project documentation (skills, README, architecture,
+  deployment guides, environment variables) to reflect the integration of Open Terminal, its features, and the updated
+  network and deployment model.
+- 🚦 **OpenWebUI Service Dependencies**: Changed OpenWebUI's health check dependency from `jupyter` to the new
+  `open-terminal` service.
+
+### Security
+
+- 🔒 **Enhanced Code Execution Isolation**: Arbitrary user-submitted code executed via Open Terminal now runs in a
+  dedicated `code-sandbox` network, which is internal (no outbound internet in non-dev stages) and only allows
+  communication with its direct callers, significantly reducing the blast radius in case of a sandbox escape.
+- 🛡️ **Per-User Sandbox Isolation**: The Open Terminal service is configured for multi-user support, providing separate
+  Linux accounts and home directories for each user, improving data privacy and preventing users from accessing each
+  other's files within the sandbox.
+
+______________________________________________________________________
+
+## [v0.305.8] - 2026-07-01 - Enhanced Mem0 Milvus Filtering
+
+### Added
+
+- ✨ Introduced **`PatchedMilvusDB`** to extend the filtering capabilities of mem0's Milvus vector store, enabling more
+  complex query operations.
+- 🧪 Added comprehensive **unit tests** for `PatchedMilvusDB` to ensure accurate and robust generation of Milvus query
+  filters, especially for advanced operators.
+
+### Fixed
+
+- 🐛 Resolved an issue where **`mem0`'s MilvusDB vector store** failed to correctly process advanced metadata filters,
+  particularly the `in` operator, which led to Milvus query parsing errors.
+
+### Changed
+
+- 🔄 The **`Mem0Service`** now integrates the `PatchedMilvusDB` wrapper for its internal Milvus vector store,
+  transparently applying the enhanced filter logic.
+
+______________________________________________________________________
+
+## [v0.305.7] - 2026-07-01 - Streamlined Dataset Details UI
+
+### Removed
+
+- 🗑️ **Dataset Details Page:** Removed an unnecessary `ConfirmPopup` component from the dataset details view,
+  simplifying the UI.
+
+______________________________________________________________________
+
+## [v0.305.6] - 2026-06-30 - Enhanced Document Processing and User Experience
+
+### Added
+
+- ✨ **Enhanced Document Page Counting:** The MarkItDown loader now accurately determines the page count for Microsoft
+  Word (.docx), PowerPoint (.pptx), and Excel (.xlsx) files, providing more precise document metadata.
+- 🚀 **Implemented File Upload Progress Tracking:** Users will now see real-time progress indicators during document
+  uploads, improving visibility and user experience, especially for larger files.
+
+______________________________________________________________________
+
+## [v0.305.5] - 2026-06-30 - Enhanced CI/CD Workflow Resilience
+
+### Fixed
+
+- 🐛 **CI Workflow Failures:** Prevented potential CI/CD pipeline failures during Docker image pre-pull login by ensuring
+  that an expired or absent GitHub token no longer causes the job to fail, significantly improving overall workflow
+  stability.
+
+### Changed
+
+- 🔄 **Best-Effort Docker Login:** Modified the `ghcr.io` Docker login process in CI workflows to be best-effort; if
+  authentication fails (e.g., due to an expired token), the system will now proceed with anonymous pulls for public
+  images, guaranteeing job continuity.
+- 📄 **Internal Documentation:** Updated internal documentation for GitHub Actions (`CLAUDE.md`) to explicitly reflect
+  the new best-effort login behavior and its rationale, providing clearer guidance for pipeline operations.
+
+______________________________________________________________________
+
+## [v0.305.4] - 2026-06-30 - Improved Agent Configuration Stability
+
+### Fixed
+
+- 🐛 **Agent ID Immutability:** Corrected an issue where changes to an agent's **agent ID** during an update could lead
+  to silent failures in real-time communication (SSE). The system now explicitly ensures the agent ID remains immutable,
+  aligning with the instance key and preventing chat completion issues.
+- 🖼️ **UI Enhancement:** Disabled the **agent ID** field in the agent configuration form on the web interface, clearly
+  indicating its immutable nature and preventing users from inadvertently attempting to change it when editing an
+  existing agent.
+
+______________________________________________________________________
+
+## [v0.305.3] - 2026-06-29 - Fortifying AI Agents Against Flaky LLM Structured Output
+
+### Added
+
+- 🦾 **Introduced `ResilientOpenAILike` for Robust LLM Interactions**: A new wrapper for `OpenAILike` models that
+  automatically retries structured prediction calls multiple times. This significantly improves the reliability of
+  agents interacting with Large Language Models (LLMs) that may intermittently produce malformed structured output.
+- 📄 **New Architecture Decision Record (ADR) on Reasoning Model Resilience**: Documented the challenges with structured
+  output from specific reasoning models (Kimi-K2.6, Qwen3.5) on Infomaniak and detailed the architectural decisions to
+  mitigate these issues, including the adoption of plain-text verdicts and retry mechanisms.
+- ⚡️ **New `text_verdict` Utility Module**: A dedicated module providing helpers for requesting and parsing plain-text
+  verdicts from LLMs, which is now used by several guard and detection functions for improved reliability and speed.
+
+### Changed
+
+- 🔄 **Relevance Guards Now Use Plain-Text Verdicts**: The `agent_description_guard`, `few_shot_guard`, and
+  `context_sufficient_guard` have been converted from expecting structured JSON output to requesting and parsing simple
+  plain-text verdicts (e.g., `ALLOW`/`BLOCK`, `SUFFICIENT`/`INSUFFICIENT`). This change dramatically increases their
+  reliability with reasoning models.
+- 🚀 **Faster and More Reliable Meta-Question Detection**: The `detect_meta_question` function now uses a streamlined,
+  single-token plain-text classification (e.g., `NORMAL`, `META_IDENTITY`) with reasoning disabled, reducing latency
+  from ~4-5 seconds to sub-second on reasoning models without compromising accuracy.
+- 🛡️ **Guards Fail Open on Unrecognizable Responses**: Relevance guards (`agent_description_guard`, `few_shot_guard`,
+  `context_sufficient_guard`) now gracefully degrade by accepting a request if the LLM returns an unparseable verdict,
+  preventing agent crashes and improving user experience.
+- 💬 **Strict System Message Placement for Qwen3.5 Compatibility**: The `do_answer_meta_question` and `RAGAgent`'s
+  guard-reject branch now ensure that system messages always lead the message list, resolving a
+  `400 - System message must be at the beginning` error with Qwen3.5.
+- ⚙️ **Centralized Retry Mechanism for All Structured Predictions**: All structured prediction calls are now routed
+  through the new `ResilientOpenAILike` wrapper by default, providing a single point of failure mitigation for all
+  agents without requiring individual call-site changes.
+
+### Fixed
+
+- 🐛 **Resolved Agent Crashes Due to Flaky LLM Structured Output**: Addressed a critical issue where agents would crash
+  when reasoning models like Kimi-K2.6 or Qwen3.5 failed to produce reliably parseable structured output (e.g., empty
+  tool calls, malformed JSON).
+- 🔒 **Prevented Sensitive Information Leaks in Guard Logs**: Guard-failure logs no longer include raw model output,
+  queries, or retrieved context, enhancing privacy and security.
+
+______________________________________________________________________
+
+## [v0.305.2] - 2026-06-29 - Enhanced Stability and Reliability
+
+### Fixed
+
+- 🐛 **Resolved infinite render loop** in the `DynamicConfiguration` component, preventing UI freezes and ensuring stable
+  form interaction after data updates.
+- ⏱️ **Improved `FewShotAgent` test reliability** by extending the test runner's delay, preventing premature test
+  termination and accommodating longer execution times, especially in self-hosted LLM environments.
+
+______________________________________________________________________
+
+## [v0.305.1] - 2026-06-29 - Enhanced Form Data Stability
+
+### Fixed
+
+- 🐛 **Resolved dynamic form data mutation issues:** Implemented deep cloning during data hydration in the
+  `DynamicConfiguration` component. This prevents FormKit's write-backs from inadvertently mutating shared cached
+  objects (e.g., from Pinia-Colada) and eliminates potential infinite reactivity loops, leading to more stable and
+  predictable form behavior.
+
+______________________________________________________________________
+
+## [v0.305.0] - 2026-06-26 - Simplifying Agent Workflows: Meta-Question Detection Removed
+
+### Removed
+
+- 🗑️ **Meta-question detection and answering functionality** has been completely removed from all agents (Expert RAG,
+  Few-Shot, LLM Wrapping, MCP React, Namespace Selection, and RAG agents). This simplifies their internal architecture
+  and streamlines execution by removing the initial classification step.
+- 🗑️ **Associated event types and internal logic** related to meta-question handling, such as
+  `MetaQuestionDetectedEvent` and `NotAMetaQuestionEvent`, have been deprecated from core agent events and the
+  self-awareness module.
+- 🗑️ **Dedicated test infrastructure** for meta-question routing, including specific feature scenarios and integration
+  tests, has been removed in alignment with the deprecation of this functionality.
+
+### Refactor
+
+- 🧹 **Agent preconditions** for various steps (e.g., memory retrieval, chat history management) have been simplified by
+  removing their dependency on meta-question detection logic, leading to more direct and efficient workflow execution.
+
+______________________________________________________________________
+
+## [v0.304.1] - 2026-06-26 - Temporary Adjustment to Agent Metadata Features
+
+### Changed
+
+- 🔄 **Conversation Metadata Generation Temporarily Disabled:** To enable further investigation and refinement, the
+  automatic generation of conversation titles and follow-up questions has been temporarily paused across `RAGAgent`,
+  `ExpertRAGAgent`, `FewShotAgent`, `LLMWrappingAgent`, and `McpReactAgent`. This aims to ensure a more robust and
+  reliable agent experience in future iterations.
+
+______________________________________________________________________
+
 ## [v0.304.0] - 2026-06-25 - Empowering Access Management: Introducing the Dynamic Capability Catalog
 
 ### Added

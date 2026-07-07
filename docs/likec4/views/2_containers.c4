@@ -89,10 +89,10 @@ views {
 
   view tier_utility of hub {
     title       "Utility / Tools Tier"
-    description "Auxiliary services consumed mostly by OpenWebUI and operators. Attu provides a Milvus admin surface."
+    description "Auxiliary services consumed mostly by OpenWebUI and operators. Open Terminal is the active code-execution sandbox (plain LLM models); Jupyter is retained but no longer the OpenWebUI code path. Attu provides a Milvus admin surface."
 
     include
-      hub.searxng, hub.jupyter, hub.playwright, hub.attu,
+      hub.searxng, hub.open_terminal, hub.jupyter, hub.playwright, hub.attu,
       hub.openwebui, hub.milvus, hub.oidc_middleware
   }
 }

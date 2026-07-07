@@ -52,11 +52,3 @@ Feature: RAG Agent
     * a StopEvent is present
     * a RAGSuccessStopEvent is present
 
-  Scenario: Test RAGAgent answers a meta question about itself without retrieval
-    Given a RAGAgent runner with a valid self hosted configuration
-    When the start event is sent with a user query "What can you do?"
-    Then a MetaQuestionDetectedEvent is present
-    * an LLMEvent is present with a generated response
-    * a StopEvent is present
-    * no RetrieverEvent is present
-

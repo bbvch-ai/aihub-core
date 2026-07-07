@@ -1,11 +1,10 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from llama_index.core import PromptTemplate
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from swiss_ai_hub.core.generative_ai.guards.agent_description_guard import GuardResult, agent_description_guard
+from swiss_ai_hub.core.generative_ai.guards.agent_description_guard import agent_description_guard
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
@@ -16,11 +15,7 @@ scenarios("./features/agent_description_guard.feature")
 @pytest.fixture
 def llm():
     with patch("llama_index.core.llms.llm.LLM", new_callable=Mock) as mock_llm:
-        mock_llm_instance = mock_llm.return_value
-        mock_llm_instance.astructured_predict = AsyncMock(
-            return_value=GuardResult(reasoning="Expected reasoning", success=True)
-        )
-        yield mock_llm_instance
+        yield mock_llm.return_value
 
 
 @given(parsers.parse('a locale handler with locale "{locale}"'), target_fixture="locale_handler")
@@ -38,36 +33,33 @@ def _(query):
     return query
 
 
-@given("the following messages:", target_fixture="messages")
-def _(datatable):
-    messages = []
-    for row in datatable[1:]:
-        role = MessageRole[row[0]]
-        content = row[1]
-        messages.append(ChatMessage(role=role, content=content))
-    return messages
+@given(parsers.parse('the guard model replies "{reply}"'))
+def _(llm, reply):
+    llm.achat = AsyncMock(return_value=ChatResponse(message=ChatMessage(role=MessageRole.ASSISTANT, content=reply)))
 
 
-@when("the agent description guard is executed")
+@when("the agent description guard is executed", target_fixture="guard_result")
 @async_test
-async def _(agent_description, llm, locale_handler, user_query, messages):
-    await agent_description_guard(
+async def _(agent_description, llm, locale_handler, user_query):
+    return await agent_description_guard(
         agent_description=agent_description,
         llm=llm,
         t=locale_handler,
         user_query=user_query,
-        messages=messages,
+        messages=[],
     )
 
 
-@then("structured_predict should be called", target_fixture="call_args")
-def _(llm):
-    llm.astructured_predict.assert_called()
-    call_args = llm.astructured_predict.call_args
-    return call_args
+@then("the guard should accept the request")
+def _(guard_result):
+    assert guard_result.success is True
 
 
-@then("structured_predict should be called with prompt:")
-def _(call_args, locale_handler, docstring):
-    prompt = PromptTemplate(locale_handler("lib.guards.agent_description_guard.prompt")).format(**call_args[1])
-    assert prompt.strip() == docstring.strip()
+@then("the guard should reject the request")
+def _(guard_result):
+    assert guard_result.success is False
+
+
+@then(parsers.parse('the reasoning should be "{expected_reasoning}"'))
+def _(guard_result, expected_reasoning):
+    assert guard_result.reasoning == expected_reasoning
