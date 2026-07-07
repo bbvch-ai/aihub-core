@@ -32,26 +32,54 @@ def _route_endpoint(builder_method: str):
 
 
 class TestAssertModelAccessHelper:
-    """Covers the shared guard used by embeddings / image / stt / tts."""
+    """Covers the shared guard, now on the service so internal callers (not just HTTP) enforce it."""
 
     def test_allows_granted_capability(self):
         with patch(
-            f"{_CONTROLLER}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.text-generation.*"])
+            f"{_SERVICE}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.text-generation.*"])
         ):
-            OpenaiController._assert_model_access(fake_user(), "text-generation/gemma-4-31B-it")  # no raise
+            OpenaiService._assert_model_access(fake_user(), "text-generation/gemma-4-31B-it")  # no raise
 
     def test_denies_other_capability(self):
         with patch(
-            f"{_CONTROLLER}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.text-generation.*"])
+            f"{_SERVICE}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.text-generation.*"])
         ):
             with pytest.raises(HTTPException) as exc:
-                OpenaiController._assert_model_access(fake_user(), "embedding/bge-m3")
+                OpenaiService._assert_model_access(fake_user(), "embedding/bge-m3")
         assert exc.value.status_code == 403
 
     def test_denies_bare_name_without_capability(self):
-        with patch(f"{_CONTROLLER}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.>"])):
+        with patch(f"{_SERVICE}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.>"])):
             with pytest.raises(HTTPException) as exc:
-                OpenaiController._assert_model_access(fake_user(), "transcription")  # no slash -> empty name
+                OpenaiService._assert_model_access(fake_user(), "transcription")  # no slash -> empty name
+        assert exc.value.status_code == 403
+
+
+class TestServiceInvocationEnforcesModelAccess:
+    """Each invocation method must enforce access itself, before any model call, so a direct
+    (non-HTTP) caller cannot bypass the guard the controller used to run."""
+
+    @pytest.mark.asyncio
+    async def test_embeddings_denies_without_access(self):
+        with patch(f"{_SERVICE}.AccessChecker.from_user", return_value=_checker([])):
+            with pytest.raises(HTTPException) as exc:
+                await OpenaiService.get_embeddings(model_name="embedding/bge-m3", input_text="hi", user=fake_user())
+        assert exc.value.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_stt_denies_without_access(self):
+        with patch(f"{_SERVICE}.AccessChecker.from_user", return_value=_checker([])):
+            with pytest.raises(HTTPException) as exc:
+                await OpenaiService.stt(
+                    model_name="whisper-large-v3",
+                    file=Mock(),
+                    user=fake_user(),
+                    language=None,
+                    prompt=None,
+                    response_format="json",
+                    temperature=0,
+                    timestamp_granularities=None,
+                )
         assert exc.value.status_code == 403
 
 

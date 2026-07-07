@@ -13,9 +13,6 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoop,
     LimitChatHistoryEvent,
     LLMEvent,
-    LLMStopEvent,
-    MetaQuestionDetectedEvent,
-    NotAMetaQuestionEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
     RAGStartEvent,
@@ -54,11 +51,6 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
-from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    do_generate_follow_up_questions,
-    do_generate_title,
-)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.preconditions import (
     check_context_ready_for_history_limit_with_expert,
@@ -84,12 +76,6 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_rerank_nodes,
     do_respond_with_llm,
     do_retrieve,
-)
-from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
-from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
-from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
-    do_answer_meta_question,
-    do_detect_meta_question,
 )
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
@@ -139,21 +125,17 @@ async def is_no_answer_response(event: AgentInTheLoop.response) -> bool:
 @precondition()
 async def organization_memory_enabled(
     config: ExpertRAGAgentConfig,
-    start_event: UserMessageEvent | RAGStartEvent,
-    clear: NotAMetaQuestionEvent | None = None,
 ) -> bool:
-    """Precondition to check if organization memory retrieval is enabled (gated by meta-question detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_organization_memory_enabled(config)
+    """Precondition to check if organization memory retrieval is enabled."""
+    return check_organization_memory_enabled(config)
 
 
 @precondition()
 async def user_memory_retrieval_enabled(
     config: ExpertRAGAgentConfig,
-    start_event: UserMessageEvent | RAGStartEvent,
-    clear: NotAMetaQuestionEvent | None = None,
 ) -> bool:
-    """Precondition to check if user memory retrieval is enabled (gated by meta-question detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(config)
+    """Precondition to check if user memory retrieval is enabled."""
+    return check_user_memory_retrieval_enabled(config)
 
 
 @precondition()
@@ -165,28 +147,20 @@ async def user_memory_storage_enabled(config: ExpertRAGAgentConfig) -> bool:
 @precondition()
 async def memory_ready_for_chat_history(
     config: ExpertRAGAgentConfig,
-    start_event: UserMessageEvent | RAGStartEvent,
-    clear: NotAMetaQuestionEvent | None = None,
     user_memory_event: RetrieveUserMemoryEvent | None = None,
     org_memory_event: RetrieveOrganizationMemoryEvent | None = None,
 ) -> bool:
     """Precondition to ensure all required memory events are present before extending chat history."""
-    return check_passed_meta_question_gate(start_event, clear) and check_memory_ready_for_chat_history(
-        config, user_memory_event, org_memory_event
-    )
+    return check_memory_ready_for_chat_history(config, user_memory_event, org_memory_event)
 
 
 @precondition()
 async def memory_added_to_chat_history(
     config: ExpertRAGAgentConfig,
-    start_event: UserMessageEvent | RAGStartEvent,
-    clear: NotAMetaQuestionEvent | None = None,
     memory_history_event: AddMemoryToChatHistoryEvent | None = None,
 ) -> bool:
-    """Precondition to ensure memory has been added to chat history when required (gated by meta detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_memory_added_to_chat_history(
-        config, memory_history_event
-    )
+    """Precondition to ensure memory has been added to chat history when required."""
+    return check_memory_added_to_chat_history(config, memory_history_event)
 
 
 @precondition()
@@ -226,51 +200,6 @@ class ExpertRAGAgent(Agent):
     icon: ClassVar[str] = "mage:building-a"
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
-        icon="mdi:help-circle-outline",
-    )
-    async def detect_meta_question_step(
-        self,
-        event: UserMessageEvent,
-        agent_config: ExpertRAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
-        """Gate every chat message: classify it as a meta question or release the normal pipeline."""
-        return await do_detect_meta_question(
-            user_query=event.user_query,
-            llm_config=agent_config.llm,
-            displayer=displayer,
-            t=t,
-        )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
-        icon="mdi:account-voice",
-    )
-    async def answer_meta_question_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: ExpertRAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> LLMStopEvent:
-        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        return await do_answer_meta_question(
-            event=event,
-            agent_name=t.extract(agent_config.name),
-            agent_description=t.extract(agent_config.description),
-            workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
-            chat_history=user_message_event.messages,
-            llm_config=agent_config.llm,
-            displayer=displayer,
-            t=t,
-        )
-
-    @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.name"),
         description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.description"),
         icon="mdi:account-circle",
@@ -281,7 +210,6 @@ class ExpertRAGAgent(Agent):
         event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         memory: AgentMemory,
-        _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context."""
         query = event.user_query
@@ -306,7 +234,6 @@ class ExpertRAGAgent(Agent):
         event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         memory: AgentMemory,
-        _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         assert agent_config.org_memory is not None  # precondition enforces this
@@ -342,7 +269,6 @@ class ExpertRAGAgent(Agent):
         org_memory_event: RetrieveOrganizationMemoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
-        _clear: NotAMetaQuestionEvent | None = None,
     ) -> AddMemoryToChatHistoryEvent:
         """Extend chat history with memory context (user and/or organization)."""
         chat_history = user_message_event.messages
@@ -379,7 +305,6 @@ class ExpertRAGAgent(Agent):
         user_event: UserMessageEvent | RAGStartEvent,
         memory_history_event: AddMemoryToChatHistoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
-        _clear: NotAMetaQuestionEvent | None = None,
     ) -> LimitChatHistoryEvent:
         # Use extended history if memory was added, otherwise use original messages
         messages = memory_history_event.extended_history if memory_history_event is not None else user_event.messages
@@ -720,50 +645,6 @@ class ExpertRAGAgent(Agent):
             displayer,
             t,
             as_stop_step=False,
-        )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
-        icon="mdi:format-title",
-        stop_on_error=False,
-    )
-    async def generate_conversation_title_step(
-        self,
-        llm_event: LLMEvent,
-        agent_config: ExpertRAGAgentConfig,
-        thread_context: ThreadContext,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> None:
-        """Generate a stable conversation title once per thread (deferred until a topic is identifiable)."""
-        await do_generate_title(
-            chat_messages=llm_event.chat_messages,
-            llm_config=agent_config.llm,
-            displayer=displayer,
-            t=t,
-            thread_context=thread_context,
-        )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.description"),
-        icon="mdi:comment-question-outline",
-        stop_on_error=False,
-    )
-    async def generate_follow_up_questions_step(
-        self,
-        llm_event: LLMEvent,
-        agent_config: ExpertRAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> None:
-        """Suggest follow-up questions for the latest answer."""
-        await do_generate_follow_up_questions(
-            chat_messages=llm_event.chat_messages,
-            llm_config=agent_config.llm,
-            displayer=displayer,
-            t=t,
         )
 
     @step(

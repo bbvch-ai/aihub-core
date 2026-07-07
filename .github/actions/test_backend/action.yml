@@ -96,7 +96,10 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        echo "${{ inputs.github_token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        # Login is best-effort: the mirrored images under ghcr.io/bbvch-ai/aihub-core are public,
+        # so an expired/absent token must not fail the job — anonymous pulls still succeed.
+        echo "${{ inputs.github_token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin \
+          || echo "::warning::ghcr.io login failed (token may be expired); continuing with anonymous pulls"
 
         # Pre-pull images in parallel to use cache effectively
         echo "Pre-pulling Docker images for faster startup..."

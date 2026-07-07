@@ -94,22 +94,30 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
     setNestedValue(formData.value, path, value)
   }
 
-  watch(selectedClassData, (newClass) => {
-    formData.value = newClass?.form && newClass.form.length > 0
+  // Reseed only when the chosen class changes; a refetch hands back a new reference for the
+  // same class, and reseeding on that churn would wipe the user's input (issue #38).
+  let seededForClass: string | null = null
+  watch([selectedClass, selectedClassData], () => {
+    if (seededForClass === selectedClass.value) return
+    if (!selectedClassData.value) return
+    formData.value = selectedClassData.value.form && selectedClassData.value.form.length > 0
       ? hydrateFormData({}, configForm.value as FormElement[])
       : {}
+    seededForClass = selectedClass.value
   }, { immediate: true })
 
   function applyInitialData(data: Record<string, unknown>) {
     // Hydrate from the template/clone data: nullable toggles follow the data's null-ness,
     // missing leaves fall back to their backend defaults — identical to the edit form.
     formData.value = hydrateFormData(data, configForm.value as FormElement[])
+    seededForClass = selectedClass.value
   }
 
   function resetForm() {
     selectedClass.value = initialClass()
     formData.value = {}
     activeStep.value = 0
+    seededForClass = null
   }
 
   return {

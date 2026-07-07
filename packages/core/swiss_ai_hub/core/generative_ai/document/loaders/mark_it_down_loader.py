@@ -1,7 +1,10 @@
 import asyncio
+import io
 import logging
 import os
+import re
 import tempfile
+import zipfile
 from typing import TYPE_CHECKING, Any
 
 from llama_index.core.readers.base import BaseReader
@@ -23,6 +26,9 @@ if TYPE_CHECKING:
     from markitdown import MarkItDown
 
 logger = logging.getLogger(__name__)
+
+_PPTX_SLIDE_PATH = re.compile(r"ppt/slides/slide\d+\.xml$")
+_XLSX_WORKSHEET_PATH = re.compile(r"xl/worksheets/sheet\d+\.xml$")
 
 
 class MarkItDownLoader(BaseReader):
@@ -111,7 +117,7 @@ class MarkItDownLoader(BaseReader):
         md_content = wrap_markdown_tables(md_content)
 
         metadata = {
-            NUMBER_OF_PAGES: 1,
+            NUMBER_OF_PAGES: self._count_pages(file_bytes, filename) or 1,
             "parser": "markitdown",
         }
 
@@ -160,7 +166,7 @@ class MarkItDownLoader(BaseReader):
         md_content = wrap_markdown_tables(md_content)
 
         metadata = {
-            NUMBER_OF_PAGES: 1,
+            NUMBER_OF_PAGES: self._count_pages(content, filename) or 1,
             "parser": "markitdown",
         }
 
@@ -168,6 +174,37 @@ class MarkItDownLoader(BaseReader):
             metadata.update(extra_info)
 
         return [Document(text=md_content, extra_info=metadata)]
+
+    @staticmethod
+    def _count_pages(file_bytes: bytes, filename: str) -> int | None:
+        """Best-effort page count read from the original Office file.
+
+        MarkItDown flattens documents to markdown and loses pagination, so the count is taken
+        from the source archive instead. Returns None for formats without a meaningful page count.
+        """
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in {".docx", ".pptx", ".xlsx"}:
+            return None
+        try:
+            with zipfile.ZipFile(io.BytesIO(file_bytes)) as archive:
+                match ext:
+                    case ".docx":
+                        return MarkItDownLoader._read_docx_page_count(archive)
+                    case ".pptx":
+                        return sum(1 for name in archive.namelist() if _PPTX_SLIDE_PATH.search(name)) or None
+                    case ".xlsx":
+                        return sum(1 for name in archive.namelist() if _XLSX_WORKSHEET_PATH.search(name)) or None
+        except (zipfile.BadZipFile, KeyError):
+            # Page count is cosmetic metadata; a malformed archive must never fail ingestion.
+            return None
+        return None
+
+    @staticmethod
+    def _read_docx_page_count(archive: zipfile.ZipFile) -> int | None:
+        """Read Word's cached page count from docProps/app.xml (absent in some documents)."""
+        app_xml = archive.read("docProps/app.xml").decode("utf-8", errors="ignore")
+        page_match = re.search(r"<Pages>(\d+)</Pages>", app_xml)
+        return int(page_match.group(1)) if page_match else None
 
     async def _convert_to_markdown(self, file_bytes: bytes, filename: str) -> str:
         """Convert document to markdown using MarkItDown."""

@@ -52,8 +52,10 @@ async def do_answer_meta_question(
     # (#1443 drains display-event streams before teardown); this is now a backstop against any empty
     # turn that still slips through (e.g. a cached conversation or a different chat client).
     non_empty_history = [message for message in chat_history if str(message.content or "").strip()]
+    # System prompt must lead the message list: strict providers (e.g. Qwen3.5 on Infomaniak) reject
+    # a 400 "System message must be at the beginning" when it follows the conversation turns.
     messages = merge_consecutive_messages(
-        [*non_empty_history, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)]
+        [ChatMessage(role=MessageRole.SYSTEM, content=system_prompt), *non_empty_history]
     )
 
     async with llm_config.cost_reporting_llm(displayer) as llm:

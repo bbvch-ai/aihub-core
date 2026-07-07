@@ -47,7 +47,7 @@ import {
   type FormElement,
   type RepeaterConfig,
 } from '@core/composables/form/useFormKitTransform'
-import { merge } from 'lodash-es'
+import { cloneDeep } from 'lodash-es'
 
 import type { FormkitElement } from '@core/sdk/client'
 import type { FormKitSchemaDefinition } from '@formkit/core'
@@ -59,17 +59,26 @@ const props = defineProps<{
   initialData?: Record<string, unknown>
 }>()
 
+// Clone so the form model never shares references with the Pinia-Colada cache: otherwise
+// FormKit's write-backs mutate the cached object and the watcher loops on its own mutations.
 function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
-  return hydrateFormData(raw, props.form as FormElement[])
+  return hydrateFormData(cloneDeep(raw), props.form as FormElement[])
 }
 
 const data = ref<Record<string, unknown>>(hydrate(props.initialData || {}))
 
+// Seed from `initialData` only once. A save refetches the query, so `initialData` becomes a new
+// object; re-hydrating then would reassign `data`, which FormKit's `v-model` re-commits in a
+// slightly different shape and reassigns again — an infinite render loop that froze the tab.
+let formSeeded = !!(props.initialData && Object.keys(props.initialData).length > 0)
+
 watch(() => props.initialData, (newData) => {
+  if (formSeeded) return
   if (newData && Object.keys(newData).length > 0) {
-    data.value = merge({}, data.value, hydrate(newData))
+    data.value = hydrate(newData)
+    formSeeded = true
   }
-}, { deep: true })
+})
 
 const emit = defineEmits<{
   submit: [Record<string, unknown>]

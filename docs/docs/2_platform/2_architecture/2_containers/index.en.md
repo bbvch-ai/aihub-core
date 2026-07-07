@@ -91,9 +91,10 @@ Valkey, SeaweedFS) belong to the Data tier.
 
 ## Utility tier
 
-Auxiliary services that support the application tier without being core to it: SearXNG for web search, Jupyter as a
-code-execution sandbox, Playwright for browser automation, and Attu as a Milvus admin console for operators. These are
-consumed mostly by OpenWebUI (as agent tools) and by operators.
+Auxiliary services that support the application tier without being core to it: SearXNG for web search, Open Terminal as
+the code-execution sandbox for OpenWebUI (plain LLM models; per-user isolation, downloadable file output), Jupyter
+(retained in the stack but no longer the OpenWebUI code path), Playwright for browser automation, and Attu as a Milvus
+admin console for operators. These are consumed mostly by OpenWebUI (as agent tools) and by operators.
 
 <likec4-view view-id="tier_utility" style="display:block;height:420px"></likec4-view>
 
