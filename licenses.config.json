@@ -29,6 +29,7 @@
     "expert_rag_agent",
     "expert_asking_agent",
     "namespace_selection_agent",
+    "memory_writer_agent",
     "mineru-api",
     "mineru-vlm",
     "backup"

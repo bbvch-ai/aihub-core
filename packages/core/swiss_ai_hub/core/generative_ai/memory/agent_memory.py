@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import cached_property
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -47,14 +48,30 @@ class AgentMemory:
 
         self._agent_config = agent_config
         self._t = t
-        self._config = Mem0Settings().get_config(
-            custom_fact_extraction_prompt=custom_fact_extraction_prompt,
-            custom_update_memory_prompt=custom_update_memory_prompt,
+        self._settings = Mem0Settings()
+        self._custom_fact_extraction_prompt = custom_fact_extraction_prompt
+        self._custom_update_memory_prompt = custom_update_memory_prompt
+
+    def _build_service(self, enable_graph: bool) -> Mem0Service:
+        config = self._settings.get_config(
+            custom_fact_extraction_prompt=self._custom_fact_extraction_prompt,
+            custom_update_memory_prompt=self._custom_update_memory_prompt,
+            enable_graph=enable_graph,
         )
-        self.mem0service = Mem0Service(
-            self._config,
-            t=self._t,
-        )
+        return Mem0Service(config, t=self._t)
+
+    @cached_property
+    def _user_memory_service(self) -> Mem0Service:
+        """User memory: graph is opt-out via ENABLE_USER_MEMORY_GRAPH (its ~3 graph LLM calls dominate the
+        save latency — issue #1179). Built lazily so agents that only write user memory never open a Neo4j
+        connection when the graph is off."""
+        return self._build_service(enable_graph=self._settings.ENABLE_USER_MEMORY_GRAPH)
+
+    @cached_property
+    def _organization_memory_service(self) -> Mem0Service:
+        """Organization memory always keeps the graph: writes are rare, explicit, and entity-rich, so the
+        graph's cost is amortized and its relational value applies."""
+        return self._build_service(enable_graph=True)
 
     @property
     def agent_id(self):
@@ -99,7 +116,7 @@ class AgentMemory:
         The thread/display/run IDs are preserved in metadata for traceability (knowing which conversation
         generated which memory) and potential future filtering.
         """
-        return await self.mem0service.add_memory(
+        return await self._user_memory_service.add_memory(
             messages=self.messages_to_dict(messages, user_id),
             owner_id=user_id,
             memory_type=MemoryType.USER_MEMORY,
@@ -131,7 +148,7 @@ class AgentMemory:
         memory, it is NOT inferred from the chat history.
         """
         messages = [{"role": MessageRole.USER, "content": memory, "name": user_id}]
-        return await self.mem0service.add_memory(
+        return await self._organization_memory_service.add_memory(
             messages=messages,
             owner_id=tenant_id,
             memory_type=MemoryType.ORGANIZATION_MEMORY,
@@ -162,8 +179,17 @@ class AgentMemory:
         Reranking is enabled by default to improve relevance - the initial vector search returns candidates,
         then a more sophisticated reranker (typically cross-encoder) refines the ordering. The threshold
         filters low-relevance results, ensuring only sufficiently related memories are returned.
+
+        Cross-agent sharing: with the graph store enabled, the graph is the channel that makes one agent's
+        user facts visible to other agents, and the vector read is partitioned by `agent_id` (per-agent
+        memory banks). When the graph is disabled (`ENABLE_USER_MEMORY_GRAPH=False`), that cross-agent
+        channel is gone, so the vector read must take over: we drop the `agent_id` filter and search all of
+        the user's memories regardless of which agent wrote them — mirroring `search_organization_memory`.
+        The writer's `_agent_id` stays on the stored record as trace metadata; it just no longer partitions
+        reads.
         """
-        return await self.mem0service.search(
+        agent_id = self.agent_id if self._settings.ENABLE_USER_MEMORY_GRAPH else None
+        return await self._user_memory_service.search(
             query=query,
             owner_id=user_id,
             thread_id=thread_id,
@@ -171,7 +197,7 @@ class AgentMemory:
             run_id=run_id,
             memory_type=MemoryType.USER_MEMORY,
             user_id=user_id,
-            agent_id=self.agent_id,
+            agent_id=agent_id,
             limit=limit,
             threshold=threshold,
             rerank=rerank,
@@ -206,7 +232,7 @@ class AgentMemory:
         tenant-wide retrieval; pass a concrete `user_id` only if the caller wants to restrict
         results to memories written on behalf of that user.
         """
-        return await self.mem0service.search(
+        return await self._organization_memory_service.search(
             query=query,
             owner_id=tenant_id,
             thread_id=thread_id,

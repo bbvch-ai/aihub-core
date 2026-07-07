@@ -7,19 +7,26 @@ from typing import Annotated, Any, cast, override
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
+from opentelemetry import context as otel_context
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
 from swiss_ai_hub.core.dispatcher import BaseDispatcher, EventsAndKwargs, TraceStore
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.agent import AgentInTheLoopRequestEvent, ControlEvent, ExceptionEvent, StartEvent
+from swiss_ai_hub.core.events.agent import (
+    AgentInTheLoopRequestEvent,
+    ControlEvent,
+    ExceptionEvent,
+    MemoryStorageRequestedEvent,
+    StartEvent,
+)
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.generative_ai import AgentMemory
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.rpc import AgentConfigClient
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
-from swiss_ai_hub.core.topic_managers import AgentClassTopicManager, AgentThreadTopicManager
+from swiss_ai_hub.core.topic_managers import AgentClassTopicManager, AgentThreadTopicManager, AgentTopicManager
 from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic, Topic
 from swiss_ai_hub.core.topics.agents.agent_class_topic import AgentClassTopic
 
@@ -339,7 +346,50 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_aitl_request_event:
             logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event.event_name}")
             await self.trigger_agent_in_the_loop(cast(AgentInTheLoopRequestEvent, event), topic)
+        if event.is_memory_storage_request_event:
+            logger.debug(f"Handling special event: MemoryStorageRequestedEvent: {event.event_name}")
+            await self.trigger_memory_storage(cast(MemoryStorageRequestedEvent, event), topic)
         await self.publish_event(event, topic)
+
+    async def trigger_memory_storage(
+        self,
+        event: Annotated[MemoryStorageRequestedEvent, "The detached memory-storage delegation request."],
+        topic: Annotated[AgentInstanceTopic, "The caller run's topic (used only for logging context)."],
+    ) -> None:
+        """
+        Fire-and-forget delegation to the memory-writer agent.
+
+        Publishes the wrapped start event to the writer's subject on a fresh, independent execution context
+        (own thread/display/run ids), so the caller's stop-time cleanup never touches it. Unlike
+        `trigger_agent_in_the_loop`, NO response subscription is opened — the writer runs to its own StopEvent
+        and cleans itself up, with nothing routed back to the caller. The `MemoryStorageRequestedEvent` itself
+        is still published to the caller topic by `publish_event` (control-only, no display), where it serves
+        as the stop-gate marker.
+
+        The publish is done in a **detached OTEL context** so the writer starts its own root Langfuse trace.
+        Otherwise `js_publisher.with_trace_context()` would inject the caller's span context into the message
+        headers, and the writer's subscriber would activate it as the parent — nesting the writer's run inside
+        the caller's trace (mixing the RAG steps into the writer trace).
+        """
+        writer_topic = AgentInstanceTopic.from_partial_topic(
+            partial_topic=PartialAgentTopic(
+                agent_id=event.target_agent_id,
+                agent_class=event.target_agent_class,
+                event_type=AgentTopicManager.CONTROL_EVENT,
+                event_name=event.start_event.event_name,
+                event_id=str(ObjectId()),
+            ),
+            thread_id=str(ObjectId()),
+            display_id=str(ObjectId()),
+            run_id=str(ObjectId()),
+        )
+        subject = writer_topic.to_subject()
+        logger.debug(f"Delegating memory storage to writer subject {subject}")
+        detached_context_token = otel_context.attach(otel_context.Context())
+        try:
+            await self.js_publisher.publish_event(event.start_event, subject)
+        finally:
+            otel_context.detach(detached_context_token)
 
     @override
     async def publish_event(

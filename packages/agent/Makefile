@@ -49,3 +49,6 @@ run-namespace-selection-agent:
 
 run-retrieval-agent:
 	uv run python app/retrieval_agent/main.py
+
+run-memory-writer-agent:
+	uv run python app/memory_writer_agent/main.py

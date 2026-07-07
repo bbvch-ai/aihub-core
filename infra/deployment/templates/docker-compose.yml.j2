@@ -3642,6 +3642,70 @@ services:
       - data
   {%- endif %}
 
+  {%- if image_tags.memory_writer_agent[stage] %}
+  {{ service_license('memory_writer_agent') }}
+  memory_writer_agent:
+    container_name: memory-writer-agent
+    restart: always
+    {%- if image_tags.memory_writer_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/memory_writer_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.memory_writer_agent[stage] }}
+    {%- endif %}
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j (mem0 constructs Neo4j settings even when the user-memory graph is disabled)
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: memory-writer-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('memory_writer_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+  {%- endif %}
+
   {%- if image_tags.default_rag_pipeline[stage] %}
   {{ service_license('default_rag_pipeline') }}
   default_rag_pipeline:
