@@ -256,6 +256,12 @@
       "notes": "Core MIT. The repo's enterprise/ subtree is proprietary — we deploy only the OSS edition."
     },
     {
+      "service": "open-terminal",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
       "service": "open-webui",
       "license": "Open WebUI License (modified BSD-3-Clause)",
       "status": "⚠️",

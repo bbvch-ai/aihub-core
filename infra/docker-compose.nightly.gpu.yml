@@ -1656,6 +1656,41 @@ services:
     networks:
       - backend
 
+  # License: MIT — third-party (see LICENSE_REPORT.md)
+  open-terminal:
+    container_name: open-terminal
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
+    restart: always
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
+    environment:
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+      OPEN_TERMINAL_MULTI_USER: 'true'  # Per-user home directories (/home/<user>)
+      # Tool-context guidance: files surface in the Files panel; use read-file for documents
+      OPEN_TERMINAL_SYSTEM_PROMPT: >-
+        You have access to a sandboxed Linux computer with Python and common
+        document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
+        weasyprint, matplotlib). Use your tools to run commands, read and write
+        files, and search the filesystem. Verify the current state before making
+        changes and check command output to confirm success. Files you create in
+        your working directory automatically appear in the user's Files panel,
+        where they can download them — after creating a file, tell the user its
+        filename. To read the contents of a document such as a PDF, DOCX or XLSX,
+        use the read-file tool, which extracts the text; do not use display for that.
+    healthcheck:
+      # No documented health endpoint; probe the Swagger /docs route instead
+      test: [CMD, curl, -f, http://localhost:8000/docs]
+      interval: 15s
+      timeout: 3s
+      start_period: 40s  # Generous cold-start for the ~1.2 GB image
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - code-sandbox  # Isolated single-tenant zone (callers join it to reach this sandbox)
+
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
     container_name: playwright-server
@@ -1845,7 +1880,7 @@ services:
         condition: service_healthy
       litellm:
         condition: service_healthy
-      jupyter:
+      open-terminal:
         condition: service_healthy
       playwright:
         condition: service_healthy
@@ -1974,15 +2009,10 @@ services:
       SHOW_ADMIN_DETAILS: true
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
-      # --- Code Execution ---
-      CODE_EXECUTION_ENGINE: jupyter
-      CODE_EXECUTION_JUPYTER_URL: http://jupyter:8888
-      CODE_EXECUTION_JUPYTER_AUTH: token
-      CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
-      CODE_INTERPRETER_ENGINE: jupyter
-      CODE_INTERPRETER_JUPYTER_URL: http://jupyter:8888
-      CODE_INTERPRETER_JUPYTER_AUTH: token
-      CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+      # --- Code Execution (Open Terminal) ---
+      # Native execute_code connection (plain LLM models). "permission":"read" is the
+      # connection-access grant, NOT a filesystem mode; key must be alphanumeric/hex (single-quoted JSON).
+      TERMINAL_SERVER_CONNECTIONS: '[{"id":"open-terminal","name":"Open Terminal","enabled":true,"url":"http://open-terminal:8000","key":"${OPEN_TERMINAL_API_KEY}","auth_type":"bearer","config":{"access_grants":[{"principal_type":"user","principal_id":"*","permission":"read"}]}}]'
 
       # --- Vector DB ---
       VECTOR_DB: milvus
@@ -2109,6 +2139,7 @@ services:
       - backend
       - data
       - storage
+      - code-sandbox  # Caller of the open-terminal sandbox zone
 
   # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   openwebui-init:
@@ -3502,3 +3533,8 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: 'false'
+  # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
+  code-sandbox:
+    name: code-sandbox
+    driver: bridge
+    internal: true

@@ -3,6 +3,7 @@ from mem0.configs.base import MemoryConfig
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.graph.patched_memory_graph import PatchedMemoryGraph
 from swiss_ai_hub.core.infrastructure.mem0.patched_async_memory import PatchedAsyncMemory
+from swiss_ai_hub.core.infrastructure.mem0.patched_milvus_db import PatchedMilvusDB
 from swiss_ai_hub.core.infrastructure.mem0.patched_open_ai_embedding import PatchedOpenAIEmbedding
 from swiss_ai_hub.core.infrastructure.mem0.patched_open_aillm import PatchedOpenAILLM
 from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
@@ -19,6 +20,7 @@ class Mem0Service:
     ):
         self._config = config
         self._memory = PatchedAsyncMemory(config=config)
+        self._memory.vector_store = PatchedMilvusDB.from_milvus(self._memory.vector_store)
         self._memory.llm = PatchedOpenAILLM.from_llm(self._memory.llm)
         self._memory.embedding_model = PatchedOpenAIEmbedding.from_embedding(self._memory.embedding_model)
         # When the graph store is disabled, mem0 sets enable_graph=False and self.graph=None — nothing to wrap.

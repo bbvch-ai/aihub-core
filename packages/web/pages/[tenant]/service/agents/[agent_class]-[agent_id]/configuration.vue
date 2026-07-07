@@ -2,7 +2,7 @@
   <StructuralColumn
     :title="t('agent.configuration.title')"
     close-route="/service/agents"
-    :loading="agentInstanceIsLoading"
+    :loading="agentInstanceIsLoading && !hasLoaded"
     size="normal"
   >
     <div class="flex flex-col gap-3">
@@ -10,7 +10,7 @@
         {{ t('agent.configuration.description') }}
       </p>
       <AgentConfiguration
-        v-if="configForm && configForm.length > 0 && !agentInstanceIsLoading"
+        v-if="hasLoaded && configForm && configForm.length > 0"
         :title="t('agent.configuration.runtimeSettings')"
         :description="agentInstance?.agent_config.description || ''"
         :form="configForm"
@@ -18,7 +18,7 @@
         @submit="submitConfiguration"
       />
       <div
-        v-else-if="agentInstanceIsLoading"
+        v-else-if="!hasLoaded"
         class="text-center text-sm text-surface-500 dark:text-surface-400"
       >
         {{ t('common.loading') }}
@@ -42,6 +42,20 @@ const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
 const { updateAgentInstance } = useUpdateAgentInstance()
 const { t } = useI18n()
 const toast = useToast()
+
+// Latch so a background refetch or transient `enabled` flip can't remount the form and
+// re-seed it from server data, dropping unsaved edits (issue #38).
+const hasLoaded = ref(false)
+watch(agentInstance, (value) => {
+  if (value) hasLoaded.value = true
+}, { immediate: true })
+
+// Nuxt reuses this instance across param changes; drop the latch on route identity change so
+// the loading state shows until the new agent resolves, instead of the previous form lingering.
+watch(
+  () => `${route.params.agent_class}/${route.params.agent_id}`,
+  () => { hasLoaded.value = false },
+)
 
 // Lock agent_id on edit: it is the immutable instance key, and a divergent value silently breaks
 // the SSE completion check so the chat never finishes. The backend pins it on save too; this is UX.

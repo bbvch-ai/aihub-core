@@ -63,7 +63,7 @@ class LLMParameter(Form):
                 min=0.0,
                 max=2.0,
                 step=0.1,
-                value=0.1,
+                value=0.0,
                 min_fraction_digits=0,
                 max_fraction_digits=1,
             ),

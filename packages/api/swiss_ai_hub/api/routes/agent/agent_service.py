@@ -304,7 +304,9 @@ class AgentService:
         await subscriber.start()
         logger.debug(f"Subscriber created for streaming subject: {subscriber.subject}")
 
-        await external_agent_event_distributor.distribute_event(external_event, user)
+        await external_agent_event_distributor.distribute_event(
+            external_event, user, target_agent=AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
+        )
 
         return resources
 

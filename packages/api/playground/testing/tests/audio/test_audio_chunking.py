@@ -134,7 +134,10 @@ async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
     ) as mock_litellm_client:
         mock_litellm_client.return_value = mock_client
 
-        with patch.object(OpenaiService, "_model_names_by_type", side_effect=mock_model_names):
+        with (
+            patch.object(OpenaiService, "_model_names_by_type", side_effect=mock_model_names),
+            patch.object(OpenaiService, "_assert_model_access"),
+        ):
             result = await OpenaiService.stt(
                 file=large_file,
                 user=fake_user(),
