@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.307.0] - 2026-07-07 - Enhanced Model Access Control and Granular Permissions
+
+### Added
+
+- ✨ **New Model Permission Rules**: Introduced canonical permission rule builders and normalization logic within
+  `AccessChecker` to precisely define and manage access to individual models and model capabilities.
+- 🚀 **Centralized Model Access Guard**: Added new `_assert_model_access` and `_has_model_access` helper methods to
+  `OpenaiService`, ensuring all model invocations enforce user permissions consistently at the service layer.
+- 🧪 **Comprehensive Model Access Tests**: Added extensive unit tests for both `ModelService` and `OpenaiService` to
+  validate the new granular model and assistant access control mechanisms.
+
+### Security
+
+- 🔑 **Granular Model Access Enforcement**: Implemented strict access control checks across all OpenAI API service
+  methods (Chat Completions, Embeddings, Speech-to-Text, Text-to-Speech, Image Generation) to ensure users only access
+  models for which they have explicit permissions.
+- 🔐 **Filtered Model Listings**: The `/v1/models` and `ModelService` listing endpoints now filter available models based
+  on the requesting user's granted permissions, only showing models they are authorized to use.
+- 🛡️ **Improved Assistant Access Logic**: Refined the `chat_completion_with_assistants` and `get_model_with_assistants`
+  endpoints to correctly differentiate and apply access checks for both models and assistants, raising `403 Forbidden`
+  for unauthorized access.
+- 🚫 **Prevented Permission Masking**: Modified model lookup fallback logic in `OpenaiService` so that only
+  `404 Not Found` errors will trigger a search for an assistant; any other error, such as `403 Forbidden`, is now
+  propagated directly.
+
+### Refactor
+
+- 🧹 **Centralized Access Control Logic**: Moved model and assistant access validation logic from the `OpenaiController`
+  to the `OpenaiService`, ensuring a single source of truth for permission checks and simplifying controller logic.
+
+______________________________________________________________________
+
 ## [v0.306.2] - 2026-07-06 - Refined LLM Parameter Defaults
 
 ### Changed
