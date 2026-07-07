@@ -23,7 +23,8 @@ class TestSignalSubscriptionSurvives:
         AccessChangeHook._connected = False
 
         class _DummyProvisioner:
-            async def sync_access(self) -> None: ...
+            async def sync_access(self) -> None:
+                pass
 
         try:
             AccessChangeHook.connect(_DummyProvisioner())
