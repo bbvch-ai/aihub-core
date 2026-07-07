@@ -7,7 +7,7 @@ from nats.js import JetStreamContext
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor.events.external_agent_event import ExternalAgentEvent
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
-from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
+from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity
 from swiss_ai_hub.core.publishers.js_publisher import JSPublisher
 from swiss_ai_hub.core.publishers.nc_publisher import NCPublisher
 from swiss_ai_hub.core.topic_managers.agents.agent_thread_topic_manager import AgentThreadTopicManager
@@ -39,6 +39,7 @@ class ExternalAgentEventDistributor:
         external_event: ExternalAgentEvent,
         user: UserIdentity | None = None,
         aihub_headers: dict[str, str] | None = None,
+        target_agent: AgentInstanceRef | None = None,
     ):
         """
         Entry point for distributing an external event (ExternalAgentEvent) to agents or other systems through NATs.
@@ -81,7 +82,7 @@ class ExternalAgentEventDistributor:
             await self._handle_display_message(external_event, run_id, user)
 
         if external_event.event.is_start_event:
-            await self._handle_start_event(thread, external_event, run_id, aihub_headers)
+            await self._handle_start_event(thread, external_event, run_id, aihub_headers, target_agent)
 
     async def _handle_start_event(
         self,
@@ -89,12 +90,14 @@ class ExternalAgentEventDistributor:
         external_event: ExternalAgentEvent,
         run_id: str,
         aihub_headers: dict[str, str] | None = None,
+        target_agent: AgentInstanceRef | None = None,
     ):
         """
         Handle a StartEvent from the user.
 
         If the event has no initial messages, load message history from persistence.
-        Then, publish the StartEvent to all agents in the thread, giving them the full context.
+        Then publish the StartEvent to the agent the request selected (`target_agent`). When no target
+        is given (delegator / bot callers), fall back to every agent in the thread.
         """
         logger.debug(f"Handling start event for thread {external_event.thread_id}")
 
@@ -102,7 +105,8 @@ class ExternalAgentEventDistributor:
             external_event.event.messages = PersistedAgentEventEntity.to_message_history(str(thread.id))
             logger.debug(f"Assembled message history {external_event.event.messages}")
 
-        for agent in thread.agents:
+        target_agents = [target_agent] if target_agent else thread.agents
+        for agent in target_agents:
             event = external_event.event.model_copy(deep=True)
             event.event_id = str(ObjectId())
             topic_manager = AgentThreadTopicManager(

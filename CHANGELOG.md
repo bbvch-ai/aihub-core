@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.307.1] - 2026-07-07 - Seamless Multi-Agent Conversations: Dedicated Thread Contexts
+
+### Fixed
+
+- 🐛 **Multi-Agent Chat Context Interference**: Resolved an issue where multiple agents participating in the same chat
+  session could inadvertently share or overwrite each other's conversation context, leading to incorrect or mixed-up
+  responses.
+- 🐛 **Agent-Specific Event Routing**: Corrected the internal event distribution logic to ensure messages are now
+  precisely routed to the intended agent instance within a chat, preventing cross-agent communication mix-ups.
+
+### Added
+
+- ✨ **Multi-Agent Routing Tests**: Introduced new comprehensive tests to validate that distinct agents in a shared chat
+  thread correctly maintain their separate contexts and respond independently.
+
+### Changed
+
+- 🔄 **Thread ID Salting for Agents/Models**: Updated the ID generation mechanism for chat threads to include agent or
+  model identifiers as a "salt." This ensures unique thread IDs for each agent's or model's interaction within a single
+  chat session, effectively isolating their operational context.
+- ⚡️ **Targeted Event Distribution**: Modified the core event distributor to explicitly direct events to a specific
+  `target_agent` when provided, enhancing precision and control over agent interactions and preventing unintended event
+  broadcasts.
+
+______________________________________________________________________
+
 ## [v0.307.0] - 2026-07-07 - Enhanced Model Access Control and Granular Permissions
 
 ### Added
