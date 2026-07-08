@@ -193,6 +193,26 @@ class AccessChecker:
         """
         return re.sub(r"[^a-zA-Z0-9_-]", "_", value)
 
+    @staticmethod
+    def normalize_model_access_rule(rule: str) -> str:
+        """Collapses the model-name part of a model access rule to a single segment (``.``/``/`` → ``_``).
+
+        A hand-authored rule such as ``aihub.user.model.text-generation.Kimi-K2.6`` reads its version dot
+        as a hierarchy separator, so it can never match the template ``model_user_rule`` builds (which
+        normalizes the name to ``Kimi-K2_6``). Rewriting the name on save makes the two sides line up.
+        Wildcard tails (``*``/``>``) and non-model rules pass through unchanged, and the transform is
+        idempotent (an already-normalized name has no characters left to collapse).
+        """
+        for prefix in (_USER_PREFIX, _ADMIN_PREFIX):
+            model_prefix = f"{prefix}model."
+            if not rule.startswith(model_prefix):
+                continue
+            capability, separator, model_name = rule[len(model_prefix) :].partition(".")
+            if not separator or "*" in model_name or ">" in model_name:
+                return rule
+            return f"{model_prefix}{capability}.{AccessChecker._normalize_model_segment(model_name)}"
+        return rule
+
     @classmethod
     def rules_grant_admin_to_agent_instance(cls, rules: list[str], agent_class: str, agent_id: str) -> bool:
         """Whether a flat rule list already grants admin to a concrete agent instance.
