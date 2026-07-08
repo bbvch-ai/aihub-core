@@ -13,7 +13,9 @@ from scim2_models import Group, User
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
+from swiss_ai_hub.core.infrastructure.openwebui.available_model import AvailableModel
 from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
@@ -27,7 +29,8 @@ from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleString
 logger = logging.getLogger(__name__)
 
 AIHUB_GROUP_PREFIX = "aihub:"
-AIHUB_MODEL_PREFIX = "aihub-agent-"
+AIHUB_AGENT_PREFIX = "aihub-agent-"
+AIHUB_LLM_MODEL_PREFIX = "aihub-model-"
 
 _LOCK_TIMEOUT = 60
 # The group critical section lists all SCIM groups/users + all Keycloak users and then issues one
@@ -41,8 +44,12 @@ type AiHubToOwuiUserIdMapping = dict[str, str]
 type TenantAccessRules = dict[str, list[str]]
 """Maps tenant name to its access rule strings."""
 
-type RoleAccessRules = dict[str, list[str]]
-"""Maps role name to its access rule strings."""
+type RoleAccessRules = dict[tuple[str, str], list[str]]
+"""Maps (tenant display name, role name) to that role's access rule strings.
+
+Keyed by the pair because role names are only unique per tenant (index ``(tenant_id, name)``):
+the same name (``AIHubUser``, a shared ``TestRole``, …) exists in every tenant with its own rules,
+so a name-only key would collapse them and let one tenant's rules mask another's."""
 
 
 class OpenWebuiProvisioner:
@@ -96,6 +103,7 @@ class OpenWebuiProvisioner:
             async with httpx.AsyncClient(timeout=30.0) as http:
                 await self._sync_groups()
                 await self._sync_workspace_models(http, self._get_known_online_agents())
+                await self._sync_llm_workspace_models(http, await self._get_available_llm_models())
                 await self._sync_access_grants(http)
 
             logger.info("OpenWebUI provisioning completed")
@@ -145,6 +153,27 @@ class OpenWebuiProvisioner:
             )
             for config in all_configs
         ]
+
+    async def _get_available_llm_models(self) -> list[AvailableModel]:
+        """Queries LiteLLM for chat-capable models eligible to appear in the OpenWebUI picker.
+
+        Filters on ``mode == "chat"`` rather than the capability prefix so non-chat models
+        (embedding/rerank/transcription/image) never reach the chat picker.
+        """
+        async with LiteLLMProxySettings().httpx_aclient as client:
+            response = await client.get("/v1/model/info")
+            response.raise_for_status()
+            data = response.json()["data"]
+
+        models: list[AvailableModel] = []
+        for entry in data:
+            if entry.get("model_info", {}).get("mode") != "chat":
+                continue
+            capability, _, name = entry["model_name"].partition("/")
+            if not name:
+                continue
+            models.append(AvailableModel(capability=capability, name=name, display_name=name))
+        return models
 
     # ------------------------------------------------------------------
     # Group sync
@@ -252,7 +281,7 @@ class OpenWebuiProvisioner:
 
     @staticmethod
     def _workspace_model_id(agent_class: str, agent_id: str) -> str:
-        return f"{AIHUB_MODEL_PREFIX}{agent_class}-{agent_id}"
+        return f"{AIHUB_AGENT_PREFIX}{agent_class}-{agent_id}"
 
     @staticmethod
     def _base_model_id(agent_class: str, agent_id: str) -> str:
@@ -292,7 +321,7 @@ class OpenWebuiProvisioner:
 
     async def _sync_workspace_models(self, http: httpx.AsyncClient, online_agents: list[OnlineAgent]) -> None:
         existing_models = await self._openwebui.list_models(http)
-        existing_aihub = {m["id"]: m for m in existing_models if m.get("id", "").startswith(AIHUB_MODEL_PREFIX)}
+        existing_aihub = {m["id"]: m for m in existing_models if m.get("id", "").startswith(AIHUB_AGENT_PREFIX)}
 
         to_create, to_update, to_delete = self._compute_model_diff(online_agents, existing_aihub)
 
@@ -309,6 +338,46 @@ class OpenWebuiProvisioner:
         for model_id in to_delete:
             await self._openwebui.delete_model(http, model_id)
             logger.info(f"OpenWebUI: Deleted workspace model '{model_id}'")
+
+    # ------------------------------------------------------------------
+    # LLM model sync
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _llm_workspace_model_id(model: AvailableModel) -> str:
+        return f"{AIHUB_LLM_MODEL_PREFIX}{model.capability}-{model.name}"
+
+    def _build_llm_model_data(self, model: AvailableModel) -> dict[str, Any]:
+        """Points ``base_model_id`` at the raw LiteLLM connection model so chat routes through it.
+
+        That base has no OpenWebUI registry entry, so ``has_base_model_access`` treats it as a raw
+        provider model and lets granted users through — gating happens via this entry's access grants.
+        """
+        return {
+            "id": self._llm_workspace_model_id(model),
+            "name": model.display_name,
+            "base_model_id": model.litellm_name,
+            "meta": {"description": f"AI-Hub model: {model.litellm_name}"},
+        }
+
+    async def _sync_llm_workspace_models(self, http: httpx.AsyncClient, models: list[AvailableModel]) -> None:
+        existing_models = await self._openwebui.list_models(http)
+        existing_aihub = {m["id"]: m for m in existing_models if m.get("id", "").startswith(AIHUB_LLM_MODEL_PREFIX)}
+
+        desired = {self._llm_workspace_model_id(model): model for model in models}
+
+        for model_id, model in desired.items():
+            existing = existing_aihub.get(model_id)
+            if existing is None:
+                await self._openwebui.create_model(http, self._build_llm_model_data(model))
+                logger.info(f"OpenWebUI: Created LLM workspace model '{model_id}'")
+            elif existing.get("name") != model.display_name:
+                await self._openwebui.update_model(http, self._build_llm_model_data(model))
+                logger.info(f"OpenWebUI: Updated LLM workspace model '{model_id}' name to '{model.display_name}'")
+
+        for model_id in set(existing_aihub) - set(desired):
+            await self._openwebui.delete_model(http, model_id)
+            logger.info(f"OpenWebUI: Deleted LLM workspace model '{model_id}'")
 
     # ------------------------------------------------------------------
     # Access grant computation
@@ -336,10 +405,40 @@ class OpenWebuiProvisioner:
 
             tenant_name, role_name = parts
             t_rules = tenant_rules.get(tenant_name, [])
-            r_rules = role_rules.get(role_name, [])
+            r_rules = role_rules.get((tenant_name, role_name), [])
 
             checker = AccessChecker(user_access_rules=r_rules, tenant_access_rules=t_rules)
             if checker.has_access_to_agent(agent_class, agent_id):
+                grants.append(AccessGrant(principal_type="group", principal_id=group.id, permission="read"))
+
+        return grants
+
+    @staticmethod
+    def _compute_access_for_llm_model(
+        capability: str,
+        name: str,
+        groups: list[Group],
+        tenant_rules: TenantAccessRules,
+        role_rules: RoleAccessRules,
+    ) -> list[AccessGrant]:
+        """Computes which groups should have read access to a given LLM workspace model."""
+        grants: list[AccessGrant] = []
+
+        for group in groups:
+            group_name = group.display_name or ""
+            if not group_name.startswith(AIHUB_GROUP_PREFIX):
+                continue
+
+            parts = group_name[len(AIHUB_GROUP_PREFIX) :].rsplit(":", 1)
+            if len(parts) != 2:
+                continue
+
+            tenant_name, role_name = parts
+            t_rules = tenant_rules.get(tenant_name, [])
+            r_rules = role_rules.get((tenant_name, role_name), [])
+
+            checker = AccessChecker(user_access_rules=r_rules, tenant_access_rules=t_rules)
+            if checker.has_access_to_model(capability, name):
                 grants.append(AccessGrant(principal_type="group", principal_id=group.id, permission="read"))
 
         return grants
@@ -354,12 +453,45 @@ class OpenWebuiProvisioner:
         return (parts[0], parts[1]) if len(parts) == 2 else None
 
     @staticmethod
+    def _parse_llm_from_model(model: dict[str, Any]) -> tuple[str, str] | None:
+        """Extracts (capability, name) from an LLM workspace model via its base_model_id."""
+        capability, _, name = model.get("base_model_id", "").partition("/")
+        return (capability, name) if capability and name else None
+
+    def _compute_grants_for_managed_model(
+        self,
+        model: dict[str, Any],
+        groups: list[Group],
+        tenant_rules: TenantAccessRules,
+        role_rules: RoleAccessRules,
+    ) -> list[AccessGrant] | None:
+        """Dispatches grant computation by managed-model prefix; returns None for unparseable models."""
+        model_id = model.get("id", "")
+        if model_id.startswith(AIHUB_AGENT_PREFIX):
+            parsed = self._parse_agent_from_model(model)
+            return self._compute_access_for_model(*parsed, groups, tenant_rules, role_rules) if parsed else None
+        if model_id.startswith(AIHUB_LLM_MODEL_PREFIX):
+            parsed = self._parse_llm_from_model(model)
+            return self._compute_access_for_llm_model(*parsed, groups, tenant_rules, role_rules) if parsed else None
+        return None
+
+    @staticmethod
     def _build_role_rules() -> RoleAccessRules:
-        return {role.name: list(role.access_rules) for role in RoleEntity.objects()}
+        """Keys rules by (tenant display name, role name) so same-named roles in different tenants
+        stay distinct. The tenant display name matches the ``aihub:{tenant}:{role}`` group naming and
+        the ``tenant_rules`` keying, so the lookup in ``_compute_access_for_*`` lines up."""
+        tenant_name_by_id = {str(tenant.id): tenant.name for tenant in TenantMetadataEntity.objects()}
+        return {
+            (tenant_name_by_id[role.tenant_id], role.name): list(role.access_rules)
+            for role in RoleEntity.objects()
+            if role.tenant_id in tenant_name_by_id
+        }
 
     async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
         existing_models = await self._openwebui.list_models(http)
-        aihub_models = [m for m in existing_models if m.get("id", "").startswith(AIHUB_MODEL_PREFIX)]
+        aihub_models = [
+            m for m in existing_models if m.get("id", "").startswith((AIHUB_AGENT_PREFIX, AIHUB_LLM_MODEL_PREFIX))
+        ]
 
         if not aihub_models:
             return
@@ -379,13 +511,9 @@ class OpenWebuiProvisioner:
 
         async def update_single(model: dict[str, Any]) -> None:
             async with semaphore:
-                parsed = self._parse_agent_from_model(model)
-                if not parsed:
+                access_control = self._compute_grants_for_managed_model(model, aihub_groups, tenant_rules, role_rules)
+                if access_control is None:
                     return
-                agent_class, agent_id = parsed
-                access_control = self._compute_access_for_model(
-                    agent_class, agent_id, aihub_groups, tenant_rules, role_rules
-                )
                 await self._openwebui.update_model_access(http, model["id"], access_control)
 
         await asyncio.gather(*[update_single(m) for m in aihub_models])

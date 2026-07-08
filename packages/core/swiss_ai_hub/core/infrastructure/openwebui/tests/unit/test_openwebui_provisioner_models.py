@@ -5,7 +5,7 @@ import pytest
 
 from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
-    AIHUB_MODEL_PREFIX,
+    AIHUB_AGENT_PREFIX,
     OpenWebuiProvisioner,
 )
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -34,7 +34,7 @@ class TestResolveDisplayName:
         assert provisioner._resolve_display_name(name, "rag") == "rag"
 
 
-_RAG_MODEL_ID = f"{AIHUB_MODEL_PREFIX}rag-default"
+_RAG_MODEL_ID = f"{AIHUB_AGENT_PREFIX}rag-default"
 
 
 class TestComputeModelDiff:

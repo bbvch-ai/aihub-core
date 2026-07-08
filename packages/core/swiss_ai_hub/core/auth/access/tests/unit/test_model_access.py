@@ -91,3 +91,45 @@ def test_normalization_collision_is_accepted_tradeoff() -> None:
     assert AccessChecker.model_user_rule("text-generation", "gpt-4.1") == AccessChecker.model_user_rule(
         "text-generation", "gpt-4_1"
     )
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("aihub.user.model.text-generation.Kimi-K2.6", "aihub.user.model.text-generation.Kimi-K2_6"),
+        ("aihub.user.model.text-generation.gpt-4.1", "aihub.user.model.text-generation.gpt-4_1"),
+        ("aihub.admin.model.text-generation.gpt-4.1", "aihub.admin.model.text-generation.gpt-4_1"),
+        # already normalized → unchanged (idempotent)
+        ("aihub.user.model.text-generation.Kimi-K2_6", "aihub.user.model.text-generation.Kimi-K2_6"),
+        # no special characters → unchanged
+        ("aihub.user.model.text-generation.Apertus-70B", "aihub.user.model.text-generation.Apertus-70B"),
+        # wildcard tails preserved
+        ("aihub.user.model.text-generation.*", "aihub.user.model.text-generation.*"),
+        ("aihub.user.model.text-generation.>", "aihub.user.model.text-generation.>"),
+        ("aihub.user.model.>", "aihub.user.model.>"),
+        ("aihub.user.model.*", "aihub.user.model.*"),
+        # non-model rules pass through untouched
+        ("aihub.user.agent.rag.default", "aihub.user.agent.rag.default"),
+        ("aihub.user.service.openai", "aihub.user.service.openai"),
+    ],
+)
+def test_normalize_model_access_rule(raw: str, expected: str) -> None:
+    assert AccessChecker.normalize_model_access_rule(raw) == expected
+
+
+def test_normalized_dotted_rule_grants_the_model() -> None:
+    """The fix end-to-end: a hand-authored dotted rule, once normalized, grants the model whose
+    permission template ``model_user_rule`` builds."""
+    rule = AccessChecker.normalize_model_access_rule("aihub.user.model.text-generation.Kimi-K2.6")
+    checker = AccessChecker(user_access_rules=[rule], tenant_access_rules=["aihub.user.model.>"])
+    assert checker.has_access_to_model("text-generation", "Kimi-K2.6") is True
+
+
+def test_unnormalized_dotted_rule_fails_to_grant() -> None:
+    """Documents the bug the normalization fixes: the raw dotted rule can never match, because the
+    version dot is read as a hierarchy separator while the checked template collapses it to ``_``."""
+    checker = AccessChecker(
+        user_access_rules=["aihub.user.model.text-generation.Kimi-K2.6"],
+        tenant_access_rules=["aihub.user.model.>"],
+    )
+    assert checker.has_access_to_model("text-generation", "Kimi-K2.6") is False

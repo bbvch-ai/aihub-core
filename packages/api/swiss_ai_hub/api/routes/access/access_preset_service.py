@@ -19,6 +19,7 @@ _PRESET_DEFINITIONS: list[_PresetDefinition] = [
     _PresetDefinition("aihub.admin.agent.>", "admin_all_agents", "agents"),
     _PresetDefinition("aihub.user.process.>", "user_all_processes", "processes"),
     _PresetDefinition("aihub.admin.process.>", "admin_all_processes", "processes"),
+    _PresetDefinition("aihub.user.model.>", "user_all_models", "models"),
     _PresetDefinition("aihub.admin.knowledge.>", "admin_knowledge", "knowledge"),
 ]
 
