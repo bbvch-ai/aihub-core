@@ -80,7 +80,6 @@ class ImapAgent(Agent):
             subject=parsed.subject,
             date=parsed.date,
             body_text=parsed.body_text,
-            body_html=parsed.body_html,
             attachments=attachments,
         )
 

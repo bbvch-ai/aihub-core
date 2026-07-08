@@ -38,12 +38,23 @@ class ImapClientConfig(StepConfig):
         Field(default=50, description="Maximum number of unread messages listed per run — keeps events small."),
         Gt(0),
     ]
+    max_message_bytes: Annotated[
+        int,
+        Field(
+            default=50_000_000,
+            description="Deployment-fixed hard ceiling on the raw RFC822 size of a message. The size is checked "
+            "before the body is downloaded, so a hostile or oversized mail is refused instead of being pulled into "
+            "the agent's memory; this is what bounds peak fetch memory (max_body_bytes and max_attachment_bytes only "
+            "trim what is kept after parsing).",
+        ),
+        Gt(0),
+    ]
     max_body_bytes: Annotated[
         int,
         Field(
             default=1_000_000,
             description="Deployment-fixed cap on the decoded body carried in a fetch event; longer bodies are "
-            "truncated so a hostile or oversized mail cannot exceed NATS/FerretDB message-size limits.",
+            "truncated so the persisted/streamed event cannot exceed NATS/FerretDB message-size limits.",
         ),
         Gt(0),
     ]
@@ -51,8 +62,8 @@ class ImapClientConfig(StepConfig):
         int,
         Field(
             default=10_000_000,
-            description="Deployment-fixed cap on a single stored attachment; larger attachments are skipped so "
-            "one message cannot overload the agent process or the attachment bucket.",
+            description="Deployment-fixed cap on a single stored attachment; larger attachments are skipped so one "
+            "message cannot overload the attachment bucket.",
         ),
         Gt(0),
     ]

@@ -15,6 +15,7 @@ from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 _FLAGS_KEY = b"FLAGS"
 _HEADER_KEY = b"BODY[HEADER]"
 _BODY_KEY = b"BODY[]"
+_SIZE_KEY = b"RFC822.SIZE"
 
 
 class ImapClient:
@@ -32,12 +33,14 @@ class ImapClient:
         max_messages: int,
         max_body_bytes: int,
         max_attachment_bytes: int,
+        max_message_bytes: int,
     ) -> None:
         self._connection = connection
         self._inbox_folder = inbox_folder
         self._max_messages = max_messages
         self._max_body_bytes = max_body_bytes
         self._max_attachment_bytes = max_attachment_bytes
+        self._max_message_bytes = max_message_bytes
 
     async def list_unread(self) -> list[UnreadMailSummary]:
         """List unread messages as header summaries, identified by UID so ids stay valid across connections."""
@@ -54,9 +57,23 @@ class ImapClient:
         return summaries
 
     async def fetch_message(self, message_id: str) -> ParsedMessage:
-        """Fetch a single message by UID, including body and attachments, without setting the Seen flag."""
+        """Fetch a single message by UID, including body and attachments, without setting the Seen flag.
+
+        The raw size is checked (a cheap ``RFC822.SIZE`` fetch) before the body is downloaded, so an
+        oversized message is refused rather than pulled into memory — this is what bounds peak fetch memory.
+        """
         await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=True)
         uid = int(message_id)
+
+        sized = await asyncio.to_thread(self._connection.fetch, [uid], ["RFC822.SIZE"])
+        if uid not in sized:
+            raise ValueError(f"message {message_id} not found in {self._inbox_folder} — it may have been expunged")
+        size = sized[uid].get(_SIZE_KEY, 0)
+        if size > self._max_message_bytes:
+            raise ValueError(
+                f"message {message_id} is {size} bytes, exceeding the {self._max_message_bytes}-byte fetch ceiling"
+            )
+
         fetched = await asyncio.to_thread(self._connection.fetch, [uid], ["BODY.PEEK[]"])
         message = self._parse_bytes(fetched[uid][_BODY_KEY])
         return MailParser.parse_message(message_id, message, self._max_body_bytes, self._max_attachment_bytes)
@@ -87,6 +104,7 @@ class ImapClientFactory:
                 config.max_messages,
                 config.max_body_bytes,
                 config.max_attachment_bytes,
+                config.max_message_bytes,
             )
         finally:
             # Best-effort cleanup — a failed logout must never mask the original step failure.

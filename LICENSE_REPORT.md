@@ -4,7 +4,7 @@ Generated on: 08.07.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **398 packages**
+- Python packages (uv): **399 packages**
 - Node.js packages (pnpm): **994 packages**
 - External Docker images: **0 images**
 
@@ -144,6 +144,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | hyperframe                                       | 6.1.0           | MIT License                                             |                                                                      |
 | ✅     | idna                                             | 3.15            | BSD-3-Clause                                            |                                                                      |
 | ✅     | ImageHash                                        | 4.3.2           | 2-clause BSD License                                    |                                                                      |
+| ✅     | imapclient                                       | 3.1.0           | BSD License                                             |                                                                      |
 | ✅     | iniconfig                                        | 2.3.0           | MIT                                                     |                                                                      |
 | ✅     | ipython                                          | 9.13.0          | BSD-3-Clause                                            |                                                                      |
 | ✅     | ipython_pygments_lexers                          | 1.1.1           | BSD License                                             |                                                                      |

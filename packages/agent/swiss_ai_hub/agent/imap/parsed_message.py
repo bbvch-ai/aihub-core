@@ -12,7 +12,12 @@ class ParsedAttachment(BaseModel):
 
 
 class ParsedMessage(BaseModel):
-    """A fully parsed MIME message — headers, decoded bodies, and attachments with their raw bytes."""
+    """A fully parsed MIME message — headers, decoded bodies, and attachments with their raw bytes.
+
+    ``body_html`` is untrusted, sender-controlled markup. It is intentionally NOT surfaced on
+    ``MailFetchedEvent`` (which is persisted and streamed to the frontend) — a consumer that needs it
+    must sanitize it server-side first. It is kept here only as the in-process parse result.
+    """
 
     message_id: str
     sender: str
