@@ -336,6 +336,8 @@ def build_memory_storage_request(
             origin_agent_name=agent_config.name,
             origin_agent_description=agent_config.description,
         ),
+        # Routing target carried on the event (not hard-coded in the dispatcher by design) so the delegation
+        # primitive stays generic; today it resolves to the single MemoryWriterAgent system instance.
         target_agent_class=MemoryWriterAgentConfig.AGENT_CLASS,
         target_agent_id=MemoryWriterAgentConfig.AGENT_ID,
     )

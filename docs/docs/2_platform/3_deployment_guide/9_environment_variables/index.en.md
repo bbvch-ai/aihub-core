@@ -233,7 +233,6 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `LITE_LLM_PROXY_USER_RPM_LIMIT` | `LiteLLMProxySettings.USER_RPM_LIMIT` | `None` |  | Specify rpm limit for a given user (Requests per minute) |
 | `LITE_LLM_PROXY_USER_SOFT_BUDGET` | `LiteLLMProxySettings.USER_SOFT_BUDGET` | `None` |  | Get alerts when user crosses given budget, doesn't block requests. |
 | `LITE_LLM_PROXY_USER_TPM_LIMIT` | `LiteLLMProxySettings.USER_TPM_LIMIT` | `None` |  | Specify tpm limit for a given user (Tokens per minute) |
-| `MEM0_ENABLE_USER_MEMORY_GRAPH` | `Mem0Settings.ENABLE_USER_MEMORY_GRAPH` | `True` |  | Whether user-memory writes/reads use the Neo4j graph store. The graph adds ~3 sequential LLM calls per save (issue #1179). Default True preserves current behavior; set False to disable the graph for user memory. Organization memory always keeps the graph. |
 | `MEM0_SUPPORT_VISION` | `Mem0Settings.SUPPORT_VISION` | `True` |  | Whether to support vision |
 | `MEM0_VISION_DETAIL` | `Mem0Settings.VISION_DETAIL` | `'auto'` |  | Vision details |
 | `MEMORY_DEFAULT_TENANT_ID` | `MemorySettings.DEFAULT_TENANT_ID` | `'AIHub'` |  | Default tenant ID for memory scoping |

@@ -23,7 +23,9 @@ class MemoryWriterAgentConfig(AgentConfig):
     def as_form(cls) -> Self:
         return cls(
             agent_id=cls.AGENT_ID,
-            name=LocaleString(de="Speicher-Writer", en="Memory Writer", fr="Écrivain mémoire", it="Scrittore memoria"),
+            name=LocaleString(
+                de="Speicher-Writer", en="Memory Writer", fr="Rédacteur de mémoire", it="Registratore di memoria"
+            ),
             description=LocaleString(
                 de="Systemagent, der Nutzerspeicher ausserhalb des kritischen Pfads persistiert.",
                 en="System agent that persists user memory off the chat critical path.",

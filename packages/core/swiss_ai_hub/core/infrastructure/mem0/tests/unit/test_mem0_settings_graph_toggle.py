@@ -37,19 +37,9 @@ def test_enable_graph_false_yields_empty_graph_store(settings):
     assert not config.graph_store.config
 
 
-def test_default_keeps_graph_on(settings):
-    """Backwards compatibility: omitting enable_graph must preserve the current graph-on behavior."""
+def test_get_config_defaults_to_graph_on(settings):
+    """The low-level builder's `enable_graph` param still defaults to True (org memory relies on it)."""
     assert settings.get_config().graph_store.config
-
-
-def test_user_memory_graph_flag_defaults_to_on(monkeypatch):
-    """Reversible rollout: the class default preserves current behavior (the perf win is opting False).
-
-    Delete any env override so we test the field default, not the local dev value.
-    """
-    monkeypatch.delenv("MEM0_ENABLE_USER_MEMORY_GRAPH", raising=False)
-    settings = Mem0Settings(LLM_NAME="llm", EMBEDDING_MODEL_NAME="embed", RERANKING_MODEL_NAME="rerank")
-    assert settings.ENABLE_USER_MEMORY_GRAPH is True
 
 
 def test_memory_search_result_relations_defaults_to_empty():

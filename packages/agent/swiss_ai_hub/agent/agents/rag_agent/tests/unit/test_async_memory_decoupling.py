@@ -12,7 +12,9 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
-import swiss_ai_hub.agent.agents.rag_agent.rag_agent  # noqa: F401  (load the module graph before rag.* imports)
+# Load rag_agent first: it has a module-level circular dependency with rag.preconditions/step_functions
+# that only resolves in the runtime (rag_agent-first) order; importing preconditions first would break.
+import swiss_ai_hub.agent.agents.rag_agent  # noqa: F401,E402  (import-order guard, not a direct dependency)
 from swiss_ai_hub.agent.rag.preconditions import check_ready_for_stop
 from swiss_ai_hub.agent.rag.step_functions import build_memory_storage_request
 

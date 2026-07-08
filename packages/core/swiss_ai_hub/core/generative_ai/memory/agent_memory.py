@@ -62,10 +62,10 @@ class AgentMemory:
 
     @cached_property
     def _user_memory_service(self) -> Mem0Service:
-        """User memory: graph is opt-out via ENABLE_USER_MEMORY_GRAPH (its ~3 graph LLM calls dominate the
-        save latency — issue #1179). Built lazily so agents that only write user memory never open a Neo4j
-        connection when the graph is off."""
-        return self._build_service(enable_graph=self._settings.ENABLE_USER_MEMORY_GRAPH)
+        """User memory runs WITHOUT the graph store: its ~3 graph LLM calls dominate the save latency and add
+        no value for flat per-turn preferences (issue #1179). Built lazily so user-memory-only agents never
+        open a Neo4j connection."""
+        return self._build_service(enable_graph=False)
 
     @cached_property
     def _organization_memory_service(self) -> Mem0Service:
@@ -180,15 +180,12 @@ class AgentMemory:
         then a more sophisticated reranker (typically cross-encoder) refines the ordering. The threshold
         filters low-relevance results, ensuring only sufficiently related memories are returned.
 
-        Cross-agent sharing: with the graph store enabled, the graph is the channel that makes one agent's
-        user facts visible to other agents, and the vector read is partitioned by `agent_id` (per-agent
-        memory banks). When the graph is disabled (`ENABLE_USER_MEMORY_GRAPH=False`), that cross-agent
-        channel is gone, so the vector read must take over: we drop the `agent_id` filter and search all of
-        the user's memories regardless of which agent wrote them — mirroring `search_organization_memory`.
-        The writer's `_agent_id` stays on the stored record as trace metadata; it just no longer partitions
-        reads.
+        Cross-agent sharing: user memory runs without the graph store (issue #1179), which used to be the
+        channel that made one agent's user facts visible to other agents. The vector read takes over that
+        role — the `agent_id` filter is intentionally NOT applied, so all of the user's memories are returned
+        regardless of which agent wrote them, mirroring `search_organization_memory`. The writer's `_agent_id`
+        stays on the stored record as trace metadata; it just does not partition reads.
         """
-        agent_id = self.agent_id if self._settings.ENABLE_USER_MEMORY_GRAPH else None
         return await self._user_memory_service.search(
             query=query,
             owner_id=user_id,
@@ -197,7 +194,7 @@ class AgentMemory:
             run_id=run_id,
             memory_type=MemoryType.USER_MEMORY,
             user_id=user_id,
-            agent_id=agent_id,
+            agent_id=None,
             limit=limit,
             threshold=threshold,
             rerank=rerank,

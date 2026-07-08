@@ -10,7 +10,7 @@ class MemoryStoredStopEvent(StopEvent):
 
     Unlike a bare `StopEvent`, this surfaces what was actually persisted (added/updated/deleted memories) in
     the writer run's trace, mirroring the observability of the inline `StoreUserMemoryEvent`. Graph relations
-    are intentionally omitted — user memory runs with the graph disabled, so they are always empty here.
+    are not surfaced: user memory runs without the graph store (issue #1179), so they are always empty here.
     """
 
     added_memories: Annotated[list[str], Field(default_factory=list, description="Newly added memory texts")]

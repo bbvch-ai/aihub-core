@@ -24,15 +24,6 @@ class Mem0Settings(EnvironmentSettings):
     SUPPORT_VISION: Annotated[bool, Field(description="Whether to support vision")] = True
     VISION_DETAIL: Annotated[str, Field(description="Vision details")] = "auto"
 
-    ENABLE_USER_MEMORY_GRAPH: Annotated[
-        bool,
-        Field(
-            description="Whether user-memory writes/reads use the Neo4j graph store. The graph adds ~3 sequential "
-            "LLM calls per save (issue #1179). Default True preserves current behavior; set False to disable the "
-            "graph for user memory. Organization memory always keeps the graph."
-        ),
-    ] = True
-
     def get_config(
         self,
         custom_fact_extraction_prompt: Annotated[str | None, "How LLM extracts facts from conversations"] = None,

@@ -346,10 +346,13 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_aitl_request_event:
             logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event.event_name}")
             await self.trigger_agent_in_the_loop(cast(AgentInTheLoopRequestEvent, event), topic)
+        # Publish the event before delegating memory storage: MemoryStorageRequestedEvent doubles as the
+        # stop-gate marker, so publishing it first means a failed writer publish (NATS blip) surfaces as a
+        # dropped write on a run that still completes — not a run wedged forever waiting for the marker.
+        await self.publish_event(event, topic)
         if event.is_memory_storage_request_event:
             logger.debug(f"Handling special event: MemoryStorageRequestedEvent: {event.event_name}")
             await self.trigger_memory_storage(cast(MemoryStorageRequestedEvent, event), topic)
-        await self.publish_event(event, topic)
 
     async def trigger_memory_storage(
         self,
