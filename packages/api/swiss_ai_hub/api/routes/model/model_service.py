@@ -1,9 +1,14 @@
+import logging
+
 from fastapi import HTTPException
 from httpx import Client
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure import LiteLLMService, trace_fn
 
 from swiss_ai_hub.api.routes.model.dto.model_dto import ModelDTO, ModelTypeGroupDTO
+
+logger = logging.getLogger(__name__)
 
 
 class ModelService:
@@ -19,9 +24,21 @@ class ModelService:
         response = client.get(url="v1/model/info")
         data = response.json()["data"]
         models: list[ModelDTO] = []
+        access_checker = AccessChecker.from_user(user)
 
         for model_data in data:
             model = ModelDTO.model_validate(model_data)
+
+            capability, _, name = model.model_name.partition("/")
+
+            if not name:
+                logger.warning(f"Model name '{model.model_name}' does not contain a capability prefix.")
+                continue
+
+            if not access_checker.has_access_to_model(capability, name):
+                logger.warning(f"User '{user.id}' does not have access to model '{model.model_name}'.")
+                continue
+
             updated_model_info = model.convert_costs_to_microunits()
 
             updated_model = model.model_copy(update={"model_info": updated_model_info})

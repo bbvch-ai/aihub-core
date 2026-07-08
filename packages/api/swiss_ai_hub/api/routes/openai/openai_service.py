@@ -19,6 +19,7 @@ from opentelemetry.propagate import inject
 from pydantic import BaseModel
 from pydub import AudioSegment
 from starlette.responses import StreamingResponse
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
@@ -121,8 +122,11 @@ class OpenaiService:
         """
         try:
             return await OpenaiService.get_model(model_name)
-        except HTTPException:
-            pass
+        except HTTPException as model_lookup_error:
+            # Only a 404 ("not a known model") should fall through to the agent branch; any other error
+            # (e.g. a future 403) must propagate rather than be masked as an assistant lookup.
+            if model_lookup_error.status_code != 404:
+                raise
         agent_class, agent_id = model_name.split("/")
         agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
@@ -135,6 +139,22 @@ class OpenaiService:
             agent_class=agent_dto.agent_class,
             agent_id=agent_dto.agent_id,
         )
+
+    @staticmethod
+    def _has_model_access(access_checker: AccessChecker, model_name: str) -> bool:
+        """Whether the checker grants the ``capability/name`` model. A bare id (no ``/``) forms no valid
+        rule, so it is denied rather than raising in the template check. Used to filter model listings."""
+        capability, _, name = model_name.partition("/")
+        return bool(name) and access_checker.has_access_to_model(capability, name)
+
+    @staticmethod
+    def _assert_model_access(user: UserIdentity, model_name: str) -> None:
+        """Enforces per-model access for a direct model invocation. Lives on the service, not the
+        controller, so internal (non-HTTP) callers cannot bypass it."""
+        if not OpenaiService._has_model_access(AccessChecker.from_user(user), model_name):
+            raise HTTPException(
+                status_code=403, detail=f"User {user.id} does not have permission to access model {model_name}"
+            )
 
     @staticmethod
     @trace_fn
@@ -150,6 +170,8 @@ class OpenaiService:
         Generate text embeddings using the specified embedding model.
         Identifies the model, prepares parameters, and returns embeddings for the input text.
         """
+        OpenaiService._assert_model_access(user, model_name)
+
         embedding_model_names = await OpenaiService._model_names_by_type("embedding", model_name)
 
         if len(embedding_model_names) == 0:
@@ -183,6 +205,7 @@ class OpenaiService:
         Delegates to the underlying chat model; supports both synchronous and streaming responses.
         """
         await OpenaiService.get_model(model_name)  # Ensures model exists
+        OpenaiService._assert_model_access(user, model_name)
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
@@ -250,10 +273,17 @@ class OpenaiService:
                 user=user,
                 t=t,
             )
-        except HTTPException:
-            pass
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise
 
         agent_class, agent_id = model_name.split("/")
+        if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
+            raise HTTPException(
+                status_code=403,
+                detail=f"User {user.id} does not have permission to access assistant {model_name}",
+            )
+
         agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
@@ -460,6 +490,8 @@ class OpenaiService:
         Generate an image using the specified image model.
         Routes the generation request to the corresponding Azure image model client.
         """
+        OpenaiService._assert_model_access(user, model_name)
+
         image_model_names = await OpenaiService._model_names_by_type("image_generation", model_name)
         if len(image_model_names) == 0:
             raise ValueError(f"Model {model_name} not found.")
@@ -486,6 +518,8 @@ class OpenaiService:
         Utilizes the specified speech-to-text model and parameters to convert audio into transcription.
         Handles chunking of large audio files to comply with API size limits.
         """
+        OpenaiService._assert_model_access(user, f"transcription/{model_name}")
+
         tts_model_names = await OpenaiService._model_names_by_type("audio_transcription", model_name)
         if len(tts_model_names) == 0:
             raise ValueError(f"Model {model_name} not found.")
@@ -547,6 +581,8 @@ class OpenaiService:
         Convert text to speech and return the audio content.
         Sends a TTS request to the designated model and streams the resulting audio bytes.
         """
+        OpenaiService._assert_model_access(user, f"speech/{model_name}")
+
         tts_model_names = await OpenaiService._model_names_by_type("audio_speech", model_name)
         if len(tts_model_names) == 0:
             raise ValueError(f"Model {model_name} not found.")

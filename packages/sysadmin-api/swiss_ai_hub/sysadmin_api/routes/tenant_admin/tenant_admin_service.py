@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from keycloak import KeycloakGetError
 from swiss_ai_hub.api.runners.lifetime.initialize_db import initialize_default_roles_for_tenant
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
@@ -106,7 +107,7 @@ class TenantAdminService:
             tenant_id=data.tenant_id,
             name=data.name,
             description=data.description,
-            access_rules=data.access_rules,
+            access_rules=[AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules],
         )
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
@@ -133,7 +134,11 @@ class TenantAdminService:
             tenant_id=tenant_id,
             name=data.name,
             description=data.description,
-            access_rules=data.access_rules,
+            access_rules=(
+                [AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules]
+                if data.access_rules is not None
+                else None
+            ),
         )
         if not entity:
             raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)

@@ -174,6 +174,45 @@ class AccessChecker:
         """Canonical user permission for a specific agent instance (not the agent class/blueprint)."""
         return f"{_USER_PREFIX}agent.{agent_class}.{agent_id}"
 
+    @staticmethod
+    def model_user_rule(model_capability: str, model_name: str) -> str:
+        """Canonical user permission for a specific llm (not the llm capability e.x. reranking, text etc.)."""
+        normalized_capability = AccessChecker._normalize_model_segment(model_capability)
+        normalized_model = AccessChecker._normalize_model_segment(model_name)
+        return f"{_USER_PREFIX}model.{normalized_capability}.{normalized_model}"
+
+    @staticmethod
+    def _normalize_model_segment(value: str) -> str:
+        """Collapse a model identifier into one permission segment.
+
+        Model names carry version dots and provider slashes (``gpt-4.1``,
+        ``text-generation/gpt-4``) that the matcher would otherwise read as extra
+        hierarchy levels — or reject outright. Mapping every character outside
+        ``[a-zA-Z0-9_-]`` to ``_`` keeps the name on a single level so a capability
+        wildcard (``...text-generation.*``) covers it.
+        """
+        return re.sub(r"[^a-zA-Z0-9_-]", "_", value)
+
+    @staticmethod
+    def normalize_model_access_rule(rule: str) -> str:
+        """Collapses the model-name part of a model access rule to a single segment (``.``/``/`` → ``_``).
+
+        A hand-authored rule such as ``aihub.user.model.text-generation.Kimi-K2.6`` reads its version dot
+        as a hierarchy separator, so it can never match the template ``model_user_rule`` builds (which
+        normalizes the name to ``Kimi-K2_6``). Rewriting the name on save makes the two sides line up.
+        Wildcard tails (``*``/``>``) and non-model rules pass through unchanged, and the transform is
+        idempotent (an already-normalized name has no characters left to collapse).
+        """
+        for prefix in (_USER_PREFIX, _ADMIN_PREFIX):
+            model_prefix = f"{prefix}model."
+            if not rule.startswith(model_prefix):
+                continue
+            capability, separator, model_name = rule[len(model_prefix) :].partition(".")
+            if not separator or "*" in model_name or ">" in model_name:
+                return rule
+            return f"{model_prefix}{capability}.{AccessChecker._normalize_model_segment(model_name)}"
+        return rule
+
     @classmethod
     def rules_grant_admin_to_agent_instance(cls, rules: list[str], agent_class: str, agent_id: str) -> bool:
         """Whether a flat rule list already grants admin to a concrete agent instance.
@@ -300,6 +339,17 @@ class AccessChecker:
     def has_access_to_agent_class(self, agent_class: str) -> bool:
         """Convenience method to check access level for a specific agent."""
         return self.access_level(f"{_USER_PREFIX}agent.{agent_class}.?*") != AccessLevel.ACCESS_DENIED
+
+    def access_level_for_model(self, model_capability: str, model_name: str) -> AccessLevel:
+        """Convenience method to check access level for a specific model."""
+        return self.access_level(self.model_user_rule(model_capability, model_name))
+
+    def has_access_to_model(self, model_capability: str, model_name: str) -> bool:
+        return self.access_level_for_model(model_capability, model_name) != AccessLevel.ACCESS_DENIED
+
+    def has_access_to_model_capability(self, model_capability: str) -> bool:
+        normalized_capability = AccessChecker._normalize_model_segment(model_capability)
+        return self.access_level(f"aihub.user.model.{normalized_capability}.?*") != AccessLevel.ACCESS_DENIED
 
     def access_level_for_process(self, process_class: str, process_id: str) -> AccessLevel:
         """Convenience method to check access level for a specific process."""

@@ -1630,19 +1630,20 @@ class Pipe:
         self,
         chat_id: Annotated[Optional[str], "Chat session ID"],
         message_id: Annotated[Optional[str], "Message ID"],
+        agent_identifier: Annotated[str, "Agent class/id, salts the thread_id so distinct agents in one chat get distinct threads"] = "",
     ) -> Annotated[tuple[str, str], "Thread and display IDs"]:
         """Generate thread and display IDs"""
-        thread_id = self._str_to_object_id(chat_id)
+        thread_id = self._str_to_object_id(chat_id, salt=agent_identifier)
         display_id = self._str_to_object_id(message_id)
         return thread_id, display_id
 
     def _str_to_object_id(
-        self, context_id: Annotated[Optional[str], "Context ID to convert"]
+        self, context_id: Annotated[Optional[str], "Context ID to convert"], salt: Annotated[str, "Salt mixed into the hash"] = ""
     ) -> Annotated[str, "ObjectId string"]:
         """Convert string to ObjectId format"""
         if not context_id:
             return str(ObjectId())
-        hashed = hashlib.md5(context_id.encode()).digest()[:12]
+        hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
         return str(ObjectId(hashed)).lower()
 
     async def _set_ui_context(
@@ -1706,8 +1707,10 @@ class Pipe:
         # Extract agent information
         agent_class, agent_id = self._extract_agent_info(body["model"])
 
-        # Generate IDs
-        thread_id, display_id = self._generate_ids(__metadata__.get("chat_id"), __metadata__.get("message_id"))
+        # Generate IDs (salt thread_id with the agent so distinct agents in one chat get distinct threads)
+        thread_id, display_id = self._generate_ids(
+            __metadata__.get("chat_id"), __metadata__.get("message_id"), agent_identifier=f"{agent_class}/{agent_id}"
+        )
 
         tracer = trace.get_tracer(__name__)
         with tracer.start_as_current_span(

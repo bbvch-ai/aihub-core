@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Annotated, NamedTuple
 from fastapi.routing import APIRoute
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, trace_fn
 from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 
 from swiss_ai_hub.api.decorators.access_catalog import ACCESS_CATALOG_ENTRY_ATTRIBUTE, AccessCatalogEntryMeta
@@ -29,6 +29,11 @@ _SERVICE_ADMIN_LABEL = ApiLocaleString.from_i18n_path("api.access.capabilities.o
 _SERVICE_ADMIN_DESCRIPTION = ApiLocaleString.from_i18n_path(
     "api.access.capabilities.ops.service.administer.description"
 )
+
+# Models are gated in the service layer (``has_access_to_model``), not by a per-model route guard, so their
+# capability rows are synthesized rather than read off a route — the same way the service gates above are.
+_MODEL_SERVICE_NAME = "model"
+_MODEL_USE_DESCRIPTION = ApiLocaleString.from_i18n_path("api.access.capabilities.ops.model.use.description")
 
 
 class _Guard(NamedTuple):
@@ -189,6 +194,23 @@ class AccessCapabilityService:
                 return value
         return None
 
+    @staticmethod
+    async def available_models_by_capability() -> dict[str, list[str]]:
+        """Enumerates every LiteLLM model as ``{capability: [model_name, ...]}`` for the model capability
+        rows. Uses the master client so the whole catalog is built; per-subject and per-ceiling filtering
+        happens downstream in ``_capability_for_guard``. Models without a capability prefix are skipped —
+        they cannot form a ``aihub.user.model.<capability>.<name>`` rule."""
+        async with LiteLLMProxySettings().httpx_aclient as client:
+            response = await client.get("/v1/model/info")
+            response.raise_for_status()
+            data = response.json()["data"]
+        models_by_capability: dict[str, list[str]] = {}
+        for entry in data:
+            capability, _, name = entry["model_name"].partition("/")
+            if name:
+                models_by_capability.setdefault(capability, []).append(name)
+        return models_by_capability
+
 
 class _CapabilityCatalogBuilder:
     """Assembles one capability catalog for a single ``(subject, ceiling, locale)``. Holding these as state
@@ -241,6 +263,8 @@ class _CapabilityCatalogBuilder:
         )
         capabilities += self._capabilities_for(resource_wide)
         subgroups = await self._resource_groups(service_name, resource_guards)
+        if service_name == _MODEL_SERVICE_NAME:
+            subgroups = subgroups + await self._model_tier_groups()
         return CapabilityGroup(
             key=f"service:{service_name}",
             label=self._t.extract(controller.name),
@@ -316,6 +340,42 @@ class _CapabilityCatalogBuilder:
             locked=granted and rule not in self._granted_rules,
             toggleable=True,
         )
+
+    async def _model_tier_groups(self) -> list[CapabilityGroup]:
+        """Synthesizes the model capability subtree: one group per capability tier (text-generation,
+        embedding, ...), each holding a grantable row per concrete model. The rule is built with
+        ``AccessChecker.model_user_rule`` — the same normalized template enforcement checks with — so a
+        checkbox can never grant a rule that would fail to match, and dotted names are collapsed for free.
+        ``_capability_for_guard`` applies the ceiling and ``granted`` state exactly as for route-derived
+        rows, so a model the ceiling cannot grant is hidden rather than shown disabled.
+
+        Unlike the ``_resource_resolvers`` services (agents, processes, knowledge), models are gated in the
+        service layer and have no per-model route guard for that machinery to expand, so their rows are built
+        here directly rather than by substituting a route template."""
+        models_by_capability = await AccessCapabilityService.available_models_by_capability()
+        groups: list[CapabilityGroup] = []
+        for capability in sorted(models_by_capability):
+            capabilities: list[Capability] = []
+            for name in sorted(models_by_capability[capability]):
+                label = LocaleString(de=name, en=name, fr=name, it=name)
+                guard = _Guard(AccessChecker.model_user_rule(capability, name))
+                capability_row = self._capability_for_guard(label, _MODEL_USE_DESCRIPTION, guard)
+                if capability_row is not None:
+                    capabilities.append(capability_row)
+            if capabilities:
+                groups.append(
+                    CapabilityGroup(
+                        key=f"model:{capability}",
+                        label=self._prettify_capability(capability),
+                        capabilities=capabilities,
+                    )
+                )
+        return groups
+
+    @staticmethod
+    def _prettify_capability(capability: str) -> str:
+        """Turns a LiteLLM capability segment (``text-generation``) into a group heading (``Text generation``)."""
+        return capability.replace("-", " ").replace("_", " ").capitalize()
 
     @staticmethod
     def _prune(group: CapabilityGroup) -> bool:

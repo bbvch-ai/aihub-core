@@ -292,7 +292,12 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await external_agent_event_distributor.distribute_event(external_event, user, aihub_headers=aihub_headers)
+        await external_agent_event_distributor.distribute_event(
+            external_event,
+            user,
+            aihub_headers=aihub_headers,
+            target_agent=AgentInstanceRef(agent_class=agent_class, agent_id=agent_id),
+        )
 
         return resources
 
@@ -399,7 +404,12 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await external_agent_event_distributor.distribute_event(external_event, user, aihub_headers=aihub_headers)
+        await external_agent_event_distributor.distribute_event(
+            external_event,
+            user,
+            aihub_headers=aihub_headers,
+            target_agent=AgentInstanceRef(agent_class=agent_class, agent_id=agent_id),
+        )
 
         return resources
 

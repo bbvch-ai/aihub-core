@@ -5,6 +5,110 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.308.0] - 2026-07-08 - Dynamic LLM Access and Robust Role Management
+
+### Added
+
+- ✨ **Dynamic LLM Model Discovery and Provisioning**: Introduced automatic discovery of LiteLLM chat models and their
+  provisioning as workspace models in OpenWebUI, allowing users to select and interact with available LLMs.
+- 🦾 **"Use All Models" Access Preset**: Added a new access preset to quickly grant users permission to utilize all
+  available LLM models.
+- 📂 **Model Capabilities in Access Editor**: Integrated a dedicated 'Models' category into the Role Access Rules editor,
+  enabling fine-grained control over model permissions.
+
+### Fixed
+
+- 🐛 **Reliable Role Access Updates**: Corrected the role update mechanism to ensure that changes to access rules trigger
+  proper re-synchronization of OpenWebUI access grants.
+- 🔒 **Normalized Model Access Rules**: Addressed an issue where model names containing dots (e.g., `Kimi-K2.6`) were not
+  correctly normalized in access rules, preventing proper matching and access grants. This applies to both role and
+  tenant access rules.
+- 🩹 **Persistent Access Change Hooks**: Fixed a regression where internal signal subscriptions for access changes were
+  prematurely garbage-collected, ensuring that OpenWebUI re-syncs are reliably triggered.
+- 🔑 **Improved Cross-Tenant Role Isolation**: Resolved a bug that could cause access rules for roles with the same name
+  across different tenants to collide, ensuring each tenant's roles maintain their distinct access permissions.
+
+### Changed
+
+- 🔄 **Unified OpenWebUI Model Management**: OpenWebUI provisioning now seamlessly manages both AI-Hub agent models and
+  newly introduced LLM workspace models, each with distinct prefixes and tailored access grant computations.
+- 🖼️ **Enhanced Role Access Editor UI**: The Role Access Rules editor now features a dedicated "Models" category,
+  providing a clearer and more intuitive interface for managing model-related permissions.
+
+### Refactor
+
+- 🧹 **Clearer OpenWebUI Model Prefixes**: Renamed the OpenWebUI model prefix for agents (`AIHUB_MODEL_PREFIX` to
+  `AIHUB_AGENT_PREFIX`) to improve clarity and distinguish it from the new prefix used for LLM models.
+
+______________________________________________________________________
+
+## [v0.307.1] - 2026-07-07 - Seamless Multi-Agent Conversations: Dedicated Thread Contexts
+
+### Fixed
+
+- 🐛 **Multi-Agent Chat Context Interference**: Resolved an issue where multiple agents participating in the same chat
+  session could inadvertently share or overwrite each other's conversation context, leading to incorrect or mixed-up
+  responses.
+- 🐛 **Agent-Specific Event Routing**: Corrected the internal event distribution logic to ensure messages are now
+  precisely routed to the intended agent instance within a chat, preventing cross-agent communication mix-ups.
+
+### Added
+
+- ✨ **Multi-Agent Routing Tests**: Introduced new comprehensive tests to validate that distinct agents in a shared chat
+  thread correctly maintain their separate contexts and respond independently.
+
+### Changed
+
+- 🔄 **Thread ID Salting for Agents/Models**: Updated the ID generation mechanism for chat threads to include agent or
+  model identifiers as a "salt." This ensures unique thread IDs for each agent's or model's interaction within a single
+  chat session, effectively isolating their operational context.
+- ⚡️ **Targeted Event Distribution**: Modified the core event distributor to explicitly direct events to a specific
+  `target_agent` when provided, enhancing precision and control over agent interactions and preventing unintended event
+  broadcasts.
+
+______________________________________________________________________
+
+## [v0.307.0] - 2026-07-07 - Enhanced Model Access Control and Granular Permissions
+
+### Added
+
+- ✨ **New Model Permission Rules**: Introduced canonical permission rule builders and normalization logic within
+  `AccessChecker` to precisely define and manage access to individual models and model capabilities.
+- 🚀 **Centralized Model Access Guard**: Added new `_assert_model_access` and `_has_model_access` helper methods to
+  `OpenaiService`, ensuring all model invocations enforce user permissions consistently at the service layer.
+- 🧪 **Comprehensive Model Access Tests**: Added extensive unit tests for both `ModelService` and `OpenaiService` to
+  validate the new granular model and assistant access control mechanisms.
+
+### Security
+
+- 🔑 **Granular Model Access Enforcement**: Implemented strict access control checks across all OpenAI API service
+  methods (Chat Completions, Embeddings, Speech-to-Text, Text-to-Speech, Image Generation) to ensure users only access
+  models for which they have explicit permissions.
+- 🔐 **Filtered Model Listings**: The `/v1/models` and `ModelService` listing endpoints now filter available models based
+  on the requesting user's granted permissions, only showing models they are authorized to use.
+- 🛡️ **Improved Assistant Access Logic**: Refined the `chat_completion_with_assistants` and `get_model_with_assistants`
+  endpoints to correctly differentiate and apply access checks for both models and assistants, raising `403 Forbidden`
+  for unauthorized access.
+- 🚫 **Prevented Permission Masking**: Modified model lookup fallback logic in `OpenaiService` so that only
+  `404 Not Found` errors will trigger a search for an assistant; any other error, such as `403 Forbidden`, is now
+  propagated directly.
+
+### Refactor
+
+- 🧹 **Centralized Access Control Logic**: Moved model and assistant access validation logic from the `OpenaiController`
+  to the `OpenaiService`, ensuring a single source of truth for permission checks and simplifying controller logic.
+
+______________________________________________________________________
+
+## [v0.306.2] - 2026-07-06 - Refined LLM Parameter Defaults
+
+### Changed
+
+- ⚙️ **LLM parameter default value:** Adjusted the default value for a specific LLM parameter (e.g., temperature) from
+  `0.1` to `0.0` to refine model configuration defaults and potentially promote more deterministic initial outputs.
+
+______________________________________________________________________
+
 ## [v0.306.1] - 2026-07-02 - Improved Agent Form Reliability
 
 ### Fixed

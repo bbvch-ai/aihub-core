@@ -631,6 +631,7 @@ role:
   preset_category_everything: Tutto
   preset_category_agents: Agenti
   preset_category_processes: Processi
+  preset_category_models: Modelli
   preset_category_knowledge: Conoscenza
   capabilities_title: Cosa concedono queste regole
   capabilities_subtitle: Seleziona una capacità per concederla. Gli elementi bloccati

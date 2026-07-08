@@ -178,7 +178,7 @@ const props = withDefaults(defineProps<{
 const { presets } = useAccessPresets()
 
 const presetGroups = computed<{ category: string, label: string, presets: AccessPresetDto[] }[]>(() => {
-  const order = ['everything', 'agents', 'processes', 'knowledge']
+  const order = ['everything', 'agents', 'processes', 'models', 'knowledge']
   const byCategory = new Map<string, AccessPresetDto[]>()
   for (const preset of presets.value ?? []) {
     if (!byCategory.has(preset.category)) byCategory.set(preset.category, [])
