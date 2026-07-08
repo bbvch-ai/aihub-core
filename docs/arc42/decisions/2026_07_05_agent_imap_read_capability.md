@@ -55,12 +55,19 @@ contract, which references files by `file_id` and derives the S3 location at run
   own path prefix and emits references, mirroring `UserUploadedFile`. This required **wiring an S3 client into the agent
   runtime for the first time** (`MailAttachmentStore`, using `S3StorageSettings` with the blocking put wrapped in a
   thread).
-- **New dependency**: `aioimaplib` for async IMAP. MIME/attachment parsing uses the Python standard-library `email`
-  module — no additional dependency.
+- **New dependency**: `imapclient` (BSD-3-Clause) for IMAP. It is synchronous, so its blocking calls are off-loaded
+  with `asyncio.to_thread` (the same pattern the attachment store uses for S3). It parses server responses into
+  structured dicts and raises on `NO`/`BAD` responses, so no hand-rolled protocol-line parsing or status-check shim is
+  needed. MIME/attachment parsing uses the Python standard-library `email` module — no additional dependency.
+  `aioimaplib` was the initial choice but is GPL-3.0, incompatible with the Apache-2.0 license of `packages/agent`, and
+  was rejected on the license-check gate.
 - **Read-only scope**: no SMTP, no sending — ever. Sending is explicitly out of scope for the whole email capability,
-  not just this story. Read-only extends to the protocol level: listing and fetching use `BODY.PEEK[...]` so the
-  `\Seen` flag is never set, and every server response is status-checked (`ImapCommandError`) instead of trusting
-  aioimaplib's non-raising `NO`/`BAD` responses.
+  not just this story. Read-only extends to the protocol level: listing and fetching use a read-only `SELECT`
+  (`EXAMINE`) plus `BODY.PEEK[...]` so the `\Seen` flag is never set, and imapclient raises on a failed login or select
+  rather than surfacing it as an empty inbox.
+- **Bounded payloads**: `ImapClientConfig.max_body_bytes` (default 1 MB) truncates the body carried in a fetch event and
+  `max_attachment_bytes` (default 10 MB) skips oversized attachments, so a single hostile or oversized message cannot
+  exceed NATS/FerretDB message-size limits or overload the agent. Both are deployment-fixed (not user-configurable).
 - **Stable message identity**: messages are addressed by IMAP UID (`UID SEARCH` / `UID FETCH`), not sequence numbers —
   list and fetch run on separate connections (possibly separate servers), and sequence numbers shift when another
   client expunges mail in between.
@@ -92,7 +99,9 @@ A playground demonstrator agent (`playground/minimal_workflow/imap_workflow`) ex
 - **Mailbox credentials are stored at-rest in the agent config**, like MCP `api_key`. A platform-wide
   secret-indirection mechanism (Key Vault / references) for agent configs remains a possible follow-up if the security
   posture needs to tighten.
-- **`aioimaplib` is a new runtime dependency** in `packages/agent`, adding to the maintenance and supply-chain surface.
+- **`imapclient` is a new runtime dependency** in `packages/agent`, adding to the maintenance and supply-chain surface.
+  It is BSD-3-Clause (permissive) and has no transitive runtime dependencies of its own.
 - **Mail bodies are protocol payloads.** `MailFetchedEvent` carries `body_text`/`body_html` of arbitrary inbound mail
   into the audit trail (FerretDB) and to the frontend over WebSocket; Presidio only guards the LLM path. Frontends must
-  never render `body_html` as raw HTML (XSS from a hostile sender).
+  never render `body_html` as raw HTML (XSS from a hostile sender). The `body_html` field description carries this
+  contract explicitly into the generated SDK types so downstream consumers inherit the warning.

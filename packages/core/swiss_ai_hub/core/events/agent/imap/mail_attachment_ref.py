@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 
@@ -28,6 +28,15 @@ class MailAttachmentRef(BaseModel):
         ),
     ]
     size_bytes: Annotated[int, Field(ge=0, description="Size of the stored attachment in bytes.")]
+
+    @field_validator("filename")
+    @classmethod
+    def _reject_path_traversal(cls, value: str) -> str:
+        """The pattern already blocks path separators; also reject ``..`` so the name can never walk
+        directories when used in a download path or a ``Content-Disposition`` header."""
+        if ".." in value:
+            raise ValueError("filename must not contain '..'")
+        return value
 
     def resolve_s3_location(self, agent_class: str, agent_id: str) -> tuple[str, str]:
         """Derive the S3 bucket and key through UserUploadedFile so both file contracts share one layout."""

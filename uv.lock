@@ -119,15 +119,6 @@ wheels = [
 ]
 
 [[package]]
-name = "aioimaplib"
-version = "2.0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ee/da/a454c47fb8522e607425e15bf1f49ccfdb3d75f4071f40b63ebd49573495/aioimaplib-2.0.1.tar.gz", hash = "sha256:5a494c3b75f220977048f5eb2c7ba9c0570a3148aaf38bee844e37e4d7af8648", size = 35555, upload-time = "2025-01-16T10:38:23.14Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/13/52/48aaa287fb3c4c995edcb602370b10d182dc5c48371df7cb3a404356733f/aioimaplib-2.0.1-py3-none-any.whl", hash = "sha256:727e00c35cf25106bd34611dddd6e2ddf91a5f1a7e72d9269f3ce62486b31e14", size = 34729, upload-time = "2025-01-16T10:38:20.427Z" },
-]
-
-[[package]]
 name = "aioitertools"
 version = "0.13.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1863,6 +1854,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cd/de/5c0189b0582e21583c2a213081c35a2501c0f9e51f21f6a52f55fbb9a4ff/ImageHash-4.3.2.tar.gz", hash = "sha256:e54a79805afb82a34acde4746a16540503a9636fd1ffb31d8e099b29bbbf8156", size = 303190, upload-time = "2025-02-01T08:45:39.328Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/31/2c/5f0903a53a62029875aaa3884c38070cc388248a2c1b9aa935632669e5a7/ImageHash-4.3.2-py2.py3-none-any.whl", hash = "sha256:02b0f965f8c77cd813f61d7d39031ea27d4780e7ebcad56c6cd6a709acc06e5f", size = 296657, upload-time = "2025-02-01T08:45:36.102Z" },
+]
+
+[[package]]
+name = "imapclient"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/79/8138f8c91e791f49cf4c2269b1eaaaddb93013d162e92ddc249b84d38105/imapclient-3.1.0.tar.gz", hash = "sha256:b0413a516ffcc4b4d69f2c611c0e95da57968edf5a5c78ac82d1bf882305facc", size = 199675, upload-time = "2026-01-17T18:50:12.186Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8a/a8/a0f86ed51f792d9e6afcc062db2766033be7d1028d1fd5deaf38b075430a/imapclient-3.1.0-py2.py3-none-any.whl", hash = "sha256:34c192ffe82936e940a998ac89c474296942cd7c4f6c208f0fccfcd972946038", size = 182536, upload-time = "2026-01-17T18:49:09.105Z" },
 ]
 
 [[package]]
@@ -5443,8 +5443,8 @@ name = "swiss-ai-hub-agent"
 version = "0.308.0"
 source = { editable = "packages/agent" }
 dependencies = [
-    { name = "aioimaplib" },
     { name = "fastmcp" },
+    { name = "imapclient" },
     { name = "llama-index-llms-azure-openai" },
     { name = "llama-index-llms-openai" },
     { name = "stringcase" },
@@ -5459,8 +5459,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aioimaplib", specifier = ">=2.0.1" },
     { name = "fastmcp", specifier = ">=3.0.0" },
+    { name = "imapclient", specifier = ">=3.0.1" },
     { name = "llama-index-llms-azure-openai", specifier = ">=0.4.2" },
     { name = "llama-index-llms-openai", specifier = ">=0.6.12" },
     { name = "stringcase", specifier = ">=1.2.0" },

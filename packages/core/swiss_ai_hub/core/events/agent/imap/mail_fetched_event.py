@@ -21,7 +21,15 @@ class MailFetchedEvent(ControlAndDisplayEvent):
     subject: Annotated[str, Field(description="Subject header of the message.")]
     date: Annotated[datetime | None, Field(default=None, description="Date header of the message, if parseable.")]
     body_text: Annotated[str | None, Field(default=None, description="Plain-text body of the message, if present.")]
-    body_html: Annotated[str | None, Field(default=None, description="HTML body of the message, if present.")]
+    body_html: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="HTML body of the message, if present. SECURITY: untrusted, sender-controlled markup — "
+            "consumers MUST NOT render it as raw HTML (stored XSS from a hostile sender). Sanitize it or "
+            "render as plain text only.",
+        ),
+    ]
     attachments: Annotated[
         list[MailAttachmentRef],
         Field(default_factory=list, description="References to the message's attachments stored in S3."),

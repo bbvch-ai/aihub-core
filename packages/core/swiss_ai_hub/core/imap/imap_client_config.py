@@ -38,6 +38,24 @@ class ImapClientConfig(StepConfig):
         Field(default=50, description="Maximum number of unread messages listed per run — keeps events small."),
         Gt(0),
     ]
+    max_body_bytes: Annotated[
+        int,
+        Field(
+            default=1_000_000,
+            description="Deployment-fixed cap on the decoded body carried in a fetch event; longer bodies are "
+            "truncated so a hostile or oversized mail cannot exceed NATS/FerretDB message-size limits.",
+        ),
+        Gt(0),
+    ]
+    max_attachment_bytes: Annotated[
+        int,
+        Field(
+            default=10_000_000,
+            description="Deployment-fixed cap on a single stored attachment; larger attachments are skipped so "
+            "one message cannot overload the agent process or the attachment bucket.",
+        ),
+        Gt(0),
+    ]
     drafts_folder: Annotated[
         str | InputText,
         Field(default="Drafts", description="Mailbox folder drafts are written to (used by the draft-reply story)."),

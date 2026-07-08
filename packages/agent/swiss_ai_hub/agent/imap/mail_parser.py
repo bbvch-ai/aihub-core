@@ -21,7 +21,14 @@ class MailParser:
         )
 
     @staticmethod
-    def parse_message(message_id: str, message: EmailMessage) -> ParsedMessage:
+    def parse_message(
+        message_id: str,
+        message: EmailMessage,
+        max_body_bytes: int,
+        max_attachment_bytes: int,
+    ) -> ParsedMessage:
+        """Parse a MIME message, truncating bodies and dropping oversized attachments so a hostile or
+        oversized mail can never bloat the persisted/streamed event or the agent's memory footprint."""
         body_text: str | None = None
         body_html: str | None = None
         attachments: list[ParsedAttachment] = []
@@ -35,6 +42,8 @@ class MailParser:
 
             if disposition == "attachment" or filename:
                 payload = part.get_payload(decode=True) or b""
+                if len(payload) > max_attachment_bytes:
+                    continue
                 attachments.append(
                     ParsedAttachment(
                         filename=MailParser._safe_filename(filename or "attachment"),
@@ -43,9 +52,9 @@ class MailParser:
                     )
                 )
             elif content_type == "text/plain" and body_text is None:
-                body_text = MailParser._decode_text(part)
+                body_text = MailParser._decode_text(part, max_body_bytes)
             elif content_type == "text/html" and body_html is None:
-                body_html = MailParser._decode_text(part)
+                body_html = MailParser._decode_text(part, max_body_bytes)
 
         return ParsedMessage(
             message_id=message_id,
@@ -58,10 +67,14 @@ class MailParser:
         )
 
     @staticmethod
-    def _decode_text(part: EmailMessage) -> str:
+    def _decode_text(part: EmailMessage, max_bytes: int) -> str:
         payload = part.get_payload(decode=True) or b""
         charset = part.get_content_charset() or "utf-8"
-        return payload.decode(charset, errors="replace")
+        text = payload.decode(charset, errors="replace")
+        encoded = text.encode("utf-8")
+        if len(encoded) <= max_bytes:
+            return text
+        return encoded[:max_bytes].decode("utf-8", errors="ignore")
 
     @staticmethod
     def _parse_date(raw_date: str | None) -> datetime | None:
