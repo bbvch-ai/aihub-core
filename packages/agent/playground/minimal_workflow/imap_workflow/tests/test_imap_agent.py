@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, scenarios, then, when
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
@@ -11,13 +10,12 @@ from swiss_ai_hub.core.events.agent import (
     MailFetchedEvent,
     UnreadMailListedEvent,
     UnreadMailSummary,
-    UserMessageEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.testing import async_test
-from swiss_ai_hub.core.testing.auth_utils import fake_user
 
+from playground.minimal_workflow.imap_workflow.events.read_mail_start_event import ReadMailStartEvent
 from playground.minimal_workflow.imap_workflow.imap_agent import ImapAgent
 from playground.minimal_workflow.imap_workflow.imap_agent_config import ImapAgentConfig
 from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment, ParsedMessage
@@ -92,10 +90,7 @@ async def _(agent_runner: AgentTestRunner, unread_mail: list[UnreadMailSummary])
     ):
         async with agent_runner.test_run() as topic:
             await agent_runner.send_event_from_topic(
-                start_event=UserMessageEvent(
-                    messages=[ChatMessage(content="read my mail", role=MessageRole.USER)],
-                    user=fake_user(),
-                ),
+                start_event=ReadMailStartEvent(),
                 topic=topic,
             )
 

@@ -5,11 +5,11 @@ from swiss_ai_hub.core.events.agent import (
     MailFetchedEvent,
     StopEvent,
     UnreadMailListedEvent,
-    UserMessageEvent,
 )
 from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
+from playground.minimal_workflow.imap_workflow.events.read_mail_start_event import ReadMailStartEvent
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
@@ -18,7 +18,11 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class ImapAgent(Agent):
-    """Demonstrator for the IMAP read capability — lists unread mail, then fetches one message with attachments."""
+    """Demonstrator for the IMAP read capability — lists unread mail, then fetches one message with attachments.
+
+    Non-conversational (like RetrievalAgent): triggered by ReadMailStartEvent, configured via its form, and used as a
+    reference/building block — it is not exposed in the chat UI.
+    """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString(
         en="IMAP Agent", de="IMAP-Agent", fr="Agent IMAP", it="Agente IMAP"
@@ -37,7 +41,7 @@ class ImapAgent(Agent):
     )
     async def list_unread_step(
         self,
-        _event: UserMessageEvent,
+        _event: ReadMailStartEvent,
         imap_config: ImapClientConfig,
     ) -> UnreadMailListedEvent:
         """Open the inbox and return header summaries of all unread messages."""
