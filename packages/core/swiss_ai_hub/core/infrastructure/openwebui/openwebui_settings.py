@@ -26,8 +26,9 @@ class OpenWebuiSettings(EnvironmentSettings):
     @field_validator("MODEL_NAME_LOCALE", mode="before")
     @classmethod
     def _default_blank_locale(cls, value: str | None) -> str:
-        """A compose-interpolated unset ``${OPENWEBUI_MODEL_NAME_LOCALE}`` arrives as an empty string that bypasses the
-        field default, so coerce blank values back to en rather than letting LocaleHandler fall back to its own default."""
+        """An unset compose-interpolated ``${OPENWEBUI_MODEL_NAME_LOCALE}`` arrives as an empty string that
+        bypasses the field default, so coerce blank values back to ``en`` rather than letting LocaleHandler
+        fall back to its own default."""
 
         locale = (value or "").strip()
         if not locale:
