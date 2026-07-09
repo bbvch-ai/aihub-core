@@ -331,6 +331,8 @@ agent:
     status: 'Status:'
     online: Online
     offline: Offline
+  export:
+    button: Exportieren
   configuration:
     title: Agentenkonfiguration
     description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für
