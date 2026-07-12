@@ -14,6 +14,7 @@ from swiss_ai_hub.core.routes import TenantScopedController
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale, use_locale_ws
 from swiss_ai_hub.api.routes.event.dto.event_timeseries import EventTimeseries
+from swiss_ai_hub.api.routes.event.dto.thread_reference import ThreadReference
 from swiss_ai_hub.api.routes.event.event_service import EventService
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.sockets.events.server_to_user.contextualized_agent_event import ContextualizedAgentEvent
@@ -72,6 +73,36 @@ class EventController(TenantScopedController):
                 thread_id=str_to_object_id(thread_id),
                 display_id=str_to_object_id(display_id) if display_id else None,
             )
+
+        return self
+
+    def resolve_thread_for_display(self, path: str = "/agents/displays/{display_id}/thread") -> Self:
+        @self.router.get(path, tags=self.tags)
+        async def resolve_thread_for_display(
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+            display_id: Annotated[str, Path(title="Display ID", pattern=r"^[a-f0-9]{24}$")],
+        ) -> ThreadReference:
+            """
+            Resolves the thread that owns a display so the chat-UI side panel can open the correct per-agent thread
+            without recomputing the salted thread_id.
+            """
+            thread_id = EventService.thread_id_for_display(display_id=display_id)
+            if thread_id is None:
+                raise HTTPException(status_code=404, detail="No thread found for the given display.")
+
+            thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
+            user_in_thread = user.id in [u.id for u in thread.users]
+            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                thread.process_class, thread.process_id
+            )
+            if not (user_in_thread or thread_belongs_to_users_process):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You do not have access to this thread. Please contact the process owner.",
+                )
+
+            return ThreadReference(thread_id=thread_id)
 
         return self
 

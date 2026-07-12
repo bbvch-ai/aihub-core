@@ -29,14 +29,17 @@ def _persist_event(
     event_parents: list[str],
     event_id: str,
     event_type: str = AgentTopicManager.CONTROL_EVENT,
+    display_id: str = "disp",
+    agent_id: str = "test",
+    run_id: str = "run",
 ) -> None:
     """Insert a minimal event. Only thread_id / event_id / event_parents / event_type drive classification."""
     PersistedAgentEventEntity(
         agent_class="TestAgent",
-        agent_id="test",
+        agent_id=agent_id,
         thread_id=thread_id,
-        display_id="disp",
-        run_id="run",
+        display_id=display_id,
+        run_id=run_id,
         event_id=event_id,
         event_type=event_type,
         event_name=event_parents[0],
@@ -96,3 +99,25 @@ class TestThreadIdsByStatus:
         _persist_event("t_y", ["ExceptionEvent"], "e2")
         # the pipeline has no $sort, so compare as a set
         assert set(PersistedAgentEventEntity.thread_ids_by_status("failed")) == {"t_x", "t_y"}
+
+
+class TestThreadIdForDisplay:
+    def test_resolves_thread_from_display(self):
+        _persist_event("t_owner", ["StartEvent"], "e1", display_id="d1")
+        assert PersistedAgentEventEntity.thread_id_for_display("d1") == "t_owner"
+
+    def test_returns_none_for_unknown_display(self):
+        assert PersistedAgentEventEntity.thread_id_for_display("missing") is None
+
+    def test_aitl_delegation_shares_one_thread_for_a_display(self):
+        # NamespaceSelectionAgent -> RAGAgent: same thread_id + display_id, different agent/run.
+        _persist_event("t_shared", ["StartEvent"], "e1", display_id="d1", agent_id="namespace", run_id="r1")
+        _persist_event("t_shared", ["StartEvent"], "e2", display_id="d1", agent_id="rag", run_id="r2")
+        assert PersistedAgentEventEntity.thread_id_for_display("d1") == "t_shared"
+
+    def test_distinct_displays_resolve_to_their_own_threads(self):
+        # Side-by-side: each column is a separate message -> distinct display_id -> distinct thread.
+        _persist_event("t_a", ["StartEvent"], "e1", display_id="d_a")
+        _persist_event("t_b", ["StartEvent"], "e2", display_id="d_b")
+        assert PersistedAgentEventEntity.thread_id_for_display("d_a") == "t_a"
+        assert PersistedAgentEventEntity.thread_id_for_display("d_b") == "t_b"
