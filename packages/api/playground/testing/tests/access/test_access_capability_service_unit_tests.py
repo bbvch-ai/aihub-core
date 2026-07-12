@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.routing import APIRoute
@@ -287,6 +287,69 @@ def test_presets_cover_curated_rules_with_localized_names():
     rules = {preset.rule for preset in presets}
     assert {"aihub.user.>", "aihub.admin.>", "aihub.user.agent.>"} <= rules
     assert all(preset.name and preset.description for preset in presets)
+
+
+def test_presets_include_use_all_models():
+    presets = AccessPresetService.get_presets(LocaleHandler("en"))
+
+    all_models = next(preset for preset in presets if preset.rule == "aihub.user.model.>")
+    assert all_models.name and all_models.description and all_models.category == "models"
+
+
+_MODEL_ROUTES = [("aihub.user.?>", None)]
+_ACCESS_SVC = "swiss_ai_hub.api.routes.access.access_capability_service"
+
+
+async def _model_catalog(rules, tenant_rules=None, models=None):
+    """Builds the catalog with a ModelController, patching the LiteLLM enumeration so the synthesized
+    model subtree is fed fakes instead of a live proxy call."""
+    models = models if models is not None else {"text-generation": ["Kimi-K2.6", "Apertus-70B"]}
+    controllers = [_controller("Models", "ModelController", _MODEL_ROUTES)]
+    with patch(
+        f"{_ACCESS_SVC}.AccessCapabilityService.available_models_by_capability",
+        AsyncMock(return_value=models),
+    ):
+        return await _catalog(rules, controllers, tenant_rules=tenant_rules)
+
+
+def _model_tier(response):
+    service = _group_by_key(response.groups, "service:model")
+    return _group_by_key(service.groups, "model:text-generation")
+
+
+@pytest.mark.asyncio
+async def test_model_group_synthesizes_tier_and_model_rows():
+    tier = _model_tier(await _model_catalog([]))
+
+    assert tier.label == "Text generation"
+    assert {cap.rule for cap in tier.capabilities} == {
+        "aihub.user.model.text-generation.Kimi-K2_6",
+        "aihub.user.model.text-generation.Apertus-70B",
+    }
+    assert all(cap.toggleable for cap in tier.capabilities)
+
+
+@pytest.mark.asyncio
+async def test_model_capability_normalizes_dotted_name_but_labels_the_real_name():
+    tier = _model_tier(await _model_catalog([]))
+
+    kimi = next(cap for cap in tier.capabilities if cap.rule == "aihub.user.model.text-generation.Kimi-K2_6")
+    assert kimi.label == "Kimi-K2.6"  # display keeps the real dotted name; only the rule is collapsed
+
+
+@pytest.mark.asyncio
+async def test_model_capability_reflects_granted_state():
+    tier = _model_tier(await _model_catalog(["aihub.user.model.text-generation.Kimi-K2_6"]))
+
+    kimi = next(cap for cap in tier.capabilities if cap.rule == "aihub.user.model.text-generation.Kimi-K2_6")
+    assert kimi.granted and not kimi.locked
+
+
+@pytest.mark.asyncio
+async def test_model_ceiling_hides_models_it_cannot_grant():
+    tier = _model_tier(await _model_catalog([], tenant_rules=["aihub.user.model.text-generation.Kimi-K2_6"]))
+
+    assert {cap.rule for cap in tier.capabilities} == {"aihub.user.model.text-generation.Kimi-K2_6"}
 
 
 @pytest.mark.asyncio

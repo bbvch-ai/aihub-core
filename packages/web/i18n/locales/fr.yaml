@@ -634,6 +634,7 @@ role:
   preset_category_everything: Tout
   preset_category_agents: Agents
   preset_category_processes: Processus
+  preset_category_models: Modèles
   preset_category_knowledge: Connaissances
   capabilities_title: Ce que ces règles accordent
   capabilities_subtitle: Cochez une capacité pour l'accorder. Les éléments verrouillés

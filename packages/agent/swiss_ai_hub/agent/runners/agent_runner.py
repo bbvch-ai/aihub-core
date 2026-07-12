@@ -203,14 +203,17 @@ class AgentRunner(HealthCheckProvider):
         )
         await self.dispatcher.start()
 
-        self.nc_publisher = NCPublisher(f"{self.agent_class}RunnerDiscoveryResponse", self.nc)
-        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
-            self.nc,
-            AgentTopicManager(),
-            self.discovery_handler,
-            subscriber_name=f"{self.agent_class}RunnerDiscoveryRequest",
-        )
-        await self.discovery_event_subscriber.start()
+        # Internal/system agents (discoverable=False) skip discovery, so they never register a user-facing
+        # blueprint in the Admin UI. They still subscribe to control events below and run normally.
+        if self.agent_type.discoverable:
+            self.nc_publisher = NCPublisher(f"{self.agent_class}RunnerDiscoveryResponse", self.nc)
+            self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
+                self.nc,
+                AgentTopicManager(),
+                self.discovery_handler,
+                subscriber_name=f"{self.agent_class}RunnerDiscoveryRequest",
+            )
+            await self.discovery_event_subscriber.start()
 
         # Subscribe to control events
         self.control_event_subscriber = AgentJSSubscriber.for_agent_class_control_events(

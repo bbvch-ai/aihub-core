@@ -5,6 +5,80 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.309.0] - 2026-07-09 - UX Boost: Asynchronous User Memory & Graph Store Optimization
+
+### Added
+
+- 🦾 Introduced the **`MemoryWriterAgent`**, a new dedicated system agent for asynchronously persisting user memories,
+  significantly improving chat responsiveness by decoupling memory writes from the critical path.
+- ✨ Implemented a **`discoverable` flag** on the base `Agent` class, enabling programmatic control over which agents
+  appear in the Admin UI.
+- 💬 Added new **event types** (`MemoryStorageRequestedEvent`, `StoreUserMemoryRequestedEvent`, `MemoryStoredStopEvent`)
+  to orchestrate the new asynchronous memory storage workflow.
+- ⚙️ Introduced a new configuration option, **`enable_async_memory_storage`**, for RAG and ExpertRAG agents, allowing
+  administrators to enable or disable asynchronous user memory persistence.
+
+### Changed
+
+- ⚡️ Drastically **improved chat user experience** by making user memory persistence asynchronous; the "thinking"
+  indicator now clears immediately after an agent answers, without waiting for memory storage.
+- 🚀 **Optimized user memory save performance** by disabling the Neo4j graph store for user memory, reducing save latency
+  by approximately 73% (from ~66s to ~17.5s) per turn. Organization memory retains graph store capabilities.
+- 🔄 Enhanced **cross-agent user memory sharing** by routing user memory queries through the vector store, allowing
+  agents to access all user memories regardless of the originating agent.
+- 📈 Expanded **Langfuse tracing** to correctly attribute asynchronous `MemoryWriterAgent` runs to the original user
+  query and context.
+- 📦 Updated **deployment configurations** to include the new `MemoryWriterAgent` service across all Docker Compose
+  variants.
+
+### Refactor
+
+- 🧹 Redesigned **`AgentMemory` architecture** to use separate, lazily-built Mem0 services for user and organization
+  memory, enabling distinct and optimized storage configurations for each.
+- 🛠️ Modernized **Mem0 integration** to gracefully handle disabled graph stores, preventing errors and ensuring robust
+  memory operations when graph data is not present.
+- ⚙️ Introduced an **`enable_graph` parameter** to `Mem0Settings.get_config` for fine-grained control over graph store
+  inclusion, enabling performance optimizations per memory type.
+
+______________________________________________________________________
+
+## [v0.308.0] - 2026-07-08 - Dynamic LLM Access and Robust Role Management
+
+### Added
+
+- ✨ **Dynamic LLM Model Discovery and Provisioning**: Introduced automatic discovery of LiteLLM chat models and their
+  provisioning as workspace models in OpenWebUI, allowing users to select and interact with available LLMs.
+- 🦾 **"Use All Models" Access Preset**: Added a new access preset to quickly grant users permission to utilize all
+  available LLM models.
+- 📂 **Model Capabilities in Access Editor**: Integrated a dedicated 'Models' category into the Role Access Rules editor,
+  enabling fine-grained control over model permissions.
+
+### Fixed
+
+- 🐛 **Reliable Role Access Updates**: Corrected the role update mechanism to ensure that changes to access rules trigger
+  proper re-synchronization of OpenWebUI access grants.
+- 🔒 **Normalized Model Access Rules**: Addressed an issue where model names containing dots (e.g., `Kimi-K2.6`) were not
+  correctly normalized in access rules, preventing proper matching and access grants. This applies to both role and
+  tenant access rules.
+- 🩹 **Persistent Access Change Hooks**: Fixed a regression where internal signal subscriptions for access changes were
+  prematurely garbage-collected, ensuring that OpenWebUI re-syncs are reliably triggered.
+- 🔑 **Improved Cross-Tenant Role Isolation**: Resolved a bug that could cause access rules for roles with the same name
+  across different tenants to collide, ensuring each tenant's roles maintain their distinct access permissions.
+
+### Changed
+
+- 🔄 **Unified OpenWebUI Model Management**: OpenWebUI provisioning now seamlessly manages both AI-Hub agent models and
+  newly introduced LLM workspace models, each with distinct prefixes and tailored access grant computations.
+- 🖼️ **Enhanced Role Access Editor UI**: The Role Access Rules editor now features a dedicated "Models" category,
+  providing a clearer and more intuitive interface for managing model-related permissions.
+
+### Refactor
+
+- 🧹 **Clearer OpenWebUI Model Prefixes**: Renamed the OpenWebUI model prefix for agents (`AIHUB_MODEL_PREFIX` to
+  `AIHUB_AGENT_PREFIX`) to improve clarity and distinguish it from the new prefix used for LLM models.
+
+______________________________________________________________________
+
 ## [v0.307.1] - 2026-07-07 - Seamless Multi-Agent Conversations: Dedicated Thread Contexts
 
 ### Fixed

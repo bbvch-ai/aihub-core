@@ -626,6 +626,7 @@ role:
   preset_category_everything: Everything
   preset_category_agents: Agents
   preset_category_processes: Processes
+  preset_category_models: Models
   preset_category_knowledge: Knowledge
   capabilities_title: What these rules grant
   capabilities_subtitle: Tick a capability to grant it. Locked items are covered by

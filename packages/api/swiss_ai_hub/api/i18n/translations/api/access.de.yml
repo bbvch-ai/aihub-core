@@ -20,6 +20,9 @@ presets:
   admin_all_processes:
     name: Alle Prozesse verwalten
     description: Jeden Prozess erstellen, konfigurieren und löschen.
+  user_all_models:
+    name: Alle Modelle nutzen
+    description: Jedes verfügbare Modell nutzen.
   admin_knowledge:
     name: Wissensdatenbanken verwalten
     description: Volle Kontrolle über Wissensdatenbanken und ihre Dokumente.
@@ -81,6 +84,9 @@ capabilities:
       manage:
         label: Verwalten
         description: Dokumente in diesen Namespace konfigurieren und einspeisen.
+    model:
+      use:
+        description: Dieses Modell nutzen.
     memory:
       org:
         label: Organisationsspeicher nutzen
