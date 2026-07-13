@@ -65,17 +65,24 @@ contract, which references files by `file_id` and derives the S3 location at run
   not just this story. Read-only extends to the protocol level: listing and fetching use a read-only `SELECT`
   (`EXAMINE`) plus `BODY.PEEK[...]` so the `\Seen` flag is never set, and imapclient raises on a failed login or select
   rather than surfacing it as an empty inbox.
-- **Bounded payloads**: `ImapClientConfig.max_body_bytes` (default 1 MB) truncates the body carried in a fetch event and
-  `max_attachment_bytes` (default 10 MB) skips oversized attachments, so a single hostile or oversized message cannot
-  exceed NATS/FerretDB message-size limits or overload the agent. Both are deployment-fixed (not user-configurable).
+- **Bounded payloads**: three deployment-fixed caps (not user-configurable) keep a single hostile or oversized message
+  from overloading the agent or exceeding NATS/FerretDB message-size limits. `ImapClientConfig.max_message_bytes`
+  (default 50 MB) is the peak-memory bound: the raw RFC822 size is checked with a cheap `RFC822.SIZE` fetch *before* the
+  body is downloaded, so an oversized message is refused instead of being pulled into memory. `max_body_bytes`
+  (default 1 MB) then truncates the decoded body carried in a fetch event, and `max_attachment_bytes` (default 10 MB)
+  skips oversized attachments — both only trim what is kept *after* parsing.
 - **Stable message identity**: messages are addressed by IMAP UID (`UID SEARCH` / `UID FETCH`), not sequence numbers —
   list and fetch run on separate connections (possibly separate servers), and sequence numbers shift when another
   client expunges mail in between.
 - **Bounded listing**: `ImapClientConfig.max_messages` (default 50) caps how many unread summaries a single
   `UnreadMailListedEvent` carries, keeping the persisted/streamed event small even for overflowing inboxes.
 
-A playground demonstrator agent (`playground/minimal_workflow/imap_workflow`) exercises the capability end to end
-(`list_unread_step` → `fetch_mail_step` → stop) and hosts the BDD tests.
+A demonstrator agent (`playground/minimal_workflow/imap_workflow`) exercises the capability end to end
+(`list_unread_step` → `fetch_mail_step` → stop) and hosts the BDD tests. It is **non-conversational**, like
+`RetrievalAgent`: it is triggered by a dedicated `ReadMailStartEvent` (a `StartEvent` subclass) rather than
+`UserMessageEvent`, so it stays out of the chat UI (`is_conversational` is `False`) and is configured via its form and
+started programmatically. It has its own deployable entry point (`app/imap_agent/main.py`) so it can run as a real agent
+process; a production email agent can graduate from the final sibling story.
 
 ## Consequences
 
@@ -101,7 +108,9 @@ A playground demonstrator agent (`playground/minimal_workflow/imap_workflow`) ex
   posture needs to tighten.
 - **`imapclient` is a new runtime dependency** in `packages/agent`, adding to the maintenance and supply-chain surface.
   It is BSD-3-Clause (permissive) and has no transitive runtime dependencies of its own.
-- **Mail bodies are protocol payloads.** `MailFetchedEvent` carries `body_text`/`body_html` of arbitrary inbound mail
-  into the audit trail (FerretDB) and to the frontend over WebSocket; Presidio only guards the LLM path. Frontends must
-  never render `body_html` as raw HTML (XSS from a hostile sender). The `body_html` field description carries this
-  contract explicitly into the generated SDK types so downstream consumers inherit the warning.
+- **Mail bodies are protocol payloads.** `MailFetchedEvent` carries only the plain-text `body_text` of arbitrary
+  inbound mail into the audit trail (FerretDB) and to the frontend over WebSocket; Presidio only guards the LLM path.
+  The HTML body is parsed but deliberately **not** surfaced on the event — it is kept in-process on `ParsedMessage`
+  (`body_html`) as the parse result and never enters the persisted/streamed event or the generated SDK types, so a
+  hostile sender's markup cannot reach a frontend that might render it as raw HTML (XSS). A future consumer that needs
+  the HTML body must add it to the event explicitly and sanitize it server-side first.
