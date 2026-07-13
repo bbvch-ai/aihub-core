@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.309.3] - 2026-07-13 - Deployment Configuration & Documentation Enhancements
+
+### Changed
+
+- ⚙️ **Standardized MongoDB Connection String:** Explicitly configured the `MONGO_CONNECTION_STRING` across all Docker
+  Compose deployment environments, ensuring consistent and clear database connectivity for all services.
+- 📄 **Updated Environment Variable Documentation:** Ensured the `memory_writer_agent` is correctly listed in the
+  environment variables documentation, reflecting its operational dependencies on MongoDB, NATS, and Neo4j.
+
+______________________________________________________________________
+
 ## [v0.309.2] - 2026-07-13 - Empowering Expert Agents with Advanced Memory Capabilities
 
 ### Added
