@@ -51,6 +51,7 @@
             ref="fileInput"
             type="file"
             accept="application/json,.json"
+            :aria-label="t('agent.import.button')"
             class="hidden"
             @change="handleFileSelected"
           >
