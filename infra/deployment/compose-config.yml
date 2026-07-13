@@ -117,6 +117,11 @@ image_tags:
     local: namespace_selection_agent:latest
     nightly: namespace_selection_agent:nightly
     latest: namespace_selection_agent:latest
+  memory_writer_agent:
+    build: localbuild
+    local: memory_writer_agent:latest
+    nightly: memory_writer_agent:nightly
+    latest: memory_writer_agent:latest
   default_rag_pipeline:
     build: localbuild
     local: default_rag_pipeline:latest
