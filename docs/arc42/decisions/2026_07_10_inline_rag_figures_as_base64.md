@@ -105,5 +105,9 @@ both in-cluster.
   base64's ~33% overhead.
 - **The infra Python is not in the standard `make test` scope** — `test_custom_callbacks.py` is runnable via
   `uv run pytest infra/deployment/templates/litellm_functions/` but will not run in CI unless that path is wired.
-- **Graceful degradation, easy to miss** — an unavailable or oversized figure is replaced by a small text marker and a
-  logged warning rather than failing the call, so a persistently broken figure can go unnoticed unless logs are checked.
+- **Graceful degradation, easy to miss** — an unavailable, non-image, or oversized figure is replaced by a small text
+  marker and a logged warning rather than failing the call, so a persistently broken figure can go unnoticed unless
+  logs are checked.
+- **Toggle needs a restart** — `RAG_IMAGE_INLINE_ENABLED` / `RAG_IMAGE_INLINE_MAX_BYTES` are read at process start (the
+  gateway hook reads them at import), so flipping them requires recreating the `litellm` container and the RAG agent
+  containers, not just editing `.env`.

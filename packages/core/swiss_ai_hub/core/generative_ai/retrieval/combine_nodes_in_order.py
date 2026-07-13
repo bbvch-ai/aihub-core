@@ -1,11 +1,11 @@
 import html
-import os
 from collections import defaultdict
 
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.prompts import RichPromptTemplate
 
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
+from swiss_ai_hub.core.generative_ai.retrieval.rag_image_inline_settings import RagImageInlineSettings
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.s3.use_s3 import create_s3_service
@@ -49,7 +49,7 @@ def combine_nodes_in_order(
     # When inlining is enabled the figure URL is signed internally so the LiteLLM gateway
     # hook can fetch and base64-inline it; when disabled we fall back to the public
     # presigned URL (pre-inlining behaviour) for the provider to fetch directly.
-    inline_enabled = os.environ.get("RAG_IMAGE_INLINE_ENABLED", "true").strip().lower() in ("1", "true", "yes", "on")
+    inline_enabled = RagImageInlineSettings().ENABLED
 
     nodes_per_document: dict[str, list[IngestedNode]] = defaultdict(list)
 
