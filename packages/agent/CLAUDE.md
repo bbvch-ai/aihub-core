@@ -338,26 +338,26 @@ the relevant steps.
 
 ## Pre-Built Agents
 
-| Agent                       | Purpose                          | Key Pattern                                                                                                                                               |
-| --------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) + conversation metadata (title + follow-up questions) |
-| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                                                                                                                     |
-| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory                                                                                                          |
-| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop                                                                                                            |
-| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection                                                                                                            |
-| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate                                                                                                    |
-| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context                                                                                                                |
+| Agent                       | Purpose                                                   | Key Pattern                                                                                                                                                                                               |
+| --------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **RAGAgent**                | Knowledge QA with retrieval                               | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) + conversation metadata (title + follow-up questions)                                                 |
+| **LLMWrappingAgent**        | Simple LLM chat passthrough                               | Minimal 2-step workflow, no retrieval                                                                                                                                                                     |
+| **ExpertAskingAgent**       | Human expert escalation                                   | BotInTheLoop + iterative refinement + org memory                                                                                                                                                          |
+| **ExpertRAGAgent**          | RAG with expert fallback                                  | RAGAgent steps + HITL consent + AgentInTheLoop                                                                                                                                                            |
+| **FewShotAgent**            | Pattern-matching with examples                            | Suitability guard + few-shot example injection                                                                                                                                                            |
+| **NamespaceSelectionAgent** | LLM-driven knowledge routing                              | HITL namespace approval + ThreadContext + RAG delegate                                                                                                                                                    |
+| **RetrievalAgent**          | Pure document retrieval (no LLM)                          | Retrieval-only, returns structured context                                                                                                                                                                |
 | **MemoryWriterAgent**       | System agent: async user-memory persistence (issue #1179) | Non-discoverable; triggered by `MemoryStorageRequestedEvent` from RAG/ExpertRAG when `enable_async_memory_storage` is on; rebuilds the origin agent's `AgentMemory` and writes off the chat critical path |
 
 Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.py` (entry point),
 `agents/{snake_name}/tests/` (BDD tests).
 
-**System (non-discoverable) agents**: set `discoverable: ClassVar[bool] = False` on the agent class so the runner
-skips discovery — the agent never registers a user-facing blueprint in the Admin UI but still subscribes to and
-processes its control events. Used for programmatically-triggered agents like `MemoryWriterAgent`. Such an agent's
-config bakes its identity as non-configurable primitives in `as_form()` (agent_id/name/description as plain values, not
-FormKit elements), so `deep_merge(non_configurable, {})` yields a valid runtime config with no `agent_configs` DB
-record — no config seeder needed.
+**System (non-discoverable) agents**: set `discoverable: ClassVar[bool] = False` on the agent class so the runner skips
+discovery — the agent never registers a user-facing blueprint in the Admin UI but still subscribes to and processes its
+control events. Used for programmatically-triggered agents like `MemoryWriterAgent`. Such an agent's config bakes its
+identity as non-configurable primitives in `as_form()` (agent_id/name/description as plain values, not FormKit
+elements), so `deep_merge(non_configurable, {})` yields a valid runtime config with no `agent_configs` DB record — no
+config seeder needed.
 
 ## Playground
 
