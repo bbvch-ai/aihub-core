@@ -1,6 +1,8 @@
 from collections.abc import Callable
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
@@ -11,12 +13,14 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
+    MemoryStorageRequestedEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
     RAGSuccessStopEvent,
     RerankerEvent,
     RetrieverEvent,
     StandaloneQuestionCondenserEvent,
+    StoreUserMemoryRequestedEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
     IngestedNode,
@@ -33,7 +37,9 @@ from swiss_ai_hub.core.generative_ai import (
     retrieve_from_all_sources,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
+from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_config import MemoryWriterAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_event import (
     ContextInsufficientWithQueryEvent,
@@ -302,3 +308,36 @@ def do_finalize_rag_stop(
     if context_insufficient_reject is not None:
         return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT, answer=answer)
     return RAGSuccessStopEvent(answer=answer)
+
+
+def build_memory_storage_request(
+    user: UserIdentity,
+    messages: list[ChatMessage],
+    topic: AgentInstanceTopic,
+    agent_config: AgentConfig,
+    locale: str,
+) -> MemoryStorageRequestedEvent:
+    """
+    Build the detached memory-storage delegation targeting the `MemoryWriterAgent` (issue #1179).
+
+    Carries the originating agent's identity (from the topic + config) so the writer rebuilds the *same*
+    `AgentMemory` — preserving the fact-extraction prompt and the `_agent_id` scoping tag.
+    """
+    return MemoryStorageRequestedEvent(
+        start_event=StoreUserMemoryRequestedEvent(
+            user=user,
+            messages=messages,
+            locale=locale,
+            origin_thread_id=topic.thread_id,
+            origin_display_id=topic.display_id,
+            origin_run_id=topic.run_id,
+            origin_agent_class=topic.agent_class,
+            origin_agent_id=agent_config.agent_id,
+            origin_agent_name=agent_config.name,
+            origin_agent_description=agent_config.description,
+        ),
+        # Routing target carried on the event (not hard-coded in the dispatcher by design) so the delegation
+        # primitive stays generic; today it resolves to the single MemoryWriterAgent system instance.
+        target_agent_class=MemoryWriterAgentConfig.AGENT_CLASS,
+        target_agent_id=MemoryWriterAgentConfig.AGENT_ID,
+    )

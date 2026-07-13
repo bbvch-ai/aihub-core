@@ -98,6 +98,12 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.memory.history.add_user_memory_to_chat_history_event import (
         AddUserMemoryToChatHistoryEvent,
     )
+    from swiss_ai_hub.core.events.agent.memory.request.memory_storage_requested_event import (
+        MemoryStorageRequestedEvent,
+    )
+    from swiss_ai_hub.core.events.agent.memory.request.store_user_memory_requested_event import (
+        StoreUserMemoryRequestedEvent,
+    )
     from swiss_ai_hub.core.events.agent.memory.retrieve.base_retrieve_memory_event import BaseRetrieveMemoryEvent
     from swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_organization_memory_event import (
         RetrieveOrganizationMemoryEvent,
@@ -208,6 +214,8 @@ __all__ = [
     "StopEvent",
     "StoreOrganizationMemoryEvent",
     "StoreUserMemoryEvent",
+    "StoreUserMemoryRequestedEvent",
+    "MemoryStorageRequestedEvent",
     "TeamsConfig",
     "TextContent",
     "ThoughtEvent",
@@ -301,6 +309,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "StopEvent": "swiss_ai_hub.core.events.agent.control.stop.stop_event",
     "StoreOrganizationMemoryEvent": "swiss_ai_hub.core.events.agent.memory.store.store_organization_memory_event",
     "StoreUserMemoryEvent": "swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event",
+    "StoreUserMemoryRequestedEvent": (
+        "swiss_ai_hub.core.events.agent.memory.request.store_user_memory_requested_event"
+    ),
+    "MemoryStorageRequestedEvent": "swiss_ai_hub.core.events.agent.memory.request.memory_storage_requested_event",
     "TeamsConfig": "swiss_ai_hub.core.events.agent.bitl.request.bot_in_the_loop_request_event",
     "TextContent": "swiss_ai_hub.core.events.agent.semantic.llm.message",
     "ThoughtEvent": "swiss_ai_hub.core.events.agent.display.thought_event",

@@ -50,6 +50,11 @@ class Agent(DispatchableWorkflow):
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.base_agent.metadata.description")
     icon: ClassVar[str] = "mage:robot"
 
+    # Whether the runner answers class-discovery requests. Set False for internal/system agents (e.g. the
+    # memory-writer) that are triggered programmatically and must NOT appear as a user-facing blueprint in the
+    # Admin UI. Non-discoverable agents still subscribe to and process their control events normally.
+    discoverable: ClassVar[bool] = True
+
     STEP_ANNOTATION = "_is_agent_step"
 
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"

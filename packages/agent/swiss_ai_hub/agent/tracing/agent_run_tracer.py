@@ -53,8 +53,13 @@ class AgentRunTracer:
         Langfuse trace, even when the workflow is interrupted by HITL/BITL
         interactions that would otherwise introduce a new trace.
         """
-        user_input = event.user_query if event.is_user_message_event else ""
-        user_id = event.user.id if event.is_user_message_event else ""
+        # Attribute the trace to the user and query whenever the start event carries them — not only chat
+        # (UserMessageEvent) starts, but also programmatic starts (RAGStartEvent) and delegated system runs
+        # (StoreUserMemoryRequestedEvent). Without this a delegated writer run has no user_id and an empty
+        # input, so Langfuse falls back to rendering the raw messages array (looking like a chat trace).
+        user = getattr(event, "user", None)
+        user_id = user.id if user is not None else ""
+        user_input = event.user_query if hasattr(event, "user_query") else ""
         logger.debug(f"Storing run metadata for {topic.run_id}")
 
         carrier: dict[str, str] = {}

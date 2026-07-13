@@ -13,6 +13,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoop,
     LimitChatHistoryEvent,
     LLMEvent,
+    MemoryStorageRequestedEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
     RAGStartEvent,
@@ -66,6 +67,7 @@ from swiss_ai_hub.agent.rag.preconditions import (
     check_user_memory_storage_enabled,
 )
 from swiss_ai_hub.agent.rag.step_functions import (
+    build_memory_storage_request,
     do_condense_standalone_question,
     do_context_sufficient_guard,
     do_few_shot_guard,
@@ -167,9 +169,10 @@ async def memory_added_to_chat_history(
 async def ready_for_stop(
     config: ExpertRAGAgentConfig,
     store_memory_event: StoreUserMemoryEvent | None = None,
+    memory_storage_request: MemoryStorageRequestedEvent | None = None,
 ) -> bool:
     """Precondition to ensure all required steps are complete before stopping."""
-    return check_ready_for_stop(config, store_memory_event)
+    return check_ready_for_stop(config, store_memory_event, memory_storage_request)
 
 
 class ExpertRAGAgent(Agent):
@@ -659,8 +662,23 @@ class ExpertRAGAgent(Agent):
         llm_event: LLMEvent,
         memory: AgentMemory,
         topic: AgentInstanceTopic,
-    ) -> StoreUserMemoryEvent:
-        """Store new user memories from the conversation."""
+        agent_config: ExpertRAGAgentConfig,
+        t: LocaleHandler,
+    ) -> StoreUserMemoryEvent | MemoryStorageRequestedEvent:
+        """
+        Store new user memories from the conversation.
+
+        Inline (default): write via mem0 and return the result event. Async (issue #1179): delegate the write
+        to the `MemoryWriterAgent` so the chat run finalizes as soon as the answer is ready.
+        """
+        if agent_config.user_memory.enable_async_memory_storage:
+            return build_memory_storage_request(
+                user=user_message_event.user,
+                messages=llm_event.chat_messages,
+                topic=topic,
+                agent_config=agent_config,
+                locale=t.locale,
+            )
         memory_added = await memory.add_user_memory(
             messages=llm_event.chat_messages,
             user_id=user_message_event.user.id,
@@ -679,6 +697,7 @@ class ExpertRAGAgent(Agent):
         self,
         llm_event: LLMEvent,
         _store_memory_event: StoreUserMemoryEvent | None,
+        _memory_storage_request: MemoryStorageRequestedEvent | None,
         expert_answer_context: ExpertAnswerContextEvent | None,
         few_shot_reject: FewShotRejectEvent | None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None,
