@@ -23,6 +23,8 @@ from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
 
+NO_THREAD_ACCESS_DETAIL = "You do not have access to this thread. Please contact the process owner."
+
 
 class EventController(TenantScopedController):
     """
@@ -65,7 +67,7 @@ class EventController(TenantScopedController):
             if not (user_in_thread or thread_belongs_to_users_process):
                 raise HTTPException(
                     status_code=403,
-                    detail="You do not have access to this thread. Please contact the process owner.",
+                    detail=NO_THREAD_ACCESS_DETAIL,
                 )
 
             return EventService.get_events_in_thread(
@@ -99,7 +101,7 @@ class EventController(TenantScopedController):
             if not (user_in_thread or thread_belongs_to_users_process):
                 raise HTTPException(
                     status_code=403,
-                    detail="You do not have access to this thread. Please contact the process owner.",
+                    detail=NO_THREAD_ACCESS_DETAIL,
                 )
 
             return ThreadReference(thread_id=thread_id)
@@ -161,7 +163,7 @@ class EventController(TenantScopedController):
                 if not (user_in_thread or thread_belongs_to_users_process):
                     raise HTTPException(
                         status_code=403,
-                        detail="You do not have access to this thread. Please contact the process owner.",
+                        detail=NO_THREAD_ACCESS_DETAIL,
                     )
 
             return EventService.get_event_timeseries(
