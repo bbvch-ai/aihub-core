@@ -23,7 +23,7 @@ export const useExportAgentInstance = () => {
 
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `${instance.agent_id}_config.json`
+    anchor.download = `${instance.agent_config.name}_${instance.agent_id}_config.json`
     anchor.click()
 
     URL.revokeObjectURL(url)
