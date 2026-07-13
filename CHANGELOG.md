@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.309.1] - 2026-07-13 - Enhanced Memory Protection and Agent Isolation
+
+### Added
+
+- ✅ **New Tests for Memory Scoping Logic**: Dedicated unit tests were introduced to validate the correct implementation
+  and behavior of agent-specific memory isolation within the Mem0 service.
+
+### Changed
+
+- 🔐 **Improved Agent Memory Isolation**: User memories in Mem0 are now natively scoped to the writing agent during
+  reconciliation, preventing one agent from modifying or deleting another agent's user-specific data. Organization
+  memories continue to be tenant-shared as intended.
+
+______________________________________________________________________
+
 ## [v0.309.0] - 2026-07-09 - UX Boost: Asynchronous User Memory & Graph Store Optimization
 
 ### Added
