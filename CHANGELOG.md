@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.309.2] - 2026-07-13 - Empowering Expert Agents with Advanced Memory Capabilities
+
+### Added
+
+- 🦾 **Enhanced Expert Agent Capabilities:** The `expert_asking_agent` and `expert_rag_agent` services are now fully
+  configured to integrate with **Mem0** for advanced LLM, embedding, and reranking functionalities, and **Neo4j** for
+  organizational memory graph storage, significantly boosting their intelligence and knowledge retention.
+
+### Changed
+
+- 📄 **Updated Environment Variable Documentation:** The documentation for environment variables has been updated to
+  reflect the expanded utilization of **Mem0** and **Neo4j** settings by the `expert_asking_agent` and
+  `expert_rag_agent`.
+
+### Removed
+
+- 🗑️ **Streamlined CI/CD Workflow:** An extraneous Docker login step has been removed from the `test-backup-e2e` GitHub
+  Actions workflow, contributing to a more efficient build process.
+
+______________________________________________________________________
+
 ## [v0.309.1] - 2026-07-13 - Enhanced Memory Protection and Agent Isolation
 
 ### Added

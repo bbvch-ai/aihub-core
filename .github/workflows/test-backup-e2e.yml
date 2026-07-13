@@ -34,9 +34,6 @@ jobs:
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
       - name: Generate Docker Compose files
         run: make generate-compose
-      - name: Login to GHCR
-        run: echo "${{ secrets.PAT_GITHUB_READ_PACKAGES }}" | docker login ghcr.io
-          -u ${{ github.actor }} --password-stdin
       - name: Build backup image
         run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev build
           backup-code
