@@ -16,6 +16,12 @@
           @update:model-value="toNavItem"
         />
         <div class="flex items-center gap-4">
+          <Button
+            icon="pi pi-upload"
+            severity="secondary"
+            :label="t('agent.import.button')"
+            @click="triggerImport"
+          />
           <Select
             v-model="agentClass"
             :options="agentClassOptions"
@@ -41,6 +47,13 @@
             :placeholder="t('agent.list.search_placeholder')"
             class="w-80"
           />
+          <input
+            ref="fileInput"
+            type="file"
+            accept="application/json,.json"
+            class="hidden"
+            @change="handleFileSelected"
+          >
         </div>
       </div>
       <div class="flex flex-col gap-8 pt-4">
@@ -120,6 +133,8 @@
 </template>
 
 <script setup lang="ts">
+import { AgentConfigImportError } from '@core/composables/agent/useImportAgentInstance'
+
 import type { FullAgentInstanceDto, WorkflowGraph } from '@core/sdk/client'
 
 type AgentGroup = {
@@ -135,11 +150,15 @@ type AgentGroup = {
 const router = useRouter()
 const route = useRoute()
 const tenantPath = useTenantPath()
+const { tenantId } = useTenant()
 const { t, locale } = useI18n()
+
+const toast = useToast()
 
 const { agentInstances, agentInstancesAreLoading, searchQuery, agentClass, status } = useAgentInstances()
 const { agentClasses, agentClassesAreLoading } = useAgentClasses()
 const { navItems, activeNavItem, toNavItem } = useAgentNavigation()
+const { readAgentConfigFile } = useImportAgentInstance()
 
 const isLoading = computed(() => agentInstancesAreLoading.value || agentClassesAreLoading.value)
 const isTemplatesRoute = computed(() => route.path.includes('/service/agents/templates'))
@@ -147,6 +166,8 @@ const isTemplatesRoute = computed(() => route.path.includes('/service/agents/tem
 const createModalOpen = ref(false)
 const selectedClassForCreate = ref('')
 const initialDataForCreate = ref<Record<string, unknown> | null>(null)
+
+const fileInput = ref<HTMLInputElement | null>(null)
 
 const workflowModalOpen = ref(false)
 const selectedGroupForWorkflow = ref<AgentGroup | null>(null)
@@ -193,6 +214,50 @@ const handleClone = (agent: FullAgentInstanceDto) => {
   selectedClassForCreate.value = agent.agent_class
   initialDataForCreate.value = agent.configuration ?? null
   createModalOpen.value = true
+}
+
+const triggerImport = () => fileInput.value?.click()
+
+const handleFileSelected = async () => {
+  const input = fileInput.value
+  const file = input?.files?.[0]
+  if (input) input.value = ''
+  if (!file) return
+
+  try {
+    const exported = await readAgentConfigFile(file)
+
+    const blueprintExists = agentClasses.value?.find(c => c.agent_class === exported.agentClass)
+    if (!blueprintExists) {
+      toast.add({
+        severity: 'error',
+        summary: t('agent.import.error.title'),
+        detail: t('agent.import.error.blueprintNotFound', { agentClass: exported.agentClass }),
+        life: 5000,
+      })
+      return
+    }
+
+    const configuration: Record<string, unknown> = { ...exported.configuration, tenant_id: tenantId.value }
+
+    const orgMemory = configuration.org_memory
+    if (orgMemory && typeof orgMemory === 'object' && !Array.isArray(orgMemory)) {
+      configuration.org_memory = { ...orgMemory, tenant_id: tenantId.value }
+    }
+
+    selectedClassForCreate.value = exported.agentClass
+    initialDataForCreate.value = configuration
+    createModalOpen.value = true
+  }
+  catch (error) {
+    const reason = error instanceof AgentConfigImportError ? error.reason : 'invalidStructure'
+    toast.add({
+      severity: 'error',
+      summary: t('agent.import.error.title'),
+      detail: t(`agent.import.error.${reason}`),
+      life: 5000,
+    })
+  }
 }
 
 const groupedAgents = computed<AgentGroup[]>(() => {

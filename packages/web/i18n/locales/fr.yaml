@@ -329,6 +329,19 @@ agent:
     status: 'Statut:'
     online: En ligne
     offline: Hors ligne
+  import:
+    button: Importer
+    error:
+      title: Échec de l'import
+      invalidJson: Le fichier sélectionné n'est pas un JSON valide.
+      invalidStructure: Le fichier sélectionné n'est pas un export de configuration
+        d'agent valide.
+      missingFields: Il manque des champs obligatoires dans le fichier (schemaVersion,
+        agentClass ou configuration).
+      unsupportedVersion: Le fichier utilise une version de schéma d'export non prise
+        en charge.
+      blueprintNotFound: Le modèle d'agent « {agentClass} » n'est pas disponible dans
+        cet environnement.
   configuration:
     title: Configuration de l'agent
     description: Configurez le comportement d'exécution et les paramètres de cet agent

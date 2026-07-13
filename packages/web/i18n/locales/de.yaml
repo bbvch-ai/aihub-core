@@ -331,6 +331,17 @@ agent:
     status: 'Status:'
     online: Online
     offline: Offline
+  import:
+    button: Importieren
+    error:
+      title: Import fehlgeschlagen
+      invalidJson: Die ausgewählte Datei ist kein gültiges JSON.
+      invalidStructure: Die ausgewählte Datei ist kein gültiger Agenten-Konfigurationsexport.
+      missingFields: In der Datei fehlen erforderliche Felder (schemaVersion, agentClass
+        oder configuration).
+      unsupportedVersion: Die Datei verwendet eine nicht unterstützte Export-Schemaversion.
+      blueprintNotFound: Die Agenten-Vorlage "{agentClass}" ist in dieser Umgebung
+        nicht verfügbar.
   configuration:
     title: Agentenkonfiguration
     description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für
