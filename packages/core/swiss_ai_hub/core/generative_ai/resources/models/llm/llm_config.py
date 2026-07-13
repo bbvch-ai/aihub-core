@@ -132,6 +132,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         is_chat_model = model_info["model_info"]["mode"] == "chat"
         is_function_calling_model = model_info["model_info"]["supports_function_calling"]
         max_tokens = model_info["model_info"]["max_output_tokens"]
+        supports_response_schema = model_info["model_info"].get("supports_response_schema") or False
 
         token_counter = TokenCountingHandler(tokenizer=self.token_counter)
         cost_tracker = LLMCostTracker(
@@ -153,6 +154,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             context_window=context_size,
             is_chat_model=is_chat_model,
             is_function_calling_model=is_function_calling_model,
+            should_use_structured_outputs=supports_response_schema,
             tokenizer=self.tokenizer,
             max_tokens=max_tokens,
             logprobs=self.default_parameter.logprobs,
