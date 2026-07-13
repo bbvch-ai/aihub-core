@@ -27,6 +27,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       supports_vision: true
       input_cost_per_token: 0
       output_cost_per_token: 0
