@@ -48,6 +48,13 @@ class EventService:
 
     @staticmethod
     @trace_fn
+    def thread_id_for_display(display_id: str) -> str | None:
+        """Resolve the thread that owns a display, so the chat-UI side panel can open the correct per-agent thread
+        without recomputing the salted thread_id."""
+        return PersistedAgentEventEntity.thread_id_for_display(display_id)
+
+    @staticmethod
+    @trace_fn
     def get_all_thread_display_events(thread_id: str) -> list[PersistedAgentEventEntity]:
         """Retrieves all display events for a thread."""
         return PersistedAgentEventEntity.display_events_for_thread(thread_id)

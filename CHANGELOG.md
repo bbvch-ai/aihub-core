@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.309.4] - 2026-07-14 - Improved Event Context Resolution for Enhanced UI Navigation
+
+### Added
+
+- ✨ **New Thread Resolution API:** Introduced a dedicated API endpoint
+  (`/api/v1/active/events/agents/displays/{display_id}/thread`) allowing the UI to dynamically resolve the correct
+  conversation thread from a display ID, streamlining navigation to related traces, sources, or memories.
+- 📄 **Thread Reference DTO:** Added a new `ThreadReference` data transfer object to structure the API responses for
+  thread resolution.
+- 📚 **Core Persistence Support:** Implemented a new method within the `PersistedAgentEventEntity` to efficiently query
+  and retrieve the thread ID associated with any given display ID from the persistence layer.
+- 🧪 **Robust API Testing:** Included comprehensive new tests for the `resolve_thread_for_display` API endpoint,
+  validating correct thread resolution across various scenarios, including AI-Hub Traceability Layer (AITL) delegation.
+
+### Changed
+
+- 🔄 **Synchronized Event ID Hashing:** Updated the `_str_to_object_id` function in OpenWebUI actions (memory, source,
+  tracing) to precisely match the hashing logic used by AI-Hub's event production, ensuring consistent `display_id`
+  generation for accurate event linking.
+- 🚀 **Dynamic UI Panel Navigation:** Enhanced the OpenWebUI frontend to dynamically fetch the associated **thread ID**
+  using the new API when users click "show traces," "show sources," or "show memories," providing a more resilient and
+  decoupled approach to navigating contextual panels.
+- 🗑️ **Optimized Cross-Window Communication:** Removed the direct `thread_id` from `postMessage` payloads originating
+  from OpenWebUI functions, as the frontend now handles its resolution, simplifying the data passed between the embedded
+  UI and the parent application.
+
+### Refactor
+
+- 🧹 **Standardized Error Messaging:** Consolidated the "access denied" error message for HTTP 403 responses within the
+  `EventController` into a reusable constant, improving consistency and maintainability.
+
+______________________________________________________________________
+
 ## [v0.309.3] - 2026-07-13 - Deployment Configuration & Documentation Enhancements
 
 ### Changed
