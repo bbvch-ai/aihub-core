@@ -43,7 +43,22 @@ processors:
   filter/langfuse:
     error_mode: ignore
     traces:
-      span: ['attributes["openinference.span.kind"] == nil']
+      span:
+        - attributes["openinference.span.kind"] == nil
+
+  # Backstop (issue 1496): drop unbounded, high-cardinality HTTP server metrics
+  # (side-effect of FastAPI/ASGI auto-instrumentation) before they reach the paid
+  # backend. Dropping whole metrics needs no histogram re-aggregation. Catches any
+  # emitter (e.g. open-webui) even if suppressed at the application source.
+  filter/metrics_cardinality:
+    error_mode: ignore
+    metrics:
+      metric:
+        - name == "http.server.duration"
+        - name == "http.server.request.duration"
+        - name == "http.server.active_requests"
+        - name == "http.server.request.size"
+        - name == "http.server.response.size"
 exporters:
   # Generic cloud exporter with configurable headers
   # Controlled via environment variables:
@@ -96,5 +111,5 @@ service:
     # Accept metrics but use debug exporter (Langfuse doesn't support metrics via OTEL)
     metrics:
       receivers: [otlp]
-      processors: [batch]
+      processors: [filter/metrics_cardinality, batch]
       exporters: [debug]
