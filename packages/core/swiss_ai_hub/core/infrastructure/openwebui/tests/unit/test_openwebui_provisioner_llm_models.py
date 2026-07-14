@@ -45,6 +45,14 @@ def _litellm_returning(entries: list[dict]):
         yield
 
 
+@pytest.fixture(autouse=True)
+def _unregistered_base_models(provisioner: OpenWebuiProvisioner):
+    """Defaults every sync to the healthy state — raw bases carry no registry entry. Tests that
+    exercise the shadowing repair override this with their own ``list_base_models`` patch."""
+    with patch.object(provisioner._openwebui, "list_base_models", return_value=[]):
+        yield
+
+
 class TestGetAvailableLlmModels:
     @pytest.mark.asyncio
     async def test_keeps_only_chat_models(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -158,6 +166,65 @@ class TestSyncLlmWorkspaceModels:
             await provisioner._sync_llm_workspace_models(mock_client, [])
 
             mock_create.assert_not_called()
+            mock_delete.assert_not_called()
+
+
+class TestDeleteShadowingBaseModels:
+    """A registry entry at a workspace model's ``base_model_id`` makes OpenWebUI's
+    ``has_base_model_access`` deny every user without a grant on it, so the model stays in the picker
+    but chat fails with "Model not found". Saving a raw model in the OpenWebUI workspace creates exactly
+    such an entry. It is only reachable via ``list_base_models``: OpenWebUI's model search filters on
+    ``base_model_id != None``, so ``list_models`` can never return it."""
+
+    @pytest.mark.asyncio
+    async def test_deletes_entry_shadowing_the_raw_base_model(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui, "list_base_models", return_value=[{"id": "text-generation/gemma-4-31B-it"}]
+            ),
+            patch.object(
+                provisioner._openwebui, "list_models", return_value=[{"id": _GEMMA_ID, "name": "gemma-4-31B-it"}]
+            ),
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [_GEMMA])
+
+            mock_delete.assert_called_once_with(mock_client, "text-generation/gemma-4-31B-it")
+
+    @pytest.mark.asyncio
+    async def test_leaves_unregistered_base_alone(self, provisioner: OpenWebuiProvisioner) -> None:
+        """The healthy state: the raw model has no registry entry, so there is nothing to repair."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(provisioner._openwebui, "list_base_models", return_value=[]),
+            patch.object(
+                provisioner._openwebui, "list_models", return_value=[{"id": _GEMMA_ID, "name": "gemma-4-31B-it"}]
+            ),
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [_GEMMA])
+
+            mock_delete.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_does_not_delete_unrelated_base_models(self, provisioner: OpenWebuiProvisioner) -> None:
+        """Only bases of models we actually provision are repaired; foreign entries are left untouched."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui, "list_base_models", return_value=[{"id": "text-generation/some-other-model"}]
+            ),
+            patch.object(
+                provisioner._openwebui, "list_models", return_value=[{"id": _GEMMA_ID, "name": "gemma-4-31B-it"}]
+            ),
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [_GEMMA])
+
             mock_delete.assert_not_called()
 
 

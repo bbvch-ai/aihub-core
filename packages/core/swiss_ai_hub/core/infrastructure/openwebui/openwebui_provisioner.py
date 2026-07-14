@@ -360,7 +360,29 @@ class OpenWebuiProvisioner:
             "meta": {"description": f"AI-Hub model: {model.litellm_name}"},
         }
 
+    async def _delete_shadowing_base_models(self, http: httpx.AsyncClient, models: list[AvailableModel]) -> None:
+        """Removes registry entries that shadow the raw LiteLLM models our workspace models point at.
+
+        ``_build_llm_model_data`` depends on those bases staying unregistered. Once an entry exists for one,
+        OpenWebUI's ``has_base_model_access`` walks workspace model -> base and denies everyone without a
+        grant on that entry, so the model stays visible in the picker but chatting with it fails with
+        "Model not found". Saving a raw model in the OpenWebUI workspace creates exactly such an entry, so
+        reassert the invariant on every sync.
+        """
+        shadowing_ids = {m.get("id", "") for m in await self._openwebui.list_base_models(http)}
+
+        for model in models:
+            if model.litellm_name not in shadowing_ids:
+                continue
+            await self._openwebui.delete_model(http, model.litellm_name)
+            logger.warning(
+                f"OpenWebUI: Deleted registry entry '{model.litellm_name}' shadowing the raw LiteLLM model — "
+                f"it denied every non-admin access to the workspace model above it"
+            )
+
     async def _sync_llm_workspace_models(self, http: httpx.AsyncClient, models: list[AvailableModel]) -> None:
+        await self._delete_shadowing_base_models(http, models)
+
         existing_models = await self._openwebui.list_models(http)
         existing_aihub = {m["id"]: m for m in existing_models if m.get("id", "").startswith(AIHUB_LLM_MODEL_PREFIX)}
 
