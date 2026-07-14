@@ -3,6 +3,19 @@
 - Status: accepted
 - Supersedes: [`2026_06_29_resilience_for_reasoning_models_on_infomaniak`](2026_06_29_resilience_for_reasoning_models_on_infomaniak.md)
 
+::: warning Update (2026-07-14)
+Two parts of this decision were revised after monitoring:
+
+- **The reasoning-disable flag was wrong for Qwen3.** `chat_template_kwargs={"thinking": false}` is silently ignored by
+  Qwen3.5, which kept emitting ~1k reasoning tokens (~13s for a single-token classification). Qwen3 reads
+  `enable_thinking`; both keys are now sent — `{"thinking": false, "enable_thinking": false}` — dropping detection to
+  ~1s and the structured/meta paths to a fraction of their former latency. The mechanism (decision #3) is otherwise
+  unchanged.
+- **Conversation metadata (title + follow-up) is disabled again**, pending investigation — decision #6 below is
+  therefore only partially in force. Per-agent self-awareness stays enabled (it now also disables reasoning on the
+  streamed meta answer), **except `McpReactAgent`, which opted out of self-awareness entirely**.
+  :::
+
 ## Context
 
 Swiss AI Hub routes all chat LLM access through LiteLLM. On CPU (non-GPU) deployments every text-generation model is
@@ -24,7 +37,8 @@ That assumption was **not separately verified** — the failures it recorded wer
 the tool-call path.
 
 We re-tested the JSON-schema path directly through LiteLLM, with reasoning disabled
-(`extra_body={"chat_template_kwargs":{"thinking":false}}`), against the Pydantic result models used in production
+(`extra_body={"chat_template_kwargs":{"thinking":false,"enable_thinking":false}}`), against the Pydantic result models
+used in production
 (`TitleResult`, `FollowUpQuestionsResult`), 5 runs per model+schema:
 
 | Model                         | Title parsed | Follow-ups parsed | Fenced/recovered |
@@ -46,8 +60,8 @@ to `tool_choice`, not to structured output in general.
 - **`response_format` is the ecosystem standard.** It is the native structured-output mechanism across LiteLLM, vLLM
   (guided decoding / xgrammar), and the OpenAI-compatible API — decoupled from tool-calling quirks.
 - **Reasoning is pure latency for these calls.** A title, a follow-up list, a route, or a meta-question label is a
-  trivial extraction; letting a reasoning model "think" first adds ~4-5s and is what produced the fenced/partial output
-  the old ADR saw.
+  trivial extraction; letting a reasoning model "think" first adds seconds of latency (measured ~13s for a single-token
+  classification on Qwen3.5) and is what produced the fenced/partial output the old ADR saw.
 - **Capability must reflect the deployment, not a static registry.** LlamaIndex's built-in
   `is_json_schema_supported()` only knows OpenAI's public model names and returns false negatives for custom-named
   vLLM/Infomaniak models. The deployment's LiteLLM `model_list` is the source of truth.
@@ -67,9 +81,11 @@ models (Apertus, gemma-4, Kimi-K2.6, Ministral, Qwen3.5) and the local GPU model
 carry the flag, driven from the Jinja2 template `templates/configs/litellm-config.yml.j2`.
 
 **3. Reasoning is disabled on the structured-output path.** `ResilientOpenAILike` injects
-`extra_body={"chat_template_kwargs":{"thinking":false}}` on `(a)structured_predict` when
-`should_use_structured_outputs` is set. Mistral-tokenizer models (Ministral) reject `chat_template_kwargs` with a 400,
-so the call falls back to a plain request — the same pattern already used in `text_verdict.py`.
+`extra_body={"chat_template_kwargs":{"thinking":false,"enable_thinking":false}}` on `(a)structured_predict` when
+`should_use_structured_outputs` is set. Model families read different keys — Qwen3 honours `enable_thinking` and
+silently ignores `thinking`, other vLLM templates honour `thinking` — so both are sent. Mistral-tokenizer models
+(Ministral) reject `chat_template_kwargs` with a 400, so the call falls back to a plain request — the same pattern
+already used in `text_verdict.py`.
 
 **4. Forced `tool_choice` becomes explicit opt-in.** The conversation-metadata path no longer forces `tool_choice`;
 LlamaIndex's `response_format` path removes it anyway when the capability is declared. A call site that genuinely needs a

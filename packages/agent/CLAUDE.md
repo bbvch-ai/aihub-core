@@ -133,7 +133,7 @@ reference):
 2. **Gate every raw `UserMessageEvent` entry step** so detection can't be raced. Two equivalent forms depending on the
    agent's start events:
 
-   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`): add a
+   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`): add a
      **required** `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates the step — no precondition.
    - **Entry also accepts a programmatic start** (e.g. `RAGAgent`, `ExpertRAGAgent`, `NamespaceSelectionAgent` accept
      `UserMessageEvent | RAGStartEvent`): keep `_clear: NotAMetaQuestionEvent | None = None` and combine the step's
@@ -340,7 +340,7 @@ the relevant steps.
 
 | Agent                       | Purpose                                                   | Key Pattern                                                                                                                                                                                               |
 | --------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **RAGAgent**                | Knowledge QA with retrieval                               | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) + conversation metadata (title + follow-up questions)                                                 |
+| **RAGAgent**                | Knowledge QA with retrieval                               | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate). Conversation metadata (title + follow-up questions) is currently disabled pending investigation      |
 | **LLMWrappingAgent**        | Simple LLM chat passthrough                               | Minimal 2-step workflow, no retrieval                                                                                                                                                                     |
 | **ExpertAskingAgent**       | Human expert escalation                                   | BotInTheLoop + iterative refinement + org memory                                                                                                                                                          |
 | **ExpertRAGAgent**          | RAG with expert fallback                                  | RAGAgent steps + HITL consent + AgentInTheLoop                                                                                                                                                            |
