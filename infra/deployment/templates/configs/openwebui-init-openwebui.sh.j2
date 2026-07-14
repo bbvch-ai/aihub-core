@@ -80,6 +80,7 @@ build_meta_json() {
 # Register a single function via PostgreSQL
 register_function() {
     file="$1"
+    is_active="${2:-true}"
     func_id=$(generate_id "$file")
     title=$(extract_metadata "$file" "title")
     description=$(extract_metadata "$file" "description")
@@ -123,7 +124,7 @@ SQLHEADER
         '${func_type}',
         v_content,
         '${meta_json}'::jsonb,
-        true,
+        ${is_active},
         true,
         ${timestamp},
         ${timestamp}
@@ -252,7 +253,13 @@ main() {
             __*.py) continue ;;
         esac
 
-        if register_function "$file"; then
+        # Functions seeded disabled by default (re-registration resets this each run)
+        is_active="true"
+        case "$filename" in
+            source_action.py|tracing_action.py|memory_action.py) is_active="false" ;;
+        esac
+
+        if register_function "$file" "$is_active"; then
             registered=$((registered + 1))
         else
             failed=$((failed + 1))
