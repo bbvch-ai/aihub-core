@@ -35,7 +35,7 @@ async def test_structured_output_path_disables_reasoning():
         await llm.astructured_predict(_Result, "prompt")
 
     forwarded = parent.await_args.kwargs["llm_kwargs"]
-    assert forwarded["extra_body"] == {"chat_template_kwargs": {"thinking": False}}
+    assert forwarded["extra_body"] == {"chat_template_kwargs": {"thinking": False, "enable_thinking": False}}
 
 
 @pytest.mark.asyncio

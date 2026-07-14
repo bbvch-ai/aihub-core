@@ -11,9 +11,11 @@ STRUCTURED_OUTPUT_ATTEMPTS = 3
 
 # Reasoning models on Infomaniak emit clean JSON via ``response_format`` only with thinking disabled; a
 # structured extraction (title, follow-ups, routing) is a trivial task, so reasoning is pure latency and
-# the source of the fenced/truncated/omitted-field output the provider otherwise returns. Mistral-tokenizer
-# models (Ministral) reject ``chat_template_kwargs`` with a 400, so the call falls back to a plain request.
-_REASONING_DISABLED = {"chat_template_kwargs": {"thinking": False}}
+# the source of the fenced/truncated/omitted-field output the provider otherwise returns. Model families
+# read different keys — Qwen3 honours ``enable_thinking`` (and silently ignores ``thinking``, still burning
+# ~1k reasoning tokens), other vLLM templates honour ``thinking`` — so send both. Mistral-tokenizer models
+# (Ministral) reject ``chat_template_kwargs`` with a 400, so the call falls back to a plain request.
+_REASONING_DISABLED = {"chat_template_kwargs": {"thinking": False, "enable_thinking": False}}
 
 
 class ResilientOpenAILike(OpenAILike):

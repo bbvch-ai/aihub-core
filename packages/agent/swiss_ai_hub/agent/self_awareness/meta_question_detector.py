@@ -17,6 +17,13 @@ _LABEL_TO_CATEGORY = {
 }
 _LABELS = (*_LABEL_TO_CATEGORY, "NORMAL")
 
+# Detection and the meta answer are trivial for a reasoning model, so its thinking is pure latency (≈13s
+# for a single-token classification on Qwen3.5). Model families read different keys — Qwen3 honours
+# ``enable_thinking`` and silently ignores ``thinking``, other vLLM templates honour ``thinking`` — so send
+# both. Mistral-tokenizer models (Ministral) reject ``chat_template_kwargs`` with a 400; callers fall back
+# to a plain request.
+REASONING_DISABLED_EXTRA_BODY = {"chat_template_kwargs": {"thinking": False, "enable_thinking": False}}
+
 # Reasoning models on Infomaniak cannot reliably produce structured output (tool calls / JSON) but are
 # reliable at emitting a single free-text label, so detection classifies via a plain-text token. Tokens
 # are language-agnostic; the model reads the (any-language) user message and emits the English token.
@@ -54,10 +61,10 @@ async def detect_meta_question(llm: LLM, t: LocaleHandler, user_query: str) -> M
 
     try:
         # Disable reasoning: this is a trivial single-token classification, so the model's thinking is
-        # pure latency (≈4-5s on Infomaniak reasoning models). Mistral-tokenizer models reject
-        # chat_template_kwargs, so fall back to a plain call (they have no reasoning to disable anyway).
+        # pure latency. Mistral-tokenizer models reject chat_template_kwargs, so fall back to a plain call
+        # (they have no reasoning to disable anyway).
         try:
-            response = await llm.achat([message], extra_body={"chat_template_kwargs": {"thinking": False}})
+            response = await llm.achat([message], extra_body=REASONING_DISABLED_EXTRA_BODY)
         except BadRequestError:
             response = await llm.achat([message])
         label = _parse_label(str(response.message.content))
