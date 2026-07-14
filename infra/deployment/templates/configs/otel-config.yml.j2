@@ -68,6 +68,8 @@ processors:
         - 'name == "http.server.active_requests"'
         - 'name == "http.server.request.size"'
         - 'name == "http.server.response.size"'
+        - 'name == "http.server.request.body.size"'
+        - 'name == "http.server.response.body.size"'
 
 exporters:
   # Generic cloud exporter with configurable headers
