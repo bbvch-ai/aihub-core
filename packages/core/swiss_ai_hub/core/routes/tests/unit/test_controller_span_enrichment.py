@@ -36,7 +36,9 @@ def test_enrich_span_keeps_http_route_as_template(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(controller_module.trace, "get_current_span", lambda: span)
 
     path = "/api/v1/active/agents/DemoAgent/abc123"
-    Controller._enrich_span_with_context(SimpleNamespace(service_name="demo"), fake_user(), _make_request(path), "aihub.user.agent")
+    Controller._enrich_span_with_context(
+        SimpleNamespace(service_name="demo"), fake_user(), _make_request(path), "aihub.user.agent"
+    )
 
     assert "http.route" not in span.attributes
     assert span.attributes["url.path"] == path
