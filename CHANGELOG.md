@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.310.4] - 2026-07-15 - Enhanced Container Health Monitoring
+
+### Added
+
+- 🚀 **Introduced Docker Health Checks:** Added robust `HEALTHCHECK` instructions to both the main web application
+  (`web`) and system administration interface (`sysadmin-web`) Docker containers. This enhancement allows container
+  orchestrators to proactively monitor service availability, automatically detect unresponsive containers, and manage
+  their lifecycle more effectively, leading to improved application resilience and operational stability.
+
+______________________________________________________________________
+
 ## [v0.310.3] - 2026-07-15 - Seamless RAG Figure Delivery to LLMs
 
 ### Added
