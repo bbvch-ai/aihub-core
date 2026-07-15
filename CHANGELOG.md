@@ -5,6 +5,214 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.310.2] - 2026-07-15 - Enhanced Release Automation and Flexibility
+
+### Changed
+
+- 🚀 **Improved npm Publishing Strategy:** The automated npm publishing workflow now intelligently handles backport and
+  hotfix releases. It assigns a line-specific dist-tag (e.g., `release-X.Y`) to versions older than the current `latest`
+  on npm, preventing the `latest` tag from moving backward.
+- ⚙️ **Flexible Manual Release Workflow:** The manual release workflow (for cutting new tags) has been enhanced to allow
+  specifying any source branch or ref to tag (e.g., a hotfix branch), even when the workflow is initiated from `main`.
+  This provides greater flexibility for managing backport and hotfix releases.
+- 📄 **Updated Manual Release Instructions:** The usage instructions for the manual release workflow have been updated to
+  reflect the new `source_ref` input, making it clearer how to tag specific branches or commits.
+
+______________________________________________________________________
+
+## [v0.310.1] - 2026-07-15 - Streamlined Manual Release Process
+
+### Added
+
+- ✨ **Manual Release Workflow:** A new GitHub Actions workflow (`release-manual.yml`) has been introduced to empower
+  maintainers with greater control and flexibility over the release process. This workflow enables the manual creation
+  of releases with a specified `vMAJOR.MINOR.PATCH` version tag from any arbitrary branch, proving especially valuable
+  for hotfixes or targeted special releases. It automates crucial steps such as changelog generation, version bumping,
+  and the dispatch of all downstream build, release, and publishing workflows (e.g., Docker images, npm, PyPI), while
+  ensuring release integrity by preventing tag overwrites and keeping the source branch pristine.
+
+______________________________________________________________________
+
+## [v0.310.0] - 2026-07-15 - Agents Gain IMAP Read Capability with Secure S3 Attachment Handling
+
+### Added
+
+- ✨ **Introduced IMAP Read Capability for Agents**: Agents can now connect to IMAP inboxes, list unread messages, and
+  fetch selected messages along with their attachments. This foundational capability enables agents to interact with
+  email workflows.
+- 🦾 **New IMAP Agent Demonstrator**: A new `ImapAgent` (non-conversational) has been added to the playground, showcasing
+  how to list unread mail and fetch messages with S3-referenced attachments.
+- 📦 **Core IMAP Configuration and Event Types**: Added `ImapClientConfig` for configuring IMAP connections, and new
+  event types like `UnreadMailListedEvent`, `MailFetchedEvent`, `MailAttachmentRef`, and `UnreadMailSummary` for
+  structured communication of IMAP data.
+- ☁️ **S3 Integration for Agent Attachments**: The agent runtime now includes native S3 client integration, allowing
+  mail attachments to be stored securely in S3 and referenced by `file_id` within agent events, preventing event bloat.
+- 🔒 **Configurable Message Size Limits**: Implemented deployment-fixed caps for raw message size, body size, and
+  attachment size to protect agents from hostile or oversized emails and prevent exceeding message-size limits in the
+  audit trail and WebSocket streams.
+- 🌍 **Internationalization for IMAP Features**: Added translations for IMAP configuration fields and new IMAP-related
+  events in German, English, French, and Italian.
+- 📄 **Architectural Decision Record for IMAP**: A new ADR documents the design decisions behind the agent's IMAP read
+  capability, covering exposure, event handling, and attachment storage.
+
+### Changed
+
+- 🚀 **Agent Runtime Dependency on S3**: The agent runtime now depends on S3 for storing mail attachments, expanding its
+  infrastructure requirements.
+- 📡 **IMAP Events Exposed via WebSocket**: `UnreadMailListedEvent` and `MailFetchedEvent` are now included in the
+  `DisplayEvents` type, making them visible in the frontend's event timeline via WebSocket.
+- 🧩 **Filename Sanitization for Attachments**: Improved security by sanitizing attachment filenames to prevent path
+  traversal vulnerabilities.
+
+### Security
+
+- 🔑 **HTML Body Exclusion from Events**: The raw HTML body of fetched emails is deliberately *not* surfaced in
+  `MailFetchedEvent` (which is persisted and streamed to the frontend) to mitigate Cross-Site Scripting (XSS) risks from
+  hostile sender markup.
+
+______________________________________________________________________
+
+## [v0.309.4] - 2026-07-14 - Improved Event Context Resolution for Enhanced UI Navigation
+
+### Added
+
+- ✨ **New Thread Resolution API:** Introduced a dedicated API endpoint
+  (`/api/v1/active/events/agents/displays/{display_id}/thread`) allowing the UI to dynamically resolve the correct
+  conversation thread from a display ID, streamlining navigation to related traces, sources, or memories.
+- 📄 **Thread Reference DTO:** Added a new `ThreadReference` data transfer object to structure the API responses for
+  thread resolution.
+- 📚 **Core Persistence Support:** Implemented a new method within the `PersistedAgentEventEntity` to efficiently query
+  and retrieve the thread ID associated with any given display ID from the persistence layer.
+- 🧪 **Robust API Testing:** Included comprehensive new tests for the `resolve_thread_for_display` API endpoint,
+  validating correct thread resolution across various scenarios, including AI-Hub Traceability Layer (AITL) delegation.
+
+### Changed
+
+- 🔄 **Synchronized Event ID Hashing:** Updated the `_str_to_object_id` function in OpenWebUI actions (memory, source,
+  tracing) to precisely match the hashing logic used by AI-Hub's event production, ensuring consistent `display_id`
+  generation for accurate event linking.
+- 🚀 **Dynamic UI Panel Navigation:** Enhanced the OpenWebUI frontend to dynamically fetch the associated **thread ID**
+  using the new API when users click "show traces," "show sources," or "show memories," providing a more resilient and
+  decoupled approach to navigating contextual panels.
+- 🗑️ **Optimized Cross-Window Communication:** Removed the direct `thread_id` from `postMessage` payloads originating
+  from OpenWebUI functions, as the frontend now handles its resolution, simplifying the data passed between the embedded
+  UI and the parent application.
+
+### Refactor
+
+- 🧹 **Standardized Error Messaging:** Consolidated the "access denied" error message for HTTP 403 responses within the
+  `EventController` into a reusable constant, improving consistency and maintainability.
+
+______________________________________________________________________
+
+## [v0.309.3] - 2026-07-13 - Deployment Configuration & Documentation Enhancements
+
+### Changed
+
+- ⚙️ **Standardized MongoDB Connection String:** Explicitly configured the `MONGO_CONNECTION_STRING` across all Docker
+  Compose deployment environments, ensuring consistent and clear database connectivity for all services.
+- 📄 **Updated Environment Variable Documentation:** Ensured the `memory_writer_agent` is correctly listed in the
+  environment variables documentation, reflecting its operational dependencies on MongoDB, NATS, and Neo4j.
+
+______________________________________________________________________
+
+## [v0.309.2] - 2026-07-13 - Empowering Expert Agents with Advanced Memory Capabilities
+
+### Added
+
+- 🦾 **Enhanced Expert Agent Capabilities:** The `expert_asking_agent` and `expert_rag_agent` services are now fully
+  configured to integrate with **Mem0** for advanced LLM, embedding, and reranking functionalities, and **Neo4j** for
+  organizational memory graph storage, significantly boosting their intelligence and knowledge retention.
+
+### Changed
+
+- 📄 **Updated Environment Variable Documentation:** The documentation for environment variables has been updated to
+  reflect the expanded utilization of **Mem0** and **Neo4j** settings by the `expert_asking_agent` and
+  `expert_rag_agent`.
+
+### Removed
+
+- 🗑️ **Streamlined CI/CD Workflow:** An extraneous Docker login step has been removed from the `test-backup-e2e` GitHub
+  Actions workflow, contributing to a more efficient build process.
+
+______________________________________________________________________
+
+## [v0.309.1] - 2026-07-13 - Enhanced Memory Protection and Agent Isolation
+
+### Added
+
+- ✅ **New Tests for Memory Scoping Logic**: Dedicated unit tests were introduced to validate the correct implementation
+  and behavior of agent-specific memory isolation within the Mem0 service.
+
+### Changed
+
+- 🔐 **Improved Agent Memory Isolation**: User memories in Mem0 are now natively scoped to the writing agent during
+  reconciliation, preventing one agent from modifying or deleting another agent's user-specific data. Organization
+  memories continue to be tenant-shared as intended.
+
+______________________________________________________________________
+
+## [v0.309.0] - 2026-07-09 - UX Boost: Asynchronous User Memory & Graph Store Optimization
+
+### Added
+
+- 🦾 Introduced the **`MemoryWriterAgent`**, a new dedicated system agent for asynchronously persisting user memories,
+  significantly improving chat responsiveness by decoupling memory writes from the critical path.
+- ✨ Implemented a **`discoverable` flag** on the base `Agent` class, enabling programmatic control over which agents
+  appear in the Admin UI.
+- 💬 Added new **event types** (`MemoryStorageRequestedEvent`, `StoreUserMemoryRequestedEvent`, `MemoryStoredStopEvent`)
+  to orchestrate the new asynchronous memory storage workflow.
+- ⚙️ Introduced a new configuration option, **`enable_async_memory_storage`**, for RAG and ExpertRAG agents, allowing
+  administrators to enable or disable asynchronous user memory persistence.
+
+### Changed
+
+- ⚡️ Drastically **improved chat user experience** by making user memory persistence asynchronous; the "thinking"
+  indicator now clears immediately after an agent answers, without waiting for memory storage.
+- 🚀 **Optimized user memory save performance** by disabling the Neo4j graph store for user memory, reducing save latency
+  by approximately 73% (from ~66s to ~17.5s) per turn. Organization memory retains graph store capabilities.
+- 🔄 Enhanced **cross-agent user memory sharing** by routing user memory queries through the vector store, allowing
+  agents to access all user memories regardless of the originating agent.
+- 📈 Expanded **Langfuse tracing** to correctly attribute asynchronous `MemoryWriterAgent` runs to the original user
+  query and context.
+- 📦 Updated **deployment configurations** to include the new `MemoryWriterAgent` service across all Docker Compose
+  variants.
+
+### Refactor
+
+- 🧹 Redesigned **`AgentMemory` architecture** to use separate, lazily-built Mem0 services for user and organization
+  memory, enabling distinct and optimized storage configurations for each.
+- 🛠️ Modernized **Mem0 integration** to gracefully handle disabled graph stores, preventing errors and ensuring robust
+  memory operations when graph data is not present.
+- ⚙️ Introduced an **`enable_graph` parameter** to `Mem0Settings.get_config` for fine-grained control over graph store
+  inclusion, enabling performance optimizations per memory type.
+
+______________________________________________________________________
+
+## [v0.308.2] - 2026-07-14 - Improved OpenWebUI Stability and Provisioning Control
+
+### Fixed
+
+- 🐛 **Resolved OpenWebUI Model Access Issues:** Fixed a critical bug where workspace models became inaccessible to
+  non-admin users if a corresponding "shadowing" base model entry was present. The provisioning logic now actively
+  detects and removes these problematic entries to ensure all users have proper access.
+
+### Added
+
+- ✨ **New OpenWebUI Client Functionality:** Introduced a new `list_base_models` method to the OpenWebUI client, enabling
+  the detection of specific model registry entries that were previously invisible, crucial for resolving model access
+  issues.
+- 🧪 **Comprehensive Tests for Model Provisioning:** Added new unit tests to validate the OpenWebUI provisioner's ability
+  to correctly manage and clean up base model registrations, enhancing the robustness of model synchronization.
+
+### Changed
+
+- ⚙️ **Configurable OpenWebUI Function State:** Modified OpenWebUI function registration to allow certain system
+  functions (e.g., `source`, `tracing`, `memory` actions) to be seeded as disabled by default upon initialization,
+  providing greater control over initial plugin availability.
+
+______________________________________________________________________
+
 ## [v0.308.0] - 2026-07-08 - Dynamic LLM Access and Robust Role Management
 
 ### Added
