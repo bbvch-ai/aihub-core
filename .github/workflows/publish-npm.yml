@@ -72,4 +72,33 @@ jobs:
             echo "${PKG_NAME}@${PKG_VERSION} is already on the registry — skipping."
             exit 0
           fi
-          npm publish --provenance --access public
+          # A backport/hotfix publishes a version lower than the current `latest`
+          # dist-tag. npm refuses to implicitly move `latest` backwards, so pin such
+          # releases to a per-line dist-tag (release-X.Y) instead of moving `latest`.
+          # Newer releases (the normal main path) keep the implicit `latest`.
+          PUBLISH_ARGS=(--provenance --access public)
+          # Resolve the registry's current `latest`. E404 (package/tag not yet
+          # published — the first-publish case) is treated as empty; any other
+          # npm failure (e.g. registry unreachable) fails loudly rather than
+          # silently falling through to an implicit `latest` publish.
+          set +e
+          LATEST_OUT="$(npm view "${PKG_NAME}@latest" version 2>&1)"
+          LATEST_RC=$?
+          set -e
+          if [ "$LATEST_RC" -eq 0 ]; then
+            LATEST="$LATEST_OUT"
+          elif printf '%s' "$LATEST_OUT" | grep -q 'E404'; then
+            LATEST=""
+          else
+            echo "::error::Could not query the current 'latest' version from npm: $LATEST_OUT"
+            exit 1
+          fi
+          if [ -n "$LATEST" ] && [ "$LATEST" != "$PKG_VERSION" ]; then
+            HIGHEST="$(printf '%s\n%s\n' "$PKG_VERSION" "$LATEST" | sort -V | tail -n1)"
+            if [ "$HIGHEST" = "$LATEST" ]; then
+              LINE_TAG="release-$(printf '%s' "$PKG_VERSION" | cut -d. -f1-2)"
+              PUBLISH_ARGS+=(--tag "$LINE_TAG")
+              echo "Backport publish: ${PKG_VERSION} < latest ${LATEST}; using dist-tag ${LINE_TAG} (not moving 'latest')."
+            fi
+          fi
+          npm publish "${PUBLISH_ARGS[@]}"

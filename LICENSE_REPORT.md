@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 14.07.2026
+Generated on: 15.07.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **398 packages**
+- Python packages (uv): **399 packages**
 - Node.js packages (pnpm): **994 packages**
 - External Docker images: **0 images**
 
@@ -144,6 +144,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | hyperframe                                       | 6.1.0           | MIT License                                             |                                                                      |
 | ✅     | idna                                             | 3.15            | BSD-3-Clause                                            |                                                                      |
 | ✅     | ImageHash                                        | 4.3.2           | 2-clause BSD License                                    |                                                                      |
+| ✅     | IMAPClient                                       | 3.1.0           | BSD License                                             |                                                                      |
 | ✅     | iniconfig                                        | 2.3.0           | MIT                                                     |                                                                      |
 | ✅     | ipython                                          | 9.13.0          | BSD-3-Clause                                            |                                                                      |
 | ✅     | ipython_pygments_lexers                          | 1.1.1           | BSD License                                             |                                                                      |
@@ -378,7 +379,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | stringcase                                       | 1.2.0           | MIT                                                     |                                                                      |
 | ✅     | striprtf                                         | 0.0.26          | BSD License                                             |                                                                      |
 | ✅     | structlog                                        | 25.5.0          | MIT OR Apache-2.0                                       |                                                                      |
-| ✅     | swiss-ai-hub                                     | 0.309.3         | Apache-2.0                                              |                                                                      |
+| ✅     | swiss-ai-hub                                     | 0.310.2         | Apache-2.0                                              |                                                                      |
 | ✅     | swiss-ai-hub-jambo                               | 0.5.0           | MIT                                                     |                                                                      |
 | ✅     | sympy                                            | 1.14.0          | BSD License                                             |                                                                      |
 | ✅     | tabulate                                         | 0.10.0          | MIT                                                     |                                                                      |

@@ -1433,7 +1433,12 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
       STORE_MODEL_IN_DB: true
-    volumes: [./configs/litellm/litellm-config.local.yml:/app/config.yml]
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+      RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
+    volumes:
+      - ./configs/litellm/litellm-config.local.yml:/app/config.yml
+      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
       postgres:
@@ -2727,6 +2732,10 @@ services:
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # NATs
       NATS_ENDPOINT: nats://nats:4222
       NATS_TOKEN: ${NATS_TOKEN}
@@ -2793,6 +2802,10 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -2926,6 +2939,10 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222

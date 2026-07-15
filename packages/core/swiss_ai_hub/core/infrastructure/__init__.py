@@ -45,7 +45,12 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
     from swiss_ai_hub.core.infrastructure.redis.use_redis import use_redis
     from swiss_ai_hub.core.infrastructure.s3.s3_storage_settings import S3StorageSettings
-    from swiss_ai_hub.core.infrastructure.s3.use_s3 import create_s3_filesystem, use_s3, use_s3_service
+    from swiss_ai_hub.core.infrastructure.s3.use_s3 import (
+        create_s3_client,
+        create_s3_filesystem,
+        use_s3,
+        use_s3_service,
+    )
     from swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings import SharePointSettings
 
 __all__ = [
@@ -83,6 +88,7 @@ __all__ = [
     "RedisSettings",
     "S3StorageSettings",
     "UserSignupSettings",
+    "create_s3_client",
     "create_s3_filesystem",
     "enable_logging",
     "get_tracer",
@@ -130,6 +136,7 @@ _LAZY_IMPORTS = {
     "RedisSettings": "swiss_ai_hub.core.infrastructure.redis.redis_settings",
     "S3StorageSettings": "swiss_ai_hub.core.infrastructure.s3.s3_storage_settings",
     "UserSignupSettings": "swiss_ai_hub.core.infrastructure.api.user_signup_settings",
+    "create_s3_client": "swiss_ai_hub.core.infrastructure.s3.use_s3",
     "create_s3_filesystem": "swiss_ai_hub.core.infrastructure.s3.use_s3",
     "enable_logging": "swiss_ai_hub.core.infrastructure.logging.logger",
     "get_tracer": "swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer",

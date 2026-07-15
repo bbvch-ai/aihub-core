@@ -40,6 +40,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
+    MailFetchedEvent,
     MetaQuestionDetectedEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
@@ -59,6 +60,7 @@ from swiss_ai_hub.core.events.agent import (
     StoreUserMemoryEvent,
     ThoughtEvent,
     ToolEvent,
+    UnreadMailListedEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -123,6 +125,8 @@ DisplayEvents = (
     | Annotated[RetrieveOrganizationMemoryEvent, Tag("RetrieveOrganizationMemoryEvent")]
     | Annotated[RetrieveUserMemoryEvent, Tag("RetrieveUserMemoryEvent")]
     | Annotated[StoreOrganizationMemoryEvent, Tag("StoreOrganizationMemoryEvent")]
+    | Annotated[UnreadMailListedEvent, Tag("UnreadMailListedEvent")]
+    | Annotated[MailFetchedEvent, Tag("MailFetchedEvent")]
 )
 
 
