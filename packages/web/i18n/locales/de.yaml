@@ -342,6 +342,8 @@ agent:
       unsupportedVersion: Die Datei verwendet eine nicht unterstützte Export-Schemaversion.
       blueprintNotFound: Die Agenten-Vorlage "{agentClass}" ist in dieser Umgebung
         nicht verfügbar.
+  export:
+    button: Exportieren
   configuration:
     title: Agentenkonfiguration
     description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für

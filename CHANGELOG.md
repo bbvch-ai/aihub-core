@@ -5,6 +5,313 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.311.0] - 2026-07-15 - Agent Configuration Export Introduced
+
+### Added
+
+- ✨ **Empowered users to export agent configurations**, allowing them to download a JSON file containing the full setup
+  of an agent instance directly from the agent card or its dedicated configuration page.
+- 📄 **Implemented a standardized export schema (version 1.0)** for agent configurations, ensuring consistent and
+  machine-readable data for easier backup and migration.
+- 🌐 **Included localized labels** for the new "Export" button, providing a seamless experience for users across all
+  supported languages.
+
+______________________________________________________________________
+
+## [v0.310.6] - 2026-07-15 - Enhanced Document List Selection
+
+### Added
+
+- ✨ **Introduced "Select All" for Documents:** Users can now easily select all deletable documents in the document list
+  using a new "Select All" checkbox in the table header, streamlining bulk action workflows.
+
+### Changed
+
+- 🔄 **Improved Document Selection Logic:** The mechanism for managing selected documents has been refined, ensuring that
+  the "Select All" option accurately reflects and applies only to documents that are available for deletion.
+
+### Fixed
+
+- 🐛 **Cleared Selection on Document Deletion:** Documents are now immediately deselected from the list of checked items
+  after they have been initiated for individual deletion, preventing inconsistencies in the selection state.
+
+______________________________________________________________________
+
+## [v0.310.5] - 2026-07-15 - Improved Release Tagging Workflow
+
+### Changed
+
+- ⚙️ **Improved Release Workflow Accuracy:** The GitHub Actions workflow responsible for setting `latest` tags now
+  explicitly checks out the precise source tag, ensuring greater consistency and preventing potential discrepancies
+  during release operations.
+
+______________________________________________________________________
+
+## [v0.310.4] - 2026-07-15 - Enhanced Container Health Monitoring
+
+### Added
+
+- 🚀 **Introduced Docker Health Checks:** Added robust `HEALTHCHECK` instructions to both the main web application
+  (`web`) and system administration interface (`sysadmin-web`) Docker containers. This enhancement allows container
+  orchestrators to proactively monitor service availability, automatically detect unresponsive containers, and manage
+  their lifecycle more effectively, leading to improved application resilience and operational stability.
+
+______________________________________________________________________
+
+## [v0.310.3] - 2026-07-15 - Seamless RAG Figure Delivery to LLMs
+
+### Added
+
+- ✨ **Introduced RAG Figure Inlining:** Implemented a new mechanism to inline RAG figures (images) as Base64 directly at
+  the LiteLLM gateway, ensuring compatibility with LLM providers that cannot directly access internal S3 storage.
+- 🖼️ **Configurable Image Inlining:** Added new environment variables (`RAG_IMAGE_INLINE_ENABLED`,
+  `RAG_IMAGE_INLINE_MAX_BYTES`) to control RAG image inlining behavior and define a maximum size, allowing for flexible
+  deployment configurations and cost management.
+- 🔗 **Dedicated Internal S3 Endpoint:** Introduced `S3_STORAGE_INTERNAL_ENDPOINT` for signing presigned URLs
+  specifically for in-cluster services like the LiteLLM gateway, enhancing secure and efficient internal data transfer.
+- 📄 **Architectural Decision Record:** Added a new ADR outlining the rationale, design, and consequences of the RAG
+  figure inlining solution.
+
+### Changed
+
+- 🔄 **Refined S3 Presigned URL Generation:** Updated the S3 anonymous file access service to support generating
+  presigned URLs tailored for either public or internal (in-cluster) access based on the RAG image inlining setting.
+- 🔌 **LiteLLM Gateway Integration:** Configured the LiteLLM gateway to utilize a new custom callback, which
+  intelligently fetches RAG figures from internal storage and inlines them as Base64 into LLM prompts.
+- 🎛️ **RAG Agent Image Handling:** Modified RAG agents to sign image URLs against the new internal S3 endpoint when
+  inlining is enabled, ensuring figures are correctly prepared for the LiteLLM gateway.
+- ⚙️ **Deployment Configuration:** Updated Docker Compose and deployment scripts to include the new LiteLLM custom
+  callback and propagate relevant environment variables to the LiteLLM and RAG agent services.
+- 📚 **Documentation:** Expanded the environment variables documentation to include details on
+  `RAG_IMAGE_INLINE_ENABLED`, `RAG_IMAGE_INLINE_MAX_BYTES`, and `S3_STORAGE_INTERNAL_ENDPOINT`.
+
+______________________________________________________________________
+
+## [v0.308.3] - 2026-07-15 - Platform Version Synchronization and Maintenance
+
+### Changed
+
+- 📦 **Platform-Wide Version Alignment:** All core packages and their inter-dependencies have been updated to `v0.308.3`
+  to ensure consistent versioning across the entire platform, improving overall stability and build predictability.
+
+______________________________________________________________________
+
+## [v0.310.2] - 2026-07-15 - Enhanced Release Automation and Flexibility
+
+### Changed
+
+- ✨ **Improved npm publishing for backports:** The `publish-npm` workflow now intelligently handles backport or hotfix
+  releases. When publishing a version older than the current `latest` on the npm registry, it will assign a
+  `release-X.Y` dist-tag instead of implicitly moving the `latest` tag backwards, preserving the `latest` tag for new
+  mainline releases.
+- 🚀 **Flexible manual release tagging:** The `release-manual` workflow now supports a `source_ref` input, allowing users
+  to tag releases from any specified branch or commit (e.g., `hotfix/0.308`) rather than strictly the branch the
+  workflow is run from. This greatly improves the process for hotfixes and maintenance branches.
+- 📄 **Enhanced release workflow visibility:** The run name for manual releases now includes the `source_ref` being
+  tagged, providing clearer context at a glance within GitHub Actions.
+- ⚙️ **Streamlined manual release validation:** Updated internal logic to validate and correctly checkout the specified
+  `source_ref`, ensuring robust and accurate manual release operations.
+
+______________________________________________________________________
+
+## [v0.310.1] - 2026-07-15 - Streamlined Manual Release Process
+
+### Added
+
+- ✨ **Introduced Manual Release Workflow:** A new GitHub Actions workflow (`release-manual.yml`) has been added to
+  provide maintainers with enhanced control and flexibility over the release process. This workflow allows for the
+  manual creation of releases with a specified `vMAJOR.MINOR.PATCH` version tag from any arbitrary branch, which is
+  particularly useful for hotfixes or special-purpose releases. It fully automates critical steps such as changelog
+  generation, version bumping, and dispatching all downstream build, release, and publishing workflows (e.g., Docker
+  images, npm, PyPI), while ensuring release safety by preventing tag overwrites and keeping the source branch pristine.
+
+______________________________________________________________________
+
+## [v0.310.0] - 2026-07-15 - Agents Gain IMAP Read Capability with Secure S3 Attachment Handling
+
+### Added
+
+- ✨ **Introduced IMAP Read Capability for Agents**: Agents can now connect to IMAP inboxes, list unread messages, and
+  fetch selected messages along with their attachments. This foundational capability enables agents to interact with
+  email workflows.
+- 🦾 **New IMAP Agent Demonstrator**: A new `ImapAgent` (non-conversational) has been added to the playground, showcasing
+  how to list unread mail and fetch messages with S3-referenced attachments.
+- 📦 **Core IMAP Configuration and Event Types**: Added `ImapClientConfig` for configuring IMAP connections, and new
+  event types like `UnreadMailListedEvent`, `MailFetchedEvent`, `MailAttachmentRef`, and `UnreadMailSummary` for
+  structured communication of IMAP data.
+- ☁️ **S3 Integration for Agent Attachments**: The agent runtime now includes native S3 client integration, allowing
+  mail attachments to be stored securely in S3 and referenced by `file_id` within agent events, preventing event bloat.
+- 🔒 **Configurable Message Size Limits**: Implemented deployment-fixed caps for raw message size, body size, and
+  attachment size to protect agents from hostile or oversized emails and prevent exceeding message-size limits in the
+  audit trail and WebSocket streams.
+- 🌍 **Internationalization for IMAP Features**: Added translations for IMAP configuration fields and new IMAP-related
+  events in German, English, French, and Italian.
+- 📄 **Architectural Decision Record for IMAP**: A new ADR documents the design decisions behind the agent's IMAP read
+  capability, covering exposure, event handling, and attachment storage.
+
+### Changed
+
+- 🚀 **Agent Runtime Dependency on S3**: The agent runtime now depends on S3 for storing mail attachments, expanding its
+  infrastructure requirements.
+- 📡 **IMAP Events Exposed via WebSocket**: `UnreadMailListedEvent` and `MailFetchedEvent` are now included in the
+  `DisplayEvents` type, making them visible in the frontend's event timeline via WebSocket.
+- 🧩 **Filename Sanitization for Attachments**: Improved security by sanitizing attachment filenames to prevent path
+  traversal vulnerabilities.
+
+### Security
+
+- 🔑 **HTML Body Exclusion from Events**: The raw HTML body of fetched emails is deliberately *not* surfaced in
+  `MailFetchedEvent` (which is persisted and streamed to the frontend) to mitigate Cross-Site Scripting (XSS) risks from
+  hostile sender markup.
+
+______________________________________________________________________
+
+## [v0.308.2] - 2026-07-14 - Enhanced OpenWebUI Model Availability and Access
+
+### Added
+
+- ⚙️ **New `list_base_models` method:** Introduced a new client method in `OpenWebuiClient` to retrieve OpenWebUI
+  registry entries for raw provider models (those without a `base_model_id`), enabling more comprehensive model
+  management.
+
+### Fixed
+
+- 🐛 **Resolved OpenWebUI model access denials:** Fixed an issue where users were unable to access certain workspace
+  models in OpenWebUI, encountering "Model not found" errors even when the models were visible. This occurred when an
+  underlying raw LiteLLM model was inadvertently registered, creating a "shadowing" entry that blocked user access.
+- 🛡️ **Automated removal of shadowing base models:** Implemented an automatic cleanup process during OpenWebUI model
+  synchronization to detect and remove these problematic "shadowing" base model registry entries, ensuring consistent
+  and correct user access to all provisioned models.
+
+______________________________________________________________________
+
+## [v0.308.1] - 2026-07-14 - Refined Function Registration and Default Status
+
+### Changed
+
+- ⚙️ **Adjusted Default Function Activation:** Modified the initial setup process to register core functions like
+  **`source_action.py`**, **`tracing_action.py`**, and **`memory_action.py`** as *inactive* by default, providing
+  administrators with greater control over initial system capabilities.
+
+______________________________________________________________________
+
+## [v0.309.4] - 2026-07-14 - Improved Event Context Resolution for Enhanced UI Navigation
+
+### Added
+
+- ✨ **New Thread Resolution API:** Introduced a dedicated API endpoint
+  (`/api/v1/active/events/agents/displays/{display_id}/thread`) allowing the UI to dynamically resolve the correct
+  conversation thread from a display ID, streamlining navigation to related traces, sources, or memories.
+- 📄 **Thread Reference DTO:** Added a new `ThreadReference` data transfer object to structure the API responses for
+  thread resolution.
+- 📚 **Core Persistence Support:** Implemented a new method within the `PersistedAgentEventEntity` to efficiently query
+  and retrieve the thread ID associated with any given display ID from the persistence layer.
+- 🧪 **Robust API Testing:** Included comprehensive new tests for the `resolve_thread_for_display` API endpoint,
+  validating correct thread resolution across various scenarios, including AI-Hub Traceability Layer (AITL) delegation.
+
+### Changed
+
+- 🔄 **Synchronized Event ID Hashing:** Updated the `_str_to_object_id` function in OpenWebUI actions (memory, source,
+  tracing) to precisely match the hashing logic used by AI-Hub's event production, ensuring consistent `display_id`
+  generation for accurate event linking.
+- 🚀 **Dynamic UI Panel Navigation:** Enhanced the OpenWebUI frontend to dynamically fetch the associated **thread ID**
+  using the new API when users click "show traces," "show sources," or "show memories," providing a more resilient and
+  decoupled approach to navigating contextual panels.
+- 🗑️ **Optimized Cross-Window Communication:** Removed the direct `thread_id` from `postMessage` payloads originating
+  from OpenWebUI functions, as the frontend now handles its resolution, simplifying the data passed between the embedded
+  UI and the parent application.
+
+### Refactor
+
+- 🧹 **Standardized Error Messaging:** Consolidated the "access denied" error message for HTTP 403 responses within the
+  `EventController` into a reusable constant, improving consistency and maintainability.
+
+______________________________________________________________________
+
+## [v0.309.3] - 2026-07-13 - Deployment Configuration & Documentation Enhancements
+
+### Changed
+
+- ⚙️ **Standardized MongoDB Connection String:** Explicitly configured the `MONGO_CONNECTION_STRING` across all Docker
+  Compose deployment environments, ensuring consistent and clear database connectivity for all services.
+- 📄 **Updated Environment Variable Documentation:** Ensured the `memory_writer_agent` is correctly listed in the
+  environment variables documentation, reflecting its operational dependencies on MongoDB, NATS, and Neo4j.
+
+______________________________________________________________________
+
+## [v0.309.2] - 2026-07-13 - Empowering Expert Agents with Advanced Memory Capabilities
+
+### Added
+
+- 🦾 **Enhanced Expert Agent Capabilities:** The `expert_asking_agent` and `expert_rag_agent` services are now fully
+  configured to integrate with **Mem0** for advanced LLM, embedding, and reranking functionalities, and **Neo4j** for
+  organizational memory graph storage, significantly boosting their intelligence and knowledge retention.
+
+### Changed
+
+- 📄 **Updated Environment Variable Documentation:** The documentation for environment variables has been updated to
+  reflect the expanded utilization of **Mem0** and **Neo4j** settings by the `expert_asking_agent` and
+  `expert_rag_agent`.
+
+### Removed
+
+- 🗑️ **Streamlined CI/CD Workflow:** An extraneous Docker login step has been removed from the `test-backup-e2e` GitHub
+  Actions workflow, contributing to a more efficient build process.
+
+______________________________________________________________________
+
+## [v0.309.1] - 2026-07-13 - Enhanced Memory Protection and Agent Isolation
+
+### Added
+
+- ✅ **New Tests for Memory Scoping Logic**: Dedicated unit tests were introduced to validate the correct implementation
+  and behavior of agent-specific memory isolation within the Mem0 service.
+
+### Changed
+
+- 🔐 **Improved Agent Memory Isolation**: User memories in Mem0 are now natively scoped to the writing agent during
+  reconciliation, preventing one agent from modifying or deleting another agent's user-specific data. Organization
+  memories continue to be tenant-shared as intended.
+
+______________________________________________________________________
+
+## [v0.309.0] - 2026-07-09 - UX Boost: Asynchronous User Memory & Graph Store Optimization
+
+### Added
+
+- 🦾 Introduced the **`MemoryWriterAgent`**, a new dedicated system agent for asynchronously persisting user memories,
+  significantly improving chat responsiveness by decoupling memory writes from the critical path.
+- ✨ Implemented a **`discoverable` flag** on the base `Agent` class, enabling programmatic control over which agents
+  appear in the Admin UI.
+- 💬 Added new **event types** (`MemoryStorageRequestedEvent`, `StoreUserMemoryRequestedEvent`, `MemoryStoredStopEvent`)
+  to orchestrate the new asynchronous memory storage workflow.
+- ⚙️ Introduced a new configuration option, **`enable_async_memory_storage`**, for RAG and ExpertRAG agents, allowing
+  administrators to enable or disable asynchronous user memory persistence.
+
+### Changed
+
+- ⚡️ Drastically **improved chat user experience** by making user memory persistence asynchronous; the "thinking"
+  indicator now clears immediately after an agent answers, without waiting for memory storage.
+- 🚀 **Optimized user memory save performance** by disabling the Neo4j graph store for user memory, reducing save latency
+  by approximately 73% (from ~66s to ~17.5s) per turn. Organization memory retains graph store capabilities.
+- 🔄 Enhanced **cross-agent user memory sharing** by routing user memory queries through the vector store, allowing
+  agents to access all user memories regardless of the originating agent.
+- 📈 Expanded **Langfuse tracing** to correctly attribute asynchronous `MemoryWriterAgent` runs to the original user
+  query and context.
+- 📦 Updated **deployment configurations** to include the new `MemoryWriterAgent` service across all Docker Compose
+  variants.
+
+### Refactor
+
+- 🧹 Redesigned **`AgentMemory` architecture** to use separate, lazily-built Mem0 services for user and organization
+  memory, enabling distinct and optimized storage configurations for each.
+- 🛠️ Modernized **Mem0 integration** to gracefully handle disabled graph stores, preventing errors and ensuring robust
+  memory operations when graph data is not present.
+- ⚙️ Introduced an **`enable_graph` parameter** to `Mem0Settings.get_config` for fine-grained control over graph store
+  inclusion, enabling performance optimizations per memory type.
+
+______________________________________________________________________
+
 ## [v0.308.0] - 2026-07-08 - Dynamic LLM Access and Robust Role Management
 
 ### Added

@@ -339,6 +339,8 @@ agent:
       unsupportedVersion: The file uses an unsupported export schema version.
       blueprintNotFound: The agent blueprint "{agentClass}" is not available in this
         environment.
+  export:
+    button: Export
   configuration:
     title: Agent Configuration
     description: Configure the runtime behavior and settings for this agent

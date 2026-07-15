@@ -1,0 +1,185 @@
+---
+# =============================================================================
+# Manual Tag, Gen-Changelog & Release
+# =============================================================================
+#
+# PURPOSE:
+#   Cut a release with a version YOU choose (not auto-computed from PR labels)
+#   from an arbitrary branch — e.g. a hotfix branch like `hotfix/0.308`.
+#   It mirrors the tail end of add-tag.yml (version-bump + tag) and then fans
+#   out to every downstream release workflow, but WITHOUT touching the rolling
+#   `nightly` / `latest` tags (those are reserved for the main release path and
+#   set-latest.yml).
+#
+# USAGE:
+#   1. In the GitHub UI, run this workflow from `main` (the "Use workflow from"
+#      dropdown only lists branches that contain this file, so keep it on `main`).
+#   2. Set `source_ref` to the branch/ref you actually want to tag — e.g.
+#      `hotfix/0.308`. Leave it empty to tag the branch selected in the dropdown.
+#      The tip of that ref is what gets tagged.
+#   3. Provide `release_version` as a strict vMAJOR.MINOR.PATCH tag (e.g.
+#      v0.308.1). It is validated because publish-npm / publish-pypi guard that
+#      the tagged commit's package.json / pyproject.toml version matches.
+#
+# WHAT IT DOES:
+#   - Refuses to overwrite an existing tag.
+#   - Runs `make version-bump` and creates an EPHEMERAL commit that only the tag
+#     points to — the source branch is never pushed / mutated.
+#   - Pushes the annotated tag (default GITHUB_TOKEN is enough; only a tag is
+#     pushed and the bump commit touches no workflow files).
+#   - Dispatches each downstream workflow at that tag: create-release (GitHub
+#     pre-release + bundles), all build-* image builds, publish-npm, publish-pypi.
+#
+# =============================================================================
+name: Manual Tag, Gen-Changelog & Release
+run-name: Manual Tag & Release - ${{ github.event.inputs.release_version }} (${{ github.event.inputs.source_ref || github.ref_name }})
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Release version tag to cut (e.g., v0.308.1)
+        required: true
+      source_ref:
+        description: Branch/ref to tag (e.g., hotfix/0.308). Empty = the branch selected
+          above.
+        required: false
+        default: ''
+concurrency:
+  # Release versions are globally unique, so the version alone is the correct
+  # lock even now that any source_ref can be tagged.
+  group: release-manual-${{ github.event.inputs.release_version }}
+  cancel-in-progress: false
+jobs:
+  tag-and-bump:
+    name: Version Bump & Tag
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+      source_ref: ${{ steps.validate.outputs.source_ref }}
+    steps:
+      - name: Validate version & resolve source ref
+        id: validate
+        env:
+          VERSION: ${{ github.event.inputs.release_version }}
+          INPUT_SOURCE_REF: ${{ github.event.inputs.source_ref }}
+          SELECTED_BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::'$VERSION' is not a valid vMAJOR.MINOR.PATCH release tag."
+            exit 1
+          fi
+          # Tag the ref the user asked for; fall back to the dropdown branch.
+          SOURCE_REF="${INPUT_SOURCE_REF:-$SELECTED_BRANCH}"
+          echo "Tagging ref: $SOURCE_REF"
+          # Soft correlation check: hotfix/X.Y or release/X.Y refs should cut vX.Y.* tags.
+          if [[ "$SOURCE_REF" =~ ^(hotfix|release)/([0-9]+)\.([0-9]+)$ ]]; then
+            PREFIX="v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}."
+            case "$VERSION" in
+              "$PREFIX"*) : ;;
+              *) echo "::warning::Version $VERSION does not match ref $SOURCE_REF (expected ${PREFIX}*)" ;;
+            esac
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "source_ref=$SOURCE_REF" >> "$GITHUB_OUTPUT"
+      - name: Checkout source ref
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ steps.validate.outputs.source_ref }}
+          fetch-depth: 0
+      - name: Guard - tag must not already exist
+        env:
+          VERSION: ${{ steps.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          if git rev-parse "$VERSION" >/dev/null 2>&1 \
+            || git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
+            echo "::error::Tag $VERSION already exists. Aborting to avoid overwriting a release."
+            exit 1
+          fi
+      - name: Setup Python 3.13
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --all-packages --dev --frozen
+      - name: Setup LLM for changelog generation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          uv tool install llm --with llm-gemini
+          llm keys set gemini --value "$GEMINI_API_KEY"
+      - name: Generate changelog, bump version, commit (ephemeral) and tag
+        env:
+          VERSION: ${{ steps.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create a local (un-pushed) tag on the branch tip so generate-changelog.sh
+          # can diff the previous v* tag -> this release. Requires >= 2 v* tags; with
+          # fewer, the script no-ops and create-release uses its "Release <tag>" fallback.
+          git tag -a "$VERSION" -m "Release $VERSION"
+          bash ./generate-changelog.sh
+          uv run mdformat --number CHANGELOG.md || true
+
+          # Bump the version across all packages.
+          make version-bump VERSION="${VERSION#v}"
+
+          # Bake changelog + version bump into a single commit that only the tag
+          # references — the source branch is never pushed or mutated. Stage exactly
+          # the release files so the changelog step's markdown reformat can't leak in.
+          git add CHANGELOG.md pyproject.toml packages/*/pyproject.toml \
+            packages/web/package.json packages/sysadmin-web/package.json
+          git commit -m "chore(release): $VERSION" \
+            || echo "No changes to commit; tagging branch tip as-is."
+
+          # Move the annotated tag onto the release commit and push only the tag.
+          git tag -f -a "$VERSION" -m "Release $VERSION"
+          git push origin "refs/tags/$VERSION"
+          echo "Tagged $(git rev-parse --short HEAD) as $VERSION and pushed the tag."
+  fan-out:
+    name: Dispatch Downstream Release Workflows
+    needs: tag-and-bump
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Dispatch build, release and publish workflows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.tag-and-bump.outputs.version }}
+        run: |-
+          set -euo pipefail
+          # Every listed workflow supports workflow_dispatch with a release_version
+          # input and checks out at that tag. Running them --ref "$VERSION" pins the
+          # workflow definition to the released code. secondary_tag is left at its
+          # default (empty) so nightly/latest are NOT moved.
+          WORKFLOWS=(
+            create-release.yml
+            build-agents.yml
+            build-pipelines.yml
+            build-api-and-bot.yml
+            build-dagster.yml
+            build-web.yml
+            build-backup.yml
+            build-sysadmin.yml
+            publish-npm.yml
+            publish-pypi.yml
+          )
+          for wf in "${WORKFLOWS[@]}"; do
+            echo "Dispatching $wf @ $VERSION"
+            gh workflow run "$wf" --ref "$VERSION" -f release_version="$VERSION"
+          done
+          echo "All downstream release workflows dispatched for $VERSION."

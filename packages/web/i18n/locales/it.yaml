@@ -342,6 +342,8 @@ agent:
         supportata.
       blueprintNotFound: Il modello di agente "{agentClass}" non è disponibile in
         questo ambiente.
+  export:
+    button: Esporta
   configuration:
     title: Configurazione dell'agente
     description: Configura il comportamento runtime e le impostazioni per questo agente

@@ -1433,7 +1433,12 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
       STORE_MODEL_IN_DB: true
-    volumes: [./configs/litellm/litellm-config.local.yml:/app/config.yml]
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+      RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
+    volumes:
+      - ./configs/litellm/litellm-config.local.yml:/app/config.yml
+      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
       postgres:
@@ -2727,6 +2732,10 @@ services:
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # NATs
       NATS_ENDPOINT: nats://nats:4222
       NATS_TOKEN: ${NATS_TOKEN}
@@ -2794,6 +2803,10 @@ services:
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # NATs
       NATS_ENDPOINT: nats://nats:4222
       NATS_TOKEN: ${NATS_TOKEN}
@@ -2801,6 +2814,16 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
       REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j (organization memory graph store)
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -2850,6 +2873,16 @@ services:
 
       # Mongo DB
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Neo4j (organization memory graph store)
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
@@ -2906,6 +2939,10 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -3017,6 +3054,64 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: namespace-selection-agent
+      OTEL_RESOURCE_SERVICE_VERSION: latest
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8090/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  memory_writer_agent:
+    container_name: memory-writer-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/memory_writer_agent:latest
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Neo4j (mem0 constructs Neo4j settings even when the user-memory graph is disabled)
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: memory-writer-agent
       OTEL_RESOURCE_SERVICE_VERSION: latest
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:

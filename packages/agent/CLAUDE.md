@@ -347,9 +347,17 @@ the relevant steps.
 | **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection                                                                                                            |
 | **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate                                                                                                    |
 | **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context                                                                                                                |
+| **MemoryWriterAgent**       | System agent: async user-memory persistence (issue #1179) | Non-discoverable; triggered by `MemoryStorageRequestedEvent` from RAG/ExpertRAG when `enable_async_memory_storage` is on; rebuilds the origin agent's `AgentMemory` and writes off the chat critical path |
 
 Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.py` (entry point),
 `agents/{snake_name}/tests/` (BDD tests).
+
+**System (non-discoverable) agents**: set `discoverable: ClassVar[bool] = False` on the agent class so the runner
+skips discovery — the agent never registers a user-facing blueprint in the Admin UI but still subscribes to and
+processes its control events. Used for programmatically-triggered agents like `MemoryWriterAgent`. Such an agent's
+config bakes its identity as non-configurable primitives in `as_form()` (agent_id/name/description as plain values, not
+FormKit elements), so `deep_merge(non_configurable, {})` yields a valid runtime config with no `agent_configs` DB
+record — no config seeder needed.
 
 ## Playground
 
@@ -359,7 +367,9 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
   `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
-  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`
+  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`, `imap_workflow`
+  (non-conversational IMAP read-capability demonstrator — `ReadMailStartEvent` → list unread → fetch one message with
+  S3-referenced attachments → stop; deployable via `app/imap_agent/main.py`)
 - `playground/performance/` — Load testing with PerformanceTestingAgent
 
 ## Testing

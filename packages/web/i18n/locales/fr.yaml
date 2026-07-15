@@ -342,6 +342,8 @@ agent:
         en charge.
       blueprintNotFound: Le modèle d'agent « {agentClass} » n'est pas disponible dans
         cet environnement.
+  export:
+    button: Exporter
   configuration:
     title: Configuration de l'agent
     description: Configurez le comportement d'exécution et les paramètres de cet agent

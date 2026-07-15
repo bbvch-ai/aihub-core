@@ -21445,6 +21445,21 @@ export const ThreadDTOSchema = {
   description: "Thread information and statistics for API response.",
 } as const;
 
+export const ThreadReferenceSchema = {
+  properties: {
+    thread_id: {
+      type: "string",
+      title: "Thread Id",
+      description: "The thread ID that owns the requested display",
+    },
+  },
+  type: "object",
+  required: ["thread_id"],
+  title: "ThreadReference",
+  description:
+    "The thread that owns a display, resolved so the chat-UI side panel can open the correct per-agent thread.",
+} as const;
+
 export const TimeRangeSchema = {
   type: "string",
   enum: ["1h", "24h", "30d", "365d"],

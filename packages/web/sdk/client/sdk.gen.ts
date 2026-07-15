@@ -256,6 +256,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  ResolveThreadForDisplayData,
+  ResolveThreadForDisplayError,
+  ResolveThreadForDisplayResponse,
   RevokeRoleData,
   RevokeRoleError,
   RevokeRoleResponse,
@@ -800,6 +803,38 @@ export const getAgentEventsInThread = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/events/agents/threads/{thread_id}",
+    ...options,
+  });
+
+/**
+ * Resolve Thread For Display
+ *
+ * Resolves the thread that owns a display so the chat-UI side panel can open the correct per-agent thread
+ * without recomputing the salted thread_id.
+ */
+export const resolveThreadForDisplay = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ResolveThreadForDisplayResponse =
+    ResolveThreadForDisplayResponse,
+>(
+  options: Options<
+    TComposable,
+    ResolveThreadForDisplayData,
+    ResolveThreadForDisplayResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    ResolveThreadForDisplayResponse | DefaultT,
+    ResolveThreadForDisplayError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/events/agents/displays/{display_id}/thread",
     ...options,
   });
 
