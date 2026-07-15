@@ -1,6 +1,7 @@
 from typing import Annotated, Literal
 
 from pydantic import Field
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.events.agent import StartEvent
 
 
@@ -12,3 +13,7 @@ class ReadMailStartEvent(StartEvent):
     """
 
     locale: Annotated[Literal["de", "en", "fr", "it"], Field(description="The language for display output.")] = "en"
+    user: Annotated[
+        UserIdentity | None,
+        Field(default=None, description="User the run is executed on behalf of; populated when triggered via the API."),
+    ]
