@@ -72,4 +72,18 @@ jobs:
             echo "${PKG_NAME}@${PKG_VERSION} is already on the registry — skipping."
             exit 0
           fi
-          npm publish --provenance --access public
+          # A backport/hotfix publishes a version lower than the current `latest`
+          # dist-tag. npm refuses to implicitly move `latest` backwards, so pin such
+          # releases to a per-line dist-tag (release-X.Y) instead of moving `latest`.
+          # Newer releases (the normal main path) keep the implicit `latest`.
+          PUBLISH_ARGS=(--provenance --access public)
+          LATEST="$(npm view "${PKG_NAME}@latest" version 2>/dev/null || true)"
+          if [ -n "$LATEST" ] && [ "$LATEST" != "$PKG_VERSION" ]; then
+            HIGHEST="$(printf '%s\n%s\n' "$PKG_VERSION" "$LATEST" | sort -V | tail -n1)"
+            if [ "$HIGHEST" = "$LATEST" ]; then
+              LINE_TAG="release-$(printf '%s' "$PKG_VERSION" | cut -d. -f1-2)"
+              PUBLISH_ARGS+=(--tag "$LINE_TAG")
+              echo "Backport publish: ${PKG_VERSION} < latest ${LATEST}; using dist-tag ${LINE_TAG} (not moving 'latest')."
+            fi
+          fi
+          npm publish "${PUBLISH_ARGS[@]}"
