@@ -328,6 +328,8 @@ agent:
     status: 'Status:'
     online: Online
     offline: Offline
+  export:
+    button: Export
   configuration:
     title: Agent Configuration
     description: Configure the runtime behavior and settings for this agent

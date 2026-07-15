@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.311.0] - 2026-07-15 - Agent Configuration Export Introduced
+
+### Added
+
+- ✨ **Empowered users to export agent configurations**, allowing them to download a JSON file containing the full setup
+  of an agent instance directly from the agent card or its dedicated configuration page.
+- 📄 **Implemented a standardized export schema (version 1.0)** for agent configurations, ensuring consistent and
+  machine-readable data for easier backup and migration.
+- 🌐 **Included localized labels** for the new "Export" button, providing a seamless experience for users across all
+  supported languages.
+
+______________________________________________________________________
+
 ## [v0.310.6] - 2026-07-15 - Enhanced Document List Selection
 
 ### Added

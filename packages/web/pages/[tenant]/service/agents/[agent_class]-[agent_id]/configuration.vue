@@ -6,9 +6,19 @@
     size="normal"
   >
     <div class="flex flex-col gap-3">
-      <p class="mb-4 text-sm text-surface-500 dark:text-surface-400">
-        {{ t('agent.configuration.description') }}
-      </p>
+      <div class="mb-4 flex items-start justify-between gap-4">
+        <p class="text-sm text-surface-500 dark:text-surface-400">
+          {{ t('agent.configuration.description') }}
+        </p>
+        <Button
+          icon="pi pi-download"
+          severity="secondary"
+          :label="t('agent.export.button')"
+          class="shrink-0"
+          :disabled="!agentInstance"
+          @click="exportAgent"
+        />
+      </div>
       <AgentConfiguration
         v-if="hasLoaded && configForm && configForm.length > 0"
         :title="t('agent.configuration.runtimeSettings')"
@@ -40,8 +50,13 @@ const route = useRoute()
 const { tenantId } = useTenant()
 const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
 const { updateAgentInstance } = useUpdateAgentInstance()
+const { exportAgentInstance } = useExportAgentInstance()
 const { t } = useI18n()
 const toast = useToast()
+
+const exportAgent = () => {
+  if (agentInstance.value) exportAgentInstance(agentInstance.value)
+}
 
 // Latch so a background refetch or transient `enabled` flip can't remount the form and
 // re-seed it from server data, dropping unsaved edits (issue #38).
