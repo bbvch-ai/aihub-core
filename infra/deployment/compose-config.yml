@@ -123,15 +123,15 @@ image_tags:
     nightly: memory_writer_agent:nightly
     latest: memory_writer_agent:latest
   default_rag_pipeline:
-    build: localbuild
-    local: default_rag_pipeline:latest
-    nightly: default_rag_pipeline:nightly
-    latest: default_rag_pipeline:latest
+  #   build: localbuild
+  #   local: default_rag_pipeline:latest
+  #   nightly: default_rag_pipeline:nightly
+  #   latest: default_rag_pipeline:latest
   shared_rag_pipeline:
-    build: localbuild
-    local: shared_rag_pipeline:latest
-    nightly: shared_rag_pipeline:nightly
-    latest: shared_rag_pipeline:latest
+  #   build: localbuild
+  #   local: shared_rag_pipeline:latest
+  #   nightly: shared_rag_pipeline:nightly
+  #   latest: shared_rag_pipeline:latest
   rag_pipeline:
     build: localbuild
     local: rag_pipeline:latest
