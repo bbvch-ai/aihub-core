@@ -14521,6 +14521,20 @@ export type ThreadDto = {
 };
 
 /**
+ * ThreadReference
+ *
+ * The thread that owns a display, resolved so the chat-UI side panel can open the correct per-agent thread.
+ */
+export type ThreadReference = {
+  /**
+   * Thread Id
+   *
+   * The thread ID that owns the requested display
+   */
+  thread_id: string;
+};
+
+/**
  * TimeRange
  */
 export const TimeRange = {
@@ -25014,6 +25028,44 @@ export type GetAgentEventsInThreadResponses = {
 
 export type GetAgentEventsInThreadResponse =
   GetAgentEventsInThreadResponses[keyof GetAgentEventsInThreadResponses];
+
+export type ResolveThreadForDisplayData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Display ID
+     */
+    display_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/events/agents/displays/{display_id}/thread";
+};
+
+export type ResolveThreadForDisplayErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ResolveThreadForDisplayError =
+  ResolveThreadForDisplayErrors[keyof ResolveThreadForDisplayErrors];
+
+export type ResolveThreadForDisplayResponses = {
+  /**
+   * Successful Response
+   */
+  200: ThreadReference;
+};
+
+export type ResolveThreadForDisplayResponse =
+  ResolveThreadForDisplayResponses[keyof ResolveThreadForDisplayResponses];
 
 export type GetAgentEventTimeseriesData = {
   body?: never;

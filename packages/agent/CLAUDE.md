@@ -367,7 +367,9 @@ config seeder needed.
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
   `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
-  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`
+  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`, `imap_workflow`
+  (non-conversational IMAP read-capability demonstrator — `ReadMailStartEvent` → list unread → fetch one message with
+  S3-referenced attachments → stop; deployable via `app/imap_agent/main.py`)
 - `playground/performance/` — Load testing with PerformanceTestingAgent
 
 ## Testing

@@ -5,6 +5,120 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.310.1] - 2026-07-15 - Streamlined Manual Release Process
+
+### Added
+
+- ✨ **Introduced Manual Release Workflow:** A new GitHub Actions workflow (`release-manual.yml`) has been added to
+  provide maintainers with enhanced control and flexibility over the release process. This workflow allows for the
+  manual creation of releases with a specified `vMAJOR.MINOR.PATCH` version tag from any arbitrary branch, which is
+  particularly useful for hotfixes or special-purpose releases. It fully automates critical steps such as changelog
+  generation, version bumping, and dispatching all downstream build, release, and publishing workflows (e.g., Docker
+  images, npm, PyPI), while ensuring release safety by preventing tag overwrites and keeping the source branch pristine.
+
+______________________________________________________________________
+
+## [v0.310.0] - 2026-07-15 - Agents Gain IMAP Read Capability with Secure S3 Attachment Handling
+
+### Added
+
+- ✨ **Introduced IMAP Read Capability for Agents**: Agents can now connect to IMAP inboxes, list unread messages, and
+  fetch selected messages along with their attachments. This foundational capability enables agents to interact with
+  email workflows.
+- 🦾 **New IMAP Agent Demonstrator**: A new `ImapAgent` (non-conversational) has been added to the playground, showcasing
+  how to list unread mail and fetch messages with S3-referenced attachments.
+- 📦 **Core IMAP Configuration and Event Types**: Added `ImapClientConfig` for configuring IMAP connections, and new
+  event types like `UnreadMailListedEvent`, `MailFetchedEvent`, `MailAttachmentRef`, and `UnreadMailSummary` for
+  structured communication of IMAP data.
+- ☁️ **S3 Integration for Agent Attachments**: The agent runtime now includes native S3 client integration, allowing
+  mail attachments to be stored securely in S3 and referenced by `file_id` within agent events, preventing event bloat.
+- 🔒 **Configurable Message Size Limits**: Implemented deployment-fixed caps for raw message size, body size, and
+  attachment size to protect agents from hostile or oversized emails and prevent exceeding message-size limits in the
+  audit trail and WebSocket streams.
+- 🌍 **Internationalization for IMAP Features**: Added translations for IMAP configuration fields and new IMAP-related
+  events in German, English, French, and Italian.
+- 📄 **Architectural Decision Record for IMAP**: A new ADR documents the design decisions behind the agent's IMAP read
+  capability, covering exposure, event handling, and attachment storage.
+
+### Changed
+
+- 🚀 **Agent Runtime Dependency on S3**: The agent runtime now depends on S3 for storing mail attachments, expanding its
+  infrastructure requirements.
+- 📡 **IMAP Events Exposed via WebSocket**: `UnreadMailListedEvent` and `MailFetchedEvent` are now included in the
+  `DisplayEvents` type, making them visible in the frontend's event timeline via WebSocket.
+- 🧩 **Filename Sanitization for Attachments**: Improved security by sanitizing attachment filenames to prevent path
+  traversal vulnerabilities.
+
+### Security
+
+- 🔑 **HTML Body Exclusion from Events**: The raw HTML body of fetched emails is deliberately *not* surfaced in
+  `MailFetchedEvent` (which is persisted and streamed to the frontend) to mitigate Cross-Site Scripting (XSS) risks from
+  hostile sender markup.
+
+______________________________________________________________________
+
+## [v0.308.2] - 2026-07-14 - Enhanced OpenWebUI Model Availability and Access
+
+### Added
+
+- ⚙️ **New `list_base_models` method:** Introduced a new client method in `OpenWebuiClient` to retrieve OpenWebUI
+  registry entries for raw provider models (those without a `base_model_id`), enabling more comprehensive model
+  management.
+
+### Fixed
+
+- 🐛 **Resolved OpenWebUI model access denials:** Fixed an issue where users were unable to access certain workspace
+  models in OpenWebUI, encountering "Model not found" errors even when the models were visible. This occurred when an
+  underlying raw LiteLLM model was inadvertently registered, creating a "shadowing" entry that blocked user access.
+- 🛡️ **Automated removal of shadowing base models:** Implemented an automatic cleanup process during OpenWebUI model
+  synchronization to detect and remove these problematic "shadowing" base model registry entries, ensuring consistent
+  and correct user access to all provisioned models.
+
+______________________________________________________________________
+
+## [v0.308.1] - 2026-07-14 - Refined Function Registration and Default Status
+
+### Changed
+
+- ⚙️ **Adjusted Default Function Activation:** Modified the initial setup process to register core functions like
+  **`source_action.py`**, **`tracing_action.py`**, and **`memory_action.py`** as *inactive* by default, providing
+  administrators with greater control over initial system capabilities.
+
+______________________________________________________________________
+
+## [v0.309.4] - 2026-07-14 - Improved Event Context Resolution for Enhanced UI Navigation
+
+### Added
+
+- ✨ **New Thread Resolution API:** Introduced a dedicated API endpoint
+  (`/api/v1/active/events/agents/displays/{display_id}/thread`) allowing the UI to dynamically resolve the correct
+  conversation thread from a display ID, streamlining navigation to related traces, sources, or memories.
+- 📄 **Thread Reference DTO:** Added a new `ThreadReference` data transfer object to structure the API responses for
+  thread resolution.
+- 📚 **Core Persistence Support:** Implemented a new method within the `PersistedAgentEventEntity` to efficiently query
+  and retrieve the thread ID associated with any given display ID from the persistence layer.
+- 🧪 **Robust API Testing:** Included comprehensive new tests for the `resolve_thread_for_display` API endpoint,
+  validating correct thread resolution across various scenarios, including AI-Hub Traceability Layer (AITL) delegation.
+
+### Changed
+
+- 🔄 **Synchronized Event ID Hashing:** Updated the `_str_to_object_id` function in OpenWebUI actions (memory, source,
+  tracing) to precisely match the hashing logic used by AI-Hub's event production, ensuring consistent `display_id`
+  generation for accurate event linking.
+- 🚀 **Dynamic UI Panel Navigation:** Enhanced the OpenWebUI frontend to dynamically fetch the associated **thread ID**
+  using the new API when users click "show traces," "show sources," or "show memories," providing a more resilient and
+  decoupled approach to navigating contextual panels.
+- 🗑️ **Optimized Cross-Window Communication:** Removed the direct `thread_id` from `postMessage` payloads originating
+  from OpenWebUI functions, as the frontend now handles its resolution, simplifying the data passed between the embedded
+  UI and the parent application.
+
+### Refactor
+
+- 🧹 **Standardized Error Messaging:** Consolidated the "access denied" error message for HTTP 403 responses within the
+  `EventController` into a reusable constant, improving consistency and maintainability.
+
+______________________________________________________________________
+
 ## [v0.309.3] - 2026-07-13 - Deployment Configuration & Documentation Enhancements
 
 ### Changed
