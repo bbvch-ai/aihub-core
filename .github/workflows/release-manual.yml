@@ -40,8 +40,7 @@ on:
         description: Release version tag to cut (e.g., v0.308.1)
         required: true
       source_ref:
-        description: Branch/ref to tag (e.g., hotfix/0.308). Empty = the branch selected
-          above.
+        description: Branch/ref to tag (e.g., hotfix/0.308). Empty = the branch selected above.
         required: false
         default: ''
 concurrency:
@@ -145,6 +144,7 @@ jobs:
           # Move the annotated tag onto the release commit and push only the tag.
           git tag -f -a "$VERSION" -m "Release $VERSION"
           git push origin "refs/tags/$VERSION"
+
           echo "Tagged $(git rev-parse --short HEAD) as $VERSION and pushed the tag."
   fan-out:
     name: Dispatch Downstream Release Workflows
@@ -160,14 +160,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.tag-and-bump.outputs.version }}
+          DEFAULT_REF: ${{ github.event.repository.default_branch }}
         run: |-
           set -euo pipefail
-          # Every listed workflow supports workflow_dispatch with a release_version
-          # input and checks out at that tag. Running them --ref "$VERSION" pins the
-          # workflow definition to the released code. secondary_tag is left at its
-          # default (empty) so nightly/latest are NOT moved.
-          WORKFLOWS=(
-            create-release.yml
+          # All downstream workflows take a release_version input and secondary_tag
+          # is left at its default (empty), so nightly/latest are NOT moved.
+          #
+          # The dispatch --ref decides which *workflow definition* runs, and it must
+          # differ by group because the two groups get their build source differently:
+          #
+          #   BUILD_WORKFLOWS check out the *dispatch ref* (no explicit `ref:`), so they
+          #   must run at the tag to build the released (e.g. hotfix) code.
+          #
+          #   TAG_CHECKOUT_WORKFLOWS check out the tag explicitly (`ref: release_version`)
+          #   regardless of dispatch ref, so we run them from the default branch to get
+          #   the latest, fixed definitions (e.g. the publish-npm backport dist-tag) —
+          #   the tag's own copy may be an old branch that predates those fixes.
+          BUILD_WORKFLOWS=(
             build-agents.yml
             build-pipelines.yml
             build-api-and-bot.yml
@@ -175,11 +184,18 @@ jobs:
             build-web.yml
             build-backup.yml
             build-sysadmin.yml
+          )
+          TAG_CHECKOUT_WORKFLOWS=(
+            create-release.yml
             publish-npm.yml
             publish-pypi.yml
           )
-          for wf in "${WORKFLOWS[@]}"; do
-            echo "Dispatching $wf @ $VERSION"
+          for wf in "${BUILD_WORKFLOWS[@]}"; do
+            echo "Dispatching $wf @ tag $VERSION (builds tagged code)"
             gh workflow run "$wf" --ref "$VERSION" -f release_version="$VERSION"
+          done
+          for wf in "${TAG_CHECKOUT_WORKFLOWS[@]}"; do
+            echo "Dispatching $wf from $DEFAULT_REF for $VERSION (latest definition, checks out the tag)"
+            gh workflow run "$wf" --ref "$DEFAULT_REF" -f release_version="$VERSION"
           done
           echo "All downstream release workflows dispatched for $VERSION."
