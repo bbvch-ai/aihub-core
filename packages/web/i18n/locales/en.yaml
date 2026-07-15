@@ -503,6 +503,9 @@ knowledge:
     title: Add Collection
     description: Create a new knowledge collection
     cancel: Cancel
+  add_database:
+    title: Add Knowledge Database
+    description: Create a new self-service knowledge database
   auto_sync:
     title: Auto-synchronized
     description: Collections are automatically managed
@@ -513,11 +516,22 @@ knowledge:
   form:
     create:
       title: Create Collection
+    create_database:
+      title: Create Knowledge Database
     edit:
       title: Edit Collection
     database:
       label: Knowledge Database
       placeholder: Knowledge Database Name
+    database_name:
+      label: Database Name
+      placeholder: myknowledgebase
+      help: Only alphanumeric characters are allowed. The name cannot be changed later.
+      validation_error: Database name can only contain alphanumeric characters
+    ingestor:
+      label: Ingestion Pipeline
+      placeholder: Select an ingestion pipeline
+      help: The pipeline that processes documents uploaded to this database.
     folder_name:
       label: Collection Name
       placeholder: my-collection

@@ -3287,6 +3287,82 @@ services:
       - backend
       - data
       - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  rag_pipeline:
+    container_name: rag-pipeline
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/rag_pipeline:latest
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # NATS
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Pipeline run-failure notifications (Apprise)
+      NOTIFICATION_URLS: ${NOTIFICATION_URLS}
+      NOTIFICATION_DAGSTER_UI_BASE_URL: https://dagster.${DOMAIN}
+      NOTIFICATION_TITLE_PREFIX: Swiss AI Hub Pipeline
+      NOTIFICATION_MIN_INTERVAL_SECONDS: 30
+    healthcheck:
+      test:
+        - CMD
+        - dagster
+        - api
+        - grpc-health-check
+        - --host
+        - localhost
+        - --port
+        - '4000'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
   # ===================================================================
   # Bot Service (MS Teams Integration)
   # ===================================================================

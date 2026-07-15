@@ -108,6 +108,8 @@ runner.mount(
         auth=auth,
         translation_llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
     )
+    .get_ingestors()
+    .create_database()
     .create_namespace()
     .update_namespace()
     .get_databases()

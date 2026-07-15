@@ -18,7 +18,7 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMC
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import MongoSettings, trace_fn
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
@@ -36,13 +36,16 @@ from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response impor
     BatchDeleteDocumentsResponse,
     DocumentDeletionResult,
 )
+from swiss_ai_hub.api.routes.knowledge.dto.create_database_request import CreateDatabaseRequest
 from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.database_dto import DatabaseDTO
+from swiss_ai_hub.api.routes.knowledge.dto.database_response import DatabaseResponse
 from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_request import DocumentUploadRequest
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_response import DocumentUploadResponse
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_validation_request import DocumentUploadValidationRequest
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_validation_response import DocumentUploadValidationResponse
+from swiss_ai_hub.api.routes.knowledge.dto.ingestor_dto import IngestorDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_dto import NamespaceDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_response import NamespaceResponse
 from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDTO
@@ -216,6 +219,76 @@ class KnowledgeService:
             locale_string=locale_string, llm_config=llm_config, t=t, source_locale=t.locale
         )
         return LocaleStringEntity.from_locale_string(translated_locale_string)
+
+    @staticmethod
+    @trace_fn
+    def get_ingestors(t: LocaleHandler) -> list[IngestorDTO]:
+        """Returns the ingestion pipelines a user may pick when creating a knowledge database."""
+        return [IngestorDTO.from_ingestor_type(ingestor, t) for ingestor in IngestorType.selectable()]
+
+    @staticmethod
+    async def create_database(
+        database: str,
+        request: CreateDatabaseRequest,
+        t: LocaleHandler,
+        s3_service: S3AnonymousFileAccessService,
+        llm_config: LLMConfig | None = None,
+    ) -> DatabaseResponse:
+        """
+        Creates a new self-service knowledge database (bucket).
+
+        The database name doubles as the S3 bucket, Mongo store, and Milvus collection name. The bucket
+        records the ingestor that owns it, so the matching deployed pipeline picks it up without any
+        redeployment.
+
+        The S3 bucket is provisioned (with browser-upload CORS) up front so documents can be uploaded
+        immediately, before the pipeline's first lazy ingest.
+        """
+        if request.ingestor not in IngestorType.selectable():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ingestor '{request.ingestor.value}' cannot be assigned to a self-service database.",
+            )
+
+        try:
+            BucketEntity.get_bucket_by_bucket_name(database)
+            raise HTTPException(status_code=409, detail=f"Database '{database}' already exists.")
+        except DoesNotExist:
+            pass
+
+        if s3_service.container_exists(database):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Storage container '{database}' already exists but is not a knowledge database. "
+                    "Choose a different name."
+                ),
+            )
+
+        s3_service.ensure_bucket_with_cors(database)
+
+        display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
+            text=request.display_name, t=t, llm_config=llm_config
+        )
+        description_entity = await KnowledgeService._create_and_translate_locale_entity(
+            request.description, t, llm_config
+        )
+
+        bucket = BucketEntity.create_bucket(
+            bucket_name=database,
+            db_name=database,
+            name=display_name_entity,
+            description=description_entity,
+            ingestor=request.ingestor.value,
+        )
+
+        return DatabaseResponse(
+            name=bucket.db_name,
+            bucket_name=bucket.bucket_name,
+            ingestor=bucket.ingestor,
+            display_name=KnowledgeService._safe_extract_locale_string(bucket.name, t),
+            description=KnowledgeService._safe_extract_locale_string(bucket.description, t),
+        )
 
     @staticmethod
     async def create_namespace(

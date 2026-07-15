@@ -40,6 +40,9 @@ import type {
   CreateAgentInstanceData,
   CreateAgentInstanceError,
   CreateAgentInstanceResponse,
+  CreateDatabaseData,
+  CreateDatabaseError,
+  CreateDatabaseResponse,
   CreateDatasetData,
   CreateDatasetError,
   CreateDatasetResponse,
@@ -149,6 +152,8 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetIngestorsData,
+  GetIngestorsResponse,
   GetLitellmModelData,
   GetLitellmModelError,
   GetLitellmModelResponse,
@@ -2617,6 +2622,70 @@ export const updateDataset = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/datasets/{dataset_id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get selectable ingestion pipelines
+ *
+ * Returns the ingestion pipelines that can be assigned to a new knowledge database.
+ */
+export const getIngestors = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIngestorsResponse = GetIngestorsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIngestorsData,
+    GetIngestorsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIngestorsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/ingestors",
+    ...options,
+  });
+
+/**
+ * Create Database
+ *
+ * Creates a new self-service knowledge database (bucket) ingested by the RAG pipeline.
+ */
+export const createDatabase = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateDatabaseResponse = CreateDatabaseResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateDatabaseData,
+    CreateDatabaseResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateDatabaseResponse | DefaultT,
+    CreateDatabaseError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}",
     ...options,
     headers: {
       "Content-Type": "application/json",

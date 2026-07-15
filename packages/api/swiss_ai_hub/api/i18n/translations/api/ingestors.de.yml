@@ -1,0 +1,5 @@
+---
+rag:
+  display_name: RAG-Pipeline
+  description: Analysiert hochgeladene Dokumente, zerlegt sie in Abschnitte und bettet
+    sie für die semantische Suche ein.

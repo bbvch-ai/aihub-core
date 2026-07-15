@@ -5847,6 +5847,45 @@ export const CreateAgentInstanceRequestSchema = {
     "Request body for creating a new agent instance.\nThe agent_class is provided in the URL path, not in the request body.",
 } as const;
 
+export const CreateDatabaseRequestSchema = {
+  properties: {
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description:
+        "The display name of the knowledge database in the user's locale.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description:
+        "A short description of the knowledge database in the user's locale.",
+    },
+    ingestor: {
+      $ref: "#/components/schemas/IngestorType",
+      description:
+        "The deployed ingestion pipeline that processes this database's documents.",
+      default: "rag",
+    },
+  },
+  type: "object",
+  title: "CreateDatabaseRequest",
+} as const;
+
 export const CreateNamespaceRequestSchema = {
   properties: {
     folder_name: {
@@ -6230,6 +6269,54 @@ export const DatabaseDTOSchema = {
   type: "object",
   required: ["name", "display_name", "auto_sync", "namespaces"],
   title: "DatabaseDTO",
+} as const;
+
+export const DatabaseResponseSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "The database name (also the Milvus collection and Mongo store name).",
+    },
+    bucket_name: {
+      type: "string",
+      title: "Bucket Name",
+      description: "The S3 bucket / data lake container name.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description: "The deployed ingestion pipeline that owns this database.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "A user-friendly display name for the database.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "A brief description of the database's contents.",
+    },
+  },
+  type: "object",
+  required: ["name", "bucket_name", "ingestor"],
+  title: "DatabaseResponse",
 } as const;
 
 export const DatasetSchema = {
@@ -10965,6 +11052,51 @@ export const IngestedNodeSchema = {
   title: "IngestedNode",
   description:
     "A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.\nThe attributes defined here are the minimal number of attributes that a node must have to ensure the\nUI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.\nmust be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes\nthat are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,\nare strictly necessary.",
+} as const;
+
+export const IngestorDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The ingestor identifier stored on the knowledge database.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the ingestion pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of what the pipeline does.",
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "IngestorDTO",
+} as const;
+
+export const IngestorTypeSchema = {
+  type: "string",
+  enum: ["unassigned", "default_rag", "shared_rag", "rag"],
+  title: "IngestorType",
+  description:
+    "Identifies which deployed ingestion pipeline owns a knowledge database.\n\nUsed as a routing guard: the single ``rag`` pipeline reads this off each\n``BucketEntity`` to decide which buckets it ingests, so it can coexist with the legacy\nper-bucket ``default_rag`` / ``shared_rag`` deployments without double-processing them.\n\n``UNASSIGNED`` is the field default, and exists so that rows written before this field was\nintroduced — which have no ``ingestor`` key, and for which MongoEngine therefore applies the\nfield default on load — are owned by no RAG pipeline. Defaulting to\n``RAG`` instead would make every pre-existing knowledge database in an upgraded\ndeployment get claimed and re-ingested by the RAG pipeline alongside the deploy-bound\npipeline that already owns it.",
 } as const;
 
 export const InputAudioSchema = {

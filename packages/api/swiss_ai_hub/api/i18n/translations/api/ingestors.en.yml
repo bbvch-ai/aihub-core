@@ -1,0 +1,4 @@
+---
+rag:
+  display_name: RAG Pipeline
+  description: Parses, chunks and embeds uploaded documents for semantic retrieval.

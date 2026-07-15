@@ -510,6 +510,9 @@ knowledge:
     title: Ajouter une collection
     description: Créer une nouvelle collection de connaissances
     cancel: Annuler
+  add_database:
+    title: Ajouter une base de connaissances
+    description: Créer une nouvelle base de connaissances en libre-service
   auto_sync:
     title: Synchronisé automatiquement
     description: Les collections sont gérées automatiquement
@@ -520,11 +523,24 @@ knowledge:
   form:
     create:
       title: Créer une collection
+    create_database:
+      title: Créer une base de connaissances
     edit:
       title: Modifier la collection
     database:
       label: Base de connaissances
       placeholder: Nom de la base de connaissances
+    database_name:
+      label: Nom de la base de données
+      placeholder: mabasedeconnaissances
+      help: Seuls les caractères alphanumériques sont autorisés. Le nom ne peut pas
+        être modifié ultérieurement.
+      validation_error: Le nom de la base de données ne peut contenir que des caractères
+        alphanumériques
+    ingestor:
+      label: Pipeline d'ingestion
+      placeholder: Sélectionner un pipeline d'ingestion
+      help: Le pipeline qui traite les documents téléversés dans cette base de données.
     folder_name:
       label: Nom de la collection
       placeholder: ma-collection

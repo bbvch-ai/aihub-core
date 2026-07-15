@@ -1,0 +1,5 @@
+---
+rag:
+  display_name: Pipeline RAG
+  description: Analyse les documents téléversés, les découpe en segments et les vectorise
+    pour la recherche sémantique.

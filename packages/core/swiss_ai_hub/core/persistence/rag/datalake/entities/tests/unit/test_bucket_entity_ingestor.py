@@ -1,0 +1,76 @@
+import pytest
+from bson import ObjectId
+from mongoengine import connect, disconnect
+
+from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
+from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
+from swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity import BucketEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
+
+
+@pytest.fixture
+def mongo_connection():
+    client = connect(
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+    )
+    yield client
+    disconnect()
+
+
+@pytest.fixture(autouse=True)
+def clean_buckets(mongo_connection):
+    BucketEntity.objects.delete()
+    yield
+    BucketEntity.objects.delete()
+
+
+def _insert_pre_upgrade_row(mongo_connection, bucket_name: str) -> None:
+    """Write a bucket row exactly as a release predating the ``ingestor`` field would have: no such key."""
+    mongo_connection[AIHubSettings().MONGO_MAIN_DB_NAME]["buckets"].insert_one(
+        {
+            "_id": ObjectId(),
+            "bucket_name": bucket_name,
+            "db_name": bucket_name,
+            "name": {"en": bucket_name},
+            "description": {"en": bucket_name},
+            "auto_sync": False,
+            "datalake_type": "s3",
+        }
+    )
+
+
+class TestIngestorDefault:
+    def test_row_predating_the_field_is_not_claimed_by_the_rag_pipeline(self, mongo_connection):
+        """Upgrade guard: a bucket written before the field existed must not be re-ingested.
+
+        MongoEngine applies the field default when the key is absent, so an unsafe default would hand every
+        pre-existing knowledge database to the RAG pipeline on upgrade — double-ingesting corpora
+        that a deploy-bound pipeline already owns.
+        """
+        _insert_pre_upgrade_row(mongo_connection, "legacyknowledge")
+
+        bucket = BucketEntity.get_bucket_by_bucket_name("legacyknowledge")
+
+        assert bucket.ingestor == IngestorType.UNASSIGNED.value
+        assert bucket.ingestor != IngestorType.RAG.value
+
+    def test_rag_pipeline_only_claims_buckets_explicitly_assigned_to_it(self, mongo_connection):
+        _insert_pre_upgrade_row(mongo_connection, "legacyknowledge")
+        BucketEntity.create_bucket(bucket_name="defaultknowledge", ingestor=IngestorType.DEFAULT_RAG.value)
+        BucketEntity.create_bucket(bucket_name="selfservicedb", ingestor=IngestorType.RAG.value)
+
+        owned = [
+            bucket.bucket_name for bucket in BucketEntity.get_all_buckets() if bucket.ingestor == IngestorType.RAG.value
+        ]
+
+        assert owned == ["selfservicedb"]
+
+    def test_create_bucket_does_not_hand_a_bucket_to_a_pipeline_by_default(self):
+        bucket = BucketEntity.create_bucket(bucket_name="unclaimeddb")
+
+        assert bucket.ingestor == IngestorType.UNASSIGNED.value
+
+    def test_unassigned_is_not_offered_as_a_user_choice(self):
+        assert IngestorType.UNASSIGNED not in IngestorType.selectable()
+        assert IngestorType.selectable() == [IngestorType.RAG]

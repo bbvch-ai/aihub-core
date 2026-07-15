@@ -18,7 +18,7 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings, StartupTenantSetting
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
 
 logger = logging.getLogger(__name__)
 
@@ -244,26 +244,44 @@ async def initialize_knowledge_buckets() -> None:
         return
 
     buckets_config = [
-        {"bucket_name": settings.DEFAULT_BUCKET_NAME, "namespace": settings.DEFAULT_NAMESPACE_NAME},
-        {"bucket_name": settings.SHARED_BUCKET_NAME, "namespace": settings.SHARED_NAMESPACE_NAME},
+        {
+            "bucket_name": settings.DEFAULT_BUCKET_NAME,
+            "namespace": settings.DEFAULT_NAMESPACE_NAME,
+            "ingestor": IngestorType.DEFAULT_RAG.value,
+        },
+        {
+            "bucket_name": settings.SHARED_BUCKET_NAME,
+            "namespace": settings.SHARED_NAMESPACE_NAME,
+            "ingestor": IngestorType.SHARED_RAG.value,
+        },
     ]
 
     for config in buckets_config:
-        bucket = await _ensure_bucket_exists(config["bucket_name"])
+        bucket = await _ensure_bucket_exists(config["bucket_name"], config["ingestor"])
         await _ensure_namespace_exists(bucket, config["namespace"])
 
     logger.info("Knowledge bucket initialization completed successfully")
 
 
-async def _ensure_bucket_exists(bucket_name: str) -> BucketEntity:
-    """Ensure a bucket exists in the database, creating it if necessary."""
+async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:
+    """Ensure a bucket exists in the database with the correct ingestor, creating it if necessary.
+
+    The ``ingestor`` is re-asserted on existing rows so the two seeded buckets are labelled with the legacy
+    pipeline that owns them. This is labelling, not a safety net: rows predating the field read the inert
+    ``unassigned`` default, so no pipeline claims them even if this seeder never runs (e.g. when
+    ``CREATE_DEFAULT_BUCKETS`` is off).
+    """
     try:
         bucket = BucketEntity.get_bucket_by_bucket_name(bucket_name)
-        logger.info(f"Bucket '{bucket_name}' already exists, skipping creation")
+        if bucket.ingestor != ingestor:
+            bucket = BucketEntity.update_bucket(str(bucket.id), ingestor=ingestor)
+            logger.info(f"Updated bucket '{bucket_name}' ingestor to '{ingestor}'")
+        else:
+            logger.info(f"Bucket '{bucket_name}' already exists, skipping creation")
         return bucket
     except DoesNotExist:
         try:
-            bucket = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name)
+            bucket = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name, ingestor=ingestor)
             logger.info(f"Successfully created bucket '{bucket_name}'")
             return bucket
         except Exception:

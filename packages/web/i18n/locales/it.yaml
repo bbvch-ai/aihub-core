@@ -508,6 +508,9 @@ knowledge:
     title: Aggiungi collezione
     description: Crea una nuova collezione di conoscenza
     cancel: Annulla
+  add_database:
+    title: Aggiungi database di conoscenza
+    description: Crea un nuovo database di conoscenza self-service
   auto_sync:
     title: Sincronizzato automaticamente
     description: Le collezioni sono gestite automaticamente
@@ -518,11 +521,23 @@ knowledge:
   form:
     create:
       title: Crea collezione
+    create_database:
+      title: Crea database di conoscenza
     edit:
       title: Modifica collezione
     database:
       label: Database di conoscenza
       placeholder: Nome del database di conoscenza
+    database_name:
+      label: Nome del database
+      placeholder: ilmiodatabase
+      help: Sono consentiti solo caratteri alfanumerici. Il nome non può essere modificato
+        in seguito.
+      validation_error: Il nome del database può contenere solo caratteri alfanumerici
+    ingestor:
+      label: Pipeline di ingestione
+      placeholder: Seleziona una pipeline di ingestione
+      help: La pipeline che elabora i documenti caricati in questo database.
     folder_name:
       label: Nome collezione
       placeholder: mia-collezione

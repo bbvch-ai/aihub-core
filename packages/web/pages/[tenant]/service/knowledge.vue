@@ -5,6 +5,7 @@
       :loading="databasesAreLoading"
     >
       <div class="flex flex-col gap-12">
+        <KnowledgeDatabaseEmptyCard @add="openNewDatabaseModal" />
         <div
           v-for="database in databases"
           :key="database.name"
@@ -63,6 +64,11 @@
       :namespace="editingNamespace"
       @success="handleUpdateSuccess"
     />
+
+    <KnowledgeDatabaseCreateModal
+      v-model="newDatabaseModalVisible"
+      @success="handleDatabaseCreationSuccess"
+    />
   </StructuralScreen>
 </template>
 
@@ -88,6 +94,8 @@ const selectedDatabaseForNewNamespace = ref('')
 
 const editNamespaceModalVisible = ref(false)
 const editingNamespace = ref<NamespaceDto | null>(null)
+
+const newDatabaseModalVisible = ref(false)
 
 const toNamespace = (database_name: string, namespace: NamespaceDto) => {
   router.push(tenantPath(`/service/knowledge/${database_name}/${namespace.name}`))
@@ -122,5 +130,13 @@ const openEditNamespaceModal = (namespace: NamespaceDto) => {
 
 const handleUpdateSuccess = () => {
   editingNamespace.value = null
+}
+
+const openNewDatabaseModal = () => {
+  newDatabaseModalVisible.value = true
+}
+
+const handleDatabaseCreationSuccess = () => {
+  newDatabaseModalVisible.value = false
 }
 </script>

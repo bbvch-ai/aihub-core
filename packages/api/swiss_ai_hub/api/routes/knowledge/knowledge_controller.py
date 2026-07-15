@@ -26,13 +26,16 @@ from swiss_ai_hub.api.pagination.type.page_size import PageSize
 from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
 from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_request import BatchDeleteDocumentsRequest
 from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import BatchDeleteDocumentsResponse
+from swiss_ai_hub.api.routes.knowledge.dto.create_database_request import CreateDatabaseRequest
 from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.database_dto import DatabaseDTO
+from swiss_ai_hub.api.routes.knowledge.dto.database_response import DatabaseResponse
 from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_request import DocumentUploadRequest
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_response import DocumentUploadResponse
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_validation_request import DocumentUploadValidationRequest
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_validation_response import DocumentUploadValidationResponse
+from swiss_ai_hub.api.routes.knowledge.dto.ingestor_dto import IngestorDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_response import NamespaceResponse
 from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDTO
 from swiss_ai_hub.api.routes.knowledge.dto.paginated_documents_response import PaginatedDocumentsResponse
@@ -218,6 +221,35 @@ class KnowledgeController(TenantScopedController):
                 vector_store_factory=vector_store_factory,
                 t=t,
             )
+
+        return self
+
+    def get_ingestors(self, route: str = "/ingestors") -> Self:
+        @self.router.get(route, tags=self.tags, summary="Get selectable ingestion pipelines")
+        async def get_ingestors(
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[IngestorDTO]:
+            """
+            Returns the ingestion pipelines that can be assigned to a new knowledge database.
+            """
+            return KnowledgeService.get_ingestors(t)
+
+        return self
+
+    def create_database(self, route: str = "/databases/{database}") -> Self:
+        @self.router.post(route, tags=self.tags)
+        async def create_database(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9]+$")],
+            request: CreateDatabaseRequest,
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+        ) -> DatabaseResponse:
+            """
+            Creates a new self-service knowledge database (bucket) ingested by the RAG pipeline.
+            """
+            return await KnowledgeService.create_database(database, request, t, s3_service, self.translation_llm_config)
 
         return self
 

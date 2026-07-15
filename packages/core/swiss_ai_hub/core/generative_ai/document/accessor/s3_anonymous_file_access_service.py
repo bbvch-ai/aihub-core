@@ -50,6 +50,66 @@ class S3AnonymousFileAccessService:
         self._s3_config = s3_settings
 
     @trace_fn
+    def container_exists(self, container: str) -> bool:
+        """Whether the S3 container exists, independent of whether any ``BucketEntity`` row references it.
+
+        Lets callers distinguish "free name" from "name already taken by storage we did not create" —
+        platform buckets (``dagster``, ``milvus``, ``langfuse``, …) have no bucket row, so an entity-only
+        duplicate check would happily bind a knowledge database onto one of them.
+        """
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+
+        try:
+            self._s3_client.head_bucket(Bucket=container)
+        except ClientError as error:
+            if error.response["Error"]["Code"] in ("404", "NoSuchBucket"):
+                return False
+            raise
+        return True
+
+    @trace_fn
+    def ensure_bucket_with_cors(self, container: str) -> None:
+        """Idempotently create the bucket and apply browser-upload CORS rules.
+
+        Self-service knowledge databases are provisioned here at creation time: the static
+        ``init-buckets.sh`` only covers the built-in buckets, so without this a presigned browser
+        upload to a freshly created bucket fails its CORS preflight (the bucket has no CORS, or does
+        not exist yet because the pipeline only creates it lazily on first ingest).
+        """
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+
+        try:
+            self._s3_client.head_bucket(Bucket=container)
+        except ClientError as error:
+            if error.response["Error"]["Code"] not in ("404", "NoSuchBucket"):
+                raise
+            self._s3_client.create_bucket(Bucket=container)
+            logger.info(f"Created S3 bucket '{container}' for self-service knowledge database")
+
+        self._s3_client.put_bucket_cors(
+            Bucket=container,
+            CORSConfiguration={
+                "CORSRules": [
+                    {
+                        "AllowedHeaders": [
+                            "Content-Type",
+                            "x-amz-date",
+                            "authorization",
+                            "x-amz-security-token",
+                            "x-amz-content-sha256",
+                        ],
+                        "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+                        "AllowedOrigins": ["*"],
+                        "ExposeHeaders": ["ETag", "x-amz-request-id", "x-amz-id-2", "x-amz-server-side-encryption"],
+                        "MaxAgeSeconds": 3000,
+                    }
+                ]
+            },
+        )
+
+    @trace_fn
     def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24, internal: bool = False) -> str:
         """
         Generate a presigned URL for temporary read-only access to an S3 object.

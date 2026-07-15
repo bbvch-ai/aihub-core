@@ -38,10 +38,10 @@ low relational value. Organization memory is the opposite: rare, explicitly cura
 
 Make the mem0 graph store **per-memory-type**:
 
-- **User memory: graph OFF (unconditional).** `AgentMemory` builds a graph-less mem0 service for user memory; mem0
-  then skips the entire graph branch (3 LLM calls + graph embeddings). The graph is not needed for user memory —
-  cross-agent user facts are served from the vector store instead (see below). There is no runtime toggle: the graph
-  was providing no value for flat per-turn user preferences, so it is removed rather than made configurable.
+- **User memory: graph OFF (unconditional).** `AgentMemory` builds a graph-less mem0 service for user memory; mem0 then
+  skips the entire graph branch (3 LLM calls + graph embeddings). The graph is not needed for user memory — cross-agent
+  user facts are served from the vector store instead (see below). There is no runtime toggle: the graph was providing
+  no value for flat per-turn user preferences, so it is removed rather than made configurable.
 - **Organization memory: graph ON**, always.
 
 Because mem0 has no per-call graph switch (`enable_graph` is fixed at `Memory` construction from whether a `graph_store`
@@ -49,17 +49,17 @@ is configured) and `AgentMemory` previously shared one service for both scopes, 
 lazily-built services with different configs. Lazy construction means a user-memory-only agent (e.g. RAG) never opens a
 Neo4j connection when the graph is off.
 
-**Cross-agent replacement (replaces graph purpose 1):** user-memory *reads*
-(`search_user_memory`) drop the `agent_id` filter and search all of the user's memories regardless of which agent wrote
-them — mirroring `search_organization_memory`. The writer's `_agent_id` remains on the stored record as trace metadata;
-it no longer partitions reads. This moves cross-agent user-fact sharing from the graph to the vector store.
+**Cross-agent replacement (replaces graph purpose 1):** user-memory *reads* (`search_user_memory`) drop the `agent_id`
+filter and search all of the user's memories regardless of which agent wrote them — mirroring
+`search_organization_memory`. The writer's `_agent_id` remains on the stored record as trace metadata; it no longer
+partitions reads. This moves cross-agent user-fact sharing from the graph to the vector store.
 
 ## Measured effect
 
-Dev run with the graph off (~28 stored memories): Ministral LLM calls **5 → 2**, embedding calls **~120 → 13**, save wall-clock
-**~66s → ~17.5s** (~73% reduction). The residual is the vector ADD/UPDATE/DELETE reconciliation call (~15s, ~1,200
-completion tokens) whose output **scales with the stored-memory count** — it is unaffected by the graph and is tracked
-separately (bounding memory count / decoupling the save from the run's critical path).
+Dev run with the graph off (~28 stored memories): Ministral LLM calls **5 → 2**, embedding calls **~120 → 13**, save
+wall-clock **~66s → ~17.5s** (~73% reduction). The residual is the vector ADD/UPDATE/DELETE reconciliation call (~15s,
+~1,200 completion tokens) whose output **scales with the stored-memory count** — it is unaffected by the graph and is
+tracked separately (bounding memory count / decoupling the save from the run's critical path).
 
 ## Consequences
 
@@ -72,8 +72,8 @@ separately (bounding memory count / decoupling the save from the run's critical 
 **Negative / risks**
 
 - **Lost prompt feature:** retrieval currently renders a "Knowledge Graph Relationships" block (graph triples) into the
-  user-memory system prompt (`extend_chat_history_with_user_memory`). With the graph off this block is empty. Materiality
-  is unquantified — see open question.
+  user-memory system prompt (`extend_chat_history_with_user_memory`). With the graph off this block is empty.
+  Materiality is unquantified — see open question.
 - **Cross-agent semantics change:** cross-agent user facts now flow through the vector store (unpartitioned reads)
   instead of the graph. Behavior is equivalent in intent, but relevance is now purely semantic (threshold + rerank)
   rather than graph-linked.
@@ -82,11 +82,12 @@ separately (bounding memory count / decoupling the save from the run's critical 
   mem0-internals caveat to note if org write latency ever matters.
 
 **Follow-up (monitor after rollout):** production graph-usage stats — what fraction of users interact with 2+ agents,
-and how often the removed relations block mattered — to confirm the vector-based cross-agent replacement covers the need.
+and how often the removed relations block mattered — to confirm the vector-based cross-agent replacement covers the
+need.
 
 ## Related
 
 - Supersedes the user-memory graph portion of `2025_12_18_adopt_mem0_for_agent_memory` (organization memory portion
   stands).
-- Neo4j data is retained (only user-memory writes stop populating it); a future graph-store replacement (Neo4j is flagged as outdated) is
-  out of scope for this decision.
+- Neo4j data is retained (only user-memory writes stop populating it); a future graph-store replacement (Neo4j is
+  flagged as outdated) is out of scope for this decision.

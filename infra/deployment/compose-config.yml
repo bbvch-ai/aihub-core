@@ -132,6 +132,11 @@ image_tags:
     local: shared_rag_pipeline:latest
     nightly: shared_rag_pipeline:nightly
     latest: shared_rag_pipeline:latest
+  rag_pipeline:
+    build: localbuild
+    local: rag_pipeline:latest
+    nightly: rag_pipeline:nightly
+    latest: rag_pipeline:latest
   bot:
     build: localbuild
     local: bot:latest

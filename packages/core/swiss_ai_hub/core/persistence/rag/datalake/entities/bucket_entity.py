@@ -6,6 +6,7 @@ from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringFie
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
 
 
 class BucketEntity(Document):
@@ -29,6 +30,11 @@ class BucketEntity(Document):
     description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
+    ingestor = StringField(
+        required=True,
+        default=IngestorType.UNASSIGNED.value,
+        choices=[ingestor_type.value for ingestor_type in IngestorType],
+    )
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
@@ -47,6 +53,7 @@ class BucketEntity(Document):
         description: LocaleStringEntity | None = None,
         auto_sync: bool = False,
         datalake_type: str = "s3",
+        ingestor: str = IngestorType.UNASSIGNED.value,
         db_alias: str = "default",
     ) -> Self:
         cls._validate_name(bucket_name, "bucket_name")
@@ -61,6 +68,7 @@ class BucketEntity(Document):
                 description=description or LocaleStringEntity(),
                 auto_sync=auto_sync,
                 datalake_type=datalake_type,
+                ingestor=ingestor,
             )
             bucket.save()
             return bucket
@@ -95,6 +103,7 @@ class BucketEntity(Document):
         description: LocaleStringEntity | None = None,
         auto_sync: bool | None = None,
         datalake_type: str | None = None,
+        ingestor: str | None = None,
         db_alias: str = "default",
     ) -> Self:
         bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
@@ -110,6 +119,8 @@ class BucketEntity(Document):
             bucket.auto_sync = auto_sync
         if datalake_type:
             bucket.datalake_type = datalake_type
+        if ingestor:
+            bucket.ingestor = ingestor
         bucket.save()
         return bucket
 

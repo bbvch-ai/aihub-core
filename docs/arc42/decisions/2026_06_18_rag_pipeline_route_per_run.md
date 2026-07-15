@@ -1,0 +1,165 @@
+# RAG Pipeline: one deployment, all knowledge databases (collection-per-db, route-per-run)
+
+## Context
+
+Historically each knowledge database was bound 1:1 to a Dagster pipeline at deploy time. Adding a database required a
+new `app/` module, Dockerfile, compose service, `compose-config.yml` entry, `workspace.yml` code-location, and bucket
+env var — so only two existed (`default_rag_pipeline`, `shared_rag_pipeline`). Users could not create a knowledge
+database from the UI without a redeploy.
+
+The data model was already the right shape: `BucketEntity` is the source of truth (its `bucket_name` is the S3
+container, its `db_name` is the Milvus collection and Mongo store, 1:1), `BucketEntity.get_all_buckets()` exists, and
+the API already enumerates all databases at runtime. The blocker was purely in the pipeline, which baked a single
+`datalake_container_name` into its asset keys, partition names, resources, jobs, and NATS topic.
+
+A "knowledge database" is a `BucketEntity`; "folder"/"namespace" is a `NamespaceEntity` row; a chunk carries `namespace`
+\+ `document_id` but no `db` field — database identity is simply *which Milvus collection it lives in*.
+
+**Scope: Stage 2 only.** "RAG pipeline" here means the data lake → vector store stage (parse, chunk, embed, index). The
+Stage 1 source connectors (SharePoint, rclone, local filesystem → data lake) are unchanged and remain per-source, and a
+deployment is still free to build its own Stage 1 + Stage 2 pipeline for its own bucket. This decision is about how
+knowledge databases are *ingested from the data lake*, not about how documents get into it.
+
+## Decision Drivers
+
+- *Self-service*: users must create knowledge databases from the UI with no deployment.
+- *One pipeline, many databases*: exactly one deployed RAG pipeline of a given type should ingest all databases it owns,
+  reading their configs from MongoDB at runtime.
+- *Isolation preserved*: each database keeps its own vector collection and document store.
+- *No disruption / no reprocessing*: the existing `default`/`shared` databases must keep ingesting and serving
+  unchanged, with no re-parse/re-embed of existing corpora.
+- *Coexistence*: a new dynamic pipeline must run alongside the legacy fixed pipelines without double-ingesting their
+  data.
+
+## Alternatives Considered
+
+1. **Migrate the legacy pipelines onto the new route-per-run model and delete their scaffolding.** Rejected: changing
+   partition keys (`file` → `{bucket}|{file}`) and dropping the container prefix from asset keys makes Dagster treat
+   every existing partition as new, forcing a full re-parse (MinerU) + re-embed of all existing corpora. Upsert-safe but
+   an avoidable one-time compute cost and risk.
+2. **Dynamically merge N `Definitions` (one per bucket) at code-load time**, reloading the code location when a bucket
+   is added. Rejected: the asset graph would change on every bucket creation, requiring code-location reloads and
+   per-bucket sensor/asset-name namespacing; far more moving parts than routing per run.
+3. **A true `MultiPartitionsDefinition` with `(bucket, file)` dimensions.** Rejected: Dagster permits at most one
+   *dynamic* dimension, and both bucket and file are dynamic. The composite key is therefore encoded into a single
+   `DynamicPartitionsDefinition` key string instead.
+4. **A single wildcard NATS sensor** subscribing to `pipeline.datalake.*.to.knowledge.*.*.*.*` and filtering the
+   received events by the bucket's `ingestor`. Rejected: a JetStream stream for that wildcard subject would *overlap*
+   the legacy pipelines' per-instance streams, and JetStream forbids overlapping subjects between streams — creating it
+   would break `default`/`shared` ingestion. The sensor instead enumerates the buckets it owns and polls each one's own
+   per-instance stream. This also makes the ingestor guard intrinsic rather than a filter applied after the fact: a
+   bucket the pipeline does not own is never even polled.
+
+## Decision
+
+Add a new, **additive** `rag_pipeline` that ingests all knowledge databases tagged for it, and leave the legacy
+pipelines untouched.
+
+1. **`ingestor` field on `BucketEntity`** (`unassigned` / `default_rag` / `shared_rag` / `rag`) records which deployed
+   pipeline owns a database. It is the routing guard that lets the new pipeline coexist with the legacy ones. The
+   startup seeder labels the two managed buckets `default_rag`/`shared_rag`.
+
+   **The field default is the inert `unassigned`, and this is load-bearing for upgrades.** Rows written by releases
+   predating the field have no `ingestor` key, and MongoEngine applies the *field default* when the key is absent — so
+   defaulting to `rag` would make every knowledge database in an upgraded deployment read as owned by the RAG pipeline,
+   which would then claim it and re-parse + re-embed its entire corpus alongside the deploy-bound pipeline that already
+   owns it. The seeder cannot be relied on to repair this: it only touches the two buckets it seeds, it is skipped
+   entirely when `CREATE_DEFAULT_BUCKETS` is off, and the pipeline's sensors do not wait for it. Deployments with
+   additional buckets and their own pipelines therefore would not be covered at all. With an inert default, an
+   un-migrated row is owned by nobody, the legacy pipelines keep working (they never read `ingestor`), and **no
+   migration script or operator action is required on upgrade**. The same default protects
+   `bucket_utils._get_or_create_bucket`, the path by which any pipeline auto-registers a bucket row it does not find.
+
+2. **Self-service create-database** API (`POST /knowledge/databases/{database}`, gated by
+   `aihub.admin.knowledge.{database}`) and UI, mirroring the existing create-namespace flow. No deployment required.
+
+3. **The user selects the ingestor at creation time**, rather than it being assigned implicitly. The choice is offered
+   as a **server-provided, localized list** (`GET /knowledge/ingestors`, backed by `IngestorType.selectable()`), not a
+   client-side enum: the set of pipelines a database may be assigned to is a platform fact, so the API owns it and the
+   UI renders whatever it is given. `create_database` rejects a non-selectable ingestor with a 400.
+
+   Only `rag` is selectable today. `default_rag`/`shared_rag` are deliberately **excluded**: each is bound to a single
+   bucket by an env var at deploy time, so a database assigned to one of them would be silently never ingested. They
+   exist as `ingestor` values only to mark the legacy buckets for the routing guard.
+
+   A selector with one option is intentional. When a second pipeline *type* is deployed (a different chunking strategy,
+   an OCR-heavy variant, a tenant-specific pipeline), the database must record which one owns it — and that is a user's
+   choice, not an implicit default. Making the API shape right from the start means a new pipeline type needs only a new
+   enum value plus translations: no API contract change, no SDK regeneration, no UI change.
+
+4. **One Milvus collection per database, routed per run.** The bucket/db becomes a run/partition dimension via a
+   composite partition key `{bucket}|{encoded_file_uri}` in a single shared `DynamicPartitionsDefinition`. IO managers
+   and resources resolve `container_name`/`store_name` per run instead of from constructor config. One file still maps
+   to one Dagster partition. (`|` is a safe separator because `BucketEntity` already constrains bucket names to
+   `^[a-zA-Z0-9]+$`.)
+
+   **Routing uses two different mechanisms, chosen by how the run was triggered — this is the central correctness
+   constraint of the design.** Dagster's `InitResourceContext` exposes *neither* the partition key *nor* custom run tags
+   for auto-materialized runs, so a resource cannot resolve its own target bucket from the partition. Therefore:
+
+   - **Partitioned write path** (`documents` / `nodes` / `summary_nodes`, launched by the automation sensor, which
+     supplies only a composite partition key): routes on the **partition key**, inside the IO managers and inside the
+     two nodes ops that touch the stores directly.
+   - **Observe and remove path** (launched by our schedule, NATS sensor, or run-after-success sensor): routes the
+     **resources** on the `aihub/bucket` run tag. The remove run is non-partitioned, so the S3 IO manager's
+     non-partitioned branch reads the tag too — which is why the run-after-success sensor must propagate the bucket tag
+     from the observe run to the remove run.
+
+   Collapsing these into one mechanism is not possible without changing Dagster's resource-init contract.
+
+5. **Bucket-scoped partition reconciliation.** `replace_partition_keys_for_bucket` only diffs the current bucket's
+   subset of keys within the shared registry, so one bucket's observe run cannot delete another bucket's partitions —
+   eliminating the class of bug latent in the old global `rclone_partitions` name.
+
+6. **Every deployment-global name is derived from the `ingestor`.** Asset keys (`{ingestor}_datalake_to_vectorstore/…`),
+   the dynamic-partition registry (`{ingestor}_document_partitions`), the job names, and the Dagster intermediates
+   prefix all carry the ingestor. Asset keys are unique per Dagster *deployment* and `DynamicPartitionsDefinition` names
+   are global to the Dagster *instance*, so hardcoding them would mean a second pipeline type (the very thing the
+   ingestor selector exists to allow) could not be deployed alongside the first — two code locations would claim the
+   same asset keys and share one partition registry. Deriving them costs nothing and keeps the factory instantiable more
+   than once.
+
+   This is also what keeps a customer's own bespoke pipeline out of the way: a deployment that builds its own Stage 1 +
+   Stage 2 via `default_definitions(datalake_container_name="pocrag")` gets `["pocrag", "datalake_to_vectorstore", …]`
+   asset keys and a `pocrag_document_partitions` registry, which cannot collide with the RAG pipeline's.
+
+7. **Per-bucket fan-out for triggering.** The RAG pipeline's NATS sensor and schedule enumerate
+   `BucketEntity.get_all_buckets()` filtered by `ingestor == "rag"` and emit one run per owned bucket, carrying the
+   bucket in run config/tags. Each bucket keeps its own narrow JetStream stream (same shape as legacy), so there is no
+   JetStream subject overlap with the legacy per-bucket streams.
+
+## Consequences
+
+### Positive
+
+- Knowledge databases are created self-service from the UI with no redeploy, no new code location, compose service, or
+  env var.
+- Existing `default`/`shared` databases are completely unaffected: no migration, no reprocessing, no risk.
+- Upgrading a deployed setup needs no data migration: pre-existing bucket rows read the inert `unassigned` default and
+  are claimed by no pipeline.
+- Per-database isolation is preserved (one collection + one document store per database).
+- The shared-registry partition bug class is fixed by bucket-scoped reconciliation.
+- Bespoke customer pipelines (their own Stage 1 + Stage 2, independent of the knowledge base) keep working untouched:
+  their buckets are `unassigned`, and their asset keys, partition registries, job names, and Dagster intermediates
+  prefix are all namespaced by their own container name.
+- A second pipeline *type* can be deployed alongside the first, because every deployment-global name is ingestor-scoped.
+
+### Trade-offs
+
+- The two legacy fixed deployments remain; the per-database deployment scaffolding is not removed (it is simply no
+  longer needed for new databases). This is a **deliberate deviation** from the originating issue, which asked to
+  migrate `default`/`shared` onto the shared pipeline and delete their scaffolding. That migration is deferred to a
+  separate change because it is not free: the legacy asset keys are container-prefixed and their partition keys are bare
+  file URIs (vs. `{bucket}|{uri}`), so Dagster would see every already-ingested document as new and re-parse (MinerU) +
+  re-embed both corpora in full. The run is upsert-safe and non-destructive — same collection names, vectors overwrite
+  by `uri_to_id`, retrieval keeps working throughout — but it is hours of avoidable compute that should be scheduled
+  deliberately rather than triggered as a side effect of merging a feature. Rollback for that future change is to flip
+  `ingestor` back and redeploy the legacy code locations.
+- Three `ingestor` values exist while only one is selectable, which reads as redundancy until the legacy pipelines are
+  retired. The alternative — omitting the field and inferring ownership from a bucket name allowlist — would bury the
+  routing rule in the pipeline instead of the data model.
+- The RAG pipeline runs one asset graph shared across all its databases — one process, one resource pool, one crash
+  domain — rather than the per-database isolation the legacy deployments have. Acceptable at expected scale; the
+  per-tick enumeration of buckets is the scaling limit to watch.
+- IO managers resolve the store per run (a cheap idempotent Mongo lookup, cached per run), trading a little runtime work
+  for deploy-time flexibility.

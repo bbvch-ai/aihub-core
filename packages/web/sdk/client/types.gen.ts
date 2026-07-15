@@ -3989,6 +3989,28 @@ export type CreateAgentInstanceRequest = {
 };
 
 /**
+ * CreateDatabaseRequest
+ */
+export type CreateDatabaseRequest = {
+  /**
+   * Display Name
+   *
+   * The display name of the knowledge database in the user's locale.
+   */
+  display_name?: string | null;
+  /**
+   * Description
+   *
+   * A short description of the knowledge database in the user's locale.
+   */
+  description?: string | null;
+  /**
+   * The deployed ingestion pipeline that processes this database's documents.
+   */
+  ingestor?: IngestorType;
+};
+
+/**
  * CreateNamespaceRequest
  */
 export type CreateNamespaceRequest = {
@@ -4272,6 +4294,42 @@ export type DatabaseDto = {
    * List of namespaces
    */
   namespaces: Array<NamespaceDto>;
+};
+
+/**
+ * DatabaseResponse
+ */
+export type DatabaseResponse = {
+  /**
+   * Name
+   *
+   * The database name (also the Milvus collection and Mongo store name).
+   */
+  name: string;
+  /**
+   * Bucket Name
+   *
+   * The S3 bucket / data lake container name.
+   */
+  bucket_name: string;
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that owns this database.
+   */
+  ingestor: string;
+  /**
+   * Display Name
+   *
+   * A user-friendly display name for the database.
+   */
+  display_name?: string | null;
+  /**
+   * Description
+   *
+   * A brief description of the database's contents.
+   */
+  description?: string | null;
 };
 
 /**
@@ -7467,6 +7525,71 @@ export type IngestedNode = {
    */
   score?: number | null;
 };
+
+/**
+ * IngestorDTO
+ */
+export type IngestorDto = {
+  /**
+   * Name
+   *
+   * The ingestor identifier stored on the knowledge database.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the ingestion pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of what the pipeline does.
+   */
+  description: string | null;
+};
+
+/**
+ * IngestorType
+ *
+ * Identifies which deployed ingestion pipeline owns a knowledge database.
+ *
+ * Used as a routing guard: the single ``rag`` pipeline reads this off each
+ * ``BucketEntity`` to decide which buckets it ingests, so it can coexist with the legacy
+ * per-bucket ``default_rag`` / ``shared_rag`` deployments without double-processing them.
+ *
+ * ``UNASSIGNED`` is the field default, and exists so that rows written before this field was
+ * introduced — which have no ``ingestor`` key, and for which MongoEngine therefore applies the
+ * field default on load — are owned by no RAG pipeline. Defaulting to
+ * ``RAG`` instead would make every pre-existing knowledge database in an upgraded
+ * deployment get claimed and re-ingested by the RAG pipeline alongside the deploy-bound
+ * pipeline that already owns it.
+ */
+export const IngestorType = {
+  UNASSIGNED: "unassigned",
+  DEFAULT_RAG: "default_rag",
+  SHARED_RAG: "shared_rag",
+  RAG: "rag",
+} as const;
+
+/**
+ * IngestorType
+ *
+ * Identifies which deployed ingestion pipeline owns a knowledge database.
+ *
+ * Used as a routing guard: the single ``rag`` pipeline reads this off each
+ * ``BucketEntity`` to decide which buckets it ingests, so it can coexist with the legacy
+ * per-bucket ``default_rag`` / ``shared_rag`` deployments without double-processing them.
+ *
+ * ``UNASSIGNED`` is the field default, and exists so that rows written before this field was
+ * introduced — which have no ``ingestor`` key, and for which MongoEngine therefore applies the
+ * field default on load — are owned by no RAG pipeline. Defaulting to
+ * ``RAG`` instead would make every pre-existing knowledge database in an upgraded
+ * deployment get claimed and re-ingested by the RAG pipeline alongside the deploy-bound
+ * pipeline that already owns it.
+ */
+export type IngestorType = (typeof IngestorType)[keyof typeof IngestorType];
 
 /**
  * InputAudio
@@ -27347,6 +27470,70 @@ export type UpdateDatasetResponses = {
 
 export type UpdateDatasetResponse =
   UpdateDatasetResponses[keyof UpdateDatasetResponses];
+
+export type GetIngestorsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/ingestors";
+};
+
+export type GetIngestorsResponses = {
+  /**
+   * Response Get Ingestors  Tenant Id  Knowledge Ingestors Get
+   *
+   * Successful Response
+   */
+  200: Array<IngestorDto>;
+};
+
+export type GetIngestorsResponse =
+  GetIngestorsResponses[keyof GetIngestorsResponses];
+
+export type CreateDatabaseData = {
+  body: CreateDatabaseRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type CreateDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateDatabaseError =
+  CreateDatabaseErrors[keyof CreateDatabaseErrors];
+
+export type CreateDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type CreateDatabaseResponse =
+  CreateDatabaseResponses[keyof CreateDatabaseResponses];
 
 export type CreateNamespaceData = {
   body: CreateNamespaceRequest;

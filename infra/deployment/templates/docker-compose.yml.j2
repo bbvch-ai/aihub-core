@@ -3947,6 +3947,83 @@ services:
       - storage
   {%- endif %}
 
+  {%- if image_tags.rag_pipeline[stage] %}
+  {{ service_license('rag_pipeline') }}
+  rag_pipeline:
+    container_name: rag-pipeline
+    restart: always
+    {%- if image_tags.rag_pipeline[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/pipeline/app/rag_pipeline/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.rag_pipeline[stage] }}
+    {%- endif %}
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # NATS
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Pipeline run-failure notifications (Apprise)
+      NOTIFICATION_URLS: ${NOTIFICATION_URLS}
+      NOTIFICATION_DAGSTER_UI_BASE_URL: "{{ NOTIFICATION_DAGSTER_UI_BASE_URL }}"
+      NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
+      NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
+  {%- endif %}
+
   {%- if image_tags.bot[stage] %}
   # ===================================================================
   # Bot Service (MS Teams Integration)

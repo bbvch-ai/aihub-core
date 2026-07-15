@@ -37,8 +37,9 @@ its output.
 
 ## Should you use this package?
 
-**Probably not directly — most deployments use the pre-built pipeline images** (`default_rag_pipeline`,
-`shared_rag_pipeline`), which ingest the platform's default buckets out of the box.
+**Probably not directly — most deployments use the pre-built pipeline images.** `rag_pipeline` ingests every knowledge
+database users create from the UI, with no redeploy; the legacy `default_rag_pipeline` and `shared_rag_pipeline` still
+serve the platform's two built-in buckets.
 
 **Use this PyPI package when you want a custom pipeline** — connect a new data source, ingest into a different bucket,
 or tune parsing/chunking/embedding for your documents. It's an SDK for building your own ingestion as a Dagster

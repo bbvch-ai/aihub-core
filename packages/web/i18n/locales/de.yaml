@@ -510,6 +510,9 @@ knowledge:
     title: Sammlung hinzufügen
     description: Eine neue Wissenssammlung erstellen
     cancel: Abbrechen
+  add_database:
+    title: Wissensdatenbank hinzufügen
+    description: Eine neue Self-Service-Wissensdatenbank erstellen
   auto_sync:
     title: Automatisch synchronisiert
     description: Sammlungen werden automatisch verwaltet
@@ -520,11 +523,23 @@ knowledge:
   form:
     create:
       title: Sammlung erstellen
+    create_database:
+      title: Wissensdatenbank erstellen
     edit:
       title: Sammlung bearbeiten
     database:
       label: Wissensdatenbank
       placeholder: Name der Wissensdatenbank
+    database_name:
+      label: Datenbankname
+      placeholder: meinewissensdatenbank
+      help: Nur alphanumerische Zeichen sind erlaubt. Der Name kann später nicht geändert
+        werden.
+      validation_error: Der Datenbankname darf nur alphanumerische Zeichen enthalten
+    ingestor:
+      label: Ingestion-Pipeline
+      placeholder: Ingestion-Pipeline auswählen
+      help: Die Pipeline, die in diese Datenbank hochgeladene Dokumente verarbeitet.
     folder_name:
       label: Sammlungsname
       placeholder: meine-sammlung

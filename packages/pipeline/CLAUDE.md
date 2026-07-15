@@ -65,10 +65,13 @@ packages/pipeline/                        # SDK framework
 │   └── const/pipeline_names.py            # INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 
 app/                                   # Deployable pipelines (Dagster gRPC code locations)
-├── default_rag_pipeline/              # Per-tenant bucket pipeline
-│   ├── __init__.py                    # defs = default_definitions(DEFAULT_BUCKET_NAME)
+├── rag_pipeline/                      # THE RAG pipeline — one deployment, all self-service knowledge DBs
+│   ├── __init__.py                    # defs = rag_pipeline_definitions()  (route-per-run, no bucket env var)
 │   └── Dockerfile                     # dagster api grpc on port 4000
-└── shared_rag_pipeline/               # Shared bucket pipeline
+├── default_rag_pipeline/              # LEGACY: per-tenant bucket pipeline (bound to one bucket at deploy time)
+│   ├── __init__.py                    # defs = default_definitions(DEFAULT_BUCKET_NAME)
+│   └── Dockerfile
+└── shared_rag_pipeline/               # LEGACY: shared bucket pipeline
     ├── __init__.py                    # defs = default_definitions(SHARED_BUCKET_NAME)
     └── Dockerfile
 
@@ -312,11 +315,24 @@ location, customize. See `templates/sources/README.md` for the full guide includ
 
 `app/` contains deployable Dagster gRPC code locations:
 
-- `default_rag_pipeline/` — per-tenant bucket (`AIHubSettings().DEFAULT_BUCKET_NAME`)
-- `shared_rag_pipeline/` — shared bucket (`AIHubSettings().SHARED_BUCKET_NAME`)
+- `rag_pipeline/` — **the** RAG pipeline. One deployment ingests *every* knowledge database whose
+  `BucketEntity.ingestor` is `rag`, resolving the target bucket per run (composite partition key `{bucket}|{uri}` on the
+  write path, `aihub/bucket` run tag on the observe/remove path). Built by `rag_pipeline_definitions()` in
+  `util/rag_definitions_util.py`. Creating a knowledge database needs no new code location, compose service, or env var.
+  Every deployment-global name (asset keys, partition registry, jobs) is derived from the ingestor so a second pipeline
+  *type* can be deployed alongside it.
+- `default_rag_pipeline/` — legacy, per-tenant bucket (`AIHubSettings().DEFAULT_BUCKET_NAME`)
+- `shared_rag_pipeline/` — legacy, shared bucket (`AIHubSettings().SHARED_BUCKET_NAME`)
+
+The two legacy pipelines are bound to one bucket at deploy time and are kept only so their existing corpora are not
+reprocessed; new databases always belong to `rag_pipeline`. Buckets they own are marked `default_rag` / `shared_rag`,
+and rows predating the field read the inert `unassigned` default — that is the routing guard which keeps `rag_pipeline`
+from double-ingesting them.
 
 Each has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
 `dagster api grpc -h 0.0.0.0 -p 4000 -m "app.{pipeline_name}"`
+
+Run all three locally: `make rag-pipelines`.
 
 ## Testing
 
@@ -364,7 +380,7 @@ vector_store/, doc_store/, llm/, share_point/, rclone/, local_file_system/
 **Utilities**: `packages/pipeline/swiss_ai_hub/pipeline/util/` — definitions_util, id_utils, partition_utils,
 bucket_utils, key_utils
 
-**App**: `app/default_rag_pipeline/__init__.py`, `app/shared_rag_pipeline/__init__.py`
+**App**: `app/rag_pipeline/__init__.py` (+ legacy `app/default_rag_pipeline/`, `app/shared_rag_pipeline/`)
 
 **Playground**: `playground/__init__.py`, `playground/quick_start/`
 
