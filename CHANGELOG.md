@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.310.6] - 2026-07-15 - Enhanced Document List Selection
+
+### Added
+
+- ✨ **Introduced "Select All" for Documents:** Users can now easily select all deletable documents in the document list
+  using a new "Select All" checkbox in the table header, streamlining bulk action workflows.
+
+### Changed
+
+- 🔄 **Improved Document Selection Logic:** The mechanism for managing selected documents has been refined, ensuring that
+  the "Select All" option accurately reflects and applies only to documents that are available for deletion.
+
+### Fixed
+
+- 🐛 **Cleared Selection on Document Deletion:** Documents are now immediately deselected from the list of checked items
+  after they have been initiated for individual deletion, preventing inconsistencies in the selection state.
+
+______________________________________________________________________
+
 ## [v0.310.5] - 2026-07-15 - Improved Release Tagging Workflow
 
 ### Changed
