@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.310.2] - 2026-07-15 - Enhanced Release Automation and Flexibility
+
+### Changed
+
+- ✨ **Improved npm publishing for backports:** The `publish-npm` workflow now intelligently handles backport or hotfix
+  releases. When publishing a version older than the current `latest` on the npm registry, it will assign a
+  `release-X.Y` dist-tag instead of implicitly moving the `latest` tag backwards, preserving the `latest` tag for new
+  mainline releases.
+- 🚀 **Flexible manual release tagging:** The `release-manual` workflow now supports a `source_ref` input, allowing users
+  to tag releases from any specified branch or commit (e.g., `hotfix/0.308`) rather than strictly the branch the
+  workflow is run from. This greatly improves the process for hotfixes and maintenance branches.
+- 📄 **Enhanced release workflow visibility:** The run name for manual releases now includes the `source_ref` being
+  tagged, providing clearer context at a glance within GitHub Actions.
+- ⚙️ **Streamlined manual release validation:** Updated internal logic to validate and correctly checkout the specified
+  `source_ref`, ensuring robust and accurate manual release operations.
+
+______________________________________________________________________
+
 ## [v0.310.1] - 2026-07-15 - Streamlined Manual Release Process
 
 ### Added

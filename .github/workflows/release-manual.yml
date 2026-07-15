@@ -12,10 +12,12 @@
 #   set-latest.yml).
 #
 # USAGE:
-#   1. In the GitHub UI, pick this workflow and select the branch to release
-#      from (the branch tip is what gets tagged). The workflow file must exist
-#      on that branch, so merge this to `main` for future branches to inherit.
-#   2. Provide `release_version` as a strict vMAJOR.MINOR.PATCH tag (e.g.
+#   1. In the GitHub UI, run this workflow from `main` (the "Use workflow from"
+#      dropdown only lists branches that contain this file, so keep it on `main`).
+#   2. Set `source_ref` to the branch/ref you actually want to tag — e.g.
+#      `hotfix/0.308`. Leave it empty to tag the branch selected in the dropdown.
+#      The tip of that ref is what gets tagged.
+#   3. Provide `release_version` as a strict vMAJOR.MINOR.PATCH tag (e.g.
 #      v0.308.1). It is validated because publish-npm / publish-pypi guard that
 #      the tagged commit's package.json / pyproject.toml version matches.
 #
@@ -30,14 +32,21 @@
 #
 # =============================================================================
 name: Manual Tag, Gen-Changelog & Release
-run-name: Manual Tag & Release - ${{ github.event.inputs.release_version }}
+run-name: Manual Tag & Release - ${{ github.event.inputs.release_version }} (${{ github.event.inputs.source_ref || github.ref_name }})
 on:
   workflow_dispatch:
     inputs:
       release_version:
         description: Release version tag to cut (e.g., v0.308.1)
         required: true
+      source_ref:
+        description: Branch/ref to tag (e.g., hotfix/0.308). Empty = the branch selected
+          above.
+        required: false
+        default: ''
 concurrency:
+  # Release versions are globally unique, so the version alone is the correct
+  # lock even now that any source_ref can be tagged.
   group: release-manual-${{ github.event.inputs.release_version }}
   cancel-in-progress: false
 jobs:
@@ -49,30 +58,37 @@ jobs:
       contents: write
     outputs:
       version: ${{ steps.validate.outputs.version }}
+      source_ref: ${{ steps.validate.outputs.source_ref }}
     steps:
-      - name: Validate version & branch
+      - name: Validate version & resolve source ref
         id: validate
         env:
           VERSION: ${{ github.event.inputs.release_version }}
-          BRANCH: ${{ github.ref_name }}
+          INPUT_SOURCE_REF: ${{ github.event.inputs.source_ref }}
+          SELECTED_BRANCH: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::'$VERSION' is not a valid vMAJOR.MINOR.PATCH release tag."
             exit 1
           fi
-          # Soft correlation check: hotfix/X.Y branches should cut vX.Y.* tags.
-          if [[ "$BRANCH" =~ ^hotfix/([0-9]+)\.([0-9]+)$ ]]; then
-            PREFIX="v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}."
+          # Tag the ref the user asked for; fall back to the dropdown branch.
+          SOURCE_REF="${INPUT_SOURCE_REF:-$SELECTED_BRANCH}"
+          echo "Tagging ref: $SOURCE_REF"
+          # Soft correlation check: hotfix/X.Y or release/X.Y refs should cut vX.Y.* tags.
+          if [[ "$SOURCE_REF" =~ ^(hotfix|release)/([0-9]+)\.([0-9]+)$ ]]; then
+            PREFIX="v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}."
             case "$VERSION" in
               "$PREFIX"*) : ;;
-              *) echo "::warning::Version $VERSION does not match branch $BRANCH (expected ${PREFIX}*)" ;;
+              *) echo "::warning::Version $VERSION does not match ref $SOURCE_REF (expected ${PREFIX}*)" ;;
             esac
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      - name: Checkout branch
+          echo "source_ref=$SOURCE_REF" >> "$GITHUB_OUTPUT"
+      - name: Checkout source ref
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
+          ref: ${{ steps.validate.outputs.source_ref }}
           fetch-depth: 0
       - name: Guard - tag must not already exist
         env:
