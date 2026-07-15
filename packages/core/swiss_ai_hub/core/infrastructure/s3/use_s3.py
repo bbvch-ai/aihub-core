@@ -29,6 +29,23 @@ def use_s3_service(request: Request) -> S3AnonymousFileAccessService:
     )
 
 
+def create_s3_client(endpoint_url: str | None = None) -> S3Client:
+    """
+    Factory function to create a boto3 S3 client configured from S3StorageSettings.
+
+    Pass endpoint_url to target the public endpoint for presigned URLs; defaults to the internal endpoint.
+    """
+    settings = S3StorageSettings()
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint_url or settings.ENDPOINT,
+        aws_access_key_id=settings.ACCESS_KEY,
+        aws_secret_access_key=settings.SECRET_KEY.get_secret_value(),
+        region_name=settings.REGION,
+        config=Config(signature_version="s3v4"),
+    )
+
+
 def create_s3_service() -> S3AnonymousFileAccessService:
     """
     Factory function to create S3AnonymousFileAccessService with default settings.
@@ -37,35 +54,11 @@ def create_s3_service() -> S3AnonymousFileAccessService:
     For FastAPI endpoints, prefer using the `use_s3_service` dependency.
     """
     settings = S3StorageSettings()
-    s3_client = boto3.client(
-        "s3",
-        endpoint_url=settings.ENDPOINT,
-        aws_access_key_id=settings.ACCESS_KEY,
-        aws_secret_access_key=settings.SECRET_KEY.get_secret_value(),
-        region_name=settings.REGION,
-        config=Config(signature_version="s3v4"),
-    )
-    s3_public_client = boto3.client(
-        "s3",
-        endpoint_url=settings.get_public_endpoint(),
-        aws_access_key_id=settings.ACCESS_KEY,
-        aws_secret_access_key=settings.SECRET_KEY.get_secret_value(),
-        region_name=settings.REGION,
-        config=Config(signature_version="s3v4"),
-    )
-    s3_internal_client = boto3.client(
-        "s3",
-        endpoint_url=settings.get_internal_endpoint(),
-        aws_access_key_id=settings.ACCESS_KEY,
-        aws_secret_access_key=settings.SECRET_KEY.get_secret_value(),
-        region_name=settings.REGION,
-        config=Config(signature_version="s3v4"),
-    )
     return S3AnonymousFileAccessService(
-        s3_client=s3_client,
-        s3_public_client=s3_public_client,
+        s3_client=create_s3_client(),
+        s3_public_client=create_s3_client(settings.get_public_endpoint()),
         s3_settings=settings,
-        s3_internal_client=s3_internal_client,
+        s3_internal_client=create_s3_client(settings.get_internal_endpoint()),
     )
 
 

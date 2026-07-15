@@ -57,9 +57,16 @@ class Mem0Service:
         }
         # Filter out None values and empty strings
         metadata = {k: str(v) for k, v in metadata.items() if v is not None and v != ""}
+        # Native agent_id scopes mem0's infer-time reconciliation (its ADD/UPDATE/DELETE search over
+        # existing memories) to the writing agent, so one agent's write can no longer rewrite or delete
+        # another agent's user memories. mem0 reconciles on native keys, not on our `_agent_id` metadata.
+        # Org memory is left unscoped (infer=False, intentionally tenant-shared). Reads stay cross-agent
+        # shared — the read path passes agent_id=None deliberately.
+        native_agent_id = agent_id if memory_type == MemoryType.USER_MEMORY else None
         added_memory = await self._memory.add(
             messages,
             user_id=owner_id,
+            agent_id=native_agent_id,
             metadata=metadata,
             infer=infer,
         )

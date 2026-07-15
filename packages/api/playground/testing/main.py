@@ -37,7 +37,7 @@ async def main():
         HealthController(auth=auth).get_health(),
         MyAccountController(auth=auth).get_my_account().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
-        EventController(auth=auth).ws().get_agent_events_in_thread(),
+        EventController(auth=auth).ws().get_agent_events_in_thread().resolve_thread_for_display(),
         ThreadController(auth=auth)
         .get_user_threads()
         .create_thread()
