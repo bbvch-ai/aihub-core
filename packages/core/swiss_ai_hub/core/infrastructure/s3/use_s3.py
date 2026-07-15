@@ -58,6 +58,7 @@ def create_s3_service() -> S3AnonymousFileAccessService:
         s3_client=create_s3_client(),
         s3_public_client=create_s3_client(settings.get_public_endpoint()),
         s3_settings=settings,
+        s3_internal_client=create_s3_client(settings.get_internal_endpoint()),
     )
 
 

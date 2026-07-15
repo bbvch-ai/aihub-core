@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.310.3] - 2026-07-15 - Seamless RAG Figure Delivery to LLMs
+
+### Added
+
+- ✨ **Introduced RAG Figure Inlining:** Implemented a new mechanism to inline RAG figures (images) as Base64 directly at
+  the LiteLLM gateway, ensuring compatibility with LLM providers that cannot directly access internal S3 storage.
+- 🖼️ **Configurable Image Inlining:** Added new environment variables (`RAG_IMAGE_INLINE_ENABLED`,
+  `RAG_IMAGE_INLINE_MAX_BYTES`) to control RAG image inlining behavior and define a maximum size, allowing for flexible
+  deployment configurations and cost management.
+- 🔗 **Dedicated Internal S3 Endpoint:** Introduced `S3_STORAGE_INTERNAL_ENDPOINT` for signing presigned URLs
+  specifically for in-cluster services like the LiteLLM gateway, enhancing secure and efficient internal data transfer.
+- 📄 **Architectural Decision Record:** Added a new ADR outlining the rationale, design, and consequences of the RAG
+  figure inlining solution.
+
+### Changed
+
+- 🔄 **Refined S3 Presigned URL Generation:** Updated the S3 anonymous file access service to support generating
+  presigned URLs tailored for either public or internal (in-cluster) access based on the RAG image inlining setting.
+- 🔌 **LiteLLM Gateway Integration:** Configured the LiteLLM gateway to utilize a new custom callback, which
+  intelligently fetches RAG figures from internal storage and inlines them as Base64 into LLM prompts.
+- 🎛️ **RAG Agent Image Handling:** Modified RAG agents to sign image URLs against the new internal S3 endpoint when
+  inlining is enabled, ensuring figures are correctly prepared for the LiteLLM gateway.
+- ⚙️ **Deployment Configuration:** Updated Docker Compose and deployment scripts to include the new LiteLLM custom
+  callback and propagate relevant environment variables to the LiteLLM and RAG agent services.
+- 📚 **Documentation:** Expanded the environment variables documentation to include details on
+  `RAG_IMAGE_INLINE_ENABLED`, `RAG_IMAGE_INLINE_MAX_BYTES`, and `S3_STORAGE_INTERNAL_ENDPOINT`.
+
+______________________________________________________________________
+
+## [v0.308.3] - 2026-07-15 - Platform Version Synchronization and Maintenance
+
+### Changed
+
+- 📦 **Platform-Wide Version Alignment:** All core packages and their inter-dependencies have been updated to `v0.308.3`
+  to ensure consistent versioning across the entire platform, improving overall stability and build predictability.
+
+______________________________________________________________________
+
 ## [v0.310.2] - 2026-07-15 - Enhanced Release Automation and Flexibility
 
 ### Changed

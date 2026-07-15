@@ -113,6 +113,7 @@ KEYCLOAK_MANAGED_TEMPLATES = [
 # (source_dir relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR)
 STATIC_COPY_DIRS = [
     ("templates/openwebui_functions", "configs/openwebui/functions"),
+    ("templates/litellm_functions", "configs/litellm"),
 ]
 
 # Static files copied verbatim (no Jinja2 rendering).
@@ -345,7 +346,7 @@ def generate_default(env, config_data):
         dst_dir = ROOT_DIR / dst_rel
         dst_dir.mkdir(parents=True, exist_ok=True)
         for f in src_dir.iterdir():
-            if f.is_file():
+            if f.is_file() and not f.name.startswith("test_"):
                 shutil.copy2(f, dst_dir / f.name)
                 stats["static-copies"] += 1
 
@@ -493,7 +494,7 @@ def generate_release(env, config_data, version, output_dir, project):
             dst_dir = variant_dir / dst_rel
             dst_dir.mkdir(parents=True, exist_ok=True)
             for f in src_dir.iterdir():
-                if f.is_file():
+                if f.is_file() and not f.name.startswith("test_"):
                     shutil.copy2(f, dst_dir / f.name)
 
         for src_rel, dst_rel, filename in STATIC_COPY_FILES:

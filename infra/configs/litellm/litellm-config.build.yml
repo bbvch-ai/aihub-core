@@ -190,7 +190,10 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: [detect_prompt_injection, otel]
+  callbacks:
+    - detect_prompt_injection
+    - otel
+    - custom_callbacks.proxy_handler_instance
   default_fallbacks: [text-generation/gemma-4-31B-it]
   telemetry: true
   json_logs: true
