@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.310.1] - 2026-07-15 - Streamlined Manual Release Process
+
+### Added
+
+- ✨ **Introduced Manual Release Workflow:** A new GitHub Actions workflow (`release-manual.yml`) has been added to
+  provide maintainers with enhanced control and flexibility over the release process. This workflow allows for the
+  manual creation of releases with a specified `vMAJOR.MINOR.PATCH` version tag from any arbitrary branch, which is
+  particularly useful for hotfixes or special-purpose releases. It fully automates critical steps such as changelog
+  generation, version bumping, and dispatching all downstream build, release, and publishing workflows (e.g., Docker
+  images, npm, PyPI), while ensuring release safety by preventing tag overwrites and keeping the source branch pristine.
+
+______________________________________________________________________
+
 ## [v0.310.0] - 2026-07-15 - Agents Gain IMAP Read Capability with Secure S3 Attachment Handling
 
 ### Added
