@@ -24,3 +24,12 @@ config:
   drafts_folder:
     label: Entwürfe-Ordner
     help: Postfach-Ordner, in den Entwürfe geschrieben werden.
+  enable_move:
+    label: Abgerufene E-Mail verschieben
+    help: Wenn aktiviert, wird die abgerufene Post nach dem Lesen in den Verarbeitet-Ordner
+      verschoben. Wenn deaktiviert, wird der Verschiebeschritt übersprungen und die
+      Post bleibt im Posteingang.
+  processed_folder:
+    label: Verarbeitet-Ordner
+    help: Postfach-Ordner, in den eine verarbeitete Post verschoben wird, wenn Verschieben
+      aktiviert ist.

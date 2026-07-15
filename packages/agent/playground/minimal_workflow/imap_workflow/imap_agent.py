@@ -3,6 +3,7 @@ from typing import ClassVar
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     MailFetchedEvent,
+    MailMovedEvent,
     StopEvent,
     UnreadMailListedEvent,
 )
@@ -28,10 +29,13 @@ class ImapAgent(Agent):
         en="IMAP Agent", de="IMAP-Agent", fr="Agent IMAP", it="Agente IMAP"
     )
     description: ClassVar[AgentLocaleString] = AgentLocaleString(
-        en="Reads unread mail from an IMAP inbox and fetches a message with attachments",
-        de="Liest ungelesene E-Mails aus einem IMAP-Posteingang und ruft eine Nachricht mit Anhängen ab",
-        fr="Lit les e-mails non lus d'une boîte IMAP et récupère un message avec pièces jointes",
-        it="Legge le e-mail non lette da una casella IMAP e recupera un messaggio con allegati",
+        en="Reads unread mail from an IMAP inbox, fetches a message with attachments, and optionally files it away",
+        de="Liest ungelesene E-Mails aus einem IMAP-Posteingang, ruft eine Nachricht mit Anhängen ab und legt sie "
+        "optional ab",
+        fr="Lit les e-mails non lus d'une boîte IMAP, récupère un message avec pièces jointes et le classe "
+        "éventuellement",
+        it="Legge le e-mail non lette da una casella IMAP, recupera un messaggio con allegati e lo archivia "
+        "facoltativamente",
     )
     icon: ClassVar[str] = "mage:inbox"
 
@@ -84,9 +88,34 @@ class ImapAgent(Agent):
         )
 
     @step(
+        name=AgentLocaleString(en="Move message", de="Nachricht verschieben"),
+        icon="mage:folder-2",
+    )
+    async def move_mail_step(
+        self,
+        event: MailFetchedEvent,
+        imap_config: ImapClientConfig,
+        displayer: EventDisplayer,
+    ) -> MailMovedEvent | StopEvent:
+        """File the fetched message into the processed folder; skip when moving is disabled in the config."""
+        if not imap_config.enable_move:
+            await displayer.display_thought("Moving is disabled — leaving the message in the inbox.")
+            return StopEvent()
+        if not imap_config.processed_folder:
+            raise ValueError("enable_move is on but processed_folder is empty")
+
+        async with ImapClientFactory.create(imap_config) as client:
+            await client.move_message(event.message_id, imap_config.processed_folder)
+        return MailMovedEvent(
+            message_id=event.message_id,
+            source_folder=imap_config.inbox_folder,
+            target_folder=imap_config.processed_folder,
+        )
+
+    @step(
         name=AgentLocaleString(en="Finish", de="Abschliessen"),
         icon="mage:check",
     )
-    async def stop_step(self, _event: MailFetchedEvent) -> StopEvent:
-        """Terminate the run once the chosen message has been fetched."""
+    async def stop_step(self, _event: MailMovedEvent) -> StopEvent:
+        """Terminate the run once the chosen message has been moved."""
         return StopEvent()

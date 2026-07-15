@@ -41,6 +41,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     LLMStopEvent,
     MailFetchedEvent,
+    MailMovedEvent,
     MetaQuestionDetectedEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
@@ -127,6 +128,7 @@ DisplayEvents = (
     | Annotated[StoreOrganizationMemoryEvent, Tag("StoreOrganizationMemoryEvent")]
     | Annotated[UnreadMailListedEvent, Tag("UnreadMailListedEvent")]
     | Annotated[MailFetchedEvent, Tag("MailFetchedEvent")]
+    | Annotated[MailMovedEvent, Tag("MailMovedEvent")]
 )
 
 
