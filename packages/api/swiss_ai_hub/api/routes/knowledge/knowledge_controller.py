@@ -14,7 +14,7 @@ from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import MongoSettings, use_s3_service, use_vector_store_factory
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, use_s3_service, use_vector_store_factory
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.routes import TenantScopedController
 
@@ -50,6 +50,12 @@ class KnowledgeController(TenantScopedController):
 
     _NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL = "Not authorized to view this database"
 
+    # A knowledge database's name doubles as its Mongo document store (db_name) and Milvus collection,
+    # so any name that collides with a reserved store must be blocked: reads guard against them and
+    # creation rejects them up front. These are MongoDB's system databases; the application's own main
+    # database is configurable, so it is added to the reserved set per instance in __init__.
+    _SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
+
     def __init__(
         self,
         *,
@@ -63,6 +69,7 @@ class KnowledgeController(TenantScopedController):
             host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore", uuidRepresentation="standard"
         )
 
+        self._reserved_database_names = self._SYSTEM_DATABASE_NAMES | {AIHubSettings().MONGO_MAIN_DB_NAME}
         self.translation_llm_config = translation_llm_config
 
     @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.see")
@@ -125,7 +132,7 @@ class KnowledgeController(TenantScopedController):
             Optionally filter by document title or filename using the search parameter.
             Supports sorting by document_title, created_at, or updated_at.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             total, documents = KnowledgeService.get_paginated_documents(
                 db=database,
@@ -160,7 +167,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns a single document by its ID.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_document_by_id(db=database, document_id=document_id)
 
@@ -183,7 +190,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns nodes for a given document.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_nodes(
                 db=database,
@@ -212,7 +219,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns nodes for a given document.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_summary_nodes(
                 db=database,
@@ -240,7 +247,7 @@ class KnowledgeController(TenantScopedController):
     def create_database(self, route: str = "/databases/{database}") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_database(
-            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9]+$")],
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z][a-zA-Z0-9]*$")],
             request: CreateDatabaseRequest,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -249,6 +256,10 @@ class KnowledgeController(TenantScopedController):
             """
             Creates a new self-service knowledge database (bucket) ingested by the RAG pipeline.
             """
+            if database in self._reserved_database_names:
+                raise HTTPException(
+                    status_code=400, detail=f"Database name '{database}' is reserved and cannot be used."
+                )
             return await KnowledgeService.create_database(database, request, t, s3_service, self.translation_llm_config)
 
         return self
@@ -352,7 +363,7 @@ class KnowledgeController(TenantScopedController):
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> SignedUrlDto:
             """Generates a presigned URL for downloading a document's source file."""
-            if database in ["admin", "local", "config"]:
+            if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             url = KnowledgeService.get_document_url(
                 db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
@@ -392,7 +403,7 @@ class KnowledgeController(TenantScopedController):
             Deletes the document's source file from the data lake and schedules cleanup of the
             doc store and vector store via the pipeline's reconciliation.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             await KnowledgeService.delete_document(
                 nc=nc,
@@ -420,7 +431,7 @@ class KnowledgeController(TenantScopedController):
             nc: Annotated[NATS, Depends(use_nats)],
         ) -> BatchDeleteDocumentsResponse:
             """Best-effort scheduling of multiple document deletions with a per-document result."""
-            if database in ["admin", "local", "config"]:
+            if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return await KnowledgeService.batch_delete_documents(
                 nc=nc,

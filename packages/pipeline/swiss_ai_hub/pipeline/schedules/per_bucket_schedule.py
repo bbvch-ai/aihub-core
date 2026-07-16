@@ -25,7 +25,7 @@ def per_bucket_observe_schedule(
         job=observe_job,
         cron_schedule=f"{minute} {hour} * * *",
         name=f"PerBucketObservationAt_{hour:02}_{minute:02}",
-        description="Observes every knowledge database it owns's data lake once per day.",
+        description="Observes the data lake of every knowledge database this pipeline owns once per day.",
         default_status=DefaultScheduleStatus.RUNNING,
         execution_timezone=execution_timezone,
     )

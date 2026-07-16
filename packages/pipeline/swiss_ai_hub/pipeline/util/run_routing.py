@@ -31,6 +31,9 @@ def bucket_from_resource_init(context: InitResourceContext) -> str:
 
 def bucket_from_run_tag(context: OpExecutionContext | InputContext) -> str:
     """Resolve the run's bucket from the ``aihub/bucket`` run tag inside an op or IO manager."""
+    # OpExecutionContext.run_tags is public; InputContext exposes no public run-tags (or run) accessor
+    # as of dagster 1.13.5 — its only route is the non-public step_context. Revisit if InputContext gains
+    # a public run_tags/dagster_run property, or if step_context is removed/renamed on a Dagster upgrade.
     run_tags = context.run_tags if isinstance(context, OpExecutionContext) else context.step_context.run_tags
     if BUCKET_RUN_TAG not in run_tags:
         raise ValueError(

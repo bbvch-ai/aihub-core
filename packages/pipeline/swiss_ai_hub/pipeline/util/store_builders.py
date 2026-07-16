@@ -23,6 +23,13 @@ from the ``aihub/bucket`` run tag on the non-partitioned observe/remove path —
 Builds are cached per identity so repeated lookups within a process reuse a single connection.
 """
 
+# Lazily-created, process-wide event loop for building vector stores from a synchronous caller.
+# pymilvus 2.6+ constructs an AsyncMilvusClient in MilvusVectorStore.__init__ (which calls
+# asyncio.get_running_loop()) and retains a reference to that loop for the store's lifetime, so it
+# cannot be closed. Sharing one loop across every bucket keeps this to a single long-lived loop for the
+# whole process rather than one per store_name (which also avoids N "unclosed event loop" warnings).
+_vector_store_loop: asyncio.AbstractEventLoop | None = None
+
 
 @cache
 def build_doc_store(store_name: str) -> MongoDocumentStore:
@@ -54,15 +61,15 @@ def build_vector_store(store_name: str) -> MilvusVectorStore:
         asyncio.get_running_loop()
         return _create()
     except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        global _vector_store_loop
+        if _vector_store_loop is None:
+            _vector_store_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(_vector_store_loop)
 
-        # Loop left open intentionally — pymilvus retains a reference to it via AsyncMilvusClient
-        # for the lifetime of the vector store.
         async def _async_create() -> MilvusVectorStore:  # noqa: S7503
             return _create()
 
-        return loop.run_until_complete(_async_create())
+        return _vector_store_loop.run_until_complete(_async_create())
 
 
 def build_s3_data_lake_client(bucket: str, *, ensure_bucket: bool = False) -> S3DataLakeClient:

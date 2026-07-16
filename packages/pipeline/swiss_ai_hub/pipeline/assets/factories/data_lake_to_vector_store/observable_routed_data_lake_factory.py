@@ -34,7 +34,7 @@ def observable_routed_data_lake_factory(
         group_name=group_name_from_asset_key(key),
         partitions_def=partitions,
         io_manager_key="data_lake_io_manager",
-        description="Observes each knowledge database it owns's data lake for changes (routed by run tag)",
+        description="Observes the data lake of each knowledge database this pipeline owns for changes (routed by run tag)",
     )
     def observable_routed_data_lake(
         context: OpExecutionContext,

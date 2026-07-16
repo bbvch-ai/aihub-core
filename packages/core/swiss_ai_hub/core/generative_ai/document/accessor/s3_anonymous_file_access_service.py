@@ -88,6 +88,10 @@ class S3AnonymousFileAccessService:
             self._s3_client.create_bucket(Bucket=container)
             logger.info(f"Created S3 bucket '{container}' for self-service knowledge database")
 
+        # AllowedOrigins is "*" by design: the entitlement lives in the short-lived, signed presigned URL,
+        # not in CORS. The origin we would otherwise pin is the browser app's own domain (Admin UI /
+        # OpenWebUI), which is deployment-specific and not known to these S3 settings — PUBLIC_ENDPOINT is
+        # the S3 host, not the frontend host. Narrow this to the frontend origin only once it is configurable.
         self._s3_client.put_bucket_cors(
             Bucket=container,
             CORSConfiguration={
@@ -135,17 +139,13 @@ class S3AnonymousFileAccessService:
             raise ValueError("Lifetime must be between 1 and 168 hours")
 
         signing_client = self._s3_internal_client if internal else self._s3_public_client
-        try:
-            # so the URL is accessible from browsers
-            presigned_url = signing_client.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": container, "Key": file_path},
-                ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds
-            )
-            logger.debug(f"Generated presigned URL for {container}/{file_path}, expires in {lifetime_hours}h")
-            return presigned_url
-        except ClientError as e:
-            raise Exception(f"Failed to generate presigned URL: {e}")
+        presigned_url = signing_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": container, "Key": file_path},
+            ExpiresIn=int(lifetime_hours * 3600),
+        )
+        logger.debug(f"Generated presigned URL for {container}/{file_path}, expires in {lifetime_hours}h")
+        return presigned_url
 
     @trace_fn
     def get_url_signing_secret(self) -> str:
@@ -177,17 +177,13 @@ class S3AnonymousFileAccessService:
         if lifetime_hours <= 0 or lifetime_hours > 24:  # 24 hours max for uploads
             raise ValueError("Lifetime must be between 1 and 24 hours")
 
-        try:
-            # so the URL is accessible from browsers
-            presigned_url = self._s3_public_client.generate_presigned_url(
-                "put_object",
-                Params={"Bucket": container, "Key": file_path, "ContentType": content_type},
-                ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds
-            )
-            logger.debug(f"Generated presigned upload URL for {container}/{file_path}, expires in {lifetime_hours}h")
-            return presigned_url
-        except ClientError as e:
-            raise Exception(f"Failed to generate presigned upload URL: {e}")
+        presigned_url = self._s3_public_client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": container, "Key": file_path, "ContentType": content_type},
+            ExpiresIn=int(lifetime_hours * 3600),
+        )
+        logger.debug(f"Generated presigned upload URL for {container}/{file_path}, expires in {lifetime_hours}h")
+        return presigned_url
 
     @trace_fn
     def download_file(self, container: str, file_path: str) -> bytes:
@@ -218,23 +214,16 @@ class S3AnonymousFileAccessService:
             raise ValueError(_FILE_PATH_EMPTY_ERROR)
 
         try:
-            # Use head_object to check existence without downloading the file
             self._s3_client.head_object(Bucket=container, Key=file_path)
             logger.debug(f"File verification successful: {container}/{file_path}")
             return True
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code in ["404", "NoSuchKey"]:
-                # File doesn't exist - this is expected behavior, not an error
+                # A missing object is the expected negative result, not a failure.
                 logger.debug(f"File does not exist: {container}/{file_path}")
                 return False
-            else:
-                # Unexpected error occurred
-                logger.error(f"Failed to verify file existence {container}/{file_path}: {e}")
-                raise Exception(f"Failed to verify file existence: {e}")
-        except Exception as e:
-            logger.error(f"Failed to verify file existence {container}/{file_path}: {e}")
-            raise Exception(f"Failed to verify file existence: {e}")
+            raise
 
     def list_files(self, container: str, prefix: str = "") -> list[dict]:
         """
@@ -247,41 +236,33 @@ class S3AnonymousFileAccessService:
         if not container or not container.strip():
             raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
 
-        try:
-            files = []
-            paginator = self._s3_client.get_paginator("list_objects_v2")
-            page_iterator = paginator.paginate(
-                Bucket=container,
-                Prefix=prefix,
-            )
+        files = []
+        paginator = self._s3_client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(
+            Bucket=container,
+            Prefix=prefix,
+        )
 
-            for page in page_iterator:
-                if "Contents" not in page:
+        for page in page_iterator:
+            if "Contents" not in page:
+                continue
+
+            for obj in page["Contents"]:
+                # Skip directories (keys ending with '/')
+                if obj["Key"].endswith("/"):
                     continue
 
-                for obj in page["Contents"]:
-                    # Skip directories (keys ending with '/')
-                    if obj["Key"].endswith("/"):
-                        continue
+                files.append(
+                    {
+                        "key": obj["Key"],
+                        "size": obj["Size"],
+                        "last_modified": obj["LastModified"].isoformat(),
+                        "etag": obj.get("ETag", "").strip('"'),
+                    }
+                )
 
-                    files.append(
-                        {
-                            "key": obj["Key"],
-                            "size": obj["Size"],
-                            "last_modified": obj["LastModified"].isoformat(),
-                            "etag": obj.get("ETag", "").strip('"'),
-                        }
-                    )
-
-            logger.debug(f"Listed {len(files)} files in {container} with prefix '{prefix}'")
-            return files
-
-        except ClientError as e:
-            logger.error(f"Failed to list files in {container} with prefix '{prefix}': {e}")
-            raise Exception(f"Failed to list files: {e}")
-        except Exception as e:
-            logger.error(f"Failed to list files in {container} with prefix '{prefix}': {e}")
-            raise Exception(f"Failed to list files: {e}")
+        logger.debug(f"Listed {len(files)} files in {container} with prefix '{prefix}'")
+        return files
 
     @trace_fn
     def delete_file(self, container: str, file_path: str) -> None:
@@ -293,3 +274,28 @@ class S3AnonymousFileAccessService:
 
         self._s3_client.delete_object(Bucket=container, Key=file_path)
         logger.info(f"Deleted file: {container}/{file_path}")
+
+    @trace_fn
+    def delete_container(self, container: str) -> None:
+        """Empty and remove an S3 container, tolerating one that is already gone.
+
+        S3 refuses to delete a non-empty bucket, so every object is removed first (paginated, in
+        1000-key batches). Idempotent: a missing bucket is treated as success, so this is safe to call
+        as a create-time rollback and as a repeatable knowledge-database teardown step.
+        """
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+
+        try:
+            paginator = self._s3_client.get_paginator("list_objects_v2")
+            for page in paginator.paginate(Bucket=container):
+                keys = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
+                if keys:
+                    self._s3_client.delete_objects(Bucket=container, Delete={"Objects": keys})
+
+            self._s3_client.delete_bucket(Bucket=container)
+            logger.info(f"Deleted S3 container '{container}'")
+        except ClientError as error:
+            if error.response["Error"]["Code"] in ("404", "NoSuchBucket"):
+                return
+            raise

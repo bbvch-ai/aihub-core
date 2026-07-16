@@ -265,6 +265,9 @@ class S3DataLakeClient(AbstractDataLakeClient):
             else:
                 raise
 
+        # AllowedOrigins is "*" by design: the entitlement lives in the short-lived, signed presigned URL,
+        # not in CORS. The origin we would otherwise pin is the browser app's own domain, which is
+        # deployment-specific and not known here. Narrow this once the frontend origin is configurable.
         cors_config = {
             "CORSRules": [
                 {
