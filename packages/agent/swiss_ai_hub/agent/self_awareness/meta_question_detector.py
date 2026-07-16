@@ -3,7 +3,7 @@ import logging
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
-from openai import BadRequestError
+from openai import APIError, BadRequestError
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.self_awareness.meta_question_classification import MetaQuestionClassification
@@ -68,9 +68,12 @@ async def detect_meta_question(llm: LLM, t: LocaleHandler, user_query: str) -> M
         except BadRequestError:
             response = await llm.achat([message])
         label = _parse_label(str(response.message.content))
-    except (ValueError, TypeError) as unparseable_response:
+    except (APIError, ValueError, TypeError) as detection_failure:
+        # Detection gates every chat message, so a transient gateway error (timeout, connection,
+        # rate-limit, 5xx — all openai.APIError) or an unparseable response must degrade to the normal
+        # pipeline, never surface as an ExceptionEvent that kills an otherwise-healthy run.
         logger.warning(
-            "Meta-question detection failed (%s); treating as a normal question.", type(unparseable_response).__name__
+            "Meta-question detection failed (%s); treating as a normal question.", type(detection_failure).__name__
         )
         label = None
 
