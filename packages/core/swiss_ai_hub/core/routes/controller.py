@@ -181,8 +181,11 @@ class Controller(abc.ABC):
                 else:
                     span.set_attribute(f"resource.{param_name}", str(param_value))
 
-        # Request context
-        span.set_attribute("http.route", request.url.path)
+        # Record the concrete path on url.path (current OTel HTTP semconv; what SigNoz
+        # indexes). Never overwrite http.route, which the FastAPI instrumentation keeps as
+        # the bounded route template — de-templating it exploded metric/label cardinality
+        # (one series per URL) — see issue #1496.
+        span.set_attribute("url.path", request.url.path)
         if client_host := getattr(request.client, "host", None):
             span.set_attribute("client.ip", client_host)
 

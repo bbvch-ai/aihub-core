@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-pipeline"
-version = "0.311.0"
+version = "0.311.1"
 description = "Swiss AI Hub Pipeline SDK: Dagster-based document ingestion, parsing, embedding, and vector storage for RAG."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.311.0",
+    "swiss-ai-hub-core==0.311.1",
     "dagster-webserver>=1.11.2",
     "dagster-postgres>=0.27.2",
     "dagster-azure>=0.27.2",

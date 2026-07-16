@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.server.openapi import MCPType, RouteMap
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.metrics import NoOpMeterProvider
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
@@ -21,6 +22,11 @@ from swiss_ai_hub.api.routes.process.process_controller import ProcessController
 from swiss_ai_hub.api.runners.lifetime.lifetime_manager import lifetime_manager
 
 logger = logging.getLogger(__name__)
+
+# Bounded allowlist of request headers captured as span attributes. Capturing every
+# header ([".*"]) added high-cardinality attributes (user-agent, traceparent, cookie,
+# content-length) that inflated trace/metric cardinality — see issue #1496.
+CAPTURED_REQUEST_HEADERS = ["content-type", "accept", "accept-language"]
 
 
 class ApiRunner(Runner):
@@ -195,11 +201,14 @@ class ApiRunner(Runner):
             logger.info("OpenTelemetry instrumentation disabled: OTEL_ENABLED=False")
             return
 
+        # NoOpMeterProvider suppresses the http.server.duration histogram that FastAPI
+        # instrumentation emits as a side-effect. Metrics are not deliberately used here
+        # and the unbounded histogram was the SigNoz cost driver — see issue #1496.
         FastAPIInstrumentor.instrument_app(
             self._api_app,
             exclude_spans=["receive", "send"],
-            http_capture_headers_server_request=[".*"],
-            http_capture_headers_sanitize_fields=["authorization"],
+            http_capture_headers_server_request=CAPTURED_REQUEST_HEADERS,
+            meter_provider=NoOpMeterProvider(),
         )
         logger.info("FastAPI application instrumented with OpenTelemetry")
         logger.info("Note: Core OpenTelemetry, MongoDB, and HTTP client configuration handled in lifetime_manager")

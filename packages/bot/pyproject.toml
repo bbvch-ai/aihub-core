@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-bot"
-version = "0.311.0"
+version = "0.311.1"
 description = "Swiss AI Hub Bot SDK: connect users to AI agents via MS Teams, Slack, and web chat."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.311.0",
+    "swiss-ai-hub-core==0.311.1",
     "azure-identity>=1.19.0",
     "azure-mgmt-cosmosdb>=9.7.0",
     "azure-mgmt-resource>=23.2.0",

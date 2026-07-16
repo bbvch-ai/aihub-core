@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.311.1] - 2026-07-16 - OpenTelemetry Cost Optimization and Observability Fixes
+
+### Fixed
+
+- 🐛 **Reduced OpenTelemetry Data Cardinality**: Implemented robust filtering for HTTP server metrics to prevent
+  unbounded, high-cardinality data (e.g., `http.server.duration`, `http.server.request.size`) from being sent to the
+  backend. This change significantly reduces observability costs and improves the signal-to-noise ratio of collected
+  telemetry data by stopping automatic FastAPI/ASGI instrumentation.
+- ⚡️ **Optimized OpenTelemetry HTTP Header Capture**: Switched from capturing all HTTP request headers to an explicit,
+  bounded allowlist (`content-type`, `accept`, `accept-language`) for span attributes. This prevents high-cardinality
+  attributes like `user-agent` or `cookie` from inflating trace and metric costs.
+- 🔄 **Preserved `http.route` Semantics**: Ensured that the `http.route` OpenTelemetry attribute correctly retains its
+  bounded route template value, while concrete URL paths are now recorded under `url.path`. This prevents metric and
+  label cardinality explosions caused by de-templating `http.route`.
+- 🧪 **Added Regression Tests for OTel Optimizations**: Introduced new tests to safeguard against the future
+  re-introduction of high-cardinality OpenTelemetry data issues by verifying HTTP header capture limits and the behavior
+  of the `http.route` attribute.
+
+______________________________________________________________________
+
 ## [v0.311.0] - 2026-07-15 - Agent Configuration Export Introduced
 
 ### Added
