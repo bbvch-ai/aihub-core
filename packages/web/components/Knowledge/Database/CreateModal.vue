@@ -17,8 +17,8 @@
           <span class="ml-1 text-xs text-red-500">*</span>
         </label>
         <InputText
+          id="database-name-input"
           v-model="name"
-          input-id="database-name-input"
           :placeholder="t('knowledge.form.database_name.placeholder')"
           :class="{ 'p-invalid': error || nameValidationError }"
           :disabled="isCreating"
@@ -42,8 +42,8 @@
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
         <InputText
+          id="database-display-name-input"
           v-model="displayName"
-          input-id="database-display-name-input"
           :placeholder="t('knowledge.form.display_name.placeholder')"
           :disabled="isCreating"
         />
@@ -59,8 +59,8 @@
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
         <Textarea
+          id="database-description-textarea"
           v-model="description"
-          input-id="database-description-textarea"
           :placeholder="t('knowledge.form.description.placeholder')"
           :disabled="isCreating"
           rows="3"
@@ -77,8 +77,8 @@
           <span class="ml-1 text-xs text-red-500">*</span>
         </label>
         <Select
+          id="database-ingestor-select"
           v-model="ingestor"
-          input-id="database-ingestor-select"
           :options="ingestors"
           option-label="display_name"
           option-value="name"
@@ -117,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import type { CreateDatabaseRequest, IngestorType } from '@core/sdk/client'
+import type { CreateDatabaseRequest } from '@core/sdk/client'
 
 const { t } = useI18n()
 
@@ -137,11 +137,11 @@ const { tenantId } = useTenant()
 const name = ref('')
 const displayName = ref('')
 const description = ref('')
-const ingestor = ref<IngestorType | undefined>()
+const ingestor = ref<string | undefined>()
 const error = ref('')
 const isCreating = ref(false)
 
-const defaultIngestor = computed(() => ingestors.value?.[0]?.name as IngestorType | undefined)
+const defaultIngestor = computed(() => ingestors.value?.[0]?.name)
 
 const selectedIngestorDescription = computed(
   () => ingestors.value?.find(candidate => candidate.name === ingestor.value)?.description,
@@ -185,8 +185,8 @@ const handleCreate = async () => {
 
   const requestBody: CreateDatabaseRequest & { database: string, tenantId: string } = {
     database: name.value,
-    display_name: displayName.value,
-    description: description.value,
+    display_name: displayName.value.trim() || undefined,
+    description: description.value.trim() || undefined,
     ingestor: ingestor.value,
     tenantId: tenantId.value!,
   }

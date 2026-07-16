@@ -5876,7 +5876,8 @@ export const CreateDatabaseRequestSchema = {
         "A short description of the knowledge database in the user's locale.",
     },
     ingestor: {
-      $ref: "#/components/schemas/IngestorType",
+      type: "string",
+      title: "Ingestor",
       description:
         "The deployed ingestion pipeline that processes this database's documents.",
       default: "rag",

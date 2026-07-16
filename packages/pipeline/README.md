@@ -203,6 +203,45 @@ running under the shared daemon.
 
 ______________________________________________________________________
 
+## Making a custom pipeline selectable in the UI
+
+Deploying a pipeline is not enough for a user to create a knowledge database for it from the admin UI — the API must
+know the pipeline exists. Two pieces connect a custom pipeline to self-service database creation:
+
+**1. Own the databases you ingest.** Build your Stage 2 with `rag_pipeline_definitions(ingestor="acme_rag", …)` — the
+route-per-run RAG pipeline. Its sensors and schedule claim every knowledge database whose `ingestor` equals that string,
+so the id you pass here is the routing key.
+
+**2. Register it so users can pick it.** Contribute an `Ingestor` (the same `id`, plus localized labels) to the core
+`IngestorRegistry` via a `swiss_ai_hub.ingestors` entry point in your package:
+
+```python
+# acme_pipeline/ingestors.py
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.persistence import Ingestor
+
+acme_rag = Ingestor(
+    id="acme_rag",  # must equal the ingestor passed to rag_pipeline_definitions
+    display_name=LocaleString(en="Acme RAG", de="Acme RAG", fr="Acme RAG", it="Acme RAG"),
+    description=LocaleString(en="Acme's OCR-heavy ingestion pipeline"),
+)
+```
+
+```toml
+# pyproject.toml
+[project.entry-points."swiss_ai_hub.ingestors"]
+acme_rag = "acme_pipeline.ingestors:acme_rag"
+```
+
+Install that package into the platform's API image. The API auto-discovers the entry point, `GET /knowledge/ingestors`
+then offers "Acme RAG" in the create-database dialog, and `create_database` accepts it — with **no** change to the
+platform's `IngestorType` enum, API contract, or generated SDK. (A deployment that builds its own API from the
+`swiss-ai-hub-api` SDK can instead call `IngestorRegistry.register(acme_rag)` at startup.) See ADR
+`2026_06_18_rag_pipeline_route_per_run` for the rationale, including why the `ingestor` field is a plain string at the
+API boundary.
+
+______________________________________________________________________
+
 ## Links
 
 - **Source & issues**: https://github.com/bbvch-ai/aihub-core

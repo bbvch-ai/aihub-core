@@ -1,6 +1,6 @@
 import pytest
 from bson import ObjectId
-from mongoengine import connect, disconnect
+from mongoengine import ValidationError, connect, disconnect
 
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
@@ -74,3 +74,32 @@ class TestIngestorDefault:
     def test_unassigned_is_not_offered_as_a_user_choice(self):
         assert IngestorType.UNASSIGNED not in IngestorType.selectable()
         assert IngestorType.selectable() == [IngestorType.RAG]
+
+
+class TestUpdateBucket:
+    def test_auto_sync_can_be_toggled_off(self):
+        """A truthy check would swallow ``auto_sync=False`` and make the flag impossible to turn off."""
+        bucket = BucketEntity.create_bucket(bucket_name="syncingdb", auto_sync=True)
+
+        updated = BucketEntity.update_bucket(str(bucket.id), auto_sync=False)
+
+        assert updated.auto_sync is False
+
+    def test_omitting_auto_sync_leaves_it_unchanged(self):
+        bucket = BucketEntity.create_bucket(bucket_name="syncingdb", auto_sync=True)
+
+        updated = BucketEntity.update_bucket(str(bucket.id), ingestor=IngestorType.RAG.value)
+
+        assert updated.auto_sync is True
+
+
+class TestBucketNameValidation:
+    def test_rejects_a_name_that_does_not_start_with_a_letter(self):
+        """The name doubles as a Milvus collection, which must start with a letter or underscore."""
+        with pytest.raises(ValidationError):
+            BucketEntity.create_bucket(bucket_name="001")
+
+    def test_accepts_a_letter_led_alphanumeric_name(self):
+        bucket = BucketEntity.create_bucket(bucket_name="db001")
+
+        assert bucket.bucket_name == "db001"

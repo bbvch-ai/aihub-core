@@ -11,6 +11,8 @@ class CreateDatabaseRequest(BaseModel):
     description: Annotated[
         str | None, Field(description="A short description of the knowledge database in the user's locale.")
     ] = None
+    # Deliberately a plain str, not the IngestorType enum, so a database can be assigned to a custom pipeline
+    # registered via IngestorRegistry. The value is validated against the registry in create_database.
     ingestor: Annotated[
-        IngestorType, Field(description="The deployed ingestion pipeline that processes this database's documents.")
-    ] = IngestorType.RAG
+        str, Field(description="The deployed ingestion pipeline that processes this database's documents.")
+    ] = IngestorType.RAG.value

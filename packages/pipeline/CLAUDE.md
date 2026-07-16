@@ -320,7 +320,11 @@ location, customize. See `templates/sources/README.md` for the full guide includ
   write path, `aihub/bucket` run tag on the observe/remove path). Built by `rag_pipeline_definitions()` in
   `util/rag_definitions_util.py`. Creating a knowledge database needs no new code location, compose service, or env var.
   Every deployment-global name (asset keys, partition registry, jobs) is derived from the ingestor so a second pipeline
-  *type* can be deployed alongside it.
+  *type* can be deployed alongside it. A custom pipeline built with a non-`rag` ingestor becomes **user-selectable** by
+  registering an `Ingestor` with the core `IngestorRegistry` (a `swiss_ai_hub.ingestors` entry point, or an explicit
+  `register()`); the API's `GET /knowledge/ingestors` and `create_database` read the registry. The `ingestor` field is a
+  plain `str` at the API boundary precisely so custom values are representable — see ADR
+  `2026_06_18_rag_pipeline_route_per_run`.
 - `default_rag_pipeline/` — legacy, per-tenant bucket (`AIHubSettings().DEFAULT_BUCKET_NAME`)
 - `shared_rag_pipeline/` — legacy, shared bucket (`AIHubSettings().SHARED_BUCKET_NAME`)
 

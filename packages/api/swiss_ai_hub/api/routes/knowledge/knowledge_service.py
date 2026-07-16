@@ -5,7 +5,7 @@ from typing import Annotated
 import mongoengine
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from mongoengine import DoesNotExist, register_connection
+from mongoengine import ConnectionFailure, DoesNotExist, NotUniqueError, register_connection
 from nats.aio.client import Client as NATS
 from pydantic import Field
 from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
@@ -18,7 +18,12 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMC
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import MongoSettings, trace_fn
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities import (
+    BucketEntity,
+    IngestorRegistry,
+    IngestorType,
+    NamespaceEntity,
+)
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
@@ -62,7 +67,9 @@ class KnowledgeService:
     def _ensure_db_exists(db: str):
         try:
             mongoengine.connection.get_connection(alias=db)
-        except Exception:
+        except ConnectionFailure:
+            # ConnectionFailure here means the alias has not been registered yet — register it lazily.
+            # Any other error (e.g. Mongo unreachable) must propagate, not be mistaken for a missing alias.
             register_connection(
                 alias=db,
                 name=db,
@@ -223,8 +230,14 @@ class KnowledgeService:
     @staticmethod
     @trace_fn
     def get_ingestors(t: LocaleHandler) -> list[IngestorDTO]:
-        """Returns the ingestion pipelines a user may pick when creating a knowledge database."""
-        return [IngestorDTO.from_ingestor_type(ingestor, t) for ingestor in IngestorType.selectable()]
+        """Returns the ingestion pipelines a user may pick when creating a knowledge database.
+
+        The platform's own pipelines come from ``IngestorType.selectable()``; any custom pipelines a
+        deployment registered via ``IngestorRegistry`` are appended, so they are offered in the UI too.
+        """
+        platform = [IngestorDTO.from_ingestor_type(ingestor, t) for ingestor in IngestorType.selectable()]
+        custom = [IngestorDTO.from_ingestor(ingestor, t) for ingestor in IngestorRegistry.custom()]
+        return platform + custom
 
     @staticmethod
     async def create_database(
@@ -244,10 +257,10 @@ class KnowledgeService:
         The S3 bucket is provisioned (with browser-upload CORS) up front so documents can be uploaded
         immediately, before the pipeline's first lazy ingest.
         """
-        if request.ingestor not in IngestorType.selectable():
+        if not IngestorRegistry.is_selectable(request.ingestor):
             raise HTTPException(
                 status_code=400,
-                detail=f"Ingestor '{request.ingestor.value}' cannot be assigned to a self-service database.",
+                detail=f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database.",
             )
 
         try:
@@ -265,8 +278,6 @@ class KnowledgeService:
                 ),
             )
 
-        s3_service.ensure_bucket_with_cors(database)
-
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
             text=request.display_name, t=t, llm_config=llm_config
         )
@@ -274,13 +285,27 @@ class KnowledgeService:
             request.description, t, llm_config
         )
 
-        bucket = BucketEntity.create_bucket(
-            bucket_name=database,
-            db_name=database,
-            name=display_name_entity,
-            description=description_entity,
-            ingestor=request.ingestor.value,
-        )
+        # Persist the entity before provisioning storage: the unique bucket_name index serialises
+        # concurrent admin calls (the loser gets NotUniqueError, not a second bucket), so any failure
+        # before this point leaves no orphan. If provisioning fails, roll back both the container and
+        # the row so a retry starts clean.
+        try:
+            bucket = BucketEntity.create_bucket(
+                bucket_name=database,
+                db_name=database,
+                name=display_name_entity,
+                description=description_entity,
+                ingestor=request.ingestor,
+            )
+        except NotUniqueError:
+            raise HTTPException(status_code=409, detail=f"Database '{database}' already exists.") from None
+
+        try:
+            s3_service.ensure_bucket_with_cors(database)
+        except Exception:
+            s3_service.delete_container(database)
+            BucketEntity.delete_bucket(str(bucket.id))
+            raise
 
         return DatabaseResponse(
             name=bucket.db_name,

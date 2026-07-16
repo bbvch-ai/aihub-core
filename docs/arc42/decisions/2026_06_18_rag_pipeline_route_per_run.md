@@ -74,24 +74,43 @@ pipelines untouched.
    `aihub.admin.knowledge.{database}`) and UI, mirroring the existing create-namespace flow. No deployment required.
 
 3. **The user selects the ingestor at creation time**, rather than it being assigned implicitly. The choice is offered
-   as a **server-provided, localized list** (`GET /knowledge/ingestors`, backed by `IngestorType.selectable()`), not a
+   as a **server-provided, localized list** (`GET /knowledge/ingestors`, backed by the `IngestorRegistry`), not a
    client-side enum: the set of pipelines a database may be assigned to is a platform fact, so the API owns it and the
    UI renders whatever it is given. `create_database` rejects a non-selectable ingestor with a 400.
 
-   Only `rag` is selectable today. `default_rag`/`shared_rag` are deliberately **excluded**: each is bound to a single
-   bucket by an env var at deploy time, so a database assigned to one of them would be silently never ingested. They
-   exist as `ingestor` values only to mark the legacy buckets for the routing guard.
+   Only `rag` is selectable out of the box. `default_rag`/`shared_rag` are deliberately **excluded**: each is bound to a
+   single bucket by an env var at deploy time, so a database assigned to one of them would be silently never ingested.
+   They exist as `ingestor` values only to mark the legacy buckets for the routing guard.
 
-   A selector with one option is intentional. When a second pipeline *type* is deployed (a different chunking strategy,
-   an OCR-heavy variant, a tenant-specific pipeline), the database must record which one owns it — and that is a user's
-   choice, not an implicit default. Making the API shape right from the start means a new pipeline type needs only a new
-   enum value plus translations: no API contract change, no SDK regeneration, no UI change.
+   A selector with one built-in option is intentional. When a second pipeline *type* is deployed (a different chunking
+   strategy, an OCR-heavy variant, a tenant-specific pipeline), the database must record which one owns it — and that is
+   a user's choice, not an implicit default.
+
+   **Extending the selectable set — `IngestorRegistry`.** A customer-specific deployment makes its own route-per-run
+   pipeline selectable *without forking the platform*. It registers an `Ingestor` (a routing `id` plus localized labels)
+   with the core `IngestorRegistry`, either by declaring it under the `swiss_ai_hub.ingestors` entry-point group —
+   auto-discovered by the stock API image the first time the registry is queried — or by calling
+   `IngestorRegistry.register()` in a deployment that builds its own API from the `packages/api` SDK. Both
+   `GET /knowledge/ingestors` and `create_database` consult the registry, so a registered ingestor is immediately
+   offered and accepted. The `id` must equal the `ingestor` string the deployment passes to `rag_pipeline_definitions` —
+   that shared string is what makes the pipeline claim the databases assigned to it. No `IngestorType` change, no API
+   contract change, no SDK regeneration.
+
+   **Why the wire field is a plain `str`, not the `IngestorType` enum.** The `ingestor` value on the request/response
+   DTOs — and therefore in the OpenAPI schema and generated SDK — is deliberately a free string. Typing it as the closed
+   `IngestorType` enum would bake the platform's fixed set into the API contract and the SDK, making a custom,
+   deployment-registered ingestor *unrepresentable on the wire*: a client validating against the enum would reject it,
+   defeating the whole registry. The selectable set stays authoritative and server-owned (the registry), but it is
+   discovered at runtime via `GET /knowledge/ingestors` instead of frozen into a type. `BucketEntity.ingestor` likewise
+   carries no static `choices` — `create_database` validates the submitted value against the registry, and because
+   routing is exact-match a value owned by no pipeline is simply never ingested. `IngestorType` remains an enum
+   internally for the platform's own values (defaults, the routing guard, the seeder); only the boundary is a string.
 
 4. **One Milvus collection per database, routed per run.** The bucket/db becomes a run/partition dimension via a
    composite partition key `{bucket}|{encoded_file_uri}` in a single shared `DynamicPartitionsDefinition`. IO managers
    and resources resolve `container_name`/`store_name` per run instead of from constructor config. One file still maps
    to one Dagster partition. (`|` is a safe separator because `BucketEntity` already constrains bucket names to
-   `^[a-zA-Z0-9]+$`.)
+   `^[a-zA-Z][a-zA-Z0-9]*$` — a leading letter is also required so the name is a valid Milvus collection.)
 
    **Routing uses two different mechanisms, chosen by how the run was triggered — this is the central correctness
    constraint of the design.** Dagster's `InitResourceContext` exposes *neither* the partition key *nor* custom run tags
@@ -143,8 +162,16 @@ pipelines untouched.
   their buckets are `unassigned`, and their asset keys, partition registries, job names, and Dagster intermediates
   prefix are all namespaced by their own container name.
 - A second pipeline *type* can be deployed alongside the first, because every deployment-global name is ingestor-scoped.
+- A customer-specific pipeline becomes user-selectable without forking the platform: registering an `Ingestor` with the
+  `IngestorRegistry` (via the `swiss_ai_hub.ingestors` entry point, or `register()` in a self-built API) is enough — no
+  `IngestorType` change, no API-contract change, no SDK regeneration.
 
 ### Trade-offs
+
+- The `ingestor` field is a plain `str` at the API boundary (request/response DTOs, OpenAPI, SDK) rather than the typed
+  `IngestorType` enum. This is what lets a deployment-registered custom ingestor travel on the wire, but the SDK client
+  gets a string instead of a discriminated union, so the frontend does not get compile-time validation of ingestor
+  values — it relies on the server-provided `GET /knowledge/ingestors` list and server-side validation instead.
 
 - The two legacy fixed deployments remain; the per-database deployment scaffolding is not removed (it is simply no
   longer needed for new databases). This is a **deliberate deviation** from the originating issue, which asked to
@@ -155,11 +182,14 @@ pipelines untouched.
   by `uri_to_id`, retrieval keeps working throughout — but it is hours of avoidable compute that should be scheduled
   deliberately rather than triggered as a side effect of merging a feature. Rollback for that future change is to flip
   `ingestor` back and redeploy the legacy code locations.
+
 - Three `ingestor` values exist while only one is selectable, which reads as redundancy until the legacy pipelines are
   retired. The alternative — omitting the field and inferring ownership from a bucket name allowlist — would bury the
   routing rule in the pipeline instead of the data model.
+
 - The RAG pipeline runs one asset graph shared across all its databases — one process, one resource pool, one crash
   domain — rather than the per-database isolation the legacy deployments have. Acceptable at expected scale; the
   per-tick enumeration of buckets is the scaling limit to watch.
+
 - IO managers resolve the store per run (a cheap idempotent Mongo lookup, cached per run), trading a little runtime work
   for deploy-time flexibility.

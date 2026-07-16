@@ -4007,7 +4007,7 @@ export type CreateDatabaseRequest = {
   /**
    * The deployed ingestion pipeline that processes this database's documents.
    */
-  ingestor?: IngestorType;
+  ingestor?: string;
 };
 
 /**

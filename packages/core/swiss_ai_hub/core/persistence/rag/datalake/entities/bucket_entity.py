@@ -30,19 +30,21 @@ class BucketEntity(Document):
     description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
-    ingestor = StringField(
-        required=True,
-        default=IngestorType.UNASSIGNED.value,
-        choices=[ingestor_type.value for ingestor_type in IngestorType],
-    )
+    # No static ``choices``: besides the platform IngestorType values, a custom deployment can register its
+    # own ingestor via IngestorRegistry, and that set is not known at class-definition time. The create path
+    # validates the value against IngestorRegistry; routing is exact-match, so an unknown value is simply
+    # owned by no pipeline. The default stays the inert ``unassigned`` (see IngestorType).
+    ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
         if not name:
             raise ValidationError(f"{field_name} cannot be empty")
 
-        if not re.match(r"^[a-zA-Z0-9]+$", name):
-            raise ValidationError(f"{field_name} '{name}' can only contain alphanumeric characters")
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9]*$", name):
+            raise ValidationError(
+                f"{field_name} '{name}' must start with a letter and contain only alphanumeric characters"
+            )
 
     @classmethod
     def create_bucket(
@@ -115,11 +117,11 @@ class BucketEntity(Document):
             bucket.name = name
         if description:
             bucket.description = description
-        if auto_sync:
+        if auto_sync is not None:
             bucket.auto_sync = auto_sync
         if datalake_type:
             bucket.datalake_type = datalake_type
-        if ingestor:
+        if ingestor is not None:
             bucket.ingestor = ingestor
         bucket.save()
         return bucket
