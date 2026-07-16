@@ -238,3 +238,7 @@ unread_mail_listed_event:
 mail_fetched_event:
   name: E-mail Recuperata
   description: L'agente ha recuperato un messaggio, incluso il corpo e gli allegati.
+mail_moved_event:
+  name: E-mail Spostata
+  description: L'agente ha spostato un messaggio dalla cartella di origine a una cartella
+    di destinazione.

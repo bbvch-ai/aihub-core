@@ -24,3 +24,10 @@ config:
   drafts_folder:
     label: Drafts Folder
     help: Mailbox folder drafts are written to.
+  enable_move:
+    label: Move Fetched Mail
+    help: When on, the fetched mail is moved into the processed folder after it is
+      read. When off, the move step is skipped and the mail stays in the inbox.
+  processed_folder:
+    label: Processed Folder
+    help: Mailbox folder a processed mail is moved to when Enable Move is on.

@@ -110,6 +110,57 @@ async def test_fetch_message_raises_on_expunged_uid():
 
 
 @async_test
+async def test_move_message_uses_atomic_move_when_supported():
+    connection = _connection(fetch={101: {b"FLAGS": ()}})
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    await client.move_message("101", "Processed")
+
+    connection.select_folder.assert_called_once_with("INBOX", readonly=False)
+    connection.move.assert_called_once_with([101], "Processed")
+    connection.copy.assert_not_called()
+
+
+@async_test
+async def test_move_message_falls_back_to_copy_and_uid_expunge_without_move():
+    connection = _connection(fetch={101: {b"FLAGS": ()}})
+    connection.has_capability = MagicMock(side_effect=lambda capability: capability == b"UIDPLUS")
+    client = _client(connection)
+
+    await client.move_message("101", "Processed")
+
+    connection.move.assert_not_called()
+    connection.copy.assert_called_once_with([101], "Processed")
+    connection.delete_messages.assert_called_once_with([101])
+    connection.uid_expunge.assert_called_once_with([101])
+
+
+@async_test
+async def test_move_message_refuses_when_neither_move_nor_uidplus():
+    connection = _connection(fetch={101: {b"FLAGS": ()}})
+    connection.has_capability = MagicMock(return_value=False)
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="neither MOVE nor UIDPLUS"):
+        await client.move_message("101", "Processed")
+
+    connection.copy.assert_not_called()
+
+
+@async_test
+async def test_move_message_raises_on_expunged_uid_without_mutating():
+    connection = _connection(fetch={})
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="expunged"):
+        await client.move_message("101", "Processed")
+
+    connection.move.assert_not_called()
+
+
+@async_test
 async def test_factory_raises_and_logs_out_on_failed_login():
     connection = MagicMock()
     connection.login = MagicMock(side_effect=LoginError("[AUTHENTICATIONFAILED] Invalid credentials"))

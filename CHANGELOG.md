@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.312.0] - 2026-07-16 - Enhanced IMAP Agent: Organize Your Inbox with Mail Movement
+
+### Added
+
+- ✨ **Mail Movement Capability for IMAP Agent:** Introduced the ability for the IMAP agent to automatically move fetched
+  emails from the inbox to a specified "Processed" folder, enhancing mail organization workflows.
+- 📬 **New `MailMovedEvent`:** A dedicated event is now emitted when an email is successfully moved on the IMAP server,
+  providing clear visibility of mail organization actions in the event timeline.
+- ⚙️ **Configurable Mail Organization:** Added new IMAP client configuration options, `enable_move` and
+  `processed_folder`, allowing users to enable and define the target folder for processed emails.
+- 🦾 **Robust IMAP Message Movement Logic:** Implemented a sophisticated `move_message` method in the IMAP client that
+  intelligently utilizes the IMAP `MOVE` command when available, or falls back to `COPY` and `UID EXPUNGE` for reliable
+  and non-destructive message relocation.
+
+### Changed
+
+- 📄 **Expanded IMAP Agent Demonstrator:** The `imap_workflow` demonstrator agent has been updated to showcase the new
+  optional mail movement functionality, providing a practical example of organizing fetched emails.
+- 📝 **Updated IMAP Agent Descriptions:** Descriptions for the IMAP agent now clearly reflect its expanded capabilities,
+  highlighting the ability to organize mail in addition to reading it.
+- 🔑 **User Identity in IMAP Start Event:** The `ReadMailStartEvent` now includes an optional `user` identity field,
+  enabling more contextualized agent runs when triggered programmatically through the API.
+
+______________________________________________________________________
+
 ## [v0.311.1] - 2026-07-16 - OpenTelemetry Cost Optimization and Observability Fixes
 
 ### Fixed
