@@ -33,19 +33,24 @@ class S3AnonymousFileAccessService:
         s3_client: S3Client,
         s3_public_client: S3Client,
         s3_settings: S3StorageSettings,
+        s3_internal_client: S3Client | None = None,
     ):
         """
         Initialize the S3 anonymous file access service with injected clients.
 
-        Accepts pre-configured boto3 clients for both internal operations and
-        public URL generation, enabling proper dependency injection.
+        Accepts pre-configured boto3 clients for internal operations, public URL
+        generation, and (optionally) in-cluster presigned URL signing, enabling proper
+        dependency injection. `s3_internal_client` signs URLs that another in-cluster
+        service fetches (e.g. the LiteLLM gateway); it falls back to `s3_client` when
+        not provided, as browser-facing callers never sign internal URLs.
         """
         self._s3_client = s3_client
         self._s3_public_client = s3_public_client
+        self._s3_internal_client = s3_internal_client or s3_client
         self._s3_config = s3_settings
 
     @trace_fn
-    def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24) -> str:
+    def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24, internal: bool = False) -> str:
         """
         Generate a presigned URL for temporary read-only access to an S3 object.
 
@@ -53,8 +58,12 @@ class S3AnonymousFileAccessService:
         S3 object without requiring AWS credentials. The URL expires after
         the specified lifetime.
 
-        The URL is generated using the public endpoint so it can be accessed
-        by browsers (e.g., via Traefik-routed domain instead of internal Docker DNS).
+        By default the URL is signed against the public endpoint so browsers can
+        reach it (e.g., via Traefik-routed domain). Presigned URLs are host-bound,
+        so `internal=True` signs against the in-cluster endpoint instead — needed when
+        an in-cluster consumer (e.g. the LiteLLM gateway) must fetch the object over
+        Docker DNS rather than the public domain. Signing is offline, so this works from
+        the host even when the in-cluster host is not resolvable there.
 
         The maximum lifetime for presigned URLs is 7 days (168 hours).
         """
@@ -65,9 +74,10 @@ class S3AnonymousFileAccessService:
         if lifetime_hours <= 0 or lifetime_hours > 168:  # 7 days max
             raise ValueError("Lifetime must be between 1 and 168 hours")
 
+        signing_client = self._s3_internal_client if internal else self._s3_public_client
         try:
             # so the URL is accessible from browsers
-            presigned_url = self._s3_public_client.generate_presigned_url(
+            presigned_url = signing_client.generate_presigned_url(
                 "get_object",
                 Params={"Bucket": container, "Key": file_path},
                 ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds

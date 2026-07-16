@@ -44,6 +44,15 @@
           @click.stop="emit('clone', agent)"
         />
         <Button
+          v-tooltip.top="t('agent.export.button')"
+          icon="pi pi-download"
+          severity="secondary"
+          text
+          rounded
+          size="small"
+          @click.stop="exportAgentInstance(agent)"
+        />
+        <Button
           v-if="showDelete"
           icon="pi pi-trash"
           severity="secondary"
@@ -93,6 +102,7 @@ const toast = useToast()
 const confirm = useConfirm()
 const { tenantId } = useTenant()
 const { deleteAgentInstance, isDeleting } = useDeleteAgentInstance()
+const { exportAgentInstance } = useExportAgentInstance()
 
 const isActive = computed(() => {
   return route.params.agent_id === props.agent.agent_id && route.params.agent_class === props.agent.agent_class
