@@ -208,7 +208,6 @@ class ApiRunner(Runner):
             self._api_app,
             exclude_spans=["receive", "send"],
             http_capture_headers_server_request=CAPTURED_REQUEST_HEADERS,
-            http_capture_headers_sanitize_fields=["authorization"],
             meter_provider=NoOpMeterProvider(),
         )
         logger.info("FastAPI application instrumented with OpenTelemetry")
