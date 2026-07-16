@@ -239,3 +239,7 @@ unread_mail_listed_event:
 mail_fetched_event:
   name: E-Mail Abgerufen
   description: Der Agent hat eine Nachricht einschließlich Text und Anhängen abgerufen.
+mail_moved_event:
+  name: E-Mail Verschoben
+  description: Der Agent hat eine Nachricht aus ihrem Quellordner in einen Zielordner
+    verschoben.

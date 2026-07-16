@@ -5,6 +5,168 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.312.1] - 2026-07-16 - Enhanced UI Clarity
+
+### Added
+
+- ✨ Added an **empty state message** to the Memory List table, providing clear feedback when no items are present.
+
+______________________________________________________________________
+
+## [v0.312.0] - 2026-07-16 - Enhanced IMAP Agent: Organize Your Inbox with Mail Movement
+
+### Added
+
+- ✨ **Mail Movement Capability for IMAP Agent:** Introduced the ability for the IMAP agent to automatically move fetched
+  emails from the inbox to a specified "Processed" folder, enhancing mail organization workflows.
+- 📬 **New `MailMovedEvent`:** A dedicated event is now emitted when an email is successfully moved on the IMAP server,
+  providing clear visibility of mail organization actions in the event timeline.
+- ⚙️ **Configurable Mail Organization:** Added new IMAP client configuration options, `enable_move` and
+  `processed_folder`, allowing users to enable and define the target folder for processed emails.
+- 🦾 **Robust IMAP Message Movement Logic:** Implemented a sophisticated `move_message` method in the IMAP client that
+  intelligently utilizes the IMAP `MOVE` command when available, or falls back to `COPY` and `UID EXPUNGE` for reliable
+  and non-destructive message relocation.
+
+### Changed
+
+- 📄 **Expanded IMAP Agent Demonstrator:** The `imap_workflow` demonstrator agent has been updated to showcase the new
+  optional mail movement functionality, providing a practical example of organizing fetched emails.
+- 📝 **Updated IMAP Agent Descriptions:** Descriptions for the IMAP agent now clearly reflect its expanded capabilities,
+  highlighting the ability to organize mail in addition to reading it.
+- 🔑 **User Identity in IMAP Start Event:** The `ReadMailStartEvent` now includes an optional `user` identity field,
+  enabling more contextualized agent runs when triggered programmatically through the API.
+
+______________________________________________________________________
+
+## [v0.311.1] - 2026-07-16 - OpenTelemetry Cost Optimization and Observability Fixes
+
+### Fixed
+
+- 🐛 **Reduced OpenTelemetry Data Cardinality**: Implemented robust filtering for HTTP server metrics to prevent
+  unbounded, high-cardinality data (e.g., `http.server.duration`, `http.server.request.size`) from being sent to the
+  backend. This change significantly reduces observability costs and improves the signal-to-noise ratio of collected
+  telemetry data by stopping automatic FastAPI/ASGI instrumentation.
+- ⚡️ **Optimized OpenTelemetry HTTP Header Capture**: Switched from capturing all HTTP request headers to an explicit,
+  bounded allowlist (`content-type`, `accept`, `accept-language`) for span attributes. This prevents high-cardinality
+  attributes like `user-agent` or `cookie` from inflating trace and metric costs.
+- 🔄 **Preserved `http.route` Semantics**: Ensured that the `http.route` OpenTelemetry attribute correctly retains its
+  bounded route template value, while concrete URL paths are now recorded under `url.path`. This prevents metric and
+  label cardinality explosions caused by de-templating `http.route`.
+- 🧪 **Added Regression Tests for OTel Optimizations**: Introduced new tests to safeguard against the future
+  re-introduction of high-cardinality OpenTelemetry data issues by verifying HTTP header capture limits and the behavior
+  of the `http.route` attribute.
+
+______________________________________________________________________
+
+## [v0.311.0] - 2026-07-15 - Agent Configuration Export Introduced
+
+### Added
+
+- ✨ **Empowered users to export agent configurations**, allowing them to download a JSON file containing the full setup
+  of an agent instance directly from the agent card or its dedicated configuration page.
+- 📄 **Implemented a standardized export schema (version 1.0)** for agent configurations, ensuring consistent and
+  machine-readable data for easier backup and migration.
+- 🌐 **Included localized labels** for the new "Export" button, providing a seamless experience for users across all
+  supported languages.
+
+______________________________________________________________________
+
+## [v0.310.6] - 2026-07-15 - Enhanced Document List Selection
+
+### Added
+
+- ✨ **Introduced "Select All" for Documents:** Users can now easily select all deletable documents in the document list
+  using a new "Select All" checkbox in the table header, streamlining bulk action workflows.
+
+### Changed
+
+- 🔄 **Improved Document Selection Logic:** The mechanism for managing selected documents has been refined, ensuring that
+  the "Select All" option accurately reflects and applies only to documents that are available for deletion.
+
+### Fixed
+
+- 🐛 **Cleared Selection on Document Deletion:** Documents are now immediately deselected from the list of checked items
+  after they have been initiated for individual deletion, preventing inconsistencies in the selection state.
+
+______________________________________________________________________
+
+## [v0.310.5] - 2026-07-15 - Improved Release Tagging Workflow
+
+### Changed
+
+- ⚙️ **Improved Release Workflow Accuracy:** The GitHub Actions workflow responsible for setting `latest` tags now
+  explicitly checks out the precise source tag, ensuring greater consistency and preventing potential discrepancies
+  during release operations.
+
+______________________________________________________________________
+
+## [v0.310.4] - 2026-07-15 - Enhanced Container Health Monitoring
+
+### Added
+
+- 🚀 **Introduced Docker Health Checks:** Added robust `HEALTHCHECK` instructions to both the main web application
+  (`web`) and system administration interface (`sysadmin-web`) Docker containers. This enhancement allows container
+  orchestrators to proactively monitor service availability, automatically detect unresponsive containers, and manage
+  their lifecycle more effectively, leading to improved application resilience and operational stability.
+
+______________________________________________________________________
+
+## [v0.310.3] - 2026-07-15 - Seamless RAG Figure Delivery to LLMs
+
+### Added
+
+- ✨ **Introduced RAG Figure Inlining:** Implemented a new mechanism to inline RAG figures (images) as Base64 directly at
+  the LiteLLM gateway, ensuring compatibility with LLM providers that cannot directly access internal S3 storage.
+- 🖼️ **Configurable Image Inlining:** Added new environment variables (`RAG_IMAGE_INLINE_ENABLED`,
+  `RAG_IMAGE_INLINE_MAX_BYTES`) to control RAG image inlining behavior and define a maximum size, allowing for flexible
+  deployment configurations and cost management.
+- 🔗 **Dedicated Internal S3 Endpoint:** Introduced `S3_STORAGE_INTERNAL_ENDPOINT` for signing presigned URLs
+  specifically for in-cluster services like the LiteLLM gateway, enhancing secure and efficient internal data transfer.
+- 📄 **Architectural Decision Record:** Added a new ADR outlining the rationale, design, and consequences of the RAG
+  figure inlining solution.
+
+### Changed
+
+- 🔄 **Refined S3 Presigned URL Generation:** Updated the S3 anonymous file access service to support generating
+  presigned URLs tailored for either public or internal (in-cluster) access based on the RAG image inlining setting.
+- 🔌 **LiteLLM Gateway Integration:** Configured the LiteLLM gateway to utilize a new custom callback, which
+  intelligently fetches RAG figures from internal storage and inlines them as Base64 into LLM prompts.
+- 🎛️ **RAG Agent Image Handling:** Modified RAG agents to sign image URLs against the new internal S3 endpoint when
+  inlining is enabled, ensuring figures are correctly prepared for the LiteLLM gateway.
+- ⚙️ **Deployment Configuration:** Updated Docker Compose and deployment scripts to include the new LiteLLM custom
+  callback and propagate relevant environment variables to the LiteLLM and RAG agent services.
+- 📚 **Documentation:** Expanded the environment variables documentation to include details on
+  `RAG_IMAGE_INLINE_ENABLED`, `RAG_IMAGE_INLINE_MAX_BYTES`, and `S3_STORAGE_INTERNAL_ENDPOINT`.
+
+______________________________________________________________________
+
+## [v0.308.3] - 2026-07-15 - Platform Version Synchronization and Maintenance
+
+### Changed
+
+- 📦 **Platform-Wide Version Alignment:** All core packages and their inter-dependencies have been updated to `v0.308.3`
+  to ensure consistent versioning across the entire platform, improving overall stability and build predictability.
+
+______________________________________________________________________
+
+## [v0.310.2] - 2026-07-15 - Enhanced Release Automation and Flexibility
+
+### Changed
+
+- ✨ **Improved npm publishing for backports:** The `publish-npm` workflow now intelligently handles backport or hotfix
+  releases. When publishing a version older than the current `latest` on the npm registry, it will assign a
+  `release-X.Y` dist-tag instead of implicitly moving the `latest` tag backwards, preserving the `latest` tag for new
+  mainline releases.
+- 🚀 **Flexible manual release tagging:** The `release-manual` workflow now supports a `source_ref` input, allowing users
+  to tag releases from any specified branch or commit (e.g., `hotfix/0.308`) rather than strictly the branch the
+  workflow is run from. This greatly improves the process for hotfixes and maintenance branches.
+- 📄 **Enhanced release workflow visibility:** The run name for manual releases now includes the `source_ref` being
+  tagged, providing clearer context at a glance within GitHub Actions.
+- ⚙️ **Streamlined manual release validation:** Updated internal logic to validate and correctly checkout the specified
+  `source_ref`, ensuring robust and accurate manual release operations.
+
+______________________________________________________________________
+
 ## [v0.310.1] - 2026-07-15 - Streamlined Manual Release Process
 
 ### Added

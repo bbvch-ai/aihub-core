@@ -71,6 +71,20 @@ class ImapClientConfig(StepConfig):
         str | InputText,
         Field(default="Drafts", description="Mailbox folder drafts are written to (used by the draft-reply story)."),
     ]
+    enable_move: Annotated[
+        bool | ToggleSwitch,
+        Field(
+            default=False,
+            description="Enable moving a processed message into processed_folder. When off, the move step is skipped; "
+            "when on, processed_folder must be set.",
+        ),
+    ]
+    processed_folder: Annotated[
+        str | InputText,
+        Field(
+            default="Processed", description="Mailbox folder a processed message is moved to when enable_move is on."
+        ),
+    ]
 
     @classmethod
     def as_form(cls) -> Self:
@@ -112,5 +126,15 @@ class ImapClientConfig(StepConfig):
             drafts_folder=InputText(
                 label=LocaleString.from_i18n_path("lib.imap.config.drafts_folder.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.drafts_folder.help"),
+            ),
+            enable_move=ToggleSwitch(
+                label=LocaleString.from_i18n_path("lib.imap.config.enable_move.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.enable_move.help"),
+                ref="move_fetched_mail_enabled",
+            ),
+            processed_folder=InputText(
+                label=LocaleString.from_i18n_path("lib.imap.config.processed_folder.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.processed_folder.help"),
+                condition_if="$get(move_fetched_mail_enabled).value",
             ),
         )

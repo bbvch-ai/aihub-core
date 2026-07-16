@@ -52,3 +52,6 @@ run-retrieval-agent:
 
 run-memory-writer-agent:
 	uv run python app/memory_writer_agent/main.py
+
+run-imap-agent:
+	uv run python app/imap_agent/main.py

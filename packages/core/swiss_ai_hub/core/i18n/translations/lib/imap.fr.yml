@@ -25,3 +25,12 @@ config:
   drafts_folder:
     label: Dossier des brouillons
     help: Dossier de la boîte aux lettres où les brouillons sont écrits.
+  enable_move:
+    label: Déplacer l'e-mail récupéré
+    help: Si activé, le mail récupéré est déplacé dans le dossier traité après sa
+      lecture. Si désactivé, l'étape de déplacement est ignorée et le mail reste dans
+      la boîte de réception.
+  processed_folder:
+    label: Dossier traité
+    help: Dossier de la boîte aux lettres où un mail traité est déplacé lorsque le
+      déplacement est activé.

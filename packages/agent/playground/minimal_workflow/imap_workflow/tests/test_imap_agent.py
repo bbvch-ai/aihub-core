@@ -2,12 +2,12 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from pytest_bdd import given, scenarios, then, when
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
     MailAttachmentRef,
     MailFetchedEvent,
+    MailMovedEvent,
     UnreadMailListedEvent,
     UnreadMailSummary,
 )
@@ -28,12 +28,18 @@ _STORE = "swiss_ai_hub.agent.imap.mail_attachment_store.MailAttachmentStore.stor
 _FILE_ID = "0d5f7a1c-3b2e-4c8d-9a6f-1e2d3c4b5a6f"
 
 
-def _config() -> ImapAgentConfig:
+def _config(enable_move: bool = False) -> ImapAgentConfig:
     return ImapAgentConfig(
         agent_id="imap_agent",
         name=LocaleString(en="IMAP Agent"),
         description=LocaleString(en="Test agent"),
-        imap=ImapClientConfig(host="imap.test", username="a@test", password="secret"),
+        imap=ImapClientConfig(
+            host="imap.test",
+            username="a@test",
+            password="secret",
+            enable_move=enable_move,
+            processed_folder="Processed",
+        ),
     )
 
 
@@ -57,24 +63,26 @@ async def _fake_create(client: AsyncMock, _config: ImapClientConfig) -> AsyncIte
     yield client
 
 
-@pytest.fixture
-def agent_runner() -> AgentTestRunner:
-    return AgentTestRunner(agent_type=ImapAgent, agent_config=_config())
+@given("an ImapAgent runner with a mocked IMAP inbox", target_fixture="mailbox")
+def _() -> tuple[list[UnreadMailSummary], bool]:
+    return [UnreadMailSummary(message_id="1", sender="alice@test", subject="Quarterly report")], False
 
 
-@given("an ImapAgent runner with a mocked IMAP inbox", target_fixture="unread_mail")
-def _() -> list[UnreadMailSummary]:
-    return [UnreadMailSummary(message_id="1", sender="alice@test", subject="Quarterly report")]
+@given("an ImapAgent runner with moving enabled and a mocked IMAP inbox", target_fixture="mailbox")
+def _moving_enabled() -> tuple[list[UnreadMailSummary], bool]:
+    return [UnreadMailSummary(message_id="1", sender="alice@test", subject="Quarterly report")], True
 
 
-@given("an ImapAgent runner with an empty IMAP inbox", target_fixture="unread_mail")
-def _empty() -> list[UnreadMailSummary]:
-    return []
+@given("an ImapAgent runner with an empty IMAP inbox", target_fixture="mailbox")
+def _empty() -> tuple[list[UnreadMailSummary], bool]:
+    return [], False
 
 
-@when("the user asks to read mail")
+@when("the user asks to read mail", target_fixture="agent_runner")
 @async_test
-async def _(agent_runner: AgentTestRunner, unread_mail: list[UnreadMailSummary]):
+async def _(mailbox: tuple[list[UnreadMailSummary], bool]) -> AgentTestRunner:
+    unread_mail, enable_move = mailbox
+    agent_runner = AgentTestRunner(agent_type=ImapAgent, agent_config=_config(enable_move))
     client = _make_client(unread_mail)
 
     def create_side_effect(config: ImapClientConfig):
@@ -93,6 +101,7 @@ async def _(agent_runner: AgentTestRunner, unread_mail: list[UnreadMailSummary])
                 start_event=ReadMailStartEvent(),
                 topic=topic,
             )
+    return agent_runner
 
 
 def _dedupe(events: list[BaseEvent]) -> list[BaseEvent]:
@@ -115,6 +124,18 @@ def _(agent_runner: AgentTestRunner):
 @then("no MailFetchedEvent was emitted")
 def _(agent_runner: AgentTestRunner):
     assert len(_dedupe(agent_runner.get_events_of_class(MailFetchedEvent))) == 0
+
+
+@then("a MailMovedEvent was emitted")
+def _(agent_runner: AgentTestRunner):
+    events = _dedupe(agent_runner.get_events_of_class(MailMovedEvent))
+    assert len(events) == 1
+    assert events[0].target_folder == "Processed"
+
+
+@then("no MailMovedEvent was emitted")
+def _(agent_runner: AgentTestRunner):
+    assert len(_dedupe(agent_runner.get_events_of_class(MailMovedEvent))) == 0
 
 
 @then("a StopEvent is present")

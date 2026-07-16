@@ -329,6 +329,8 @@ agent:
     status: 'Statut:'
     online: En ligne
     offline: Hors ligne
+  export:
+    button: Exporter
   configuration:
     title: Configuration de l'agent
     description: Configurez le comportement d'exécution et les paramètres de cet agent

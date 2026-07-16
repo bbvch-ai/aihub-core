@@ -25,3 +25,12 @@ config:
   drafts_folder:
     label: Cartella Bozze
     help: Cartella della casella in cui vengono scritte le bozze.
+  enable_move:
+    label: Sposta e-mail recuperata
+    help: Se attivato, il posta recuperato viene spostato nella cartella elaborati
+      dopo la lettura. Se disattivato, il passaggio di spostamento viene saltato e
+      il posta rimane nella posta in arrivo.
+  processed_folder:
+    label: Cartella Elaborati
+    help: Cartella della casella in cui un posta elaborato viene spostato quando lo
+      spostamento è abilitato.

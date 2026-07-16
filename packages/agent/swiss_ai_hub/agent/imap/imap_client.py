@@ -16,6 +16,8 @@ _FLAGS_KEY = b"FLAGS"
 _HEADER_KEY = b"BODY[HEADER]"
 _BODY_KEY = b"BODY[]"
 _SIZE_KEY = b"RFC822.SIZE"
+_MOVE_CAPABILITY = b"MOVE"
+_UIDPLUS_CAPABILITY = b"UIDPLUS"
 
 
 class ImapClient:
@@ -77,6 +79,35 @@ class ImapClient:
         fetched = await asyncio.to_thread(self._connection.fetch, [uid], ["BODY.PEEK[]"])
         message = self._parse_bytes(fetched[uid][_BODY_KEY])
         return MailParser.parse_message(message_id, message, self._max_body_bytes, self._max_attachment_bytes)
+
+    async def move_message(self, message_id: str, target_folder: str) -> None:
+        """Move a message by UID from the inbox folder into target_folder, opening the folder writable.
+
+        Uses the atomic IMAP ``MOVE`` (RFC 6851) when the server supports it; otherwise falls back to
+        ``COPY`` + ``UID EXPUNGE`` (RFC 4315, UIDPLUS), which purges only this UID. A server offering neither
+        is refused rather than expunged with a blind ``EXPUNGE`` that would also destroy other clients'
+        ``\\Deleted`` mail.
+        """
+        await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=False)
+        uid = int(message_id)
+
+        present = await asyncio.to_thread(self._connection.fetch, [uid], ["FLAGS"])
+        if uid not in present:
+            raise ValueError(f"message {message_id} not found in {self._inbox_folder} — it may have been expunged")
+
+        if await asyncio.to_thread(self._connection.has_capability, _MOVE_CAPABILITY):
+            await asyncio.to_thread(self._connection.move, [uid], target_folder)
+            return
+
+        if not await asyncio.to_thread(self._connection.has_capability, _UIDPLUS_CAPABILITY):
+            raise ValueError(
+                f"IMAP server supports neither MOVE nor UIDPLUS — cannot move message {message_id} without risking "
+                "other clients' deleted mail"
+            )
+
+        await asyncio.to_thread(self._connection.copy, [uid], target_folder)
+        await asyncio.to_thread(self._connection.delete_messages, [uid])
+        await asyncio.to_thread(self._connection.uid_expunge, [uid])
 
     @staticmethod
     def _parse_bytes(raw: bytes) -> EmailMessage:
