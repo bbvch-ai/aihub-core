@@ -881,7 +881,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak:
     container_name: keycloak
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.5
     restart: unless-stopped
     entrypoint: /bin/bash
     command:
@@ -974,7 +974,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak-config:
     container_name: keycloak-config
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak-config-cli:6.5.0-26.5.4
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak-config-cli:6.5.1-26.5.5
     restart: on-failure
     environment:
       KEYCLOAK_URL: http://keycloak:8080

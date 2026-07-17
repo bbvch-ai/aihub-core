@@ -52,8 +52,8 @@ image_tags:
   speaches: speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: rclone:1.71.2
-  keycloak: keycloak:26.5.4
-  keycloak_config_cli: keycloak-config-cli:6.5.0-26.5.4
+  keycloak: keycloak:26.5.5
+  keycloak_config_cli: keycloak-config-cli:6.5.1-26.5.5
   searxng: searxng:2026.4.29-cba0cffa8
 
   # --- Custom Application Services ---
