@@ -226,3 +226,6 @@ unread_mail_listed_event:
 mail_fetched_event:
   name: Mail Fetched
   description: The agent fetched a message including its body and attachments.
+mail_moved_event:
+  name: Mail Moved
+  description: The agent moved a message from its source folder into a target folder.

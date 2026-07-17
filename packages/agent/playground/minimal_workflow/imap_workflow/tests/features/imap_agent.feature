@@ -5,6 +5,15 @@ Feature: IMAP Agent
     When the user asks to read mail
     Then an UnreadMailListedEvent was emitted
     And a MailFetchedEvent was emitted
+    And no MailMovedEvent was emitted
+    And a StopEvent is present
+    And no ExceptionEvent is present
+
+  Scenario: Moves the fetched message when moving is enabled
+    Given an ImapAgent runner with moving enabled and a mocked IMAP inbox
+    When the user asks to read mail
+    Then a MailFetchedEvent was emitted
+    And a MailMovedEvent was emitted
     And a StopEvent is present
     And no ExceptionEvent is present
 
@@ -13,4 +22,5 @@ Feature: IMAP Agent
     When the user asks to read mail
     Then an UnreadMailListedEvent was emitted
     And no MailFetchedEvent was emitted
+    And no MailMovedEvent was emitted
     And a StopEvent is present

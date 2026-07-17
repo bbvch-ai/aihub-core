@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.312.1] - 2026-07-16 - Enhanced UI Clarity
+
+### Added
+
+- ✨ Added an **empty state message** to the Memory List table, providing clear feedback when no items are present.
+
+______________________________________________________________________
+
+## [v0.312.0] - 2026-07-16 - Enhanced IMAP Agent: Organize Your Inbox with Mail Movement
+
+### Added
+
+- ✨ **Mail Movement Capability for IMAP Agent:** Introduced the ability for the IMAP agent to automatically move fetched
+  emails from the inbox to a specified "Processed" folder, enhancing mail organization workflows.
+- 📬 **New `MailMovedEvent`:** A dedicated event is now emitted when an email is successfully moved on the IMAP server,
+  providing clear visibility of mail organization actions in the event timeline.
+- ⚙️ **Configurable Mail Organization:** Added new IMAP client configuration options, `enable_move` and
+  `processed_folder`, allowing users to enable and define the target folder for processed emails.
+- 🦾 **Robust IMAP Message Movement Logic:** Implemented a sophisticated `move_message` method in the IMAP client that
+  intelligently utilizes the IMAP `MOVE` command when available, or falls back to `COPY` and `UID EXPUNGE` for reliable
+  and non-destructive message relocation.
+
+### Changed
+
+- 📄 **Expanded IMAP Agent Demonstrator:** The `imap_workflow` demonstrator agent has been updated to showcase the new
+  optional mail movement functionality, providing a practical example of organizing fetched emails.
+- 📝 **Updated IMAP Agent Descriptions:** Descriptions for the IMAP agent now clearly reflect its expanded capabilities,
+  highlighting the ability to organize mail in addition to reading it.
+- 🔑 **User Identity in IMAP Start Event:** The `ReadMailStartEvent` now includes an optional `user` identity field,
+  enabling more contextualized agent runs when triggered programmatically through the API.
+
+______________________________________________________________________
+
+## [v0.311.1] - 2026-07-16 - OpenTelemetry Cost Optimization and Observability Fixes
+
+### Fixed
+
+- 🐛 **Reduced OpenTelemetry Data Cardinality**: Implemented robust filtering for HTTP server metrics to prevent
+  unbounded, high-cardinality data (e.g., `http.server.duration`, `http.server.request.size`) from being sent to the
+  backend. This change significantly reduces observability costs and improves the signal-to-noise ratio of collected
+  telemetry data by stopping automatic FastAPI/ASGI instrumentation.
+- ⚡️ **Optimized OpenTelemetry HTTP Header Capture**: Switched from capturing all HTTP request headers to an explicit,
+  bounded allowlist (`content-type`, `accept`, `accept-language`) for span attributes. This prevents high-cardinality
+  attributes like `user-agent` or `cookie` from inflating trace and metric costs.
+- 🔄 **Preserved `http.route` Semantics**: Ensured that the `http.route` OpenTelemetry attribute correctly retains its
+  bounded route template value, while concrete URL paths are now recorded under `url.path`. This prevents metric and
+  label cardinality explosions caused by de-templating `http.route`.
+- 🧪 **Added Regression Tests for OTel Optimizations**: Introduced new tests to safeguard against the future
+  re-introduction of high-cardinality OpenTelemetry data issues by verifying HTTP header capture limits and the behavior
+  of the `http.route` attribute.
+
+______________________________________________________________________
+
 ## [v0.311.0] - 2026-07-15 - Agent Configuration Export Introduced
 
 ### Added

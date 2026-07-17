@@ -237,3 +237,7 @@ unread_mail_listed_event:
 mail_fetched_event:
   name: E-mail Récupéré
   description: L'agent a récupéré un message, y compris son corps et ses pièces jointes.
+mail_moved_event:
+  name: E-mail Déplacé
+  description: L'agent a déplacé un message de son dossier source vers un dossier
+    cible.
