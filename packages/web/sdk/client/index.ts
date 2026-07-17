@@ -708,7 +708,6 @@ export {
   type ImageUrl,
   type IngestedNode,
   type IngestorDto,
-  IngestorType,
   type InitiateDocumentUploadData,
   type InitiateDocumentUploadError,
   type InitiateDocumentUploadErrors,

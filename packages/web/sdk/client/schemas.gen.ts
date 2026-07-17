@@ -11092,14 +11092,6 @@ export const IngestorDTOSchema = {
   title: "IngestorDTO",
 } as const;
 
-export const IngestorTypeSchema = {
-  type: "string",
-  enum: ["unassigned", "default_rag", "shared_rag", "rag"],
-  title: "IngestorType",
-  description:
-    "Identifies which deployed ingestion pipeline owns a knowledge database.\n\nUsed as a routing guard: the single ``rag`` pipeline reads this off each\n``BucketEntity`` to decide which buckets it ingests, so it can coexist with the legacy\nper-bucket ``default_rag`` / ``shared_rag`` deployments without double-processing them.\n\n``UNASSIGNED`` is the field default, and exists so that rows written before this field was\nintroduced — which have no ``ingestor`` key, and for which MongoEngine therefore applies the\nfield default on load — are owned by no RAG pipeline. Defaulting to\n``RAG`` instead would make every pre-existing knowledge database in an upgraded\ndeployment get claimed and re-ingested by the RAG pipeline alongside the deploy-bound\npipeline that already owns it.",
-} as const;
-
 export const InputAudioSchema = {
   properties: {
     data: {

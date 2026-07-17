@@ -7551,47 +7551,6 @@ export type IngestorDto = {
 };
 
 /**
- * IngestorType
- *
- * Identifies which deployed ingestion pipeline owns a knowledge database.
- *
- * Used as a routing guard: the single ``rag`` pipeline reads this off each
- * ``BucketEntity`` to decide which buckets it ingests, so it can coexist with the legacy
- * per-bucket ``default_rag`` / ``shared_rag`` deployments without double-processing them.
- *
- * ``UNASSIGNED`` is the field default, and exists so that rows written before this field was
- * introduced — which have no ``ingestor`` key, and for which MongoEngine therefore applies the
- * field default on load — are owned by no RAG pipeline. Defaulting to
- * ``RAG`` instead would make every pre-existing knowledge database in an upgraded
- * deployment get claimed and re-ingested by the RAG pipeline alongside the deploy-bound
- * pipeline that already owns it.
- */
-export const IngestorType = {
-  UNASSIGNED: "unassigned",
-  DEFAULT_RAG: "default_rag",
-  SHARED_RAG: "shared_rag",
-  RAG: "rag",
-} as const;
-
-/**
- * IngestorType
- *
- * Identifies which deployed ingestion pipeline owns a knowledge database.
- *
- * Used as a routing guard: the single ``rag`` pipeline reads this off each
- * ``BucketEntity`` to decide which buckets it ingests, so it can coexist with the legacy
- * per-bucket ``default_rag`` / ``shared_rag`` deployments without double-processing them.
- *
- * ``UNASSIGNED`` is the field default, and exists so that rows written before this field was
- * introduced — which have no ``ingestor`` key, and for which MongoEngine therefore applies the
- * field default on load — are owned by no RAG pipeline. Defaulting to
- * ``RAG`` instead would make every pre-existing knowledge database in an upgraded
- * deployment get claimed and re-ingested by the RAG pipeline alongside the deploy-bound
- * pipeline that already owns it.
- */
-export type IngestorType = (typeof IngestorType)[keyof typeof IngestorType];
-
-/**
  * InputAudio
  */
 export type InputAudio = {
