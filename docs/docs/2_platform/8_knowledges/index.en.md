@@ -53,6 +53,26 @@ Mark a database as auto-sync to connect it to external content sources like Shar
 The external system becomes the source of truth. Your team continues working in SharePoint, and the sync pipeline brings
 changes into the Swiss AI Hub on the configured schedule.
 
+### Deleting databases and collections
+
+You can remove a whole knowledge database or an individual collection from the web interface. Both actions are
+permanent.
+
+- **Delete a collection** removes that collection's documents from storage and the vector index; the database and its
+  other collections stay.
+- **Delete a database** removes the database entirely — every collection, all its documents, its vector collection, and
+  its file storage.
+
+To prevent accidents, the confirmation dialog shows how many documents will be removed and requires you to type the
+exact database or collection name before the delete button becomes active.
+
+Deletion runs in the background. The moment you confirm, the item disappears from the list and stops accepting new
+uploads, while the platform frees the underlying storage shortly afterwards. If you later re-upload a document that was
+deleted, it is ingested again normally.
+
+Auto-synced databases cannot be deleted from the UI — their content is owned by the external source, which would simply
+re-sync it. Remove the external connection instead.
+
 ## Document processing
 
 The system processes each uploaded document through several stages:

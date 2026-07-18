@@ -3,13 +3,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.core.events.pipeline.knowledge_teardown_requested_event import KnowledgeTeardownRequestedEvent
     from swiss_ai_hub.core.events.pipeline.source_updated_event import SourceUpdatedEvent
 
 __all__ = [
+    "KnowledgeTeardownRequestedEvent",
     "SourceUpdatedEvent",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "KnowledgeTeardownRequestedEvent": "swiss_ai_hub.core.events.pipeline.knowledge_teardown_requested_event",
     "SourceUpdatedEvent": "swiss_ai_hub.core.events.pipeline.source_updated_event",
 }
 

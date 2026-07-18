@@ -518,9 +518,32 @@ knowledge:
     description: Le collezioni possono essere create e gestite manualmente
   edit_namespace: Modifica collezione
   upload_documents: Carica documenti
+  delete_namespace: Elimina collezione
+  delete_database: Elimina database
+  delete:
+    confirm_label: Digita {name} per confermare
+    database:
+      title: Elimina database di conoscenza
+      warning: Questa operazione elimina definitivamente il database {name}, tutte
+        le sue collezioni e i suoi {count} documenti. L’operazione non può essere
+        annullata.
+    namespace:
+      title: Elimina collezione
+      warning: Questa operazione elimina definitivamente la collezione {name} e i
+        suoi {count} documenti. L’operazione non può essere annullata.
+    actions:
+      delete: Elimina
+    scheduled:
+      summary: Eliminazione avviata
+      detail: L’eliminazione viene eseguita in background e potrebbe richiedere un
+        momento.
+    error:
+      summary: Eliminazione non riuscita
+      detail: Impossibile avviare l’eliminazione. Riprova.
   form:
     create:
       title: Crea collezione
+    create_error: Creazione della collezione non riuscita. Riprova.
     create_database:
       title: Crea database di conoscenza
     edit:

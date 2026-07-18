@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 _CONTAINER_NAME_EMPTY_ERROR = "Container name cannot be empty"
 _FILE_PATH_EMPTY_ERROR = "File path cannot be empty"
+_PREFIX_EMPTY_ERROR = "Prefix cannot be empty"
 
 
 class S3AnonymousFileAccessService:
@@ -274,6 +275,31 @@ class S3AnonymousFileAccessService:
 
         self._s3_client.delete_object(Bucket=container, Key=file_path)
         logger.info(f"Deleted file: {container}/{file_path}")
+
+    @trace_fn
+    def delete_prefix(self, container: str, prefix: str) -> None:
+        """Delete every object under a key prefix (paginated, 1000-key batches), leaving the bucket in place.
+
+        This is the namespace-teardown counterpart to ``delete_container``: a namespace maps to a
+        ``folder_name/`` prefix within a shared bucket. Idempotent — a missing bucket is treated as
+        success — so the step is safe to retry as part of the teardown job.
+        """
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+        if not prefix or not prefix.strip():
+            raise ValueError(_PREFIX_EMPTY_ERROR)
+
+        try:
+            paginator = self._s3_client.get_paginator("list_objects_v2")
+            for page in paginator.paginate(Bucket=container, Prefix=prefix):
+                keys = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
+                if keys:
+                    self._s3_client.delete_objects(Bucket=container, Delete={"Objects": keys})
+            logger.info(f"Deleted objects under prefix '{prefix}' in container '{container}'")
+        except ClientError as error:
+            if error.response["Error"]["Code"] in ("404", "NoSuchBucket"):
+                return
+            raise
 
     @trace_fn
     def delete_container(self, container: str) -> None:

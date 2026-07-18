@@ -8,7 +8,7 @@ from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import ConnectionFailure, DoesNotExist, NotUniqueError, register_connection
 from nats.aio.client import Client as NATS
 from pydantic import Field
-from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
+from swiss_ai_hub.core.events.pipeline import KnowledgeTeardownRequestedEvent, SourceUpdatedEvent
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
@@ -16,7 +16,7 @@ from swiss_ai_hub.core.generative_ai.document.types.file_type_config import File
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.infrastructure import MongoSettings, trace_fn
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, trace_fn
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import (
     BucketEntity,
@@ -34,7 +34,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     TYPE,
     NodeTypeValue,
 )
-from swiss_ai_hub.core.publishers import NCPublisher
+from swiss_ai_hub.core.publishers import JSPublisher, NCPublisher
 from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
 
 from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import (
@@ -60,6 +60,12 @@ from swiss_ai_hub.api.routes.translation.translation_service import TranslationS
 logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
+
+# Teardown requests get their own JetStream stream, keyed by a dedicated pipeline target type, so they
+# never share the SourceUpdatedEvent stream: the upload sensor naks any non-SourceUpdatedEvent, which
+# would make JetStream redeliver a shared teardown event forever. The pipeline teardown sensor's
+# target-type constant MUST match this value.
+_KNOWLEDGE_TEARDOWN_TARGET_TYPE = "knowledge_teardown"
 
 
 class KnowledgeService:
@@ -143,8 +149,19 @@ class KnowledgeService:
         """
         database_dtos: list[DatabaseDTO] = []
         buckets = BucketEntity.get_all_buckets()
+        show_legacy = AIHubSettings().SHOW_LEGACY_KNOWLEDGE
 
         for bucket in buckets:
+            # A bucket flagged for teardown is being purged by the pipeline; hide it so it disappears
+            # from the UI immediately and cannot be re-selected while the teardown job runs.
+            if bucket.deleting:
+                continue
+
+            # The legacy default_rag / shared_rag databases are obsolete once their deploy-bound pipelines
+            # are switched off, so they are hidden unless a deployment opts back in via SHOW_LEGACY_KNOWLEDGE.
+            if not show_legacy and KnowledgeService._is_legacy_bucket(bucket):
+                continue
+
             db_name = bucket.db_name
             KnowledgeService._ensure_db_exists(db_name)
 
@@ -152,12 +169,20 @@ class KnowledgeService:
 
             namespaces = []
             for ns_entity in namespace_entities:
+                if ns_entity.deleting:
+                    continue
                 total_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
                 namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_count))
 
             display_name = KnowledgeService._safe_extract_locale_string(bucket.name, t)
             database_dtos.append(
-                DatabaseDTO(name=db_name, display_name=display_name, auto_sync=bucket.auto_sync, namespaces=namespaces)
+                DatabaseDTO(
+                    name=db_name,
+                    display_name=display_name,
+                    auto_sync=bucket.auto_sync,
+                    deletable=KnowledgeService._is_database_deletable(bucket),
+                    namespaces=namespaces,
+                )
             )
 
         return database_dtos
@@ -618,3 +643,136 @@ class KnowledgeService:
                 status = "failed"
             results.append(DocumentDeletionResult(document_id=document_id, status=status))
         return BatchDeleteDocumentsResponse(results=results)
+
+    @staticmethod
+    def _is_legacy_bucket(bucket: BucketEntity) -> bool:
+        """Whether the bucket belongs to a legacy deploy-bound pipeline (``default_rag`` / ``shared_rag``)."""
+        return bucket.ingestor in (IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value)
+
+    @staticmethod
+    def _is_database_deletable(bucket: BucketEntity) -> bool:
+        """Whether the whole database may be torn down.
+
+        Auto-synced databases are refilled by their source, and the legacy ``default_rag`` / ``shared_rag``
+        buckets are bound to a deploy-time pipeline that expects the bucket to keep existing — so neither
+        database itself is deletable. Namespaces inside them remain individually deletable.
+        """
+        return not bucket.auto_sync and not KnowledgeService._is_legacy_bucket(bucket)
+
+    @staticmethod
+    def _reject_if_auto_synced(bucket: BucketEntity) -> None:
+        """Guard shared by database and namespace deletion: an auto-synced database's content is owned by its
+        external source and would just be re-synced, so nothing in it may be deleted from the UI."""
+        if bucket.auto_sync:
+            raise HTTPException(
+                status_code=403, detail=f"Database '{bucket.db_name}' is auto-synced and cannot be deleted."
+            )
+
+    @staticmethod
+    def _reject_undeletable_database(bucket: BucketEntity) -> None:
+        """Whole-database deletion guard: auto-synced and legacy databases are protected.
+
+        Only the database itself is protected for legacy buckets — their namespaces stay deletable — because
+        the legacy per-bucket pipeline expects the bucket to exist. Mongo-internal / main-db names are rejected
+        earlier, at the controller, via the reserved-name guard.
+        """
+        KnowledgeService._reject_if_auto_synced(bucket)
+        if KnowledgeService._is_legacy_bucket(bucket):
+            raise HTTPException(status_code=403, detail=f"Legacy database '{bucket.db_name}' cannot be deleted.")
+
+    @staticmethod
+    @trace_fn
+    async def delete_database(nc: NATS, database: str) -> None:
+        """Flag a knowledge database (and its namespaces) for teardown and hand the heavy purge to the pipeline.
+
+        The synchronous work is O(1): flip the ``deleting`` flag — which excludes the rows from every
+        enumeration path, so ingestion stops at once — and publish a durable teardown request. The
+        Dagster teardown job then drops the Milvus collection, the doc-store database and the S3 bucket,
+        and hard-deletes the rows as its final step.
+        """
+        try:
+            bucket = BucketEntity.get_bucket_by_db_name(database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
+
+        KnowledgeService._reject_undeletable_database(bucket)
+
+        BucketEntity.mark_deleting(str(bucket.id))
+        NamespaceEntity.mark_all_deleting_for_bucket(str(bucket.id))
+
+        await KnowledgeService._publish_teardown_event(
+            nc=nc,
+            bucket_name=bucket.bucket_name,
+            db_name=bucket.db_name,
+            event=KnowledgeTeardownRequestedEvent.for_database(
+                bucket_id=str(bucket.id), bucket_name=bucket.bucket_name, db_name=bucket.db_name
+            ),
+        )
+
+    @staticmethod
+    @trace_fn
+    async def delete_namespace(nc: NATS, database: str, namespace: str) -> None:
+        """Flag a single namespace for teardown; the bucket and its other namespaces survive.
+
+        Same mark-then-sweep shape as ``delete_database``: flip the namespace's ``deleting`` flag and
+        publish a durable teardown request. The teardown job deletes the namespace's S3 folder, its
+        doc-store rows and its Milvus vectors (by metadata filter — never a partition drop, since
+        namespaces share hashed partitions), then hard-deletes the row.
+        """
+        try:
+            bucket = BucketEntity.get_bucket_by_db_name(database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
+
+        KnowledgeService._reject_if_auto_synced(bucket)
+
+        try:
+            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)
+        except DoesNotExist:
+            raise HTTPException(
+                status_code=404, detail=f"Folder '{namespace}' not found in database '{database}'"
+            ) from None
+
+        NamespaceEntity.mark_deleting(str(namespace_entity.id))
+
+        await KnowledgeService._publish_teardown_event(
+            nc=nc,
+            bucket_name=bucket.bucket_name,
+            db_name=bucket.db_name,
+            event=KnowledgeTeardownRequestedEvent.for_namespace(
+                bucket_id=str(bucket.id),
+                bucket_name=bucket.bucket_name,
+                db_name=bucket.db_name,
+                namespace_id=str(namespace_entity.id),
+                namespace_name=namespace_entity.namespace_name,
+                folder_name=namespace_entity.folder_name,
+            ),
+        )
+
+    @staticmethod
+    @trace_fn
+    async def _publish_teardown_event(
+        nc: NATS, bucket_name: str, db_name: str, event: KnowledgeTeardownRequestedEvent
+    ) -> None:
+        """Publish a teardown request to its own durable JetStream stream.
+
+        JetStream (not NATS core) is used so the request survives an API or pipeline restart until the
+        teardown sensor consumes it — the whole point of doing the destructive work in Dagster. The
+        stream is ensured before publishing so even a first-ever teardown is captured rather than lost.
+        """
+        topic_manager = PipelineInstanceTopicManager(
+            source_type="datalake",
+            source_id=bucket_name,
+            target_type=_KNOWLEDGE_TEARDOWN_TARGET_TYPE,
+            target_id=db_name,
+        )
+        stream_name, stream_subject = topic_manager.get_stream()
+        subject = topic_manager.get_subject_for_specific_event_in_pipeline_instance(
+            run_key=event.event_id, event_name=event.event_name, event_id=event.event_id
+        )
+
+        publisher = JSPublisher(name="KnowledgeService", js=nc.jetstream())
+        await publisher.ensure_stream_exists(stream_name, stream_subject)
+        await publisher.publish_event(event, subject)
+
+        logger.info(f"Published KnowledgeTeardownRequestedEvent ({event.teardown_type}) for '{db_name}' to {subject}")

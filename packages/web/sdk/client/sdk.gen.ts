@@ -73,8 +73,12 @@ import type {
   DeleteAllOrganizationMemoriesResponse,
   DeleteAllUserMemoriesData,
   DeleteAllUserMemoriesResponse,
+  DeleteDatabaseData,
+  DeleteDatabaseError,
   DeleteDocumentData,
   DeleteDocumentError,
+  DeleteNamespaceData,
+  DeleteNamespaceError,
   DeleteOrganizationMemoryData,
   DeleteOrganizationMemoryError,
   DeleteOrganizationMemoryResponse,
@@ -2660,6 +2664,32 @@ export const getIngestors = <
   });
 
 /**
+ * Delete a knowledge database
+ *
+ * Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
+ * database and S3 bucket — via the pipeline's Dagster teardown job. Returns immediately with 202.
+ */
+export const deleteDatabase = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteDatabaseData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteDatabaseError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+  });
+
+/**
  * Create Database
  *
  * Creates a new self-service knowledge database (bucket) ingested by the RAG pipeline.
@@ -2691,6 +2721,32 @@ export const createDatabase = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Delete a namespace
+ *
+ * Schedules asynchronous teardown of one namespace — its S3 folder, doc-store rows and Milvus
+ * vectors (deleted by metadata filter, never a partition drop). Returns immediately with 202.
+ */
+export const deleteNamespace = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteNamespaceData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteNamespaceError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}",
+    ...options,
   });
 
 /**

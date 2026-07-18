@@ -3869,7 +3869,10 @@ export type ContextualizedAgentEvent = {
     | BaseStoreMemoryEvent
     | RetrieveOrganizationMemoryEvent
     | RetrieveUserMemoryEvent
-    | StoreOrganizationMemoryEvent;
+    | StoreOrganizationMemoryEvent
+    | UnreadMailListedEvent
+    | MailFetchedEvent
+    | MailMovedEvent;
 };
 
 /**
@@ -4005,6 +4008,8 @@ export type CreateDatabaseRequest = {
    */
   description?: string | null;
   /**
+   * Ingestor
+   *
    * The deployed ingestion pipeline that processes this database's documents.
    */
   ingestor?: string;
@@ -4288,6 +4293,12 @@ export type DatabaseDto = {
    * Whether this database auto-syncs namespaces
    */
   auto_sync: boolean;
+  /**
+   * Deletable
+   *
+   * Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.
+   */
+  deletable: boolean;
   /**
    * Namespaces
    *
@@ -9265,6 +9276,175 @@ export type Logprob = {
    * Logprob
    */
   logprob?: number | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MailAttachmentRef
+ *
+ * Reference to a fetched mail attachment whose bytes are stored in S3, not carried in the event.
+ *
+ * Mirrors ``UserUploadedFile``: attachments are referenced by ``file_id`` (the S3 object key within the
+ * agent's dedicated bucket) so large binaries never bloat the persisted/streamed event.
+ */
+export type MailAttachmentRef = {
+  /**
+   * Filename
+   *
+   * Original attachment filename, including extension. Must not contain path separators.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * MIME type of the attachment.
+   */
+  content_type: string;
+  /**
+   * File Id
+   *
+   * UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.
+   */
+  file_id: string;
+  /**
+   * Size Bytes
+   *
+   * Size of the stored attachment in bytes.
+   */
+  size_bytes: number;
+};
+
+/**
+ * MailFetchedEvent
+ *
+ * Carries a single fetched message — headers, body, and references to its stored attachments.
+ */
+export type MailFetchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the fetched message within the inbox folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Body Text
+   *
+   * Plain-text body of the message, if present.
+   */
+  body_text?: string | null;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailMovedEvent
+ *
+ * Records that a message was moved from its source folder into a target folder on the IMAP server.
+ */
+export type MailMovedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the moved message within its source folder.
+   */
+  message_id: string;
+  /**
+   * Source Folder
+   *
+   * Folder the message was moved out of.
+   */
+  source_folder: string;
+  /**
+   * Target Folder
+   *
+   * Folder the message was moved into.
+   */
+  target_folder: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -15204,6 +15384,90 @@ export type TranslationResponse = {
 };
 
 /**
+ * UnreadMailListedEvent
+ *
+ * Carries the unread messages found in the configured inbox folder.
+ */
+export type UnreadMailListedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Messages
+   *
+   * Header summaries of the unread messages in the inbox.
+   */
+  messages?: Array<UnreadMailSummary>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * UnreadMailSummary
+ *
+ * Lightweight header summary of one unread message — enough for an agent to decide what to fetch.
+ */
+export type UnreadMailSummary = {
+  /**
+   * Message Id
+   *
+   * IMAP UID of the message within the inbox folder — stable across connections.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Flags
+   *
+   * IMAP flags set on the message.
+   */
+  flags?: Array<string>;
+};
+
+/**
  * UpdateAgentInstanceDTO
  *
  * Request body for updating an agent instance configuration.
@@ -17968,7 +18232,10 @@ export type ContextualizedAgentEventWritable = {
     | BaseStoreMemoryEventWritable
     | RetrieveOrganizationMemoryEventWritable
     | RetrieveUserMemoryEventWritable
-    | StoreOrganizationMemoryEventWritable;
+    | StoreOrganizationMemoryEventWritable
+    | UnreadMailListedEventWritable
+    | MailFetchedEventWritable
+    | MailMovedEventWritable;
 };
 
 /**
@@ -21027,6 +21294,114 @@ export type LocaleInputWritable = {
    * Placeholder text for each language
    */
   placeholder?: LocaleString | string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MailFetchedEvent
+ *
+ * Carries a single fetched message — headers, body, and references to its stored attachments.
+ */
+export type MailFetchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the fetched message within the inbox folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Body Text
+   *
+   * Plain-text body of the message, if present.
+   */
+  body_text?: string | null;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailMovedEvent
+ *
+ * Records that a message was moved from its source folder into a target folder on the IMAP server.
+ */
+export type MailMovedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the moved message within its source folder.
+   */
+  message_id: string;
+  /**
+   * Source Folder
+   *
+   * Folder the message was moved out of.
+   */
+  source_folder: string;
+  /**
+   * Target Folder
+   *
+   * Folder the message was moved into.
+   */
+  target_folder: string;
   [key: string]: unknown;
 };
 
@@ -24402,6 +24777,39 @@ export type ToolEventWritable = {
 };
 
 /**
+ * UnreadMailListedEvent
+ *
+ * Carries the unread messages found in the configured inbox folder.
+ */
+export type UnreadMailListedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Messages
+   *
+   * Header summaries of the unread messages in the inbox.
+   */
+  messages?: Array<UnreadMailSummary>;
+  [key: string]: unknown;
+};
+
+/**
  * UserMessageEvent
  *
  * A start event triggered directly by a user's message, bridging both display and control functionalities.
@@ -27456,6 +27864,41 @@ export type GetIngestorsResponses = {
 export type GetIngestorsResponse =
   GetIngestorsResponses[keyof GetIngestorsResponses];
 
+export type DeleteDatabaseData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type DeleteDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteDatabaseError =
+  DeleteDatabaseErrors[keyof DeleteDatabaseErrors];
+
+export type DeleteDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
+
 export type CreateDatabaseData = {
   body: CreateDatabaseRequest;
   path: {
@@ -27493,6 +27936,45 @@ export type CreateDatabaseResponses = {
 
 export type CreateDatabaseResponse =
   CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type DeleteNamespaceData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}";
+};
+
+export type DeleteNamespaceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteNamespaceError =
+  DeleteNamespaceErrors[keyof DeleteNamespaceErrors];
+
+export type DeleteNamespaceResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
 
 export type CreateNamespaceData = {
   body: CreateNamespaceRequest;

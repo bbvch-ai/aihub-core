@@ -513,9 +513,30 @@ knowledge:
     description: Collections can be created and managed manually
   edit_namespace: Edit collection
   upload_documents: Upload documents
+  delete_namespace: Delete collection
+  delete_database: Delete database
+  delete:
+    confirm_label: Type {name} to confirm
+    database:
+      title: Delete knowledge database
+      warning: This permanently deletes the database {name}, all its collections,
+        and its {count} documents. This cannot be undone.
+    namespace:
+      title: Delete collection
+      warning: This permanently deletes the collection {name} and its {count} documents.
+        This cannot be undone.
+    actions:
+      delete: Delete
+    scheduled:
+      summary: Deletion started
+      detail: The deletion runs in the background and may take a moment.
+    error:
+      summary: Deletion failed
+      detail: The deletion could not be started. Please try again.
   form:
     create:
       title: Create Collection
+    create_error: Failed to create the collection. Please try again.
     create_database:
       title: Create Knowledge Database
     edit:

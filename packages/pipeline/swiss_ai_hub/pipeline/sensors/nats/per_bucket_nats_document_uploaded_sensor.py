@@ -40,7 +40,10 @@ def per_bucket_nats_document_uploaded_sensor(
             run_requests: list[RunRequest] = []
             try:
                 ensure_main_db_connection()
-                owned_buckets = [b for b in BucketEntity.get_all_buckets() if b.ingestor == ingestor]
+                # Exclude ``deleting`` buckets: a database marked for teardown must stop being ingested at
+                # once. The teardown sensor still enumerates it (by not applying this filter) so the pending
+                # teardown event is consumed and the row eventually hard-deleted.
+                owned_buckets = [b for b in BucketEntity.get_all_buckets() if b.ingestor == ingestor and not b.deleting]
                 if not owned_buckets:
                     return []
 

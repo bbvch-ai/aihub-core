@@ -2510,6 +2510,7 @@ services:
       AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
       AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
       AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+      AIHUB_SHOW_LEGACY_KNOWLEDGE: ${AIHUB_SHOW_LEGACY_KNOWLEDGE}
 
       # Startup tenant — read by StartupTenantSettings on first boot to seed
       # the initial tenant. ID also goes to keycloak for realm-import group naming.

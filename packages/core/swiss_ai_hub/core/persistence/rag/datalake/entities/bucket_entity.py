@@ -35,6 +35,10 @@ class BucketEntity(Document):
     # validates the value against IngestorRegistry; routing is exact-match, so an unknown value is simply
     # owned by no pipeline. The default stays the inert ``unassigned`` (see IngestorType).
     ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
+    # Tap-shutoff for async teardown: once set, every enumeration path (get_databases, the per-bucket
+    # schedule, the NATS document-uploaded sensor) must exclude this row, so ingestion stops immediately
+    # while the row survives for the teardown job to read. Hard-deleted only as the job's final step.
+    deleting = BooleanField(default=False)
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
@@ -123,6 +127,14 @@ class BucketEntity(Document):
             bucket.datalake_type = datalake_type
         if ingestor is not None:
             bucket.ingestor = ingestor
+        bucket.save()
+        return bucket
+
+    @classmethod
+    def mark_deleting(cls, bucket_id: str, db_alias: str = "default") -> Self:
+        """Flag a bucket for teardown so enumeration excludes it while the teardown job runs."""
+        bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
+        bucket.deleting = True
         bucket.save()
         return bucket
 

@@ -98,6 +98,7 @@ class KnowledgeController(TenantScopedController):
                             name=db.name,
                             display_name=db.display_name,
                             auto_sync=db.auto_sync,
+                            deletable=db.deletable,
                             namespaces=accessible_namespaces,
                         )
                     )
@@ -412,6 +413,47 @@ class KnowledgeController(TenantScopedController):
                 document_id=document_id,
                 s3_service=s3_service,
             )
+            return Response(status_code=status.HTTP_202_ACCEPTED)
+
+        return self
+
+    def delete_database(self, route: str = "/databases/{database}") -> Self:
+        @self.router.delete(
+            route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete a knowledge database"
+        )
+        async def delete_database(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+            nc: Annotated[NATS, Depends(use_nats)],
+        ) -> Response:
+            """
+            Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
+            database and S3 bucket — via the pipeline's Dagster teardown job. Returns immediately with 202.
+            """
+            if database in self._reserved_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            await KnowledgeService.delete_database(nc=nc, database=database)
+            return Response(status_code=status.HTTP_202_ACCEPTED)
+
+        return self
+
+    def delete_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> Self:
+        @self.router.delete(route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete a namespace")
+        async def delete_namespace(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
+            nc: Annotated[NATS, Depends(use_nats)],
+        ) -> Response:
+            """
+            Schedules asynchronous teardown of one namespace — its S3 folder, doc-store rows and Milvus
+            vectors (deleted by metadata filter, never a partition drop). Returns immediately with 202.
+            """
+            if database in self._reserved_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            await KnowledgeService.delete_namespace(nc=nc, database=database, namespace=namespace)
             return Response(status_code=status.HTTP_202_ACCEPTED)
 
         return self

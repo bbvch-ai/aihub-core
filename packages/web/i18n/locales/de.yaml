@@ -520,9 +520,32 @@ knowledge:
     description: Sammlungen können manuell erstellt und verwaltet werden
   edit_namespace: Sammlung bearbeiten
   upload_documents: Dokumente hochladen
+  delete_namespace: Sammlung löschen
+  delete_database: Datenbank löschen
+  delete:
+    confirm_label: Geben Sie zur Bestätigung {name} ein
+    database:
+      title: Wissensdatenbank löschen
+      warning: Dadurch werden die Datenbank {name}, alle ihre Sammlungen und ihre
+        {count} Dokumente unwiderruflich gelöscht. Dies kann nicht rückgängig gemacht
+        werden.
+    namespace:
+      title: Sammlung löschen
+      warning: Dadurch werden die Sammlung {name} und ihre {count} Dokumente unwiderruflich
+        gelöscht. Dies kann nicht rückgängig gemacht werden.
+    actions:
+      delete: Löschen
+    scheduled:
+      summary: Löschung gestartet
+      detail: Die Löschung läuft im Hintergrund und kann einen Moment dauern.
+    error:
+      summary: Löschung fehlgeschlagen
+      detail: Die Löschung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.
   form:
     create:
       title: Sammlung erstellen
+    create_error: Die Sammlung konnte nicht erstellt werden. Bitte versuchen Sie es
+      erneut.
     create_database:
       title: Wissensdatenbank erstellen
     edit:

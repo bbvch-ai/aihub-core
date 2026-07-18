@@ -33,7 +33,8 @@ def per_bucket_observe_schedule(
         ensure_main_db_connection()
         timestamp = int(context.scheduled_execution_time.timestamp())
         for bucket in BucketEntity.get_all_buckets():
-            if bucket.ingestor != ingestor:
+            # Skip buckets flagged for teardown — a deleting database must not be observed/re-ingested.
+            if bucket.ingestor != ingestor or bucket.deleting:
                 continue
             yield RunRequest(
                 run_key=f"{bucket.bucket_name}_{timestamp}",

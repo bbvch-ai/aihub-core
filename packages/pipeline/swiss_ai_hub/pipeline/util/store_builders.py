@@ -5,6 +5,9 @@ import boto3
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from pymilvus import MilvusClient
+from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
+    S3AnonymousFileAccessService,
+)
 from swiss_ai_hub.core.infrastructure import MilvusSettings, S3StorageSettings
 from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import (
@@ -87,3 +90,21 @@ def build_s3_data_lake_client(bucket: str, *, ensure_bucket: bool = False) -> S3
         endpoint_url=s3_config.ENDPOINT,
     )
     return S3DataLakeClient(bucket, s3_client, ensure_bucket=ensure_bucket)
+
+
+@cache
+def build_s3_file_access_service() -> S3AnonymousFileAccessService:
+    """Core S3 service used by knowledge teardown for ``delete_prefix`` / ``delete_container``.
+
+    Teardown only ever deletes objects, so it needs just the internal client; the same client is passed
+    as the public one because no presigned URLs are generated here.
+    """
+    s3_config = S3StorageSettings()
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=s3_config.ACCESS_KEY,
+        aws_secret_access_key=s3_config.SECRET_KEY.get_secret_value(),
+        region_name=s3_config.REGION,
+        endpoint_url=s3_config.ENDPOINT,
+    )
+    return S3AnonymousFileAccessService(s3_client=s3_client, s3_public_client=s3_client, s3_settings=s3_config)

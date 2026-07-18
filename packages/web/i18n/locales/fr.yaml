@@ -520,9 +520,30 @@ knowledge:
     description: Les collections peuvent être créées et gérées manuellement
   edit_namespace: Modifier la collection
   upload_documents: Télécharger des documents
+  delete_namespace: Supprimer la collection
+  delete_database: Supprimer la base de données
+  delete:
+    confirm_label: Saisissez {name} pour confirmer
+    database:
+      title: Supprimer la base de connaissances
+      warning: Cette action supprime définitivement la base de données {name}, toutes
+        ses collections et ses {count} documents. Cette action est irréversible.
+    namespace:
+      title: Supprimer la collection
+      warning: Cette action supprime définitivement la collection {name} et ses {count}
+        documents. Cette action est irréversible.
+    actions:
+      delete: Supprimer
+    scheduled:
+      summary: Suppression lancée
+      detail: La suppression s’exécute en arrière-plan et peut prendre un moment.
+    error:
+      summary: Échec de la suppression
+      detail: La suppression n’a pas pu être lancée. Veuillez réessayer.
   form:
     create:
       title: Créer une collection
+    create_error: Échec de la création de la collection. Veuillez réessayer.
     create_database:
       title: Créer une base de connaissances
     edit:

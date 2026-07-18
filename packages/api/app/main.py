@@ -122,7 +122,9 @@ runner.mount(
     .get_supported_file_types()
     .get_document_url()
     .delete_document()
-    .batch_delete_documents(),
+    .batch_delete_documents()
+    .delete_namespace()
+    .delete_database(),
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     UserMemoryController(auth=auth)
