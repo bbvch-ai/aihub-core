@@ -449,9 +449,6 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -471,6 +468,9 @@ export const AgentClassDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -670,9 +670,6 @@ export const AgentConfigDTOSchema = {
                 $ref: "#/components/schemas/MultiSelect",
               },
               {
-                $ref: "#/components/schemas/OrgMemoryTenantInput",
-              },
-              {
                 $ref: "#/components/schemas/Password",
               },
               {
@@ -692,6 +689,9 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/Slider",
+              },
+              {
+                $ref: "#/components/schemas/TenantSelect",
               },
               {
                 $ref: "#/components/schemas/Textarea",
@@ -5694,6 +5694,15 @@ export const ContextualizedAgentEventSchema = {
         {
           $ref: "#/components/schemas/StoreOrganizationMemoryEvent",
         },
+        {
+          $ref: "#/components/schemas/UnreadMailListedEvent",
+        },
+        {
+          $ref: "#/components/schemas/MailFetchedEvent",
+        },
+        {
+          $ref: "#/components/schemas/MailMovedEvent",
+        },
       ],
       title: "Event",
       description: "Data of the event itself.",
@@ -8190,9 +8199,6 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -8212,6 +8218,9 @@ export const FullProcessInstanceDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -8469,9 +8478,6 @@ export const GroupSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -8493,6 +8499,9 @@ export const GroupSchema = {
             $ref: "#/components/schemas/Slider",
           },
           {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
             $ref: "#/components/schemas/Textarea",
           },
           {
@@ -8509,6 +8518,26 @@ export const GroupSchema = {
       type: "array",
       title: "Children",
       description: "Child form elements contained within this group",
+    },
+    accessRule: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accessrule",
+      description:
+        "Access rule the user must satisfy to submit this section as enabled",
+    },
+    accessDeniedMessagePath: {
+      type: "string",
+      title: "Accessdeniedmessagepath",
+      description:
+        "i18n path for the message shown when access_rule is not satisfied",
+      default: "lib.common.authorization.no_access_section",
     },
   },
   additionalProperties: true,
@@ -8965,9 +8994,6 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -8987,6 +9013,9 @@ export const HumanInDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -9111,9 +9140,6 @@ export const HumanInSpecsSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -9133,6 +9159,9 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -13718,6 +13747,238 @@ export const LogprobSchema = {
   title: "Logprob",
 } as const;
 
+export const MailAttachmentRefSchema = {
+  properties: {
+    filename: {
+      type: "string",
+      pattern: "^[^/\\\\]+$",
+      title: "Filename",
+      description:
+        "Original attachment filename, including extension. Must not contain path separators.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "MIME type of the attachment.",
+      examples: ["application/pdf"],
+    },
+    file_id: {
+      type: "string",
+      pattern:
+        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      title: "File Id",
+      description:
+        "UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.",
+    },
+    size_bytes: {
+      type: "integer",
+      minimum: 0,
+      title: "Size Bytes",
+      description: "Size of the stored attachment in bytes.",
+    },
+  },
+  type: "object",
+  required: ["filename", "content_type", "file_id", "size_bytes"],
+  title: "MailAttachmentRef",
+  description:
+    "Reference to a fetched mail attachment whose bytes are stored in S3, not carried in the event.\n\nMirrors ``UserUploadedFile``: attachments are referenced by ``file_id`` (the S3 object key within the\nagent's dedicated bucket) so large binaries never bloat the persisted/streamed event.",
+} as const;
+
+export const MailFetchedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the fetched message within the inbox folder.",
+    },
+    sender: {
+      type: "string",
+      title: "Sender",
+      description: "Raw From header of the message.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject header of the message.",
+    },
+    date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Date",
+      description: "Date header of the message, if parseable.",
+    },
+    body_text: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Body Text",
+      description: "Plain-text body of the message, if present.",
+    },
+    attachments: {
+      items: {
+        $ref: "#/components/schemas/MailAttachmentRef",
+      },
+      type: "array",
+      title: "Attachments",
+      description: "References to the message's attachments stored in S3.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "message_id",
+    "sender",
+    "subject",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "MailFetchedEvent",
+  description:
+    "Carries a single fetched message — headers, body, and references to its stored attachments.",
+} as const;
+
+export const MailMovedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the moved message within its source folder.",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the message was moved out of.",
+    },
+    target_folder: {
+      type: "string",
+      title: "Target Folder",
+      description: "Folder the message was moved into.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "message_id",
+    "source_folder",
+    "target_folder",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "MailMovedEvent",
+  description:
+    "Records that a message was moved from its source folder into a target folder on the IMAP server.",
+} as const;
+
 export const MemoriesResponseSchema = {
   properties: {
     total: {
@@ -15914,254 +16175,6 @@ export const OpenWebuiWebhookUserSchema = {
   title: "OpenWebuiWebhookUser",
 } as const;
 
-export const OrgMemoryTenantInputSchema = {
-  properties: {
-    is_formkit_element: {
-      type: "boolean",
-      const: true,
-      title: "Is Formkit Element",
-      description: "Indicates that this element is a FormKit element",
-      default: true,
-    },
-    if: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^\\$.+",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "If",
-      description: "Conditional expression to show this element",
-    },
-    id: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Id",
-      description: "Unique identifier for this element",
-    },
-    nullable: {
-      type: "boolean",
-      title: "Nullable",
-      description:
-        "Render with a sibling toggle that sets this field to null when off",
-      default: false,
-    },
-    defaultEnabled: {
-      anyOf: [
-        {
-          type: "boolean",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Defaultenabled",
-      description:
-        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
-    },
-    formkit: {
-      type: "string",
-      const: "orgMemoryTenantInput",
-      title: "Formkit",
-      description: "Organization-memory tenant_id input element.",
-      default: "orgMemoryTenantInput",
-    },
-    name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Name",
-      description: "Name of this field",
-    },
-    label: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-      ],
-      title: "Label",
-      description: "Label of this field",
-    },
-    help: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Help",
-      description: "Help text of this field",
-    },
-    value: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "integer",
-        },
-        {
-          type: "number",
-        },
-        {
-          type: "boolean",
-        },
-        {
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        {
-          additionalProperties: {
-            type: "string",
-          },
-          type: "object",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Value",
-      description: "Default value for this field",
-    },
-    required: {
-      type: "boolean",
-      title: "Required",
-      description: "Whether this field is required",
-      default: false,
-    },
-    additional_validation_rules: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Additional Validation Rules",
-      description: "Validation expression",
-    },
-    disabled: {
-      type: "boolean",
-      title: "Disabled",
-      description: "Whether the input is disabled",
-      default: false,
-    },
-    readonly: {
-      type: "boolean",
-      title: "Readonly",
-      description: "Whether the input is readonly",
-      default: false,
-    },
-    placeholder: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Placeholder",
-      description: "Placeholder text",
-    },
-    prefix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Prefix",
-      description: "Prefix text",
-    },
-    suffix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Suffix",
-      description: "Suffix text",
-    },
-    iconPrefix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconprefix",
-      description: "Icon prefix",
-    },
-    iconSuffix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconsuffix",
-      description: "Icon suffix",
-    },
-    validation: {
-      type: "string",
-      title: "Validation",
-      readOnly: true,
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["label", "validation"],
-  title: "OrgMemoryTenantInput",
-  description:
-    "Text input for the organization-memory `tenant_id` field that also enforces\nconfig-time access control.\n\nRenders identically to a plain `InputText` (same UI), but its presence in a\nsubmitted config means the section is enabled — so we require the configuring user\nto hold `aihub.user.memory.organization`. When the parent `org_memory` section is\nnull the walker never reaches this element, so no check fires.",
-} as const;
-
 export const PaginatedDocumentsResponseSchema = {
   properties: {
     total: {
@@ -16822,9 +16835,6 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -16844,6 +16854,9 @@ export const ProcessClassDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -18373,9 +18386,6 @@ export const RepeaterSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -18395,6 +18405,9 @@ export const RepeaterSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -20794,6 +20807,192 @@ export const TenantMembershipDTOSchema = {
   description: "A tenant the current user belongs to.",
 } as const;
 
+export const TenantSelectSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "tenantSelect",
+      title: "Formkit",
+      description: "Tenant select element.",
+      default: "tenantSelect",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "TenantSelect",
+  description:
+    'A FormKit element for selecting one of the tenants the user belongs to.\n\nRenders as a select dropdown listing tenant *names*, while the submitted value is the\ntenant *id*. The frontend populates the options from the user\'s memberships and\npre-selects their active tenant.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    tenant_id: Annotated[\n        str | TenantSelect,\n        Field(description="Tenant to scope against"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            tenant_id=TenantSelect(\n                label=LocaleString(en="Tenant"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(tenant_id="507f1f77bcf86cd799439011")\n```',
+} as const;
+
 export const TextBlockSchema = {
   properties: {
     block_type: {
@@ -22418,6 +22617,121 @@ export const TranslationResponseSchema = {
     "Response containing the translated LocaleString with all supported locales populated.",
 } as const;
 
+export const UnreadMailListedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    messages: {
+      items: {
+        $ref: "#/components/schemas/UnreadMailSummary",
+      },
+      type: "array",
+      title: "Messages",
+      description: "Header summaries of the unread messages in the inbox.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "UnreadMailListedEvent",
+  description:
+    "Carries the unread messages found in the configured inbox folder.",
+} as const;
+
+export const UnreadMailSummarySchema = {
+  properties: {
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description:
+        "IMAP UID of the message within the inbox folder — stable across connections.",
+    },
+    sender: {
+      type: "string",
+      title: "Sender",
+      description: "Raw From header of the message.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject header of the message.",
+    },
+    date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Date",
+      description: "Date header of the message, if parseable.",
+    },
+    flags: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Flags",
+      description: "IMAP flags set on the message.",
+    },
+  },
+  type: "object",
+  required: ["message_id", "sender", "subject"],
+  title: "UnreadMailSummary",
+  description:
+    "Lightweight header summary of one unread message — enough for an agent to decide what to fetch.",
+} as const;
+
 export const UpdateAgentInstanceDTOSchema = {
   properties: {
     configuration: {
@@ -23889,9 +24203,6 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -23911,6 +24222,9 @@ export const AgentClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -24110,9 +24424,6 @@ export const AgentConfigDTOWritableSchema = {
                 $ref: "#/components/schemas/MultiSelectWritable",
               },
               {
-                $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-              },
-              {
                 $ref: "#/components/schemas/PasswordWritable",
               },
               {
@@ -24132,6 +24443,9 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/SliderWritable",
+              },
+              {
+                $ref: "#/components/schemas/TenantSelectWritable",
               },
               {
                 $ref: "#/components/schemas/TextareaWritable",
@@ -26423,6 +26737,15 @@ export const ContextualizedAgentEventWritableSchema = {
         {
           $ref: "#/components/schemas/StoreOrganizationMemoryEventWritable",
         },
+        {
+          $ref: "#/components/schemas/UnreadMailListedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MailFetchedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MailMovedEventWritable",
+        },
       ],
       title: "Event",
       description: "Data of the event itself.",
@@ -27410,9 +27733,6 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -27432,6 +27752,9 @@ export const FullProcessInstanceDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -27619,9 +27942,6 @@ export const GroupWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -27643,6 +27963,9 @@ export const GroupWritableSchema = {
             $ref: "#/components/schemas/SliderWritable",
           },
           {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
             $ref: "#/components/schemas/TextareaWritable",
           },
           {
@@ -27659,6 +27982,26 @@ export const GroupWritableSchema = {
       type: "array",
       title: "Children",
       description: "Child form elements contained within this group",
+    },
+    accessRule: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accessrule",
+      description:
+        "Access rule the user must satisfy to submit this section as enabled",
+    },
+    accessDeniedMessagePath: {
+      type: "string",
+      title: "Accessdeniedmessagepath",
+      description:
+        "i18n path for the message shown when access_rule is not satisfied",
+      default: "lib.common.authorization.no_access_section",
     },
   },
   additionalProperties: true,
@@ -27898,9 +28241,6 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -27920,6 +28260,9 @@ export const HumanInDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -28044,9 +28387,6 @@ export const HumanInSpecsWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -28066,6 +28406,9 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -31285,6 +31628,155 @@ export const LocaleInputWritableSchema = {
     'A FormKit element for entering multi-language text (LocaleString values).\n\nThis element renders as a text input with language switching capability,\nallowing users to enter translations for all supported languages (de, en, fr, it)\nin a single compact UI component.\n\nThe frontend renders this as an input field with a language selector, where users\ncan switch between languages to enter the corresponding translation.\n\n### Form Duality\nWhen used in a Form, this element captures a LocaleString value with translations\nfor each language. The form submission returns a dict with language keys.\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    custom_greeting: Annotated[\n        LocaleString | LocaleInput,\n        Field(description="Custom greeting message"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    ...,\n    custom_greeting=LocaleInput(label=LocaleString(en="Greeting", de="Begrüßung")),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    ...,\n    custom_greeting=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"),\n)\n```',
 } as const;
 
+export const MailFetchedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the fetched message within the inbox folder.",
+    },
+    sender: {
+      type: "string",
+      title: "Sender",
+      description: "Raw From header of the message.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject header of the message.",
+    },
+    date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Date",
+      description: "Date header of the message, if parseable.",
+    },
+    body_text: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Body Text",
+      description: "Plain-text body of the message, if present.",
+    },
+    attachments: {
+      items: {
+        $ref: "#/components/schemas/MailAttachmentRef",
+      },
+      type: "array",
+      title: "Attachments",
+      description: "References to the message's attachments stored in S3.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["message_id", "sender", "subject"],
+  title: "MailFetchedEvent",
+  description:
+    "Carries a single fetched message — headers, body, and references to its stored attachments.",
+} as const;
+
+export const MailMovedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the moved message within its source folder.",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the message was moved out of.",
+    },
+    target_folder: {
+      type: "string",
+      title: "Target Folder",
+      description: "Folder the message was moved into.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["message_id", "source_folder", "target_folder"],
+  title: "MailMovedEvent",
+  description:
+    "Records that a message was moved from its source folder into a target folder on the IMAP server.",
+} as const;
+
 export const MessageWritableSchema = {
   properties: {
     role: {
@@ -31973,249 +32465,6 @@ export const OpenChatHitlResponseWritableSchema = {
     "Response indicating whether there's an open chat HITL request for a thread.",
 } as const;
 
-export const OrgMemoryTenantInputWritableSchema = {
-  properties: {
-    is_formkit_element: {
-      type: "boolean",
-      const: true,
-      title: "Is Formkit Element",
-      description: "Indicates that this element is a FormKit element",
-      default: true,
-    },
-    if: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^\\$.+",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "If",
-      description: "Conditional expression to show this element",
-    },
-    id: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Id",
-      description: "Unique identifier for this element",
-    },
-    nullable: {
-      type: "boolean",
-      title: "Nullable",
-      description:
-        "Render with a sibling toggle that sets this field to null when off",
-      default: false,
-    },
-    defaultEnabled: {
-      anyOf: [
-        {
-          type: "boolean",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Defaultenabled",
-      description:
-        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
-    },
-    formkit: {
-      type: "string",
-      const: "orgMemoryTenantInput",
-      title: "Formkit",
-      description: "Organization-memory tenant_id input element.",
-      default: "orgMemoryTenantInput",
-    },
-    name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Name",
-      description: "Name of this field",
-    },
-    label: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-      ],
-      title: "Label",
-      description: "Label of this field",
-    },
-    help: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Help",
-      description: "Help text of this field",
-    },
-    value: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "integer",
-        },
-        {
-          type: "number",
-        },
-        {
-          type: "boolean",
-        },
-        {
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        {
-          additionalProperties: {
-            type: "string",
-          },
-          type: "object",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Value",
-      description: "Default value for this field",
-    },
-    required: {
-      type: "boolean",
-      title: "Required",
-      description: "Whether this field is required",
-      default: false,
-    },
-    additional_validation_rules: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Additional Validation Rules",
-      description: "Validation expression",
-    },
-    disabled: {
-      type: "boolean",
-      title: "Disabled",
-      description: "Whether the input is disabled",
-      default: false,
-    },
-    readonly: {
-      type: "boolean",
-      title: "Readonly",
-      description: "Whether the input is readonly",
-      default: false,
-    },
-    placeholder: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Placeholder",
-      description: "Placeholder text",
-    },
-    prefix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Prefix",
-      description: "Prefix text",
-    },
-    suffix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Suffix",
-      description: "Suffix text",
-    },
-    iconPrefix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconprefix",
-      description: "Icon prefix",
-    },
-    iconSuffix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconsuffix",
-      description: "Icon suffix",
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["label"],
-  title: "OrgMemoryTenantInput",
-  description:
-    "Text input for the organization-memory `tenant_id` field that also enforces\nconfig-time access control.\n\nRenders identically to a plain `InputText` (same UI), but its presence in a\nsubmitted config means the section is enabled — so we require the configuring user\nto hold `aihub.user.memory.organization`. When the parent `org_memory` section is\nnull the walker never reaches this element, so no check fires.",
-} as const;
-
 export const PaginatedProcessWalkthroughsResponseWritableSchema = {
   properties: {
     total: {
@@ -32654,9 +32903,6 @@ export const ProcessClassDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -32676,6 +32922,9 @@ export const ProcessClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -33759,9 +34008,6 @@ export const RepeaterWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -33781,6 +34027,9 @@ export const RepeaterWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -35555,6 +35804,187 @@ export const StoreUserMemoryEventWritableSchema = {
     "Specialized BaseStoreMemoryEvent for user-specific memories.\n\nEmitted when an agent stores private user memories to long-term storage.\nThese memories are scoped to individual users and never shared across users.\nUser memories are typically inferred from conversation context.",
 } as const;
 
+export const TenantSelectWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "tenantSelect",
+      title: "Formkit",
+      description: "Tenant select element.",
+      default: "tenantSelect",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "TenantSelect",
+  description:
+    'A FormKit element for selecting one of the tenants the user belongs to.\n\nRenders as a select dropdown listing tenant *names*, while the submitted value is the\ntenant *id*. The frontend populates the options from the user\'s memberships and\npre-selects their active tenant.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    tenant_id: Annotated[\n        str | TenantSelect,\n        Field(description="Tenant to scope against"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            tenant_id=TenantSelect(\n                label=LocaleString(en="Tenant"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(tenant_id="507f1f77bcf86cd799439011")\n```',
+} as const;
+
 export const TextareaWritableSchema = {
   properties: {
     is_formkit_element: {
@@ -36588,6 +37018,56 @@ export const ToolEventWritableSchema = {
   additionalProperties: true,
   type: "object",
   title: "ToolEvent",
+} as const;
+
+export const UnreadMailListedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    messages: {
+      items: {
+        $ref: "#/components/schemas/UnreadMailSummary",
+      },
+      type: "array",
+      title: "Messages",
+      description: "Header summaries of the unread messages in the inbox.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "UnreadMailListedEvent",
+  description:
+    "Carries the unread messages found in the configured inbox folder.",
 } as const;
 
 export const UserMessageEventWritableSchema = {
