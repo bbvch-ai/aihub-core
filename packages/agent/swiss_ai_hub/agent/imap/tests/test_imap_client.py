@@ -129,25 +129,6 @@ async def test_fetch_message_reads_from_given_folder():
 
 
 @async_test
-async def test_find_message_uid_searches_folder_by_message_id():
-    connection = _connection(search=[301])
-    client = _client(connection)
-
-    uid = await client.find_message_uid("Processed", "<orig-1@test>")
-
-    assert uid == "301"
-    connection.select_folder.assert_called_once_with("Processed", readonly=True)
-    assert connection.search.call_args.args[0] == ["HEADER", "Message-ID", "<orig-1@test>"]
-
-
-@async_test
-async def test_find_message_uid_returns_none_when_absent():
-    client = _client(_connection(search=[]))
-
-    assert await client.find_message_uid("Processed", "<missing@test>") is None
-
-
-@async_test
 async def test_move_message_uses_atomic_move_when_supported():
     connection = _connection(fetch={101: {b"FLAGS": ()}})
     connection.has_capability = MagicMock(return_value=True)

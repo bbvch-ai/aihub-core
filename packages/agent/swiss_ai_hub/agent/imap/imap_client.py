@@ -65,16 +65,6 @@ class ImapClient:
             summaries.append(MailParser.parse_summary(str(uid), message, flags))
         return summaries
 
-    async def find_message_uid(self, folder: str, rfc_message_id: str) -> str | None:
-        """Return the UID of the message with the given RFC ``Message-ID`` in ``folder``, or None if absent.
-
-        UIDs are folder-specific, so after a move the message carries a new UID in its target folder. The stable
-        ``Message-ID`` header lets the draft step re-locate the same message wherever it now lives.
-        """
-        await asyncio.to_thread(self._connection.select_folder, folder, readonly=True)
-        uids = await asyncio.to_thread(self._connection.search, ["HEADER", "Message-ID", rfc_message_id])
-        return str(uids[0]) if uids else None
-
     async def list_undrafted(self, folder: str, limit: int) -> tuple[str, list[UnreadMailSummary]]:
         """List up to ``limit`` not-yet-drafted messages in ``folder``, and the dedup flag used to identify them.
 
