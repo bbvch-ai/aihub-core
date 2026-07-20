@@ -95,6 +95,15 @@ class Form(BaseModel):
 
     _form_registry: ClassVar[dict[str, type[Form]]] = {}
 
+    required_access_rule: ClassVar[str | None] = None
+    """Access rule the configuring user must hold to submit this form as an enabled nested section.
+
+    Surfaces on the wrapping Group and is enforced at submit time. Only meaningful for Forms used
+    as nested sections; ignored for a top-level config."""
+
+    required_access_rule_message_path: ClassVar[str] = "lib.common.authorization.no_access_section"
+    """i18n path for the 403 message shown when `required_access_rule` is not satisfied."""
+
     @computed_field
     @property
     def _form_name(self) -> str:
@@ -176,6 +185,8 @@ class Form(BaseModel):
                                 ref=group_ref,
                                 nullable=True,
                                 default_enabled=self._default_is_non_null(field_info),
+                                access_rule=nested_form_type.required_access_rule,
+                                access_denied_message_path=nested_form_type.required_access_rule_message_path,
                             )
                         )
                 continue
@@ -201,6 +212,8 @@ class Form(BaseModel):
                     ref=group_ref,
                     nullable=allows_none,
                     default_enabled=self._default_is_non_null(field_info) if allows_none else None,
+                    access_rule=type(field_value).required_access_rule,
+                    access_denied_message_path=type(field_value).required_access_rule_message_path,
                 )
                 formkit_elements.append(group)
 

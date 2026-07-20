@@ -42,11 +42,21 @@ class FormkitElement(BaseModel, abc.ABC):
     def in_locale(self, t: LocaleHandler) -> Self: ...
 
     def validate_authorization(
-        self, field_path: str, value: Any, access_checker: AccessChecker, t: LocaleHandler
+        self,
+        field_path: str,
+        value: Any,
+        access_checker: AccessChecker,
+        accessible_tenant_ids: set[str],
+        t: LocaleHandler,
     ) -> list[ConfigAuthorizationViolation]:
         """Validate that the submitted value references only resources the user may access.
 
         Override in element subclasses that reference access-controlled resources
-        (e.g. KnowledgeDatabaseSelector, AgentSelector). The default returns no violations.
+        (e.g. KnowledgeDatabaseSelector, TenantSelect). The default returns no violations.
+
+        `access_checker` only carries rules for the tenant the user is acting within, so it
+        cannot answer cross-tenant membership questions. `accessible_tenant_ids` is resolved
+        once per request by the caller (Keycloak is the source of truth for membership) and
+        passed down for elements that reference tenants.
         """
         return []

@@ -370,10 +370,10 @@ class AgentService:
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(
+        await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
             config=configuration,
-            access_checker=AccessChecker.from_user(user),
+            user=user,
             t=t,
         )
 
@@ -461,10 +461,10 @@ class AgentService:
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(
+        await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
             config=config,
-            access_checker=AccessChecker.from_user(user),
+            user=user,
             t=t,
         )
 
