@@ -20,7 +20,7 @@ class ConfigAuthorizationService:
         t: LocaleHandler,
     ) -> None:
         accessible_tenant_ids = await KeycloakAdminService.get_user_tenant_ids(user.id)
-        
+
         ConfigAuthorizationService.validate_config_authorization_or_raise(
             form_elements=form_elements,
             config=config,
@@ -38,7 +38,7 @@ class ConfigAuthorizationService:
         t: LocaleHandler,
     ) -> None:
         """Validate config authorization and raise HTTP 403 if any violations are found."""
-        
+
         typed_elements = ConfigAuthorizationService._form_elements_adapter.validate_python(form_elements)
         violations = ConfigAuthorizationService._validate_elements(
             typed_elements, config, access_checker, accessible_tenant_ids, t, prefix=""
