@@ -34,11 +34,14 @@ following the same provisioner pattern used for Langfuse (`LangfuseProvisioner`)
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using `AccessChecker` with
    tenant ceiling enforcement, then sets `access_control` on the model.
 
-The provisioner runs on five triggers — all changes propagate immediately:
+The provisioner runs on six triggers — all changes propagate immediately:
 
 - **Startup** (`provision()`): full sync of groups, workspace models, and access grants
-- **Agent discovery cycle** (`sync_agents()`): when the set of online agent instances changes (checked every 60
-  seconds), syncs workspace models and access grants
+- **Agent discovery cycle** (`sync_agents()`): the periodic reconciler — when the set of online agent instances changes
+  (checked every 60 seconds), syncs workspace models and access grants
+- **Agent config changes** (`sync_known_agents()`): when an agent instance is created, renamed, or deleted, syncs
+  workspace models and access grants immediately (via `AgentConfigChangeHook` MongoEngine signals on
+  `AgentConfigEntityDocument`) instead of waiting for the next discovery cycle
 - **Tenant switch** (`sync_access()`): when a user changes active tenant (via `AuthHandler` hook)
 - **OpenWebUI signup webhook** (`sync_access()`): when a new user signs up (via `WebhookController`)
 - **Access entity changes** (`sync_access()`): when roles, tenants, or user-role assignments are created, updated, or
@@ -57,6 +60,9 @@ The provisioner runs on five triggers — all changes propagate immediately:
   they're only active in production — not during unit tests. No manual notification calls in entity code. Rapid
   mutations are debounced with a 2-second quiet window so bulk operations (e.g. assigning 50 users) collapse into a
   single sync call.
+- **`AgentConfigChangeHook` pattern**: the workspace-model analogue of `AccessChangeHook`. `post_save`/`post_delete`
+  signals on `AgentConfigEntityDocument` trigger `sync_known_agents()` (same debounce, lock, and lifetime-manager
+  wiring). The discovery cycle remains the periodic backstop that reconciles drift.
 - **Distributed locking**: Each sync method (`provision`, `sync_agents`, `sync_access`) acquires a non-blocking Redis
   lock before executing. Concurrent calls across API replicas skip gracefully instead of racing. Locks use separate keys
   per sync type so agent sync and access sync don't block each other.
