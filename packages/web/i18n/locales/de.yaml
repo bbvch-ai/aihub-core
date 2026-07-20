@@ -11,6 +11,7 @@ common:
   loading: Laden...
   selectModel: Modell auswählen
   selectDatabase: Datenbank auswählen
+  selectTenant: Mandant auswählen
 models:
   title: Modelle
   error: Fehler beim Laden der Modelle

@@ -11,6 +11,7 @@ common:
   loading: Loading...
   selectModel: Select a model
   selectDatabase: Select a database
+  selectTenant: Select a tenant
 models:
   title: Models
   error: Error loading models

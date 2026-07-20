@@ -11,6 +11,7 @@ common:
   loading: Caricamento...
   selectModel: Seleziona un modello
   selectDatabase: Seleziona un database
+  selectTenant: Seleziona un tenant
 models:
   title: Modelli
   error: Errore nel caricamento dei modelli

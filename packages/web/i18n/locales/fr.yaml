@@ -11,6 +11,7 @@ common:
   loading: Chargement...
   selectModel: Sélectionner un modèle
   selectDatabase: Sélectionner une base de données
+  selectTenant: Sélectionner un locataire
 models:
   title: Modèles
   error: Erreur lors du chargement des modèles
