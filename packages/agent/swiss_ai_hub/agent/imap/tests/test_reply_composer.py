@@ -1,12 +1,11 @@
 import email
 from email.policy import default as default_policy
 
-from swiss_ai_hub.core.events.agent import MailFetchedEvent
-
+from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 
 
-def _fetched(**overrides) -> MailFetchedEvent:
+def _parsed(**overrides) -> ParsedMessage:
     base = {
         "message_id": "101",
         "sender": "Alice <alice@example.com>",
@@ -15,16 +14,16 @@ def _fetched(**overrides) -> MailFetchedEvent:
         "rfc_message_id": "<orig-123@example.com>",
     }
     base.update(overrides)
-    return MailFetchedEvent(**base)
+    return ParsedMessage(**base)
 
 
 def _parse(raw: bytes):
     return email.message_from_bytes(raw, policy=default_policy)
 
 
-def test_compose_sets_threading_headers_and_llm_body():
-    raw = ReplyComposer.compose(_fetched(), from_address="me@example.com", body="Thanks, looks good.")
-    message = _parse(raw)
+def test_compose_from_parsed_sets_threading_headers_and_returns_envelope():
+    composed = ReplyComposer.compose_from_parsed(_parsed(), from_address="me@example.com", body="Thanks, looks good.")
+    message = _parse(composed.raw)
 
     assert message["From"] == "me@example.com"
     assert message["To"] == "Alice <alice@example.com>"
@@ -32,6 +31,20 @@ def test_compose_sets_threading_headers_and_llm_body():
     assert message["In-Reply-To"] == "<orig-123@example.com>"
     assert message["References"] == "<orig-123@example.com>"
     assert message.get_content().strip() == "Thanks, looks good."
+
+    # The returned envelope mirrors the composed headers, so the persisted ref never drifts from the draft.
+    assert composed.subject == "Re: Quarterly report"
+    assert composed.recipient == "Alice <alice@example.com>"
+    assert composed.in_reply_to == "<orig-123@example.com>"
+
+
+def test_compose_from_parsed_prefers_reply_to_over_sender():
+    composed = ReplyComposer.compose_from_parsed(
+        _parsed(reply_to="desk@example.com"), from_address="me@example.com", body="ok"
+    )
+
+    assert composed.recipient == "desk@example.com"
+    assert _parse(composed.raw)["To"] == "desk@example.com"
 
 
 def test_reply_subject_is_idempotent():
@@ -41,14 +54,8 @@ def test_reply_subject_is_idempotent():
 
 
 def test_references_chain_appends_original_message_id():
-    fetched = _fetched(references="<a@x> <b@x>")
-    raw = ReplyComposer.compose(fetched, from_address="me@example.com", body="ok")
-    message = _parse(raw)
+    composed = ReplyComposer.compose_from_parsed(
+        _parsed(references="<a@x> <b@x>"), from_address="me@example.com", body="ok"
+    )
 
-    assert message["References"] == "<a@x> <b@x> <orig-123@example.com>"
-
-
-def test_recipient_prefers_reply_to_over_sender():
-    fetched = _fetched(reply_to="desk@example.com")
-    assert ReplyComposer.reply_recipient(fetched) == "desk@example.com"
-    assert ReplyComposer.reply_recipient(_fetched()) == "Alice <alice@example.com>"
+    assert _parse(composed.raw)["References"] == "<a@x> <b@x> <orig-123@example.com>"

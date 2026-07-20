@@ -285,42 +285,28 @@ async def test_factory_raises_and_logs_out_on_failed_login():
 
 
 @async_test
-async def test_resolve_drafted_flag_prefers_custom_keyword_when_supported():
-    connection = _connection()
+async def test_list_undrafted_uses_unkeyword_and_returns_custom_keyword_when_supported():
+    connection = _connection(search=[11, 12])
     connection.select_folder = MagicMock(return_value={b"PERMANENTFLAGS": (b"\\Seen", b"\\*")})
     client = _client(connection)
 
-    assert await client.resolve_drafted_flag("Processed") == "$AiHubDrafted"
+    drafted_flag, summaries = await client.list_undrafted("Processed", limit=5)
 
-
-@async_test
-async def test_resolve_drafted_flag_falls_back_to_answered_without_keyword_support():
-    connection = _connection()
-    connection.select_folder = MagicMock(return_value={b"PERMANENTFLAGS": (b"\\Seen", b"\\Answered")})
-    client = _client(connection)
-
-    assert await client.resolve_drafted_flag("Processed") == "\\Answered"
-
-
-@async_test
-async def test_list_undrafted_searches_unkeyword_for_custom_keyword():
-    connection = _connection(search=[11, 12])
-    client = _client(connection)
-
-    summaries = await client.list_undrafted("Processed", "$AiHubDrafted", limit=5)
-
+    assert drafted_flag == "$AiHubDrafted"
     assert [s.message_id for s in summaries] == ["11", "12"]
     connection.select_folder.assert_called_once_with("Processed", readonly=True)
     assert connection.search.call_args.args[0] == ["UNKEYWORD", "$AiHubDrafted"]
 
 
 @async_test
-async def test_list_undrafted_searches_unanswered_and_caps_at_limit():
+async def test_list_undrafted_falls_back_to_unanswered_without_keyword_support_and_caps_at_limit():
     connection = _connection(search=[11, 12, 13])
+    connection.select_folder = MagicMock(return_value={b"PERMANENTFLAGS": (b"\\Seen", b"\\Answered")})
     client = _client(connection)
 
-    summaries = await client.list_undrafted("Processed", "\\Answered", limit=2)
+    drafted_flag, summaries = await client.list_undrafted("Processed", limit=2)
 
+    assert drafted_flag == "\\Answered"
     assert len(summaries) == 2
     assert connection.search.call_args.args[0] == ["UNANSWERED"]
 

@@ -18,8 +18,10 @@ from playground.minimal_workflow.imap_workflow.events.draft_mail_start_event imp
 from playground.minimal_workflow.imap_workflow.events.read_mail_start_event import ReadMailStartEvent
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
 from swiss_ai_hub.agent.imap.mail_attachment_store import MailAttachmentStore
+from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -181,73 +183,102 @@ class ImapAgent(Agent):
         draft: DraftEmailSettings,
         displayer: EventDisplayer,
     ) -> MailBatchDraftedEvent | StopEvent:
-        """Draft LLM replies for a batch of not-yet-drafted messages read from the configured source folder.
+        """Draft LLM replies for a batch of not-yet-drafted messages from ``draft.source_folder`` and append them.
 
-        Independent of the read/move chain: it lists up to ``batch_size`` messages in ``draft.source_folder`` that are
-        not yet marked with the drafted flag (a custom keyword, or ``\\Answered`` on servers without keyword support),
-        drafts a reply for each, appends it to the drafts folder, and then marks the source message drafted. Reads use
-        ``BODY.PEEK`` and marking never sets ``\\Seen``, so the source mail stays unread. Ordering is at-least-once —
-        the draft is appended before the source is flagged, so a crash re-drafts (a recoverable duplicate) rather than
-        skipping. Inbound mail is untrusted and enters the LLM prompt; the Presidio guard covers the LLM path.
+        Independent of the read/move chain. See ADR ``2026_07_05_agent_imap_read_capability`` for the design —
+        source stays unread, flag-based dedup, and at-least-once (append before flag) ordering.
         """
         if not draft.enable_draft:
             logger.info("[imap] draft_batch_step: enable_draft=False — nothing to draft, stopping")
             await displayer.display_thought("Drafting is disabled — no replies were drafted.")
             return StopEvent()
 
+        drafted_flag, parsed_messages = await self._read_draft_candidates(imap_config, draft)
+        logger.info(
+            "[imap] draft_batch_step: %d undrafted message(s) in %s (flag=%s, batch_size=%d)",
+            len(parsed_messages),
+            draft.source_folder,
+            drafted_flag,
+            draft.batch_size,
+        )
+
+        replies = [
+            (parsed, await self._compose_reply(parsed, draft, imap_config, displayer)) for parsed in parsed_messages
+        ]
+        drafted = await self._persist_drafts(imap_config, draft, drafted_flag, replies)
+        return MailBatchDraftedEvent(source_folder=draft.source_folder, count=len(drafted), drafted=drafted)
+
+    async def _read_draft_candidates(
+        self, imap_config: ImapClientConfig, draft: DraftEmailSettings
+    ) -> tuple[str, list[ParsedMessage]]:
+        """Read the undrafted batch (read-only, ``BODY.PEEK``) in a short-lived connection, so the IMAP socket is not
+        held open across the LLM calls that follow — an idle socket gets dropped by many servers mid-batch."""
+        async with ImapClientFactory.create(imap_config) as client:
+            drafted_flag, candidates = await client.list_undrafted(draft.source_folder, draft.batch_size)
+            parsed = [
+                await client.fetch_message(candidate.message_id, folder=draft.source_folder)
+                for candidate in candidates
+            ]
+        return drafted_flag, parsed
+
+    async def _compose_reply(
+        self,
+        parsed: ParsedMessage,
+        draft: DraftEmailSettings,
+        imap_config: ImapClientConfig,
+        displayer: EventDisplayer,
+    ) -> ComposedReply:
+        """Draft the reply body with the LLM (no IMAP connection held) and wrap it in a threaded envelope.
+
+        Inbound mail is untrusted and enters the LLM prompt; the platform's Presidio guard anonymizes PII at the LLM
+        gateway, so this step adds no sanitisation of its own.
+        """
+        await displayer.display_thought(f"Drafting a reply to: {parsed.subject}")
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=draft.draft_prompt),
+            ChatMessage(
+                role=MessageRole.USER,
+                content=self._render_original(parsed.sender, parsed.subject, parsed.body_text),
+            ),
+        ]
         llm_config = draft.llm
+        async with llm_config.cost_reporting_llm(displayer) as llm:
+            llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
+        body = llm_event.chat_messages[-1].content or ""
+        return ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body)
+
+    async def _persist_drafts(
+        self,
+        imap_config: ImapClientConfig,
+        draft: DraftEmailSettings,
+        drafted_flag: str,
+        replies: list[tuple[ParsedMessage, ComposedReply]],
+    ) -> list[DraftedReplyRef]:
+        """Append each draft then flag its source (at-least-once: append before flag), in a fresh connection opened
+        after all LLM work so the socket is never idle mid-stream."""
         drafted: list[DraftedReplyRef] = []
         async with ImapClientFactory.create(imap_config) as client:
-            drafted_flag = await client.resolve_drafted_flag(draft.source_folder)
-            candidates = await client.list_undrafted(draft.source_folder, drafted_flag, draft.batch_size)
-            logger.info(
-                "[imap] draft_batch_step: %d undrafted message(s) in %s (flag=%s, batch_size=%d)",
-                len(candidates),
-                draft.source_folder,
-                drafted_flag,
-                draft.batch_size,
-            )
-
-            for summary in candidates:
-                uid = summary.message_id
-                parsed = await client.fetch_message(uid, folder=draft.source_folder)
-                await displayer.display_thought(f"Drafting a reply to: {parsed.subject}")
-
-                messages = [
-                    ChatMessage(role=MessageRole.SYSTEM, content=draft.draft_prompt),
-                    ChatMessage(
-                        role=MessageRole.USER,
-                        content=self._render_original(parsed.sender, parsed.subject, parsed.body_text),
-                    ),
-                ]
-                async with llm_config.cost_reporting_llm(displayer) as llm:
-                    llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
-                draft_body = llm_event.chat_messages[-1].content or ""
-
-                raw_draft = ReplyComposer.compose_from_parsed(
-                    parsed, from_address=imap_config.username, body=draft_body
-                )
-                resolved_folder, draft_uid = await client.append_draft(draft.drafts_folder, raw_draft)
-                await client.mark_drafted(draft.source_folder, uid, drafted_flag)
+            for parsed, reply in replies:
+                resolved_folder, draft_uid = await client.append_draft(draft.drafts_folder, reply.raw)
+                await client.mark_drafted(draft.source_folder, parsed.message_id, drafted_flag)
                 logger.info(
                     "[imap] draft_batch_step: drafted uid=%s -> %r (draft_uid=%s), marked with %s",
-                    uid,
+                    parsed.message_id,
                     resolved_folder,
                     draft_uid,
                     drafted_flag,
                 )
                 drafted.append(
                     DraftedReplyRef(
-                        source_uid=uid,
+                        source_uid=parsed.message_id,
                         drafts_folder=resolved_folder,
                         draft_uid=draft_uid,
-                        in_reply_to=parsed.rfc_message_id,
-                        subject=ReplyComposer.reply_subject(parsed.subject),
-                        recipient=parsed.reply_to or parsed.sender,
+                        in_reply_to=reply.in_reply_to,
+                        subject=reply.subject,
+                        recipient=reply.recipient,
                     )
                 )
-
-        return MailBatchDraftedEvent(source_folder=draft.source_folder, count=len(drafted), drafted=drafted)
+        return drafted
 
     @step(
         name=AgentLocaleString(en="Finish drafting", de="Entwurf abschliessen"),

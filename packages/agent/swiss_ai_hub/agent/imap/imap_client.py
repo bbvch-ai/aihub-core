@@ -23,8 +23,8 @@ _DRAFT_FLAG = b"\\Draft"
 _DRAFTS_SPECIAL_USE = b"\\Drafts"
 _PERMANENT_FLAGS_KEY = b"PERMANENTFLAGS"
 _CUSTOM_KEYWORDS_WILDCARD = b"\\*"
-DRAFTED_KEYWORD = "$AiHubDrafted"
-ANSWERED_FLAG = "\\Answered"
+_DRAFTED_KEYWORD = "$AiHubDrafted"
+_ANSWERED_FLAG = "\\Answered"
 
 
 class ImapClient:
@@ -75,27 +75,19 @@ class ImapClient:
         uids = await asyncio.to_thread(self._connection.search, ["HEADER", "Message-ID", rfc_message_id])
         return str(uids[0]) if uids else None
 
-    async def resolve_drafted_flag(self, folder: str) -> str:
-        """The flag used to mark a message as drafted — a custom keyword when the server allows it, else ``\\Answered``.
+    async def list_undrafted(self, folder: str, limit: int) -> tuple[str, list[UnreadMailSummary]]:
+        """List up to ``limit`` not-yet-drafted messages in ``folder``, and the dedup flag used to identify them.
 
-        A custom keyword is preferred because it does not paint the standard "replied" indicator on mail that only has
-        an unsent draft; ``\\Answered`` is the compatibility fallback for servers that reject custom keywords.
+        The dedup flag is resolved from the same read-only ``SELECT`` used for the search: a custom keyword
+        (``$AiHubDrafted``) when the folder's ``PERMANENTFLAGS`` advertises ``\\*``, else ``\\Answered`` — the custom
+        keyword is preferred so mail with only an unsent draft is not painted with the standard "replied" indicator.
+        The flag is returned so the caller passes the exact value back to ``mark_drafted`` (no stringly-typed guessing).
+        ``BODY.PEEK`` keeps every candidate unread.
         """
-        return DRAFTED_KEYWORD if await self._supports_custom_keywords(folder) else ANSWERED_FLAG
-
-    async def _supports_custom_keywords(self, folder: str) -> bool:
-        """True when the folder's ``PERMANENTFLAGS`` advertises ``\\*`` (arbitrary keywords may be set)."""
         response = await asyncio.to_thread(self._connection.select_folder, folder, readonly=True)
-        return _CUSTOM_KEYWORDS_WILDCARD in response.get(_PERMANENT_FLAGS_KEY, ())
-
-    async def list_undrafted(self, folder: str, drafted_flag: str, limit: int) -> list[UnreadMailSummary]:
-        """List up to ``limit`` messages in ``folder`` not yet marked with ``drafted_flag``, as header summaries.
-
-        Read-only ``SELECT`` + ``BODY.PEEK`` keep every candidate unread. ``\\Answered`` maps to an ``UNANSWERED``
-        search; a custom keyword maps to ``UNKEYWORD``.
-        """
-        await asyncio.to_thread(self._connection.select_folder, folder, readonly=True)
-        criteria = ["UNANSWERED"] if drafted_flag == ANSWERED_FLAG else ["UNKEYWORD", drafted_flag]
+        supports_keywords = _CUSTOM_KEYWORDS_WILDCARD in response.get(_PERMANENT_FLAGS_KEY, ())
+        drafted_flag = _DRAFTED_KEYWORD if supports_keywords else _ANSWERED_FLAG
+        criteria = ["UNKEYWORD", drafted_flag] if supports_keywords else ["UNANSWERED"]
         uids = await asyncio.to_thread(self._connection.search, criteria)
 
         summaries: list[UnreadMailSummary] = []
@@ -105,7 +97,7 @@ class ImapClient:
             message = self._parse_bytes(data[_HEADER_KEY])
             flags = [flag.decode(errors="replace") for flag in data.get(_FLAGS_KEY, ())]
             summaries.append(MailParser.parse_summary(str(uid), message, flags))
-        return summaries
+        return drafted_flag, summaries
 
     async def mark_drafted(self, folder: str, message_id: str, drafted_flag: str) -> None:
         """Flag a message as drafted (writable ``SELECT`` + ``STORE``) without setting ``\\Seen`` — it stays unread."""
