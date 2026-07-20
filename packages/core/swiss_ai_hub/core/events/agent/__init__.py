@@ -85,7 +85,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
         HumanInTheLoopResponseEvent,
     )
+    from swiss_ai_hub.core.events.agent.imap.drafted_reply_ref import DraftedReplyRef
     from swiss_ai_hub.core.events.agent.imap.mail_attachment_ref import MailAttachmentRef
+    from swiss_ai_hub.core.events.agent.imap.mail_batch_drafted_event import MailBatchDraftedEvent
     from swiss_ai_hub.core.events.agent.imap.mail_fetched_event import MailFetchedEvent
     from swiss_ai_hub.core.events.agent.imap.mail_moved_event import MailMovedEvent
     from swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event import UnreadMailListedEvent
@@ -190,7 +192,9 @@ __all__ = [
     "LLMStopEvent",
     "LanguageEvent",
     "LimitChatHistoryEvent",
+    "DraftedReplyRef",
     "MailAttachmentRef",
+    "MailBatchDraftedEvent",
     "MailFetchedEvent",
     "MailMovedEvent",
     "Message",
@@ -286,7 +290,9 @@ _LAZY_IMPORTS: dict[str, str] = {
     "LLMStopEvent": "swiss_ai_hub.core.events.agent.semantic.llm.llm_stop_event",
     "LanguageEvent": "swiss_ai_hub.core.events.agent.common.language_event",
     "LimitChatHistoryEvent": "swiss_ai_hub.core.events.agent.common.limit_chat_history_event",
+    "DraftedReplyRef": "swiss_ai_hub.core.events.agent.imap.drafted_reply_ref",
     "MailAttachmentRef": "swiss_ai_hub.core.events.agent.imap.mail_attachment_ref",
+    "MailBatchDraftedEvent": "swiss_ai_hub.core.events.agent.imap.mail_batch_drafted_event",
     "MailFetchedEvent": "swiss_ai_hub.core.events.agent.imap.mail_fetched_event",
     "MailMovedEvent": "swiss_ai_hub.core.events.agent.imap.mail_moved_event",
     "Message": "swiss_ai_hub.core.events.agent.semantic.llm.message",

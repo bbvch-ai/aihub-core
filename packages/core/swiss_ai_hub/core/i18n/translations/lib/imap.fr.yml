@@ -22,9 +22,16 @@ config:
   max_messages:
     label: Nombre max d'e-mails non lus
     help: Nombre maximal de messages non lus répertoriés par exécution.
+  enable_draft:
+    label: Rédiger une réponse
+    help: Si activé, une réponse au message récupéré est rédigée et ajoutée au dossier
+      des brouillons pour qu'un humain la révise et l'envoie. Si désactivé, l'étape
+      de rédaction est ignorée.
   drafts_folder:
     label: Dossier des brouillons
-    help: Dossier de la boîte aux lettres où les brouillons sont écrits.
+    help: Dossier de la boîte aux lettres où les brouillons de réponse sont ajoutés.
+      Si ce dossier est introuvable, le dossier Brouillons special-use du serveur
+      est utilisé à la place.
   enable_move:
     label: Déplacer l'e-mail récupéré
     help: Si activé, le mail récupéré est déplacé dans le dossier traité après sa
@@ -34,3 +41,16 @@ config:
     label: Dossier traité
     help: Dossier de la boîte aux lettres où un mail traité est déplacé lorsque le
       déplacement est activé.
+  source_folder:
+    label: Dossier source du brouillon
+    help: Dossier de la boîte aux lettres d'où le rédacteur lit les messages candidats.
+      Pointez-le vers le dossier traité pour rédiger le courrier qui y est classé.
+  batch_size:
+    label: Taille du lot de brouillons
+    help: Nombre maximal de messages rédigés par exécution.
+  draft_model:
+    label: Modèle LLM
+    help: Modèle de chat utilisé pour rédiger le corps de la réponse.
+  draft_prompt:
+    label: Invite de rédaction
+    help: Instructions guidant la manière dont le LLM rédige le corps de la réponse.

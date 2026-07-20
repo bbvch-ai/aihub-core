@@ -367,9 +367,15 @@ config seeder needed.
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
   `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
-  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`, `imap_workflow` (non-conversational IMAP read +
-  organise demonstrator — `ReadMailStartEvent` → list unread → fetch one message with S3-referenced attachments →
-  optionally move it to the processed folder when `enable_move` is on → stop; deployable via `app/imap_agent/main.py`)
+  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`, `imap_workflow` (non-conversational IMAP
+  demonstrator with two independent, separately-triggered chains — deployable via `app/imap_agent/main.py`):
+  **read/move** (`ReadMailStartEvent` → list unread → fetch one message with S3-referenced attachments → optionally move
+  it to the processed folder when `enable_move` is on → finish); and **draft** (`DraftMailStartEvent` → list up to
+  `batch_size` not-yet-drafted messages in `source_folder` (searched by `UNKEYWORD $AiHubDrafted`, or `UNANSWERED`
+  fallback) → for each: draft an LLM reply, `APPEND` it to the drafts folder, then flag the source message drafted →
+  finish). Reads use `BODY.PEEK` and marking never sets `\Seen`, so source mail stays unread; ordering is at-least-once
+  (append before flag); it never sends. The grouped `DraftEmailSettings` config (`packages/core/imap/`) holds the draft
+  toggle, source folder, batch size, drafts folder, LLM model, and prompt)
 - `playground/performance/` — Load testing with PerformanceTestingAgent
 
 ## Testing

@@ -10,8 +10,16 @@ from swiss_ai_hub.agent.imap.imap_client import ImapClient, ImapClientFactory
 _HEADER = b"From: Alice <alice@example.com>\r\nSubject: Report\r\nDate: Mon, 05 Jan 2026 10:00:00 +0000\r\n\r\n"
 
 
-def _connection(search: list[int] | None = None, fetch: dict | None = None) -> MagicMock:
+_FOLDERS = [
+    ((b"\\HasNoChildren",), b"/", "INBOX"),
+    ((b"\\HasNoChildren",), b"/", "Processed"),
+    ((b"\\Drafts", b"\\HasNoChildren"), b"/", "[Gmail]/Drafts"),
+]
+
+
+def _connection(search: list[int] | None = None, fetch: dict | None = None, folders: list | None = None) -> MagicMock:
     connection = MagicMock()
+    connection.list_folders = MagicMock(return_value=_FOLDERS if folders is None else folders)
     connection.search = MagicMock(return_value=[101, 102] if search is None else search)
     if fetch is not None:
         connection.fetch = MagicMock(return_value=fetch)
@@ -110,6 +118,36 @@ async def test_fetch_message_raises_on_expunged_uid():
 
 
 @async_test
+async def test_fetch_message_reads_from_given_folder():
+    body = b"From: alice@example.com\r\nSubject: Report\r\n\r\nhello"
+    connection = _connection(fetch={101: {b"RFC822.SIZE": len(body), b"BODY[]": body}})
+    client = _client(connection)
+
+    await client.fetch_message("101", folder="Processed")
+
+    connection.select_folder.assert_called_once_with("Processed", readonly=True)
+
+
+@async_test
+async def test_find_message_uid_searches_folder_by_message_id():
+    connection = _connection(search=[301])
+    client = _client(connection)
+
+    uid = await client.find_message_uid("Processed", "<orig-1@test>")
+
+    assert uid == "301"
+    connection.select_folder.assert_called_once_with("Processed", readonly=True)
+    assert connection.search.call_args.args[0] == ["HEADER", "Message-ID", "<orig-1@test>"]
+
+
+@async_test
+async def test_find_message_uid_returns_none_when_absent():
+    client = _client(_connection(search=[]))
+
+    assert await client.find_message_uid("Processed", "<missing@test>") is None
+
+
+@async_test
 async def test_move_message_uses_atomic_move_when_supported():
     connection = _connection(fetch={101: {b"FLAGS": ()}})
     connection.has_capability = MagicMock(return_value=True)
@@ -149,6 +187,18 @@ async def test_move_message_refuses_when_neither_move_nor_uidplus():
 
 
 @async_test
+async def test_move_message_raises_actionable_error_when_target_folder_missing():
+    connection = _connection(fetch={101: {b"FLAGS": ()}})
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="does not exist"):
+        await client.move_message("101", "DoesNotExist")
+
+    connection.move.assert_not_called()
+
+
+@async_test
 async def test_move_message_raises_on_expunged_uid_without_mutating():
     connection = _connection(fetch={})
     connection.has_capability = MagicMock(return_value=True)
@@ -158,6 +208,66 @@ async def test_move_message_raises_on_expunged_uid_without_mutating():
         await client.move_message("101", "Processed")
 
     connection.move.assert_not_called()
+
+
+@async_test
+async def test_append_draft_uses_configured_folder_when_it_exists_verbatim():
+    connection = _connection()
+    connection.append = MagicMock(return_value=b"[APPENDUID 130 57] (Success)")
+    client = _client(connection)
+
+    resolved, uid = await client.append_draft("Processed", b"From: me\r\nSubject: Re: Hi\r\n\r\nBody")
+
+    assert (resolved, uid) == ("Processed", "57")
+    _folder, _msg = connection.append.call_args.args
+    assert _folder == "Processed"
+    assert connection.append.call_args.kwargs["flags"] == [b"\\Draft"]
+
+
+@async_test
+async def test_append_draft_auto_resolves_drafts_special_use_when_name_mismatches():
+    connection = _connection()
+    connection.append = MagicMock(return_value=b"[APPENDUID 130 57] (Success)")
+    client = _client(connection)
+
+    resolved, uid = await client.append_draft("Drafts", b"raw")
+
+    assert resolved == "[Gmail]/Drafts"
+    assert uid == "57"
+    assert connection.append.call_args.args[0] == "[Gmail]/Drafts"
+
+
+@async_test
+async def test_append_draft_auto_resolves_when_folder_left_blank():
+    connection = _connection()
+    connection.append = MagicMock(return_value=b"[APPENDUID 130 57] (Success)")
+    client = _client(connection)
+
+    resolved, _uid = await client.append_draft("", b"raw")
+
+    assert resolved == "[Gmail]/Drafts"
+
+
+@async_test
+async def test_append_draft_raises_actionable_error_when_no_drafts_folder():
+    connection = _connection(folders=[((b"\\HasNoChildren",), b"/", "INBOX")])
+    connection.append = MagicMock(return_value=b"[APPENDUID 130 57] (Success)")
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="Available folders: INBOX"):
+        await client.append_draft("", b"raw")
+
+    connection.append.assert_not_called()
+
+
+@async_test
+async def test_append_draft_returns_none_without_uidplus():
+    connection = _connection()
+    connection.append = MagicMock(return_value=b"(Success)")
+    client = _client(connection)
+
+    _resolved, uid = await client.append_draft("Processed", b"raw")
+    assert uid is None
 
 
 @async_test
@@ -172,3 +282,55 @@ async def test_factory_raises_and_logs_out_on_failed_login():
                 pytest.fail("client must not be yielded after a failed login")
 
     connection.logout.assert_called_once()
+
+
+@async_test
+async def test_resolve_drafted_flag_prefers_custom_keyword_when_supported():
+    connection = _connection()
+    connection.select_folder = MagicMock(return_value={b"PERMANENTFLAGS": (b"\\Seen", b"\\*")})
+    client = _client(connection)
+
+    assert await client.resolve_drafted_flag("Processed") == "$AiHubDrafted"
+
+
+@async_test
+async def test_resolve_drafted_flag_falls_back_to_answered_without_keyword_support():
+    connection = _connection()
+    connection.select_folder = MagicMock(return_value={b"PERMANENTFLAGS": (b"\\Seen", b"\\Answered")})
+    client = _client(connection)
+
+    assert await client.resolve_drafted_flag("Processed") == "\\Answered"
+
+
+@async_test
+async def test_list_undrafted_searches_unkeyword_for_custom_keyword():
+    connection = _connection(search=[11, 12])
+    client = _client(connection)
+
+    summaries = await client.list_undrafted("Processed", "$AiHubDrafted", limit=5)
+
+    assert [s.message_id for s in summaries] == ["11", "12"]
+    connection.select_folder.assert_called_once_with("Processed", readonly=True)
+    assert connection.search.call_args.args[0] == ["UNKEYWORD", "$AiHubDrafted"]
+
+
+@async_test
+async def test_list_undrafted_searches_unanswered_and_caps_at_limit():
+    connection = _connection(search=[11, 12, 13])
+    client = _client(connection)
+
+    summaries = await client.list_undrafted("Processed", "\\Answered", limit=2)
+
+    assert len(summaries) == 2
+    assert connection.search.call_args.args[0] == ["UNANSWERED"]
+
+
+@async_test
+async def test_mark_drafted_adds_flag_writable_without_seen():
+    connection = _connection()
+    client = _client(connection)
+
+    await client.mark_drafted("Processed", "11", "$AiHubDrafted")
+
+    connection.select_folder.assert_called_once_with("Processed", readonly=False)
+    connection.add_flags.assert_called_once_with([11], ["$AiHubDrafted"])
