@@ -216,8 +216,7 @@ class ImapAgent(Agent):
         async with ImapClientFactory.create(imap_config) as client:
             drafted_flag, candidates = await client.list_undrafted(draft.source_folder, draft.batch_size)
             parsed = [
-                await client.fetch_message(candidate.message_id, folder=draft.source_folder)
-                for candidate in candidates
+                await client.fetch_message(candidate.message_id, folder=draft.source_folder) for candidate in candidates
             ]
         return drafted_flag, parsed
 
