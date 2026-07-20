@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.313.0] - 2026-07-17 - Streamlined Agent Configuration Import
+
+### Added
+
+- ✨ **Agent Instance Import Feature:** Introduced the ability to import agent configurations directly from JSON files,
+  making it easier to migrate or share agent setups between environments or users.
+- 📄 **Robust Import Validation:** Implemented comprehensive validation for imported agent configuration files, including
+  checks for valid JSON format, correct structural integrity, presence of required fields, and support for the export
+  schema version.
+- 🌐 **Localized Import Messages:** Added translated messages for the new agent import functionality, providing clear
+  feedback for various success and error states in multiple languages.
+- 🚀 **Pre-fill Agent Creation from Import:** When a valid agent configuration is imported, the agent creation form will
+  now automatically pre-fill with the imported data, significantly speeding up the agent setup process.
+- ⚙️ **Automatic Tenant ID Assignment:** Ensures that imported agent configurations are automatically assigned the
+  correct `tenant_id` and, if applicable, `org_memory.tenant_id`, for seamless integration into the current environment.
+
+______________________________________________________________________
+
 ## [v0.312.1] - 2026-07-16 - Enhanced UI Clarity
 
 ### Added
