@@ -5,8 +5,12 @@ name: Verify SDK Sync
 # that forget `pnpm generate-sdk` leave the SDK stale; this catches that at PR time
 # instead of letting the drift surface later in an unrelated contributor's diff.
 #
-# Approach: boot the real API (uvicorn + its docker services), regenerate the SDK
-# against the live spec exactly like a developer does, then `git diff --exit-code`.
+# Approach: the OpenAPI spec is a static document, so there's no need to boot the
+# platform. We import the ASGI app and dump the mounted FastAPI app's openapi()
+# offline — connections live in the lifespan, which never runs on import — then
+# serve that JSON at the same URL openapi-ts.config.ts already points at, run
+# `pnpm generate-sdk`, and `git diff --exit-code`. No docker services required.
+#
 # Always runs (no trigger-level paths filter) so it can be a required check; the
 # work only happens when the relevant backend/SDK paths actually changed.
 on:
@@ -20,7 +24,7 @@ jobs:
     name: ${{ matrix.web_package }}
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
-    timeout-minutes: 30
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -29,20 +33,12 @@ jobs:
           - web_package: packages/web
             api_dir: packages/api
             api_port: 8000
-            # Services the API lifespan connects to on startup. uvicorn runs the real
-            # lifespan (unlike pytest, which uses the ASGI adapter and skips it), so
-            # this needs keycloak on top of the packages/api test matrix — startup
-            # calls initialize_startup_tenant() -> KeycloakAdminService.
-            docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
-              litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
-              seaweedfs-init etcd-init etcd milvus-standalone neo4j keycloak
-          # Sysadmin plane: @swiss-ai-hub/sysadmin-web SDK ← packages/sysadmin-api on
-          # :8001. Its lifespan (sysadmin_runner.py) connects Mongo + NATS + Redis, so
-          # it needs nats + valkey on top of ferretdb — more than the pytest matrix.
+            app_module: app.main
+          # Sysadmin plane: @swiss-ai-hub/sysadmin-web SDK ← packages/sysadmin-api on :8001.
           - web_package: packages/sysadmin-web
             api_dir: packages/sysadmin-api
             api_port: 8001
-            docker_compose_services: postgres-ferretdb ferretdb nats valkey
+            app_module: swiss_ai_hub.sysadmin_api.main
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -78,48 +74,58 @@ jobs:
       - name: Install Python dependencies
         if: steps.changes.outputs.changed == 'true'
         run: uv sync --all-packages --dev --frozen
-      - name: Prepare environment file
-        if: steps.changes.outputs.changed == 'true'
-        # Pydantic BaseSettings load from .env; docker compose reads --env-file .env.dev.
-        run: cp .env.dev .env
-      - name: Start backend Docker services
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d \
-            ${{ matrix.docker_compose_services }}
-      - name: Wait for Docker services to become healthy
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          MAX_WAIT=600; INTERVAL=5; ELAPSED=0
-          while [ $ELAPSED -lt $MAX_WAIT ]; do
-            UNHEALTHY=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "unhealthy" || true)
-            STARTING=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "starting" || true)
-            if [ -z "$UNHEALTHY" ] && [ -z "$STARTING" ]; then
-              echo "All Docker services healthy."; docker ps; break
-            fi
-            echo "Waiting for services... ${ELAPSED}s / ${MAX_WAIT}s"
-            sleep $INTERVAL; ELAPSED=$((ELAPSED + INTERVAL))
-          done
-      - name: Start API server
+      - name: Export OpenAPI spec (offline, no server)
         if: steps.changes.outputs.changed == 'true'
         working-directory: ${{ matrix.api_dir }}
+        env:
+          APP_MODULE: ${{ matrix.app_module }}
+          SPEC_DIR: ${{ runner.temp }}/spec/api/v1
         run: |
-          make run-dev > /tmp/api-server.log 2>&1 &
-          echo "API_PID=$!" >> "$GITHUB_ENV"
-      - name: Wait for OpenAPI spec to be served
+          # Settings read the env; export .env.dev so import-time BaseSettings resolve.
+          set -a; . "${GITHUB_WORKSPACE}/.env.dev"; set +a
+          mkdir -p "$SPEC_DIR"
+          # Import the ASGI app and dump the mounted FastAPI app's schema — identical
+          # to the document served at /api/v1/openapi.json, without a running server.
+          uv run python - <<'PY'
+          import json
+          import os
+          from importlib import import_module
+
+          from fastapi import FastAPI
+          from starlette.routing import Mount
+
+          app = import_module(os.environ["APP_MODULE"]).app
+          mount = next(
+              route
+              for route in app.routes
+              if isinstance(route, Mount) and isinstance(route.app, FastAPI)
+          )
+          schema = mount.app.openapi()
+          # The live server serves this spec through the mount, so FastAPI injects the
+          # mount path as the server URL (from the request root_path). Offline there is
+          # no request, so replicate it — otherwise the generated client baseURL drifts.
+          schema["servers"] = [{"url": mount.path}]
+          out = os.path.join(os.environ["SPEC_DIR"], "openapi.json")
+          with open(out, "w") as handle:
+              json.dump(schema, handle)
+          print(f"Wrote OpenAPI spec to {out}")
+          PY
+      - name: Serve the spec at the generator's URL
         if: steps.changes.outputs.changed == 'true'
         run: |
+          # openapi-ts.config.ts points at http://localhost:<port>/api/v1/openapi.json;
+          # serve the exported file there so the config needs no change.
+          python -m http.server ${{ matrix.api_port }} \
+            --directory "${{ runner.temp }}/spec" > /tmp/spec-server.log 2>&1 &
+          echo "SPEC_SERVER_PID=$!" >> "$GITHUB_ENV"
           URL="http://localhost:${{ matrix.api_port }}/api/v1/openapi.json"
-          for i in $(seq 1 90); do
+          for _ in $(seq 1 20); do
             if curl -sf -o /dev/null "$URL"; then
-              echo "OpenAPI spec available at $URL after $((i * 5))s."
-              exit 0
+              echo "Serving spec at $URL"; exit 0
             fi
-            sleep 5
+            sleep 1
           done
-          echo "::error::API did not serve $URL within 450s. Last 100 log lines:"
-          tail -100 /tmp/api-server.log
-          exit 1
+          echo "::error::spec file was not served at $URL"; cat /tmp/spec-server.log; exit 1
       - name: Setup Node.js
         if: steps.changes.outputs.changed == 'true'
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
@@ -149,6 +155,6 @@ jobs:
             exit 1
           fi
           echo "SDK client is in sync with the backend. ✅"
-      - name: Stop API server
-        if: always() && steps.changes.outputs.changed == 'true' && env.API_PID != ''
-        run: kill "$API_PID" || true
+      - name: Stop spec server
+        if: always() && steps.changes.outputs.changed == 'true' && env.SPEC_SERVER_PID != ''
+        run: kill "$SPEC_SERVER_PID" || true
