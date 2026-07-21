@@ -1,0 +1,153 @@
+---
+name: Verify SDK Sync
+# PR check: the committed frontend SDK client (packages/*/sdk/client) must match a
+# fresh regeneration from the backend OpenAPI spec. Backend event/endpoint changes
+# that forget `pnpm generate-sdk` leave the SDK stale; this catches that at PR time
+# instead of letting the drift surface later in an unrelated contributor's diff.
+#
+# Approach: boot the real API (uvicorn + its docker services), regenerate the SDK
+# against the live spec exactly like a developer does, then `git diff --exit-code`.
+# Always runs (no trigger-level paths filter) so it can be a required check; the
+# work only happens when the relevant backend/SDK paths actually changed.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: ${{ matrix.web_package }}
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Main plane: @swiss-ai-hub/web SDK ← packages/api on :8000.
+          - web_package: packages/web
+            api_dir: packages/api
+            api_port: 8000
+            # Services the API lifespan connects to on startup (uvicorn runs the real
+            # lifespan, unlike pytest which uses the ASGI adapter). Mirrors the
+            # packages/api entry in analyze-test-pr.yml.
+            docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
+              litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
+              seaweedfs-init etcd-init etcd milvus-standalone neo4j
+          # Sysadmin plane: @swiss-ai-hub/sysadmin-web SDK ← packages/sysadmin-api on
+          # :8001. Its lifespan (sysadmin_runner.py) connects Mongo + NATS + Redis, so
+          # it needs nats + valkey on top of ferretdb — more than the pytest matrix.
+          - web_package: packages/sysadmin-web
+            api_dir: packages/sysadmin-api
+            api_port: 8001
+            docker_compose_services: postgres-ferretdb ferretdb nats valkey
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Detect relevant changes
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          API_DIR: ${{ matrix.api_dir }}
+          WEB_PACKAGE: ${{ matrix.web_package }}
+        run: |
+          # The SDK for this plane can drift when its backend contract (api scope or
+          # shared packages/core) changes, when the committed client itself changes,
+          # or when this workflow changes. Anything else can't affect the diff.
+          if git diff --name-only "$BASE_SHA"...HEAD | grep -qE \
+            "^(${API_DIR}/|packages/core/|${WEB_PACKAGE}/sdk/|pnpm-lock\.yaml$|uv\.lock$|\.github/workflows/verify-sdk-sync\.yml$)"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No backend or SDK changes affecting ${WEB_PACKAGE} — skipping."
+          fi
+      - name: Set up Python
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        if: steps.changes.outputs.changed == 'true'
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+        with:
+          enable-cache: true
+      - name: Install Python dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: uv sync --all-packages --dev --frozen
+      - name: Prepare environment file
+        if: steps.changes.outputs.changed == 'true'
+        # Pydantic BaseSettings load from .env; docker compose reads --env-file .env.dev.
+        run: cp .env.dev .env
+      - name: Start backend Docker services
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d \
+            ${{ matrix.docker_compose_services }}
+      - name: Wait for Docker services to become healthy
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          MAX_WAIT=600; INTERVAL=5; ELAPSED=0
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            UNHEALTHY=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "unhealthy" || true)
+            STARTING=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "starting" || true)
+            if [ -z "$UNHEALTHY" ] && [ -z "$STARTING" ]; then
+              echo "All Docker services healthy."; docker ps; break
+            fi
+            echo "Waiting for services... ${ELAPSED}s / ${MAX_WAIT}s"
+            sleep $INTERVAL; ELAPSED=$((ELAPSED + INTERVAL))
+          done
+      - name: Start API server
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ matrix.api_dir }}
+        run: |
+          make run-dev > /tmp/api-server.log 2>&1 &
+          echo "API_PID=$!" >> "$GITHUB_ENV"
+      - name: Wait for OpenAPI spec to be served
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          URL="http://localhost:${{ matrix.api_port }}/api/v1/openapi.json"
+          for i in $(seq 1 60); do
+            if curl -sf -o /dev/null "$URL"; then
+              echo "OpenAPI spec available at $URL after $((i * 5))s."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::API did not serve $URL within 300s. Last 100 log lines:"
+          tail -100 /tmp/api-server.log
+          exit 1
+      - name: Setup Node.js
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: 25.x
+      - name: Install pnpm via corepack
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ matrix.web_package }}
+        run: |
+          npm install -g --ignore-scripts corepack@0.34.7
+          corepack enable pnpm
+          corepack install
+      - name: Install frontend dependencies
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ matrix.web_package }}
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Regenerate SDK
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ matrix.web_package }}
+        run: pnpm generate-sdk
+      - name: Verify SDK is in sync
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          if ! git diff --exit-code -- "${{ matrix.web_package }}/sdk/client"; then
+            echo "::error::The committed SDK client in ${{ matrix.web_package }}/sdk/client is out of sync with the backend OpenAPI spec."
+            echo "::error::Run 'pnpm generate-sdk' in ${{ matrix.web_package }} (with the API running) and commit the result."
+            exit 1
+          fi
+          echo "SDK client is in sync with the backend. ✅"
+      - name: Stop API server
+        if: always() && steps.changes.outputs.changed == 'true' && env.API_PID != ''
+        run: kill "$API_PID" || true
