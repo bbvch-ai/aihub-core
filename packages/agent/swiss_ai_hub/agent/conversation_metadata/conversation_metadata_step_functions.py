@@ -2,9 +2,7 @@ import asyncio
 import logging
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.llms import LLM
 from llama_index.core.prompts import RichPromptTemplate
-from openai import NOT_GIVEN
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ConversationTitleEvent, FollowUpQuestionsEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
@@ -17,11 +15,6 @@ from swiss_ai_hub.agent.conversation_metadata.title_result import TitleResult
 logger = logging.getLogger(__name__)
 
 TITLE_GENERATED_KEY = "title_generated"
-
-
-def _structured_predict_kwargs(llm: LLM) -> dict:
-    """Force tool use on function-calling models so structured output stays reliable."""
-    return {"tool_choice": "required" if llm.metadata.is_function_calling_model else NOT_GIVEN}
 
 
 def _conversation_messages(chat_messages: list[ChatMessage]) -> list[ChatMessage]:
@@ -62,7 +55,6 @@ async def do_generate_title(
         result: TitleResult = await llm.astructured_predict(
             TitleResult,
             prompt,
-            llm_kwargs=_structured_predict_kwargs(llm),
             chat_history=_conversation_messages(chat_messages),
         )
 
@@ -91,7 +83,6 @@ async def do_generate_follow_up_questions(
         result: FollowUpQuestionsResult = await llm.astructured_predict(
             FollowUpQuestionsResult,
             prompt,
-            llm_kwargs=_structured_predict_kwargs(llm),
             chat_history=_conversation_messages(chat_messages),
         )
 

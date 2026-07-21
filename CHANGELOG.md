@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.314.0] - 2026-07-21 - Enhanced LLM Structured Output and Agent Self-Awareness
+
+### Added
+
+- 🦾 **Re-enabled Per-Agent Self-Awareness:** Agents can now detect and answer meta-questions about their capabilities
+  and workflows, providing a more intuitive and responsive user experience.
+- 🧪 **New Integration Tests for Meta-Question Routing:** Comprehensive integration tests were added to validate that
+  meta-questions are correctly handled by self-awareness workflows and bypass irrelevant steps like retrieval.
+
+### Changed
+
+- ⚡️ **Optimized LLM Structured Output for Speed and Reliability:** Switched to `response_format` JSON schema as the
+  default mechanism for structured LLM outputs, particularly for reasoning models on Infomaniak. This update
+  significantly improves parsing reliability and drastically reduces latency by disabling unnecessary reasoning during
+  structured data extraction.
+- ⚙️ **Universal `response_format` Support:** All chat models in the LiteLLM configuration now explicitly declare
+  support for `response_format` JSON schema, enabling consistent and high-performance structured output across the
+  board.
+- 🔄 **Introduced Meta-Question Gating for Agent Workflows:** Core agent entry steps (e.g., memory retrieval, chat
+  history processing) are now gated by meta-question detection. This ensures that meta-questions are handled by
+  dedicated self-awareness workflows, preventing them from triggering the main agent pipeline.
+- 📄 **Improved Resilience for Meta-Question Detection and Answering:** Meta-question detection now gracefully handles
+  transient API errors and malformed responses, preventing workflow failures. Additionally, meta-question answers
+  explicitly disable LLM reasoning to further reduce latency and improve responsiveness.
+- 📝 **Updated Structured Output Handling in Conversation Metadata:** The internal logic for generating conversation
+  titles and follow-up questions has been adjusted to leverage the new `response_format` mechanism, no longer relying on
+  forced tool calls. (Note: Conversation metadata generation remains temporarily disabled.)
+- 🛡️ **`McpReactAgent` Opts Out of Self-Awareness:** The `McpReactAgent` now explicitly bypasses self-awareness
+  features, streamlining its specific workflow.
+
+### Refactor
+
+- 🧹 **Superseded Prior Resilience Decision:** The architectural decision to enhance resilience for reasoning models has
+  been updated and superseded by a new document outlining the comprehensive adoption of `response_format` JSON schema
+  for structured LLM outputs.
+
+______________________________________________________________________
+
 ## [v0.313.0] - 2026-07-17 - Streamlined Agent Configuration Import
 
 ### Added

@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from openai import APITimeoutError
 from swiss_ai_hub.core.events.agent import MetaQuestionDetectedEvent, NotAMetaQuestionEvent
 
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
@@ -95,6 +96,23 @@ async def test_unrecognized_label_falls_back_to_gate(displayer, locale_handler):
 
     result = await do_detect_meta_question(
         user_query="hmm",
+        llm_config=_llm_config(llm),
+        displayer=displayer,
+        t=locale_handler,
+    )
+
+    assert isinstance(result, NotAMetaQuestionEvent)
+
+
+@pytest.mark.asyncio
+async def test_transport_error_falls_back_to_gate(displayer, locale_handler):
+    """Detection gates every message: a transient gateway error must degrade to a normal task, not
+    escape as an ExceptionEvent that would kill an otherwise-healthy run."""
+    llm = _llm_returning("NORMAL")
+    llm.achat = AsyncMock(side_effect=APITimeoutError(request=MagicMock()))
+
+    result = await do_detect_meta_question(
+        user_query="What is the vacation policy?",
         llm_config=_llm_config(llm),
         displayer=displayer,
         t=locale_handler,
