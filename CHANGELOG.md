@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.316.2] - 2026-07-22 - Enhanced Milvus Configuration for Improved Agent Compatibility
+
+### Changed
+
+- ⚙️ **Streamlined Milvus Environment Variable Propagation:** Milvus connection parameters (`MILVUS_URL`,
+  `MILVUS_DIMENSION`, `MILVUS_ROOT_PASSWORD`) are now explicitly included in the environment of additional services
+  across all Docker Compose configurations, ensuring more consistent and robust database connectivity for various
+  components.
+- 📄 **Updated Documentation for Milvus Environment Variables:** The deployment guide's documentation has been revised to
+  reflect the expanded usage of Milvus environment variables, now indicating their relevance for agents like
+  `imap_agent`.
+
+______________________________________________________________________
+
 ## [v0.316.1] - 2026-07-21 - Enhanced Development Workflow and SDK Consistency
 
 ### Added
