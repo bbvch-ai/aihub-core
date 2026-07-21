@@ -29,12 +29,13 @@ jobs:
           - web_package: packages/web
             api_dir: packages/api
             api_port: 8000
-            # Services the API lifespan connects to on startup (uvicorn runs the real
-            # lifespan, unlike pytest which uses the ASGI adapter). Mirrors the
-            # packages/api entry in analyze-test-pr.yml.
+            # Services the API lifespan connects to on startup. uvicorn runs the real
+            # lifespan (unlike pytest, which uses the ASGI adapter and skips it), so
+            # this needs keycloak on top of the packages/api test matrix — startup
+            # calls initialize_startup_tenant() -> KeycloakAdminService.
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
-              seaweedfs-init etcd-init etcd milvus-standalone neo4j
+              seaweedfs-init etcd-init etcd milvus-standalone neo4j keycloak
           # Sysadmin plane: @swiss-ai-hub/sysadmin-web SDK ← packages/sysadmin-api on
           # :8001. Its lifespan (sysadmin_runner.py) connects Mongo + NATS + Redis, so
           # it needs nats + valkey on top of ferretdb — more than the pytest matrix.
@@ -109,14 +110,14 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: |
           URL="http://localhost:${{ matrix.api_port }}/api/v1/openapi.json"
-          for i in $(seq 1 60); do
+          for i in $(seq 1 90); do
             if curl -sf -o /dev/null "$URL"; then
               echo "OpenAPI spec available at $URL after $((i * 5))s."
               exit 0
             fi
             sleep 5
           done
-          echo "::error::API did not serve $URL within 300s. Last 100 log lines:"
+          echo "::error::API did not serve $URL within 450s. Last 100 log lines:"
           tail -100 /tmp/api-server.log
           exit 1
       - name: Setup Node.js
