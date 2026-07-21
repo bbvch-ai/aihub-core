@@ -3869,7 +3869,11 @@ export type ContextualizedAgentEvent = {
     | BaseStoreMemoryEvent
     | RetrieveOrganizationMemoryEvent
     | RetrieveUserMemoryEvent
-    | StoreOrganizationMemoryEvent;
+    | StoreOrganizationMemoryEvent
+    | UnreadMailListedEvent
+    | MailFetchedEvent
+    | MailMovedEvent
+    | MailBatchDraftedEvent;
 };
 
 /**
@@ -5007,6 +5011,50 @@ export type DocumentUploadValidationResponse = {
    * Name of the container/bucket
    */
   container: string;
+};
+
+/**
+ * DraftedReplyRef
+ *
+ * A single reply draft produced during a batch drafting run — one per source message.
+ */
+export type DraftedReplyRef = {
+  /**
+   * Source Uid
+   *
+   * IMAP UID of the source message within the source folder.
+   */
+  source_uid: string;
+  /**
+   * Drafts Folder
+   *
+   * Folder the draft was appended to.
+   */
+  drafts_folder: string;
+  /**
+   * Draft Uid
+   *
+   * IMAP UID assigned to the appended draft when the server reports APPENDUID.
+   */
+  draft_uid?: string | null;
+  /**
+   * In Reply To
+   *
+   * RFC Message-ID of the original message this draft replies to.
+   */
+  in_reply_to?: string | null;
+  /**
+   * Subject
+   *
+   * Subject of the draft reply.
+   */
+  subject: string;
+  /**
+   * Recipient
+   *
+   * Recipient the draft reply is addressed to.
+   */
+  recipient: string;
 };
 
 /**
@@ -9183,6 +9231,254 @@ export type Logprob = {
    * Logprob
    */
   logprob?: number | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MailAttachmentRef
+ *
+ * Reference to a fetched mail attachment whose bytes are stored in S3, not carried in the event.
+ *
+ * Mirrors ``UserUploadedFile``: attachments are referenced by ``file_id`` (the S3 object key within the
+ * agent's dedicated bucket) so large binaries never bloat the persisted/streamed event.
+ */
+export type MailAttachmentRef = {
+  /**
+   * Filename
+   *
+   * Original attachment filename, including extension. Must not contain path separators.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * MIME type of the attachment.
+   */
+  content_type: string;
+  /**
+   * File Id
+   *
+   * UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.
+   */
+  file_id: string;
+  /**
+   * Size Bytes
+   *
+   * Size of the stored attachment in bytes.
+   */
+  size_bytes: number;
+};
+
+/**
+ * MailBatchDraftedEvent
+ *
+ * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
+ *
+ * The agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and
+ * marked as drafted so it is not drafted again on the next run.
+ */
+export type MailBatchDraftedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the drafted messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of reply drafts created in this run.
+   */
+  count: number;
+  /**
+   * Drafted
+   *
+   * Per-message references to the created reply drafts.
+   */
+  drafted?: Array<DraftedReplyRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailFetchedEvent
+ *
+ * Carries a single fetched message — headers, body, and references to its stored attachments.
+ */
+export type MailFetchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the fetched message within the inbox folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Body Text
+   *
+   * Plain-text body of the message, if present.
+   */
+  body_text?: string | null;
+  /**
+   * Rfc Message Id
+   *
+   * RFC Message-ID header of the message — used to thread a reply draft.
+   */
+  rfc_message_id?: string | null;
+  /**
+   * References
+   *
+   * RFC References header of the message, if present.
+   */
+  references?: string | null;
+  /**
+   * Reply To
+   *
+   * Reply-To header of the message, if present.
+   */
+  reply_to?: string | null;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailMovedEvent
+ *
+ * Records that a message was moved from its source folder into a target folder on the IMAP server.
+ */
+export type MailMovedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the moved message within its source folder.
+   */
+  message_id: string;
+  /**
+   * Source Folder
+   *
+   * Folder the message was moved out of.
+   */
+  source_folder: string;
+  /**
+   * Target Folder
+   *
+   * Folder the message was moved into.
+   */
+  target_folder: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -15122,6 +15418,90 @@ export type TranslationResponse = {
 };
 
 /**
+ * UnreadMailListedEvent
+ *
+ * Carries the unread messages found in the configured inbox folder.
+ */
+export type UnreadMailListedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Messages
+   *
+   * Header summaries of the unread messages in the inbox.
+   */
+  messages?: Array<UnreadMailSummary>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * UnreadMailSummary
+ *
+ * Lightweight header summary of one unread message — enough for an agent to decide what to fetch.
+ */
+export type UnreadMailSummary = {
+  /**
+   * Message Id
+   *
+   * IMAP UID of the message within the inbox folder — stable across connections.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Flags
+   *
+   * IMAP flags set on the message.
+   */
+  flags?: Array<string>;
+};
+
+/**
  * UpdateAgentInstanceDTO
  *
  * Request body for updating an agent instance configuration.
@@ -17886,7 +18266,11 @@ export type ContextualizedAgentEventWritable = {
     | BaseStoreMemoryEventWritable
     | RetrieveOrganizationMemoryEventWritable
     | RetrieveUserMemoryEventWritable
-    | StoreOrganizationMemoryEventWritable;
+    | StoreOrganizationMemoryEventWritable
+    | UnreadMailListedEventWritable
+    | MailFetchedEventWritable
+    | MailMovedEventWritable
+    | MailBatchDraftedEventWritable;
 };
 
 /**
@@ -20945,6 +21329,180 @@ export type LocaleInputWritable = {
    * Placeholder text for each language
    */
   placeholder?: LocaleString | string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MailBatchDraftedEvent
+ *
+ * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
+ *
+ * The agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and
+ * marked as drafted so it is not drafted again on the next run.
+ */
+export type MailBatchDraftedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the drafted messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of reply drafts created in this run.
+   */
+  count: number;
+  /**
+   * Drafted
+   *
+   * Per-message references to the created reply drafts.
+   */
+  drafted?: Array<DraftedReplyRef>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailFetchedEvent
+ *
+ * Carries a single fetched message — headers, body, and references to its stored attachments.
+ */
+export type MailFetchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the fetched message within the inbox folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Body Text
+   *
+   * Plain-text body of the message, if present.
+   */
+  body_text?: string | null;
+  /**
+   * Rfc Message Id
+   *
+   * RFC Message-ID header of the message — used to thread a reply draft.
+   */
+  rfc_message_id?: string | null;
+  /**
+   * References
+   *
+   * RFC References header of the message, if present.
+   */
+  references?: string | null;
+  /**
+   * Reply To
+   *
+   * Reply-To header of the message, if present.
+   */
+  reply_to?: string | null;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailMovedEvent
+ *
+ * Records that a message was moved from its source folder into a target folder on the IMAP server.
+ */
+export type MailMovedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the moved message within its source folder.
+   */
+  message_id: string;
+  /**
+   * Source Folder
+   *
+   * Folder the message was moved out of.
+   */
+  source_folder: string;
+  /**
+   * Target Folder
+   *
+   * Folder the message was moved into.
+   */
+  target_folder: string;
   [key: string]: unknown;
 };
 
@@ -24316,6 +24874,39 @@ export type ToolEventWritable = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  [key: string]: unknown;
+};
+
+/**
+ * UnreadMailListedEvent
+ *
+ * Carries the unread messages found in the configured inbox folder.
+ */
+export type UnreadMailListedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Messages
+   *
+   * Header summaries of the unread messages in the inbox.
+   */
+  messages?: Array<UnreadMailSummary>;
   [key: string]: unknown;
 };
 
