@@ -1,5 +1,13 @@
 # Resilience for Reasoning Models (Kimi-K2.6, Qwen3.5) on Infomaniak
 
+> **Superseded by
+> [`2026_07_13_response_format_as_default_structured_output`](2026_07_13_response_format_as_default_structured_output.md).**
+> This ADR assumed the `response_format` JSON-schema path was also unreliable on the Infomaniak reasoning models; that
+> was never separately verified and later proved false (JSON schema with reasoning disabled parses cleanly on
+> Kimi/Qwen). The structured-object callers now default to `response_format`, and the disabled meta features are
+> re-enabled. The plain-text-verdict conversion of the relevance guards and meta-question detection described below is
+> **retained** — it remains the mechanism for those single-token classifiers.
+
 ## Context
 
 Swiss AI Hub routes all chat LLM access through LiteLLM. In CPU (non-GPU) deployments there is no self-hosted vLLM —

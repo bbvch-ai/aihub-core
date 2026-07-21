@@ -1,5 +1,6 @@
 import asyncio
 import email
+import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from email.message import EmailMessage
@@ -18,6 +19,12 @@ _BODY_KEY = b"BODY[]"
 _SIZE_KEY = b"RFC822.SIZE"
 _MOVE_CAPABILITY = b"MOVE"
 _UIDPLUS_CAPABILITY = b"UIDPLUS"
+_DRAFT_FLAG = b"\\Draft"
+_DRAFTS_SPECIAL_USE = b"\\Drafts"
+_PERMANENT_FLAGS_KEY = b"PERMANENTFLAGS"
+_CUSTOM_KEYWORDS_WILDCARD = b"\\*"
+_DRAFTED_KEYWORD = "$AiHubDrafted"
+_ANSWERED_FLAG = "\\Answered"
 
 
 class ImapClient:
@@ -58,18 +65,49 @@ class ImapClient:
             summaries.append(MailParser.parse_summary(str(uid), message, flags))
         return summaries
 
-    async def fetch_message(self, message_id: str) -> ParsedMessage:
-        """Fetch a single message by UID, including body and attachments, without setting the Seen flag.
+    async def list_undrafted(self, folder: str, limit: int) -> tuple[str, list[UnreadMailSummary]]:
+        """List up to ``limit`` not-yet-drafted messages in ``folder``, and the dedup flag used to identify them.
+
+        The dedup flag is resolved from the same read-only ``SELECT`` used for the search: a custom keyword
+        (``$AiHubDrafted``) when the folder's ``PERMANENTFLAGS`` advertises ``\\*``, else ``\\Answered`` — the custom
+        keyword is preferred so mail with only an unsent draft is not painted with the standard "replied" indicator.
+        The flag is returned so the caller passes the exact value back to ``mark_drafted`` (no stringly-typed guessing).
+        ``BODY.PEEK`` keeps every candidate unread.
+        """
+        response = await asyncio.to_thread(self._connection.select_folder, folder, readonly=True)
+        supports_keywords = _CUSTOM_KEYWORDS_WILDCARD in response.get(_PERMANENT_FLAGS_KEY, ())
+        drafted_flag = _DRAFTED_KEYWORD if supports_keywords else _ANSWERED_FLAG
+        criteria = ["UNKEYWORD", drafted_flag] if supports_keywords else ["UNANSWERED"]
+        uids = await asyncio.to_thread(self._connection.search, criteria)
+
+        summaries: list[UnreadMailSummary] = []
+        for uid in uids[:limit]:
+            fetched = await asyncio.to_thread(self._connection.fetch, [uid], ["BODY.PEEK[HEADER]", "FLAGS"])
+            data = fetched[uid]
+            message = self._parse_bytes(data[_HEADER_KEY])
+            flags = [flag.decode(errors="replace") for flag in data.get(_FLAGS_KEY, ())]
+            summaries.append(MailParser.parse_summary(str(uid), message, flags))
+        return drafted_flag, summaries
+
+    async def mark_drafted(self, folder: str, message_id: str, drafted_flag: str) -> None:
+        """Flag a message as drafted (writable ``SELECT`` + ``STORE``) without setting ``\\Seen`` — it stays unread."""
+        await asyncio.to_thread(self._connection.select_folder, folder, readonly=False)
+        await asyncio.to_thread(self._connection.add_flags, [int(message_id)], [drafted_flag])
+
+    async def fetch_message(self, message_id: str, folder: str | None = None) -> ParsedMessage:
+        """Fetch a single message by UID from ``folder`` (defaults to the inbox), including body and attachments,
+        without setting the Seen flag.
 
         The raw size is checked (a cheap ``RFC822.SIZE`` fetch) before the body is downloaded, so an
         oversized message is refused rather than pulled into memory — this is what bounds peak fetch memory.
         """
-        await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=True)
+        source_folder = folder or self._inbox_folder
+        await asyncio.to_thread(self._connection.select_folder, source_folder, readonly=True)
         uid = int(message_id)
 
         sized = await asyncio.to_thread(self._connection.fetch, [uid], ["RFC822.SIZE"])
         if uid not in sized:
-            raise ValueError(f"message {message_id} not found in {self._inbox_folder} — it may have been expunged")
+            raise ValueError(f"message {message_id} not found in {source_folder} — it may have been expunged")
         size = sized[uid].get(_SIZE_KEY, 0)
         if size > self._max_message_bytes:
             raise ValueError(
@@ -88,6 +126,7 @@ class ImapClient:
         is refused rather than expunged with a blind ``EXPUNGE`` that would also destroy other clients'
         ``\\Deleted`` mail.
         """
+        target_folder = await self._resolve_folder(target_folder, None)
         await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=False)
         uid = int(message_id)
 
@@ -108,6 +147,49 @@ class ImapClient:
         await asyncio.to_thread(self._connection.copy, [uid], target_folder)
         await asyncio.to_thread(self._connection.delete_messages, [uid])
         await asyncio.to_thread(self._connection.uid_expunge, [uid])
+
+    async def append_draft(self, drafts_folder: str, raw_message: bytes) -> tuple[str, str | None]:
+        """Append a reply as a ``\\Draft``-flagged message to the drafts folder; never sends (no SMTP path exists).
+
+        The configured name is only trusted when the server's own ``LIST`` returns it verbatim; otherwise the folder
+        flagged ``\\Drafts`` (RFC 6154 SPECIAL-USE) is used. This is required because folder names are the server's
+        bytes — localized Gmail drafts (e.g. ``[Gmail]/Thư nháp``) and NFC/NFD Unicode differences make a hand-typed
+        name mismatch and fail with ``[TRYCREATE]``. Returns the resolved folder and the ``APPENDUID`` (UIDPLUS,
+        RFC 4315) when reported.
+        """
+        target = await self._resolve_folder(drafts_folder, _DRAFTS_SPECIAL_USE)
+        response = await asyncio.to_thread(self._connection.append, target, raw_message, flags=[_DRAFT_FLAG])
+        return target, self._parse_appenduid(response)
+
+    async def _resolve_folder(self, configured: str, special_use_flag: bytes | None) -> str:
+        """Return the server's exact folder name: the configured one if it exists verbatim, else the special-use match.
+
+        Never trust a retyped name — folder names are the server's bytes (mUTF-7), so a visually-identical config value
+        can differ (localization, NFC vs NFD) and select a non-existent folder.
+        """
+        folders = await asyncio.to_thread(self._connection.list_folders)
+        names = {name for _flags, _delim, name in folders}
+        if configured and configured in names:
+            return configured
+
+        if special_use_flag is not None:
+            for flags, _delim, name in folders:
+                if special_use_flag in flags:
+                    return name
+
+        available = ", ".join(sorted(names))
+        raise ValueError(
+            f"folder {configured!r} does not exist on the server and no {special_use_flag!r} special-use folder was "
+            f"found. Available folders: {available}"
+        )
+
+    @staticmethod
+    def _parse_appenduid(response: bytes | str | None) -> str | None:
+        if response is None:
+            return None
+        text = response.decode(errors="replace") if isinstance(response, bytes) else response
+        match = re.search(r"APPENDUID\s+\d+\s+(\d+)", text, re.IGNORECASE)
+        return match.group(1) if match else None
 
     @staticmethod
     def _parse_bytes(raw: bytes) -> EmailMessage:

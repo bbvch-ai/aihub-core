@@ -23,6 +23,9 @@ class ParsedMessage(BaseModel):
     sender: str
     subject: str
     date: datetime | None = None
+    rfc_message_id: str | None = None
+    references: str | None = None
+    reply_to: str | None = None
     body_text: str | None = None
     body_html: str | None = None
     attachments: list[ParsedAttachment] = []

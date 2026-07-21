@@ -5,6 +5,110 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.315.0] - 2026-07-21 - Major IMAP Agent Upgrade: Smart Drafting and Streamlined Workflows
+
+### Added
+
+- 🦾 **Independent Batch Email Drafting:** Introduced a powerful new capability for IMAP agents to draft replies for a
+  batch of messages autonomously. This feature is triggered by a new `DraftMailStartEvent` and can be scheduled and run
+  independently of the mail reading and moving workflow.
+- ✨ **Configurable Drafting Settings:** A new `DraftEmailSettings` configuration group allows fine-grained control over
+  the drafting process, including the source folder for messages, batch size, the LLM model used for drafting, and the
+  prompt guiding the LLM.
+- 🚀 **Flag-Based Deduplication:** The agent now prevents re-drafting the same message by utilizing a custom IMAP keyword
+  (`$AiHubDrafted`) or falling back to the `\Answered` flag, ensuring idempotency across runs.
+- 📦 **New Events for Drafting:** Introduced `MailBatchDraftedEvent` to summarize the results of a batch drafting run,
+  and `DraftedReplyRef` to provide detailed references for each created draft.
+- 📤 **Robust Draft Appending:** The IMAP client can now append `\Draft`-flagged messages to a configured drafts folder,
+  automatically resolving the exact server folder name (e.g., handling localized "[Gmail]/Drafts") and returning the
+  `APPENDUID` when supported.
+- 🧵 **Enhanced Email Threading:** Mail parsing and `MailFetchedEvent` now include RFC `Message-ID`, `References`, and
+  `Reply-To` headers, enabling `ReplyComposer` to generate correctly threaded replies that appear nested in any mail
+  client.
+- 🛠️ **Dedicated Reply Composition Logic:** A new `ReplyComposer` utility provides deterministic and idempotent
+  generation of reply envelopes, ensuring consistent subject lines (e.g., "Re: Subject") and proper threading.
+
+### Changed
+
+- 🔄 **IMAP Agent Workflow Separation:** The IMAP agent now supports two distinct and independent workflows: one for
+  reading and optionally moving mail, and another for batch drafting replies.
+- ⚙️ **IMAP Configuration Restructuring:** The configuration for IMAP agents has been refactored, moving
+  drafting-related settings into the new `DraftEmailSettings` group. **Note: This is a breaking change to the config
+  shape; existing IMAP agent profiles must be recreated.**
+- 📄 **Flexible Message Fetching:** The IMAP client's `fetch_message` method now accepts an optional folder argument,
+  allowing messages to be fetched from specific mailboxes beyond just the inbox.
+- 🛡️ **Improved Folder Resolution:** IMAP client operations, such as moving mail and appending drafts, now include
+  robust folder resolution logic to ensure the correct mailbox is targeted, with fallbacks to special-use folders where
+  applicable.
+
+### Removed
+
+- 🗑️ **Consolidated `drafts_folder`:** The `drafts_folder` setting has been removed from the general `ImapClientConfig`
+  and integrated into the more specific `DraftEmailSettings`.
+
+### Refactor
+
+- 🧹 **Internal Workflow Streamlining:** The internal IMAP agent steps have been reorganized, separating the
+  `finish_after_move_step` from the new drafting logic to enhance modularity and clarity.
+
+______________________________________________________________________
+
+## [v0.314.0] - 2026-07-21 - Enhanced LLM Structured Output and Agent Self-Awareness
+
+### Added
+
+- 🦾 **Re-enabled Per-Agent Self-Awareness:** Agents can now detect and answer meta-questions about their capabilities
+  and workflows, providing a more intuitive and responsive user experience.
+- 🧪 **New Integration Tests for Meta-Question Routing:** Comprehensive integration tests were added to validate that
+  meta-questions are correctly handled by self-awareness workflows and bypass irrelevant steps like retrieval.
+
+### Changed
+
+- ⚡️ **Optimized LLM Structured Output for Speed and Reliability:** Switched to `response_format` JSON schema as the
+  default mechanism for structured LLM outputs, particularly for reasoning models on Infomaniak. This update
+  significantly improves parsing reliability and drastically reduces latency by disabling unnecessary reasoning during
+  structured data extraction.
+- ⚙️ **Universal `response_format` Support:** All chat models in the LiteLLM configuration now explicitly declare
+  support for `response_format` JSON schema, enabling consistent and high-performance structured output across the
+  board.
+- 🔄 **Introduced Meta-Question Gating for Agent Workflows:** Core agent entry steps (e.g., memory retrieval, chat
+  history processing) are now gated by meta-question detection. This ensures that meta-questions are handled by
+  dedicated self-awareness workflows, preventing them from triggering the main agent pipeline.
+- 📄 **Improved Resilience for Meta-Question Detection and Answering:** Meta-question detection now gracefully handles
+  transient API errors and malformed responses, preventing workflow failures. Additionally, meta-question answers
+  explicitly disable LLM reasoning to further reduce latency and improve responsiveness.
+- 📝 **Updated Structured Output Handling in Conversation Metadata:** The internal logic for generating conversation
+  titles and follow-up questions has been adjusted to leverage the new `response_format` mechanism, no longer relying on
+  forced tool calls. (Note: Conversation metadata generation remains temporarily disabled.)
+- 🛡️ **`McpReactAgent` Opts Out of Self-Awareness:** The `McpReactAgent` now explicitly bypasses self-awareness
+  features, streamlining its specific workflow.
+
+### Refactor
+
+- 🧹 **Superseded Prior Resilience Decision:** The architectural decision to enhance resilience for reasoning models has
+  been updated and superseded by a new document outlining the comprehensive adoption of `response_format` JSON schema
+  for structured LLM outputs.
+
+______________________________________________________________________
+
+## [v0.313.0] - 2026-07-17 - Streamlined Agent Configuration Import
+
+### Added
+
+- ✨ **Agent Instance Import Feature:** Introduced the ability to import agent configurations directly from JSON files,
+  making it easier to migrate or share agent setups between environments or users.
+- 📄 **Robust Import Validation:** Implemented comprehensive validation for imported agent configuration files, including
+  checks for valid JSON format, correct structural integrity, presence of required fields, and support for the export
+  schema version.
+- 🌐 **Localized Import Messages:** Added translated messages for the new agent import functionality, providing clear
+  feedback for various success and error states in multiple languages.
+- 🚀 **Pre-fill Agent Creation from Import:** When a valid agent configuration is imported, the agent creation form will
+  now automatically pre-fill with the imported data, significantly speeding up the agent setup process.
+- ⚙️ **Automatic Tenant ID Assignment:** Ensures that imported agent configurations are automatically assigned the
+  correct `tenant_id` and, if applicable, `org_memory.tenant_id`, for seamless integration into the current environment.
+
+______________________________________________________________________
+
 ## [v0.312.1] - 2026-07-16 - Enhanced UI Clarity
 
 ### Added

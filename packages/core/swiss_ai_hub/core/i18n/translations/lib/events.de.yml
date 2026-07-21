@@ -243,3 +243,8 @@ mail_moved_event:
   name: E-Mail Verschoben
   description: Der Agent hat eine Nachricht aus ihrem Quellordner in einen Zielordner
     verschoben.
+mail_batch_drafted_event:
+  name: Stapel Entworfen
+  description: Der Agent hat Antworten für einen Stapel von Nachrichten entworfen
+    und sie in den Entwürfe-Ordner angehängt, damit ein Mensch sie prüfen und senden
+    kann.
