@@ -14,9 +14,9 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
-from playground.minimal_workflow.imap_workflow.events.draft_mail_start_event import DraftMailStartEvent
-from playground.minimal_workflow.imap_workflow.events.read_mail_start_event import ReadMailStartEvent
 from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.agents.imap_agent.events.draft_mail_start_event import DraftMailStartEvent
+from swiss_ai_hub.agent.agents.imap_agent.events.read_mail_start_event import ReadMailStartEvent
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
