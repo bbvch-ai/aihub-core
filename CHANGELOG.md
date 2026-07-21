@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.316.1] - 2026-07-21 - Enhanced Development Workflow and SDK Consistency
+
+### Added
+
+- ✅ **Automated SDK Sync Verification:** A new GitHub Actions workflow has been introduced to automatically verify that
+  the committed frontend SDK clients (for both the main `@swiss-ai-hub/web` and `sysadmin-web` applications) are in sync
+  with their respective backend OpenAPI specifications. This crucial check helps prevent API/SDK drift and ensures
+  frontend clients always reflect the latest backend contract.
+- ⚡️ **Efficient Offline OpenAPI Spec Generation:** The new workflow efficiently generates OpenAPI specifications
+  directly from backend ASGI applications without needing a running server, speeding up the verification process.
+- ⚙️ **Proactive Developer Feedback:** Developers will now receive immediate feedback during pull requests if their
+  backend changes necessitate an SDK regeneration, promoting a more consistent and reliable development experience.
+
+______________________________________________________________________
+
 ## [v0.316.0] - 2026-07-21 - Introducing the IMAP Agent for Enhanced Mail Automation
 
 ### Added
