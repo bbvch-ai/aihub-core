@@ -21,6 +21,14 @@ class MailFetchedEvent(ControlAndDisplayEvent):
     subject: Annotated[str, Field(description="Subject header of the message.")]
     date: Annotated[datetime | None, Field(default=None, description="Date header of the message, if parseable.")]
     body_text: Annotated[str | None, Field(default=None, description="Plain-text body of the message, if present.")]
+    rfc_message_id: Annotated[
+        str | None,
+        Field(default=None, description="RFC Message-ID header of the message — used to thread a reply draft."),
+    ]
+    references: Annotated[
+        str | None, Field(default=None, description="RFC References header of the message, if present.")
+    ]
+    reply_to: Annotated[str | None, Field(default=None, description="Reply-To header of the message, if present.")]
     attachments: Annotated[
         list[MailAttachmentRef],
         Field(default_factory=list, description="References to the message's attachments stored in S3."),

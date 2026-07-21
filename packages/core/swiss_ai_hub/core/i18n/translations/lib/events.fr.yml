@@ -241,3 +241,7 @@ mail_moved_event:
   name: E-mail Déplacé
   description: L'agent a déplacé un message de son dossier source vers un dossier
     cible.
+mail_batch_drafted_event:
+  name: Lot Rédigé
+  description: L'agent a rédigé des réponses pour un lot de messages et les a ajoutées
+    au dossier des brouillons pour qu'un humain les révise et les envoie.

@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.315.0] - 2026-07-21 - Major IMAP Agent Upgrade: Smart Drafting and Streamlined Workflows
+
+### Added
+
+- 🦾 **Independent Batch Email Drafting:** Introduced a powerful new capability for IMAP agents to draft replies for a
+  batch of messages autonomously. This feature is triggered by a new `DraftMailStartEvent` and can be scheduled and run
+  independently of the mail reading and moving workflow.
+- ✨ **Configurable Drafting Settings:** A new `DraftEmailSettings` configuration group allows fine-grained control over
+  the drafting process, including the source folder for messages, batch size, the LLM model used for drafting, and the
+  prompt guiding the LLM.
+- 🚀 **Flag-Based Deduplication:** The agent now prevents re-drafting the same message by utilizing a custom IMAP keyword
+  (`$AiHubDrafted`) or falling back to the `\Answered` flag, ensuring idempotency across runs.
+- 📦 **New Events for Drafting:** Introduced `MailBatchDraftedEvent` to summarize the results of a batch drafting run,
+  and `DraftedReplyRef` to provide detailed references for each created draft.
+- 📤 **Robust Draft Appending:** The IMAP client can now append `\Draft`-flagged messages to a configured drafts folder,
+  automatically resolving the exact server folder name (e.g., handling localized "[Gmail]/Drafts") and returning the
+  `APPENDUID` when supported.
+- 🧵 **Enhanced Email Threading:** Mail parsing and `MailFetchedEvent` now include RFC `Message-ID`, `References`, and
+  `Reply-To` headers, enabling `ReplyComposer` to generate correctly threaded replies that appear nested in any mail
+  client.
+- 🛠️ **Dedicated Reply Composition Logic:** A new `ReplyComposer` utility provides deterministic and idempotent
+  generation of reply envelopes, ensuring consistent subject lines (e.g., "Re: Subject") and proper threading.
+
+### Changed
+
+- 🔄 **IMAP Agent Workflow Separation:** The IMAP agent now supports two distinct and independent workflows: one for
+  reading and optionally moving mail, and another for batch drafting replies.
+- ⚙️ **IMAP Configuration Restructuring:** The configuration for IMAP agents has been refactored, moving
+  drafting-related settings into the new `DraftEmailSettings` group. **Note: This is a breaking change to the config
+  shape; existing IMAP agent profiles must be recreated.**
+- 📄 **Flexible Message Fetching:** The IMAP client's `fetch_message` method now accepts an optional folder argument,
+  allowing messages to be fetched from specific mailboxes beyond just the inbox.
+- 🛡️ **Improved Folder Resolution:** IMAP client operations, such as moving mail and appending drafts, now include
+  robust folder resolution logic to ensure the correct mailbox is targeted, with fallbacks to special-use folders where
+  applicable.
+
+### Removed
+
+- 🗑️ **Consolidated `drafts_folder`:** The `drafts_folder` setting has been removed from the general `ImapClientConfig`
+  and integrated into the more specific `DraftEmailSettings`.
+
+### Refactor
+
+- 🧹 **Internal Workflow Streamlining:** The internal IMAP agent steps have been reorganized, separating the
+  `finish_after_move_step` from the new drafting logic to enhance modularity and clarity.
+
+______________________________________________________________________
+
 ## [v0.314.0] - 2026-07-21 - Enhanced LLM Structured Output and Agent Self-Awareness
 
 ### Added

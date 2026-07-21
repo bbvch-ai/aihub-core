@@ -22,9 +22,16 @@ config:
   max_messages:
     label: Numero max di e-mail non lette
     help: Numero massimo di messaggi non letti elencati per esecuzione.
+  enable_draft:
+    label: Redigi risposta
+    help: Se attivato, viene redatta una risposta al messaggio recuperato e aggiunta
+      alla cartella delle bozze affinché una persona la revisioni e la invii. Se disattivato,
+      il passaggio di redazione viene saltato.
   drafts_folder:
     label: Cartella Bozze
-    help: Cartella della casella in cui vengono scritte le bozze.
+    help: Cartella della casella in cui le bozze di risposta vengono aggiunte. Se
+      questa cartella non viene trovata, viene usata la cartella Bozze special-use
+      del server.
   enable_move:
     label: Sposta e-mail recuperata
     help: Se attivato, il posta recuperato viene spostato nella cartella elaborati
@@ -34,3 +41,16 @@ config:
     label: Cartella Elaborati
     help: Cartella della casella in cui un posta elaborato viene spostato quando lo
       spostamento è abilitato.
+  source_folder:
+    label: Cartella di origine bozza
+    help: Cartella della casella da cui il redattore legge i messaggi candidati. Puntala
+      alla cartella elaborati per redigere la posta lì archiviata.
+  batch_size:
+    label: Dimensione lotto bozze
+    help: Numero massimo di messaggi redatti per esecuzione.
+  draft_model:
+    label: Modello LLM
+    help: Modello di chat usato per redigere il corpo della risposta.
+  draft_prompt:
+    label: Prompt di redazione
+    help: Istruzioni che guidano il modo in cui l'LLM redige il corpo della risposta.

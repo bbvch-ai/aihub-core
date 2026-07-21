@@ -21,9 +21,15 @@ config:
   max_messages:
     label: Max. ungelesene E-Mails
     help: Maximale Anzahl ungelesener Nachrichten, die pro Lauf aufgelistet werden.
+  enable_draft:
+    label: Antwort entwerfen
+    help: Wenn aktiviert, wird eine Antwort auf die abgerufene Nachricht entworfen
+      und in den Entwürfe-Ordner angehängt, damit ein Mensch sie prüfen und senden
+      kann. Wenn deaktiviert, wird der Entwurfsschritt übersprungen.
   drafts_folder:
     label: Entwürfe-Ordner
-    help: Postfach-Ordner, in den Entwürfe geschrieben werden.
+    help: Postfach-Ordner, in den Antwort-Entwürfe angehängt werden. Wird dieser Ordner
+      nicht gefunden, wird stattdessen der Drafts-Special-Use-Ordner des Servers verwendet.
   enable_move:
     label: Abgerufene E-Mail verschieben
     help: Wenn aktiviert, wird die abgerufene Post nach dem Lesen in den Verarbeitet-Ordner
@@ -33,3 +39,16 @@ config:
     label: Verarbeitet-Ordner
     help: Postfach-Ordner, in den eine verarbeitete Post verschoben wird, wenn Verschieben
       aktiviert ist.
+  source_folder:
+    label: Quellordner für Entwurf
+    help: Postfach-Ordner, aus dem der Entwurfsdienst Kandidatennachrichten liest.
+      Auf den Verarbeitet-Ordner verweisen, um dort abgelegte E-Mails zu entwerfen.
+  batch_size:
+    label: Entwurfs-Stapelgröße
+    help: Maximale Anzahl von Nachrichten, die pro Lauf entworfen werden.
+  draft_model:
+    label: LLM-Modell
+    help: Chat-Modell, das den Antworttext entwirft.
+  draft_prompt:
+    label: Entwurfs-Prompt
+    help: Anweisungen, wie das LLM den Antworttext entwirft.

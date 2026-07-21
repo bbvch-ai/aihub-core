@@ -67,10 +67,6 @@ class ImapClientConfig(StepConfig):
         ),
         Gt(0),
     ]
-    drafts_folder: Annotated[
-        str | InputText,
-        Field(default="Drafts", description="Mailbox folder drafts are written to (used by the draft-reply story)."),
-    ]
     enable_move: Annotated[
         bool | ToggleSwitch,
         Field(
@@ -122,10 +118,6 @@ class ImapClientConfig(StepConfig):
                 min=1,
                 max=500,
                 step=1,
-            ),
-            drafts_folder=InputText(
-                label=LocaleString.from_i18n_path("lib.imap.config.drafts_folder.label"),
-                help=LocaleString.from_i18n_path("lib.imap.config.drafts_folder.help"),
             ),
             enable_move=ToggleSwitch(
                 label=LocaleString.from_i18n_path("lib.imap.config.enable_move.label"),
