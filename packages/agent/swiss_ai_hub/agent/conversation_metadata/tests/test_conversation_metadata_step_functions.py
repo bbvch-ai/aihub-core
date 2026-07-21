@@ -43,7 +43,6 @@ def displayer() -> MagicMock:
 
 def _llm_returning(result) -> MagicMock:
     llm = MagicMock()
-    llm.metadata.is_function_calling_model = True
     llm.astructured_predict = AsyncMock(return_value=result)
     return llm
 
@@ -157,7 +156,6 @@ async def test_metadata_uses_only_user_assistant_messages(displayer, locale_hand
 async def test_generate_metadata_is_best_effort_on_failure(displayer, locale_handler):
     """A failing generator must not propagate — metadata is non-essential and must never fail the run."""
     llm = MagicMock()
-    llm.metadata.is_function_calling_model = True
     llm.astructured_predict = AsyncMock(side_effect=RuntimeError("LLM unavailable"))
     thread_context = FakeThreadContext()
 

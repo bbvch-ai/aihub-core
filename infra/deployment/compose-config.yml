@@ -122,6 +122,11 @@ image_tags:
     local: memory_writer_agent:latest
     nightly: memory_writer_agent:nightly
     latest: memory_writer_agent:latest
+  imap_agent:
+    build: localbuild
+    local: imap_agent:latest
+    nightly: imap_agent:nightly
+    latest: imap_agent:latest
   default_rag_pipeline:
     build: localbuild
     local: default_rag_pipeline:latest

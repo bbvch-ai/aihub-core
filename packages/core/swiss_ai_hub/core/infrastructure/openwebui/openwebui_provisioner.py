@@ -118,6 +118,14 @@ class OpenWebuiProvisioner:
 
             logger.info(f"OpenWebUI sync: Updated {len(online_agents)} agent workspace models")
 
+    async def sync_known_agents(self) -> None:
+        """Reconciles workspace models against the currently-known online agents in the DB.
+
+        Lets agent-config mutations (create/rename/delete) reflect in the OpenWebUI model picker
+        immediately instead of waiting for the next periodic discovery cycle.
+        """
+        await self.sync_agents(self._get_known_online_agents())
+
     async def sync_access(self) -> None:
         async with self._sync_lock("openwebui:sync:access") as acquired:
             if not acquired:

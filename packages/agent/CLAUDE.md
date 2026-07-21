@@ -16,6 +16,7 @@ packages/agent/                       # SDK framework
 │   │   ├── expert_asking_agent/       # Human expert escalation via Teams/Slack
 │   │   ├── expert_rag_agent/          # RAG with expert fallback
 │   │   ├── few_shot_agent/            # Pattern-matching with examples
+│   │   ├── imap_agent/                # Non-conversational IMAP mail read/move + draft-reply
 │   │   ├── namespace_selection_agent/ # LLM-driven knowledge routing
 │   │   └── retrieval_agent/           # Pure document retrieval (no LLM)
 │   ├── context/
@@ -133,7 +134,7 @@ reference):
 2. **Gate every raw `UserMessageEvent` entry step** so detection can't be raced. Two equivalent forms depending on the
    agent's start events:
 
-   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`): add a
+   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`): add a
      **required** `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates the step — no precondition.
    - **Entry also accepts a programmatic start** (e.g. `RAGAgent`, `ExpertRAGAgent`, `NamespaceSelectionAgent` accept
      `UserMessageEvent | RAGStartEvent`): keep `_clear: NotAMetaQuestionEvent | None = None` and combine the step's
@@ -340,7 +341,7 @@ the relevant steps.
 
 | Agent                       | Purpose                                                   | Key Pattern                                                                                                                                                                                               |
 | --------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **RAGAgent**                | Knowledge QA with retrieval                               | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) + conversation metadata (title + follow-up questions)                                                 |
+| **RAGAgent**                | Knowledge QA with retrieval                               | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate). Conversation metadata (title + follow-up questions) is currently disabled pending investigation      |
 | **LLMWrappingAgent**        | Simple LLM chat passthrough                               | Minimal 2-step workflow, no retrieval                                                                                                                                                                     |
 | **ExpertAskingAgent**       | Human expert escalation                                   | BotInTheLoop + iterative refinement + org memory                                                                                                                                                          |
 | **ExpertRAGAgent**          | RAG with expert fallback                                  | RAGAgent steps + HITL consent + AgentInTheLoop                                                                                                                                                            |
@@ -348,6 +349,7 @@ the relevant steps.
 | **NamespaceSelectionAgent** | LLM-driven knowledge routing                              | HITL namespace approval + ThreadContext + RAG delegate                                                                                                                                                    |
 | **RetrievalAgent**          | Pure document retrieval (no LLM)                          | Retrieval-only, returns structured context                                                                                                                                                                |
 | **MemoryWriterAgent**       | System agent: async user-memory persistence (issue #1179) | Non-discoverable; triggered by `MemoryStorageRequestedEvent` from RAG/ExpertRAG when `enable_async_memory_storage` is on; rebuilds the origin agent's `AgentMemory` and writes off the chat critical path |
+| **ImapAgent**               | Non-conversational IMAP mail agent (read/move + draft-reply) | Two independent, programmatically-started chains: **read/move** (`ReadMailStartEvent` → list unread → fetch one message with S3-stored attachments → optionally move to the processed folder) and **draft** (`DraftMailStartEvent` → draft LLM replies for a batch of not-yet-drafted messages, `APPEND` to drafts, flag the source). Read-only IMAP (`BODY.PEEK`, source stays unread), at-least-once (append before flag), never sends. Grouped `ImapClientConfig`/`DraftEmailSettings` config in `packages/core/imap/` |
 
 Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.py` (entry point),
 `agents/{snake_name}/tests/` (BDD tests).
@@ -367,9 +369,7 @@ config seeder needed.
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
   `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
-  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`, `imap_workflow` (non-conversational IMAP read +
-  organise demonstrator — `ReadMailStartEvent` → list unread → fetch one message with S3-referenced attachments →
-  optionally move it to the processed folder when `enable_move` is on → stop; deployable via `app/imap_agent/main.py`)
+  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`
 - `playground/performance/` — Load testing with PerformanceTestingAgent
 
 ## Testing

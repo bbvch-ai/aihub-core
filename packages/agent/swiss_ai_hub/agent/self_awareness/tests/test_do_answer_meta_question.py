@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from openai import BadRequestError
 from swiss_ai_hub.core.events.agent import LLMStopEvent, MetaQuestionDetectedEvent
 
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
@@ -15,12 +17,18 @@ def locale_handler() -> AgentLocaleHandler:
 
 
 @pytest.fixture
-def llm_config() -> MagicMock:
+def llm() -> SimpleNamespace:
+    """A minimal stand-in exposing the mutable ``additional_kwargs`` the reasoning-off path writes to."""
+    return SimpleNamespace(additional_kwargs={})
+
+
+@pytest.fixture
+def llm_config(llm) -> MagicMock:
     config = MagicMock()
 
     @asynccontextmanager
     async def ctx(_displayer):
-        yield MagicMock()
+        yield llm
 
     config.cost_reporting_llm = ctx
     return config
@@ -86,6 +94,56 @@ async def test_answer_drops_empty_history_turns(llm_config, displayer, locale_ha
 
     sent_messages = displayer.display_llm_stream.call_args.args[2]
     assert all(str(m.content or "").strip() for m in sent_messages), "empty-content turns must be dropped"
+
+
+@pytest.mark.asyncio
+async def test_answer_disables_reasoning_on_the_streamed_response(llm, llm_config, displayer, locale_handler):
+    """A meta answer needs no chain-of-thought; reasoning is pure latency, so it must be turned off. The
+    streaming path takes no per-call kwargs, so the flag is baked onto the LLM instance before streaming."""
+    event = MetaQuestionDetectedEvent(user_query="who are you?", category="identity", reasoning="identity")
+
+    await do_answer_meta_question(
+        event=event,
+        agent_name="Bot",
+        agent_description="A bot.",
+        workflow_summary="- Answer",
+        chat_history=[],
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+    )
+
+    assert llm.additional_kwargs["extra_body"]["chat_template_kwargs"] == {"thinking": False, "enable_thinking": False}
+
+
+@pytest.mark.asyncio
+async def test_answer_falls_back_to_plain_stream_when_reasoning_flag_rejected(
+    llm, llm_config, displayer, locale_handler
+):
+    """Mistral-tokenizer models reject chat_template_kwargs with a 400 before any chunk streams; the answer
+    must retry as a plain request rather than fail the run."""
+    displayer.display_llm_stream = AsyncMock(
+        side_effect=[
+            BadRequestError("chat_template not supported", response=MagicMock(status_code=400), body=None),
+            LLMStopEvent(chat_messages=[]),
+        ]
+    )
+    event = MetaQuestionDetectedEvent(user_query="who are you?", category="identity", reasoning="identity")
+
+    result = await do_answer_meta_question(
+        event=event,
+        agent_name="Bot",
+        agent_description="A bot.",
+        workflow_summary="- Answer",
+        chat_history=[],
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+    )
+
+    assert isinstance(result, LLMStopEvent)
+    assert displayer.display_llm_stream.await_count == 2
+    assert "extra_body" not in llm.additional_kwargs, "the retry must send a plain request"
 
 
 @pytest.mark.asyncio

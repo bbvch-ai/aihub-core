@@ -3872,7 +3872,8 @@ export type ContextualizedAgentEvent = {
     | StoreOrganizationMemoryEvent
     | UnreadMailListedEvent
     | MailFetchedEvent
-    | MailMovedEvent;
+    | MailMovedEvent
+    | MailBatchDraftedEvent;
 };
 
 /**
@@ -5010,6 +5011,50 @@ export type DocumentUploadValidationResponse = {
    * Name of the container/bucket
    */
   container: string;
+};
+
+/**
+ * DraftedReplyRef
+ *
+ * A single reply draft produced during a batch drafting run — one per source message.
+ */
+export type DraftedReplyRef = {
+  /**
+   * Source Uid
+   *
+   * IMAP UID of the source message within the source folder.
+   */
+  source_uid: string;
+  /**
+   * Drafts Folder
+   *
+   * Folder the draft was appended to.
+   */
+  drafts_folder: string;
+  /**
+   * Draft Uid
+   *
+   * IMAP UID assigned to the appended draft when the server reports APPENDUID.
+   */
+  draft_uid?: string | null;
+  /**
+   * In Reply To
+   *
+   * RFC Message-ID of the original message this draft replies to.
+   */
+  in_reply_to?: string | null;
+  /**
+   * Subject
+   *
+   * Subject of the draft reply.
+   */
+  subject: string;
+  /**
+   * Recipient
+   *
+   * Recipient the draft reply is addressed to.
+   */
+  recipient: string;
 };
 
 /**
@@ -9237,6 +9282,67 @@ export type MailAttachmentRef = {
 };
 
 /**
+ * MailBatchDraftedEvent
+ *
+ * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
+ *
+ * The agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and
+ * marked as drafted so it is not drafted again on the next run.
+ */
+export type MailBatchDraftedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the drafted messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of reply drafts created in this run.
+   */
+  count: number;
+  /**
+   * Drafted
+   *
+   * Per-message references to the created reply drafts.
+   */
+  drafted?: Array<DraftedReplyRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * MailFetchedEvent
  *
  * Carries a single fetched message — headers, body, and references to its stored attachments.
@@ -9290,6 +9396,24 @@ export type MailFetchedEvent = {
    * Plain-text body of the message, if present.
    */
   body_text?: string | null;
+  /**
+   * Rfc Message Id
+   *
+   * RFC Message-ID header of the message — used to thread a reply draft.
+   */
+  rfc_message_id?: string | null;
+  /**
+   * References
+   *
+   * RFC References header of the message, if present.
+   */
+  references?: string | null;
+  /**
+   * Reply To
+   *
+   * Reply-To header of the message, if present.
+   */
+  reply_to?: string | null;
   /**
    * Attachments
    *
@@ -18146,7 +18270,8 @@ export type ContextualizedAgentEventWritable = {
     | StoreOrganizationMemoryEventWritable
     | UnreadMailListedEventWritable
     | MailFetchedEventWritable
-    | MailMovedEventWritable;
+    | MailMovedEventWritable
+    | MailBatchDraftedEventWritable;
 };
 
 /**
@@ -21221,6 +21346,54 @@ export type LocaleInputWritable = {
 };
 
 /**
+ * MailBatchDraftedEvent
+ *
+ * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
+ *
+ * The agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and
+ * marked as drafted so it is not drafted again on the next run.
+ */
+export type MailBatchDraftedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the drafted messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of reply drafts created in this run.
+   */
+  count: number;
+  /**
+   * Drafted
+   *
+   * Per-message references to the created reply drafts.
+   */
+  drafted?: Array<DraftedReplyRef>;
+  [key: string]: unknown;
+};
+
+/**
  * MailFetchedEvent
  *
  * Carries a single fetched message — headers, body, and references to its stored attachments.
@@ -21274,6 +21447,24 @@ export type MailFetchedEventWritable = {
    * Plain-text body of the message, if present.
    */
   body_text?: string | null;
+  /**
+   * Rfc Message Id
+   *
+   * RFC Message-ID header of the message — used to thread a reply draft.
+   */
+  rfc_message_id?: string | null;
+  /**
+   * References
+   *
+   * RFC References header of the message, if present.
+   */
+  references?: string | null;
+  /**
+   * Reply To
+   *
+   * Reply-To header of the message, if present.
+   */
+  reply_to?: string | null;
   /**
    * Attachments
    *

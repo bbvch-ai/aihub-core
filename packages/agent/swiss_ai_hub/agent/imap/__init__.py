@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.imap.mail_attachment_store import MailAttachmentStore
     from swiss_ai_hub.agent.imap.mail_parser import MailParser
     from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment, ParsedMessage
+    from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 
 __all__ = [
     "ImapClient",
@@ -13,6 +14,7 @@ __all__ = [
     "MailParser",
     "ParsedAttachment",
     "ParsedMessage",
+    "ReplyComposer",
 ]
 
 _IMAP_CLIENT_MODULE = "swiss_ai_hub.agent.imap.imap_client"
@@ -25,6 +27,7 @@ _LAZY_IMPORTS = {
     "MailParser": "swiss_ai_hub.agent.imap.mail_parser",
     "ParsedAttachment": _PARSED_MESSAGE_MODULE,
     "ParsedMessage": _PARSED_MESSAGE_MODULE,
+    "ReplyComposer": "swiss_ai_hub.agent.imap.reply_composer",
 }
 
 

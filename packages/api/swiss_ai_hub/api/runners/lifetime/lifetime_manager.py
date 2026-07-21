@@ -19,7 +19,7 @@ from swiss_ai_hub.core.infrastructure import (
     RedisSettings,
     S3StorageSettings,
 )
-from swiss_ai_hub.core.persistence import AccessChangeHook
+from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
@@ -230,6 +230,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Re-sync OpenWebUI when access entities change (active tenant switches notify explicitly)
         AccessChangeHook.connect(openwebui_provisioner)
+
+        # Re-sync OpenWebUI workspace models when agent configs are created/renamed/deleted, so the
+        # model picker reflects the change immediately instead of on the next periodic discovery cycle
+        AgentConfigChangeHook.connect(openwebui_provisioner)
 
         # Yield control back to FastAPI to start serving requests
         yield
