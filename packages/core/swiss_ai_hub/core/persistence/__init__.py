@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
     from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
     from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
+    from swiss_ai_hub.core.persistence.agents.agent_config_change_hook import AgentConfigChangeHook
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
     from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
     from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import (
@@ -87,6 +88,7 @@ if TYPE_CHECKING:
 __all__ = [
     "AccessChangeHook",
     "AgentClassEntity",
+    "AgentConfigChangeHook",
     "AgentConfigEntityDocument",
     "AgentInSpecsEntity",
     "AgentInstanceRef",
@@ -156,6 +158,7 @@ __all__ = [
 _LAZY_IMPORTS = {
     "AccessChangeHook": "swiss_ai_hub.core.persistence.access.access_change_hook",
     "AgentClassEntity": "swiss_ai_hub.core.persistence.agents.agent_class_entity",
+    "AgentConfigChangeHook": "swiss_ai_hub.core.persistence.agents.agent_config_change_hook",
     "AgentConfigEntityDocument": "swiss_ai_hub.core.persistence.agents.agent_config_entity_document",
     "AgentInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",
     "AgentInstanceRef": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",

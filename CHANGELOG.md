@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.315.1] - 2026-07-21 - Enhanced Agent Management and Chat UI Responsiveness
+
+### Added
+
+- ✨ **Immediate Agent Model Updates:** Open WebUI now dynamically reflects agent creation, renaming, and deletion
+  instantly in the model picker, providing real-time feedback and eliminating the previous 60-second update delay.
+- 🦾 **Introduced `AgentConfigChangeHook`:** A new internal mechanism has been implemented to leverage database signals
+  for immediate detection and propagation of agent configuration changes, powering the real-time updates in Open WebUI.
+
+### Fixed
+
+- 🐛 **Robust Agent Configuration Sync:** Resolved a critical issue where internal signal subscriptions could be
+  prematurely garbage-collected, ensuring reliable and persistent synchronization of agent configuration changes.
+- 🖼️ **Improved Agent Deletion Flow:** Corrected a user interface bug by ensuring that when an agent is deleted from its
+  detail page, users are automatically navigated to the main agents list, preventing a disruptive 404 error toast.
+
+______________________________________________________________________
+
 ## [v0.315.0] - 2026-07-21 - Major IMAP Agent Upgrade: Smart Drafting and Streamlined Workflows
 
 ### Added
