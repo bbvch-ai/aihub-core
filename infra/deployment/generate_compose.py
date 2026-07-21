@@ -158,6 +158,7 @@ OWN_IMAGE_LICENSES = {
     "expert_asking_agent": "Apache-2.0",
     "namespace_selection_agent": "Apache-2.0",
     "memory_writer_agent": "Apache-2.0",
+    "imap_agent": "Apache-2.0",
     "retrieval_agent": "Apache-2.0",
     "default_rag_pipeline": "Apache-2.0",
     "shared_rag_pipeline": "Apache-2.0",

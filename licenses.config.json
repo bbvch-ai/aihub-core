@@ -30,6 +30,7 @@
     "expert_asking_agent",
     "namespace_selection_agent",
     "memory_writer_agent",
+    "imap_agent",
     "mineru-api",
     "mineru-vlm",
     "backup"
