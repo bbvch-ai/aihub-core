@@ -5694,6 +5694,18 @@ export const ContextualizedAgentEventSchema = {
         {
           $ref: "#/components/schemas/StoreOrganizationMemoryEvent",
         },
+        {
+          $ref: "#/components/schemas/UnreadMailListedEvent",
+        },
+        {
+          $ref: "#/components/schemas/MailFetchedEvent",
+        },
+        {
+          $ref: "#/components/schemas/MailMovedEvent",
+        },
+        {
+          $ref: "#/components/schemas/MailBatchDraftedEvent",
+        },
       ],
       title: "Event",
       description: "Data of the event itself.",
@@ -7210,6 +7222,62 @@ export const DocumentUploadValidationResponseSchema = {
   title: "DocumentUploadValidationResponse",
   description:
     "Response containing the validation result of a file upload.\n\nThis response indicates whether the uploaded file exists in the globally\nconfigured datalake and provides information about the validation process.",
+} as const;
+
+export const DraftedReplyRefSchema = {
+  properties: {
+    source_uid: {
+      type: "string",
+      title: "Source Uid",
+      description: "IMAP UID of the source message within the source folder.",
+    },
+    drafts_folder: {
+      type: "string",
+      title: "Drafts Folder",
+      description: "Folder the draft was appended to.",
+    },
+    draft_uid: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Draft Uid",
+      description:
+        "IMAP UID assigned to the appended draft when the server reports APPENDUID.",
+    },
+    in_reply_to: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "In Reply To",
+      description:
+        "RFC Message-ID of the original message this draft replies to.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject of the draft reply.",
+    },
+    recipient: {
+      type: "string",
+      title: "Recipient",
+      description: "Recipient the draft reply is addressed to.",
+    },
+  },
+  type: "object",
+  required: ["source_uid", "drafts_folder", "subject", "recipient"],
+  title: "DraftedReplyRef",
+  description:
+    "A single reply draft produced during a batch drafting run — one per source message.",
 } as const;
 
 export const EdgeDataSchema = {
@@ -13716,6 +13784,353 @@ export const LogprobSchema = {
   additionalProperties: true,
   type: "object",
   title: "Logprob",
+} as const;
+
+export const MailAttachmentRefSchema = {
+  properties: {
+    filename: {
+      type: "string",
+      pattern: "^[^/\\\\]+$",
+      title: "Filename",
+      description:
+        "Original attachment filename, including extension. Must not contain path separators.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "MIME type of the attachment.",
+      examples: ["application/pdf"],
+    },
+    file_id: {
+      type: "string",
+      pattern:
+        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      title: "File Id",
+      description:
+        "UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.",
+    },
+    size_bytes: {
+      type: "integer",
+      minimum: 0,
+      title: "Size Bytes",
+      description: "Size of the stored attachment in bytes.",
+    },
+  },
+  type: "object",
+  required: ["filename", "content_type", "file_id", "size_bytes"],
+  title: "MailAttachmentRef",
+  description:
+    "Reference to a fetched mail attachment whose bytes are stored in S3, not carried in the event.\n\nMirrors ``UserUploadedFile``: attachments are referenced by ``file_id`` (the S3 object key within the\nagent's dedicated bucket) so large binaries never bloat the persisted/streamed event.",
+} as const;
+
+export const MailBatchDraftedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the drafted messages were read from.",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+      description: "Number of reply drafts created in this run.",
+    },
+    drafted: {
+      items: {
+        $ref: "#/components/schemas/DraftedReplyRef",
+      },
+      type: "array",
+      title: "Drafted",
+      description: "Per-message references to the created reply drafts.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["source_folder", "count", "_event_name", "_parent_event_names"],
+  title: "MailBatchDraftedEvent",
+  description:
+    "Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.\n\nThe agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and\nmarked as drafted so it is not drafted again on the next run.",
+} as const;
+
+export const MailFetchedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the fetched message within the inbox folder.",
+    },
+    sender: {
+      type: "string",
+      title: "Sender",
+      description: "Raw From header of the message.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject header of the message.",
+    },
+    date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Date",
+      description: "Date header of the message, if parseable.",
+    },
+    body_text: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Body Text",
+      description: "Plain-text body of the message, if present.",
+    },
+    rfc_message_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Rfc Message Id",
+      description:
+        "RFC Message-ID header of the message — used to thread a reply draft.",
+    },
+    references: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "References",
+      description: "RFC References header of the message, if present.",
+    },
+    reply_to: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Reply To",
+      description: "Reply-To header of the message, if present.",
+    },
+    attachments: {
+      items: {
+        $ref: "#/components/schemas/MailAttachmentRef",
+      },
+      type: "array",
+      title: "Attachments",
+      description: "References to the message's attachments stored in S3.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "message_id",
+    "sender",
+    "subject",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "MailFetchedEvent",
+  description:
+    "Carries a single fetched message — headers, body, and references to its stored attachments.",
+} as const;
+
+export const MailMovedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the moved message within its source folder.",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the message was moved out of.",
+    },
+    target_folder: {
+      type: "string",
+      title: "Target Folder",
+      description: "Folder the message was moved into.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "message_id",
+    "source_folder",
+    "target_folder",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "MailMovedEvent",
+  description:
+    "Records that a message was moved from its source folder into a target folder on the IMAP server.",
 } as const;
 
 export const MemoriesResponseSchema = {
@@ -22418,6 +22833,121 @@ export const TranslationResponseSchema = {
     "Response containing the translated LocaleString with all supported locales populated.",
 } as const;
 
+export const UnreadMailListedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    messages: {
+      items: {
+        $ref: "#/components/schemas/UnreadMailSummary",
+      },
+      type: "array",
+      title: "Messages",
+      description: "Header summaries of the unread messages in the inbox.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "UnreadMailListedEvent",
+  description:
+    "Carries the unread messages found in the configured inbox folder.",
+} as const;
+
+export const UnreadMailSummarySchema = {
+  properties: {
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description:
+        "IMAP UID of the message within the inbox folder — stable across connections.",
+    },
+    sender: {
+      type: "string",
+      title: "Sender",
+      description: "Raw From header of the message.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject header of the message.",
+    },
+    date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Date",
+      description: "Date header of the message, if parseable.",
+    },
+    flags: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Flags",
+      description: "IMAP flags set on the message.",
+    },
+  },
+  type: "object",
+  required: ["message_id", "sender", "subject"],
+  title: "UnreadMailSummary",
+  description:
+    "Lightweight header summary of one unread message — enough for an agent to decide what to fetch.",
+} as const;
+
 export const UpdateAgentInstanceDTOSchema = {
   properties: {
     configuration: {
@@ -26422,6 +26952,18 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/StoreOrganizationMemoryEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/UnreadMailListedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MailFetchedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MailMovedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MailBatchDraftedEventWritable",
         },
       ],
       title: "Event",
@@ -31283,6 +31825,253 @@ export const LocaleInputWritableSchema = {
   title: "LocaleInput",
   description:
     'A FormKit element for entering multi-language text (LocaleString values).\n\nThis element renders as a text input with language switching capability,\nallowing users to enter translations for all supported languages (de, en, fr, it)\nin a single compact UI component.\n\nThe frontend renders this as an input field with a language selector, where users\ncan switch between languages to enter the corresponding translation.\n\n### Form Duality\nWhen used in a Form, this element captures a LocaleString value with translations\nfor each language. The form submission returns a dict with language keys.\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    custom_greeting: Annotated[\n        LocaleString | LocaleInput,\n        Field(description="Custom greeting message"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    ...,\n    custom_greeting=LocaleInput(label=LocaleString(en="Greeting", de="Begrüßung")),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    ...,\n    custom_greeting=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"),\n)\n```',
+} as const;
+
+export const MailBatchDraftedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the drafted messages were read from.",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+      description: "Number of reply drafts created in this run.",
+    },
+    drafted: {
+      items: {
+        $ref: "#/components/schemas/DraftedReplyRef",
+      },
+      type: "array",
+      title: "Drafted",
+      description: "Per-message references to the created reply drafts.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["source_folder", "count"],
+  title: "MailBatchDraftedEvent",
+  description:
+    "Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.\n\nThe agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and\nmarked as drafted so it is not drafted again on the next run.",
+} as const;
+
+export const MailFetchedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the fetched message within the inbox folder.",
+    },
+    sender: {
+      type: "string",
+      title: "Sender",
+      description: "Raw From header of the message.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject header of the message.",
+    },
+    date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Date",
+      description: "Date header of the message, if parseable.",
+    },
+    body_text: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Body Text",
+      description: "Plain-text body of the message, if present.",
+    },
+    rfc_message_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Rfc Message Id",
+      description:
+        "RFC Message-ID header of the message — used to thread a reply draft.",
+    },
+    references: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "References",
+      description: "RFC References header of the message, if present.",
+    },
+    reply_to: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Reply To",
+      description: "Reply-To header of the message, if present.",
+    },
+    attachments: {
+      items: {
+        $ref: "#/components/schemas/MailAttachmentRef",
+      },
+      type: "array",
+      title: "Attachments",
+      description: "References to the message's attachments stored in S3.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["message_id", "sender", "subject"],
+  title: "MailFetchedEvent",
+  description:
+    "Carries a single fetched message — headers, body, and references to its stored attachments.",
+} as const;
+
+export const MailMovedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the moved message within its source folder.",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the message was moved out of.",
+    },
+    target_folder: {
+      type: "string",
+      title: "Target Folder",
+      description: "Folder the message was moved into.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["message_id", "source_folder", "target_folder"],
+  title: "MailMovedEvent",
+  description:
+    "Records that a message was moved from its source folder into a target folder on the IMAP server.",
 } as const;
 
 export const MessageWritableSchema = {
@@ -36588,6 +37377,56 @@ export const ToolEventWritableSchema = {
   additionalProperties: true,
   type: "object",
   title: "ToolEvent",
+} as const;
+
+export const UnreadMailListedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    messages: {
+      items: {
+        $ref: "#/components/schemas/UnreadMailSummary",
+      },
+      type: "array",
+      title: "Messages",
+      description: "Header summaries of the unread messages in the inbox.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "UnreadMailListedEvent",
+  description:
+    "Carries the unread messages found in the configured inbox folder.",
 } as const;
 
 export const UserMessageEventWritableSchema = {
