@@ -20,6 +20,7 @@
     "agent",
     "process",
     "pipeline",
+    "imap_agent",
     "llm_wrapping_agent",
     "few_shot_agent",
     "default_rag_pipeline",
@@ -30,7 +31,6 @@
     "expert_asking_agent",
     "namespace_selection_agent",
     "memory_writer_agent",
-    "imap_agent",
     "mineru-api",
     "mineru-vlm",
     "backup"

@@ -1,17 +1,17 @@
 """Manual end-to-end run — GreenMail by default, or a real IMAP account via IMAP_* env vars.
 
 Local GreenMail (default, runs the read/move chain):
-    uv run --package swiss-ai-hub-agent python -m playground.minimal_workflow.imap_workflow.trigger
+    uv run --package swiss-ai-hub-agent python -m app.imap_agent.trigger
 
 Run the independent drafting chain instead (reads from IMAP_DRAFT_SOURCE, default INBOX):
     IMAP_TRIGGER=draft IMAP_DRAFT_SOURCE=Processed \
-        uv run --package swiss-ai-hub-agent python -m playground.minimal_workflow.imap_workflow.trigger
+        uv run --package swiss-ai-hub-agent python -m app.imap_agent.trigger
 
 Real account (e.g. Gmail with an app password):
     IMAP_HOST=imap.gmail.com IMAP_PORT=993 IMAP_TLS=1 \
     IMAP_USER=you@gmail.com IMAP_PASS='app password' \
     IMAP_DRAFTS='[Gmail]/Drafts' IMAP_PROCESSED='Processed' IMAP_ENABLE_MOVE=1 IMAP_ENABLE_DRAFT=1 \
-        uv run --package swiss-ai-hub-agent python -m playground.minimal_workflow.imap_workflow.trigger
+        uv run --package swiss-ai-hub-agent python -m app.imap_agent.trigger
 """
 
 import os
@@ -26,10 +26,9 @@ from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
 from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig  # noqa: E402
 from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 
-from playground.minimal_workflow.imap_workflow.events.draft_mail_start_event import DraftMailStartEvent  # noqa: E402
-from playground.minimal_workflow.imap_workflow.events.read_mail_start_event import ReadMailStartEvent  # noqa: E402
-from playground.minimal_workflow.imap_workflow.imap_agent import ImapAgent  # noqa: E402
-from playground.minimal_workflow.imap_workflow.imap_agent_config import ImapAgentConfig  # noqa: E402
+from swiss_ai_hub.agent.agents.imap_agent import ImapAgent, ImapAgentConfig  # noqa: E402
+from swiss_ai_hub.agent.agents.imap_agent.events.draft_mail_start_event import DraftMailStartEvent  # noqa: E402
+from swiss_ai_hub.agent.agents.imap_agent.events.read_mail_start_event import ReadMailStartEvent  # noqa: E402
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
 
 enable_logging()

@@ -24,10 +24,6 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages/agent/app/${AGENT} ./packages/agent/app/${AGENT}
 COPY packages/agent/swiss_ai_hub ./packages/agent/swiss_ai_hub
-# This agent's blueprint lives in the playground (self-contained imap_workflow).
-COPY packages/agent/playground/__init__.py ./packages/agent/playground/__init__.py
-COPY packages/agent/playground/minimal_workflow/__init__.py ./packages/agent/playground/minimal_workflow/__init__.py
-COPY packages/agent/playground/minimal_workflow/imap_workflow ./packages/agent/playground/minimal_workflow/imap_workflow
 COPY packages/agent/pyproject.toml ./packages/agent/pyproject.toml
 COPY packages/agent/LICENSE ./packages/agent/LICENSE
 COPY packages/agent/README.md ./packages/agent/README.md
