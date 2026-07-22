@@ -5,6 +5,67 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.316.2] - 2026-07-22 - Enhanced Milvus Configuration for Improved Agent Compatibility
+
+### Changed
+
+- ⚙️ **Streamlined Milvus Environment Variable Propagation:** Milvus connection parameters (`MILVUS_URL`,
+  `MILVUS_DIMENSION`, `MILVUS_ROOT_PASSWORD`) are now explicitly included in the environment of additional services
+  across all Docker Compose configurations, ensuring more consistent and robust database connectivity for various
+  components.
+- 📄 **Updated Documentation for Milvus Environment Variables:** The deployment guide's documentation has been revised to
+  reflect the expanded usage of Milvus environment variables, now indicating their relevance for agents like
+  `imap_agent`.
+
+______________________________________________________________________
+
+## [v0.316.1] - 2026-07-21 - Enhanced Development Workflow and SDK Consistency
+
+### Added
+
+- ✅ **Automated SDK Sync Verification:** A new GitHub Actions workflow has been introduced to automatically verify that
+  the committed frontend SDK clients (for both the main `@swiss-ai-hub/web` and `sysadmin-web` applications) are in sync
+  with their respective backend OpenAPI specifications. This crucial check helps prevent API/SDK drift and ensures
+  frontend clients always reflect the latest backend contract.
+- ⚡️ **Efficient Offline OpenAPI Spec Generation:** The new workflow efficiently generates OpenAPI specifications
+  directly from backend ASGI applications without needing a running server, speeding up the verification process.
+- ⚙️ **Proactive Developer Feedback:** Developers will now receive immediate feedback during pull requests if their
+  backend changes necessitate an SDK regeneration, promoting a more consistent and reliable development experience.
+
+______________________________________________________________________
+
+## [v0.316.0] - 2026-07-21 - Introducing the IMAP Agent for Enhanced Mail Automation
+
+### Added
+
+- 🦾 **New IMAP Agent**: Introduced a powerful new `ImapAgent` designed for non-conversational mail automation. This
+  agent can independently read and move emails, and automatically draft LLM-generated replies for incoming messages.
+- 📄 **Docker Service Integration**: The new `ImapAgent` is fully integrated as a deployable Docker service, including
+  comprehensive environment variable configurations for seamless deployment and operation across various deployment
+  stages (build, latest, local, nightly, and GPU versions).
+- ⚙️ **OpenTelemetry Support for IMAP Agent**: The `ImapAgent` now supports OpenTelemetry for enhanced observability and
+  tracing of its mail processing workflows.
+
+### Changed
+
+- 🔄 **Promoted IMAP Functionality**: The IMAP mail automation capabilities have been promoted from a playground example
+  to a core, production-ready `ImapAgent` within the main agent package, making it a formally recognized and deployable
+  component.
+- 📚 **Updated Environment Variable Documentation**: The deployment guide documentation has been updated to include all
+  relevant environment variables for configuring the new `ImapAgent` and its associated services (LiteLLM, S3, MongoDB,
+  NATS, Redis).
+
+______________________________________________________________________
+
+## [v0.315.2] - 2026-07-21 - Unified Package Version Alignment
+
+### Changed
+
+- 🔄 **Core Platform Packages**: Synchronized all internal Python and JavaScript packages, along with their
+  inter-dependencies, to version `0.315.2` for improved consistency and stability across the platform.
+
+______________________________________________________________________
+
 ## [v0.315.1] - 2026-07-21 - Enhanced Agent Management and Chat UI Responsiveness
 
 ### Added

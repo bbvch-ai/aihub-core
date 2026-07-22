@@ -20,6 +20,7 @@
     "agent",
     "process",
     "pipeline",
+    "imap_agent",
     "llm_wrapping_agent",
     "few_shot_agent",
     "default_rag_pipeline",
