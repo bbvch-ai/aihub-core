@@ -33,6 +33,19 @@ jobs:
         with:
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Guard - release branch matches the pyproject version
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          core="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
+          line="${core%.*}"
+          expected="release/${line}"
+          if [ "$BRANCH" != "$expected" ]; then
+            echo "::error::Release branch '$BRANCH' does not match pyproject version '$core' (expected '$expected'). Rename the branch to '$expected', or bump pyproject to the intended version, before staging can build."
+            exit 1
+          fi
+          echo "Branch '$BRANCH' matches pyproject '$core'."
       - name: Compute staging version
         id: compute
         uses: ./.github/actions/compute-version

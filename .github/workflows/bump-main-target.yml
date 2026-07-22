@@ -7,6 +7,11 @@
 # opens a PR that bumps the pyproject version to X.(Y+1).0. A human merges it
 # (no auto-merge), which resumes nightly builds on the new target.
 #
+# The next version is derived from main's pyproject (the single source of
+# truth), NOT the branch name, so a mistyped branch name cannot skip a minor.
+# The branch name must still match the pyproject minor line; if it does not, the
+# bump is skipped and build-staging.yml fails loudly so the operator fixes it.
+#
 # Note: the one-time migration catch-up (when main is still on an already
 # released version) is done by hand, since it is not triggered by a release cut.
 # =============================================================================
@@ -23,77 +28,70 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
-      - name: Parse next target from the release branch
-        id: target
-        env:
-          REF: ${{ github.event.ref }}
-        run: |
-          set -euo pipefail
-          line="${REF#release/}"
-          if ! printf '%s' "$line" | grep -Eq '^[0-9]+\.[0-9]+$'; then
-            echo "::notice::'$REF' is not release/X.Y; skipping."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          major="${line%.*}"
-          minor="${line#*.}"
-          next="${major}.$((minor + 1)).0"
-          echo "next=$next" >> "$GITHUB_OUTPUT"
-          echo "branch=chore/bump-main-${next//./-}" >> "$GITHUB_OUTPUT"
-          echo "skip=false" >> "$GITHUB_OUTPUT"
-          echo "Release $REF -> next main target v$next"
       # Deploy key so the pushed branch triggers CI (GITHUB_TOKEN pushes do not).
       - name: Checkout main (full history)
-        if: steps.target.outputs.skip != 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: main
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
-      - name: Guard - bump forward only, no duplicate PR
-        if: steps.target.outputs.skip != 'true'
-        id: guard
+      - name: Compute next target from pyproject and validate the branch
+        id: t
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEXT: ${{ steps.target.outputs.next }}
-          BRANCH: ${{ steps.target.outputs.branch }}
+          REF: ${{ github.event.ref }}
         run: |
           set -euo pipefail
-          cur="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
-          if [ "$cur" = "$NEXT" ]; then
-            echo "::notice::main is already at $NEXT; nothing to do."
+          core="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
+          if ! printf '%s' "$core" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::warning::pyproject version '$core' is not clean semver; skipping bump."
             echo "go=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          highest="$(printf '%s\n%s\n' "$cur" "$NEXT" | sort -V | tail -n1)"
-          if [ "$highest" = "$cur" ]; then
-            echo "::notice::main ($cur) is already ahead of $NEXT; not bumping backwards."
+          major="${core%%.*}"
+          rest="${core#*.}"
+          minor="${rest%%.*}"
+          expected="release/${major}.${minor}"
+
+          # The version is owned by pyproject, not the branch name. If the branch
+          # disagrees, skip; build-staging.yml fails loudly so the operator
+          # renames the branch or bumps pyproject.
+          if [ "$REF" != "$expected" ]; then
+            echo "::warning::Branch '$REF' does not match pyproject '$core' (expected '$expected'); skipping bump. Fix the branch name."
             echo "go=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          open="$(gh pr list --head "$BRANCH" --state open --json number --jq 'length')"
+
+          next="${major}.$((minor + 1)).0"
+          branch="chore/bump-main-${next//./-}"
+          open="$(gh pr list --head "$branch" --state open --json number --jq 'length')"
           if [ "$open" != "0" ]; then
-            echo "::notice::A bump PR for $BRANCH is already open."
+            echo "::notice::A bump PR for $branch is already open."
             echo "go=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          echo "go=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "next=$next"
+            echo "branch=$branch"
+            echo "go=true"
+          } >> "$GITHUB_OUTPUT"
+          echo "Will bump main $core -> $next"
       - name: Set up Python 3.13
-        if: steps.guard.outputs.go == 'true'
+        if: steps.t.outputs.go == 'true'
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: '3.13'
       - name: Install uv
-        if: steps.guard.outputs.go == 'true'
+        if: steps.t.outputs.go == 'true'
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
         with:
           enable-cache: true
       - name: Bump version, push branch, open PR
-        if: steps.guard.outputs.go == 'true'
+        if: steps.t.outputs.go == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEXT: ${{ steps.target.outputs.next }}
-          BRANCH: ${{ steps.target.outputs.branch }}
+          NEXT: ${{ steps.t.outputs.next }}
+          BRANCH: ${{ steps.t.outputs.branch }}
           CUT_REF: ${{ github.event.ref }}
         run: |
           set -euo pipefail
