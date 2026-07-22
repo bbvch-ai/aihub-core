@@ -19,6 +19,11 @@ on:
 permissions:
   contents: write
   actions: read
+concurrency:
+  # Serialise nightly tagging: two near-simultaneous merges must not race on the
+  # rolling `nightly` pointer (force-push race) or move it backwards.
+  group: nightly-tag
+  cancel-in-progress: false
 jobs:
   nightly-tag:
     name: Tag nightly & move pointer
@@ -27,11 +32,14 @@ jobs:
     timeout-minutes: 10
     outputs:
       version: ${{ steps.compute.outputs.version }}
+      created: ${{ steps.tag.outputs.created }}
     steps:
-      # Deploy key (not GITHUB_TOKEN): moving the rolling `nightly` tag between
-      # commits can touch workflow files, which GITHUB_TOKEN may not push. The
-      # RELEASE_FINALIZE_DEPLOY_KEY bypasses that restriction (same key used by
-      # set-latest.yml). fetch-depth 0 is required for git-height.
+      # Deploy key (not GITHUB_TOKEN): pushing any tag whose target commit
+      # differs in .github/workflows/** content requires the `workflow` scope,
+      # which GITHUB_TOKEN cannot hold. That covers both the immutable per-merge
+      # tag and the moving `nightly` pointer, so both use
+      # RELEASE_FINALIZE_DEPLOY_KEY (same key as set-latest.yml). fetch-depth 0
+      # is required for git-height.
       - name: Checkout main (full history)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
@@ -44,6 +52,7 @@ jobs:
         with:
           channel: nightly
       - name: Create nightly tag and move the nightly pointer
+        id: tag
         env:
           VERSION: ${{ steps.compute.outputs.version }}
         run: |
@@ -57,10 +66,12 @@ jobs:
           # (see roles/aihub_application/tasks/fetch.yml in aihub-playbook).
           if git rev-parse "$VERSION" >/dev/null 2>&1 \
             || git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
-            echo "::notice::Tag $VERSION already exists; not recreating."
+            echo "::notice::Tag $VERSION already exists; not recreating or dispatching."
+            echo "created=false" >> "$GITHUB_OUTPUT"
           else
             git tag -a "$VERSION" -m "Release $VERSION" "$TARGET"
             git push origin "refs/tags/$VERSION"
+            echo "created=true" >> "$GITHUB_OUTPUT"
           fi
 
           # Rolling pointer: newest nightly. Annotated so its message carries
@@ -71,6 +82,9 @@ jobs:
   notify-release:
     name: Dispatch build & bundle
     needs: nightly-tag
+    # Skip when the tag already existed (e.g. a workflow re-run): the Release is
+    # already there and gh release create would fail.
+    if: needs.nightly-tag.outputs.created == 'true'
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
