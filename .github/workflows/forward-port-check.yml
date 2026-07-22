@@ -1,0 +1,61 @@
+---
+# =============================================================================
+# Forward-port Check (advisory)
+# =============================================================================
+# After a push to a release/* branch (typically a merged hotfix), list the
+# commits on that branch that are not yet present on main, so hotfixes get
+# forward-ported and do not regress in the next release.
+#
+# This is ADVISORY, not a gate:
+#   * It uses `git cherry` (patch-id equivalence), so a commit that has already
+#     been cherry-picked to main is recognized and drops off the list.
+#   * Reverts (flow 3, dropping a rejected ticket) must NOT be forward-ported,
+#     so commits whose subject starts with "Revert" are excluded.
+#   * Auto-opening a cherry-pick PR is intentionally out of scope; forward-port
+#     stays a manual, reviewed step. This job only reminds.
+# =============================================================================
+name: Forward-port Check
+on:
+  push:
+    branches: ['release/**']
+permissions:
+  contents: read
+jobs:
+  check:
+    name: List commits missing from main
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Report commits not yet forward-ported to main
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+
+          # `git cherry -v origin/main HEAD` marks commits on this branch with
+          # '+' when no patch-equivalent commit exists on main, '-' when it does.
+          # Keep the '+' lines and drop reverts (they stay on the release line).
+          missing="$(git cherry -v origin/main HEAD | grep '^+ ' | grep -viE '^\+ [0-9a-f]+ Revert ' || true)"
+
+          if [ -z "$missing" ]; then
+            echo "All commits on $BRANCH are present on main. Nothing to forward-port."
+            echo "All commits on \`$BRANCH\` are present on main. Nothing to forward-port." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "::warning::Commits on $BRANCH are not on main. Forward-port hotfixes (cherry-pick to main); leave reverts on the release line."
+          echo "$missing"
+          {
+            echo "### Forward-port reminder"
+            echo ""
+            echo "These commits on \`$BRANCH\` are not yet on \`main\`. Cherry-pick hotfixes to \`main\` so the next release keeps the fix. Reverts are already excluded."
+            echo ""
+            echo '```'
+            echo "$missing"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
