@@ -2,6 +2,12 @@
 name: Create GitHub Release
 run-name: Create Release - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}
 on:
+  workflow_call:
+    inputs:
+      release_version:
+        description: Release version (e.g., v0.264.0)
+        required: true
+        type: string
   repository_dispatch:
     types: [release-ready]
   workflow_dispatch:
@@ -20,7 +26,7 @@ jobs:
       - name: Extract version
         id: version
         env:
-          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
           CLIENT_PAYLOAD_VERSION: ${{ github.event.client_payload.release_version }}
         run: |
           if [ -n "$RELEASE_VERSION" ]; then

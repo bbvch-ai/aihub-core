@@ -9,6 +9,12 @@ run-name: Publish PyPI - ${{ github.event.client_payload.release_version || gith
 # Excludes swiss-ai-hub-sysadmin-api, which ships as a Docker image rather than a PyPI library. The
 # jambo fork (swiss-ai-hub-jambo) is published from its own repository, not here.
 on:
+  workflow_call:
+    inputs:
+      release_version:
+        description: Release version tag to publish (e.g., v0.290.12)
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       release_version:
@@ -30,18 +36,15 @@ jobs:
       - name: Extract version
         id: version
         env:
-          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
-          CLIENT_PAYLOAD_VERSION: ${{ github.event.client_payload.release_version }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
         run: |
-          if [ -n "$RELEASE_VERSION" ]; then
-            VERSION="$RELEASE_VERSION"
-          elif [ -n "$CLIENT_PAYLOAD_VERSION" ]; then
-            VERSION="$CLIENT_PAYLOAD_VERSION"
-          else
+          if [ -z "$RELEASE_VERSION" ]; then
             echo "No release_version provided. Failing."
             exit 1
           fi
-          # Strict tag check: client_payload feeds checkout `ref` (injection guard).
+          VERSION="$RELEASE_VERSION"
+          # Strict flat-version check: refuses nightly/staging pre-releases, and
+          # guards the checkout `ref` below against injection.
           if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "Refusing to publish: '$VERSION' is not a valid vX.Y.Z release tag."
             exit 1
