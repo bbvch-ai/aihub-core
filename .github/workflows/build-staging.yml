@@ -1,0 +1,99 @@
+---
+# =============================================================================
+# Staging Tag & Build
+# =============================================================================
+# On every push to a release/* branch, cut an immutable staging tag and move the
+# rolling `staging` pointer, then fan out to the image builds and the release
+# bundle at that tag. This mirrors the nightly path (add-tag.yml) but for the
+# staging channel, and reuses the per-image build-*.yml workflows via dispatch
+# (like release-manual.yml) so nothing about the nightly path is touched.
+#
+# Version: v<core>-staging.<git-height>. Staging is a pre-release: it is never
+# published to npm or PyPI (that happens only at promote, for a flat version).
+# =============================================================================
+name: Staging Tag & Build
+on:
+  push:
+    branches: ['release/**']
+permissions:
+  contents: write
+  actions: write
+jobs:
+  staging-tag:
+    name: Tag staging & move pointer
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+    steps:
+      # Deploy key: moving the rolling `staging` tag can touch workflow files,
+      # which GITHUB_TOKEN may not push. Same key as add-tag.yml/set-latest.yml.
+      - name: Checkout release branch (full history)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Compute staging version
+        id: compute
+        uses: ./.github/actions/compute-version
+        with:
+          channel: staging
+      - name: Create staging tag and move the staging pointer
+        env:
+          VERSION: ${{ steps.compute.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TARGET="$(git rev-parse HEAD)"
+
+          # Immutable per-commit tag. The annotated message embeds the full
+          # version so the Ansible deploy can resolve it from the tag object.
+          if git rev-parse "$VERSION" >/dev/null 2>&1 \
+            || git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
+            echo "::notice::Tag $VERSION already exists; not recreating."
+          else
+            git tag -a "$VERSION" -m "Release $VERSION" "$TARGET"
+            git push origin "refs/tags/$VERSION"
+          fi
+
+          # Rolling pointer: newest staging candidate.
+          git tag -f -a staging "$TARGET" -m "Release $VERSION"
+          git push origin refs/tags/staging --force
+          echo "Tagged $TARGET as $VERSION and moved 'staging'."
+  fan-out:
+    name: Dispatch build & bundle
+    needs: staging-tag
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Dispatch build and release workflows at the staging tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.staging-tag.outputs.version }}
+        run: |-
+          set -euo pipefail
+          # Every build workflow supports workflow_dispatch with release_version
+          # and secondary_tag. Running them --ref "$VERSION" pins the checkout to
+          # the staging tag; secondary_tag=staging moves the rolling image tag.
+          BUILDS=(
+            build-agents.yml
+            build-pipelines.yml
+            build-api-and-bot.yml
+            build-dagster.yml
+            build-web.yml
+            build-backup.yml
+            build-sysadmin.yml
+          )
+          for wf in "${BUILDS[@]}"; do
+            echo "Dispatching $wf @ $VERSION"
+            gh workflow run "$wf" --ref "$VERSION" \
+              -f release_version="$VERSION" -f secondary_tag=staging
+          done
+          # Release bundle (prerelease) for the Ansible-pull deploy.
+          gh workflow run create-release.yml --ref "$VERSION" -f release_version="$VERSION"
+          echo "Dispatched builds and bundle for $VERSION."
