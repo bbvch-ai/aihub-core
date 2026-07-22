@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-agent"
-version = "0.316.3"
+version = "0.317.0"
 description = "Swiss AI Hub Agent SDK: build transparent, workflow-based, event-driven AI agents."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.316.3",
+    "swiss-ai-hub-core==0.317.0",
     "fastmcp>=3.0.0",
     "llama-index-llms-openai>=0.6.12",
     "llama-index-llms-azure-openai>=0.4.2",
