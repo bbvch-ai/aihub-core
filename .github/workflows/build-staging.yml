@@ -6,7 +6,7 @@
 # rolling `staging` pointer, then fan out to the image builds and the release
 # bundle at that tag. This mirrors the nightly path (add-tag.yml) but for the
 # staging channel, and reuses the per-image build-*.yml workflows via dispatch
-# (like release-manual.yml) so nothing about the nightly path is touched.
+# so nothing about the nightly path is touched.
 #
 # Version: v<core>-staging.<git-height>. Staging is a pre-release: it is never
 # published to npm or PyPI (that happens only at promote, for a flat version).
