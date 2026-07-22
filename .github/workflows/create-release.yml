@@ -74,16 +74,40 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           tar -czf "swissaihub-${VERSION}.tar.gz" -C "dist/release" "swissaihub-${VERSION}"
           tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C "dist/release" "swissaihub-${VERSION}-gpu"
-      - name: Extract changelog for this version
-        run: make extract-release-notes TAG="${{ steps.version.outputs.version }}"
-      - name: Create GitHub Release
+      - name: Create GitHub Release with auto-generated notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
+          set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
+
+          # Auto-generate the "What's Changed" PR list (title + #number + author
+          # + full-changelog compare link) so release managers can trace each PR
+          # back to its ticket and see the features/bugs in the release.
+          #
+          # Baseline matters: for STAGING and STABLE releases we start the notes
+          # at the last STABLE tag, so they list EVERY PR in the release, not
+          # just the delta since the previous pre-release. Nightly keeps the
+          # default baseline (delta since the previous nightly).
+          ARGS=(--generate-notes)
+          case "$VERSION" in
+            *-nightly.*) : ;;
+            *)
+              core="${VERSION%-*}"
+              last_stable="$(git tag -l 'v*' \
+                | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+                | grep -vx "$core" \
+                | sort -V | tail -1)"
+              if [ -n "$last_stable" ]; then
+                ARGS+=(--notes-start-tag "$last_stable")
+                echo "Release-scope notes: ${last_stable}..${VERSION}"
+              fi
+              ;;
+          esac
+
           gh release create "${VERSION}" \
             --title "Swiss AI Hub ${VERSION}" \
-            --notes-file release-notes.md \
+            "${ARGS[@]}" \
             --prerelease \
             --latest=false \
             "swissaihub-${VERSION}.tar.gz" \

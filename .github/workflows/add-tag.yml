@@ -2,19 +2,21 @@
 # =============================================================================
 # Nightly Tag & Build
 # =============================================================================
-# On every PR merged to main, cut an immutable nightly tag and move the rolling
-# `nightly` pointer, then dispatch the build + bundle workflows. This is the
-# lightweight trunk path: no version bump, no changelog commit, no force-push to
-# main. Those release-time concerns move to the promote workflow (see the
-# versioning process doc, Phase 3).
+# On every push to main (each merged PR), cut an immutable nightly tag and move
+# the rolling `nightly` pointer, then dispatch the build + bundle workflows.
+# Lightweight trunk path: no version bump, no changelog commit, no force-push.
+#
+# Triggered on `push` (not `pull_request`) on purpose: push events run the
+# workflow file from the pushed commit, so merging THIS change activates the new
+# scheme on that very merge. pull_request events run the base branch's (old)
+# copy, which would let the old workflow handle its own replacement.
 #
 # Version: v<core>-nightly.<git-height>, where <core> is the clean semver in
 # pyproject.toml and <git-height> is the commit count on main.
 # =============================================================================
 name: Nightly Tag & Build
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
 permissions:
   contents: write
@@ -27,7 +29,6 @@ concurrency:
 jobs:
   nightly-tag:
     name: Tag nightly & move pointer
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-slim
     timeout-minutes: 10
     outputs:
