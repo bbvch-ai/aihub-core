@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 21.07.2026
+Generated on: 22.07.2026
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -379,7 +379,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | stringcase                                       | 1.2.0           | MIT                                                     |                                                                      |
 | ✅     | striprtf                                         | 0.0.26          | BSD License                                             |                                                                      |
 | ✅     | structlog                                        | 25.5.0          | MIT OR Apache-2.0                                       |                                                                      |
-| ✅     | swiss-ai-hub                                     | 0.316.1         | Apache-2.0                                              |                                                                      |
+| ✅     | swiss-ai-hub                                     | 0.316.2         | Apache-2.0                                              |                                                                      |
 | ✅     | swiss-ai-hub-jambo                               | 0.5.0           | MIT                                                     |                                                                      |
 | ✅     | sympy                                            | 1.14.0          | BSD License                                             |                                                                      |
 | ✅     | tabulate                                         | 0.10.0          | MIT                                                     |                                                                      |
