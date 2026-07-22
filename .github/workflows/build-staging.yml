@@ -2,11 +2,18 @@
 # =============================================================================
 # Staging Tag & Build
 # =============================================================================
-# On every push to a release/* branch, cut an immutable staging tag and move the
-# rolling `staging` pointer, then fan out to the image builds and the release
-# bundle at that tag. This mirrors the nightly path (add-tag.yml) but for the
-# staging channel, and reuses the per-image build-*.yml workflows via dispatch
-# so nothing about the nightly path is touched.
+# On every push to a release/* branch, cut an immutable staging tag and fan out
+# to the per-image build-*.yml workflows and the release bundle. This mirrors
+# the nightly path (add-tag.yml) but for the staging channel, and reuses those
+# workflows via dispatch so nothing about the nightly path is touched.
+#
+# Deploy gate: moving the rolling `staging` pointer is what the staging VM's
+# Ansible-pull follows, so THAT step is isolated in the `publish-staging` job
+# behind the `staging` GitHub Environment. Configure that environment with a
+# required reviewer (repo Settings > Environments > staging) so a human must
+# approve before staging actually runs the candidate. The immutable tag and the
+# image builds still run automatically, so approving deploys an already-built
+# candidate immediately; without approval nothing reaches staging.
 #
 # Version: v<core>-staging.<git-height>. Staging is a pre-release: it is never
 # published to npm or PyPI (that happens only at promote, for a flat version).
@@ -20,14 +27,15 @@ permissions:
   actions: write
 jobs:
   staging-tag:
-    name: Tag staging & move pointer
+    name: Tag staging (immutable)
     runs-on: ubuntu-slim
     timeout-minutes: 10
     outputs:
       version: ${{ steps.compute.outputs.version }}
+      target: ${{ steps.target.outputs.sha }}
     steps:
-      # Deploy key: moving the rolling `staging` tag can touch workflow files,
-      # which GITHUB_TOKEN may not push. Same key as add-tag.yml/set-latest.yml.
+      # Deploy key: pushing tags can touch workflow files, which GITHUB_TOKEN
+      # may not push. Same key as add-tag.yml/set-latest.yml.
       - name: Checkout release branch (full history)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
@@ -51,7 +59,8 @@ jobs:
         uses: ./.github/actions/compute-version
         with:
           channel: staging
-      - name: Create staging tag and move the staging pointer
+      - name: Create the immutable staging tag
+        id: target
         env:
           VERSION: ${{ steps.compute.outputs.version }}
         run: |
@@ -69,11 +78,8 @@ jobs:
             git tag -a "$VERSION" -m "Release $VERSION" "$TARGET"
             git push origin "refs/tags/$VERSION"
           fi
-
-          # Rolling pointer: newest staging candidate.
-          git tag -f -a staging "$TARGET" -m "Release $VERSION"
-          git push origin refs/tags/staging --force
-          echo "Tagged $TARGET as $VERSION and moved 'staging'."
+          echo "sha=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "Tagged $TARGET as $VERSION."
   fan-out:
     name: Dispatch build & bundle
     needs: staging-tag
@@ -110,3 +116,31 @@ jobs:
           # Release bundle (prerelease) for the Ansible-pull deploy.
           gh workflow run create-release.yml --ref "$VERSION" -f release_version="$VERSION"
           echo "Dispatched builds and bundle for $VERSION."
+  publish-staging:
+    name: Publish to staging (approval required)
+    needs: staging-tag
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    # The `staging` environment carries the required-reviewer rule: this job
+    # pauses until a reviewer approves in the Actions UI. Moving the rolling
+    # `staging` pointer is the only thing the staging VM's Ansible-pull follows,
+    # so gating it here means a candidate never reaches staging by accident.
+    environment: staging
+    steps:
+      - name: Checkout release branch (full history)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Move the rolling staging pointer
+        env:
+          VERSION: ${{ needs.staging-tag.outputs.version }}
+          TARGET: ${{ needs.staging-tag.outputs.target }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Rolling pointer: newest approved staging candidate.
+          git tag -f -a staging "$TARGET" -m "Release $VERSION"
+          git push origin refs/tags/staging --force
+          echo "Moved 'staging' to $TARGET ($VERSION); the staging VM will deploy on its next pull."
