@@ -113,8 +113,8 @@ changelog:
 # Extract release notes for a specific version from CHANGELOG.md (TAG=v0.267.1, OUTPUT=release-notes.md)
 OUTPUT ?= release-notes.md
 extract-release-notes:
-	@if ! echo "$(TAG)" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
-		echo "ERROR: Invalid TAG format '$(TAG)'. Expected vMAJOR.MINOR.PATCH (e.g. v0.267.1)"; \
+	@if ! echo "$(TAG)" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-(nightly|staging)\.[0-9]+)?$$'; then \
+		echo "ERROR: Invalid TAG format '$(TAG)'. Expected vMAJOR.MINOR.PATCH or a channel pre-release (e.g. v0.267.1, v0.267.1-nightly.42)"; \
 		exit 1; \
 	fi
 	@awk -v ver="$(TAG)" 'index($$0, "## [" ver "]") == 1 {found=1; next} found && /^## \[/{exit} found{print}' CHANGELOG.md | sed '/^_\{3,\}/d' > $(OUTPUT)

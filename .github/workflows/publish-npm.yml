@@ -1,10 +1,12 @@
 ---
 name: Publish @swiss-ai-hub/web to npm
 run-name: Publish web to npm - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}
-# Publishes @swiss-ai-hub/web to npm via OIDC trusted publishing on release.
+# Publishes @swiss-ai-hub/web to npm via OIDC trusted publishing.
+# Only invoked at promote time for a flat, latest release (never on nightly or
+# staging). Triggered via workflow_dispatch by the promote workflow or manually;
+# the release-ready repository_dispatch trigger was removed so per-merge nightly
+# builds do not publish.
 on:
-  repository_dispatch:
-    types: [release-ready]
   workflow_dispatch:
     inputs:
       release_version:
