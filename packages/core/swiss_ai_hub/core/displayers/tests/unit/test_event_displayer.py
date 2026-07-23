@@ -115,13 +115,13 @@ async def test_display_llm_stream_does_not_block_event_loop(displayer, llm_confi
 @pytest.mark.asyncio
 async def test_concurrent_streams_interleave(displayer, llm_config):
     """Two concurrent runs on one agent must stream independently instead of serialising."""
-    slow_llm = make_llm(["slow-a. ", "slow-b."], delay_between_chunks=0.1)
+    slow_llm = make_llm(["slow-a. ", "slow-b."], delay_between_chunks=0.5)
     fast_llm = make_llm(["fast."])
     messages = [ChatMessage(role=MessageRole.USER, content="hi")]
 
     slow_task = asyncio.create_task(displayer.display_llm_stream(llm_config, slow_llm, messages))
     await asyncio.sleep(0.01)
-    fast_result = await asyncio.wait_for(displayer.display_llm_stream(llm_config, fast_llm, messages), timeout=0.09)
+    fast_result = await asyncio.wait_for(displayer.display_llm_stream(llm_config, fast_llm, messages), timeout=0.4)
 
     assert fast_result.output_messages[0].content == "fast."
     slow_result = await slow_task
