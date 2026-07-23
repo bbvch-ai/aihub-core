@@ -453,7 +453,8 @@ class TestCreateAgentInstanceGrantWiring:
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
         stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
-        stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth.validate_for_user_or_raise = AsyncMock()
         stack.enter_context(patch(f"{_MODULE}.FullAgentInstanceDTO"))
         config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
         config_doc.find_for_class_and_id.return_value = None
@@ -529,7 +530,8 @@ class TestUpdateAgentInstanceLocksAgentId:
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
-        stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth.validate_for_user_or_raise = AsyncMock()
         helper = stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
         helper.normalize_form_configuration.side_effect = lambda configuration: configuration
         helper.apply_metadata_to_entity.side_effect = lambda _config_instance, entity: entity

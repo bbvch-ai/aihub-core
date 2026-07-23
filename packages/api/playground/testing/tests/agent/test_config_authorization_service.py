@@ -8,18 +8,22 @@ from swiss_ai_hub.core.form import (
     InputText,
     KnowledgeDatabaseSelector,
     ModelSelect,
-    OrgMemoryTenantInput,
     Repeater,
+    TenantSelect,
 )
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
+
+ORG_MEMORY_RULE = "aihub.user.memory.organization.?>"
+ORG_MEMORY_MESSAGE_PATH = "lib.common.authorization.no_access_organization_memory"
 
 
 def _make_access_checker(
     knowledge_dbs: set[str] | None = None,
     agents: set[str] | None = None,
     org_memory: bool = False,
+    is_sys_admin: bool = False,
 ) -> Mock:
     """Create a mock AccessChecker that grants access to specified resources."""
     allowed_knowledge_dbs = knowledge_dbs or set()
@@ -40,7 +44,12 @@ def _make_access_checker(
 
     checker.has_access = Mock(side_effect=has_access)
     checker.has_access_to_agent = Mock(side_effect=has_access_to_agent)
+    checker.is_sys_admin = is_sys_admin
     return checker
+
+
+def _validate(form: list[dict], config: dict, checker: Mock, t: LocaleHandler, tenants: set[str] | None = None) -> None:
+    ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, tenants or set(), t)
 
 
 def _to_dicts(elements: list) -> list[dict]:
@@ -59,7 +68,7 @@ class TestKnowledgeDatabaseValidation:
         config = {"knowledge_databases": ["db_a", "db_b"]}
         checker = _make_access_checker(knowledge_dbs={"db_a", "db_b"})
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)
 
     def test_access_denied(self, t: LocaleHandler):
         form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="knowledge_databases")])
@@ -67,7 +76,7 @@ class TestKnowledgeDatabaseValidation:
         checker = _make_access_checker(knowledge_dbs={"db_a"})
 
         with pytest.raises(Exception) as exc_info:
-            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+            _validate(form, config, checker, t)
 
         assert exc_info.value.status_code == 403
         violations = exc_info.value.detail["violations"]
@@ -82,9 +91,7 @@ class TestKnowledgeDatabaseValidation:
         checker = _make_access_checker()
 
         with pytest.raises(Exception) as exc_info:
-            ConfigAuthorizationService.validate_config_authorization_or_raise(
-                form, config, checker, LocaleHandler(locale="de")
-            )
+            _validate(form, config, checker, LocaleHandler(locale="de"))
 
         violations = exc_info.value.detail["violations"]
         assert "Wissensdatenbank" in violations[0]["message"]
@@ -94,21 +101,21 @@ class TestKnowledgeDatabaseValidation:
         config = {"dbs": []}
         checker = _make_access_checker()
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)
 
     def test_none_value_skipped(self, t: LocaleHandler):
         form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="dbs")])
         config = {"dbs": None}
         checker = _make_access_checker()
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)
 
     def test_missing_field_skipped(self, t: LocaleHandler):
         form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="dbs")])
         config = {}
         checker = _make_access_checker()
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)
 
 
 class TestAgentSelectorValidation:
@@ -117,7 +124,7 @@ class TestAgentSelectorValidation:
         config = {"target_agent": {"agent_class": "MyAgent", "agent_id": "inst_1"}}
         checker = _make_access_checker(agents={"MyAgent/inst_1"})
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)
 
     def test_access_denied(self, t: LocaleHandler):
         form = _to_dicts([AgentSelector(label="Agent", name="target_agent")])
@@ -125,7 +132,7 @@ class TestAgentSelectorValidation:
         checker = _make_access_checker(agents=set())
 
         with pytest.raises(Exception) as exc_info:
-            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+            _validate(form, config, checker, t)
 
         assert exc_info.value.status_code == 403
         violations = exc_info.value.detail["violations"]
@@ -138,7 +145,7 @@ class TestAgentSelectorValidation:
         config = {"target_agent": {"agent_class": "MyAgent"}}
         checker = _make_access_checker()
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)
 
 
 class TestModelSelectSkipped:
@@ -147,7 +154,56 @@ class TestModelSelectSkipped:
         config = {"llm_model": "gpt-4"}
         checker = _make_access_checker()
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)
+
+
+class TestTenantSelectValidation:
+    def test_member_access_granted(self, t: LocaleHandler):
+        form = _to_dicts([TenantSelect(label="Tenant", name="tenant_id")])
+        config = {"tenant_id": "tenant_a"}
+        checker = _make_access_checker()
+
+        _validate(form, config, checker, t, tenants={"tenant_a", "tenant_b"})
+
+    def test_non_member_access_denied(self, t: LocaleHandler):
+        form = _to_dicts([TenantSelect(label="Tenant", name="tenant_id")])
+        config = {"tenant_id": "tenant_secret"}
+        checker = _make_access_checker()
+
+        with pytest.raises(Exception) as exc_info:
+            _validate(form, config, checker, t, tenants={"tenant_a"})
+
+        assert exc_info.value.status_code == 403
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 1
+        assert violations[0]["resource_type"] == "tenant"
+        assert violations[0]["resource"] == "tenant_secret"
+        assert violations[0]["field"] == "tenant_id"
+
+    def test_sysadmin_bypasses_membership(self, t: LocaleHandler):
+        form = _to_dicts([TenantSelect(label="Tenant", name="tenant_id")])
+        config = {"tenant_id": "any_tenant"}
+        checker = _make_access_checker(is_sys_admin=True)
+
+        _validate(form, config, checker, t, tenants=set())
+
+    def test_none_value_skipped(self, t: LocaleHandler):
+        form = _to_dicts([TenantSelect(label="Tenant", name="tenant_id")])
+        config = {"tenant_id": None}
+        checker = _make_access_checker()
+
+        _validate(form, config, checker, t, tenants=set())
+
+    def test_denied_message_is_localized(self):
+        form = _to_dicts([TenantSelect(label="Tenant", name="tenant_id")])
+        config = {"tenant_id": "tenant_secret"}
+        checker = _make_access_checker()
+
+        with pytest.raises(Exception) as exc_info:
+            _validate(form, config, checker, LocaleHandler(locale="de"), tenants=set())
+
+        violations = exc_info.value.detail["violations"]
+        assert "Mandanten" in violations[0]["message"]
 
 
 class TestNestedForms:
@@ -168,7 +224,7 @@ class TestNestedForms:
         checker = _make_access_checker(knowledge_dbs=set())
 
         with pytest.raises(Exception) as exc_info:
-            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+            _validate(form, config, checker, t)
 
         violations = exc_info.value.detail["violations"]
         assert len(violations) == 1
@@ -195,7 +251,7 @@ class TestNestedForms:
         checker = _make_access_checker(agents={"A/ok", "C/also_ok"})
 
         with pytest.raises(Exception) as exc_info:
-            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+            _validate(form, config, checker, t)
 
         violations = exc_info.value.detail["violations"]
         assert len(violations) == 1
@@ -222,79 +278,66 @@ class TestNestedForms:
         checker = _make_access_checker(agents=set())
 
         with pytest.raises(Exception) as exc_info:
-            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+            _validate(form, config, checker, t)
 
         violations = exc_info.value.detail["violations"]
         assert violations[0]["field"] == "outer.inner.delegate"
 
 
-class TestOrgMemoryValidation:
-    def test_access_granted(self, t: LocaleHandler):
-        form = _to_dicts(
+class TestGatedSectionValidation:
+    """A Group carrying `access_rule` gates the whole section (e.g. organization memory)."""
+
+    def _org_memory_form(self) -> list[dict]:
+        return _to_dicts(
             [
                 Group(
                     name="org_memory",
                     label="Org Memory",
-                    children=[OrgMemoryTenantInput(label="Tenant", name="tenant_id")],
+                    access_rule=ORG_MEMORY_RULE,
+                    access_denied_message_path=ORG_MEMORY_MESSAGE_PATH,
+                    children=[TenantSelect(label="Tenant", name="tenant_id")],
                 )
             ]
         )
-        config = {"org_memory": {"tenant_id": "AIHub"}}
+
+    def test_access_granted(self, t: LocaleHandler):
+        config = {"org_memory": {"tenant_id": "tenant_a"}}
         checker = _make_access_checker(org_memory=True)
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(self._org_memory_form(), config, checker, t, tenants={"tenant_a"})
 
     def test_access_denied(self, t: LocaleHandler):
-        form = _to_dicts(
-            [
-                Group(
-                    name="org_memory",
-                    label="Org Memory",
-                    children=[OrgMemoryTenantInput(label="Tenant", name="tenant_id")],
-                )
-            ]
-        )
-        config = {"org_memory": {"tenant_id": "AIHub"}}
+        config = {"org_memory": {"tenant_id": "tenant_a"}}
         checker = _make_access_checker()
 
         with pytest.raises(Exception) as exc_info:
-            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+            _validate(self._org_memory_form(), config, checker, t, tenants={"tenant_a"})
 
         assert exc_info.value.status_code == 403
         violations = exc_info.value.detail["violations"]
-        assert len(violations) == 1
-        assert violations[0]["resource_type"] == "organization_memory"
-        assert violations[0]["field"] == "org_memory.tenant_id"
+        assert any(v["resource_type"] == "section" and v["field"] == "org_memory" for v in violations)
 
-    def test_org_memory_null_skipped(self, t: LocaleHandler):
-        form = _to_dicts(
-            [
-                Group(
-                    name="org_memory",
-                    label="Org Memory",
-                    children=[OrgMemoryTenantInput(label="Tenant", name="tenant_id")],
-                )
-            ]
-        )
+    def test_denied_message_uses_section_message_path(self, t: LocaleHandler):
+        config = {"org_memory": {"tenant_id": "tenant_a"}}
+        checker = _make_access_checker()
+
+        with pytest.raises(Exception) as exc_info:
+            _validate(self._org_memory_form(), config, checker, t, tenants={"tenant_a"})
+
+        section_violation = next(v for v in exc_info.value.detail["violations"] if v["resource_type"] == "section")
+        assert "organization memory" in section_violation["message"]
+
+    def test_section_null_skipped(self, t: LocaleHandler):
         config = {"org_memory": None}
         checker = _make_access_checker()
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(self._org_memory_form(), config, checker, t)
 
-    def test_org_memory_missing_skipped(self, t: LocaleHandler):
-        form = _to_dicts(
-            [
-                Group(
-                    name="org_memory",
-                    label="Org Memory",
-                    children=[OrgMemoryTenantInput(label="Tenant", name="tenant_id")],
-                )
-            ]
-        )
+    def test_section_missing_skipped(self, t: LocaleHandler):
         config: dict = {}
         checker = _make_access_checker()
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(self._org_memory_form(), config, checker, t)
 
 
 class TestMixedForms:
@@ -308,7 +351,7 @@ class TestMixedForms:
         config = {"prompt": "Hello", "max_tokens": 100}
         checker = _make_access_checker()
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)
 
     def test_multiple_violations_across_types(self, t: LocaleHandler):
         form = _to_dicts(
@@ -324,7 +367,7 @@ class TestMixedForms:
         checker = _make_access_checker()
 
         with pytest.raises(Exception) as exc_info:
-            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+            _validate(form, config, checker, t)
 
         violations = exc_info.value.detail["violations"]
         assert len(violations) == 2
@@ -344,4 +387,4 @@ class TestMixedForms:
         }
         checker = _make_access_checker(knowledge_dbs={"allowed_db"}, agents={"MyAgent/inst_1"})
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+        _validate(form, config, checker, t)

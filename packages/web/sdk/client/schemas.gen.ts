@@ -449,9 +449,6 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -471,6 +468,9 @@ export const AgentClassDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -670,9 +670,6 @@ export const AgentConfigDTOSchema = {
                 $ref: "#/components/schemas/MultiSelect",
               },
               {
-                $ref: "#/components/schemas/OrgMemoryTenantInput",
-              },
-              {
                 $ref: "#/components/schemas/Password",
               },
               {
@@ -692,6 +689,9 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/Slider",
+              },
+              {
+                $ref: "#/components/schemas/TenantSelect",
               },
               {
                 $ref: "#/components/schemas/Textarea",
@@ -8258,9 +8258,6 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -8280,6 +8277,9 @@ export const FullProcessInstanceDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -8537,9 +8537,6 @@ export const GroupSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -8561,6 +8558,9 @@ export const GroupSchema = {
             $ref: "#/components/schemas/Slider",
           },
           {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
             $ref: "#/components/schemas/Textarea",
           },
           {
@@ -8577,6 +8577,26 @@ export const GroupSchema = {
       type: "array",
       title: "Children",
       description: "Child form elements contained within this group",
+    },
+    accessRule: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accessrule",
+      description:
+        "Access rule the user must satisfy to submit this section as enabled",
+    },
+    accessDeniedMessagePath: {
+      type: "string",
+      title: "Accessdeniedmessagepath",
+      description:
+        "i18n path for the message shown when access_rule is not satisfied",
+      default: "lib.common.authorization.no_access_section",
     },
   },
   additionalProperties: true,
@@ -9033,9 +9053,6 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -9055,6 +9072,9 @@ export const HumanInDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -9179,9 +9199,6 @@ export const HumanInSpecsSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -9201,6 +9218,9 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -16329,254 +16349,6 @@ export const OpenWebuiWebhookUserSchema = {
   title: "OpenWebuiWebhookUser",
 } as const;
 
-export const OrgMemoryTenantInputSchema = {
-  properties: {
-    is_formkit_element: {
-      type: "boolean",
-      const: true,
-      title: "Is Formkit Element",
-      description: "Indicates that this element is a FormKit element",
-      default: true,
-    },
-    if: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^\\$.+",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "If",
-      description: "Conditional expression to show this element",
-    },
-    id: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Id",
-      description: "Unique identifier for this element",
-    },
-    nullable: {
-      type: "boolean",
-      title: "Nullable",
-      description:
-        "Render with a sibling toggle that sets this field to null when off",
-      default: false,
-    },
-    defaultEnabled: {
-      anyOf: [
-        {
-          type: "boolean",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Defaultenabled",
-      description:
-        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
-    },
-    formkit: {
-      type: "string",
-      const: "orgMemoryTenantInput",
-      title: "Formkit",
-      description: "Organization-memory tenant_id input element.",
-      default: "orgMemoryTenantInput",
-    },
-    name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Name",
-      description: "Name of this field",
-    },
-    label: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-      ],
-      title: "Label",
-      description: "Label of this field",
-    },
-    help: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Help",
-      description: "Help text of this field",
-    },
-    value: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "integer",
-        },
-        {
-          type: "number",
-        },
-        {
-          type: "boolean",
-        },
-        {
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        {
-          additionalProperties: {
-            type: "string",
-          },
-          type: "object",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Value",
-      description: "Default value for this field",
-    },
-    required: {
-      type: "boolean",
-      title: "Required",
-      description: "Whether this field is required",
-      default: false,
-    },
-    additional_validation_rules: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Additional Validation Rules",
-      description: "Validation expression",
-    },
-    disabled: {
-      type: "boolean",
-      title: "Disabled",
-      description: "Whether the input is disabled",
-      default: false,
-    },
-    readonly: {
-      type: "boolean",
-      title: "Readonly",
-      description: "Whether the input is readonly",
-      default: false,
-    },
-    placeholder: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Placeholder",
-      description: "Placeholder text",
-    },
-    prefix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Prefix",
-      description: "Prefix text",
-    },
-    suffix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Suffix",
-      description: "Suffix text",
-    },
-    iconPrefix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconprefix",
-      description: "Icon prefix",
-    },
-    iconSuffix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconsuffix",
-      description: "Icon suffix",
-    },
-    validation: {
-      type: "string",
-      title: "Validation",
-      readOnly: true,
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["label", "validation"],
-  title: "OrgMemoryTenantInput",
-  description:
-    "Text input for the organization-memory `tenant_id` field that also enforces\nconfig-time access control.\n\nRenders identically to a plain `InputText` (same UI), but its presence in a\nsubmitted config means the section is enabled — so we require the configuring user\nto hold `aihub.user.memory.organization`. When the parent `org_memory` section is\nnull the walker never reaches this element, so no check fires.",
-} as const;
-
 export const PaginatedDocumentsResponseSchema = {
   properties: {
     total: {
@@ -17237,9 +17009,6 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -17259,6 +17028,9 @@ export const ProcessClassDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -18788,9 +18560,6 @@ export const RepeaterSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -18810,6 +18579,9 @@ export const RepeaterSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -21207,6 +20979,192 @@ export const TenantMembershipDTOSchema = {
   required: ["id", "name", "description"],
   title: "TenantMembershipDTO",
   description: "A tenant the current user belongs to.",
+} as const;
+
+export const TenantSelectSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "tenantSelect",
+      title: "Formkit",
+      description: "Tenant select element.",
+      default: "tenantSelect",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "TenantSelect",
+  description:
+    'A FormKit element for selecting one of the tenants the user belongs to.\n\nRenders as a select dropdown listing tenant *names*, while the submitted value is the\ntenant *id*. The frontend populates the options from the user\'s memberships and\npre-selects their active tenant.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    tenant_id: Annotated[\n        str | TenantSelect,\n        Field(description="Tenant to scope against"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            tenant_id=TenantSelect(\n                label=LocaleString(en="Tenant"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(tenant_id="507f1f77bcf86cd799439011")\n```',
 } as const;
 
 export const TextBlockSchema = {
@@ -24419,9 +24377,6 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -24441,6 +24396,9 @@ export const AgentClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -24640,9 +24598,6 @@ export const AgentConfigDTOWritableSchema = {
                 $ref: "#/components/schemas/MultiSelectWritable",
               },
               {
-                $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-              },
-              {
                 $ref: "#/components/schemas/PasswordWritable",
               },
               {
@@ -24662,6 +24617,9 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/SliderWritable",
+              },
+              {
+                $ref: "#/components/schemas/TenantSelectWritable",
               },
               {
                 $ref: "#/components/schemas/TextareaWritable",
@@ -27952,9 +27910,6 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -27974,6 +27929,9 @@ export const FullProcessInstanceDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -28161,9 +28119,6 @@ export const GroupWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -28185,6 +28140,9 @@ export const GroupWritableSchema = {
             $ref: "#/components/schemas/SliderWritable",
           },
           {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
             $ref: "#/components/schemas/TextareaWritable",
           },
           {
@@ -28201,6 +28159,26 @@ export const GroupWritableSchema = {
       type: "array",
       title: "Children",
       description: "Child form elements contained within this group",
+    },
+    accessRule: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accessrule",
+      description:
+        "Access rule the user must satisfy to submit this section as enabled",
+    },
+    accessDeniedMessagePath: {
+      type: "string",
+      title: "Accessdeniedmessagepath",
+      description:
+        "i18n path for the message shown when access_rule is not satisfied",
+      default: "lib.common.authorization.no_access_section",
     },
   },
   additionalProperties: true,
@@ -28440,9 +28418,6 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -28462,6 +28437,9 @@ export const HumanInDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -28586,9 +28564,6 @@ export const HumanInSpecsWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -28608,6 +28583,9 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -32762,249 +32740,6 @@ export const OpenChatHitlResponseWritableSchema = {
     "Response indicating whether there's an open chat HITL request for a thread.",
 } as const;
 
-export const OrgMemoryTenantInputWritableSchema = {
-  properties: {
-    is_formkit_element: {
-      type: "boolean",
-      const: true,
-      title: "Is Formkit Element",
-      description: "Indicates that this element is a FormKit element",
-      default: true,
-    },
-    if: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^\\$.+",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "If",
-      description: "Conditional expression to show this element",
-    },
-    id: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Id",
-      description: "Unique identifier for this element",
-    },
-    nullable: {
-      type: "boolean",
-      title: "Nullable",
-      description:
-        "Render with a sibling toggle that sets this field to null when off",
-      default: false,
-    },
-    defaultEnabled: {
-      anyOf: [
-        {
-          type: "boolean",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Defaultenabled",
-      description:
-        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
-    },
-    formkit: {
-      type: "string",
-      const: "orgMemoryTenantInput",
-      title: "Formkit",
-      description: "Organization-memory tenant_id input element.",
-      default: "orgMemoryTenantInput",
-    },
-    name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Name",
-      description: "Name of this field",
-    },
-    label: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-      ],
-      title: "Label",
-      description: "Label of this field",
-    },
-    help: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Help",
-      description: "Help text of this field",
-    },
-    value: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "integer",
-        },
-        {
-          type: "number",
-        },
-        {
-          type: "boolean",
-        },
-        {
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        {
-          additionalProperties: {
-            type: "string",
-          },
-          type: "object",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Value",
-      description: "Default value for this field",
-    },
-    required: {
-      type: "boolean",
-      title: "Required",
-      description: "Whether this field is required",
-      default: false,
-    },
-    additional_validation_rules: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Additional Validation Rules",
-      description: "Validation expression",
-    },
-    disabled: {
-      type: "boolean",
-      title: "Disabled",
-      description: "Whether the input is disabled",
-      default: false,
-    },
-    readonly: {
-      type: "boolean",
-      title: "Readonly",
-      description: "Whether the input is readonly",
-      default: false,
-    },
-    placeholder: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Placeholder",
-      description: "Placeholder text",
-    },
-    prefix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Prefix",
-      description: "Prefix text",
-    },
-    suffix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Suffix",
-      description: "Suffix text",
-    },
-    iconPrefix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconprefix",
-      description: "Icon prefix",
-    },
-    iconSuffix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconsuffix",
-      description: "Icon suffix",
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["label"],
-  title: "OrgMemoryTenantInput",
-  description:
-    "Text input for the organization-memory `tenant_id` field that also enforces\nconfig-time access control.\n\nRenders identically to a plain `InputText` (same UI), but its presence in a\nsubmitted config means the section is enabled — so we require the configuring user\nto hold `aihub.user.memory.organization`. When the parent `org_memory` section is\nnull the walker never reaches this element, so no check fires.",
-} as const;
-
 export const PaginatedProcessWalkthroughsResponseWritableSchema = {
   properties: {
     total: {
@@ -33443,9 +33178,6 @@ export const ProcessClassDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -33465,6 +33197,9 @@ export const ProcessClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -34548,9 +34283,6 @@ export const RepeaterWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -34570,6 +34302,9 @@ export const RepeaterWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -36342,6 +36077,187 @@ export const StoreUserMemoryEventWritableSchema = {
   title: "StoreUserMemoryEvent",
   description:
     "Specialized BaseStoreMemoryEvent for user-specific memories.\n\nEmitted when an agent stores private user memories to long-term storage.\nThese memories are scoped to individual users and never shared across users.\nUser memories are typically inferred from conversation context.",
+} as const;
+
+export const TenantSelectWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "tenantSelect",
+      title: "Formkit",
+      description: "Tenant select element.",
+      default: "tenantSelect",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "TenantSelect",
+  description:
+    'A FormKit element for selecting one of the tenants the user belongs to.\n\nRenders as a select dropdown listing tenant *names*, while the submitted value is the\ntenant *id*. The frontend populates the options from the user\'s memberships and\npre-selects their active tenant.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    tenant_id: Annotated[\n        str | TenantSelect,\n        Field(description="Tenant to scope against"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            tenant_id=TenantSelect(\n                label=LocaleString(en="Tenant"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(tenant_id="507f1f77bcf86cd799439011")\n```',
 } as const;
 
 export const TextareaWritableSchema = {

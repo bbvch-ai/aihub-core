@@ -2,5 +2,7 @@
 authorization:
   no_access_knowledge_database: Non hai accesso alla base di conoscenza '%{name}'.
   no_access_agent: Non hai accesso all'agente '%{agent}'.
+  no_access_tenant: Non sei membro del tenant '%{tenant}'.
+  no_access_section: Non hai accesso alla sezione '%{section}'.
   no_access_organization_memory: Non hai accesso alla memoria dell'organizzazione.
   config_unauthorized: La configurazione fa riferimento a risorse a cui non hai accesso.

@@ -4,6 +4,7 @@ import IconSelector from '@core/components/FormKit/IconSelector.vue'
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
 import ModelSelect from '@core/components/FormKit/ModelSelect.vue'
+import TenantSelect from '@core/components/FormKit/TenantSelect.vue'
 import VectorStoreInput from '@core/components/FormKit/VectorStoreInput.vue'
 import { en, de, fr, it } from '@formkit/i18n'
 import { createInput } from '@formkit/vue'
@@ -14,7 +15,6 @@ import type { DefaultConfigOptions } from '@formkit/vue'
 const config: DefaultConfigOptions = {
   inputs: {
     ...primeInputs,
-    orgMemoryTenantInput: primeInputs.primeInputText,
     agentSelector: createInput(AgentSelector, {
       props: ['startEvent', 'classPlaceholder', 'idPlaceholder', 'filter'],
     }),
@@ -32,6 +32,9 @@ const config: DefaultConfigOptions = {
     }),
     modelSelect: createInput(ModelSelect, {
       props: ['mode', 'placeholder', 'filter', 'showClear'],
+    }),
+    tenantSelect: createInput(TenantSelect, {
+      props: ['placeholder', 'filter'],
     }),
     vectorStoreInput: createInput(VectorStoreInput, {
       props: ['databasePlaceholder', 'namespacePlaceholder', 'filter'],

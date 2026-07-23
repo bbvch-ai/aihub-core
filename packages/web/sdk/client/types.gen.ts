@@ -368,7 +368,6 @@ export type AgentClassDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -376,6 +375,7 @@ export type AgentClassDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -495,7 +495,6 @@ export type AgentConfigDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -503,6 +502,7 @@ export type AgentConfigDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -5762,7 +5762,6 @@ export type FullProcessInstanceDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -5770,6 +5769,7 @@ export type FullProcessInstanceDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -5942,7 +5942,6 @@ export type Group = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -5950,11 +5949,24 @@ export type Group = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
     | VectorStoreInput
   >;
+  /**
+   * Accessrule
+   *
+   * Access rule the user must satisfy to submit this section as enabled
+   */
+  accessRule?: string | null;
+  /**
+   * Accessdeniedmessagepath
+   *
+   * i18n path for the message shown when access_rule is not satisfied
+   */
+  accessDeniedMessagePath?: string;
   [key: string]: unknown;
 };
 
@@ -6285,7 +6297,6 @@ export type HumanInDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -6293,6 +6304,7 @@ export type HumanInDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -6365,7 +6377,6 @@ export type HumanInSpecs = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -6373,6 +6384,7 @@ export type HumanInSpecs = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -11009,148 +11021,6 @@ export type OpenWebuiWebhookUser = {
 };
 
 /**
- * OrgMemoryTenantInput
- *
- * Text input for the organization-memory `tenant_id` field that also enforces
- * config-time access control.
- *
- * Renders identically to a plain `InputText` (same UI), but its presence in a
- * submitted config means the section is enabled — so we require the configuring user
- * to hold `aihub.user.memory.organization`. When the parent `org_memory` section is
- * null the walker never reaches this element, so no check fires.
- */
-export type OrgMemoryTenantInput = {
-  /**
-   * Is Formkit Element
-   *
-   * Indicates that this element is a FormKit element
-   */
-  is_formkit_element?: true;
-  /**
-   * If
-   *
-   * Conditional expression to show this element
-   */
-  if?: string | null;
-  /**
-   * Id
-   *
-   * Unique identifier for this element
-   */
-  id?: string | null;
-  /**
-   * Nullable
-   *
-   * Render with a sibling toggle that sets this field to null when off
-   */
-  nullable?: boolean;
-  /**
-   * Defaultenabled
-   *
-   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
-   */
-  defaultEnabled?: boolean | null;
-  /**
-   * Formkit
-   *
-   * Organization-memory tenant_id input element.
-   */
-  formkit?: "orgMemoryTenantInput";
-  /**
-   * Name
-   *
-   * Name of this field
-   */
-  name?: string | null;
-  /**
-   * Label
-   *
-   * Label of this field
-   */
-  label: LocaleString | string;
-  /**
-   * Help
-   *
-   * Help text of this field
-   */
-  help?: LocaleString | string | null;
-  /**
-   * Value
-   *
-   * Default value for this field
-   */
-  value?:
-    | string
-    | number
-    | number
-    | boolean
-    | Array<string>
-    | {
-        [key: string]: string;
-      }
-    | null;
-  /**
-   * Required
-   *
-   * Whether this field is required
-   */
-  required?: boolean;
-  /**
-   * Additional Validation Rules
-   *
-   * Validation expression
-   */
-  additional_validation_rules?: string | null;
-  /**
-   * Disabled
-   *
-   * Whether the input is disabled
-   */
-  disabled?: boolean;
-  /**
-   * Readonly
-   *
-   * Whether the input is readonly
-   */
-  readonly?: boolean;
-  /**
-   * Placeholder
-   *
-   * Placeholder text
-   */
-  placeholder?: LocaleString | string | null;
-  /**
-   * Prefix
-   *
-   * Prefix text
-   */
-  prefix?: LocaleString | string | null;
-  /**
-   * Suffix
-   *
-   * Suffix text
-   */
-  suffix?: LocaleString | string | null;
-  /**
-   * Iconprefix
-   *
-   * Icon prefix
-   */
-  iconPrefix?: string | null;
-  /**
-   * Iconsuffix
-   *
-   * Icon suffix
-   */
-  iconSuffix?: string | null;
-  /**
-   * Validation
-   */
-  readonly validation: string;
-  [key: string]: unknown;
-};
-
-/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -11619,7 +11489,6 @@ export type ProcessClassDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -11627,6 +11496,7 @@ export type ProcessClassDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -12653,7 +12523,6 @@ export type Repeater = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -12661,6 +12530,7 @@ export type Repeater = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -14353,6 +14223,137 @@ export type TenantMembershipDto = {
    * Tenant description
    */
   description: string;
+};
+
+/**
+ * TenantSelect
+ *
+ * A FormKit element for selecting one of the tenants the user belongs to.
+ *
+ * Renders as a select dropdown listing tenant *names*, while the submitted value is the
+ * tenant *id*. The frontend populates the options from the user's memberships and
+ * pre-selects their active tenant.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * tenant_id: Annotated[
+ * str | TenantSelect,
+ * Field(description="Tenant to scope against"),
+ * ]
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * tenant_id=TenantSelect(
+ * label=LocaleString(en="Tenant"),
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(tenant_id="507f1f77bcf86cd799439011")
+ * ```
+ */
+export type TenantSelect = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Tenant select element.
+   */
+  formkit?: "tenantSelect";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -16617,7 +16618,6 @@ export type AgentClassDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -16625,6 +16625,7 @@ export type AgentClassDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -16744,7 +16745,6 @@ export type AgentConfigDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -16752,6 +16752,7 @@ export type AgentConfigDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -18974,7 +18975,6 @@ export type FullProcessInstanceDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -18982,6 +18982,7 @@ export type FullProcessInstanceDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -19093,7 +19094,6 @@ export type GroupWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -19101,11 +19101,24 @@ export type GroupWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
     | VectorStoreInputWritable
   >;
+  /**
+   * Accessrule
+   *
+   * Access rule the user must satisfy to submit this section as enabled
+   */
+  accessRule?: string | null;
+  /**
+   * Accessdeniedmessagepath
+   *
+   * i18n path for the message shown when access_rule is not satisfied
+   */
+  accessDeniedMessagePath?: string;
   [key: string]: unknown;
 };
 
@@ -19284,7 +19297,6 @@ export type HumanInDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -19292,6 +19304,7 @@ export type HumanInDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -19364,7 +19377,6 @@ export type HumanInSpecsWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -19372,6 +19384,7 @@ export type HumanInSpecsWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -21981,144 +21994,6 @@ export type OpenChatHitlResponseWritable = {
 };
 
 /**
- * OrgMemoryTenantInput
- *
- * Text input for the organization-memory `tenant_id` field that also enforces
- * config-time access control.
- *
- * Renders identically to a plain `InputText` (same UI), but its presence in a
- * submitted config means the section is enabled — so we require the configuring user
- * to hold `aihub.user.memory.organization`. When the parent `org_memory` section is
- * null the walker never reaches this element, so no check fires.
- */
-export type OrgMemoryTenantInputWritable = {
-  /**
-   * Is Formkit Element
-   *
-   * Indicates that this element is a FormKit element
-   */
-  is_formkit_element?: true;
-  /**
-   * If
-   *
-   * Conditional expression to show this element
-   */
-  if?: string | null;
-  /**
-   * Id
-   *
-   * Unique identifier for this element
-   */
-  id?: string | null;
-  /**
-   * Nullable
-   *
-   * Render with a sibling toggle that sets this field to null when off
-   */
-  nullable?: boolean;
-  /**
-   * Defaultenabled
-   *
-   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
-   */
-  defaultEnabled?: boolean | null;
-  /**
-   * Formkit
-   *
-   * Organization-memory tenant_id input element.
-   */
-  formkit?: "orgMemoryTenantInput";
-  /**
-   * Name
-   *
-   * Name of this field
-   */
-  name?: string | null;
-  /**
-   * Label
-   *
-   * Label of this field
-   */
-  label: LocaleString | string;
-  /**
-   * Help
-   *
-   * Help text of this field
-   */
-  help?: LocaleString | string | null;
-  /**
-   * Value
-   *
-   * Default value for this field
-   */
-  value?:
-    | string
-    | number
-    | number
-    | boolean
-    | Array<string>
-    | {
-        [key: string]: string;
-      }
-    | null;
-  /**
-   * Required
-   *
-   * Whether this field is required
-   */
-  required?: boolean;
-  /**
-   * Additional Validation Rules
-   *
-   * Validation expression
-   */
-  additional_validation_rules?: string | null;
-  /**
-   * Disabled
-   *
-   * Whether the input is disabled
-   */
-  disabled?: boolean;
-  /**
-   * Readonly
-   *
-   * Whether the input is readonly
-   */
-  readonly?: boolean;
-  /**
-   * Placeholder
-   *
-   * Placeholder text
-   */
-  placeholder?: LocaleString | string | null;
-  /**
-   * Prefix
-   *
-   * Prefix text
-   */
-  prefix?: LocaleString | string | null;
-  /**
-   * Suffix
-   *
-   * Suffix text
-   */
-  suffix?: LocaleString | string | null;
-  /**
-   * Iconprefix
-   *
-   * Icon prefix
-   */
-  iconPrefix?: string | null;
-  /**
-   * Iconsuffix
-   *
-   * Icon suffix
-   */
-  iconSuffix?: string | null;
-  [key: string]: unknown;
-};
-
-/**
  * PaginatedProcessWalkthroughsResponse
  *
  * Paginated response containing process walkthroughs with detailed step information.
@@ -22400,7 +22275,6 @@ export type ProcessClassDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -22408,6 +22282,7 @@ export type ProcessClassDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -23071,7 +22946,6 @@ export type RepeaterWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -23079,6 +22953,7 @@ export type RepeaterWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -24245,6 +24120,133 @@ export type StoreUserMemoryEventWritable = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  [key: string]: unknown;
+};
+
+/**
+ * TenantSelect
+ *
+ * A FormKit element for selecting one of the tenants the user belongs to.
+ *
+ * Renders as a select dropdown listing tenant *names*, while the submitted value is the
+ * tenant *id*. The frontend populates the options from the user's memberships and
+ * pre-selects their active tenant.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * tenant_id: Annotated[
+ * str | TenantSelect,
+ * Field(description="Tenant to scope against"),
+ * ]
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * tenant_id=TenantSelect(
+ * label=LocaleString(en="Tenant"),
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(tenant_id="507f1f77bcf86cd799439011")
+ * ```
+ */
+export type TenantSelectWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Tenant select element.
+   */
+  formkit?: "tenantSelect";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
   [key: string]: unknown;
 };
 

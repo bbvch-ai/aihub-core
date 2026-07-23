@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from pydantic import Field
 
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
 from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -38,6 +40,20 @@ class Group(FormkitElement):
     name: Annotated[str, Field(description="Key name for the grouped data in the form output")]
     label: Annotated[LocaleString | str | None, Field(description="Optional label displayed above the group")] = None
     children: Annotated[list[ALL_FORM_OPTIONS], Field(description="Child form elements contained within this group")]
+    access_rule: Annotated[
+        str | None,
+        Field(
+            description="Access rule the user must satisfy to submit this section as enabled",
+            alias="accessRule",
+        ),
+    ] = None
+    access_denied_message_path: Annotated[
+        str,
+        Field(
+            description="i18n path for the message shown when access_rule is not satisfied",
+            alias="accessDeniedMessagePath",
+        ),
+    ] = "lib.common.authorization.no_access_section"
 
     def in_locale(self, t: LocaleHandler) -> Group:
         self_copy = self.model_copy(deep=True)
@@ -46,3 +62,26 @@ class Group(FormkitElement):
         # Type ignore: in_locale returns the same concrete type, but base class signature returns FormkitElement
         self_copy.children = [child.in_locale(t) for child in self_copy.children]  # type: ignore[misc]
         return self_copy
+
+    def validate_authorization(
+        self,
+        field_path: str,
+        value: Any,
+        access_checker: AccessChecker,
+        accessible_tenant_ids: set[str],
+        t: LocaleHandler,
+    ) -> list[ConfigAuthorizationViolation]:
+        """A non-null value means the section was submitted as enabled, so the configuring user
+        must hold the rule the section's Form declared via `required_access_rule`."""
+        if self.access_rule is None or value is None:
+            return []
+        if access_checker.has_access(self.access_rule):
+            return []
+        return [
+            ConfigAuthorizationViolation(
+                field=field_path,
+                resource_type="section",
+                resource=self.name,
+                message=t(self.access_denied_message_path, section=self.name),
+            )
+        ]
