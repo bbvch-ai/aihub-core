@@ -28,6 +28,10 @@ permissions:
 jobs:
   staging-tag:
     name: Tag staging (immutable)
+    # A PR merge into release/* is a push with created=false; branch creation is
+    # created=true. Only cut a staging build on real merges, never when the
+    # release branch is first created (that only bumps main, via bump-main-target).
+    if: ${{ !github.event.created }}
     runs-on: ubuntu-slim
     timeout-minutes: 10
     outputs:
