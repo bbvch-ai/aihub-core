@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swiss AI Hub · Environments, Versions & Release Flows</title>
+<style>
+  :root {
+    --paper:#faf8f4; --panel:#fff; --ink:#1b1d22; --muted:#5c6069; --faint:#8b8f98;
+    --line:#e6e2d9; --line-strong:#d3cec2; --brand:#c4122f;
+    --nightly:#5b62d6; --staging:#b9770a; --stable:#197a52; --k8s:#0f7c92;
+    --code-bg:#f3f0ea; --diagram-bg:#ffffff; --diagram-ink:#1b1d22;
+    --auto:#e4f4eb; --auto-ink:#197a52; --manual:#fdeccf; --manual-ink:#b9770a;
+    --approval:#e4e8fb; --approval-ink:#3a44b0;
+    --shadow:0 1px 2px rgba(20,20,25,.05),0 8px 24px rgba(20,20,25,.06);
+    --mono:ui-monospace,"SF Mono","SFMono-Regular",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#14151a; --panel:#1b1d23; --ink:#e9e7e1; --muted:#a2a6b0; --faint:#71757e;
+      --line:#2a2d35; --line-strong:#3a3e48; --brand:#ff6b7d;
+      --nightly:#9aa0ff; --staging:#e6a53c; --stable:#4ec38a; --k8s:#46b8cf;
+      --code-bg:#22242b; --diagram-bg:#f4f2ee; --diagram-ink:#1b1d22;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:940px;margin:0 auto;padding:clamp(28px,5vw,64px) clamp(18px,4vw,40px) 120px;}
+  header.masthead{border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:38px;}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--brand);font-weight:600;margin:0 0 12px;}
+  h1{font-size:clamp(27px,4.8vw,42px);line-height:1.07;letter-spacing:-.02em;margin:0 0 14px;font-weight:800;text-wrap:balance;}
+  .lede{font-size:clamp(15px,2.1vw,18px);color:var(--muted);max-width:64ch;margin:0;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px 20px;margin:22px 0 0;font-size:13px;}
+  .legend b{display:inline-flex;align-items:center;gap:8px;font-weight:600;}
+  .swatch{width:26px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--line-strong);}
+  .swatch.a{background:var(--auto);} .swatch.m{background:var(--manual);} .swatch.ap{background:var(--approval);}
+
+  section{margin-top:46px;scroll-margin-top:20px;}
+  .eyebrow{display:flex;align-items:baseline;gap:12px;margin-bottom:8px;}
+  .eyebrow .num{font-family:var(--mono);font-size:13px;color:var(--brand);font-weight:700;}
+  .eyebrow h2{font-size:clamp(20px,2.9vw,26px);letter-spacing:-.015em;margin:0;font-weight:750;text-wrap:balance;}
+  .trigger{display:flex;flex-wrap:wrap;align-items:center;gap:5px 9px;font-family:var(--mono);font-size:12px;letter-spacing:.03em;margin:0 0 6px;}
+  .trigger .step{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+  .trigger .sep{color:var(--faint);}
+  .trigger .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.06em;}
+  .pill.auto{background:var(--auto);color:var(--auto-ink);}
+  .pill.manual{background:var(--manual);color:var(--manual-ink);}
+  .pill.approval{background:var(--approval);color:var(--approval-ink);}
+  p{max-width:72ch;margin:6px 0 0;color:var(--muted);font-size:14.5px;}
+
+  .wf{font-family:var(--mono);font-size:11.5px;line-height:1.6;margin:8px 0 0;color:var(--muted);max-width:none;}
+  .wf .lab{color:var(--faint);text-transform:uppercase;letter-spacing:.08em;font-size:10px;margin-right:6px;}
+  .wf code{background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:11px;}
+  .wf .new{color:var(--brand);font-weight:700;font-size:9.5px;letter-spacing:.05em;}
+
+  figure{margin:16px 0 0;}
+  .diagram{background:var(--diagram-bg);border:1px solid var(--line-strong);border-radius:12px;padding:14px 8px;overflow-x:auto;box-shadow:var(--shadow);}
+  .diagram pre.mermaid{margin:0;background:transparent;min-width:680px;text-align:center;color:var(--diagram-ink);}
+  .diagram.wide pre.mermaid{min-width:720px;}
+
+  code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);padding:1.5px 6px;border-radius:5px;border:1px solid var(--line);}
+
+  .io{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px;}
+  .io .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow);}
+  .io .box h4{margin:0 0 6px;font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);}
+  .io .box p{margin:0;color:var(--ink);font-size:13.5px;}
+  .io .box .ok{color:var(--stable);font-weight:600;} .io .box .nope{color:var(--brand);font-weight:600;}
+
+  .callout{border-left:3px solid var(--brand);background:color-mix(in srgb,var(--brand) 7%,var(--panel));padding:13px 17px;border-radius:0 10px 10px 0;margin:16px 0 0;font-size:13.5px;color:var(--ink);}
+  .callout .tag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);font-weight:700;display:block;margin-bottom:3px;}
+
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin:18px 0;}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--panel);}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  tr:last-child td{border-bottom:none;}
+  td code, th code{font-size:12px;}
+  .ver{font-family:var(--mono);font-weight:600;white-space:nowrap;}
+  .ver.wrap{white-space:normal;overflow-wrap:break-word;font-size:12px;}
+  .ver.n{color:var(--nightly);} .ver.s{color:var(--staging);} .ver.p{color:var(--stable);} .ver.k{color:var(--k8s);}
+  .new{color:var(--brand);font-weight:700;font-family:var(--mono);font-size:.85em;}
+
+  .ripeness{display:flex;align-items:center;gap:10px;margin:16px 2px 4px;}
+  .ripeness .rlabel{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);white-space:nowrap;}
+  .ripeness .rbar{position:relative;flex:1;height:2px;border-radius:2px;background:linear-gradient(to right,color-mix(in srgb,var(--faint) 25%,transparent),var(--faint));}
+  .ripeness .rbar::after{content:"";position:absolute;right:-1px;top:50%;transform:translateY(-50%);border-left:9px solid var(--faint);border-top:5px solid transparent;border-bottom:5px solid transparent;}
+
+  .matrixwrap{overflow-x:auto;margin:4px 0;padding-bottom:6px;}
+  .matrix{display:grid;grid-template-columns:112px repeat(4,minmax(150px,1fr));gap:7px;min-width:780px;align-items:stretch;}
+  .m-h{position:relative;border-radius:11px 11px 0 0;padding:13px 13px 11px;color:#fff;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px;}
+  .m-h .t{font-weight:750;font-size:15px;letter-spacing:-.01em;}
+  .m-h.n{background:var(--nightly);} .m-h.s{background:var(--staging);} .m-h.p{background:var(--stable);} .m-h.k{background:var(--k8s);}
+  .m-h.spacer{background:transparent;box-shadow:none;padding:0;}
+  .m-l{font-family:var(--mono);font-size:11px;letter-spacing:.02em;color:var(--muted);text-align:right;padding:10px 8px;display:flex;align-items:center;justify-content:flex-end;line-height:1.3;}
+  .m-l.key{color:var(--ink);font-weight:700;font-size:11.5px;}
+  .m-c{border:1px solid var(--line);border-top:none;padding:10px 12px;font-size:12.7px;line-height:1.5;display:flex;align-items:center;background:var(--panel);}
+  .m-c.key{font-weight:650;font-size:13.5px;padding-top:12px;padding-bottom:12px;}
+  .m-c.key .ver{font-size:10.5px;font-weight:600;white-space:normal;overflow-wrap:break-word;line-height:1.35;}
+  .m-c.n{background:color-mix(in srgb,var(--nightly) 6%,var(--panel));border-color:color-mix(in srgb,var(--nightly) 22%,var(--line));}
+  .m-c.s{background:color-mix(in srgb,var(--staging) 7%,var(--panel));border-color:color-mix(in srgb,var(--staging) 22%,var(--line));}
+  .m-c.p{background:color-mix(in srgb,var(--stable) 7%,var(--panel));border-color:color-mix(in srgb,var(--stable) 22%,var(--line));}
+  .m-c.k{background:color-mix(in srgb,var(--k8s) 7%,var(--panel));border-color:color-mix(in srgb,var(--k8s) 22%,var(--line));}
+  .m-c.end{border-radius:0 0 11px 11px;}
+  .m-c code{font-size:.88em;}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;}
+  .chip.auto{background:var(--auto);color:var(--auto-ink);}
+  .chip.man{background:var(--manual);color:var(--manual-ink);}
+  .chip.approval{background:var(--approval);color:var(--approval-ink);}
+  .mark-y{color:var(--stable);font-weight:700;} .mark-n{color:var(--faint);font-weight:700;}
+
+  .diagram{cursor:zoom-in;}
+  .diagram .zoom-hint{position:absolute;top:9px;right:12px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 8px;opacity:.8;pointer-events:none;}
+  .lightbox{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;background:rgba(10,10,12,.85);padding:clamp(12px,3vw,32px);}
+  .lightbox.open{display:flex;}
+  .lightbox-inner{background:#ffffff;border-radius:14px;padding:22px;max-width:97vw;max-height:94vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.55);}
+  .lightbox-inner svg{width:min(1500px,92vw)!important;max-width:none!important;height:auto!important;}
+  .lightbox-close{position:fixed;top:16px;right:20px;z-index:1001;font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 13px;cursor:pointer;}
+  .lightbox-close:hover{background:rgba(255,255,255,.24);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <p class="kicker">Team process · environments · versions · flows</p>
+    <h1>Environments, Versions, and Release Flows</h1>
+    <p class="lede">How a version moves from dev to customers across four environments. First the version map, then seven release flows showing what runs automatically, what you trigger by hand, and which workflow drives each step.</p>
+    <div class="legend">
+      <b><span class="swatch a"></span> Automatic (GitHub Actions, Ansible-pull, Helm)</b>
+      <b><span class="swatch m"></span> Manual (a human decides / merges the PR)</b>
+    </div>
+  </header>
+
+  <!-- 0 · OVERVIEW -->
+  <section>
+    <div class="eyebrow"><span class="num">0</span><h2>Overview: environments and versions</h2></div>
+    <div class="ripeness"><span class="rlabel">dev</span><span class="rbar"></span><span class="rlabel">production</span></div>
+    <div class="matrixwrap"><div class="matrix">
+      <div class="m-h spacer"></div>
+      <div class="m-h n"><span class="t">Nightly</span></div>
+      <div class="m-h s"><span class="t">Staging</span></div>
+      <div class="m-h p"><span class="t">Latest</span></div>
+      <div class="m-h k"><span class="t">K8s</span></div>
+
+      <div class="m-l key">Version</div>
+      <div class="m-c n key"><span class="ver n">&lt;major&gt;.&lt;minor&gt;.&lt;hotfix&gt;<wbr>-nightly.&lt;build&gt;</span></div>
+      <div class="m-c s key"><span class="ver s">&lt;major&gt;.&lt;minor&gt;.&lt;hotfix&gt;<wbr>-staging.&lt;build&gt;</span></div>
+      <div class="m-c p key"><span class="ver p">&lt;major&gt;.&lt;minor&gt;.&lt;hotfix&gt;</span></div>
+      <div class="m-c k key"><span class="ver k">&lt;major&gt;.&lt;minor&gt;.&lt;hotfix&gt;</span></div>
+
+      <div class="m-l key">Used by</div>
+      <div class="m-c n key">Developers</div>
+      <div class="m-c s key">QC</div>
+      <div class="m-c p key">Prod reference</div>
+      <div class="m-c k key">Customers</div>
+
+      <div class="m-l">Git branch</div>
+      <div class="m-c n"><code>main</code></div>
+      <div class="m-c s"><code>release/&lt;major&gt;.&lt;minor&gt;</code></div>
+      <div class="m-c p"><code>release/&lt;major&gt;.&lt;minor&gt;</code></div>
+      <div class="m-c k">pinned, none</div>
+
+      <div class="m-l">Docker image</div>
+      <div class="m-c n"><code>:nightly</code></div>
+      <div class="m-c s"><code>:staging</code></div>
+      <div class="m-c p"><code>:latest</code></div>
+      <div class="m-c k"><code>:&lt;major&gt;.&lt;minor&gt;.&lt;hotfix&gt;</code></div>
+
+      <div class="m-l">npm / PyPI</div>
+      <div class="m-c n"><span class="mark-n">No</span></div>
+      <div class="m-c s"><span class="mark-n">No</span></div>
+      <div class="m-c p"><span class="mark-y">Yes</span></div>
+      <div class="m-c k"><span class="mark-n">No</span></div>
+
+      <div class="m-l">Deploy</div>
+      <div class="m-c n">Ansible-pull</div>
+      <div class="m-c s">Ansible-pull</div>
+      <div class="m-c p">Ansible-pull</div>
+      <div class="m-c k">Helm</div>
+
+      <div class="m-l">Trigger</div>
+      <div class="m-c n end"><span class="chip auto">Automatic</span></div>
+      <div class="m-c s end"><span class="chip man">Merge PR</span> <span class="chip auto">Automatic</span></div>
+      <div class="m-c p end"><span class="chip man">Manual</span></div>
+      <div class="m-c k end"><span class="chip man">Manual</span></div>
+    </div></div>
+  </section>
+
+  <!-- 1 -->
+  <section>
+    <div class="eyebrow"><span class="num">1</span><h2>Nightly (dev test)</h2></div>
+    <p class="trigger"><span class="step"><span class="pill auto">Automatic</span> on push to <code>main</code></span></p>
+    <p>Every merged PR builds a nightly and deploys it for developers.</p>
+    <p class="wf"><span class="lab">workflows</span> <code>add-tag.yml</code> &rarr; <code>build-*.yml</code> &rarr; <code>create-release.yml</code></p>
+    <figure><div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Dev as Devs
+    participant main as main
+    participant CI as GitHub Actions
+    participant GHCR as GHCR
+    participant REL as GitHub Release
+    participant AP as Ansible-pull
+    participant NB as Nightly VM
+    rect rgb(253,236,207)
+    Dev->>main: merge tickets (during sprint)
+    end
+    rect rgb(228,244,235)
+    main->>CI: add-tag.yml
+    Note over CI: create nightly tag {major}.{minor}.{hotfix}-nightly.{build}, move 'nightly' pointer
+    CI->>CI: dispatch release-ready
+    CI->>GHCR: build-*.yml, push nightly tag + :nightly
+    CI->>REL: create-release.yml, prerelease + bundle
+    Note over CI,REL: npm and PyPI publish do NOT run
+    AP->>REL: every 15 min, resolve 'nightly'
+    AP->>NB: docker compose up, devs test
+    end
+    </pre></div></figure>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="eyebrow"><span class="num">2</span><h2>Code freeze, ship to staging</h2></div>
+    <p class="trigger"><span class="step"><span class="pill manual">Manual</span> cut protected branch</span> <span class="sep">&rarr;</span> <span class="step"><span class="pill auto">Automatic</span> bump main</span> <span class="sep">&rarr;</span> <span class="step"><span class="pill manual">Merge PR</span> into release</span> <span class="sep">&rarr;</span> <span class="step"><span class="pill auto">Automatic</span> build + deploy</span></p>
+    <p>Cut <code>release/&lt;major&gt;.&lt;minor&gt;</code> to freeze the line. The branch is <b>protected</b> (a ruleset mirroring <code>main</code>): every change lands through a PR that runs the <b>same required checks as <code>main</code></b>, and force-push and deletion are blocked — no approval is required, merging the PR is the gate. Creating the branch does <b>not</b> build; it only bumps <code>main</code> to the next minor, pushed straight to <code>main</code> via the release deploy key (no bump PR). A candidate ships to staging when a PR is <b>merged</b> into the release line — that runs the staging build and deploys automatically, with no approval gate.</p>
+    <p class="wf"><span class="lab">workflows</span> On branch creation: <code>bump-main-target.yml</code> (pushes the bump straight to <code>main</code>). On each PR merge into <code>release/*</code>: <code>build-staging.yml</code> &rarr; <code>build-*.yml</code>, <code>create-release.yml</code>.</p>
+    <figure><div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor RM as Release Mgr
+    participant main as main
+    participant rel as release/x.y
+    participant CI as GitHub Actions
+    participant GHCR as GHCR
+    participant AP as Ansible-pull
+    participant ST as Staging VM
+    actor QC as QC
+    rect rgb(253,236,207)
+    RM->>rel: git branch release/x.y (code freeze, protected)
+    end
+    rect rgb(228,244,235)
+    rel->>CI: bump-main-target.yml (branch creation only)
+    CI->>main: push next-minor bump straight to main (deploy key, no PR)
+    end
+    rect rgb(253,236,207)
+    RM->>rel: open + merge a PR into the release line (same checks as main)
+    end
+    rect rgb(228,244,235)
+    rel->>CI: build-staging.yml (on merge, never on branch creation)
+    Note over CI: create immutable tag {major}.{minor}.{hotfix}-staging.{build}, build images
+    CI->>GHCR: staging tag + :staging images
+    Note over CI: no npm or PyPI publish; no approval gate
+    Note over CI: move rolling 'staging' pointer
+    AP->>ST: every 15 min, resolve 'staging', deploy
+    QC->>ST: test the candidate set
+    end
+    </pre></div></figure>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="eyebrow"><span class="num">3</span><h2>Drop a rejected ticket (revert-out)</h2></div>
+    <p class="trigger"><span class="step"><span class="pill manual">Manual</span> revert via PR into <code>release/*</code></span> <span class="sep">&rarr;</span> <span class="step"><span class="pill auto">Automatic</span> rebuild</span></p>
+    <p>Open a revert PR into the release branch to drop a ticket (the branch is protected, so it goes through a PR, not a direct push). That defers it (it returns next release); to reject it for good, revert on <code>main</code> too, or keep a feature flag off.</p>
+    <p class="wf"><span class="lab">workflows</span> <code>build-staging.yml</code> rebuilds on merge. Manual: <code>git revert</code> in a PR into the branch.</p>
+    <figure><div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor QC as QC
+    participant ST as Staging VM
+    actor Dev as Dev
+    participant rel as release/x.y
+    participant CI as GitHub Actions
+    participant main as main
+    QC->>ST: a ticket fails
+    QC-->>Dev: ticket rejected
+    alt code only
+        Dev->>rel: revert the code via a PR (release branch only)
+    else additive migration
+        Dev->>rel: revert code via PR, keep migration file
+        Note over rel: new table or column sits unused, harmless
+    else destructive migration
+        Note over Dev,rel: not allowed by policy, split expand/contract or restore backup
+    end
+    rel->>CI: build-staging, new staging build
+    CI->>ST: deploy
+    QC->>ST: re-verify, ticket gone
+    Note over rel,main: Deferral: revert here only. main keeps the code, so the ticket returns next release
+    </pre></div></figure>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="eyebrow"><span class="num">4</span><h2>Promote to latest (atomic)</h2></div>
+    <p class="trigger"><span class="step"><span class="pill manual">Manual</span> promote trigger</span> <span class="sep">&rarr;</span> <span class="step"><span class="pill auto">Automatic</span> gated pipeline</span></p>
+    <p>One trigger publishes npm and PyPI, and moves <code>latest</code> only if both succeed. This clean version is what k8s pins.</p>
+    <p class="wf"><span class="lab">workflows</span> <code>promote.yml</code> (input: staging tag) &rarr; <code>publish-npm.yml</code> + <code>publish-pypi.yml</code> &rarr; <code>set-latest.yml</code></p>
+    <figure><div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor RM as Release Mgr
+    participant rel as release/x.y
+    participant CI as GitHub Actions
+    participant NPM as npm
+    participant PY as PyPI
+    participant GHCR as GHCR
+    participant REL as GitHub Release
+    participant AP as Ansible-pull
+    participant PR as Latest VM
+    rect rgb(253,236,207)
+    RM->>CI: run promote.yml
+    end
+    rect rgb(228,244,235)
+    Note over CI: guard, version is flat and ≥ current latest
+    CI->>rel: tag the clean stable {major}.{minor}.{hotfix}
+    CI->>GHCR: build or retag the stable image
+    par publish in parallel
+      CI->>NPM: publish-npm
+    and
+      CI->>PY: publish-pypi
+    end
+    alt both succeed
+      CI->>NPM: move 'latest' dist-tag
+      CI->>GHCR: retag :latest
+      CI->>REL: clear prerelease, mark Latest
+      CI->>rel: move 'latest' git tag
+      AP->>PR: resolve 'latest', deploy
+    else either one fails
+      Note over CI: pointers not moved, release not published
+    end
+    end
+    </pre></div></figure>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="eyebrow"><span class="num">5</span><h2>Hotfix on a release line</h2></div>
+    <p class="trigger"><span class="step"><span class="pill manual">Manual</span> branch + PR</span> <span class="sep">&rarr;</span> <span class="step"><span class="pill auto">Automatic</span> staging</span> <span class="sep">&rarr;</span> <span class="step"><span class="pill manual">Manual</span> promote</span></p>
+    <p>Fix on the release line and bump the hotfix number, then promote. The PR into the protected release branch runs the same required checks as <code>main</code> (no approval needed); merging it runs the staging build, which deploys with no approval gate. On an older line, <code>latest</code> stays put (backport).</p>
+    <p class="wf"><span class="lab">workflows</span> <code>build-staging.yml</code> (on merge) &rarr; <code>promote.yml</code>. Manual: PR + bump pyproject patch.</p>
+    <figure><div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Dev as Dev
+    participant rel as release/x.y
+    participant hf as hotfix/x.y.z
+    participant CI as GitHub Actions
+    participant NPM as npm
+    participant PY as PyPI
+    participant GHCR as GHCR
+    participant ENV as Staging then Prod
+    rect rgb(253,236,207)
+    Dev->>rel: branch hotfix off the release line
+    rel->>hf: fix + test
+    Dev->>rel: PR back into the release branch
+    end
+    rect rgb(228,244,235)
+    rel->>CI: build-staging.yml
+    Note over CI: staging build, hotfix number bumped {major}.{minor}.{hotfix plus 1}
+    CI->>GHCR: staging tag
+    CI->>ENV: staging soak
+    end
+    rect rgb(253,236,207)
+    Dev->>CI: run promote.yml
+    end
+    rect rgb(228,244,235)
+    par
+      CI->>NPM: publish (latest OR backport dist-tag)
+    and
+      CI->>PY: publish
+    end
+    Note over CI: move 'latest' only if this version ≥ current latest
+    CI->>GHCR: stable image, hotfix bumped
+    CI->>ENV: prod updated
+    end
+    </pre></div></figure>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="eyebrow"><span class="num">6</span><h2>Forward-port (cherry-pick to main)</h2></div>
+    <p class="trigger"><span class="step"><span class="pill auto">Automatic</span> CI detects the gap</span> <span class="sep">&rarr;</span> <span class="step"><span class="pill manual">Manual</span> cherry-pick + PR</span></p>
+    <p>After a hotfix, CI checks the fix is on <code>main</code>; if not, cherry-pick it so the next release keeps it.</p>
+    <p class="wf"><span class="lab">workflows</span> <code>forward-port-check.yml</code> (advisory). Manual: cherry-pick + PR.</p>
+    <figure><div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant rel as release/x.y
+    participant CI as GitHub Actions
+    actor Dev as Dev
+    participant main as main
+    rect rgb(228,244,235)
+    rel->>CI: hotfix merged (fix commit)
+    Note over CI: gate, is the fix on main?
+    CI-->>Dev: no, open forward-port PR (or block)
+    end
+    rect rgb(253,236,207)
+    Dev->>main: cherry-pick the fix, PR
+    Dev->>main: review + merge
+    end
+    rect rgb(228,244,235)
+    main->>CI: triggers flow 1 (Nightly)
+    Note over CI: the next nightly includes the fix
+    end
+    </pre></div></figure>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <div class="eyebrow"><span class="num">7</span><h2>K8s: customer upgrade (pinned stable)</h2></div>
+    <p class="trigger"><span class="step"><span class="pill manual">Manual</span> Helm port + pin</span> <span class="sep">&rarr;</span> <span class="step"><span class="pill auto">Automatic</span> Helm rollout</span></p>
+    <p>Each customer pins a promoted stable version in the <code>aihub-k8s</code> repo and upgrades on request.</p>
+    <p class="wf"><span class="lab">workflows</span> none in aihub-core. Manual: <code>./deploy.sh &lt;slug&gt;</code> (rejects latest/nightly).</p>
+    <figure><div class="diagram wide"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor PT as Product / Ops
+    participant CORE as aihub-core
+    participant K8S as aihub-k8s Helm
+    participant GHCR as GHCR
+    participant CL as K8s cluster AKS/Stoney
+    participant CUST as Customer instance
+    rect rgb(253,236,207)
+    PT->>K8S: request upgrade to a promoted stable version
+    Note over K8S,CORE: Compose parity (manual)
+    K8S->>CORE: checkout the tag, diff docker-compose vs Helm
+    K8S->>K8S: port config into values, pin the version
+    PT->>K8S: run deploy.sh (rejects latest and nightly)
+    end
+    rect rgb(228,244,235)
+    K8S->>GHCR: helm upgrade, pull the pinned image
+    GHCR-->>CL: images
+    CL->>CUST: rollout, customer updated
+    end
+    Note over CUST: each customer pins its own version, upgrades independently
+    </pre></div></figure>
+  </section>
+
+  <!-- Worked example -->
+  <section>
+    <div class="eyebrow"><span class="num">EX</span><h2>Worked example: one release, start to hotfix</h2></div>
+    <p>Real numbers across flows 1, 2, 4, 5. The <b>bold coloured</b> value is the one that changed each step.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>#</th><th>What you do</th><th>Fires</th><th>nightly</th><th>staging</th><th>latest</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>0</td><td>Starting point. <code>main</code> pyproject is <code>0.317.0</code></td><td>&mdash;</td>
+            <td><span class="ver n">0.317.0-nightly.888</span></td>
+            <td><span class="ver s" style="opacity:.4">0.316.x-staging.*</span></td>
+            <td><span class="ver p" style="opacity:.4">0.316.5</span></td>
+          </tr>
+          <tr>
+            <td>1</td><td>Merge a PR into <code>main</code></td><td><span class="chip auto">Auto</span> <code>add-tag.yml</code></td>
+            <td><span class="ver n">0.317.0-nightly.889</span></td>
+            <td><span class="ver s" style="opacity:.4">unchanged</span></td>
+            <td><span class="ver p" style="opacity:.4">unchanged</span></td>
+          </tr>
+          <tr>
+            <td>2</td><td>Cut the release: create protected branch <code>release/0.317</code> from <code>main</code></td>
+            <td><span class="chip auto">Auto</span> <code>bump-main-target.yml</code> pushes <code>0.318.0</code> straight to <code>main</code>, which fires <code>add-tag.yml</code>. No staging build on creation.</td>
+            <td><span class="ver n">0.318.0-nightly.890</span></td>
+            <td><span class="ver s" style="opacity:.4">0.316.x-staging.*</span></td>
+            <td><span class="ver p" style="opacity:.4">0.316.5</span></td>
+          </tr>
+          <tr>
+            <td>3</td><td>Ship <code>0.317</code> to staging: merge a PR into <code>release/0.317</code> (protected, same checks as <code>main</code>)</td>
+            <td><span class="chip man">Merge PR</span>, then <span class="chip auto">Auto</span> <code>build-staging.yml</code> builds and deploys staging (no approval)</td>
+            <td><span class="ver n" style="opacity:.4">0.318.0-nightly.890</span></td>
+            <td><span class="ver s">0.317.0-staging.891</span></td>
+            <td><span class="ver p" style="opacity:.4">0.316.5</span></td>
+          </tr>
+          <tr>
+            <td>4</td><td>Push a last QC fix via a PR into <code>release/0.317</code> (optional)</td>
+            <td><span class="chip man">Merge PR</span>, then <span class="chip auto">Auto</span> <code>build-staging.yml</code> builds and deploys staging (no approval)</td>
+            <td><span class="ver n" style="opacity:.4">0.318.0-nightly.890</span></td>
+            <td><span class="ver s">0.317.0-staging.892</span></td>
+            <td><span class="ver p" style="opacity:.4">0.316.5</span></td>
+          </tr>
+          <tr>
+            <td>5</td><td>Ship to production: run <code>promote.yml</code> with input <code>0.317.0-staging.892</code></td>
+            <td><span class="chip man">Manual</span> <code>promote.yml</code> &rarr; publish + <code>set-latest.yml</code></td>
+            <td><span class="ver n" style="opacity:.4">0.318.0-nightly.890</span></td>
+            <td><span class="ver s" style="opacity:.4">0.317.0-staging.892</span></td>
+            <td><span class="ver p">0.317.0</span></td>
+          </tr>
+          <tr>
+            <td>6</td><td>Hotfix the shipped line: PR into <code>release/0.317</code> and bump pyproject patch to <code>0.317.1</code></td>
+            <td><span class="chip man">Manual</span> PR + bump, then <span class="chip auto">Auto</span> <code>build-staging.yml</code> builds and deploys staging (no approval)</td>
+            <td><span class="ver n" style="opacity:.4">0.318.0-nightly.890</span></td>
+            <td><span class="ver s">0.317.1-staging.893</span></td>
+            <td><span class="ver p" style="opacity:.4">0.317.0</span></td>
+          </tr>
+          <tr>
+            <td>7</td><td>Promote the hotfix: run <code>promote.yml</code> with input <code>0.317.1-staging.893</code></td>
+            <td><span class="chip man">Manual</span> <code>promote.yml</code></td>
+            <td><span class="ver n" style="opacity:.4">0.318.0-nightly.890</span></td>
+            <td><span class="ver s" style="opacity:.4">0.317.1-staging.893</span></td>
+            <td><span class="ver p">0.317.1</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="tag">Key point</span>
+      Promote ships the <b>release line's</b> version, not main's nightly core: at step 5 latest becomes <code>0.317.0</code> even though nightly is already on <code>0.318.0</code>.
+    </div>
+  </section>
+
+  <!-- Important -->
+  <section>
+    <div class="eyebrow"><span class="num">!</span><h2>Important</h2></div>
+    <ul style="max-width:74ch;font-size:14.5px;color:var(--muted);line-height:1.7;margin:6px 0 0;padding-left:20px;">
+      <li><b>Protected release line, one gate:</b> <code>release/*</code> is protected by a ruleset mirroring <code>main</code> &mdash; every change lands through a PR that runs the same required checks, and force-push and deletion are blocked. No approval is required and there is no staging deploy approval: <b>merging the PR is the single gate</b>, and the staging build and deploy then run automatically.</li>
+      <li><b>Auto bump:</b> cutting <code>release/x.y</code> pushes the next-minor bump straight to <code>main</code> via the release deploy key (a bypass actor on main's ruleset) &mdash; no bump PR, no approval, nightly advances immediately. The version is derived from main's pyproject, so a mistyped branch name is skipped by a loud guard; nothing breaks silently.</li>
+      <li><b>Backport an older line:</b> fix it on its own <code>release/x.y</code> (branch from the tag if it was deleted). Promote sees it is below <code>latest</code> and publishes without moving <code>latest</code>.</li>
+      <li><b>Drop a ticket:</b> revert via a PR into the release branch and it returns next release; revert on <code>main</code> too, or keep a feature flag off, and it stays out.</li>
+      <li><b>Migrations:</b> additive and forward-only. Destructive changes wait for a later release (expand, then contract); a feature flag beats a revert.</li>
+      <li><b>Redeploy an old version:</b> pin <code>aihub_version: vX.Y.Z</code> on the VM (or the version in k8s values). No re-release, <code>latest</code> untouched.</li>
+      <li><b>Release notes:</b> staging and latest list every PR since the last stable; nightly shows the delta since the previous nightly.</li>
+    </ul>
+  </section>
+</div>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+</script>
+<script>
+  // Click any diagram to open it enlarged in a lightbox. Event-delegated, so it
+  // works regardless of when mermaid finishes rendering the SVGs.
+  (function () {
+    const lb = document.createElement("div");
+    lb.className = "lightbox";
+    const inner = document.createElement("div");
+    inner.className = "lightbox-inner";
+    const close = document.createElement("button");
+    close.className = "lightbox-close";
+    close.textContent = "Close ✕";
+    lb.appendChild(inner);
+    lb.appendChild(close);
+    document.body.appendChild(lb);
+
+    function hide() { lb.classList.remove("open"); inner.innerHTML = ""; }
+    function show(svg) { inner.innerHTML = ""; inner.appendChild(svg.cloneNode(true)); lb.classList.add("open"); }
+
+    close.addEventListener("click", hide);
+    lb.addEventListener("click", (e) => { if (e.target === lb) hide(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
+
+    document.querySelectorAll(".diagram").forEach((d) => {
+      const hint = document.createElement("span");
+      hint.className = "zoom-hint";
+      hint.textContent = "⤢ enlarge";
+      d.appendChild(hint);
+    });
+    document.addEventListener("click", (e) => {
+      const d = e.target.closest && e.target.closest(".diagram");
+      if (!d) return;
+      const svg = d.querySelector("svg");
+      if (svg) show(svg);
+    });
+  })();
+</script>
+</body>
+</html>
