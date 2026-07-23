@@ -16,15 +16,18 @@
 # released version) is done by hand, since it is not triggered by a release cut.
 # =============================================================================
 name: Bump main to next target
-on: create
+on:
+  push:
+    branches:
+      - 'release/**'
 permissions:
   contents: write
   pull-requests: write
 jobs:
   bump:
     name: Open bump PR
-    # `create` also fires for tags and non-release branches; only act on release/*.
-    if: github.event.ref_type == 'branch' && startsWith(github.event.ref, 'release/')
+    # push to release/** also fires on later commits; only act on branch creation.
+    if: github.event.created
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
@@ -39,7 +42,7 @@ jobs:
         id: t
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REF: ${{ github.event.ref }}
+          REF: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           core="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
@@ -92,7 +95,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEXT: ${{ steps.t.outputs.next }}
           BRANCH: ${{ steps.t.outputs.branch }}
-          CUT_REF: ${{ github.event.ref }}
+          CUT_REF: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
