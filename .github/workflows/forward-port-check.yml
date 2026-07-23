@@ -23,6 +23,8 @@ permissions:
 jobs:
   check:
     name: List commits missing from main
+    # Only meaningful after a merge into release/*, not on branch creation.
+    if: ${{ !github.event.created }}
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
