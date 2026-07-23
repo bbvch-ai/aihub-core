@@ -3020,7 +3020,7 @@ export const getSupportedFileTypes = <
 /**
  * Get signed document URL
  *
- * Generates a presigned URL for downloading a document's source file.
+ * Generates a presigned URL for a document's source file (inline preview, or attachment download).
  */
 export const getDocumentUrl = <
   TComposable extends Composable = "$fetch",
