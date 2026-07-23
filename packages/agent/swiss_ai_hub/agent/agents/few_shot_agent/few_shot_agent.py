@@ -171,7 +171,7 @@ class FewShotAgent(Agent):
         await displayer.display_thought(t("agent.thought.condense_question"))
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            condensed_question = condense_standalone_question(
+            condensed_question = await condense_standalone_question(
                 chat_history=chat_history_event.limited_history,
                 message=start_event.last_user_message,
                 t=t,

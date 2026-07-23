@@ -20,7 +20,7 @@ def _messages_to_history_str(messages: list[ChatMessage]) -> str:
     return "\n".join(string_messages)
 
 
-def condense_standalone_question(
+async def condense_standalone_question(
     message: ChatMessage,
     chat_history: list[ChatMessage],
     t: LocaleHandler,
@@ -40,6 +40,6 @@ def condense_standalone_question(
     prompt_template = PromptTemplate(t("lib.prompt.condenser.standalone_question"))
     instruction_content = prompt_template.format(chat_history=chat_history_str)
     messages = [ChatMessage(role=MessageRole.SYSTEM, content=instruction_content), message]
-    response = llm.chat(messages=messages)
+    response = await llm.achat(messages=messages)
 
     return ChatMessage(role=MessageRole.USER, content=response.message.content)

@@ -131,7 +131,7 @@ class EventDisplayer:
     async def display_llm_stream(
         self,
         llm_config: Annotated[LLMConfig, "Configuration for the LLM (model name, parameters)."],
-        llm: Annotated[LLM, "The LLM instance providing stream_chat functionality."],
+        llm: Annotated[LLM, "The LLM instance providing astream_chat functionality."],
         messages: Annotated[
             list[ChatMessage],
             "The chat messages (prompt + context) to send to the LLM.",
@@ -143,7 +143,7 @@ class EventDisplayer:
         the entire output.
 
         ### How it Works
-        - Calls `llm.stream_chat(messages)` to get a generator of partial responses (chunks).
+        - Drives `llm.astream_chat(messages)` so generation never blocks the runner's event loop.
         - Maintains separate buffers for regular content and thinking content.
         - Flushes buffers when encountering sentence boundaries (.), newlines,
           or when buffer exceeds `max_buffer_length`.
@@ -158,7 +158,7 @@ class EventDisplayer:
         """
         processor = StreamProcessor(self, llm_config.model_name)
 
-        for chunk in llm.stream_chat(messages):
+        async for chunk in await llm.astream_chat(messages):
             await processor.process_chunk(chunk.delta)
 
         aggregate_content = await processor.finalize()
