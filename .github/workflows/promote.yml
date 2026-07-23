@@ -1,0 +1,222 @@
+---
+# =============================================================================
+# Promote to Latest (atomic)
+# =============================================================================
+# Promote a validated staging build to a flat, stable release and move the
+# production `latest` pointer, but ONLY if both npm and PyPI publish succeed.
+#
+# Order:
+#   1. resolve       - validate the staging tag, derive the clean version,
+#                      detect whether it would be a backport (older line).
+#   2. prepare-tag   - create the clean vX.Y.Z git tag at the staging commit.
+#   3. build-release - create-release.yml (workflow_call): GH prerelease + bundle
+#      retag-docker  - retag the staging images to :vX.Y.Z (exact tested bits).
+#      publish-npm   - publish-npm.yml (workflow_call), OIDC trusted publishing.
+#      publish-pypi  - publish-pypi.yml (workflow_call), OIDC trusted publishing.
+#   4. promote        - ONLY if every step above succeeded and this is not a
+#                       backport: dispatch set-latest.yml to move git `latest`,
+#                       retag Docker :latest, and mark the GitHub Release Latest.
+#
+# Atomicity: the `latest` pointers move only after both registries are green.
+# If either publish fails, promote is skipped and `latest` stays put. A backport
+# (version lower than the current latest) publishes to npm under a per-line
+# dist-tag (handled inside publish-npm.yml) and never moves `latest`.
+# =============================================================================
+name: Promote to Latest
+run-name: Promote ${{ github.event.inputs.source_tag }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: Validated staging tag to promote (e.g., v0.314.0-staging.7)
+        required: true
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  actions: write
+concurrency:
+  group: promote-${{ github.event.inputs.source_tag }}
+  cancel-in-progress: false
+jobs:
+  resolve:
+    name: Resolve & guard version
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    outputs:
+      clean: ${{ steps.r.outputs.clean }}
+      source_tag: ${{ steps.r.outputs.source_tag }}
+      is_backport: ${{ steps.r.outputs.is_backport }}
+    steps:
+      - name: Validate and resolve
+        id: r
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SRC: ${{ github.event.inputs.source_tag }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$SRC" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-staging\.[0-9]+$'; then
+            echo "::error::source_tag '$SRC' must be a staging tag, e.g. v0.314.0-staging.7."
+            exit 1
+          fi
+          CLEAN="${SRC%-staging.*}"
+
+          # Compare against the current 'Latest' GitHub Release. A lower version
+          # is a backport: publish it, but do not move the latest pointers.
+          IS_BACKPORT=false
+          set +e
+          CUR="$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name 2>/dev/null)"
+          set -e
+          if [ -n "$CUR" ] && [ "$CUR" != "$CLEAN" ]; then
+            HIGHEST="$(printf '%s\n%s\n' "$CLEAN" "$CUR" | sort -V | tail -n1)"
+            if [ "$HIGHEST" = "$CUR" ]; then
+              IS_BACKPORT=true
+              echo "::notice::$CLEAN < current latest $CUR; promoting as a backport (latest not moved)."
+            fi
+          fi
+          {
+            echo "clean=$CLEAN"
+            echo "source_tag=$SRC"
+            echo "is_backport=$IS_BACKPORT"
+          } >> "$GITHUB_OUTPUT"
+          echo "Promoting $SRC -> $CLEAN (backport=$IS_BACKPORT)"
+
+  discover-images:
+    name: Discover app images
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    needs: resolve
+    outputs:
+      matrix: ${{ steps.parse.outputs.matrix }}
+    steps:
+      - name: Checkout at staging tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ needs.resolve.outputs.source_tag }}
+      - name: Parse custom app images from compose-config.yml
+        id: parse
+        run: |
+          images=$(yq -o=json '.' infra/deployment/compose-config.yml \
+            | jq -c '[.image_tags | to_entries[]
+                | select((.value | type) == "object"
+                  and (.value | has("build"))
+                  and (.value.latest == .key + ":latest"))
+                | .key]')
+          echo "Discovered images: $images"
+          echo "matrix={\"image\":$images}" >> "$GITHUB_OUTPUT"
+
+  prepare-tag:
+    name: Create clean tag
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    needs: resolve
+    steps:
+      # Deploy key: the clean tag may sit on a commit whose workflow files differ
+      # from the default branch, which GITHUB_TOKEN cannot push.
+      - name: Checkout at staging tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ needs.resolve.outputs.source_tag }}
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Create clean release tag
+        env:
+          CLEAN: ${{ needs.resolve.outputs.clean }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "$CLEAN" >/dev/null 2>&1 \
+            || git ls-remote --tags origin | grep -q "refs/tags/$CLEAN$"; then
+            echo "::notice::Tag $CLEAN already exists; not recreating."
+          else
+            git tag -a "$CLEAN" -m "Release $CLEAN" "$(git rev-parse HEAD)"
+            git push origin "refs/tags/$CLEAN"
+          fi
+
+  build-release:
+    name: Build clean release bundle
+    needs: prepare-tag
+    uses: ./.github/workflows/create-release.yml
+    with:
+      release_version: ${{ needs.resolve.outputs.clean }}
+    secrets: inherit
+
+  retag-clean-docker:
+    name: Retag images to clean version
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [resolve, discover-images, prepare-tag]
+    permissions:
+      packages: write
+      contents: read
+    strategy:
+      matrix: ${{ fromJson(needs.discover-images.outputs.matrix) }}
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121  # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull staging image and push clean tag
+        env:
+          SOURCE_TAG: ${{ needs.resolve.outputs.source_tag }}
+          CLEAN: ${{ needs.resolve.outputs.clean }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |-
+          set -euo pipefail
+          IMAGE="ghcr.io/${{ github.repository_owner }}/$REPO_NAME/${{ matrix.image }}"
+          docker pull "${IMAGE}:${SOURCE_TAG}"
+          docker tag "${IMAGE}:${SOURCE_TAG}" "${IMAGE}:${CLEAN}"
+          docker push "${IMAGE}:${CLEAN}"
+          echo "Pushed ${IMAGE}:${CLEAN}"
+
+  publish-npm:
+    name: Publish npm
+    needs: prepare-tag
+    uses: ./.github/workflows/publish-npm.yml
+    with:
+      release_version: ${{ needs.resolve.outputs.clean }}
+    secrets: inherit
+
+  publish-pypi:
+    name: Publish PyPI
+    needs: prepare-tag
+    uses: ./.github/workflows/publish-pypi.yml
+    with:
+      release_version: ${{ needs.resolve.outputs.clean }}
+    secrets: inherit
+
+  promote:
+    name: Move latest pointers
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    # Runs only if every dependency succeeded (the atomic gate) and this is not
+    # a backport. A single failed publish skips this job and leaves latest put.
+    needs: [resolve, build-release, retag-clean-docker, publish-npm, publish-pypi]
+    if: needs.resolve.outputs.is_backport != 'true'
+    steps:
+      - name: Dispatch set-latest for the clean version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          CLEAN: ${{ needs.resolve.outputs.clean }}
+        run: |-
+          set -euo pipefail
+          echo "Both registries green. Promoting $CLEAN to latest via set-latest.yml."
+          gh workflow run set-latest.yml -f source_tag="$CLEAN"
+
+  backport-note:
+    name: Backport (latest not moved)
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    needs: [resolve, build-release, retag-clean-docker, publish-npm, publish-pypi]
+    if: needs.resolve.outputs.is_backport == 'true'
+    steps:
+      - name: Log backport outcome
+        env:
+          CLEAN: ${{ needs.resolve.outputs.clean }}
+        run: |-
+          echo "::notice::Published $CLEAN as a backport. npm used a per-line dist-tag; 'latest' was not moved."
