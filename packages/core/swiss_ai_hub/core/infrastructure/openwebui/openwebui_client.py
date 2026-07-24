@@ -160,6 +160,16 @@ class OpenWebuiClient:
         data = response.json()
         return data.get("items", []) if isinstance(data, dict) else data
 
+    async def list_base_models(self, http: httpx.AsyncClient) -> list[dict[str, Any]]:
+        """Lists registry entries that override a raw provider model (``base_model_id`` unset).
+
+        ``list_models`` cannot see these: OpenWebUI's search filters on ``base_model_id != None``, so
+        base-model overrides are invisible to it — and to the workspace UI that renders it.
+        """
+        response = await http.get(f"{self._base_url}{MODELS_ENDPOINT}/base", headers=self._jwt_headers)
+        response.raise_for_status()
+        return response.json()
+
     async def create_model(self, http: httpx.AsyncClient, model_data: dict[str, Any]) -> dict[str, Any]:
         model_data.setdefault("params", {})
         response = await http.post(

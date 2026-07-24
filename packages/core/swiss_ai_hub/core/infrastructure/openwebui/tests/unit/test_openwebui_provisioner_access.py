@@ -7,6 +7,7 @@ from scim2_models import Group
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
     AIHUB_AGENT_PREFIX,
+    AIHUB_LLM_MODEL_PREFIX,
     OpenWebuiProvisioner,
 )
 
@@ -393,6 +394,75 @@ class TestBuildRoleRules:
             mock_role.objects.return_value = [orphan]
 
             assert OpenWebuiProvisioner._build_role_rules() == {}
+
+
+class TestDeleteShadowingBaseModels:
+    """A registry entry at a workspace model's ``base_model_id`` makes OpenWebUI's
+    ``has_base_model_access`` deny every non-admin without a grant on it, so the model stays in the
+    picker but chat fails with "Model not found". ``POST /models/sync`` — which the OpenWebUI workspace
+    issues when an admin saves the model list — writes such an entry for every model it renders.
+    Only ``list_base_models`` can see them: OpenWebUI's model search filters on
+    ``base_model_id != None``, so ``list_models`` never returns them."""
+
+    @staticmethod
+    def _sync_with(provisioner: OpenWebuiProvisioner, workspace_models, base_models):
+        return (
+            patch.object(provisioner._openwebui, "list_models", return_value=workspace_models),
+            patch.object(provisioner._openwebui, "list_base_models", return_value=base_models),
+            patch.object(provisioner._openwebui, "list_groups", return_value=[]),
+        )
+
+    @pytest.mark.asyncio
+    async def test_deletes_entry_shadowing_an_llm_base(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        workspace = [{"id": f"{AIHUB_LLM_MODEL_PREFIX}text-generation-Kimi", "base_model_id": "text-generation/Kimi"}]
+        list_models, list_base, list_groups = self._sync_with(provisioner, workspace, [{"id": "text-generation/Kimi"}])
+
+        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_called_once_with(mock_client, "text-generation/Kimi")
+
+    @pytest.mark.asyncio
+    async def test_deletes_entry_shadowing_an_agent_pipe(self, provisioner: OpenWebuiProvisioner) -> None:
+        """The half #1595 never covered: agent presets point at ``aihub-pipeline.*`` bases, which
+        shadow identically once the workspace materialises a row for them."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
+        list_models, list_base, list_groups = self._sync_with(
+            provisioner, workspace, [{"id": "aihub-pipeline.RAGAgent.doc"}]
+        )
+
+        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_called_once_with(mock_client, "aihub-pipeline.RAGAgent.doc")
+
+    @pytest.mark.asyncio
+    async def test_leaves_unregistered_base_alone(self, provisioner: OpenWebuiProvisioner) -> None:
+        """The healthy state: the raw model has no registry entry, so there is nothing to repair."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
+        list_models, list_base, list_groups = self._sync_with(provisioner, workspace, [])
+
+        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_does_not_delete_foreign_base_models(self, provisioner: OpenWebuiProvisioner) -> None:
+        """Only bases of models we provision are repaired; entries owned by anyone else stay put."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
+        list_models, list_base, list_groups = self._sync_with(
+            provisioner, workspace, [{"id": "text-generation/somebody-elses-model"}]
+        )
+
+        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_not_called()
 
 
 class TestCrossTenantIsolation:
