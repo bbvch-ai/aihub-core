@@ -28483,7 +28483,14 @@ export type GetDocumentUrlData = {
      */
     document_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Download
+     *
+     * Force a browser download (Content-Disposition: attachment) instead of preview
+     */
+    download?: boolean;
+  };
   url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/url";
 };
 

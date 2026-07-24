@@ -215,8 +215,13 @@ const handleSort = (event: DataTableSortEvent) => {
 const downloadFile = async (documentId: string) => {
   const database = route.params.db as string
   const namespace = route.params.namespace as string
-  const url = await getDocumentSourceUrl(tenantId.value!, database, namespace, documentId)
-  window.open(url, '_blank')
+  const url = await getDocumentSourceUrl(tenantId.value!, database, namespace, documentId, true)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.rel = 'noopener'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
 }
 
 const confirmDelete = (document: DocumentDto) => {

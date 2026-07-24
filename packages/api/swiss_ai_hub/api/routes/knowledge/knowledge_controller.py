@@ -318,12 +318,19 @@ class KnowledgeController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            download: Annotated[
+                bool, Query(description="Force a browser download (Content-Disposition: attachment) instead of preview")
+            ] = False,
         ) -> SignedUrlDto:
-            """Generates a presigned URL for downloading a document's source file."""
+            """Generates a presigned URL for a document's source file (inline preview, or attachment download)."""
             if database in ["admin", "local", "config"]:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             url = KnowledgeService.get_document_url(
-                db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
+                db=database,
+                namespace=namespace,
+                document_id=document_id,
+                s3_service=s3_service,
+                as_attachment=download,
             )
             return SignedUrlDto(url=url)
 
