@@ -82,18 +82,31 @@ jobs:
             HIGHEST="$(printf '%s\n%s\n' "$VERSION" "$CUR" | sort -V | tail -n1)"
             [ "$HIGHEST" = "$CUR" ] && IS_BACKPORT=true
           fi
-          # Changelog base for a hotfix = the previous stable (usually vX.Y.(Z-1)).
-          NOTES_FROM="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "$VERSION" | sort -V | tail -1 || true)"
+          # Changelog base = highest stable strictly below this version (sort -V
+          # predecessor), so a backport stays on its own line instead of walking
+          # forward to a newer release.
+          STABLES="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "$VERSION" || true)"
+          NOTES_FROM="$(printf '%s\n%s\n' "$STABLES" "$VERSION" | sort -V | grep -B1 -x "$VERSION" | awk 'NR==1')"
+          if [ "$NOTES_FROM" = "$VERSION" ]; then NOTES_FROM=""; fi
           if [ "$IS_BACKPORT" = "true" ]; then SECONDARY=""; else SECONDARY="latest"; fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git rev-parse "$VERSION" >/dev/null 2>&1 \
-            || git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
-            echo "::error::Tag $VERSION already exists; bump the patch before hotfix-promote."; exit 1
+          HEAD_SHA="$(git rev-parse HEAD)"
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null 2>&1; then
+            # Idempotent rerun: reuse the tag if it already points at this HEAD;
+            # otherwise it's stale/mismatched and needs a patch bump or cleanup.
+            if [ "$(git rev-list -n1 "$VERSION")" = "$HEAD_SHA" ]; then
+              echo "::notice::Tag $VERSION already at HEAD; reusing (idempotent rerun)."
+            else
+              echo "::error::Tag $VERSION exists at a different commit. Bump the patch (or delete the stale tag) before rerunning hotfix-promote."; exit 1
+            fi
+          elif git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
+            echo "::error::Tag $VERSION exists on the remote. Bump the patch before rerunning hotfix-promote."; exit 1
+          else
+            git tag -a "$VERSION" -m "Release $VERSION" "$HEAD_SHA"
+            git push origin "refs/tags/$VERSION"
           fi
-          git tag -a "$VERSION" -m "Release $VERSION" "$(git rev-parse HEAD)"
-          git push origin "refs/tags/$VERSION"
 
           {
             echo "version=$VERSION"

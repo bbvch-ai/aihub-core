@@ -36,6 +36,12 @@ jobs:
     name: Tag rc & move staging pointer
     runs-on: ubuntu-slim
     timeout-minutes: 10
+    # Serialise the `staging` git-pointer move across workflows: build-rc and
+    # promote-to-staging both force-push refs/tags/staging, so they share this
+    # job-level group to avoid clobbering each other mid-flight.
+    concurrency:
+      group: staging-pointer
+      cancel-in-progress: false
     outputs:
       version: ${{ steps.compute.outputs.version }}
       notes_from: ${{ steps.notes.outputs.notes_from }}

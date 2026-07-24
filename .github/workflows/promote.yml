@@ -76,8 +76,12 @@ jobs:
             [ "$HIGHEST" = "$CUR" ] && IS_BACKPORT=true
           fi
 
-          # Cumulative changelog base: the previous stable tag (excluding CLEAN).
-          NOTES_FROM="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "$CLEAN" | sort -V | tail -1 || true)"
+          # Cumulative changelog base: the highest stable tag strictly BELOW this
+          # version (via sort -V predecessor), so a backport bases on its own line
+          # instead of walking forward to a newer release.
+          STABLES="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "$CLEAN" || true)"
+          NOTES_FROM="$(printf '%s\n%s\n' "$STABLES" "$CLEAN" | sort -V | grep -B1 -x "$CLEAN" | awk 'NR==1')"
+          if [ "$NOTES_FROM" = "$CLEAN" ]; then NOTES_FROM=""; fi
 
           {
             echo "clean=$CLEAN"

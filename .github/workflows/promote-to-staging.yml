@@ -54,6 +54,11 @@ jobs:
     needs: resolve
     runs-on: ubuntu-slim
     timeout-minutes: 5
+    # Shared with build-rc's rc-tag job: serialise the `staging` git-pointer move
+    # across workflows so a QC promote and a release-branch push can't clobber it.
+    concurrency:
+      group: staging-pointer
+      cancel-in-progress: false
     steps:
       # Deploy key: moving a pointer across commits can touch workflow files.
       - name: Checkout (full history)
