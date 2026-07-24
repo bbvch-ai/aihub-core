@@ -1,18 +1,17 @@
 ---
 # =============================================================================
-# Cut Release Branch (freeze)
+# Cut Release Branch (freeze) + bump main
 # =============================================================================
-# The end-of-sprint freeze. Cut release/X.Y at a chosen nightly build. Creating
-# the branch automatically triggers:
-#   - build-rc.yml         (push release/**) -> builds rc.1 (the frozen snapshot)
-#   - bump-main-target.yml (on: create)      -> opens the PR bumping main to the
-#                                               next minor (main is protected, so
-#                                               the bump lands via a merged PR)
-#   - forward-port-check.yml (push release/**) advisory
+# The end-of-sprint freeze, as ONE automated action:
+#   1. Cut release/X.Y at a chosen nightly build. Creating the branch triggers
+#      build-rc.yml (rc.1 = the frozen snapshot) and forward-port-check.yml.
+#   2. Bump main to the next minor, committed DIRECTLY to main via the deploy
+#      key (main is protected, but RELEASE_FINALIZE_DEPLOY_KEY has bypass), so
+#      no bump PR and no manual merge — nightly resumes on the new minor at once.
 #
 # After the cut, drop out-of-scope tickets with `git revert` on the branch and
-# fix remaining bugs — each push builds the next rc (rc.2, rc.3, ...). Promote a
-# QC-approved rc with promote.yml.
+# fix remaining bugs — each push builds the next rc. Promote a QC-approved rc
+# with promote.yml.
 # =============================================================================
 name: Cut Release Branch
 run-name: Cut release from ${{ github.event.inputs.source_tag }}
@@ -24,19 +23,33 @@ on:
         required: true
 permissions:
   contents: write
+concurrency:
+  group: cut-release
+  cancel-in-progress: false
 jobs:
   cut:
-    name: Create release/X.Y at the nightly commit
-    runs-on: ubuntu-slim
-    timeout-minutes: 10
+    name: Create release/X.Y & bump main
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     steps:
-      # Deploy key so the pushed branch triggers CI (GITHUB_TOKEN pushes do not).
-      - name: Checkout (full history)
+      # Deploy key: the pushed branch must trigger CI, and the bump commit must
+      # bypass main's branch protection. GITHUB_TOKEN can do neither.
+      - name: Checkout main (full history)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
+          ref: main
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
-      - name: Cut the release branch
+      - name: Setup Python 3.13
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+        with:
+          enable-cache: true
+      - name: Cut the release branch at the nightly commit
+        id: cut
         env:
           SRC: ${{ github.event.inputs.source_tag }}
         run: |
@@ -46,19 +59,41 @@ jobs:
             exit 1
           fi
           if ! git rev-parse "$SRC" >/dev/null 2>&1; then
-            echo "::error::nightly tag $SRC not found."
-            exit 1
+            echo "::error::nightly tag $SRC not found."; exit 1
           fi
-          core="${SRC#v}"; core="${core%%-*}"     # 0.317.0
-          line="${core%.*}"                          # 0.317
+          core="${SRC#v}"; core="${core%%-*}"      # 0.317.0
+          major="${core%%.*}"; rest="${core#*.}"; minor="${rest%%.*}"
+          line="${major}.${minor}"                   # 0.317
           branch="release/${line}"
           if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
-            echo "::error::branch $branch already exists."
+            echo "::error::branch $branch already exists."; exit 1
+          fi
+          # Guard: main must still be on this line, or the bump would skip a minor.
+          main_core="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
+          if [ "${main_core%.*}" != "$line" ]; then
+            echo "::error::main is on '$main_core' but cutting line '$line'. Resolve the mismatch before cutting."
             exit 1
           fi
-          TARGET="$(git rev-list -n 1 "$SRC")"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          TARGET="$(git rev-list -n 1 "$SRC")"
           git branch "$branch" "$TARGET"
           git push origin "refs/heads/${branch}"
-          echo "Cut $branch at $TARGET (from $SRC). build-rc + bump-main PR + forward-port-check will run."
+          echo "Cut $branch at $TARGET (from $SRC)."
+          {
+            echo "next=${major}.$((minor + 1)).0"
+            echo "branch=$branch"
+          } >> "$GITHUB_OUTPUT"
+      - name: Bump main to the next minor (direct, deploy-key bypass)
+        env:
+          NEXT: ${{ steps.cut.outputs.next }}
+          BRANCH: ${{ steps.cut.outputs.branch }}
+        run: |
+          set -euo pipefail
+          make version-bump VERSION="$NEXT"
+          git add -A
+          git commit -m "chore(swiss-ai-hub): Bump main to v${NEXT} after cutting ${BRANCH}"
+          # Land on top of any commits merged since checkout, then push to main.
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "Bumped main to v${NEXT}. Nightly resumes on the new minor."
