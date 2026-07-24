@@ -3,8 +3,10 @@
 # Nightly Tag & Build
 # =============================================================================
 # On every push to main (each merged PR), cut an immutable nightly tag and move
-# the rolling `nightly` pointer, then dispatch the build + bundle workflows.
-# Lightweight trunk path: no version bump, no changelog commit, no force-push.
+# the rolling `nightly` pointer, dispatch the image builds, and refresh the
+# single rolling `nightly` prerelease (the bundle the nightly VM fetches).
+# Lightweight trunk path: no version bump, no changelog, no versioned Release,
+# no npm/PyPI. create-release runs here in `nightly` (rolling) mode only.
 #
 # Triggered on `push` (not `pull_request`) on purpose: push events run the
 # workflow file from the pushed commit, so merging THIS change activates the new
@@ -89,11 +91,27 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
-      - name: Dispatch release-ready
+      # `release-ready` is still a live event: every build-*.yml
+      # (repository_dispatch: [release-ready]) builds the nightly images with
+      # secondary_tag=nightly, and deploy-docs.yml publishes the docs. Only
+      # create-release.yml stopped listening (it is now workflow_call only).
+      # The rolling nightly bundle is handled by the publish-nightly-bundle job.
+      - name: Dispatch release-ready (nightly image builds + docs)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.nightly-tag.outputs.version }}
         run: |-
-          gh api repos/${{ github.repository }}/dispatches \
+          gh api "repos/${{ github.repository }}/dispatches" \
             -F event_type=release-ready \
-            -F client_payload[release_version]=$VERSION
+            -F "client_payload[release_version]=$VERSION"
+
+  publish-nightly-bundle:
+    name: Refresh rolling nightly prerelease
+    needs: nightly-tag
+    # Skip when the tag already existed (re-run): the pointer/bundle are current.
+    if: needs.nightly-tag.outputs.created == 'true'
+    uses: ./.github/workflows/create-release.yml
+    with:
+      release_version: ${{ needs.nightly-tag.outputs.version }}
+      channel: nightly
+    secrets: inherit
