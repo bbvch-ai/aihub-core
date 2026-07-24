@@ -1,0 +1,64 @@
+---
+# =============================================================================
+# Cut Release Branch (freeze)
+# =============================================================================
+# The end-of-sprint freeze. Cut release/X.Y at a chosen nightly build. Creating
+# the branch automatically triggers:
+#   - build-rc.yml         (push release/**) -> builds rc.1 (the frozen snapshot)
+#   - bump-main-target.yml (on: create)      -> opens the PR bumping main to the
+#                                               next minor (main is protected, so
+#                                               the bump lands via a merged PR)
+#   - forward-port-check.yml (push release/**) advisory
+#
+# After the cut, drop out-of-scope tickets with `git revert` on the branch and
+# fix remaining bugs — each push builds the next rc (rc.2, rc.3, ...). Promote a
+# QC-approved rc with promote.yml.
+# =============================================================================
+name: Cut Release Branch
+run-name: Cut release from ${{ github.event.inputs.source_tag }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: Nightly build to freeze from (e.g., v0.317.0-nightly.891)
+        required: true
+permissions:
+  contents: write
+jobs:
+  cut:
+    name: Create release/X.Y at the nightly commit
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      # Deploy key so the pushed branch triggers CI (GITHUB_TOKEN pushes do not).
+      - name: Checkout (full history)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Cut the release branch
+        env:
+          SRC: ${{ github.event.inputs.source_tag }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$SRC" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-nightly\.[0-9]+$'; then
+            echo "::error::source_tag '$SRC' must be a nightly tag, e.g. v0.317.0-nightly.891."
+            exit 1
+          fi
+          if ! git rev-parse "$SRC" >/dev/null 2>&1; then
+            echo "::error::nightly tag $SRC not found."
+            exit 1
+          fi
+          core="${SRC#v}"; core="${core%%-*}"     # 0.317.0
+          line="${core%.*}"                          # 0.317
+          branch="release/${line}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "::error::branch $branch already exists."
+            exit 1
+          fi
+          TARGET="$(git rev-list -n 1 "$SRC")"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git branch "$branch" "$TARGET"
+          git push origin "refs/heads/${branch}"
+          echo "Cut $branch at $TARGET (from $SRC). build-rc + bump-main PR + forward-port-check will run."
