@@ -91,7 +91,12 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
-      - name: Dispatch release-ready
+      # `release-ready` is still a live event: every build-*.yml
+      # (repository_dispatch: [release-ready]) builds the nightly images with
+      # secondary_tag=nightly, and deploy-docs.yml publishes the docs. Only
+      # create-release.yml stopped listening (it is now workflow_call only).
+      # The rolling nightly bundle is handled by the publish-nightly-bundle job.
+      - name: Dispatch release-ready (nightly image builds + docs)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.nightly-tag.outputs.version }}

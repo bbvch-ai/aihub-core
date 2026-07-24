@@ -58,6 +58,13 @@ on:
         default: ''
 permissions:
   contents: write
+concurrency:
+  # Serialise writes to a rolling release (nightly/staging) so two overlapping
+  # callers never race the gh release view/edit/upload --clobber sequence.
+  # Versioned latest/backport promotes are rare; serialising per channel too is
+  # harmless. Never cancel — a half-written release is worse than a queued one.
+  group: publish-bundle-${{ inputs.channel }}
+  cancel-in-progress: false
 jobs:
   publish:
     name: Build bundle & publish release
@@ -170,9 +177,10 @@ jobs:
           A2="swissaihub-${ASSET}-gpu.tar.gz"
 
           case "$CHANNEL" in
-            nightly) TITLE="Nightly (rolling) - ${VERSION}" ;;
-            staging) TITLE="Staging (rolling) - ${VERSION}" ;;
-            latest)  TITLE="Swiss AI Hub ${VERSION}" ;;
+            nightly)  TITLE="Nightly (rolling) - ${VERSION}" ;;
+            staging)  TITLE="Staging (rolling) - ${VERSION}" ;;
+            latest)   TITLE="Swiss AI Hub ${VERSION}" ;;
+            backport) TITLE="Swiss AI Hub ${VERSION} (backport)" ;;
           esac
 
           NOTES_ARGS=()
@@ -192,8 +200,8 @@ jobs:
           else
             echo "Creating release $TARGET."
             EXTRA=()
-            [ "$PRERELEASE" = "true" ] && EXTRA+=(--prerelease)
-            [ "$LATEST" = "true" ] && EXTRA+=(--latest) || EXTRA+=(--latest=false)
+            if [ "$PRERELEASE" = "true" ]; then EXTRA+=(--prerelease); fi
+            if [ "$LATEST" = "true" ]; then EXTRA+=(--latest); else EXTRA+=(--latest=false); fi
             gh release create "$TARGET" --title "$TITLE" "${NOTES_ARGS[@]}" "${EXTRA[@]}" "$A1" "$A2"
           fi
           echo "Published $TARGET (channel=$CHANNEL, prerelease=$PRERELEASE, latest=$LATEST)."

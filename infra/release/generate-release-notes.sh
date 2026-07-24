@@ -40,15 +40,23 @@ EXCLUDE_PATTERNS=(
 
 diff_output="$(git diff "$FROM" "$TO" -- . "${EXCLUDE_PATTERNS[@]}" || true)"
 
-# Natural-language, grouped body via the LLM. Degrades gracefully if `llm` is
-# unavailable or the call fails, so a release is never blocked on note prose.
+# Guard the model's context window / cost on a big release: if the patch is very
+# large, summarise from the diffstat instead of the full patch.
+MAX_DIFF_LINES="${RELEASE_NOTES_MAX_DIFF_LINES:-6000}"
+diff_note=""
+if [ "$(printf '%s\n' "$diff_output" | wc -l)" -gt "$MAX_DIFF_LINES" ]; then
+    diff_output="$(git diff --stat "$FROM" "$TO" -- . "${EXCLUDE_PATTERNS[@]}" || true)"
+    diff_note=" (large release — summarised from the diffstat)"
+fi
+
+# Natural-language, grouped body via the LLM: system prompt from the file, the
+# diff piped as the user turn. Degrades gracefully if `llm` is unavailable or
+# the call fails, so a release is never blocked on note prose.
 body=""
 if [ -n "$diff_output" ] && command -v llm >/dev/null 2>&1; then
-    body="$(llm --no-stream -m "$MODEL" --system - "$(cat "$PROMPT_FILE")" <<EOF || true
-Here is the git diff from ${FROM} to ${TO}. Generate the grouped release notes.
-${diff_output}
-EOF
-)"
+    body="$(printf 'Here is the git diff from %s to %s%s. Generate the grouped release notes.\n\n%s\n' \
+        "$FROM" "$TO" "$diff_note" "$diff_output" \
+        | llm --no-stream -m "$MODEL" --system "$(cat "$PROMPT_FILE")" 2>/dev/null || true)"
 fi
 [ -n "$body" ] || body="_No summarised changes for this range._"
 

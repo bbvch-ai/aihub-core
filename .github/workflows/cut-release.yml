@@ -12,6 +12,12 @@
 # After the cut, drop out-of-scope tickets with `git revert` on the branch and
 # fix remaining bugs — each push builds the next rc. Promote a QC-approved rc
 # with promote.yml.
+#
+# RELEASE_FINALIZE_DEPLOY_KEY bypasses main's branch protection. It is CI-owned,
+# stored as a repo secret, used only by release workflows, and rotated on the
+# standard cadence; the bump is a mechanical version-only commit, so bypassing
+# the PR gate for it is acceptable. Both the branch cut and the bump are
+# idempotent, so rerunning this workflow to finish a partial run is safe.
 # =============================================================================
 name: Cut Release Branch
 run-name: Cut release from ${{ github.event.inputs.source_tag }}
@@ -65,35 +71,51 @@ jobs:
           major="${core%%.*}"; rest="${core#*.}"; minor="${rest%%.*}"
           line="${major}.${minor}"                   # 0.317
           branch="release/${line}"
-          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
-            echo "::error::branch $branch already exists."; exit 1
-          fi
-          # Guard: main must still be on this line, or the bump would skip a minor.
-          main_core="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
-          if [ "${main_core%.*}" != "$line" ]; then
-            echo "::error::main is on '$main_core' but cutting line '$line'. Resolve the mismatch before cutting."
-            exit 1
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          TARGET="$(git rev-list -n 1 "$SRC")"
-          git branch "$branch" "$TARGET"
-          git push origin "refs/heads/${branch}"
-          echo "Cut $branch at $TARGET (from $SRC)."
+          # Idempotent: a rerun (e.g. after the bump step failed) must not abort
+          # just because the branch is already there — skip the cut, finish the bump.
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "::notice::branch $branch already exists; skipping cut, continuing to the bump."
+          else
+            TARGET="$(git rev-list -n 1 "$SRC")"
+            git branch "$branch" "$TARGET"
+            git push origin "refs/heads/${branch}"
+            echo "Cut $branch at $TARGET (from $SRC)."
+          fi
           {
+            echo "line=$line"
             echo "next=${major}.$((minor + 1)).0"
             echo "branch=$branch"
           } >> "$GITHUB_OUTPUT"
-      - name: Bump main to the next minor (direct, deploy-key bypass)
+      - name: Bump main to the next minor (direct, deploy-key bypass, idempotent)
         env:
           NEXT: ${{ steps.cut.outputs.next }}
           BRANCH: ${{ steps.cut.outputs.branch }}
+          LINE: ${{ steps.cut.outputs.line }}
         run: |
           set -euo pipefail
+          main_core="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
+          # Idempotent + minor-skip guard: only bump when main is still on the cut
+          # line. If it already moved (rerun after a successful bump, or someone
+          # bumped it), skip cleanly rather than skipping a minor or erroring.
+          if [ "$main_core" = "$NEXT" ] || [ "${main_core%.*}" != "$LINE" ]; then
+            echo "::notice::main is on '$main_core' (not on cut line '$LINE'); bump already done — skipping."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           make version-bump VERSION="$NEXT"
           git add -A
           git commit -m "chore(swiss-ai-hub): Bump main to v${NEXT} after cutting ${BRANCH}"
-          # Land on top of any commits merged since checkout, then push to main.
-          git pull --rebase origin main
-          git push origin HEAD:main
-          echo "Bumped main to v${NEXT}. Nightly resumes on the new minor."
+          # Retry rebase+push to survive a human pushing to main in the same window.
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "Bumped main to v${NEXT}. Nightly resumes on the new minor."
+              exit 0
+            fi
+            echo "::warning::push to main failed (attempt ${attempt}/3); retrying..."
+            sleep 5
+          done
+          echo "::error::could not push the bump after 3 attempts. ${BRANCH} is cut; rerun to finish the bump."
+          exit 1
