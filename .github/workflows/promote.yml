@@ -1,26 +1,25 @@
 ---
 # =============================================================================
-# Promote to Latest (atomic)
+# Promote a Release Candidate to Latest (atomic)
 # =============================================================================
-# Promote a validated staging build to a flat, stable release and move the
-# production `latest` pointer, but ONLY if both npm and PyPI publish succeed.
+# Promote a QC-approved rc to a flat, stable release and move the production
+# `latest` pointer, but ONLY if both npm and PyPI publish succeed.
 #
-# Order:
-#   1. resolve       - validate the staging tag, derive the clean version,
-#                      detect whether it would be a backport (older line).
-#   2. prepare-tag   - create the clean vX.Y.Z git tag at the staging commit.
-#   3. build-release - create-release.yml (workflow_call): GH prerelease + bundle
-#      retag-docker  - retag the staging images to :vX.Y.Z (exact tested bits).
-#      publish-npm   - publish-npm.yml (workflow_call), OIDC trusted publishing.
-#      publish-pypi  - publish-pypi.yml (workflow_call), OIDC trusted publishing.
-#   4. promote        - ONLY if every step above succeeded and this is not a
-#                       backport: dispatch set-latest.yml to move git `latest`,
-#                       retag Docker :latest, and mark the GitHub Release Latest.
+#   1. resolve          - validate the rc tag, derive the clean vX.Y.Z, detect a
+#                         backport (older line), and find the previous stable tag
+#                         (the cumulative changelog base).
+#   2. prepare-tag      - create the clean vX.Y.Z git tag at the rc commit.
+#   3. retag-clean      - retag the tested rc images to :vX.Y.Z (exact bits).
+#      publish-npm/pypi - OIDC trusted publishing.
+#   4. build-release    - ONLY after every step above is green: create-release
+#                         (channel=latest) publishes the versioned Release marked
+#                         Latest, with the cumulative changelog. Gating it behind
+#                         the publishes keeps `latest` from being marked before
+#                         both registries are green.
+#   5. set-latest       - move git `latest` + retag :latest (+ mark Release Latest).
 #
-# Atomicity: the `latest` pointers move only after both registries are green.
-# If either publish fails, promote is skipped and `latest` stays put. A backport
-# (version lower than the current latest) publishes to npm under a per-line
-# dist-tag (handled inside publish-npm.yml) and never moves `latest`.
+# A backport (version below the current latest) uses channel=backport: it is
+# published as a full release but NOT marked Latest, and set-latest is skipped.
 # =============================================================================
 name: Promote to Latest
 run-name: Promote ${{ github.event.inputs.source_tag }}
@@ -28,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       source_tag:
-        description: Validated staging tag to promote (e.g., v0.314.0-staging.7)
+        description: QC-approved rc tag to promote (e.g., v0.317.0-rc.2)
         required: true
 permissions:
   contents: write
@@ -47,7 +46,12 @@ jobs:
       clean: ${{ steps.r.outputs.clean }}
       source_tag: ${{ steps.r.outputs.source_tag }}
       is_backport: ${{ steps.r.outputs.is_backport }}
+      notes_from: ${{ steps.r.outputs.notes_from }}
     steps:
+      - name: Checkout (full history for tag discovery)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
       - name: Validate and resolve
         id: r
         env:
@@ -56,31 +60,32 @@ jobs:
           SRC: ${{ github.event.inputs.source_tag }}
         run: |
           set -euo pipefail
-          if ! printf '%s' "$SRC" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-staging\.[0-9]+$'; then
-            echo "::error::source_tag '$SRC' must be a staging tag, e.g. v0.314.0-staging.7."
+          if ! printf '%s' "$SRC" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
+            echo "::error::source_tag '$SRC' must be an rc tag, e.g. v0.317.0-rc.2."
             exit 1
           fi
-          CLEAN="${SRC%-staging.*}"
+          CLEAN="${SRC%-rc.*}"
 
-          # Compare against the current 'Latest' GitHub Release. A lower version
-          # is a backport: publish it, but do not move the latest pointers.
+          # Backport detection against the current 'Latest' GitHub Release.
           IS_BACKPORT=false
           set +e
           CUR="$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name 2>/dev/null)"
           set -e
           if [ -n "$CUR" ] && [ "$CUR" != "$CLEAN" ]; then
             HIGHEST="$(printf '%s\n%s\n' "$CLEAN" "$CUR" | sort -V | tail -n1)"
-            if [ "$HIGHEST" = "$CUR" ]; then
-              IS_BACKPORT=true
-              echo "::notice::$CLEAN < current latest $CUR; promoting as a backport (latest not moved)."
-            fi
+            [ "$HIGHEST" = "$CUR" ] && IS_BACKPORT=true
           fi
+
+          # Cumulative changelog base: the previous stable tag (excluding CLEAN).
+          NOTES_FROM="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "$CLEAN" | sort -V | tail -1 || true)"
+
           {
             echo "clean=$CLEAN"
             echo "source_tag=$SRC"
             echo "is_backport=$IS_BACKPORT"
+            echo "notes_from=$NOTES_FROM"
           } >> "$GITHUB_OUTPUT"
-          echo "Promoting $SRC -> $CLEAN (backport=$IS_BACKPORT)"
+          echo "Promoting $SRC -> $CLEAN (backport=$IS_BACKPORT, notes_from=${NOTES_FROM:-<none>})"
 
   discover-images:
     name: Discover app images
@@ -90,7 +95,7 @@ jobs:
     outputs:
       matrix: ${{ steps.parse.outputs.matrix }}
     steps:
-      - name: Checkout at staging tag
+      - name: Checkout at rc tag
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ needs.resolve.outputs.source_tag }}
@@ -103,7 +108,6 @@ jobs:
                   and (.value | has("build"))
                   and (.value.latest == .key + ":latest"))
                 | .key]')
-          echo "Discovered images: $images"
           echo "matrix={\"image\":$images}" >> "$GITHUB_OUTPUT"
 
   prepare-tag:
@@ -112,9 +116,7 @@ jobs:
     timeout-minutes: 5
     needs: resolve
     steps:
-      # Deploy key: the clean tag may sit on a commit whose workflow files differ
-      # from the default branch, which GITHUB_TOKEN cannot push.
-      - name: Checkout at staging tag
+      - name: Checkout at rc tag
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ needs.resolve.outputs.source_tag }}
@@ -135,16 +137,8 @@ jobs:
             git push origin "refs/tags/$CLEAN"
           fi
 
-  build-release:
-    name: Build clean release bundle
-    needs: prepare-tag
-    uses: ./.github/workflows/create-release.yml
-    with:
-      release_version: ${{ needs.resolve.outputs.clean }}
-    secrets: inherit
-
   retag-clean-docker:
-    name: Retag images to clean version
+    name: Retag rc images to clean version
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [resolve, discover-images, prepare-tag]
@@ -160,7 +154,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pull staging image and push clean tag
+      - name: Pull rc image and push clean tag
         env:
           SOURCE_TAG: ${{ needs.resolve.outputs.source_tag }}
           CLEAN: ${{ needs.resolve.outputs.clean }}
@@ -171,7 +165,6 @@ jobs:
           docker pull "${IMAGE}:${SOURCE_TAG}"
           docker tag "${IMAGE}:${SOURCE_TAG}" "${IMAGE}:${CLEAN}"
           docker push "${IMAGE}:${CLEAN}"
-          echo "Pushed ${IMAGE}:${CLEAN}"
 
   publish-npm:
     name: Publish npm
@@ -189,13 +182,24 @@ jobs:
       release_version: ${{ needs.resolve.outputs.clean }}
     secrets: inherit
 
+  build-release:
+    name: Publish versioned Release (atomic gate)
+    # Runs ONLY after every publish + retag succeeded, so the release is marked
+    # Latest only when both registries are green. channel=backport keeps an
+    # older line from being marked Latest.
+    needs: [resolve, retag-clean-docker, publish-npm, publish-pypi]
+    uses: ./.github/workflows/create-release.yml
+    with:
+      release_version: ${{ needs.resolve.outputs.clean }}
+      channel: ${{ needs.resolve.outputs.is_backport == 'true' && 'backport' || 'latest' }}
+      notes_from: ${{ needs.resolve.outputs.notes_from }}
+    secrets: inherit
+
   promote:
     name: Move latest pointers
     runs-on: ubuntu-slim
     timeout-minutes: 5
-    # Runs only if every dependency succeeded (the atomic gate) and this is not
-    # a backport. A single failed publish skips this job and leaves latest put.
-    needs: [resolve, build-release, retag-clean-docker, publish-npm, publish-pypi]
+    needs: [resolve, build-release]
     if: needs.resolve.outputs.is_backport != 'true'
     steps:
       - name: Dispatch set-latest for the clean version
@@ -212,11 +216,10 @@ jobs:
     name: Backport (latest not moved)
     runs-on: ubuntu-slim
     timeout-minutes: 5
-    needs: [resolve, build-release, retag-clean-docker, publish-npm, publish-pypi]
+    needs: [resolve, build-release]
     if: needs.resolve.outputs.is_backport == 'true'
     steps:
       - name: Log backport outcome
         env:
           CLEAN: ${{ needs.resolve.outputs.clean }}
-        run: |-
-          echo "::notice::Published $CLEAN as a backport. npm used a per-line dist-tag; 'latest' was not moved."
+        run: echo "::notice::Published $CLEAN as a backport. 'latest' was not moved."

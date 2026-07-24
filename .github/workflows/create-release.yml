@@ -48,10 +48,10 @@ on:
         description: Full version, e.g. v0.317.0, v0.317.0-rc.2, v0.317.0-nightly.891
         required: true
       channel:
-        description: 'nightly | staging | latest'
+        description: 'nightly | staging | latest | backport'
         required: true
         type: choice
-        options: [nightly, staging, latest]
+        options: [nightly, staging, latest, backport]
       notes_from:
         description: Base ref for the changelog range (empty = no changelog)
         required: false
@@ -77,10 +77,13 @@ jobs:
             exit 1
           fi
           case "$CHANNEL" in
-            nightly) target="nightly";  asset="nightly";  prerelease=true;  latest=false; notes=false ;;
-            staging) target="staging";  asset="staging";  prerelease=true;  latest=false; notes=true ;;
-            latest)  target="$VERSION"; asset="$VERSION"; prerelease=false; latest=true;  notes=true ;;
-            *) echo "::error::channel must be nightly, staging, or latest (got '$CHANNEL')."; exit 1 ;;
+            nightly)  target="nightly";  asset="nightly";  prerelease=true;  latest=false; notes=false ;;
+            staging)  target="staging";  asset="staging";  prerelease=true;  latest=false; notes=true ;;
+            latest)   target="$VERSION"; asset="$VERSION"; prerelease=false; latest=true;  notes=true ;;
+            # Backport: a full versioned release for an older line, published but
+            # NOT marked Latest (latest must not move backwards).
+            backport) target="$VERSION"; asset="$VERSION"; prerelease=false; latest=false; notes=true ;;
+            *) echo "::error::channel must be nightly, staging, latest, or backport (got '$CHANNEL')."; exit 1 ;;
           esac
           # Nightly never carries notes; others only when a base ref is given.
           if [ "$notes" = "true" ] && [ -z "$NOTES_FROM" ]; then notes=false; fi
