@@ -121,7 +121,7 @@ jobs:
             test -f "${DEST}/docker-compose.yml"
             test -f "${DEST}/.env.template"
             test -f "${DEST}/setup-env.sh"
-            find "${DEST}" -name '*.yml' -o -name '*.yaml' | xargs uv run yamlfix
+            find "${DEST}" \( -name '*.yml' -o -name '*.yaml' \) -exec uv run yamlfix {} +
           done
       - name: Create tar.gz archives with the target asset name
         run: |

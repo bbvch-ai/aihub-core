@@ -96,9 +96,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.nightly-tag.outputs.version }}
         run: |-
-          gh api repos/${{ github.repository }}/dispatches \
+          gh api "repos/${{ github.repository }}/dispatches" \
             -F event_type=release-ready \
-            -F client_payload[release_version]=$VERSION
+            -F "client_payload[release_version]=$VERSION"
 
   publish-nightly-bundle:
     name: Refresh rolling nightly prerelease

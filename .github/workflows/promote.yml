@@ -168,7 +168,7 @@ jobs:
 
   publish-npm:
     name: Publish npm
-    needs: prepare-tag
+    needs: [resolve, prepare-tag]
     uses: ./.github/workflows/publish-npm.yml
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
@@ -176,7 +176,7 @@ jobs:
 
   publish-pypi:
     name: Publish PyPI
-    needs: prepare-tag
+    needs: [resolve, prepare-tag]
     uses: ./.github/workflows/publish-pypi.yml
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
