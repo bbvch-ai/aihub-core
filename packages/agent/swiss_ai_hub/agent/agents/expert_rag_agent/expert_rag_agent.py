@@ -55,6 +55,11 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
+from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
+    generate_follow_up_questions,
+    generate_title,
+)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.preconditions import (
     check_context_ready_for_history_limit_with_expert,
@@ -720,53 +725,35 @@ class ExpertRAGAgent(Agent):
             as_stop_step=False,
         )
 
-    # TEMP: conversation title + follow-up question steps disabled pending investigation. They are
-    # fire-and-forget (stop_on_error=False) with no downstream consumers, so commenting them out only
-    # drops the title/follow-up display events. Re-enable by uncommenting both @step methods below and
-    # restoring the `ThreadContext` / `do_generate_title` / `do_generate_follow_up_questions` imports.
-    # @step(
-    #     name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
-    #     description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
-    #     icon="mdi:format-title",
-    #     stop_on_error=False,
-    # )
-    # async def generate_conversation_title_step(
-    #     self,
-    #     llm_event: LLMEvent,
-    #     agent_config: ExpertRAGAgentConfig,
-    #     thread_context: ThreadContext,
-    #     displayer: EventDisplayer,
-    #     t: LocaleHandler,
-    # ) -> None:
-    #     """Generate a stable conversation title once per thread (deferred until a topic is identifiable)."""
-    #     await do_generate_title(
-    #         chat_messages=llm_event.chat_messages,
-    #         llm_config=agent_config.llm,
-    #         displayer=displayer,
-    #         t=t,
-    #         thread_context=thread_context,
-    #     )
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
+        icon="mdi:format-title",
+        stop_on_error=False,
+    )
+    async def generate_conversation_title_step(
+        self,
+        chat_history_event: LimitChatHistoryEvent,
+        agent_config: ExpertRAGAgentConfig,
+        thread_context: ThreadContext,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> None:
+        """Generate a stable conversation title once per thread, concurrently with the answer pipeline.
 
-    # @step(
-    #     name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.name"),
-    #     description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.description"),
-    #     icon="mdi:comment-question-outline",
-    #     stop_on_error=False,
-    # )
-    # async def generate_follow_up_questions_step(
-    #     self,
-    #     llm_event: LLMEvent,
-    #     agent_config: ExpertRAGAgentConfig,
-    #     displayer: EventDisplayer,
-    #     t: LocaleHandler,
-    # ) -> None:
-    #     """Suggest follow-up questions for the latest answer."""
-    #     await do_generate_follow_up_questions(
-    #         chat_messages=llm_event.chat_messages,
-    #         llm_config=agent_config.llm,
-    #         displayer=displayer,
-    #         t=t,
-    #     )
+        Anchored on the early ``LimitChatHistoryEvent`` (only fires past the meta-question gate) rather than
+        the terminal ``LLMEvent``: the title only needs the conversation topic, not the answer, so it runs in
+        parallel with retrieval/answer and emits before the stop event — avoiding the teardown race that
+        dropped or reordered the title when it hung off the answer event. ``stop_on_error=False`` and the
+        best-effort wrapper keep a failure from ever reaching the run.
+        """
+        await generate_title(
+            chat_messages=chat_history_event.limited_history,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+            thread_context=thread_context,
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.name"),
@@ -820,8 +807,21 @@ class ExpertRAGAgent(Agent):
         few_shot_reject: FewShotRejectEvent | None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None,
         agent_config: ExpertRAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
-        """Final step that ensures all required steps are complete before stopping."""
+        """Final step that ensures all required steps are complete before stopping.
+
+        Follow-up questions are generated inline here — they are grounded on the just-produced answer, so
+        they cannot start earlier; emitting them before returning the stop event puts them on the wire ahead
+        of teardown (best-effort, so they never fail the run).
+        """
+        await generate_follow_up_questions(
+            chat_messages=llm_event.chat_messages,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+        )
         return do_finalize_rag_stop(
             llm_event=llm_event,
             expert_answer_context=expert_answer_context,

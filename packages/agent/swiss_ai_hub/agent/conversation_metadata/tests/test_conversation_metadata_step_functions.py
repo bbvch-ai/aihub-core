@@ -10,6 +10,8 @@ from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functio
     do_generate_follow_up_questions,
     do_generate_title,
     generate_conversation_metadata,
+    generate_follow_up_questions,
+    generate_title,
 )
 from swiss_ai_hub.agent.conversation_metadata.follow_up_questions_result import FollowUpQuestionsResult
 from swiss_ai_hub.agent.conversation_metadata.title_result import TitleResult
@@ -164,3 +166,29 @@ async def test_generate_metadata_is_best_effort_on_failure(displayer, locale_han
 
     displayer.display_event.assert_not_awaited()
     assert await thread_context.get(TITLE_GENERATED_KEY) is None
+
+
+@pytest.mark.asyncio
+async def test_generate_title_wrapper_swallows_failure(displayer, locale_handler):
+    """The fan-out title step relies on this wrapper never raising, so a failure can't reach the run."""
+    llm = MagicMock()
+    llm.astructured_predict = AsyncMock(side_effect=RuntimeError("LLM unavailable"))
+    thread_context = FakeThreadContext()
+
+    # Must not raise.
+    await generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context)
+
+    displayer.display_event.assert_not_awaited()
+    assert await thread_context.get(TITLE_GENERATED_KEY) is None
+
+
+@pytest.mark.asyncio
+async def test_generate_follow_up_questions_wrapper_swallows_failure(displayer, locale_handler):
+    """The inline follow-up call in the terminal step relies on this wrapper never raising."""
+    llm = MagicMock()
+    llm.astructured_predict = AsyncMock(side_effect=RuntimeError("LLM unavailable"))
+
+    # Must not raise.
+    await generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
+
+    displayer.display_event.assert_not_awaited()

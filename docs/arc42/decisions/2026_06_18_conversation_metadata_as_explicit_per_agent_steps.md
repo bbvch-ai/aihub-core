@@ -1,5 +1,22 @@
 # Conversation Metadata (Title + Follow-up Questions) as Explicit Per-Agent Steps
 
+::: warning Update (2026-07-24, issue #87)
+For the split agents (`RAGAgent`, `ExpertRAGAgent`) the two metadata events are **no longer both fan-out `@step`s on the
+terminal `LLMEvent`**. Hanging both off the answer event made them run concurrently with the stop step, so their display
+events could be emitted after the StopEvent teardown (dropped/reordered title, ERROR-logged failures) — the production
+regression tracked in issue #87. They are now wired by dependency:
+
+- **Title** — an early fan-out `@step` anchored on a **pre-answer** event (`LimitChatHistoryEvent`). The title only
+  needs the conversation topic, not the answer, so it runs in parallel with retrieval/answer and emits before the stop
+  event. This realises the "Inline ordering is stronger than fan-out" follow-up flagged in Consequences below, without
+  serialising the title behind the answer.
+- **Follow-ups** — generated **inline** in the terminal step before the stop event, exactly like the inline agents. They
+  are grounded on the latest answer, so they cannot start earlier.
+
+The shared generators are unchanged; only the per-agent wiring and the best-effort wrappers (now WARNING, not ERROR)
+were touched. The rest of this ADR stands.
+:::
+
 ## Context
 
 Issue #1073 makes agents produce conversation metadata — a chat **title** and suggested **follow-up questions** — as a

@@ -74,7 +74,9 @@ async def do_condense_standalone_question(
     """Condense chat history and user query into standalone question."""
     await displayer.display_thought(t("agent.thought.condense_question"))
     async with llm_config.cost_reporting_llm(displayer) as llm:
-        condensed = condense_standalone_question(chat_history=limited_history, message=last_user_message, t=t, llm=llm)
+        condensed = await condense_standalone_question(
+            chat_history=limited_history, message=last_user_message, t=t, llm=llm
+        )
         return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed)
 
 
