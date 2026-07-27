@@ -9,8 +9,9 @@
 #                 pointer to it, and work out the changelog base ref.
 #   2. fan-out  - dispatch the per-image build-*.yml at the rc tag, tagging
 #                 images vX.Y.Z-rc.N and the rolling :staging.
-#   3. publish  - create-release.yml (channel=staging): refresh the single
-#                 rolling `staging` prerelease bundle + rc release notes.
+#   3. publish  - create-release.yml (channel=staging): refresh the rolling
+#                 `staging` bundle the QC VM fetches AND publish the immutable,
+#                 preserved per-rc release "Swiss AI Hub vX.Y.Z-rc.N" + rc notes.
 #
 # There is no approval gate: pushing to a release branch deploys the candidate
 # to the QC staging VM directly. QC's sign-off is the gate for promote (flow 4).
@@ -20,7 +21,7 @@
 name: Build Release Candidate
 on:
   push:
-    branches: ['release/**']
+    branches: [release/**]
 permissions:
   contents: write
   actions: write
@@ -107,7 +108,6 @@ jobs:
           fi
           echo "notes_from=$notes_from" >> "$GITHUB_OUTPUT"
           echo "rc changelog base: ${notes_from:-<none>}"
-
   fan-out:
     name: Dispatch image builds at the rc tag
     needs: rc-tag
@@ -138,9 +138,8 @@ jobs:
             gh workflow run "$wf" --ref "$VERSION" \
               -f release_version="$VERSION" -f secondary_tag=staging
           done
-
   publish-rc-bundle:
-    name: Refresh rolling staging prerelease (+ rc notes)
+    name: Publish rc release + refresh rolling staging
     needs: rc-tag
     uses: ./.github/workflows/create-release.yml
     with:
