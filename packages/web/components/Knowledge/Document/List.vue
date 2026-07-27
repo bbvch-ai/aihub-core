@@ -1,54 +1,126 @@
 <template>
-  <div v-if="checkedDocuments.length > 0" class="mb-2 flex items-center justify-between">
+  <div
+    v-if="checkedDocuments.length > 0"
+    class="mb-2 flex items-center justify-between"
+  >
     <p class="text-sm">
       {{ t('document.list.selected_count', { count: checkedDocuments.length }) }}
     </p>
-    <Button size="small" severity="danger" icon="pi pi-trash" :label="t('document.delete.button_selected')"
-      :loading="isBatchDeleting" @click="confirmBatchDelete" />
+    <Button
+      size="small"
+      severity="danger"
+      icon="pi pi-trash"
+      :label="t('document.delete.button_selected')"
+      :loading="isBatchDeleting"
+      @click="confirmBatchDelete"
+    />
   </div>
-  <DataTable v-model:selection="checkedDocuments" :value="documents" table-style="min-width: 50rem"
-    :row-class="getRowClass" :sort-field="sortField ?? undefined" :sort-order="sortOrder" removable-sort size="small"
-    :select-all="allDeletableSelected" @select-all-change="onSelectAllChange" @row-click="handleRowClick"
-    @sort="handleSort">
-    <Column selection-mode="multiple" header-style="width: 3rem" />
-    <Column field="document_title" :header="t('document.list.title')" sortable>
+  <DataTable
+    v-model:selection="checkedDocuments"
+    :value="documents"
+    data-key="id"
+    table-style="min-width: 50rem"
+    :row-class="getRowClass"
+    :sort-field="sortField ?? undefined"
+    :sort-order="sortOrder"
+    removable-sort
+    size="small"
+    :select-all="allDeletableSelected"
+    @select-all-change="onSelectAllChange"
+    @row-click="handleRowClick"
+    @sort="handleSort"
+  >
+    <Column
+      selection-mode="multiple"
+      header-style="width: 3rem"
+    />
+    <Column
+      field="document_title"
+      :header="t('document.list.title')"
+      sortable
+    >
       <template #body="{ data }">
         <div class="flex items-center gap-2">
           <p class="font-bold">
             {{ data.document_title }}
           </p>
-          <div v-if="isDocumentDeleting(data)" class="flex items-center gap-2">
-            <Tag :value="t('document.delete.deleting')" size="small" icon="pi pi-trash" severity="danger" />
+          <div
+            v-if="isDocumentDeleting(data)"
+            class="flex items-center gap-2"
+          >
+            <Tag
+              :value="t('document.delete.deleting')"
+              size="small"
+              icon="pi pi-trash"
+              severity="danger"
+            />
           </div>
-          <div v-else-if="!data.is_ingested" class="flex items-center gap-2">
-            <Tag :value="t('document.list.is_processing')" size="small" icon="pi pi-clock" severity="info" />
+          <div
+            v-else-if="!data.is_ingested"
+            class="flex items-center gap-2"
+          >
+            <Tag
+              :value="t('document.list.is_processing')"
+              size="small"
+              icon="pi pi-clock"
+              severity="info"
+            />
           </div>
         </div>
       </template>
     </Column>
-    <Column field="created_at" :header="t('document.list.created')" sortable>
+    <Column
+      field="created_at"
+      :header="t('document.list.created')"
+      sortable
+    >
       <template #body="{ data }">
         <p>{{ formatted(data.created_at) }}</p>
       </template>
     </Column>
-    <Column field="updated_at" :header="t('document.list.updated_at')" sortable>
+    <Column
+      field="updated_at"
+      :header="t('document.list.updated_at')"
+      sortable
+    >
       <template #body="{ data }">
         <p>{{ formatted(data.updated_at) }}</p>
       </template>
     </Column>
-    <Column field="number_of_pages" :header="t('document.list.number_of_pages')">
+    <Column
+      field="number_of_pages"
+      :header="t('document.list.number_of_pages')"
+    >
       <template #body="{ data }">
         <Badge :value="data.number_of_pages ?? '-'" />
       </template>
     </Column>
-    <Column field="source" :header="t('document.list.actions')">
+    <Column
+      field="source"
+      :header="t('document.list.actions')"
+    >
       <template #body="{ data }">
         <div class="flex items-center gap-2">
-          <Button v-if="data.source" v-tooltip.top="t('document.list.download')" rounded size="small" variant="outlined"
-            icon="pi pi-download" @click.stop="() => downloadFile(data.id)" />
-          <Button v-if="!isDocumentDeleting(data)" v-tooltip.top="t('document.delete.button')" rounded size="small"
-            variant="outlined" severity="danger" icon="pi pi-trash" :loading="isDeleting"
-            @click.stop="() => confirmDelete(data)" />
+          <Button
+            v-if="data.source"
+            v-tooltip.top="t('document.list.download')"
+            rounded
+            size="small"
+            variant="outlined"
+            icon="pi pi-download"
+            @click.stop="() => downloadFile(data.id)"
+          />
+          <Button
+            v-if="!isDocumentDeleting(data)"
+            v-tooltip.top="t('document.delete.button')"
+            rounded
+            size="small"
+            variant="outlined"
+            severity="danger"
+            icon="pi pi-trash"
+            :loading="isDeleting"
+            @click.stop="() => confirmDelete(data)"
+          />
         </div>
       </template>
     </Column>
