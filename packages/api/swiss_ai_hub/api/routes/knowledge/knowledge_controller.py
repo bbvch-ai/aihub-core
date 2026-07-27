@@ -18,6 +18,7 @@ from swiss_ai_hub.core.infrastructure import MongoSettings, use_s3_service, use_
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.routes import TenantScopedController
 
+from swiss_ai_hub.api.decorators.access_catalog import access_catalog_entry
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.pagination.type.page_number import PageNumber
@@ -61,6 +62,7 @@ class KnowledgeController(TenantScopedController):
 
         self.translation_llm_config = translation_llm_config
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.see")
     def get_databases(self, route: str = "/databases") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_databases(
@@ -93,6 +95,7 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.use")
     def get_documents_for_namespace(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents"
     ) -> Self:
@@ -218,6 +221,7 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage")
     def create_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_namespace(
@@ -314,12 +318,19 @@ class KnowledgeController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            download: Annotated[
+                bool, Query(description="Force a browser download (Content-Disposition: attachment) instead of preview")
+            ] = False,
         ) -> SignedUrlDto:
-            """Generates a presigned URL for downloading a document's source file."""
+            """Generates a presigned URL for a document's source file (inline preview, or attachment download)."""
             if database in ["admin", "local", "config"]:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             url = KnowledgeService.get_document_url(
-                db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
+                db=database,
+                namespace=namespace,
+                document_id=document_id,
+                s3_service=s3_service,
+                as_attachment=download,
             )
             return SignedUrlDto(url=url)
 

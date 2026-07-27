@@ -1,8 +1,9 @@
 ---
 tenant_id:
-  label: ID du locataire
-  help: Identifiant de locataire utilisé pour restreindre les lectures et écritures
+  label: Locataire
+  help: Sélectionnez le locataire utilisé pour restreindre les lectures et écritures
     de la mémoire organisationnelle.
+  placeholder: Sélectionner un locataire
 allowed_tenant_namespaces:
   label: Espaces de noms autorisés
   help: Liste des espaces de noms autorisés pour les lectures/écritures de la mémoire

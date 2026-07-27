@@ -15,11 +15,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
     from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
     from swiss_ai_hub.core.form.elements.model_select import ModelSelect
-    from swiss_ai_hub.core.form.elements.org_memory_tenant_input import OrgMemoryTenantInput
     from swiss_ai_hub.core.form.elements.repeater import Repeater
     from swiss_ai_hub.core.form.elements.select import Select
     from swiss_ai_hub.core.form.elements.select_button import SelectButton
     from swiss_ai_hub.core.form.elements.slider import Slider
+    from swiss_ai_hub.core.form.elements.tenant_select import TenantSelect
     from swiss_ai_hub.core.form.elements.textarea import Textarea
     from swiss_ai_hub.core.form.form import Form
     from swiss_ai_hub.core.form.normalization import (
@@ -45,12 +45,12 @@ __all__ = [
     "KnowledgeDatabaseSelector",
     "LocaleInput",
     "ModelSelect",
-    "OrgMemoryTenantInput",
     "Repeater",
     "Select",
     "SelectButton",
     "Slider",
     "TemplateData",
+    "TenantSelect",
     "Textarea",
     "normalize_empty_locale_strings",
     "normalize_empty_objects_to_none",
@@ -73,12 +73,12 @@ _LAZY_IMPORTS = {
     "KnowledgeDatabaseSelector": "swiss_ai_hub.core.form.elements.knowledge_database_selector",
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
-    "OrgMemoryTenantInput": "swiss_ai_hub.core.form.elements.org_memory_tenant_input",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
     "Select": "swiss_ai_hub.core.form.elements.select",
     "SelectButton": "swiss_ai_hub.core.form.elements.select_button",
     "Slider": "swiss_ai_hub.core.form.elements.slider",
     "TemplateData": "swiss_ai_hub.core.form.template_data",
+    "TenantSelect": "swiss_ai_hub.core.form.elements.tenant_select",
     "Textarea": "swiss_ai_hub.core.form.elements.textarea",
     "normalize_empty_locale_strings": "swiss_ai_hub.core.form.normalization",
     "normalize_empty_objects_to_none": "swiss_ai_hub.core.form.normalization",

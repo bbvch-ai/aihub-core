@@ -1,0 +1,96 @@
+---
+presets:
+  user_everything:
+    name: Use everything
+    description: Access and use every service, agent and process — without creating
+      or managing them.
+  admin_everything:
+    name: Administer everything
+    description: Full control over every service, agent and process, including creating,
+      configuring and deleting.
+  user_all_agents:
+    name: Use all agents
+    description: Chat with and use every agent instance.
+  admin_all_agents:
+    name: Manage all agents
+    description: Create, configure and delete every agent instance.
+  user_all_processes:
+    name: Use all processes
+    description: Start and participate in every process.
+  admin_all_processes:
+    name: Manage all processes
+    description: Create, configure and delete every process.
+  user_all_models:
+    name: Use all models
+    description: Use every available model.
+  admin_knowledge:
+    name: Manage knowledge bases
+    description: Full control over knowledge bases and their documents.
+capabilities:
+  ops:
+    service:
+      use:
+        label: View & use
+        description: Open this service and use its features.
+      administer:
+        label: Administer
+        description: Manage this service's configuration and data.
+    agent:
+      see:
+        label: See all assistants
+        description: View the list of assistants and their blueprints.
+      see_class:
+        label: See instances
+        description: View the instances of this assistant type.
+      create:
+        label: Create instances
+        description: Create new assistants of this type.
+      use:
+        label: Use
+        description: Chat with and use this assistant.
+      manage:
+        label: Configure & delete
+        description: Edit the configuration of, or delete, this assistant.
+    requires:
+      agent_admin:
+        label: Requires assistant admin
+        description: This service is gated by assistant-admin access.
+    process:
+      see:
+        label: See workflows
+        description: View the list of workflows.
+      see_admin:
+        label: See all workflows
+        description: View every workflow definition.
+      see_class:
+        label: See instances
+        description: View the instances of this workflow type.
+      create:
+        label: Create instances
+        description: Create new workflows of this type.
+      use:
+        label: Use
+        description: Start and take part in this workflow.
+      manage:
+        label: Configure & delete
+        description: Edit the configuration of, or delete, this workflow.
+    knowledge:
+      see:
+        label: See knowledge bases
+        description: View the list of knowledge bases.
+      use:
+        label: Use
+        description: Search and read this knowledge namespace.
+      manage:
+        label: Manage
+        description: Configure and ingest documents into this namespace.
+    model:
+      use:
+        description: Use this model.
+    memory:
+      org:
+        label: Use organization memory
+        description: Read and manage shared organization memory.
+      personal:
+        label: Use personal memory
+        description: Read and manage your personal memory.

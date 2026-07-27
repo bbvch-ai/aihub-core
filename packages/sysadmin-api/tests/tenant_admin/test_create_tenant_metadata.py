@@ -266,3 +266,38 @@ async def test_configure_tenant_assigns_superuser(monkeypatch: pytest.MonkeyPatc
     await TenantAdminService.create_tenant_metadata(_make_request())
 
     mock_assign_superuser.assert_awaited_once_with("my-tenant")
+
+
+@pytest.mark.asyncio
+async def test_configure_tenant_normalizes_dotted_model_rule(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A tenant-ceiling rule for a dotted model name (``Kimi-K2.6``) must be collapsed on write, same
+    as the role editor — otherwise the ceiling can never match the template the checker builds."""
+    _stub_keycloak_group_exists(monkeypatch)
+    _stub_metadata_lookups(monkeypatch)
+    monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
+    monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
+
+    create_calls: list[dict] = []
+
+    def record_create(**kwargs) -> MagicMock:
+        create_calls.append(kwargs)
+        entity = MagicMock()
+        entity.id = "my-tenant"
+        entity.name = "My Tenant"
+        entity.description = "desc"
+        entity.access_rules = kwargs["access_rules"]
+        entity.created_at = datetime.now(UTC)
+        entity.updated_at = datetime.now(UTC)
+        return entity
+
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", record_create)
+
+    request = CreateTenantMetadataRequest(
+        tenant_id="my-tenant",
+        name="My Tenant",
+        description="desc",
+        access_rules=["aihub.user.model.text-generation.Kimi-K2.6"],
+    )
+    await TenantAdminService.create_tenant_metadata(request)
+
+    assert create_calls[0]["access_rules"] == ["aihub.user.model.text-generation.Kimi-K2_6"]

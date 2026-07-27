@@ -10,6 +10,7 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
+    MemoryStorageRequestedEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     RAGFailureStopEvent,
@@ -46,8 +47,8 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    do_generate_follow_up_questions,
-    do_generate_title,
+    generate_follow_up_questions,
+    generate_title,
 )
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.preconditions import (
@@ -62,6 +63,7 @@ from swiss_ai_hub.agent.rag.preconditions import (
     check_user_memory_storage_enabled,
 )
 from swiss_ai_hub.agent.rag.step_functions import (
+    build_memory_storage_request,
     do_condense_standalone_question,
     do_context_sufficient_guard,
     do_few_shot_guard,
@@ -169,9 +171,10 @@ async def memory_added_to_chat_history(
 async def ready_for_stop(
     config: RAGAgentConfig,
     store_memory_event: StoreUserMemoryEvent | None = None,
+    memory_storage_request: MemoryStorageRequestedEvent | None = None,
 ) -> bool:
     """Precondition to ensure all required steps are complete before stopping."""
-    return check_ready_for_stop(config, store_memory_event)
+    return check_ready_for_stop(config, store_memory_event, memory_storage_request)
 
 
 class RAGAgent(Agent):
@@ -562,40 +565,26 @@ class RAGAgent(Agent):
     )
     async def generate_conversation_title_step(
         self,
-        llm_event: LLMEvent,
+        chat_history_event: LimitChatHistoryEvent,
         agent_config: RAGAgentConfig,
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> None:
-        """Generate a stable conversation title once per thread (deferred until a topic is identifiable)."""
-        await do_generate_title(
-            chat_messages=llm_event.chat_messages,
+        """Generate a stable conversation title once per thread, concurrently with the answer pipeline.
+
+        Anchored on the early ``LimitChatHistoryEvent`` (only fires past the meta-question gate) rather than
+        the terminal ``LLMEvent``: the title only needs the conversation topic, not the answer, so it runs in
+        parallel with retrieval/answer and emits before the stop event — avoiding the teardown race that
+        dropped or reordered the title when it hung off the answer event. ``stop_on_error=False`` and the
+        best-effort wrapper keep a failure from ever reaching the run.
+        """
+        await generate_title(
+            chat_messages=chat_history_event.limited_history,
             llm_config=agent_config.llm,
             displayer=displayer,
             t=t,
             thread_context=thread_context,
-        )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.follow_ups.description"),
-        icon="mdi:comment-question-outline",
-        stop_on_error=False,
-    )
-    async def generate_follow_up_questions_step(
-        self,
-        llm_event: LLMEvent,
-        agent_config: RAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> None:
-        """Suggest follow-up questions for the latest answer."""
-        await do_generate_follow_up_questions(
-            chat_messages=llm_event.chat_messages,
-            llm_config=agent_config.llm,
-            displayer=displayer,
-            t=t,
         )
 
     @step(
@@ -610,8 +599,24 @@ class RAGAgent(Agent):
         llm_event: LLMEvent,
         memory: AgentMemory,
         topic: AgentInstanceTopic,
-    ) -> StoreUserMemoryEvent:
-        """Store new user memories from the conversation."""
+        agent_config: RAGAgentConfig,
+        t: LocaleHandler,
+    ) -> StoreUserMemoryEvent | MemoryStorageRequestedEvent:
+        """
+        Store new user memories from the conversation.
+
+        Inline (default): write via mem0 and return the result event. Async (issue #1179): return a
+        `MemoryStorageRequestedEvent` that delegates the write to the `MemoryWriterAgent` on its own run, so
+        the chat run finalizes as soon as the answer is ready instead of waiting on the ~5-call save.
+        """
+        if agent_config.user_memory.enable_async_memory_storage:
+            return build_memory_storage_request(
+                user=user_message_event.user,
+                messages=llm_event.chat_messages,
+                topic=topic,
+                agent_config=agent_config,
+                locale=t.locale,
+            )
         memory_added = await memory.add_user_memory(
             messages=llm_event.chat_messages,
             user_id=user_message_event.user.id,
@@ -630,11 +635,25 @@ class RAGAgent(Agent):
         self,
         llm_event: LLMEvent,
         _store_memory_event: StoreUserMemoryEvent | None,
+        _memory_storage_request: MemoryStorageRequestedEvent | None,
         few_shot_reject: FewShotRejectEvent | None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None,
         agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
-        """Final step that ensures all required steps are complete before stopping."""
+        """Final step that ensures all required steps are complete before stopping.
+
+        Follow-up questions are generated inline here — they are grounded on the just-produced answer, so
+        they cannot start earlier; emitting them before returning the stop event puts them on the wire ahead
+        of teardown (best-effort, so they never fail the run).
+        """
+        await generate_follow_up_questions(
+            chat_messages=llm_event.chat_messages,
+            llm_config=agent_config.llm,
+            displayer=displayer,
+            t=t,
+        )
         return do_finalize_rag_stop(
             llm_event=llm_event,
             expert_answer_context=None,

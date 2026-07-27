@@ -304,7 +304,9 @@ class AgentService:
         await subscriber.start()
         logger.debug(f"Subscriber created for streaming subject: {subscriber.subject}")
 
-        await external_agent_event_distributor.distribute_event(external_event, user)
+        await external_agent_event_distributor.distribute_event(
+            external_event, user, target_agent=AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
+        )
 
         return resources
 
@@ -368,15 +370,19 @@ class AgentService:
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(
+        await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
             config=configuration,
-            access_checker=AccessChecker.from_user(user),
+            user=user,
             t=t,
         )
 
         config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
 
+        # Pin agent_id to the immutable instance key: the agent publishes under config_data["agent_id"]
+        # while the SSE handler addresses it by the entity key, and a mismatch silently fails the
+        # is_primary_agent stop check (stream never closes -> no title/follow-up). Mirrors create.
+        configuration["agent_id"] = agent_id
         config_entity.config_data = configuration
         config_entity.save()
 
@@ -455,10 +461,10 @@ class AgentService:
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
 
-        ConfigAuthorizationService.validate_config_authorization_or_raise(
+        await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
             config=config,
-            access_checker=AccessChecker.from_user(user),
+            user=user,
             t=t,
         )
 

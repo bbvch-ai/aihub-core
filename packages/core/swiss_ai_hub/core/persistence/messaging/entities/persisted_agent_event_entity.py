@@ -130,6 +130,14 @@ class PersistedAgentEventEntity(Document):
 
     @classmethod
     @trace_fn
+    def thread_id_for_display(cls, display_id: str) -> str | None:
+        """Resolve the thread that owns a display. Every event sharing a display_id shares one thread_id (AITL
+        delegation preserves both), so any match yields the same answer."""
+        event = cls.objects(display_id=display_id).only("thread_id").first()
+        return event.thread_id if event else None
+
+    @classmethod
+    @trace_fn
     def display_events_for_threads(
         cls, thread_ids: list[str], event_name: str | None = None
     ) -> list["PersistedAgentEventEntity"]:

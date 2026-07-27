@@ -1,0 +1,96 @@
+---
+presets:
+  user_everything:
+    name: Alles nutzen
+    description: Jeden Dienst, Agenten und Prozess nutzen — ohne sie zu erstellen
+      oder zu verwalten.
+  admin_everything:
+    name: Alles verwalten
+    description: Volle Kontrolle über jeden Dienst, Agenten und Prozess, inklusive
+      Erstellen, Konfigurieren und Löschen.
+  user_all_agents:
+    name: Alle Agenten nutzen
+    description: Mit jeder Agenten-Instanz chatten und sie nutzen.
+  admin_all_agents:
+    name: Alle Agenten verwalten
+    description: Jede Agenten-Instanz erstellen, konfigurieren und löschen.
+  user_all_processes:
+    name: Alle Prozesse nutzen
+    description: Jeden Prozess starten und daran teilnehmen.
+  admin_all_processes:
+    name: Alle Prozesse verwalten
+    description: Jeden Prozess erstellen, konfigurieren und löschen.
+  user_all_models:
+    name: Alle Modelle nutzen
+    description: Jedes verfügbare Modell nutzen.
+  admin_knowledge:
+    name: Wissensdatenbanken verwalten
+    description: Volle Kontrolle über Wissensdatenbanken und ihre Dokumente.
+capabilities:
+  ops:
+    service:
+      use:
+        label: Ansehen & nutzen
+        description: Diesen Dienst öffnen und seine Funktionen nutzen.
+      administer:
+        label: Verwalten
+        description: Konfiguration und Daten dieses Dienstes verwalten.
+    agent:
+      see:
+        label: Alle Assistenten sehen
+        description: Die Liste der Assistenten und ihre Blueprints ansehen.
+      see_class:
+        label: Instanzen sehen
+        description: Die Instanzen dieses Assistententyps ansehen.
+      create:
+        label: Instanzen erstellen
+        description: Neue Assistenten dieses Typs erstellen.
+      use:
+        label: Nutzen
+        description: Mit diesem Assistenten chatten und ihn nutzen.
+      manage:
+        label: Konfigurieren & löschen
+        description: Die Konfiguration dieses Assistenten bearbeiten oder ihn löschen.
+    requires:
+      agent_admin:
+        label: Erfordert Assistenten-Admin
+        description: Dieser Dienst ist durch Assistenten-Admin-Zugriff geschützt.
+    process:
+      see:
+        label: Workflows sehen
+        description: Die Liste der Workflows ansehen.
+      see_admin:
+        label: Alle Workflows sehen
+        description: Jede Workflow-Definition ansehen.
+      see_class:
+        label: Instanzen sehen
+        description: Die Instanzen dieses Workflow-Typs ansehen.
+      create:
+        label: Instanzen erstellen
+        description: Neue Workflows dieses Typs erstellen.
+      use:
+        label: Nutzen
+        description: Diesen Workflow starten und daran teilnehmen.
+      manage:
+        label: Konfigurieren & löschen
+        description: Die Konfiguration dieses Workflows bearbeiten oder ihn löschen.
+    knowledge:
+      see:
+        label: Wissensdatenbanken sehen
+        description: Die Liste der Wissensdatenbanken ansehen.
+      use:
+        label: Nutzen
+        description: Diesen Wissens-Namespace durchsuchen und lesen.
+      manage:
+        label: Verwalten
+        description: Dokumente in diesen Namespace konfigurieren und einspeisen.
+    model:
+      use:
+        description: Dieses Modell nutzen.
+    memory:
+      org:
+        label: Organisationsspeicher nutzen
+        description: Gemeinsamen Organisationsspeicher lesen und verwalten.
+      personal:
+        label: Persönlichen Speicher nutzen
+        description: Deinen persönlichen Speicher lesen und verwalten.

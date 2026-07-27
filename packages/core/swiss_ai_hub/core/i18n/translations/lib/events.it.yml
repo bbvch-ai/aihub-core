@@ -231,3 +231,18 @@ rag_failure_stop_event:
   name: Fallimento RAG
   description: L'esecuzione aumentata dal recupero non è riuscita a produrre una risposta
     utile. Il campo reason spiega quale percorso ha portato al fallimento.
+unread_mail_listed_event:
+  name: E-mail Non Lette Elencate
+  description: L'agente ha elencato i messaggi non letti nella cartella della posta
+    in arrivo configurata.
+mail_fetched_event:
+  name: E-mail Recuperata
+  description: L'agente ha recuperato un messaggio, incluso il corpo e gli allegati.
+mail_moved_event:
+  name: E-mail Spostata
+  description: L'agente ha spostato un messaggio dalla cartella di origine a una cartella
+    di destinazione.
+mail_batch_drafted_event:
+  name: Lotto Redatto
+  description: L'agente ha redatto risposte per un lotto di messaggi e le ha aggiunte
+    alla cartella delle bozze affinché una persona le revisioni e le invii.

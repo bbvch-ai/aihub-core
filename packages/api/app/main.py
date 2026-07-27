@@ -8,6 +8,7 @@ from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.infrastructure import enable_logging
 
 from swiss_ai_hub.api.routes import (
+    AccessController,
     AgentController,
     ApiHealthController,
     AuthProviderController,
@@ -50,7 +51,11 @@ runner.mount(
     MyAccountController(auth=auth).get_my_account().get_my_identity().get_my_dashboard().update_my_dashboard(),
     UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
     I18nController(auth=auth).get_my_locale(),
-    EventController(auth=auth).ws().get_agent_events_in_thread().get_agent_event_timeseries(),
+    EventController(auth=auth)
+    .ws()
+    .get_agent_events_in_thread()
+    .resolve_thread_for_display()
+    .get_agent_event_timeseries(),
     ModelController(auth=auth).get_litellm_models().get_litellm_models_by_mode().get_litellm_model(),
     ThreadController(auth=auth)
     .get_user_threads()
@@ -89,6 +94,7 @@ runner.mount(
     .send_process_open_form(),
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
+    AccessController(auth=auth).get_access_capabilities().get_access_presets(),
     OpenaiController(auth=auth)
     .get_models()
     .get_model_with_assistants()

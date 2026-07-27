@@ -35,6 +35,9 @@ openai:
 process:
   name: Workflows
   description: Manage automated business processes
+access:
+  name: Access Catalog
+  description: Catalog of access capabilities and presets for authoring access rules
 role:
   name: User Roles
   description: Configure access permissions and roles

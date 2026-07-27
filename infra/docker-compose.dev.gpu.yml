@@ -31,7 +31,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     expose:
       - '9333'   # Master HTTP port
@@ -69,7 +69,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     expose: ['8080', '18080']
     command: >
@@ -101,7 +101,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     ports: [8889:8888, '18888']
     command: >
@@ -153,7 +153,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     ports: [9000:9000]
     volumes:
@@ -678,7 +678,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak:
     container_name: keycloak
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.5
     restart: unless-stopped
     entrypoint: /bin/bash
     ports: [8180:8080]
@@ -744,7 +744,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak-config:
     container_name: keycloak-config
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak-config-cli:6.5.0-26.5.4
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak-config-cli:6.5.1-26.5.5
     restart: on-failure
     environment:
       KEYCLOAK_URL: http://keycloak:8080
@@ -1302,6 +1302,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
+      SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
@@ -1318,7 +1320,12 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
       STORE_MODEL_IN_DB: true
-    volumes: [./configs/litellm/litellm-config.dev.gpu.yml:/app/config.yml]
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+      RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
+    volumes:
+      - ./configs/litellm/litellm-config.dev.gpu.yml:/app/config.yml
+      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
       postgres:
@@ -1377,6 +1384,42 @@ services:
         max-file: 2
     networks:
       - backend
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
+  open-terminal:
+    container_name: open-terminal
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
+    restart: always
+    ports: [8200:8000]
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
+    environment:
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+      OPEN_TERMINAL_MULTI_USER: 'true'  # Per-user home directories (/home/<user>)
+      # Tool-context guidance: files surface in the Files panel; use read-file for documents
+      OPEN_TERMINAL_SYSTEM_PROMPT: >-
+        You have access to a sandboxed Linux computer with Python and common
+        document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
+        weasyprint, matplotlib). Use your tools to run commands, read and write
+        files, and search the filesystem. Verify the current state before making
+        changes and check command output to confirm success. Files you create in
+        your working directory automatically appear in the user's Files panel,
+        where they can download them — after creating a file, tell the user its
+        filename. To read the contents of a document such as a PDF, DOCX or XLSX,
+        use the read-file tool, which extracts the text; do not use display for that.
+    healthcheck:
+      # No documented health endpoint; probe the Swagger /docs route instead
+      test: [CMD, curl, -f, http://localhost:8000/docs]
+      interval: 15s
+      timeout: 3s
+      start_period: 40s  # Generous cold-start for the ~1.2 GB image
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - code-sandbox  # Isolated single-tenant zone (callers join it to reach this sandbox)
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
@@ -1574,7 +1617,7 @@ services:
         condition: service_healthy
       litellm:
         condition: service_healthy
-      jupyter:
+      open-terminal:
         condition: service_healthy
       playwright:
         condition: service_healthy
@@ -1663,13 +1706,6 @@ services:
       ENABLE_TAGS_GENERATION: false
       ENABLE_FOLLOW_UP_GENERATION: false
 
-      # --- Image Generation ---
-      IMAGE_GENERATION_MODEL: image-generation
-      IMAGES_OPENAI_API_BASE_URL: http://localhost:8000/api/v1/active/openai
-      IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      IMAGE_SIZE: 1024x1024
-      ENABLE_IMAGE_GENERATION: true
-
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
       AUDIO_STT_MODEL: transcription
@@ -1716,15 +1752,10 @@ services:
       SHOW_ADMIN_DETAILS: true
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
-      # --- Code Execution ---
-      CODE_EXECUTION_ENGINE: jupyter
-      CODE_EXECUTION_JUPYTER_URL: http://localhost:8888
-      CODE_EXECUTION_JUPYTER_AUTH: token
-      CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
-      CODE_INTERPRETER_ENGINE: jupyter
-      CODE_INTERPRETER_JUPYTER_URL: http://localhost:8888
-      CODE_INTERPRETER_JUPYTER_AUTH: token
-      CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+      # --- Code Execution (Open Terminal) ---
+      # Native execute_code connection (plain LLM models). "permission":"read" is the
+      # connection-access grant, NOT a filesystem mode; key must be alphanumeric/hex (single-quoted JSON).
+      TERMINAL_SERVER_CONNECTIONS: '[{"id":"open-terminal","name":"Open Terminal","enabled":true,"url":"http://localhost:8200","key":"${OPEN_TERMINAL_API_KEY}","auth_type":"bearer","config":{"access_grants":[{"principal_type":"user","principal_id":"*","permission":"read"}]}}]'
 
       # --- Vector DB ---
       VECTOR_DB: milvus
@@ -1869,6 +1900,10 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: 'false'
+  # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
+  code-sandbox:
+    name: code-sandbox
+    driver: bridge
 # ===================================================================
 # Named Volumes
 # ===================================================================

@@ -11,6 +11,7 @@ common:
   loading: Chargement...
   selectModel: Sélectionner un modèle
   selectDatabase: Sélectionner une base de données
+  selectTenant: Sélectionner un locataire
 models:
   title: Modèles
   error: Erreur lors du chargement des modèles
@@ -329,6 +330,21 @@ agent:
     status: 'Statut:'
     online: En ligne
     offline: Hors ligne
+  import:
+    button: Importer
+    error:
+      title: Échec de l'import
+      invalidJson: Le fichier sélectionné n'est pas un JSON valide.
+      invalidStructure: Le fichier sélectionné n'est pas un export de configuration
+        d'agent valide.
+      missingFields: Il manque des champs obligatoires dans le fichier (schemaVersion,
+        agentClass ou configuration).
+      unsupportedVersion: Le fichier utilise une version de schéma d'export non prise
+        en charge.
+      blueprintNotFound: Le modèle d'agent « {agentClass} » n'est pas disponible dans
+        cet environnement.
+  export:
+    button: Exporter
   configuration:
     title: Configuration de l'agent
     description: Configurez le comportement d'exécution et les paramètres de cet agent
@@ -629,6 +645,24 @@ role:
   access_rules_help_agent_instances: Toutes les instances de MyAgent
   access_rules_help_service: Service Knowledge
   access_rules_help_admin: Accès admin à tout
+  presets_button: Modèles
+  presets_title: Modèles d'accès
+  preset_category_everything: Tout
+  preset_category_agents: Agents
+  preset_category_processes: Processus
+  preset_category_models: Modèles
+  preset_category_knowledge: Connaissances
+  capabilities_title: Ce que ces règles accordent
+  capabilities_subtitle: Cochez une capacité pour l'accorder. Les éléments verrouillés
+    sont couverts par une règle plus large.
+  capabilities_readonly_title: Accès effectif
+  capabilities_readonly_subtitle: Ce que cet utilisateur peut faire, selon ses rôles
+    et dans les limites du tenant.
+  capabilities_empty: Cet utilisateur n'a aucun accès.
+  capability_locked: Accordé par une règle plus large — supprimez cette règle pour
+    changer ceci.
+  capability_readonly: Aucune règle unique ne l'accorde — utilisez un modèle ou une
+    règle plus large.
   pattern_help_intro: 'Les modèles utilisent des jokers pour les agents :'
   pattern_help_all: Tous les agents
   pattern_help_wildcard: Toutes les instances de MyAgent

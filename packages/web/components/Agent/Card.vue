@@ -44,6 +44,15 @@
           @click.stop="emit('clone', agent)"
         />
         <Button
+          v-tooltip.top="t('agent.export.button')"
+          icon="pi pi-download"
+          severity="secondary"
+          text
+          rounded
+          size="small"
+          @click.stop="exportAgentInstance(agent)"
+        />
+        <Button
           v-if="showDelete"
           icon="pi pi-trash"
           severity="secondary"
@@ -91,8 +100,10 @@ const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
 const confirm = useConfirm()
+const tenantPath = useTenantPath()
 const { tenantId } = useTenant()
 const { deleteAgentInstance, isDeleting } = useDeleteAgentInstance()
+const { exportAgentInstance } = useExportAgentInstance()
 
 const isActive = computed(() => {
   return route.params.agent_id === props.agent.agent_id && route.params.agent_class === props.agent.agent_class
@@ -112,6 +123,13 @@ function confirmDelete() {
 
 async function handleDelete() {
   try {
+    // When the deleted agent's own detail page is open, leave it first: the delete invalidates the
+    // instance query, and a still-mounted detail page would refetch the now-missing agent and raise
+    // a 404 error toast. Navigating away deactivates that query so it is only marked stale, not refetched.
+    if (isActive.value) {
+      await navigateTo(tenantPath('/service/agents'))
+    }
+
     await deleteAgentInstance({
       agentClass: props.agent.agent_class,
       agentId: props.agent.agent_id,

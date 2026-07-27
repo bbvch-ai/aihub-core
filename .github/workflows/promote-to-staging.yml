@@ -1,0 +1,146 @@
+---
+# =============================================================================
+# Promote a Nightly Build to Staging (during the sprint)
+# =============================================================================
+# A developer promotes an already-tested nightly build to the QC staging
+# environment. This does NOT rebuild and does NOT branch — it re-channels the
+# exact nightly artifact:
+#   1. move-pointer - move the rolling `staging` git pointer to the nightly commit.
+#   2. retag-docker - retag the nightly images (:vX.Y.Z-nightly.N) as :staging.
+#   3. publish      - create-release.yml (channel=staging) refreshes the single
+#                     rolling `staging` prerelease bundle. No changelog: a
+#                     sprint staging build is a nightly, and nightly carries no
+#                     release notes (rc notes only appear after the freeze).
+#
+# Staging then runs the SAME bits as the promoted nightly. Cumulative by nature:
+# a nightly build contains every ticket merged up to it.
+# =============================================================================
+name: Promote Nightly to Staging
+run-name: Promote to staging - ${{ github.event.inputs.source_tag }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: Nightly tag to promote (e.g., v0.317.0-nightly.891)
+        required: true
+permissions:
+  contents: write
+  packages: write
+concurrency:
+  group: promote-to-staging
+  cancel-in-progress: false
+jobs:
+  resolve:
+    name: Validate nightly tag
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.r.outputs.version }}
+    steps:
+      - name: Validate
+        id: r
+        env:
+          SRC: ${{ github.event.inputs.source_tag }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$SRC" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-nightly\.[0-9]+$'; then
+            echo "::error::source_tag '$SRC' must be a nightly tag, e.g. v0.317.0-nightly.891."
+            exit 1
+          fi
+          echo "version=$SRC" >> "$GITHUB_OUTPUT"
+
+  move-pointer:
+    name: Move staging pointer to the nightly commit
+    needs: resolve
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    # Shared with build-rc's rc-tag job: serialise the `staging` git-pointer move
+    # across workflows so a QC promote and a release-branch push can't clobber it.
+    concurrency:
+      group: staging-pointer
+      cancel-in-progress: false
+    steps:
+      # Deploy key: moving a pointer across commits can touch workflow files.
+      - name: Checkout (full history)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Point staging at the nightly commit
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "::error::nightly tag $VERSION not found."
+            exit 1
+          fi
+          TARGET="$(git rev-list -n 1 "$VERSION")"
+          git tag -f -a staging "$TARGET" -m "Release $VERSION"
+          git push origin refs/tags/staging --force
+          echo "Moved 'staging' to $TARGET ($VERSION)."
+
+  discover-images:
+    name: Discover app images
+    needs: resolve
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.parse.outputs.matrix }}
+    steps:
+      - name: Checkout at nightly tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ needs.resolve.outputs.version }}
+      - name: Parse custom app images from compose-config.yml
+        id: parse
+        run: |
+          images=$(yq -o=json '.' infra/deployment/compose-config.yml \
+            | jq -c '[.image_tags | to_entries[]
+                | select((.value | type) == "object"
+                  and (.value | has("build"))
+                  and (.value.latest == .key + ":latest"))
+                | .key]')
+          echo "Discovered images: $images"
+          echo "matrix={\"image\":$images}" >> "$GITHUB_OUTPUT"
+
+  retag-docker:
+    name: Retag nightly images to :staging
+    needs: [resolve, discover-images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      packages: write
+      contents: read
+    strategy:
+      matrix: ${{ fromJson(needs.discover-images.outputs.matrix) }}
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121  # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull nightly image and push :staging
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |-
+          set -euo pipefail
+          IMAGE="ghcr.io/${{ github.repository_owner }}/$REPO_NAME/${{ matrix.image }}"
+          docker pull "${IMAGE}:${VERSION}"
+          docker tag "${IMAGE}:${VERSION}" "${IMAGE}:staging"
+          docker push "${IMAGE}:staging"
+          echo "Pushed ${IMAGE}:staging (from ${VERSION})"
+
+  publish-bundle:
+    name: Refresh rolling staging prerelease (no notes)
+    needs: [resolve, move-pointer]
+    uses: ./.github/workflows/create-release.yml
+    with:
+      release_version: ${{ needs.resolve.outputs.version }}
+      channel: staging
+      notes_from: ''
+    secrets: inherit

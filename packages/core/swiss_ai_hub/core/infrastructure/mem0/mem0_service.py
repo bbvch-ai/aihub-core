@@ -3,6 +3,7 @@ from mem0.configs.base import MemoryConfig
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.graph.patched_memory_graph import PatchedMemoryGraph
 from swiss_ai_hub.core.infrastructure.mem0.patched_async_memory import PatchedAsyncMemory
+from swiss_ai_hub.core.infrastructure.mem0.patched_milvus_db import PatchedMilvusDB
 from swiss_ai_hub.core.infrastructure.mem0.patched_open_ai_embedding import PatchedOpenAIEmbedding
 from swiss_ai_hub.core.infrastructure.mem0.patched_open_aillm import PatchedOpenAILLM
 from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
@@ -19,9 +20,12 @@ class Mem0Service:
     ):
         self._config = config
         self._memory = PatchedAsyncMemory(config=config)
+        self._memory.vector_store = PatchedMilvusDB.from_milvus(self._memory.vector_store)
         self._memory.llm = PatchedOpenAILLM.from_llm(self._memory.llm)
         self._memory.embedding_model = PatchedOpenAIEmbedding.from_embedding(self._memory.embedding_model)
-        self._memory.graph = PatchedMemoryGraph.from_graph(self._memory.graph, t=t)
+        # When the graph store is disabled, mem0 sets enable_graph=False and self.graph=None — nothing to wrap.
+        if self._memory.enable_graph:
+            self._memory.graph = PatchedMemoryGraph.from_graph(self._memory.graph, t=t)
 
     @property
     def config(self):
@@ -53,27 +57,36 @@ class Mem0Service:
         }
         # Filter out None values and empty strings
         metadata = {k: str(v) for k, v in metadata.items() if v is not None and v != ""}
+        # Native agent_id scopes mem0's infer-time reconciliation (its ADD/UPDATE/DELETE search over
+        # existing memories) to the writing agent, so one agent's write can no longer rewrite or delete
+        # another agent's user memories. mem0 reconciles on native keys, not on our `_agent_id` metadata.
+        # Org memory is left unscoped (infer=False, intentionally tenant-shared). Reads stay cross-agent
+        # shared — the read path passes agent_id=None deliberately.
+        native_agent_id = agent_id if memory_type == MemoryType.USER_MEMORY else None
         added_memory = await self._memory.add(
             messages,
             user_id=owner_id,
+            agent_id=native_agent_id,
             metadata=metadata,
             infer=infer,
         )
 
+        # mem0 omits the "relations" key entirely when the graph store is disabled (main.py returns only
+        # {"results": ...}); default to an empty structure so graph-off writes don't KeyError.
+        relations = added_memory.get("relations") or {}
         added_entities, deleted_entities = [], []
-        for i, relation in enumerate(added_memory["relations"]["added_entities"]):
+        for relation in relations.get("added_entities", []):
             if isinstance(relation, list):
                 added_entities.extend(relation)
             else:
                 added_entities.append(relation)
-        for i, relation in enumerate(added_memory["relations"]["deleted_entities"]):
+        for relation in relations.get("deleted_entities", []):
             if isinstance(relation, list):
                 deleted_entities.extend(relation)
             else:
                 deleted_entities.append(relation)
 
-        added_memory["relations"]["added_entities"] = added_entities
-        added_memory["relations"]["deleted_entities"] = deleted_entities
+        added_memory["relations"] = {"added_entities": added_entities, "deleted_entities": deleted_entities}
 
         return MemoryAdded.model_validate(
             {

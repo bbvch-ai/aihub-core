@@ -232,3 +232,19 @@ rag_failure_stop_event:
   name: RAG Fehlschlag
   description: Der Retrieval-Augmented-Lauf konnte keine nützliche Antwort liefern.
     Das Reason-Feld erklärt, welcher Pfad zum Fehlschlag geführt hat.
+unread_mail_listed_event:
+  name: Ungelesene E-Mails Aufgelistet
+  description: Der Agent hat die ungelesenen Nachrichten im konfigurierten Posteingang-Ordner
+    aufgelistet.
+mail_fetched_event:
+  name: E-Mail Abgerufen
+  description: Der Agent hat eine Nachricht einschließlich Text und Anhängen abgerufen.
+mail_moved_event:
+  name: E-Mail Verschoben
+  description: Der Agent hat eine Nachricht aus ihrem Quellordner in einen Zielordner
+    verschoben.
+mail_batch_drafted_event:
+  name: Stapel Entworfen
+  description: Der Agent hat Antworten für einen Stapel von Nachrichten entworfen
+    und sie in den Entwürfe-Ordner angehängt, damit ein Mensch sie prüfen und senden
+    kann.

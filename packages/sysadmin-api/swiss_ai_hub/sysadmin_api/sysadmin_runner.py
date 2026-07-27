@@ -94,6 +94,15 @@ class SysadminApiRunner:
 
         self._api_app.openapi = custom_openapi  # type: ignore[method-assign]
 
+    @property
+    def platform_api_base_url(self) -> str | None:
+        """The sysadmin plane mounts only a curated controller subset, so endpoints whose catalog
+        depends on the *deployed* surface (the access-capability table) must defer to the main API,
+        which authoritatively knows what it serves. Predictable per deployment — ``http://api:8000``
+        in compose, ``http://localhost:8000`` in local dev (``AIHUB_INTERNAL_API_BASE_URL``).
+        """
+        return AIHubSettings().INTERNAL_API_BASE_URL
+
     def mount(self, *controllers: Controller) -> Self:
         for controller in controllers:
             controller.mount(self._api_app, self)

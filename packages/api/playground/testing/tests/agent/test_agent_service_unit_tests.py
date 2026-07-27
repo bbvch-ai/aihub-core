@@ -453,7 +453,8 @@ class TestCreateAgentInstanceGrantWiring:
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
         stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
-        stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth.validate_for_user_or_raise = AsyncMock()
         stack.enter_context(patch(f"{_MODULE}.FullAgentInstanceDTO"))
         config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
         config_doc.find_for_class_and_id.return_value = None
@@ -515,3 +516,43 @@ class TestDeleteAgentInstanceCleanup:
         assert exc_info.value.status_code == 404
         mock_revoke.assert_not_called()
         mock_delete_role.assert_not_called()
+
+
+class TestUpdateAgentInstanceLocksAgentId:
+    """update_agent_instance keeps config_data['agent_id'] pinned to the immutable instance key."""
+
+    @staticmethod
+    def _mock_update_dependencies(stack: ExitStack, config_entity: Mock) -> None:
+        class_entity = Mock()
+        class_entity.agent_config_specs.agent_class = "TestAgent"
+        class_entity.agent_config_specs.agent_config_schema = {}
+        class_entity.form = []
+        stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
+        stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
+        stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
+        config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth.validate_for_user_or_raise = AsyncMock()
+        helper = stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        helper.normalize_form_configuration.side_effect = lambda configuration: configuration
+        helper.apply_metadata_to_entity.side_effect = lambda _config_instance, entity: entity
+        config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
+        config_doc.find_for_class_and_id.return_value = config_entity
+
+    @pytest.mark.asyncio
+    async def test_form_cannot_change_agent_id(self):
+        """A diverging agent_id in the submitted form must be overwritten with the URL key before saving."""
+        config_entity = Mock()
+
+        with ExitStack() as stack:
+            self._mock_update_dependencies(stack, config_entity)
+            result = await AgentService.update_agent_instance(
+                "TestAgent",
+                "intructed_agent_02",
+                {"agent_id": "instructed_agent_02", "system_prompt": "hi"},
+                Mock(spec=LocaleHandler),
+                user=Mock(),
+            )
+
+        assert config_entity.config_data["agent_id"] == "intructed_agent_02"
+        assert result["agent_id"] == "intructed_agent_02"
+        config_entity.save.assert_called_once()

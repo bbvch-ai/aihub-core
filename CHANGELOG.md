@@ -5,6 +5,967 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.316.3] - 2026-07-22 - Keycloak Service Updates for Enhanced Stability
+
+### Changed
+
+- 🔄 **Updated Keycloak services:** Upgraded the **Keycloak** container image to `26.5.5` and the **Keycloak-Config-CLI**
+  container image to `6.5.1-26.5.5` across all deployment environments, incorporating stability improvements and
+  potential security fixes.
+
+______________________________________________________________________
+
+## [v0.316.2] - 2026-07-22 - Enhanced Milvus Configuration for Improved Agent Compatibility
+
+### Changed
+
+- ⚙️ **Streamlined Milvus Environment Variable Propagation:** Milvus connection parameters (`MILVUS_URL`,
+  `MILVUS_DIMENSION`, `MILVUS_ROOT_PASSWORD`) are now explicitly included in the environment of additional services
+  across all Docker Compose configurations, ensuring more consistent and robust database connectivity for various
+  components.
+- 📄 **Updated Documentation for Milvus Environment Variables:** The deployment guide's documentation has been revised to
+  reflect the expanded usage of Milvus environment variables, now indicating their relevance for agents like
+  `imap_agent`.
+
+______________________________________________________________________
+
+## [v0.316.1] - 2026-07-21 - Enhanced Development Workflow and SDK Consistency
+
+### Added
+
+- ✅ **Automated SDK Sync Verification:** A new GitHub Actions workflow has been introduced to automatically verify that
+  the committed frontend SDK clients (for both the main `@swiss-ai-hub/web` and `sysadmin-web` applications) are in sync
+  with their respective backend OpenAPI specifications. This crucial check helps prevent API/SDK drift and ensures
+  frontend clients always reflect the latest backend contract.
+- ⚡️ **Efficient Offline OpenAPI Spec Generation:** The new workflow efficiently generates OpenAPI specifications
+  directly from backend ASGI applications without needing a running server, speeding up the verification process.
+- ⚙️ **Proactive Developer Feedback:** Developers will now receive immediate feedback during pull requests if their
+  backend changes necessitate an SDK regeneration, promoting a more consistent and reliable development experience.
+
+______________________________________________________________________
+
+## [v0.316.0] - 2026-07-21 - Introducing the IMAP Agent for Enhanced Mail Automation
+
+### Added
+
+- 🦾 **New IMAP Agent**: Introduced a powerful new `ImapAgent` designed for non-conversational mail automation. This
+  agent can independently read and move emails, and automatically draft LLM-generated replies for incoming messages.
+- 📄 **Docker Service Integration**: The new `ImapAgent` is fully integrated as a deployable Docker service, including
+  comprehensive environment variable configurations for seamless deployment and operation across various deployment
+  stages (build, latest, local, nightly, and GPU versions).
+- ⚙️ **OpenTelemetry Support for IMAP Agent**: The `ImapAgent` now supports OpenTelemetry for enhanced observability and
+  tracing of its mail processing workflows.
+
+### Changed
+
+- 🔄 **Promoted IMAP Functionality**: The IMAP mail automation capabilities have been promoted from a playground example
+  to a core, production-ready `ImapAgent` within the main agent package, making it a formally recognized and deployable
+  component.
+- 📚 **Updated Environment Variable Documentation**: The deployment guide documentation has been updated to include all
+  relevant environment variables for configuring the new `ImapAgent` and its associated services (LiteLLM, S3, MongoDB,
+  NATS, Redis).
+
+______________________________________________________________________
+
+## [v0.315.2] - 2026-07-21 - Unified Package Version Alignment
+
+### Changed
+
+- 🔄 **Core Platform Packages**: Synchronized all internal Python and JavaScript packages, along with their
+  inter-dependencies, to version `0.315.2` for improved consistency and stability across the platform.
+
+______________________________________________________________________
+
+## [v0.315.1] - 2026-07-21 - Enhanced Agent Management and Chat UI Responsiveness
+
+### Added
+
+- ✨ **Immediate Agent Model Updates:** Open WebUI now dynamically reflects agent creation, renaming, and deletion
+  instantly in the model picker, providing real-time feedback and eliminating the previous 60-second update delay.
+- 🦾 **Introduced `AgentConfigChangeHook`:** A new internal mechanism has been implemented to leverage database signals
+  for immediate detection and propagation of agent configuration changes, powering the real-time updates in Open WebUI.
+
+### Fixed
+
+- 🐛 **Robust Agent Configuration Sync:** Resolved a critical issue where internal signal subscriptions could be
+  prematurely garbage-collected, ensuring reliable and persistent synchronization of agent configuration changes.
+- 🖼️ **Improved Agent Deletion Flow:** Corrected a user interface bug by ensuring that when an agent is deleted from its
+  detail page, users are automatically navigated to the main agents list, preventing a disruptive 404 error toast.
+
+______________________________________________________________________
+
+## [v0.315.0] - 2026-07-21 - Major IMAP Agent Upgrade: Smart Drafting and Streamlined Workflows
+
+### Added
+
+- 🦾 **Independent Batch Email Drafting:** Introduced a powerful new capability for IMAP agents to draft replies for a
+  batch of messages autonomously. This feature is triggered by a new `DraftMailStartEvent` and can be scheduled and run
+  independently of the mail reading and moving workflow.
+- ✨ **Configurable Drafting Settings:** A new `DraftEmailSettings` configuration group allows fine-grained control over
+  the drafting process, including the source folder for messages, batch size, the LLM model used for drafting, and the
+  prompt guiding the LLM.
+- 🚀 **Flag-Based Deduplication:** The agent now prevents re-drafting the same message by utilizing a custom IMAP keyword
+  (`$AiHubDrafted`) or falling back to the `\Answered` flag, ensuring idempotency across runs.
+- 📦 **New Events for Drafting:** Introduced `MailBatchDraftedEvent` to summarize the results of a batch drafting run,
+  and `DraftedReplyRef` to provide detailed references for each created draft.
+- 📤 **Robust Draft Appending:** The IMAP client can now append `\Draft`-flagged messages to a configured drafts folder,
+  automatically resolving the exact server folder name (e.g., handling localized "[Gmail]/Drafts") and returning the
+  `APPENDUID` when supported.
+- 🧵 **Enhanced Email Threading:** Mail parsing and `MailFetchedEvent` now include RFC `Message-ID`, `References`, and
+  `Reply-To` headers, enabling `ReplyComposer` to generate correctly threaded replies that appear nested in any mail
+  client.
+- 🛠️ **Dedicated Reply Composition Logic:** A new `ReplyComposer` utility provides deterministic and idempotent
+  generation of reply envelopes, ensuring consistent subject lines (e.g., "Re: Subject") and proper threading.
+
+### Changed
+
+- 🔄 **IMAP Agent Workflow Separation:** The IMAP agent now supports two distinct and independent workflows: one for
+  reading and optionally moving mail, and another for batch drafting replies.
+- ⚙️ **IMAP Configuration Restructuring:** The configuration for IMAP agents has been refactored, moving
+  drafting-related settings into the new `DraftEmailSettings` group. **Note: This is a breaking change to the config
+  shape; existing IMAP agent profiles must be recreated.**
+- 📄 **Flexible Message Fetching:** The IMAP client's `fetch_message` method now accepts an optional folder argument,
+  allowing messages to be fetched from specific mailboxes beyond just the inbox.
+- 🛡️ **Improved Folder Resolution:** IMAP client operations, such as moving mail and appending drafts, now include
+  robust folder resolution logic to ensure the correct mailbox is targeted, with fallbacks to special-use folders where
+  applicable.
+
+### Removed
+
+- 🗑️ **Consolidated `drafts_folder`:** The `drafts_folder` setting has been removed from the general `ImapClientConfig`
+  and integrated into the more specific `DraftEmailSettings`.
+
+### Refactor
+
+- 🧹 **Internal Workflow Streamlining:** The internal IMAP agent steps have been reorganized, separating the
+  `finish_after_move_step` from the new drafting logic to enhance modularity and clarity.
+
+______________________________________________________________________
+
+## [v0.314.0] - 2026-07-21 - Enhanced LLM Structured Output and Agent Self-Awareness
+
+### Added
+
+- 🦾 **Re-enabled Per-Agent Self-Awareness:** Agents can now detect and answer meta-questions about their capabilities
+  and workflows, providing a more intuitive and responsive user experience.
+- 🧪 **New Integration Tests for Meta-Question Routing:** Comprehensive integration tests were added to validate that
+  meta-questions are correctly handled by self-awareness workflows and bypass irrelevant steps like retrieval.
+
+### Changed
+
+- ⚡️ **Optimized LLM Structured Output for Speed and Reliability:** Switched to `response_format` JSON schema as the
+  default mechanism for structured LLM outputs, particularly for reasoning models on Infomaniak. This update
+  significantly improves parsing reliability and drastically reduces latency by disabling unnecessary reasoning during
+  structured data extraction.
+- ⚙️ **Universal `response_format` Support:** All chat models in the LiteLLM configuration now explicitly declare
+  support for `response_format` JSON schema, enabling consistent and high-performance structured output across the
+  board.
+- 🔄 **Introduced Meta-Question Gating for Agent Workflows:** Core agent entry steps (e.g., memory retrieval, chat
+  history processing) are now gated by meta-question detection. This ensures that meta-questions are handled by
+  dedicated self-awareness workflows, preventing them from triggering the main agent pipeline.
+- 📄 **Improved Resilience for Meta-Question Detection and Answering:** Meta-question detection now gracefully handles
+  transient API errors and malformed responses, preventing workflow failures. Additionally, meta-question answers
+  explicitly disable LLM reasoning to further reduce latency and improve responsiveness.
+- 📝 **Updated Structured Output Handling in Conversation Metadata:** The internal logic for generating conversation
+  titles and follow-up questions has been adjusted to leverage the new `response_format` mechanism, no longer relying on
+  forced tool calls. (Note: Conversation metadata generation remains temporarily disabled.)
+- 🛡️ **`McpReactAgent` Opts Out of Self-Awareness:** The `McpReactAgent` now explicitly bypasses self-awareness
+  features, streamlining its specific workflow.
+
+### Refactor
+
+- 🧹 **Superseded Prior Resilience Decision:** The architectural decision to enhance resilience for reasoning models has
+  been updated and superseded by a new document outlining the comprehensive adoption of `response_format` JSON schema
+  for structured LLM outputs.
+
+______________________________________________________________________
+
+## [v0.313.0] - 2026-07-17 - Streamlined Agent Configuration Import
+
+### Added
+
+- ✨ **Agent Instance Import Feature:** Introduced the ability to import agent configurations directly from JSON files,
+  making it easier to migrate or share agent setups between environments or users.
+- 📄 **Robust Import Validation:** Implemented comprehensive validation for imported agent configuration files, including
+  checks for valid JSON format, correct structural integrity, presence of required fields, and support for the export
+  schema version.
+- 🌐 **Localized Import Messages:** Added translated messages for the new agent import functionality, providing clear
+  feedback for various success and error states in multiple languages.
+- 🚀 **Pre-fill Agent Creation from Import:** When a valid agent configuration is imported, the agent creation form will
+  now automatically pre-fill with the imported data, significantly speeding up the agent setup process.
+- ⚙️ **Automatic Tenant ID Assignment:** Ensures that imported agent configurations are automatically assigned the
+  correct `tenant_id` and, if applicable, `org_memory.tenant_id`, for seamless integration into the current environment.
+
+______________________________________________________________________
+
+## [v0.312.1] - 2026-07-16 - Enhanced UI Clarity
+
+### Added
+
+- ✨ Added an **empty state message** to the Memory List table, providing clear feedback when no items are present.
+
+______________________________________________________________________
+
+## [v0.312.0] - 2026-07-16 - Enhanced IMAP Agent: Organize Your Inbox with Mail Movement
+
+### Added
+
+- ✨ **Mail Movement Capability for IMAP Agent:** Introduced the ability for the IMAP agent to automatically move fetched
+  emails from the inbox to a specified "Processed" folder, enhancing mail organization workflows.
+- 📬 **New `MailMovedEvent`:** A dedicated event is now emitted when an email is successfully moved on the IMAP server,
+  providing clear visibility of mail organization actions in the event timeline.
+- ⚙️ **Configurable Mail Organization:** Added new IMAP client configuration options, `enable_move` and
+  `processed_folder`, allowing users to enable and define the target folder for processed emails.
+- 🦾 **Robust IMAP Message Movement Logic:** Implemented a sophisticated `move_message` method in the IMAP client that
+  intelligently utilizes the IMAP `MOVE` command when available, or falls back to `COPY` and `UID EXPUNGE` for reliable
+  and non-destructive message relocation.
+
+### Changed
+
+- 📄 **Expanded IMAP Agent Demonstrator:** The `imap_workflow` demonstrator agent has been updated to showcase the new
+  optional mail movement functionality, providing a practical example of organizing fetched emails.
+- 📝 **Updated IMAP Agent Descriptions:** Descriptions for the IMAP agent now clearly reflect its expanded capabilities,
+  highlighting the ability to organize mail in addition to reading it.
+- 🔑 **User Identity in IMAP Start Event:** The `ReadMailStartEvent` now includes an optional `user` identity field,
+  enabling more contextualized agent runs when triggered programmatically through the API.
+
+______________________________________________________________________
+
+## [v0.311.1] - 2026-07-16 - OpenTelemetry Cost Optimization and Observability Fixes
+
+### Fixed
+
+- 🐛 **Reduced OpenTelemetry Data Cardinality**: Implemented robust filtering for HTTP server metrics to prevent
+  unbounded, high-cardinality data (e.g., `http.server.duration`, `http.server.request.size`) from being sent to the
+  backend. This change significantly reduces observability costs and improves the signal-to-noise ratio of collected
+  telemetry data by stopping automatic FastAPI/ASGI instrumentation.
+- ⚡️ **Optimized OpenTelemetry HTTP Header Capture**: Switched from capturing all HTTP request headers to an explicit,
+  bounded allowlist (`content-type`, `accept`, `accept-language`) for span attributes. This prevents high-cardinality
+  attributes like `user-agent` or `cookie` from inflating trace and metric costs.
+- 🔄 **Preserved `http.route` Semantics**: Ensured that the `http.route` OpenTelemetry attribute correctly retains its
+  bounded route template value, while concrete URL paths are now recorded under `url.path`. This prevents metric and
+  label cardinality explosions caused by de-templating `http.route`.
+- 🧪 **Added Regression Tests for OTel Optimizations**: Introduced new tests to safeguard against the future
+  re-introduction of high-cardinality OpenTelemetry data issues by verifying HTTP header capture limits and the behavior
+  of the `http.route` attribute.
+
+______________________________________________________________________
+
+## [v0.311.0] - 2026-07-15 - Agent Configuration Export Introduced
+
+### Added
+
+- ✨ **Empowered users to export agent configurations**, allowing them to download a JSON file containing the full setup
+  of an agent instance directly from the agent card or its dedicated configuration page.
+- 📄 **Implemented a standardized export schema (version 1.0)** for agent configurations, ensuring consistent and
+  machine-readable data for easier backup and migration.
+- 🌐 **Included localized labels** for the new "Export" button, providing a seamless experience for users across all
+  supported languages.
+
+______________________________________________________________________
+
+## [v0.310.6] - 2026-07-15 - Enhanced Document List Selection
+
+### Added
+
+- ✨ **Introduced "Select All" for Documents:** Users can now easily select all deletable documents in the document list
+  using a new "Select All" checkbox in the table header, streamlining bulk action workflows.
+
+### Changed
+
+- 🔄 **Improved Document Selection Logic:** The mechanism for managing selected documents has been refined, ensuring that
+  the "Select All" option accurately reflects and applies only to documents that are available for deletion.
+
+### Fixed
+
+- 🐛 **Cleared Selection on Document Deletion:** Documents are now immediately deselected from the list of checked items
+  after they have been initiated for individual deletion, preventing inconsistencies in the selection state.
+
+______________________________________________________________________
+
+## [v0.310.5] - 2026-07-15 - Improved Release Tagging Workflow
+
+### Changed
+
+- ⚙️ **Improved Release Workflow Accuracy:** The GitHub Actions workflow responsible for setting `latest` tags now
+  explicitly checks out the precise source tag, ensuring greater consistency and preventing potential discrepancies
+  during release operations.
+
+______________________________________________________________________
+
+## [v0.310.4] - 2026-07-15 - Enhanced Container Health Monitoring
+
+### Added
+
+- 🚀 **Introduced Docker Health Checks:** Added robust `HEALTHCHECK` instructions to both the main web application
+  (`web`) and system administration interface (`sysadmin-web`) Docker containers. This enhancement allows container
+  orchestrators to proactively monitor service availability, automatically detect unresponsive containers, and manage
+  their lifecycle more effectively, leading to improved application resilience and operational stability.
+
+______________________________________________________________________
+
+## [v0.310.3] - 2026-07-15 - Seamless RAG Figure Delivery to LLMs
+
+### Added
+
+- ✨ **Introduced RAG Figure Inlining:** Implemented a new mechanism to inline RAG figures (images) as Base64 directly at
+  the LiteLLM gateway, ensuring compatibility with LLM providers that cannot directly access internal S3 storage.
+- 🖼️ **Configurable Image Inlining:** Added new environment variables (`RAG_IMAGE_INLINE_ENABLED`,
+  `RAG_IMAGE_INLINE_MAX_BYTES`) to control RAG image inlining behavior and define a maximum size, allowing for flexible
+  deployment configurations and cost management.
+- 🔗 **Dedicated Internal S3 Endpoint:** Introduced `S3_STORAGE_INTERNAL_ENDPOINT` for signing presigned URLs
+  specifically for in-cluster services like the LiteLLM gateway, enhancing secure and efficient internal data transfer.
+- 📄 **Architectural Decision Record:** Added a new ADR outlining the rationale, design, and consequences of the RAG
+  figure inlining solution.
+
+### Changed
+
+- 🔄 **Refined S3 Presigned URL Generation:** Updated the S3 anonymous file access service to support generating
+  presigned URLs tailored for either public or internal (in-cluster) access based on the RAG image inlining setting.
+- 🔌 **LiteLLM Gateway Integration:** Configured the LiteLLM gateway to utilize a new custom callback, which
+  intelligently fetches RAG figures from internal storage and inlines them as Base64 into LLM prompts.
+- 🎛️ **RAG Agent Image Handling:** Modified RAG agents to sign image URLs against the new internal S3 endpoint when
+  inlining is enabled, ensuring figures are correctly prepared for the LiteLLM gateway.
+- ⚙️ **Deployment Configuration:** Updated Docker Compose and deployment scripts to include the new LiteLLM custom
+  callback and propagate relevant environment variables to the LiteLLM and RAG agent services.
+- 📚 **Documentation:** Expanded the environment variables documentation to include details on
+  `RAG_IMAGE_INLINE_ENABLED`, `RAG_IMAGE_INLINE_MAX_BYTES`, and `S3_STORAGE_INTERNAL_ENDPOINT`.
+
+______________________________________________________________________
+
+## [v0.308.3] - 2026-07-15 - Platform Version Synchronization and Maintenance
+
+### Changed
+
+- 📦 **Platform-Wide Version Alignment:** All core packages and their inter-dependencies have been updated to `v0.308.3`
+  to ensure consistent versioning across the entire platform, improving overall stability and build predictability.
+
+______________________________________________________________________
+
+## [v0.310.2] - 2026-07-15 - Enhanced Release Automation and Flexibility
+
+### Changed
+
+- ✨ **Improved npm publishing for backports:** The `publish-npm` workflow now intelligently handles backport or hotfix
+  releases. When publishing a version older than the current `latest` on the npm registry, it will assign a
+  `release-X.Y` dist-tag instead of implicitly moving the `latest` tag backwards, preserving the `latest` tag for new
+  mainline releases.
+- 🚀 **Flexible manual release tagging:** The `release-manual` workflow now supports a `source_ref` input, allowing users
+  to tag releases from any specified branch or commit (e.g., `hotfix/0.308`) rather than strictly the branch the
+  workflow is run from. This greatly improves the process for hotfixes and maintenance branches.
+- 📄 **Enhanced release workflow visibility:** The run name for manual releases now includes the `source_ref` being
+  tagged, providing clearer context at a glance within GitHub Actions.
+- ⚙️ **Streamlined manual release validation:** Updated internal logic to validate and correctly checkout the specified
+  `source_ref`, ensuring robust and accurate manual release operations.
+
+______________________________________________________________________
+
+## [v0.310.1] - 2026-07-15 - Streamlined Manual Release Process
+
+### Added
+
+- ✨ **Introduced Manual Release Workflow:** A new GitHub Actions workflow (`release-manual.yml`) has been added to
+  provide maintainers with enhanced control and flexibility over the release process. This workflow allows for the
+  manual creation of releases with a specified `vMAJOR.MINOR.PATCH` version tag from any arbitrary branch, which is
+  particularly useful for hotfixes or special-purpose releases. It fully automates critical steps such as changelog
+  generation, version bumping, and dispatching all downstream build, release, and publishing workflows (e.g., Docker
+  images, npm, PyPI), while ensuring release safety by preventing tag overwrites and keeping the source branch pristine.
+
+______________________________________________________________________
+
+## [v0.310.0] - 2026-07-15 - Agents Gain IMAP Read Capability with Secure S3 Attachment Handling
+
+### Added
+
+- ✨ **Introduced IMAP Read Capability for Agents**: Agents can now connect to IMAP inboxes, list unread messages, and
+  fetch selected messages along with their attachments. This foundational capability enables agents to interact with
+  email workflows.
+- 🦾 **New IMAP Agent Demonstrator**: A new `ImapAgent` (non-conversational) has been added to the playground, showcasing
+  how to list unread mail and fetch messages with S3-referenced attachments.
+- 📦 **Core IMAP Configuration and Event Types**: Added `ImapClientConfig` for configuring IMAP connections, and new
+  event types like `UnreadMailListedEvent`, `MailFetchedEvent`, `MailAttachmentRef`, and `UnreadMailSummary` for
+  structured communication of IMAP data.
+- ☁️ **S3 Integration for Agent Attachments**: The agent runtime now includes native S3 client integration, allowing
+  mail attachments to be stored securely in S3 and referenced by `file_id` within agent events, preventing event bloat.
+- 🔒 **Configurable Message Size Limits**: Implemented deployment-fixed caps for raw message size, body size, and
+  attachment size to protect agents from hostile or oversized emails and prevent exceeding message-size limits in the
+  audit trail and WebSocket streams.
+- 🌍 **Internationalization for IMAP Features**: Added translations for IMAP configuration fields and new IMAP-related
+  events in German, English, French, and Italian.
+- 📄 **Architectural Decision Record for IMAP**: A new ADR documents the design decisions behind the agent's IMAP read
+  capability, covering exposure, event handling, and attachment storage.
+
+### Changed
+
+- 🚀 **Agent Runtime Dependency on S3**: The agent runtime now depends on S3 for storing mail attachments, expanding its
+  infrastructure requirements.
+- 📡 **IMAP Events Exposed via WebSocket**: `UnreadMailListedEvent` and `MailFetchedEvent` are now included in the
+  `DisplayEvents` type, making them visible in the frontend's event timeline via WebSocket.
+- 🧩 **Filename Sanitization for Attachments**: Improved security by sanitizing attachment filenames to prevent path
+  traversal vulnerabilities.
+
+### Security
+
+- 🔑 **HTML Body Exclusion from Events**: The raw HTML body of fetched emails is deliberately *not* surfaced in
+  `MailFetchedEvent` (which is persisted and streamed to the frontend) to mitigate Cross-Site Scripting (XSS) risks from
+  hostile sender markup.
+
+______________________________________________________________________
+
+## [v0.308.2] - 2026-07-14 - Enhanced OpenWebUI Model Availability and Access
+
+### Added
+
+- ⚙️ **New `list_base_models` method:** Introduced a new client method in `OpenWebuiClient` to retrieve OpenWebUI
+  registry entries for raw provider models (those without a `base_model_id`), enabling more comprehensive model
+  management.
+
+### Fixed
+
+- 🐛 **Resolved OpenWebUI model access denials:** Fixed an issue where users were unable to access certain workspace
+  models in OpenWebUI, encountering "Model not found" errors even when the models were visible. This occurred when an
+  underlying raw LiteLLM model was inadvertently registered, creating a "shadowing" entry that blocked user access.
+- 🛡️ **Automated removal of shadowing base models:** Implemented an automatic cleanup process during OpenWebUI model
+  synchronization to detect and remove these problematic "shadowing" base model registry entries, ensuring consistent
+  and correct user access to all provisioned models.
+
+______________________________________________________________________
+
+## [v0.308.1] - 2026-07-14 - Refined Function Registration and Default Status
+
+### Changed
+
+- ⚙️ **Adjusted Default Function Activation:** Modified the initial setup process to register core functions like
+  **`source_action.py`**, **`tracing_action.py`**, and **`memory_action.py`** as *inactive* by default, providing
+  administrators with greater control over initial system capabilities.
+
+______________________________________________________________________
+
+## [v0.309.4] - 2026-07-14 - Improved Event Context Resolution for Enhanced UI Navigation
+
+### Added
+
+- ✨ **New Thread Resolution API:** Introduced a dedicated API endpoint
+  (`/api/v1/active/events/agents/displays/{display_id}/thread`) allowing the UI to dynamically resolve the correct
+  conversation thread from a display ID, streamlining navigation to related traces, sources, or memories.
+- 📄 **Thread Reference DTO:** Added a new `ThreadReference` data transfer object to structure the API responses for
+  thread resolution.
+- 📚 **Core Persistence Support:** Implemented a new method within the `PersistedAgentEventEntity` to efficiently query
+  and retrieve the thread ID associated with any given display ID from the persistence layer.
+- 🧪 **Robust API Testing:** Included comprehensive new tests for the `resolve_thread_for_display` API endpoint,
+  validating correct thread resolution across various scenarios, including AI-Hub Traceability Layer (AITL) delegation.
+
+### Changed
+
+- 🔄 **Synchronized Event ID Hashing:** Updated the `_str_to_object_id` function in OpenWebUI actions (memory, source,
+  tracing) to precisely match the hashing logic used by AI-Hub's event production, ensuring consistent `display_id`
+  generation for accurate event linking.
+- 🚀 **Dynamic UI Panel Navigation:** Enhanced the OpenWebUI frontend to dynamically fetch the associated **thread ID**
+  using the new API when users click "show traces," "show sources," or "show memories," providing a more resilient and
+  decoupled approach to navigating contextual panels.
+- 🗑️ **Optimized Cross-Window Communication:** Removed the direct `thread_id` from `postMessage` payloads originating
+  from OpenWebUI functions, as the frontend now handles its resolution, simplifying the data passed between the embedded
+  UI and the parent application.
+
+### Refactor
+
+- 🧹 **Standardized Error Messaging:** Consolidated the "access denied" error message for HTTP 403 responses within the
+  `EventController` into a reusable constant, improving consistency and maintainability.
+
+______________________________________________________________________
+
+## [v0.309.3] - 2026-07-13 - Deployment Configuration & Documentation Enhancements
+
+### Changed
+
+- ⚙️ **Standardized MongoDB Connection String:** Explicitly configured the `MONGO_CONNECTION_STRING` across all Docker
+  Compose deployment environments, ensuring consistent and clear database connectivity for all services.
+- 📄 **Updated Environment Variable Documentation:** Ensured the `memory_writer_agent` is correctly listed in the
+  environment variables documentation, reflecting its operational dependencies on MongoDB, NATS, and Neo4j.
+
+______________________________________________________________________
+
+## [v0.309.2] - 2026-07-13 - Empowering Expert Agents with Advanced Memory Capabilities
+
+### Added
+
+- 🦾 **Enhanced Expert Agent Capabilities:** The `expert_asking_agent` and `expert_rag_agent` services are now fully
+  configured to integrate with **Mem0** for advanced LLM, embedding, and reranking functionalities, and **Neo4j** for
+  organizational memory graph storage, significantly boosting their intelligence and knowledge retention.
+
+### Changed
+
+- 📄 **Updated Environment Variable Documentation:** The documentation for environment variables has been updated to
+  reflect the expanded utilization of **Mem0** and **Neo4j** settings by the `expert_asking_agent` and
+  `expert_rag_agent`.
+
+### Removed
+
+- 🗑️ **Streamlined CI/CD Workflow:** An extraneous Docker login step has been removed from the `test-backup-e2e` GitHub
+  Actions workflow, contributing to a more efficient build process.
+
+______________________________________________________________________
+
+## [v0.309.1] - 2026-07-13 - Enhanced Memory Protection and Agent Isolation
+
+### Added
+
+- ✅ **New Tests for Memory Scoping Logic**: Dedicated unit tests were introduced to validate the correct implementation
+  and behavior of agent-specific memory isolation within the Mem0 service.
+
+### Changed
+
+- 🔐 **Improved Agent Memory Isolation**: User memories in Mem0 are now natively scoped to the writing agent during
+  reconciliation, preventing one agent from modifying or deleting another agent's user-specific data. Organization
+  memories continue to be tenant-shared as intended.
+
+______________________________________________________________________
+
+## [v0.309.0] - 2026-07-09 - UX Boost: Asynchronous User Memory & Graph Store Optimization
+
+### Added
+
+- 🦾 Introduced the **`MemoryWriterAgent`**, a new dedicated system agent for asynchronously persisting user memories,
+  significantly improving chat responsiveness by decoupling memory writes from the critical path.
+- ✨ Implemented a **`discoverable` flag** on the base `Agent` class, enabling programmatic control over which agents
+  appear in the Admin UI.
+- 💬 Added new **event types** (`MemoryStorageRequestedEvent`, `StoreUserMemoryRequestedEvent`, `MemoryStoredStopEvent`)
+  to orchestrate the new asynchronous memory storage workflow.
+- ⚙️ Introduced a new configuration option, **`enable_async_memory_storage`**, for RAG and ExpertRAG agents, allowing
+  administrators to enable or disable asynchronous user memory persistence.
+
+### Changed
+
+- ⚡️ Drastically **improved chat user experience** by making user memory persistence asynchronous; the "thinking"
+  indicator now clears immediately after an agent answers, without waiting for memory storage.
+- 🚀 **Optimized user memory save performance** by disabling the Neo4j graph store for user memory, reducing save latency
+  by approximately 73% (from ~66s to ~17.5s) per turn. Organization memory retains graph store capabilities.
+- 🔄 Enhanced **cross-agent user memory sharing** by routing user memory queries through the vector store, allowing
+  agents to access all user memories regardless of the originating agent.
+- 📈 Expanded **Langfuse tracing** to correctly attribute asynchronous `MemoryWriterAgent` runs to the original user
+  query and context.
+- 📦 Updated **deployment configurations** to include the new `MemoryWriterAgent` service across all Docker Compose
+  variants.
+
+### Refactor
+
+- 🧹 Redesigned **`AgentMemory` architecture** to use separate, lazily-built Mem0 services for user and organization
+  memory, enabling distinct and optimized storage configurations for each.
+- 🛠️ Modernized **Mem0 integration** to gracefully handle disabled graph stores, preventing errors and ensuring robust
+  memory operations when graph data is not present.
+- ⚙️ Introduced an **`enable_graph` parameter** to `Mem0Settings.get_config` for fine-grained control over graph store
+  inclusion, enabling performance optimizations per memory type.
+
+______________________________________________________________________
+
+## [v0.308.0] - 2026-07-08 - Dynamic LLM Access and Robust Role Management
+
+### Added
+
+- ✨ **Dynamic LLM Model Discovery and Provisioning**: Introduced automatic discovery of LiteLLM chat models and their
+  provisioning as workspace models in OpenWebUI, allowing users to select and interact with available LLMs.
+- 🦾 **"Use All Models" Access Preset**: Added a new access preset to quickly grant users permission to utilize all
+  available LLM models.
+- 📂 **Model Capabilities in Access Editor**: Integrated a dedicated 'Models' category into the Role Access Rules editor,
+  enabling fine-grained control over model permissions.
+
+### Fixed
+
+- 🐛 **Reliable Role Access Updates**: Corrected the role update mechanism to ensure that changes to access rules trigger
+  proper re-synchronization of OpenWebUI access grants.
+- 🔒 **Normalized Model Access Rules**: Addressed an issue where model names containing dots (e.g., `Kimi-K2.6`) were not
+  correctly normalized in access rules, preventing proper matching and access grants. This applies to both role and
+  tenant access rules.
+- 🩹 **Persistent Access Change Hooks**: Fixed a regression where internal signal subscriptions for access changes were
+  prematurely garbage-collected, ensuring that OpenWebUI re-syncs are reliably triggered.
+- 🔑 **Improved Cross-Tenant Role Isolation**: Resolved a bug that could cause access rules for roles with the same name
+  across different tenants to collide, ensuring each tenant's roles maintain their distinct access permissions.
+
+### Changed
+
+- 🔄 **Unified OpenWebUI Model Management**: OpenWebUI provisioning now seamlessly manages both AI-Hub agent models and
+  newly introduced LLM workspace models, each with distinct prefixes and tailored access grant computations.
+- 🖼️ **Enhanced Role Access Editor UI**: The Role Access Rules editor now features a dedicated "Models" category,
+  providing a clearer and more intuitive interface for managing model-related permissions.
+
+### Refactor
+
+- 🧹 **Clearer OpenWebUI Model Prefixes**: Renamed the OpenWebUI model prefix for agents (`AIHUB_MODEL_PREFIX` to
+  `AIHUB_AGENT_PREFIX`) to improve clarity and distinguish it from the new prefix used for LLM models.
+
+______________________________________________________________________
+
+## [v0.307.1] - 2026-07-07 - Seamless Multi-Agent Conversations: Dedicated Thread Contexts
+
+### Fixed
+
+- 🐛 **Multi-Agent Chat Context Interference**: Resolved an issue where multiple agents participating in the same chat
+  session could inadvertently share or overwrite each other's conversation context, leading to incorrect or mixed-up
+  responses.
+- 🐛 **Agent-Specific Event Routing**: Corrected the internal event distribution logic to ensure messages are now
+  precisely routed to the intended agent instance within a chat, preventing cross-agent communication mix-ups.
+
+### Added
+
+- ✨ **Multi-Agent Routing Tests**: Introduced new comprehensive tests to validate that distinct agents in a shared chat
+  thread correctly maintain their separate contexts and respond independently.
+
+### Changed
+
+- 🔄 **Thread ID Salting for Agents/Models**: Updated the ID generation mechanism for chat threads to include agent or
+  model identifiers as a "salt." This ensures unique thread IDs for each agent's or model's interaction within a single
+  chat session, effectively isolating their operational context.
+- ⚡️ **Targeted Event Distribution**: Modified the core event distributor to explicitly direct events to a specific
+  `target_agent` when provided, enhancing precision and control over agent interactions and preventing unintended event
+  broadcasts.
+
+______________________________________________________________________
+
+## [v0.307.0] - 2026-07-07 - Enhanced Model Access Control and Granular Permissions
+
+### Added
+
+- ✨ **New Model Permission Rules**: Introduced canonical permission rule builders and normalization logic within
+  `AccessChecker` to precisely define and manage access to individual models and model capabilities.
+- 🚀 **Centralized Model Access Guard**: Added new `_assert_model_access` and `_has_model_access` helper methods to
+  `OpenaiService`, ensuring all model invocations enforce user permissions consistently at the service layer.
+- 🧪 **Comprehensive Model Access Tests**: Added extensive unit tests for both `ModelService` and `OpenaiService` to
+  validate the new granular model and assistant access control mechanisms.
+
+### Security
+
+- 🔑 **Granular Model Access Enforcement**: Implemented strict access control checks across all OpenAI API service
+  methods (Chat Completions, Embeddings, Speech-to-Text, Text-to-Speech, Image Generation) to ensure users only access
+  models for which they have explicit permissions.
+- 🔐 **Filtered Model Listings**: The `/v1/models` and `ModelService` listing endpoints now filter available models based
+  on the requesting user's granted permissions, only showing models they are authorized to use.
+- 🛡️ **Improved Assistant Access Logic**: Refined the `chat_completion_with_assistants` and `get_model_with_assistants`
+  endpoints to correctly differentiate and apply access checks for both models and assistants, raising `403 Forbidden`
+  for unauthorized access.
+- 🚫 **Prevented Permission Masking**: Modified model lookup fallback logic in `OpenaiService` so that only
+  `404 Not Found` errors will trigger a search for an assistant; any other error, such as `403 Forbidden`, is now
+  propagated directly.
+
+### Refactor
+
+- 🧹 **Centralized Access Control Logic**: Moved model and assistant access validation logic from the `OpenaiController`
+  to the `OpenaiService`, ensuring a single source of truth for permission checks and simplifying controller logic.
+
+______________________________________________________________________
+
+## [v0.306.2] - 2026-07-06 - Refined LLM Parameter Defaults
+
+### Changed
+
+- ⚙️ **LLM parameter default value:** Adjusted the default value for a specific LLM parameter (e.g., temperature) from
+  `0.1` to `0.0` to refine model configuration defaults and potentially promote more deterministic initial outputs.
+
+______________________________________________________________________
+
+## [v0.306.1] - 2026-07-02 - Improved Agent Form Reliability
+
+### Fixed
+
+- 🐛 **Agent configuration forms** now reliably preserve unsaved edits, preventing data loss even during background data
+  refreshes or transient loading states.
+- 🧩 **Agent creation forms** no longer reset user input when the selected agent class data is refreshed, ensuring a
+  smoother creation process.
+- 🔄 **Enhanced form stability** by preventing automatic refetches of agent class and instance data on window focus,
+  safeguarding ongoing user input.
+
+______________________________________________________________________
+
+## [v0.306.0] - 2026-07-02 - Major Upgrade: Secure Open Terminal for OpenWebUI Code Interpreter
+
+### Added
+
+- 🦾 **Open Terminal Service**: Introduced a new `open-terminal` service dedicated to sandboxed code execution for
+  OpenWebUI's plain LLM models. This new service offers per-user isolation and downloadable file output.
+- 🔑 **`OPEN_TERMINAL_API_KEY`**: Added a new environment variable for authenticating OpenWebUI's connections to the Open
+  Terminal sandbox, enhancing security.
+- 🌐 **`code-sandbox` Network Zone**: Established a new, isolated Docker network specifically for the `open-terminal`
+  sandbox and its direct callers (OpenWebUI), preventing lateral reach to other backend or data services.
+- 📄 **Architectural Decision Record**: A detailed ADR (`2026_06_22_openwebui_code_execution_open_terminal.md`) was added
+  to document the architectural shift from Jupyter to Open Terminal, outlining the rationale, decision, and
+  consequences.
+- ⚙️ **Open Terminal Dockerfile & Build Process**: Added a custom Dockerfile for `open-terminal` to include essential
+  document-processing libraries (reportlab, fpdf2) and integrated its build and push into the deployment Makefile.
+
+### Changed
+
+- 🔄 **OpenWebUI Code Execution Backend**: OpenWebUI now exclusively uses the new `open-terminal` service for
+  model-driven code execution, replacing the previous Jupyter integration.
+- 📄 **Jupyter Role Clarification**: The Jupyter service is now explicitly designated as "retained in stack but no longer
+  the OpenWebUI code path," signifying its deprecation for this use case.
+- 🗺️ **Network Topology**: Updated the system's network architecture from five to six isolated Docker networks to
+  incorporate the new `code-sandbox` zone, enhancing overall system isolation.
+- 📚 **Documentation Updates**: Comprehensive revisions across the project documentation (skills, README, architecture,
+  deployment guides, environment variables) to reflect the integration of Open Terminal, its features, and the updated
+  network and deployment model.
+- 🚦 **OpenWebUI Service Dependencies**: Changed OpenWebUI's health check dependency from `jupyter` to the new
+  `open-terminal` service.
+
+### Security
+
+- 🔒 **Enhanced Code Execution Isolation**: Arbitrary user-submitted code executed via Open Terminal now runs in a
+  dedicated `code-sandbox` network, which is internal (no outbound internet in non-dev stages) and only allows
+  communication with its direct callers, significantly reducing the blast radius in case of a sandbox escape.
+- 🛡️ **Per-User Sandbox Isolation**: The Open Terminal service is configured for multi-user support, providing separate
+  Linux accounts and home directories for each user, improving data privacy and preventing users from accessing each
+  other's files within the sandbox.
+
+______________________________________________________________________
+
+## [v0.305.8] - 2026-07-01 - Enhanced Mem0 Milvus Filtering
+
+### Added
+
+- ✨ Introduced **`PatchedMilvusDB`** to extend the filtering capabilities of mem0's Milvus vector store, enabling more
+  complex query operations.
+- 🧪 Added comprehensive **unit tests** for `PatchedMilvusDB` to ensure accurate and robust generation of Milvus query
+  filters, especially for advanced operators.
+
+### Fixed
+
+- 🐛 Resolved an issue where **`mem0`'s MilvusDB vector store** failed to correctly process advanced metadata filters,
+  particularly the `in` operator, which led to Milvus query parsing errors.
+
+### Changed
+
+- 🔄 The **`Mem0Service`** now integrates the `PatchedMilvusDB` wrapper for its internal Milvus vector store,
+  transparently applying the enhanced filter logic.
+
+______________________________________________________________________
+
+## [v0.305.7] - 2026-07-01 - Streamlined Dataset Details UI
+
+### Removed
+
+- 🗑️ **Dataset Details Page:** Removed an unnecessary `ConfirmPopup` component from the dataset details view,
+  simplifying the UI.
+
+______________________________________________________________________
+
+## [v0.305.6] - 2026-06-30 - Enhanced Document Processing and User Experience
+
+### Added
+
+- ✨ **Enhanced Document Page Counting:** The MarkItDown loader now accurately determines the page count for Microsoft
+  Word (.docx), PowerPoint (.pptx), and Excel (.xlsx) files, providing more precise document metadata.
+- 🚀 **Implemented File Upload Progress Tracking:** Users will now see real-time progress indicators during document
+  uploads, improving visibility and user experience, especially for larger files.
+
+______________________________________________________________________
+
+## [v0.305.5] - 2026-06-30 - Enhanced CI/CD Workflow Resilience
+
+### Fixed
+
+- 🐛 **CI Workflow Failures:** Prevented potential CI/CD pipeline failures during Docker image pre-pull login by ensuring
+  that an expired or absent GitHub token no longer causes the job to fail, significantly improving overall workflow
+  stability.
+
+### Changed
+
+- 🔄 **Best-Effort Docker Login:** Modified the `ghcr.io` Docker login process in CI workflows to be best-effort; if
+  authentication fails (e.g., due to an expired token), the system will now proceed with anonymous pulls for public
+  images, guaranteeing job continuity.
+- 📄 **Internal Documentation:** Updated internal documentation for GitHub Actions (`CLAUDE.md`) to explicitly reflect
+  the new best-effort login behavior and its rationale, providing clearer guidance for pipeline operations.
+
+______________________________________________________________________
+
+## [v0.305.4] - 2026-06-30 - Improved Agent Configuration Stability
+
+### Fixed
+
+- 🐛 **Agent ID Immutability:** Corrected an issue where changes to an agent's **agent ID** during an update could lead
+  to silent failures in real-time communication (SSE). The system now explicitly ensures the agent ID remains immutable,
+  aligning with the instance key and preventing chat completion issues.
+- 🖼️ **UI Enhancement:** Disabled the **agent ID** field in the agent configuration form on the web interface, clearly
+  indicating its immutable nature and preventing users from inadvertently attempting to change it when editing an
+  existing agent.
+
+______________________________________________________________________
+
+## [v0.305.3] - 2026-06-29 - Fortifying AI Agents Against Flaky LLM Structured Output
+
+### Added
+
+- 🦾 **Introduced `ResilientOpenAILike` for Robust LLM Interactions**: A new wrapper for `OpenAILike` models that
+  automatically retries structured prediction calls multiple times. This significantly improves the reliability of
+  agents interacting with Large Language Models (LLMs) that may intermittently produce malformed structured output.
+- 📄 **New Architecture Decision Record (ADR) on Reasoning Model Resilience**: Documented the challenges with structured
+  output from specific reasoning models (Kimi-K2.6, Qwen3.5) on Infomaniak and detailed the architectural decisions to
+  mitigate these issues, including the adoption of plain-text verdicts and retry mechanisms.
+- ⚡️ **New `text_verdict` Utility Module**: A dedicated module providing helpers for requesting and parsing plain-text
+  verdicts from LLMs, which is now used by several guard and detection functions for improved reliability and speed.
+
+### Changed
+
+- 🔄 **Relevance Guards Now Use Plain-Text Verdicts**: The `agent_description_guard`, `few_shot_guard`, and
+  `context_sufficient_guard` have been converted from expecting structured JSON output to requesting and parsing simple
+  plain-text verdicts (e.g., `ALLOW`/`BLOCK`, `SUFFICIENT`/`INSUFFICIENT`). This change dramatically increases their
+  reliability with reasoning models.
+- 🚀 **Faster and More Reliable Meta-Question Detection**: The `detect_meta_question` function now uses a streamlined,
+  single-token plain-text classification (e.g., `NORMAL`, `META_IDENTITY`) with reasoning disabled, reducing latency
+  from ~4-5 seconds to sub-second on reasoning models without compromising accuracy.
+- 🛡️ **Guards Fail Open on Unrecognizable Responses**: Relevance guards (`agent_description_guard`, `few_shot_guard`,
+  `context_sufficient_guard`) now gracefully degrade by accepting a request if the LLM returns an unparseable verdict,
+  preventing agent crashes and improving user experience.
+- 💬 **Strict System Message Placement for Qwen3.5 Compatibility**: The `do_answer_meta_question` and `RAGAgent`'s
+  guard-reject branch now ensure that system messages always lead the message list, resolving a
+  `400 - System message must be at the beginning` error with Qwen3.5.
+- ⚙️ **Centralized Retry Mechanism for All Structured Predictions**: All structured prediction calls are now routed
+  through the new `ResilientOpenAILike` wrapper by default, providing a single point of failure mitigation for all
+  agents without requiring individual call-site changes.
+
+### Fixed
+
+- 🐛 **Resolved Agent Crashes Due to Flaky LLM Structured Output**: Addressed a critical issue where agents would crash
+  when reasoning models like Kimi-K2.6 or Qwen3.5 failed to produce reliably parseable structured output (e.g., empty
+  tool calls, malformed JSON).
+- 🔒 **Prevented Sensitive Information Leaks in Guard Logs**: Guard-failure logs no longer include raw model output,
+  queries, or retrieved context, enhancing privacy and security.
+
+______________________________________________________________________
+
+## [v0.305.2] - 2026-06-29 - Enhanced Stability and Reliability
+
+### Fixed
+
+- 🐛 **Resolved infinite render loop** in the `DynamicConfiguration` component, preventing UI freezes and ensuring stable
+  form interaction after data updates.
+- ⏱️ **Improved `FewShotAgent` test reliability** by extending the test runner's delay, preventing premature test
+  termination and accommodating longer execution times, especially in self-hosted LLM environments.
+
+______________________________________________________________________
+
+## [v0.305.1] - 2026-06-29 - Enhanced Form Data Stability
+
+### Fixed
+
+- 🐛 **Resolved dynamic form data mutation issues:** Implemented deep cloning during data hydration in the
+  `DynamicConfiguration` component. This prevents FormKit's write-backs from inadvertently mutating shared cached
+  objects (e.g., from Pinia-Colada) and eliminates potential infinite reactivity loops, leading to more stable and
+  predictable form behavior.
+
+______________________________________________________________________
+
+## [v0.305.0] - 2026-06-26 - Simplifying Agent Workflows: Meta-Question Detection Removed
+
+### Removed
+
+- 🗑️ **Meta-question detection and answering functionality** has been completely removed from all agents (Expert RAG,
+  Few-Shot, LLM Wrapping, MCP React, Namespace Selection, and RAG agents). This simplifies their internal architecture
+  and streamlines execution by removing the initial classification step.
+- 🗑️ **Associated event types and internal logic** related to meta-question handling, such as
+  `MetaQuestionDetectedEvent` and `NotAMetaQuestionEvent`, have been deprecated from core agent events and the
+  self-awareness module.
+- 🗑️ **Dedicated test infrastructure** for meta-question routing, including specific feature scenarios and integration
+  tests, has been removed in alignment with the deprecation of this functionality.
+
+### Refactor
+
+- 🧹 **Agent preconditions** for various steps (e.g., memory retrieval, chat history management) have been simplified by
+  removing their dependency on meta-question detection logic, leading to more direct and efficient workflow execution.
+
+______________________________________________________________________
+
+## [v0.304.1] - 2026-06-26 - Temporary Adjustment to Agent Metadata Features
+
+### Changed
+
+- 🔄 **Conversation Metadata Generation Temporarily Disabled:** To enable further investigation and refinement, the
+  automatic generation of conversation titles and follow-up questions has been temporarily paused across `RAGAgent`,
+  `ExpertRAGAgent`, `FewShotAgent`, `LLMWrappingAgent`, and `McpReactAgent`. This aims to ensure a more robust and
+  reliable agent experience in future iterations.
+
+______________________________________________________________________
+
+## [v0.304.0] - 2026-06-25 - Empowering Access Management: Introducing the Dynamic Capability Catalog
+
+### Added
+
+- ✨ **Dynamic Access Capability Catalog**: Introduced a powerful new system that generates a human-readable catalog of
+  grantable capabilities directly from API endpoint permissions at runtime. This ensures that the displayed permissions
+  always match what the system enforces, eliminating drift and simplifying authorization management for operators.
+- 🔑 **Access Presets**: Added a curated library of common access rule combinations (presets) to facilitate one-click
+  assignment of broad permissions like "Use everything" or "Administer all agents."
+- 🦾 **`@access_catalog_entry` Decorator**: New decorator for API controllers, allowing endpoints to easily opt into the
+  access capability catalog by providing localized labels and descriptions. The actual access rule is derived from the
+  endpoint's `user_with_permission` guard, making divergence structurally impossible.
+- ⚙️ **`AIHUB_INTERNAL_API_BASE_URL` Configuration**: Introduced a new environment variable and Docker Compose
+  configuration to specify the internal base URL of the main platform API. This enables server-to-server communication,
+  crucial for the sysadmin plane to proxy the full access capability catalog.
+- 🧭 **Canonical Access Rule Builders**: Added static helper methods (`process_user_rule`, `service_admin_rule`, etc.) to
+  `AccessChecker` for consistently building common permission templates, improving clarity and reducing errors.
+- 📄 **New Architecture Decision Record (ADR)**: Documented the rationale and design behind the "Runtime-Derived Access
+  Capability Catalog" to provide comprehensive context on this significant feature.
+- 🌐 **Comprehensive Localization for Access Management**: Added extensive internationalization (i18n) support for the
+  new access capabilities and presets, ensuring a localized experience for role and tenant-ceiling editors.
+- 🧪 **Dedicated Access Capability Tests**: Introduced a new suite of unit and API tests to thoroughly validate the
+  functionality and security of the access capability catalog, including sysadmin and tenant ceiling considerations.
+
+### Changed
+
+- 🔄 **Redesigned Role and User Access Views**: The UI for managing roles and viewing user access now leverages the new
+  dynamic capability catalog, providing a detailed, hierarchical, and interactive representation of permissions instead
+  of a flat list of rules.
+- 🖼️ **User Access Information**: The `UserWithAccessDTO` now includes the user's resolved `access_rules` and utilizes
+  the new `AccessCatalogService` to provide a more granular and accurate overview of effective access.
+- 📚 **Documentation Updates**: Clarified guidelines for creating epics in the `write-issue` skill documentation and
+  updated `CLAUDE.md` regarding generated files, reflecting recent development practices.
+- 📝 **Agent, Process, Knowledge, and Memory Endpoints**: Existing controller methods across various services (e.g.,
+  Agent, Process, Knowledge, Organization Memory, User Memory) have been updated with `@access_catalog_entry` decorators
+  to expose their operations in the new access capability catalog.
+
+### Refactor
+
+- 🧹 **Unified User Access Logic**: Refactored the internal logic for building user access information, moving it into a
+  dedicated `AccessCatalogService` to centralize and improve the consistency of access evaluation across different UI
+  components.
+- ⚙️ **Core AccessChecker Enhancements**: Updated `AccessChecker` to use new canonical rule-building methods, improving
+  maintainability and consistency in permission checks.
+
+______________________________________________________________________
+
+## [v0.303.1] - 2026-06-24 - Superuser Configuration Streamlining
+
+### Changed
+
+- 📄 **Clarified Superuser Account Configuration:** The platform's superuser account now consistently uses
+  `SUPERUSER_EMAIL` as its Keycloak username, aligning with Keycloak's `registrationEmailAsUsername` enforcement for
+  login. The `SUPERUSER_USERNAME` variable has been re-designated as a log-only label for internal tracking, removing
+  its previous role in setting the Keycloak username. This update simplifies superuser provisioning and enhances clarity
+  in documentation across deployment guides and access control sections.
+
+______________________________________________________________________
+
+## [v0.303.0] - 2026-06-24 - Enhanced Image Generation Capabilities with Cloud Integration
+
+### Added
+
+- 🖼️ **New Cloud Image Generation Model:** Integrated the `image-generation/flux` model, enabling cloud-based image
+  generation capabilities via the Swiss LLM Cloud.
+- ⚙️ **Swiss LLM Cloud Image API Configuration:** Added new environment variables (`SWISS_LLM_CLOUD_IMAGE_API_BASE_URL`,
+  `SWISS_LLM_CLOUD_IMAGE_API_KEY`) to configure access to the new image generation service.
+
+### Changed
+
+- 🚀 **Image Generation Model Prioritization:** Updated Docker Compose configurations to prioritize the new cloud-based
+  `image-generation/flux` model for non-GPU environments.
+- 📝 **Image Prompt Expansion Logic:** Disabled LLM-powered prompt expansion for image generation when using the `flux`
+  model to accommodate its prompt length restrictions, ensuring raw prompts are passed directly.
+
+### Removed
+
+- 🗑️ **GPU-Specific Image Generation Model Placeholder:** Removed the generic `IMAGE_GENERATION_MODEL` setting from GPU
+  deployment configurations, streamlining image generation to utilize the new cloud model for non-GPU stages while GPU
+  stages await dedicated local integration.
+
+______________________________________________________________________
+
 ## [v0.302.0] - 2026-06-24 - Smarter Conversations: Agents Now Generate Titles and Follow-up Questions
 
 ### Added

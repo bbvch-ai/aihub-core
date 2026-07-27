@@ -15,9 +15,7 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    generate_conversation_metadata,
-)
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_conversation_metadata
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (

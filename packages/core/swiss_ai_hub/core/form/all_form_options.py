@@ -21,7 +21,6 @@ from swiss_ai_hub.core.form.elements.listbox import Listbox
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
-from swiss_ai_hub.core.form.elements.org_memory_tenant_input import OrgMemoryTenantInput
 from swiss_ai_hub.core.form.elements.password import Password
 from swiss_ai_hub.core.form.elements.radio_button import RadioButton
 from swiss_ai_hub.core.form.elements.rating import Rating
@@ -29,6 +28,7 @@ from swiss_ai_hub.core.form.elements.repeater import Repeater
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.elements.select_button import SelectButton
 from swiss_ai_hub.core.form.elements.slider import Slider
+from swiss_ai_hub.core.form.elements.tenant_select import TenantSelect
 from swiss_ai_hub.core.form.elements.textarea import Textarea
 from swiss_ai_hub.core.form.elements.toggle_button import ToggleButton
 from swiss_ai_hub.core.form.elements.toggle_switch import ToggleSwitch
@@ -42,7 +42,6 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "knowledgeDatabaseSelector": "KnowledgeDatabaseSelector",
     "localeInput": "LocaleInput",
     "modelSelect": "ModelSelect",
-    "orgMemoryTenantInput": "OrgMemoryTenantInput",
     "primeCascadeSelect": "CascadeSelect",
     "primeCheckbox": "Checkbox",
     "primeColorPicker": "ColorPicker",
@@ -64,6 +63,7 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "primeToggleButton": "ToggleButton",
     "primeToggleSwitch": "ToggleSwitch",
     "repeater": "Repeater",
+    "tenantSelect": "TenantSelect",
     "vectorStoreInput": "VectorStoreInput",
 }
 
@@ -102,7 +102,6 @@ _FormElementUnion = (
     | Annotated[LocaleInput, Tag("LocaleInput")]
     | Annotated[ModelSelect, Tag("ModelSelect")]
     | Annotated[MultiSelect, Tag("MultiSelect")]
-    | Annotated[OrgMemoryTenantInput, Tag("OrgMemoryTenantInput")]
     | Annotated[Password, Tag("Password")]
     | Annotated[RadioButton, Tag("RadioButton")]
     | Annotated[Rating, Tag("Rating")]
@@ -110,6 +109,7 @@ _FormElementUnion = (
     | Annotated[Select, Tag("Select")]
     | Annotated[SelectButton, Tag("SelectButton")]
     | Annotated[Slider, Tag("Slider")]
+    | Annotated[TenantSelect, Tag("TenantSelect")]
     | Annotated[Textarea, Tag("Textarea")]
     | Annotated[ToggleButton, Tag("ToggleButton")]
     | Annotated[ToggleSwitch, Tag("ToggleSwitch")]

@@ -96,7 +96,12 @@ class AgentSelector(PrimeVueElement):
         return self_copy
 
     def validate_authorization(
-        self, field_path: str, value: Any, access_checker: AccessChecker, t: LocaleHandler
+        self,
+        field_path: str,
+        value: Any,
+        access_checker: AccessChecker,
+        accessible_tenant_ids: set[str],
+        t: LocaleHandler,
     ) -> list[ConfigAuthorizationViolation]:
         if not isinstance(value, dict):
             return []

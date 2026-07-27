@@ -29,6 +29,42 @@ export type Access = {
 };
 
 /**
+ * AccessCapabilitiesRequest
+ */
+export type AccessCapabilitiesRequest = {
+  /**
+   * Access Rules
+   *
+   * Draft access rules to evaluate the capability catalog against.
+   */
+  access_rules: Array<string>;
+  /**
+   * Restrict To Tenant
+   *
+   * Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).
+   */
+  restrict_to_tenant?: boolean;
+  /**
+   * Is Sys Admin
+   *
+   * Evaluate the catalog as a platform sysadmin (AIHubSysAdmin), who holds admin on every resource regardless of rules — the user page passes the viewed user's flag. False for rule editing.
+   */
+  is_sys_admin?: boolean;
+};
+
+/**
+ * AccessCapabilitiesResponse
+ */
+export type AccessCapabilitiesResponse = {
+  /**
+   * Groups
+   *
+   * Top-level groups, one per controller/service.
+   */
+  groups: Array<CapabilityGroup>;
+};
+
+/**
  * AccessLevel
  *
  * Defines the possible outcomes of a permission check.
@@ -45,6 +81,36 @@ export const AccessLevel = {
  * Defines the possible outcomes of a permission check.
  */
 export type AccessLevel = (typeof AccessLevel)[keyof typeof AccessLevel];
+
+/**
+ * AccessPresetDTO
+ */
+export type AccessPresetDto = {
+  /**
+   * Rule
+   *
+   * The access rule string this preset adds.
+   */
+  rule: string;
+  /**
+   * Name
+   *
+   * Short, human-readable name for the preset.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What this preset grants.
+   */
+  description: string;
+  /**
+   * Category
+   *
+   * Stable category key for grouping in the UI.
+   */
+  category: string;
+};
 
 /**
  * ActiveTenantDTO
@@ -302,7 +368,6 @@ export type AgentClassDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -310,6 +375,7 @@ export type AgentClassDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -429,7 +495,6 @@ export type AgentConfigDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -437,6 +502,7 @@ export type AgentConfigDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -1856,6 +1922,90 @@ export type CachePoint = {
    */
   block_type?: "cache";
   cache_control: CacheControl;
+};
+
+/**
+ * Capability
+ */
+export type Capability = {
+  /**
+   * Key
+   *
+   * Stable identifier for this capability.
+   */
+  key: string;
+  /**
+   * Label
+   *
+   * Short human-readable action label.
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * What holding this capability lets the user do.
+   */
+  description: string;
+  /**
+   * Rule
+   *
+   * Exact access rule that grants this capability, or null for read-only capabilities.
+   */
+  rule: string | null;
+  /**
+   * Granted
+   *
+   * Whether the draft rules grant this capability.
+   */
+  granted: boolean;
+  /**
+   * Locked
+   *
+   * Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here.
+   */
+  locked: boolean;
+  /**
+   * Toggleable
+   *
+   * Whether ticking the box can add a rule. False for ?-wildcard guards with no concrete grant.
+   */
+  toggleable: boolean;
+};
+
+/**
+ * CapabilityGroup
+ */
+export type CapabilityGroup = {
+  /**
+   * Key
+   *
+   * Stable identifier (a controller/service, a class, an instance, ...).
+   */
+  key: string;
+  /**
+   * Label
+   *
+   * Display title for the group.
+   */
+  label: string;
+  /**
+   * Icon
+   *
+   * Iconify icon for the group (service or class), if any.
+   */
+  icon?: string | null;
+  /**
+   * Capabilities
+   *
+   * Capabilities directly on this group.
+   */
+  capabilities?: Array<Capability>;
+  /**
+   * Groups
+   *
+   * Nested groups (e.g. classes, then instances).
+   */
+  groups?: Array<CapabilityGroup>;
 };
 
 /**
@@ -3719,7 +3869,11 @@ export type ContextualizedAgentEvent = {
     | BaseStoreMemoryEvent
     | RetrieveOrganizationMemoryEvent
     | RetrieveUserMemoryEvent
-    | StoreOrganizationMemoryEvent;
+    | StoreOrganizationMemoryEvent
+    | UnreadMailListedEvent
+    | MailFetchedEvent
+    | MailMovedEvent
+    | MailBatchDraftedEvent;
 };
 
 /**
@@ -4860,6 +5014,50 @@ export type DocumentUploadValidationResponse = {
 };
 
 /**
+ * DraftedReplyRef
+ *
+ * A single reply draft produced during a batch drafting run — one per source message.
+ */
+export type DraftedReplyRef = {
+  /**
+   * Source Uid
+   *
+   * IMAP UID of the source message within the source folder.
+   */
+  source_uid: string;
+  /**
+   * Drafts Folder
+   *
+   * Folder the draft was appended to.
+   */
+  drafts_folder: string;
+  /**
+   * Draft Uid
+   *
+   * IMAP UID assigned to the appended draft when the server reports APPENDUID.
+   */
+  draft_uid?: string | null;
+  /**
+   * In Reply To
+   *
+   * RFC Message-ID of the original message this draft replies to.
+   */
+  in_reply_to?: string | null;
+  /**
+   * Subject
+   *
+   * Subject of the draft reply.
+   */
+  subject: string;
+  /**
+   * Recipient
+   *
+   * Recipient the draft reply is addressed to.
+   */
+  recipient: string;
+};
+
+/**
  * EdgeData
  *
  * Data for an edge in the workflow graph.
@@ -5564,7 +5762,6 @@ export type FullProcessInstanceDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -5572,6 +5769,7 @@ export type FullProcessInstanceDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -5744,7 +5942,6 @@ export type Group = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -5752,11 +5949,24 @@ export type Group = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
     | VectorStoreInput
   >;
+  /**
+   * Accessrule
+   *
+   * Access rule the user must satisfy to submit this section as enabled
+   */
+  accessRule?: string | null;
+  /**
+   * Accessdeniedmessagepath
+   *
+   * i18n path for the message shown when access_rule is not satisfied
+   */
+  accessDeniedMessagePath?: string;
   [key: string]: unknown;
 };
 
@@ -6087,7 +6297,6 @@ export type HumanInDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -6095,6 +6304,7 @@ export type HumanInDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -6167,7 +6377,6 @@ export type HumanInSpecs = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -6175,6 +6384,7 @@ export type HumanInSpecs = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -9037,6 +9247,254 @@ export type Logprob = {
 };
 
 /**
+ * MailAttachmentRef
+ *
+ * Reference to a fetched mail attachment whose bytes are stored in S3, not carried in the event.
+ *
+ * Mirrors ``UserUploadedFile``: attachments are referenced by ``file_id`` (the S3 object key within the
+ * agent's dedicated bucket) so large binaries never bloat the persisted/streamed event.
+ */
+export type MailAttachmentRef = {
+  /**
+   * Filename
+   *
+   * Original attachment filename, including extension. Must not contain path separators.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * MIME type of the attachment.
+   */
+  content_type: string;
+  /**
+   * File Id
+   *
+   * UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.
+   */
+  file_id: string;
+  /**
+   * Size Bytes
+   *
+   * Size of the stored attachment in bytes.
+   */
+  size_bytes: number;
+};
+
+/**
+ * MailBatchDraftedEvent
+ *
+ * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
+ *
+ * The agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and
+ * marked as drafted so it is not drafted again on the next run.
+ */
+export type MailBatchDraftedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the drafted messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of reply drafts created in this run.
+   */
+  count: number;
+  /**
+   * Drafted
+   *
+   * Per-message references to the created reply drafts.
+   */
+  drafted?: Array<DraftedReplyRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailFetchedEvent
+ *
+ * Carries a single fetched message — headers, body, and references to its stored attachments.
+ */
+export type MailFetchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the fetched message within the inbox folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Body Text
+   *
+   * Plain-text body of the message, if present.
+   */
+  body_text?: string | null;
+  /**
+   * Rfc Message Id
+   *
+   * RFC Message-ID header of the message — used to thread a reply draft.
+   */
+  rfc_message_id?: string | null;
+  /**
+   * References
+   *
+   * RFC References header of the message, if present.
+   */
+  references?: string | null;
+  /**
+   * Reply To
+   *
+   * Reply-To header of the message, if present.
+   */
+  reply_to?: string | null;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailMovedEvent
+ *
+ * Records that a message was moved from its source folder into a target folder on the IMAP server.
+ */
+export type MailMovedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the moved message within its source folder.
+   */
+  message_id: string;
+  /**
+   * Source Folder
+   *
+   * Folder the message was moved out of.
+   */
+  source_folder: string;
+  /**
+   * Target Folder
+   *
+   * Folder the message was moved into.
+   */
+  target_folder: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * MemoriesResponse
  *
  * Response for listing user memories with full knowledge graph.
@@ -10563,148 +11021,6 @@ export type OpenWebuiWebhookUser = {
 };
 
 /**
- * OrgMemoryTenantInput
- *
- * Text input for the organization-memory `tenant_id` field that also enforces
- * config-time access control.
- *
- * Renders identically to a plain `InputText` (same UI), but its presence in a
- * submitted config means the section is enabled — so we require the configuring user
- * to hold `aihub.user.memory.organization`. When the parent `org_memory` section is
- * null the walker never reaches this element, so no check fires.
- */
-export type OrgMemoryTenantInput = {
-  /**
-   * Is Formkit Element
-   *
-   * Indicates that this element is a FormKit element
-   */
-  is_formkit_element?: true;
-  /**
-   * If
-   *
-   * Conditional expression to show this element
-   */
-  if?: string | null;
-  /**
-   * Id
-   *
-   * Unique identifier for this element
-   */
-  id?: string | null;
-  /**
-   * Nullable
-   *
-   * Render with a sibling toggle that sets this field to null when off
-   */
-  nullable?: boolean;
-  /**
-   * Defaultenabled
-   *
-   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
-   */
-  defaultEnabled?: boolean | null;
-  /**
-   * Formkit
-   *
-   * Organization-memory tenant_id input element.
-   */
-  formkit?: "orgMemoryTenantInput";
-  /**
-   * Name
-   *
-   * Name of this field
-   */
-  name?: string | null;
-  /**
-   * Label
-   *
-   * Label of this field
-   */
-  label: LocaleString | string;
-  /**
-   * Help
-   *
-   * Help text of this field
-   */
-  help?: LocaleString | string | null;
-  /**
-   * Value
-   *
-   * Default value for this field
-   */
-  value?:
-    | string
-    | number
-    | number
-    | boolean
-    | Array<string>
-    | {
-        [key: string]: string;
-      }
-    | null;
-  /**
-   * Required
-   *
-   * Whether this field is required
-   */
-  required?: boolean;
-  /**
-   * Additional Validation Rules
-   *
-   * Validation expression
-   */
-  additional_validation_rules?: string | null;
-  /**
-   * Disabled
-   *
-   * Whether the input is disabled
-   */
-  disabled?: boolean;
-  /**
-   * Readonly
-   *
-   * Whether the input is readonly
-   */
-  readonly?: boolean;
-  /**
-   * Placeholder
-   *
-   * Placeholder text
-   */
-  placeholder?: LocaleString | string | null;
-  /**
-   * Prefix
-   *
-   * Prefix text
-   */
-  prefix?: LocaleString | string | null;
-  /**
-   * Suffix
-   *
-   * Suffix text
-   */
-  suffix?: LocaleString | string | null;
-  /**
-   * Iconprefix
-   *
-   * Icon prefix
-   */
-  iconPrefix?: string | null;
-  /**
-   * Iconsuffix
-   *
-   * Icon suffix
-   */
-  iconSuffix?: string | null;
-  /**
-   * Validation
-   */
-  readonly validation: string;
-  [key: string]: unknown;
-};
-
-/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -11173,7 +11489,6 @@ export type ProcessClassDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -11181,6 +11496,7 @@ export type ProcessClassDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -12207,7 +12523,6 @@ export type Repeater = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -12215,6 +12530,7 @@ export type Repeater = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -13910,6 +14226,137 @@ export type TenantMembershipDto = {
 };
 
 /**
+ * TenantSelect
+ *
+ * A FormKit element for selecting one of the tenants the user belongs to.
+ *
+ * Renders as a select dropdown listing tenant *names*, while the submitted value is the
+ * tenant *id*. The frontend populates the options from the user's memberships and
+ * pre-selects their active tenant.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * tenant_id: Annotated[
+ * str | TenantSelect,
+ * Field(description="Tenant to scope against"),
+ * ]
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * tenant_id=TenantSelect(
+ * label=LocaleString(en="Tenant"),
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(tenant_id="507f1f77bcf86cd799439011")
+ * ```
+ */
+export type TenantSelect = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Tenant select element.
+   */
+  formkit?: "tenantSelect";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -14368,6 +14815,20 @@ export type ThreadDto = {
    * Total LLM cost of the thread
    */
   llm_cost?: number;
+};
+
+/**
+ * ThreadReference
+ *
+ * The thread that owns a display, resolved so the chat-UI side panel can open the correct per-agent thread.
+ */
+export type ThreadReference = {
+  /**
+   * Thread Id
+   *
+   * The thread ID that owns the requested display
+   */
+  thread_id: string;
 };
 
 /**
@@ -14958,6 +15419,90 @@ export type TranslationResponse = {
 };
 
 /**
+ * UnreadMailListedEvent
+ *
+ * Carries the unread messages found in the configured inbox folder.
+ */
+export type UnreadMailListedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Messages
+   *
+   * Header summaries of the unread messages in the inbox.
+   */
+  messages?: Array<UnreadMailSummary>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * UnreadMailSummary
+ *
+ * Lightweight header summary of one unread message — enough for an agent to decide what to fetch.
+ */
+export type UnreadMailSummary = {
+  /**
+   * Message Id
+   *
+   * IMAP UID of the message within the inbox folder — stable across connections.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Flags
+   *
+   * IMAP flags set on the message.
+   */
+  flags?: Array<string>;
+};
+
+/**
  * UpdateAgentInstanceDTO
  *
  * Request body for updating an agent instance configuration.
@@ -15244,11 +15789,11 @@ export type UserAccess = {
   /**
    * Name
    *
-   * Name of the service/agent/process to which user has access to
+   * Name of the service/agent/process to which access is evaluated
    */
   name: string;
   /**
-   * Users access level to service/agent/process
+   * Access level to the service/agent/process
    */
   level: AccessLevel;
 };
@@ -15501,6 +16046,12 @@ export type UserWithAccessDto = {
    * User access levels
    */
   access: Access;
+  /**
+   * Access Rules
+   *
+   * The user's resolved access rules (union of their roles), to drive the capability view.
+   */
+  access_rules: Array<string>;
 };
 
 /**
@@ -16067,7 +16618,6 @@ export type AgentClassDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -16075,6 +16625,7 @@ export type AgentClassDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -16194,7 +16745,6 @@ export type AgentConfigDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -16202,6 +16752,7 @@ export type AgentConfigDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -17716,7 +18267,11 @@ export type ContextualizedAgentEventWritable = {
     | BaseStoreMemoryEventWritable
     | RetrieveOrganizationMemoryEventWritable
     | RetrieveUserMemoryEventWritable
-    | StoreOrganizationMemoryEventWritable;
+    | StoreOrganizationMemoryEventWritable
+    | UnreadMailListedEventWritable
+    | MailFetchedEventWritable
+    | MailMovedEventWritable
+    | MailBatchDraftedEventWritable;
 };
 
 /**
@@ -18420,7 +18975,6 @@ export type FullProcessInstanceDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -18428,6 +18982,7 @@ export type FullProcessInstanceDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -18539,7 +19094,6 @@ export type GroupWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -18547,11 +19101,24 @@ export type GroupWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
     | VectorStoreInputWritable
   >;
+  /**
+   * Accessrule
+   *
+   * Access rule the user must satisfy to submit this section as enabled
+   */
+  accessRule?: string | null;
+  /**
+   * Accessdeniedmessagepath
+   *
+   * i18n path for the message shown when access_rule is not satisfied
+   */
+  accessDeniedMessagePath?: string;
   [key: string]: unknown;
 };
 
@@ -18730,7 +19297,6 @@ export type HumanInDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -18738,6 +19304,7 @@ export type HumanInDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -18810,7 +19377,6 @@ export type HumanInSpecsWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -18818,6 +19384,7 @@ export type HumanInSpecsWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -20779,6 +21346,180 @@ export type LocaleInputWritable = {
 };
 
 /**
+ * MailBatchDraftedEvent
+ *
+ * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
+ *
+ * The agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and
+ * marked as drafted so it is not drafted again on the next run.
+ */
+export type MailBatchDraftedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the drafted messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of reply drafts created in this run.
+   */
+  count: number;
+  /**
+   * Drafted
+   *
+   * Per-message references to the created reply drafts.
+   */
+  drafted?: Array<DraftedReplyRef>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailFetchedEvent
+ *
+ * Carries a single fetched message — headers, body, and references to its stored attachments.
+ */
+export type MailFetchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the fetched message within the inbox folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Body Text
+   *
+   * Plain-text body of the message, if present.
+   */
+  body_text?: string | null;
+  /**
+   * Rfc Message Id
+   *
+   * RFC Message-ID header of the message — used to thread a reply draft.
+   */
+  rfc_message_id?: string | null;
+  /**
+   * References
+   *
+   * RFC References header of the message, if present.
+   */
+  references?: string | null;
+  /**
+   * Reply To
+   *
+   * Reply-To header of the message, if present.
+   */
+  reply_to?: string | null;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailMovedEvent
+ *
+ * Records that a message was moved from its source folder into a target folder on the IMAP server.
+ */
+export type MailMovedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the moved message within its source folder.
+   */
+  message_id: string;
+  /**
+   * Source Folder
+   *
+   * Folder the message was moved out of.
+   */
+  source_folder: string;
+  /**
+   * Target Folder
+   *
+   * Folder the message was moved into.
+   */
+  target_folder: string;
+  [key: string]: unknown;
+};
+
+/**
  * Message
  */
 export type MessageWritable = {
@@ -21253,144 +21994,6 @@ export type OpenChatHitlResponseWritable = {
 };
 
 /**
- * OrgMemoryTenantInput
- *
- * Text input for the organization-memory `tenant_id` field that also enforces
- * config-time access control.
- *
- * Renders identically to a plain `InputText` (same UI), but its presence in a
- * submitted config means the section is enabled — so we require the configuring user
- * to hold `aihub.user.memory.organization`. When the parent `org_memory` section is
- * null the walker never reaches this element, so no check fires.
- */
-export type OrgMemoryTenantInputWritable = {
-  /**
-   * Is Formkit Element
-   *
-   * Indicates that this element is a FormKit element
-   */
-  is_formkit_element?: true;
-  /**
-   * If
-   *
-   * Conditional expression to show this element
-   */
-  if?: string | null;
-  /**
-   * Id
-   *
-   * Unique identifier for this element
-   */
-  id?: string | null;
-  /**
-   * Nullable
-   *
-   * Render with a sibling toggle that sets this field to null when off
-   */
-  nullable?: boolean;
-  /**
-   * Defaultenabled
-   *
-   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
-   */
-  defaultEnabled?: boolean | null;
-  /**
-   * Formkit
-   *
-   * Organization-memory tenant_id input element.
-   */
-  formkit?: "orgMemoryTenantInput";
-  /**
-   * Name
-   *
-   * Name of this field
-   */
-  name?: string | null;
-  /**
-   * Label
-   *
-   * Label of this field
-   */
-  label: LocaleString | string;
-  /**
-   * Help
-   *
-   * Help text of this field
-   */
-  help?: LocaleString | string | null;
-  /**
-   * Value
-   *
-   * Default value for this field
-   */
-  value?:
-    | string
-    | number
-    | number
-    | boolean
-    | Array<string>
-    | {
-        [key: string]: string;
-      }
-    | null;
-  /**
-   * Required
-   *
-   * Whether this field is required
-   */
-  required?: boolean;
-  /**
-   * Additional Validation Rules
-   *
-   * Validation expression
-   */
-  additional_validation_rules?: string | null;
-  /**
-   * Disabled
-   *
-   * Whether the input is disabled
-   */
-  disabled?: boolean;
-  /**
-   * Readonly
-   *
-   * Whether the input is readonly
-   */
-  readonly?: boolean;
-  /**
-   * Placeholder
-   *
-   * Placeholder text
-   */
-  placeholder?: LocaleString | string | null;
-  /**
-   * Prefix
-   *
-   * Prefix text
-   */
-  prefix?: LocaleString | string | null;
-  /**
-   * Suffix
-   *
-   * Suffix text
-   */
-  suffix?: LocaleString | string | null;
-  /**
-   * Iconprefix
-   *
-   * Icon prefix
-   */
-  iconPrefix?: string | null;
-  /**
-   * Iconsuffix
-   *
-   * Icon suffix
-   */
-  iconSuffix?: string | null;
-  [key: string]: unknown;
-};
-
-/**
  * PaginatedProcessWalkthroughsResponse
  *
  * Paginated response containing process walkthroughs with detailed step information.
@@ -21672,7 +22275,6 @@ export type ProcessClassDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -21680,6 +22282,7 @@ export type ProcessClassDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -22343,7 +22946,6 @@ export type RepeaterWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -22351,6 +22953,7 @@ export type RepeaterWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -23521,6 +24124,133 @@ export type StoreUserMemoryEventWritable = {
 };
 
 /**
+ * TenantSelect
+ *
+ * A FormKit element for selecting one of the tenants the user belongs to.
+ *
+ * Renders as a select dropdown listing tenant *names*, while the submitted value is the
+ * tenant *id*. The frontend populates the options from the user's memberships and
+ * pre-selects their active tenant.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * tenant_id: Annotated[
+ * str | TenantSelect,
+ * Field(description="Tenant to scope against"),
+ * ]
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * tenant_id=TenantSelect(
+ * label=LocaleString(en="Tenant"),
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(tenant_id="507f1f77bcf86cd799439011")
+ * ```
+ */
+export type TenantSelectWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Tenant select element.
+   */
+  formkit?: "tenantSelect";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
  * Textarea
  *
  * https://formkit-primevue.netlify.app/inputs/Textarea
@@ -24146,6 +24876,39 @@ export type ToolEventWritable = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  [key: string]: unknown;
+};
+
+/**
+ * UnreadMailListedEvent
+ *
+ * Carries the unread messages found in the configured inbox folder.
+ */
+export type UnreadMailListedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Messages
+   *
+   * Header summaries of the unread messages in the inbox.
+   */
+  messages?: Array<UnreadMailSummary>;
   [key: string]: unknown;
 };
 
@@ -24858,6 +25621,44 @@ export type GetAgentEventsInThreadResponses = {
 
 export type GetAgentEventsInThreadResponse =
   GetAgentEventsInThreadResponses[keyof GetAgentEventsInThreadResponses];
+
+export type ResolveThreadForDisplayData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Display ID
+     */
+    display_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/events/agents/displays/{display_id}/thread";
+};
+
+export type ResolveThreadForDisplayErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ResolveThreadForDisplayError =
+  ResolveThreadForDisplayErrors[keyof ResolveThreadForDisplayErrors];
+
+export type ResolveThreadForDisplayResponses = {
+  /**
+   * Successful Response
+   */
+  200: ThreadReference;
+};
+
+export type ResolveThreadForDisplayResponse =
+  ResolveThreadForDisplayResponses[keyof ResolveThreadForDisplayResponses];
 
 export type GetAgentEventTimeseriesData = {
   body?: never;
@@ -26717,6 +27518,66 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
+export type GetAccessCapabilitiesData = {
+  body: AccessCapabilitiesRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/capabilities";
+};
+
+export type GetAccessCapabilitiesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAccessCapabilitiesError =
+  GetAccessCapabilitiesErrors[keyof GetAccessCapabilitiesErrors];
+
+export type GetAccessCapabilitiesResponses = {
+  /**
+   * Successful Response
+   */
+  200: AccessCapabilitiesResponse;
+};
+
+export type GetAccessCapabilitiesResponse =
+  GetAccessCapabilitiesResponses[keyof GetAccessCapabilitiesResponses];
+
+export type GetAccessPresetsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/presets";
+};
+
+export type GetAccessPresetsResponses = {
+  /**
+   * Response Get Access Presets  Tenant Id  Access Presets Get
+   *
+   * Successful Response
+   */
+  200: Array<AccessPresetDto>;
+};
+
+export type GetAccessPresetsResponse =
+  GetAccessPresetsResponses[keyof GetAccessPresetsResponses];
+
 export type GetModelsData = {
   body?: never;
   path: {
@@ -27622,7 +28483,14 @@ export type GetDocumentUrlData = {
      */
     document_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Download
+     *
+     * Force a browser download (Content-Disposition: attachment) instead of preview
+     */
+    download?: boolean;
+  };
   url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/url";
 };
 

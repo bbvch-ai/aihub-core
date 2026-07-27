@@ -1288,8 +1288,8 @@ name = "faiss-cpu"
 version = "1.13.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "sys_platform != 'win32'" },
-    { name = "packaging", marker = "sys_platform != 'win32'" },
+    { name = "numpy" },
+    { name = "packaging" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/07/c9/671f66f6b31ec48e5825d36435f0cb91189fa8bb6b50724029dbff4ca83c/faiss_cpu-1.13.2-cp310-abi3-macosx_14_0_arm64.whl", hash = "sha256:a9064eb34f8f64438dd5b95c8f03a780b1a3f0b99c46eeacb1f0b5d15fc02dc1", size = 3452776, upload-time = "2025-12-24T10:27:01.419Z" },
@@ -1854,6 +1854,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cd/de/5c0189b0582e21583c2a213081c35a2501c0f9e51f21f6a52f55fbb9a4ff/ImageHash-4.3.2.tar.gz", hash = "sha256:e54a79805afb82a34acde4746a16540503a9636fd1ffb31d8e099b29bbbf8156", size = 303190, upload-time = "2025-02-01T08:45:39.328Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/31/2c/5f0903a53a62029875aaa3884c38070cc388248a2c1b9aa935632669e5a7/ImageHash-4.3.2-py2.py3-none-any.whl", hash = "sha256:02b0f965f8c77cd813f61d7d39031ea27d4780e7ebcad56c6cd6a709acc06e5f", size = 296657, upload-time = "2025-02-01T08:45:36.102Z" },
+]
+
+[[package]]
+name = "imapclient"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/79/8138f8c91e791f49cf4c2269b1eaaaddb93013d162e92ddc249b84d38105/imapclient-3.1.0.tar.gz", hash = "sha256:b0413a516ffcc4b4d69f2c611c0e95da57968edf5a5c78ac82d1bf882305facc", size = 199675, upload-time = "2026-01-17T18:50:12.186Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8a/a8/a0f86ed51f792d9e6afcc062db2766033be7d1028d1fd5deaf38b075430a/imapclient-3.1.0-py2.py3-none-any.whl", hash = "sha256:34c192ffe82936e940a998ac89c474296942cd7c4f6c208f0fccfcd972946038", size = 182536, upload-time = "2026-01-17T18:49:09.105Z" },
 ]
 
 [[package]]
@@ -3093,10 +3102,10 @@ name = "milvus-lite"
 version = "3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "faiss-cpu", marker = "sys_platform != 'win32'" },
-    { name = "grpcio", marker = "sys_platform != 'win32'" },
-    { name = "numpy", marker = "sys_platform != 'win32'" },
-    { name = "pyarrow", marker = "sys_platform != 'win32'" },
+    { name = "faiss-cpu" },
+    { name = "grpcio" },
+    { name = "numpy" },
+    { name = "pyarrow" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a3/9a/d80d260e6fe1246818a8ef782c374ba9c6ca46ca3b987c14eabe914ef805/milvus_lite-3.0.tar.gz", hash = "sha256:2c35d0d046b1faae3402cde1fb73d65f51ee8c6aba65f54de1dda46f7bb18b9b", size = 589749, upload-time = "2026-05-13T07:14:05.827Z" }
 wheels = [
@@ -4104,7 +4113,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "sys_platform != 'win32'" },
+    { name = "ptyprocess" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -5247,8 +5256,8 @@ name = "secretstorage"
 version = "3.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cryptography", marker = "sys_platform != 'win32'" },
-    { name = "jeepney", marker = "sys_platform != 'win32'" },
+    { name = "cryptography" },
+    { name = "jeepney" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1c/03/e834bcd866f2f8a49a85eaff47340affa3bfa391ee9912a952a1faa68c7b/secretstorage-3.5.0.tar.gz", hash = "sha256:f04b8e4689cbce351744d5537bf6b1329c6fc68f91fa666f60a380edddcd11be", size = 19884, upload-time = "2025-11-23T19:02:53.191Z" }
 wheels = [
@@ -5408,7 +5417,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/meta" }
 dependencies = [
     { name = "swiss-ai-hub-agent" },
@@ -5431,10 +5440,11 @@ requires-dist = [
 
 [[package]]
 name = "swiss-ai-hub-agent"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/agent" }
 dependencies = [
     { name = "fastmcp" },
+    { name = "imapclient" },
     { name = "llama-index-llms-azure-openai" },
     { name = "llama-index-llms-openai" },
     { name = "stringcase" },
@@ -5450,6 +5460,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.0.0" },
+    { name = "imapclient", specifier = ">=3.0.1" },
     { name = "llama-index-llms-azure-openai", specifier = ">=0.4.2" },
     { name = "llama-index-llms-openai", specifier = ">=0.6.12" },
     { name = "stringcase", specifier = ">=1.2.0" },
@@ -5464,7 +5475,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-api"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/api" }
 dependencies = [
     { name = "audioop-lts" },
@@ -5519,7 +5530,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-backup"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/backup" }
 dependencies = [
     { name = "boto3" },
@@ -5576,7 +5587,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-bot"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/bot" }
 dependencies = [
     { name = "azure-identity" },
@@ -5621,7 +5632,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-core"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "adlfs" },
@@ -5786,7 +5797,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub-pipeline"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/pipeline" }
 dependencies = [
     { name = "apprise" },
@@ -5816,7 +5827,7 @@ dev = []
 
 [[package]]
 name = "swiss-ai-hub-process"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/process" }
 dependencies = [
     { name = "httpx" },
@@ -5845,7 +5856,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-sysadmin-api"
-version = "0.302.0"
+version = "0.318.0"
 source = { editable = "packages/sysadmin-api" }
 dependencies = [
     { name = "gunicorn" },
@@ -5872,7 +5883,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-workspace"
-version = "0.302.0"
+version = "0.318.0"
 source = { virtual = "." }
 dependencies = [
     { name = "jinja2" },

@@ -2,6 +2,8 @@
 authorization:
   no_access_knowledge_database: Vous n'avez pas accès à la base de connaissances '%{name}'.
   no_access_agent: Vous n'avez pas accès à l'agent '%{agent}'.
+  no_access_tenant: Vous n'êtes pas membre du locataire '%{tenant}'.
+  no_access_section: Vous n'avez pas accès à la section '%{section}'.
   no_access_organization_memory: Vous n'avez pas accès à la mémoire de l'organisation.
   config_unauthorized: La configuration fait référence à des ressources auxquelles
     vous n'avez pas accès.

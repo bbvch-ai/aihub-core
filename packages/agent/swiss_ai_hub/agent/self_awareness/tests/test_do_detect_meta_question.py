@@ -2,10 +2,11 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from openai import APITimeoutError
 from swiss_ai_hub.core.events.agent import MetaQuestionDetectedEvent, NotAMetaQuestionEvent
 
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
-from swiss_ai_hub.agent.self_awareness.meta_question_classification import MetaQuestionClassification
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import do_detect_meta_question
 
 
@@ -14,10 +15,12 @@ def locale_handler() -> AgentLocaleHandler:
     return AgentLocaleHandler("en")
 
 
-def _llm_returning(classification: MetaQuestionClassification) -> MagicMock:
+def _llm_returning(label: str) -> MagicMock:
+    """Detection classifies via a plain-text label token; mock the chat response that carries it."""
     llm = MagicMock()
     llm.metadata.is_function_calling_model = True
-    llm.astructured_predict = AsyncMock(return_value=classification)
+    response = ChatResponse(message=ChatMessage(role=MessageRole.ASSISTANT, content=label))
+    llm.achat = AsyncMock(return_value=response)
     return llm
 
 
@@ -42,9 +45,7 @@ def _llm_config(llm: MagicMock) -> MagicMock:
 
 @pytest.mark.asyncio
 async def test_meta_question_routes_to_detected_event(displayer, locale_handler):
-    llm = _llm_returning(
-        MetaQuestionClassification(is_meta_question=True, category="capabilities", reasoning="asks what it can do")
-    )
+    llm = _llm_returning("META_CAPABILITIES")
 
     result = await do_detect_meta_question(
         user_query="What can you do?",
@@ -56,13 +57,12 @@ async def test_meta_question_routes_to_detected_event(displayer, locale_handler)
     assert isinstance(result, MetaQuestionDetectedEvent)
     assert result.category == "capabilities"
     assert result.user_query == "What can you do?"
-    assert result.reasoning == "asks what it can do"
     displayer.display_thought.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_normal_task_routes_to_gate_event(displayer, locale_handler):
-    llm = _llm_returning(MetaQuestionClassification(is_meta_question=False, category=None, reasoning="domain question"))
+    llm = _llm_returning("NORMAL")
 
     result = await do_detect_meta_question(
         user_query="What is the vacation policy?",
@@ -72,15 +72,12 @@ async def test_normal_task_routes_to_gate_event(displayer, locale_handler):
     )
 
     assert isinstance(result, NotAMetaQuestionEvent)
-    assert result.reasoning == "domain question"
 
 
 @pytest.mark.asyncio
 async def test_lookalike_task_is_not_meta(displayer, locale_handler):
     """A message that mentions "you"/"do" but asks about the data is a normal task."""
-    llm = _llm_returning(
-        MetaQuestionClassification(is_meta_question=False, category=None, reasoning="about the document, not the agent")
-    )
+    llm = _llm_returning("NORMAL")
 
     result = await do_detect_meta_question(
         user_query="What can I do with this document?",
@@ -93,12 +90,29 @@ async def test_lookalike_task_is_not_meta(displayer, locale_handler):
 
 
 @pytest.mark.asyncio
-async def test_meta_without_category_falls_back_to_gate(displayer, locale_handler):
-    """Defensive: is_meta_question True but no category must not produce an invalid detected event."""
-    llm = _llm_returning(MetaQuestionClassification(is_meta_question=True, category=None, reasoning="ambiguous"))
+async def test_unrecognized_label_falls_back_to_gate(displayer, locale_handler):
+    """An unparseable classification (no known token) must not crash; degrade to a normal task."""
+    llm = _llm_returning("I am not sure how to classify this.")
 
     result = await do_detect_meta_question(
         user_query="hmm",
+        llm_config=_llm_config(llm),
+        displayer=displayer,
+        t=locale_handler,
+    )
+
+    assert isinstance(result, NotAMetaQuestionEvent)
+
+
+@pytest.mark.asyncio
+async def test_transport_error_falls_back_to_gate(displayer, locale_handler):
+    """Detection gates every message: a transient gateway error must degrade to a normal task, not
+    escape as an ExceptionEvent that would kill an otherwise-healthy run."""
+    llm = _llm_returning("NORMAL")
+    llm.achat = AsyncMock(side_effect=APITimeoutError(request=MagicMock()))
+
+    result = await do_detect_meta_question(
+        user_query="What is the vacation policy?",
         llm_config=_llm_config(llm),
         displayer=displayer,
         t=locale_handler,

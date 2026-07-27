@@ -62,6 +62,68 @@ def test_download_file_rejects_empty_params(container: str, file_path: str):
         service.download_file(container, file_path)
 
 
+def test_generate_sas_url_uses_public_client_by_default():
+    s3_client = MagicMock()
+    s3_public_client = MagicMock()
+    s3_public_client.generate_presigned_url.return_value = "https://public/signed"
+    service = S3AnonymousFileAccessService(
+        s3_client=s3_client,
+        s3_public_client=s3_public_client,
+        s3_settings=MagicMock(),
+    )
+
+    result = service.generate_sas_url("my-bucket", "path/to/figure.png")
+
+    assert result == "https://public/signed"
+    s3_public_client.generate_presigned_url.assert_called_once()
+    s3_client.generate_presigned_url.assert_not_called()
+
+
+def test_generate_sas_url_uses_internal_client_when_internal():
+    s3_client = MagicMock()
+    s3_internal_client = MagicMock()
+    s3_internal_client.generate_presigned_url.return_value = "http://internal/signed"
+    s3_public_client = MagicMock()
+    service = S3AnonymousFileAccessService(
+        s3_client=s3_client,
+        s3_public_client=s3_public_client,
+        s3_settings=MagicMock(),
+        s3_internal_client=s3_internal_client,
+    )
+
+    result = service.generate_sas_url("my-bucket", "path/to/figure.png", internal=True)
+
+    assert result == "http://internal/signed"
+    s3_internal_client.generate_presigned_url.assert_called_once()
+    s3_public_client.generate_presigned_url.assert_not_called()
+    s3_client.generate_presigned_url.assert_not_called()
+
+
+def test_generate_sas_url_omits_disposition_by_default():
+    s3_public_client = MagicMock()
+    s3_public_client.generate_presigned_url.return_value = "https://public/signed"
+    service = _create_service()
+    service._s3_public_client = s3_public_client
+
+    service.generate_sas_url("my-bucket", "path/to/figure.png")
+
+    params = s3_public_client.generate_presigned_url.call_args.kwargs["Params"]
+    assert "ResponseContentDisposition" not in params
+
+
+def test_generate_sas_url_sets_response_content_disposition():
+    s3_public_client = MagicMock()
+    s3_public_client.generate_presigned_url.return_value = "https://public/signed"
+    service = _create_service()
+    service._s3_public_client = s3_public_client
+
+    disposition = 'attachment; filename="report.pdf"'
+    service.generate_sas_url("my-bucket", "ns/report.pdf", response_content_disposition=disposition)
+
+    params = s3_public_client.generate_presigned_url.call_args.kwargs["Params"]
+    assert params["ResponseContentDisposition"] == disposition
+
+
 def test_delete_file_calls_delete_object():
     s3_client = MagicMock()
     service = _create_service(s3_client)

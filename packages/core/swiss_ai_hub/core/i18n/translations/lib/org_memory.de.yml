@@ -1,7 +1,9 @@
 ---
 tenant_id:
-  label: Mandanten-ID
-  help: Mandantenkennung zur Eingrenzung von Organisationsspeicher-Lese- und Schreibvorgängen.
+  label: Mandant
+  help: Wählen Sie den Mandanten zur Eingrenzung von Organisationsspeicher-Lese- und
+    Schreibvorgängen.
+  placeholder: Mandant auswählen
 allowed_tenant_namespaces:
   label: Erlaubte Namespaces
   help: Liste der für Lese-/Schreibvorgänge im Organisationsspeicher zulässigen Namespaces.

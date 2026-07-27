@@ -1,23 +1,21 @@
-from typing import Annotated
+import logging
 
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
-from openai import NOT_GIVEN
-from pydantic import Field
 
 from swiss_ai_hub.core.generative_ai.guards.guard_result import GuardResult
+from swiss_ai_hub.core.generative_ai.guards.text_verdict import (
+    binary_verdict_instruction,
+    parse_binary_verdict,
+    request_verdict,
+)
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
+logger = logging.getLogger(__name__)
 
-def guard_result_factory(t: LocaleHandler) -> type[GuardResult]:
-    class LocalizedGuardResult(GuardResult):
-        reasoning: Annotated[str, Field(description=t("lib.guards.agent_description_guard.reason"))]
-        success: Annotated[bool, Field(description=t("lib.guards.agent_description_guard.success"))]
-
-    LocalizedGuardResult.__doc__ = t("lib.guards.agent_description_guard.docstring")
-    return LocalizedGuardResult
+_ALLOW, _BLOCK = "ALLOW", "BLOCK"
 
 
 async def agent_description_guard(
@@ -27,7 +25,6 @@ async def agent_description_guard(
     user_query: str,
     messages: list[ChatMessage],
 ) -> GuardResult:
-    prompt = PromptTemplate(t("lib.guards.agent_description_guard.prompt"))
     history = "".join(
         [
             (
@@ -38,19 +35,15 @@ async def agent_description_guard(
             for message in messages
         ]
     )
-
-    llm_kwargs = {}
-
-    if not llm.metadata.is_function_calling_model:
-        llm_kwargs["tool_choice"] = NOT_GIVEN
-
-    result = await llm.astructured_predict(
-        guard_result_factory(t),
-        prompt,
-        llm_kwargs=llm_kwargs,
+    prompt = PromptTemplate(t("lib.guards.agent_description_guard.prompt")).format(
         agent_description=agent_description.in_locale(t.locale),
         user_query=user_query,
         history=history,
-    )
+    ) + binary_verdict_instruction(_ALLOW, _BLOCK)
 
-    return GuardResult.model_validate(result)
+    verdict = parse_binary_verdict(await request_verdict(llm, prompt), _ALLOW, _BLOCK)
+    if verdict is None:
+        # Reasoning models occasionally return no recognizable verdict; accept rather than block the user.
+        logger.warning("Agent-description guard returned no verdict; accepting the request.")
+        return GuardResult(success=True, reasoning="Guard unavailable; accepting the request.")
+    return GuardResult(success=verdict.success, reasoning=verdict.reasoning)

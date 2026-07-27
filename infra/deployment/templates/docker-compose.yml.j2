@@ -1805,6 +1805,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
+      SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
@@ -1821,8 +1823,12 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
       STORE_MODEL_IN_DB: True
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+      RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
     volumes:
       - ./configs/litellm/litellm-config{{ config_variant_suffix }}.yml:/app/config.yml
+      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
       postgres:
@@ -1897,6 +1903,46 @@ services:
         max-file: 2
     networks:
       - backend
+
+  {{ service_license('open-terminal') }}
+  open-terminal:
+    container_name: open-terminal
+    image: {{ global.registry_prefix }}{{ image_tags.open_terminal }}
+    restart: always
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8200:8000"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/open-terminal:/home
+    environment:
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+      OPEN_TERMINAL_MULTI_USER: "true"  # Per-user home directories (/home/<user>)
+      # Tool-context guidance: files surface in the Files panel; use read-file for documents
+      OPEN_TERMINAL_SYSTEM_PROMPT: >-
+        You have access to a sandboxed Linux computer with Python and common
+        document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
+        weasyprint, matplotlib). Use your tools to run commands, read and write
+        files, and search the filesystem. Verify the current state before making
+        changes and check command output to confirm success. Files you create in
+        your working directory automatically appear in the user's Files panel,
+        where they can download them — after creating a file, tell the user its
+        filename. To read the contents of a document such as a PDF, DOCX or XLSX,
+        use the read-file tool, which extracts the text; do not use display for that.
+    healthcheck:
+      # No documented health endpoint; probe the Swagger /docs route instead
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 15s
+      timeout: 3s
+      start_period: 40s  # Generous cold-start for the ~1.2 GB image
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - code-sandbox  # Isolated single-tenant zone (callers join it to reach this sandbox)
 
   {{ service_license('playwright') }}
   playwright:
@@ -2115,7 +2161,7 @@ services:
         condition: service_healthy
       litellm:
         condition: service_healthy
-      jupyter:
+      open-terminal:
         condition: service_healthy
       playwright:
         condition: service_healthy
@@ -2213,12 +2259,16 @@ services:
       ENABLE_TAGS_GENERATION: False
       ENABLE_FOLLOW_UP_GENERATION: False
 
-      # --- Image Generation ---
-      IMAGE_GENERATION_MODEL: image-generation
+      {%- if not gpu_enabled %}
+      # --- Image Generation (cloud-only; GPU stages have no local image model yet) ---
+      IMAGE_GENERATION_MODEL: image-generation/flux
       IMAGES_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       IMAGE_SIZE: 1024x1024
       ENABLE_IMAGE_GENERATION: True
+      # Infomaniak flux rejects prompts > 400 chars; disable LLM prompt expansion so raw prompts pass through
+      ENABLE_IMAGE_PROMPT_GENERATION: False
+      {%- endif %}
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
@@ -2270,15 +2320,10 @@ services:
       SHOW_ADMIN_DETAILS: True
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
-      # --- Code Execution ---
-      CODE_EXECUTION_ENGINE: jupyter
-      CODE_EXECUTION_JUPYTER_URL: http://{{ 'localhost' if stage == 'dev' else 'jupyter' }}:8888
-      CODE_EXECUTION_JUPYTER_AUTH: token
-      CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
-      CODE_INTERPRETER_ENGINE: jupyter
-      CODE_INTERPRETER_JUPYTER_URL: http://{{ 'localhost' if stage == 'dev' else 'jupyter' }}:8888
-      CODE_INTERPRETER_JUPYTER_AUTH: token
-      CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+      # --- Code Execution (Open Terminal) ---
+      # Native execute_code connection (plain LLM models). "permission":"read" is the
+      # connection-access grant, NOT a filesystem mode; key must be alphanumeric/hex (single-quoted JSON).
+      TERMINAL_SERVER_CONNECTIONS: '[{"id":"open-terminal","name":"Open Terminal","enabled":true,"url":"http://{{ 'localhost:8200' if stage == 'dev' else 'open-terminal:8000' }}","key":"${OPEN_TERMINAL_API_KEY}","auth_type":"bearer","config":{"access_grants":[{"principal_type":"user","principal_id":"*","permission":"read"}]}}]'
 
       # --- Vector DB ---
       VECTOR_DB: milvus
@@ -2413,6 +2458,7 @@ services:
       - backend
       - data
       - storage
+      - code-sandbox  # Caller of the open-terminal sandbox zone
     {%- endif %}
 
   {{ service_license('openwebui-init') }}
@@ -3041,6 +3087,7 @@ services:
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: https://sysadmin.${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: True
+      AIHUB_INTERNAL_API_BASE_URL: http://api:8000
 
       # Mongo DB — durable storage for tenant metadata, roles, dashboards
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
@@ -3293,6 +3340,10 @@ services:
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
       NATS_TOKEN: ${NATS_TOKEN}
@@ -3369,6 +3420,10 @@ services:
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
       NATS_TOKEN: ${NATS_TOKEN}
@@ -3376,6 +3431,16 @@ services:
       # REDIS
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j (organization memory graph store)
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3434,6 +3499,16 @@ services:
 
       # Mongo DB
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Neo4j (organization memory graph store)
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
@@ -3499,6 +3574,10 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
@@ -3639,6 +3718,139 @@ services:
     networks:
       - backend
       - data
+  {%- endif %}
+
+  {%- if image_tags.memory_writer_agent[stage] %}
+  {{ service_license('memory_writer_agent') }}
+  memory_writer_agent:
+    container_name: memory-writer-agent
+    restart: always
+    {%- if image_tags.memory_writer_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/memory_writer_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.memory_writer_agent[stage] }}
+    {%- endif %}
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Neo4j (mem0 constructs Neo4j settings even when the user-memory graph is disabled)
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: memory-writer-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('memory_writer_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+  {%- endif %}
+
+  {%- if image_tags.imap_agent[stage] %}
+  {{ service_license('imap_agent') }}
+  imap_agent:
+    container_name: imap-agent
+    restart: always
+    {%- if image_tags.imap_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/imap_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.imap_agent[stage] }}
+    {%- endif %}
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access (draft-reply generation)
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # S3 Access connection (mail attachment storage)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: imap-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('imap_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+      - egress  # Outbound access to external IMAP servers
   {%- endif %}
 
   {%- if image_tags.default_rag_pipeline[stage] %}
@@ -3937,6 +4149,13 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: "false"
+  # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
+  code-sandbox:
+    name: code-sandbox
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}
 
 {%- if stage in ['dev', 'build'] %}
 # ===================================================================

@@ -11,6 +11,7 @@ common:
   loading: Laden...
   selectModel: Modell auswählen
   selectDatabase: Datenbank auswählen
+  selectTenant: Mandant auswählen
 models:
   title: Modelle
   error: Fehler beim Laden der Modelle
@@ -331,6 +332,19 @@ agent:
     status: 'Status:'
     online: Online
     offline: Offline
+  import:
+    button: Importieren
+    error:
+      title: Import fehlgeschlagen
+      invalidJson: Die ausgewählte Datei ist kein gültiges JSON.
+      invalidStructure: Die ausgewählte Datei ist kein gültiger Agenten-Konfigurationsexport.
+      missingFields: In der Datei fehlen erforderliche Felder (schemaVersion, agentClass
+        oder configuration).
+      unsupportedVersion: Die Datei verwendet eine nicht unterstützte Export-Schemaversion.
+      blueprintNotFound: Die Agenten-Vorlage "{agentClass}" ist in dieser Umgebung
+        nicht verfügbar.
+  export:
+    button: Exportieren
   configuration:
     title: Agentenkonfiguration
     description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für
@@ -631,6 +645,24 @@ role:
   access_rules_help_agent_instances: Alle Instanzen von MyAgent
   access_rules_help_service: Knowledge-Service
   access_rules_help_admin: Admin-Zugriff auf alles
+  presets_button: Vorlagen
+  presets_title: Zugriffsvorlagen
+  preset_category_everything: Alles
+  preset_category_agents: Agenten
+  preset_category_processes: Prozesse
+  preset_category_models: Modelle
+  preset_category_knowledge: Wissen
+  capabilities_title: Was diese Regeln gewähren
+  capabilities_subtitle: Aktiviere eine Fähigkeit, um sie zu gewähren. Gesperrte Einträge
+    sind durch eine breitere Regel abgedeckt.
+  capabilities_readonly_title: Effektiver Zugriff
+  capabilities_readonly_subtitle: Was dieser Benutzer tun kann, basierend auf seinen
+    Rollen und innerhalb der Grenzen des Tenants.
+  capabilities_empty: Dieser Benutzer hat keinen Zugriff.
+  capability_locked: Durch eine breitere Regel gewährt — entferne diese Regel, um
+    dies zu ändern.
+  capability_readonly: Keine einzelne Regel gewährt dies allein — nutze eine Vorlage
+    oder eine breitere Regel.
   pattern_help_intro: 'Muster verwenden Platzhalter für Agenten:'
   pattern_help_all: Alle Agenten
   pattern_help_wildcard: Alle Instanzen von MyAgent

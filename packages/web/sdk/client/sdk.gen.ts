@@ -11,6 +11,7 @@ import { client } from "./client.gen";
 import {
   createDatasetResponseTransformer,
   createTokenEndpointResponseTransformer,
+  getAccessCapabilitiesResponseTransformer,
   getAgentEventTimeseriesResponseTransformer,
   getDatasetResponseTransformer,
   getDatasetsResponseTransformer,
@@ -86,6 +87,11 @@ import type {
   GenerateImageData,
   GenerateImageError,
   GenerateImageResponse,
+  GetAccessCapabilitiesData,
+  GetAccessCapabilitiesError,
+  GetAccessCapabilitiesResponse,
+  GetAccessPresetsData,
+  GetAccessPresetsResponse,
   GetAgentClassData,
   GetAgentClassError,
   GetAgentClassesData,
@@ -250,6 +256,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  ResolveThreadForDisplayData,
+  ResolveThreadForDisplayError,
+  ResolveThreadForDisplayResponse,
   RevokeRoleData,
   RevokeRoleError,
   RevokeRoleResponse,
@@ -794,6 +803,38 @@ export const getAgentEventsInThread = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/events/agents/threads/{thread_id}",
+    ...options,
+  });
+
+/**
+ * Resolve Thread For Display
+ *
+ * Resolves the thread that owns a display so the chat-UI side panel can open the correct per-agent thread
+ * without recomputing the salted thread_id.
+ */
+export const resolveThreadForDisplay = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ResolveThreadForDisplayResponse =
+    ResolveThreadForDisplayResponse,
+>(
+  options: Options<
+    TComposable,
+    ResolveThreadForDisplayData,
+    ResolveThreadForDisplayResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    ResolveThreadForDisplayResponse | DefaultT,
+    ResolveThreadForDisplayError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/events/agents/displays/{display_id}/thread",
     ...options,
   });
 
@@ -2173,6 +2214,72 @@ export const createRole = <
   });
 
 /**
+ * Evaluate Access Capabilities
+ *
+ * Returns the catalog of concrete capabilities (per service, agent and process), each with its exact access rule and whether the supplied draft rules grant it.
+ */
+export const getAccessCapabilities = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAccessCapabilitiesResponse =
+    GetAccessCapabilitiesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAccessCapabilitiesData,
+    GetAccessCapabilitiesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    GetAccessCapabilitiesResponse | DefaultT,
+    GetAccessCapabilitiesError,
+    DefaultT
+  >({
+    responseTransformer: getAccessCapabilitiesResponseTransformer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/capabilities",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List Access Presets
+ *
+ * Returns a curated, described library of common access rules for one-click authoring.
+ */
+export const getAccessPresets = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAccessPresetsResponse = GetAccessPresetsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAccessPresetsData,
+    GetAccessPresetsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAccessPresetsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/presets",
+    ...options,
+  });
+
+/**
  * List Models
  *
  * Lists the currently available models, and provides basic information about each one such as the owner and availability.
@@ -2913,7 +3020,7 @@ export const getSupportedFileTypes = <
 /**
  * Get signed document URL
  *
- * Generates a presigned URL for downloading a document's source file.
+ * Generates a presigned URL for a document's source file (inline preview, or attachment download).
  */
 export const getDocumentUrl = <
   TComposable extends Composable = "$fetch",

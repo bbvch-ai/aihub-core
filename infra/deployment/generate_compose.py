@@ -113,6 +113,7 @@ KEYCLOAK_MANAGED_TEMPLATES = [
 # (source_dir relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR)
 STATIC_COPY_DIRS = [
     ("templates/openwebui_functions", "configs/openwebui/functions"),
+    ("templates/litellm_functions", "configs/litellm"),
 ]
 
 # Static files copied verbatim (no Jinja2 rendering).
@@ -150,12 +151,14 @@ OWN_IMAGE_LICENSES = {
     "backup": "AGPL-3.0-or-later",
     "sysadmin-api": "AGPL-3.0-or-later",
     "sysadmin-web": "AGPL-3.0-or-later",
+    "imap_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
     "expert_rag_agent": "Apache-2.0",
     "expert_asking_agent": "Apache-2.0",
     "namespace_selection_agent": "Apache-2.0",
+    "memory_writer_agent": "Apache-2.0",
     "retrieval_agent": "Apache-2.0",
     "default_rag_pipeline": "Apache-2.0",
     "shared_rag_pipeline": "Apache-2.0",
@@ -344,7 +347,7 @@ def generate_default(env, config_data):
         dst_dir = ROOT_DIR / dst_rel
         dst_dir.mkdir(parents=True, exist_ok=True)
         for f in src_dir.iterdir():
-            if f.is_file():
+            if f.is_file() and not f.name.startswith("test_"):
                 shutil.copy2(f, dst_dir / f.name)
                 stats["static-copies"] += 1
 
@@ -492,7 +495,7 @@ def generate_release(env, config_data, version, output_dir, project):
             dst_dir = variant_dir / dst_rel
             dst_dir.mkdir(parents=True, exist_ok=True)
             for f in src_dir.iterdir():
-                if f.is_file():
+                if f.is_file() and not f.name.startswith("test_"):
                     shutil.copy2(f, dst_dir / f.name)
 
         for src_rel, dst_rel, filename in STATIC_COPY_FILES:

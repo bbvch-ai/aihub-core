@@ -200,6 +200,10 @@ class BaseEvent(BaseModel):
         return "AgentInTheLoopRequestEvent" in self._parent_event_names
 
     @property
+    def is_memory_storage_request_event(self) -> bool:
+        return "MemoryStorageRequestedEvent" in self._parent_event_names
+
+    @property
     def is_aitl_response_event(self) -> bool:
         return "AgentInTheLoopResponseEvent" in self._parent_event_names
 

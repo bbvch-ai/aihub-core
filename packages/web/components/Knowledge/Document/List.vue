@@ -24,6 +24,8 @@
     :sort-order="sortOrder"
     removable-sort
     size="small"
+    :select-all="allDeletableSelected"
+    @select-all-change="onSelectAllChange"
     @row-click="handleRowClick"
     @sort="handleSort"
   >
@@ -38,9 +40,7 @@
     >
       <template #body="{ data }">
         <div class="flex items-center gap-2">
-          <p
-            class="font-bold"
-          >
+          <p class="font-bold">
             {{ data.document_title }}
           </p>
           <div
@@ -91,9 +91,7 @@
       :header="t('document.list.number_of_pages')"
     >
       <template #body="{ data }">
-        <Badge
-          :value="data.number_of_pages ?? '-'"
-        />
+        <Badge :value="data.number_of_pages ?? '-'" />
       </template>
     </Column>
     <Column
@@ -184,16 +182,15 @@ watch(
   { immediate: true },
 )
 
-// Drop any selected document that is no longer deletable — either picked by "select all" while
-// processing, or flipped to "deleting" by a single-row delete after it was already selected.
-watch(
-  () => checkedDocuments.value.filter(document => !isDocumentDeletable(document)).length,
-  (nonDeletableCount) => {
-    if (nonDeletableCount > 0) {
-      checkedDocuments.value = checkedDocuments.value.filter(isDocumentDeletable)
-    }
-  },
+const deletableDocuments = computed(() => props.documents.filter(isDocumentDeletable))
+
+const allDeletableSelected = computed(
+  () => deletableDocuments.value.length > 0 && checkedDocuments.value.length === deletableDocuments.value.length,
 )
+
+const onSelectAllChange = ({ checked }: { checked: boolean }) => {
+  checkedDocuments.value = checked ? [...deletableDocuments.value] : []
+}
 
 const handleRowClick = (event: DataTableRowClickEvent) => {
   const document = event.data as DocumentDto
@@ -218,8 +215,13 @@ const handleSort = (event: DataTableSortEvent) => {
 const downloadFile = async (documentId: string) => {
   const database = route.params.db as string
   const namespace = route.params.namespace as string
-  const url = await getDocumentSourceUrl(tenantId.value!, database, namespace, documentId)
-  window.open(url, '_blank')
+  const url = await getDocumentSourceUrl(tenantId.value!, database, namespace, documentId, true)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.rel = 'noopener'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
 }
 
 const confirmDelete = (document: DocumentDto) => {
@@ -243,6 +245,7 @@ const handleDelete = async (document: DocumentDto) => {
       documentId: document.id,
     })
     schedule([document.id])
+    checkedDocuments.value = checkedDocuments.value.filter(selected => selected.id !== document.id)
     toast.add({
       severity: 'success',
       summary: t('document.delete.success'),

@@ -27,9 +27,7 @@ from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_questio
 )
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    generate_conversation_metadata,
-)
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_conversation_metadata
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
@@ -174,7 +172,7 @@ class FewShotAgent(Agent):
         await displayer.display_thought(t("agent.thought.condense_question"))
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            condensed_question = condense_standalone_question(
+            condensed_question = await condense_standalone_question(
                 chat_history=chat_history_event.limited_history,
                 message=start_event.last_user_message,
                 t=t,

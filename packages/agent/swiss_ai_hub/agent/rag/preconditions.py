@@ -2,6 +2,7 @@ from swiss_ai_hub.core.events.agent import (
     AddMemoryToChatHistoryEvent,
     AgentInTheLoop,
     ContextSufficientAcceptEvent,
+    MemoryStorageRequestedEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -111,13 +112,19 @@ def check_memory_added_to_chat_history(
 def check_ready_for_stop(
     config: RAGAgentConfig,
     store_memory_event: StoreUserMemoryEvent | None,
+    memory_storage_request: MemoryStorageRequestedEvent | None = None,
 ) -> bool:
     """
     Check if all required steps are complete before stopping.
 
-    Ensures that if memory storage is enabled, we wait for storage to complete
-    before emitting the stop event.
+    When memory storage is enabled, gate the stop until the storage step has produced its event so the
+    stop cannot race the store step (both trigger off the LLMEvent). In async mode
+    (`enable_async_memory_storage`) the store step returns a `MemoryStorageRequestedEvent` — a
+    millisecond-cheap delegation marker, NOT storage completion — so the run finalizes as soon as the answer
+    is ready (issue #1179). In inline mode it returns a `StoreUserMemoryEvent` only after the write finishes.
     """
-    if config.user_memory.enable_user_memory_storage:
-        return store_memory_event is not None
-    return True
+    if not config.user_memory.enable_user_memory_storage:
+        return True
+    if config.user_memory.enable_async_memory_storage:
+        return memory_storage_request is not None
+    return store_memory_event is not None

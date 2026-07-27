@@ -1,9 +1,11 @@
-from typing import Annotated, Self
+from typing import Annotated, ClassVar, Self
 
 from pydantic import Field, model_validator
 
-from swiss_ai_hub.core.form import ChipsInput, InputText, OrgMemoryTenantInput
 from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
+from swiss_ai_hub.core.form.elements.chips_input import ChipsInput
+from swiss_ai_hub.core.form.elements.input_text import InputText
+from swiss_ai_hub.core.form.elements.tenant_select import TenantSelect
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -12,8 +14,11 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 class OrgMemoryWriteConfig(Form):
     """Tenant + namespace scoping for organization-memory writes (and base for read-side scoping)."""
 
+    required_access_rule: ClassVar[str] = "aihub.user.memory.organization.?>"
+    required_access_rule_message_path: ClassVar[str] = "lib.common.authorization.no_access_organization_memory"
+
     tenant_id: Annotated[
-        str | OrgMemoryTenantInput,
+        str | TenantSelect,
         Field(description="Tenant ID for organization-memory scoping."),
     ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID)
     default_tenant_namespace: Annotated[
@@ -54,9 +59,10 @@ class OrgMemoryWriteConfig(Form):
     def as_form(cls) -> Self:
         """Factory method to create a form-mode OrgMemoryWriteConfig."""
         return cls(
-            tenant_id=OrgMemoryTenantInput(
+            tenant_id=TenantSelect(
                 label=LocaleString.from_i18n_path("lib.org_memory.tenant_id.label"),
                 help=LocaleString.from_i18n_path("lib.org_memory.tenant_id.help"),
+                placeholder=LocaleString.from_i18n_path("lib.org_memory.tenant_id.placeholder"),
             ),
             default_tenant_namespace=InputText(
                 label=LocaleString.from_i18n_path("lib.org_memory.default_tenant_namespace.label"),

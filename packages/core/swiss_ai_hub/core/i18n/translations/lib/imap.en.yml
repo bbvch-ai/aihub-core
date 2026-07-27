@@ -1,0 +1,51 @@
+---
+config:
+  host:
+    label: IMAP Host
+    help: Hostname of the IMAP server (e.g. imap.example.com).
+  port:
+    label: IMAP Port
+    help: Port of the IMAP server. Use 993 for implicit TLS.
+  username:
+    label: Username
+    help: Mailbox login, usually the full email address.
+  password:
+    label: Password
+    help: Mailbox password or app-specific token.
+  use_tls:
+    label: Use TLS
+    help: Connect over implicit TLS. Disable only for plaintext test servers.
+  inbox_folder:
+    label: Inbox Folder
+    help: Mailbox folder to read incoming mail from.
+  max_messages:
+    label: Max Unread Messages
+    help: Maximum number of unread messages listed per run.
+  enable_draft:
+    label: Draft Reply
+    help: When on, a reply to the fetched message is drafted and appended to the drafts
+      folder for a human to review and send. When off, the draft step is skipped.
+  drafts_folder:
+    label: Drafts Folder
+    help: Mailbox folder reply drafts are appended to. If this folder is not found,
+      the server's Drafts special-use folder is used instead.
+  enable_move:
+    label: Move Fetched Mail
+    help: When on, the fetched mail is moved into the processed folder after it is
+      read. When off, the move step is skipped and the mail stays in the inbox.
+  processed_folder:
+    label: Processed Folder
+    help: Mailbox folder a processed mail is moved to when Enable Move is on.
+  source_folder:
+    label: Draft Source Folder
+    help: Mailbox folder the drafter reads candidate messages from. Point it at the
+      processed folder to draft mail filed there by the move step.
+  batch_size:
+    label: Draft Batch Size
+    help: Maximum number of messages drafted per run.
+  draft_model:
+    label: LLM Model
+    help: Chat model used to draft the reply body.
+  draft_prompt:
+    label: Draft Prompt
+    help: Instructions steering how the LLM drafts the reply body.

@@ -12,6 +12,7 @@ from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import LiteLLMBase
+from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 
@@ -62,7 +63,7 @@ class LLMParameter(Form):
                 min=0.0,
                 max=2.0,
                 step=0.1,
-                value=0.1,
+                value=0.0,
                 min_fraction_digits=0,
                 max_fraction_digits=1,
             ),
@@ -131,6 +132,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         is_chat_model = model_info["model_info"]["mode"] == "chat"
         is_function_calling_model = model_info["model_info"]["supports_function_calling"]
         max_tokens = model_info["model_info"]["max_output_tokens"]
+        supports_response_schema = model_info["model_info"].get("supports_response_schema") or False
 
         token_counter = TokenCountingHandler(tokenizer=self.token_counter)
         cost_tracker = LLMCostTracker(
@@ -144,7 +146,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         if extra_headers:
             default_headers.update(extra_headers)
 
-        open_ai_like = OpenAILike(
+        open_ai_like = ResilientOpenAILike(
             model=self.model_name,
             api_base=config.BASE_URL,
             api_key=config.API_KEY.get_secret_value(),
@@ -152,6 +154,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             context_window=context_size,
             is_chat_model=is_chat_model,
             is_function_calling_model=is_function_calling_model,
+            should_use_structured_outputs=supports_response_schema,
             tokenizer=self.tokenizer,
             max_tokens=max_tokens,
             logprobs=self.default_parameter.logprobs,

@@ -34,6 +34,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       supports_vision: true
       input_cost_per_token: 0
       output_cost_per_token: 0
@@ -55,6 +56,7 @@ model_list:
       max_input_tokens: 65536
       max_output_tokens: 32768
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000007
       output_cost_per_token: 0.0000025
 
@@ -69,6 +71,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000002
       output_cost_per_token: 0.0000008
 
@@ -83,6 +86,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 65536
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000006
       output_cost_per_token: 0.000003
 
@@ -97,6 +101,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.00000001
       output_cost_per_token: 0.00000003
 
@@ -111,6 +116,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       supports_vision: false
       input_cost_per_token: 0.0000007
       output_cost_per_token: 0.000002
@@ -217,6 +223,22 @@ model_list:
       input_cost_per_second: 0.00004083
 {%- endif %}
 
+{%- if not has_local_models %}
+  # ===================================================================
+  # Image Generation Model (Cloud)
+  # ===================================================================
+
+  - model_name: image-generation/flux
+    litellm_params:
+      model: openai/flux
+      api_base: os.environ/SWISS_LLM_CLOUD_IMAGE_API_BASE_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_IMAGE_API_KEY
+      drop_params: true
+    model_info:
+      mode: image_generation
+{%- endif %}
+
+
 # ===================================================================
 # Guardrails Configuration
 # ===================================================================
@@ -261,7 +283,7 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: [ "detect_prompt_injection", "otel" ]
+  callbacks: [ "detect_prompt_injection", "otel", "custom_callbacks.proxy_handler_instance" ]
   {%- if stage != "dev" %}
   default_fallbacks: [ "{{ default_model }}" ]
   {%- endif %}

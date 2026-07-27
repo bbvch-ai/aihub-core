@@ -20,7 +20,7 @@ global:
 # -------------------------------------------------------------------
 image_tags:
   # --- Core Infrastructure (mostly static) ---
-  seaweedfs: seaweedfs:3.97
+  seaweedfs: seaweedfs:4.01
   aws_cli: aws-cli-alpine:3.22.1
   etcd: etcd:v3.5.25
   milvus: milvus:v2.6.7
@@ -37,6 +37,7 @@ image_tags:
   mineru_api: mineru-api:v2.7.5
   mineru_vlm: mineru-vlm:v2.7.5
   jupyter: minimal-notebook:notebook-7.0.6
+  open_terminal: open-terminal-office:0.11.34
   otel_collector: otel/opentelemetry-collector-contrib:0.154.0
   traefik: traefik:v3.6.2
   docker_socket_proxy: tecnativa/docker-socket-proxy:0.3
@@ -51,8 +52,8 @@ image_tags:
   speaches: speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: rclone:1.71.2
-  keycloak: keycloak:26.5.4
-  keycloak_config_cli: keycloak-config-cli:6.5.0-26.5.4
+  keycloak: keycloak:26.5.5
+  keycloak_config_cli: keycloak-config-cli:6.5.1-26.5.5
   searxng: searxng:2026.4.29-cba0cffa8
 
   # --- Custom Application Services ---
@@ -116,6 +117,16 @@ image_tags:
     local: namespace_selection_agent:latest
     nightly: namespace_selection_agent:nightly
     latest: namespace_selection_agent:latest
+  memory_writer_agent:
+    build: localbuild
+    local: memory_writer_agent:latest
+    nightly: memory_writer_agent:nightly
+    latest: memory_writer_agent:latest
+  imap_agent:
+    build: localbuild
+    local: imap_agent:latest
+    nightly: imap_agent:nightly
+    latest: imap_agent:latest
   default_rag_pipeline:
     build: localbuild
     local: default_rag_pipeline:latest

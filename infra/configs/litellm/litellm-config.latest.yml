@@ -27,6 +27,7 @@ model_list:
       max_input_tokens: 65536
       max_output_tokens: 32768
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000007
       output_cost_per_token: 0.0000025
   - model_name: text-generation/gemma-4-31B-it
@@ -40,6 +41,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000002
       output_cost_per_token: 0.0000008
   - model_name: text-generation/Kimi-K2.6
@@ -53,6 +55,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 65536
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000006
       output_cost_per_token: 0.000003
   - model_name: text-generation/Ministral-3-14B-Instruct-2512
@@ -66,6 +69,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.00000001
       output_cost_per_token: 0.00000003
   - model_name: text-generation/Qwen3.5-122B-A10B-FP8
@@ -79,6 +83,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       supports_vision: false
       input_cost_per_token: 0.0000007
       output_cost_per_token: 0.000002
@@ -138,6 +143,17 @@ model_list:
       mode: audio_transcription
       base_model: openai/whisper-1
       input_cost_per_second: 0.00004083
+  # ===================================================================
+  # Image Generation Model (Cloud)
+  # ===================================================================
+  - model_name: image-generation/flux
+    litellm_params:
+      model: openai/flux
+      api_base: os.environ/SWISS_LLM_CLOUD_IMAGE_API_BASE_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_IMAGE_API_KEY
+      drop_params: true
+    model_info:
+      mode: image_generation
 # ===================================================================
 # Guardrails Configuration
 # ===================================================================
@@ -179,7 +195,10 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: [detect_prompt_injection, otel]
+  callbacks:
+    - detect_prompt_injection
+    - otel
+    - custom_callbacks.proxy_handler_instance
   default_fallbacks: [text-generation/gemma-4-31B-it]
   telemetry: true
   json_logs: true

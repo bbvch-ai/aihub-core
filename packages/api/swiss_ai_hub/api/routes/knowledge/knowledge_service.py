@@ -437,8 +437,18 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def get_document_url(db: str, namespace: str, document_id: str, s3_service: S3AnonymousFileAccessService) -> str:
-        """Generates a presigned S3 URL for a document's source file."""
+    def get_document_url(
+        db: str,
+        namespace: str,
+        document_id: str,
+        s3_service: S3AnonymousFileAccessService,
+        as_attachment: bool = False,
+    ) -> str:
+        """Generates a presigned S3 URL for a document's source file.
+
+        `as_attachment` forces a browser download via `Content-Disposition: attachment`
+        instead of inline preview (requires SeaweedFS ≥ 4.01 to honor the override).
+        """
         KnowledgeService._ensure_db_exists(db)
         try:
             ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
@@ -449,7 +459,11 @@ class KnowledgeService:
         parts = source.split("/", 1)
         container = parts[0]
         file_path = parts[1] if len(parts) > 1 else ""
-        return s3_service.generate_sas_url(container, file_path)
+        content_disposition = None
+        if as_attachment:
+            filename = file_path.rsplit("/", 1)[-1]
+            content_disposition = f'attachment; filename="{filename}"'
+        return s3_service.generate_sas_url(container, file_path, response_content_disposition=content_disposition)
 
     @staticmethod
     def get_supported_file_types() -> list[str]:

@@ -16,6 +16,7 @@ packages/agent/                       # SDK framework
 │   │   ├── expert_asking_agent/       # Human expert escalation via Teams/Slack
 │   │   ├── expert_rag_agent/          # RAG with expert fallback
 │   │   ├── few_shot_agent/            # Pattern-matching with examples
+│   │   ├── imap_agent/                # Non-conversational IMAP mail read/move + draft-reply
 │   │   ├── namespace_selection_agent/ # LLM-driven knowledge routing
 │   │   └── retrieval_agent/           # Pure document retrieval (no LLM)
 │   ├── context/
@@ -133,8 +134,8 @@ reference):
 2. **Gate every raw `UserMessageEvent` entry step** so detection can't be raced. Two equivalent forms depending on the
    agent's start events:
 
-   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`): add a
-     **required** `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates the step — no precondition.
+   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`): add a **required**
+     `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates the step — no precondition.
    - **Entry also accepts a programmatic start** (e.g. `RAGAgent`, `ExpertRAGAgent`, `NamespaceSelectionAgent` accept
      `UserMessageEvent | RAGStartEvent`): keep `_clear: NotAMetaQuestionEvent | None = None` and combine the step's
      precondition with `check_passed_meta_question_gate(start_event, clear)`, so programmatic starts skip detection.
@@ -338,18 +339,27 @@ the relevant steps.
 
 ## Pre-Built Agents
 
-| Agent                       | Purpose                          | Key Pattern                                                                                                                                               |
-| --------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate) + conversation metadata (title + follow-up questions) |
-| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                                                                                                                     |
-| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory                                                                                                          |
-| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop                                                                                                            |
-| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection                                                                                                            |
-| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate                                                                                                    |
-| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context                                                                                                                |
+| Agent                       | Purpose                                                      | Key Pattern                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **RAGAgent**                | Knowledge QA with retrieval                                  | Multi-source retrieval + reranking + user/org memory + opted-in self-awareness (meta-question gate). Conversation metadata: title is an early fan-out `@step` (anchored on the pre-answer `LimitChatHistoryEvent`), follow-up questions are generated inline in the terminal step — both best-effort (see ADR `2026_06_18`)                                                                                                                                                                                               |
+| **LLMWrappingAgent**        | Simple LLM chat passthrough                                  | Minimal 2-step workflow, no retrieval                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **ExpertAskingAgent**       | Human expert escalation                                      | BotInTheLoop + iterative refinement + org memory                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **ExpertRAGAgent**          | RAG with expert fallback                                     | RAGAgent steps + HITL consent + AgentInTheLoop                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **FewShotAgent**            | Pattern-matching with examples                               | Suitability guard + few-shot example injection                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **NamespaceSelectionAgent** | LLM-driven knowledge routing                                 | HITL namespace approval + ThreadContext + RAG delegate                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **RetrievalAgent**          | Pure document retrieval (no LLM)                             | Retrieval-only, returns structured context                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **MemoryWriterAgent**       | System agent: async user-memory persistence (issue #1179)    | Non-discoverable; triggered by `MemoryStorageRequestedEvent` from RAG/ExpertRAG when `enable_async_memory_storage` is on; rebuilds the origin agent's `AgentMemory` and writes off the chat critical path                                                                                                                                                                                                                                                                                                                 |
+| **ImapAgent**               | Non-conversational IMAP mail agent (read/move + draft-reply) | Two independent, programmatically-started chains: **read/move** (`ReadMailStartEvent` → list unread → fetch one message with S3-stored attachments → optionally move to the processed folder) and **draft** (`DraftMailStartEvent` → draft LLM replies for a batch of not-yet-drafted messages, `APPEND` to drafts, flag the source). Read-only IMAP (`BODY.PEEK`, source stays unread), at-least-once (append before flag), never sends. Grouped `ImapClientConfig`/`DraftEmailSettings` config in `packages/core/imap/` |
 
 Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.py` (entry point),
 `agents/{snake_name}/tests/` (BDD tests).
+
+**System (non-discoverable) agents**: set `discoverable: ClassVar[bool] = False` on the agent class so the runner skips
+discovery — the agent never registers a user-facing blueprint in the Admin UI but still subscribes to and processes its
+control events. Used for programmatically-triggered agents like `MemoryWriterAgent`. Such an agent's config bakes its
+identity as non-configurable primitives in `as_form()` (agent_id/name/description as plain values, not FormKit
+elements), so `deep_merge(non_configurable, {})` yields a valid runtime config with no `agent_configs` DB record — no
+config seeder needed.
 
 ## Playground
 
