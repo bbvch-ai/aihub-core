@@ -39,7 +39,8 @@ deployment/
 │           └── managed/               # Reconciled every start by keycloak-config-cli: 10-roles, 20-client-scopes,
 │                                      #   30-clients, 40-auth-flows, 60-service-accounts
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
-    ├── aihub_pipeline.py
+    ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
+    ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py
