@@ -1763,7 +1763,7 @@ services:
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
-      AUDIO_STT_MODEL: transcription
+      AUDIO_STT_MODEL: transcription/whisper-large-v3
       AUDIO_STT_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
