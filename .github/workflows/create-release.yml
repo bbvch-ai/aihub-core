@@ -5,10 +5,12 @@
 # Builds the self-contained deployment bundle for a version and publishes it as
 # a GitHub Release, in one of two modes:
 #
-#   channel = nightly  -> ROLLING prerelease.
-#     One release at the moving `nightly` pointer tag, updated in place with a
-#     STABLE asset name (swissaihub-nightly.tar.gz). No changelog. This is the
-#     bundle host the nightly VM fetches (see aihub-playbook fetch.yml).
+#   channel = nightly  -> ROLLING prerelease (manual dispatch only).
+#     One release at the moving `nightly` pointer tag, STABLE asset name
+#     (swissaihub-nightly.tar.gz), no changelog. NOT published automatically:
+#     the trunk nightly flow (add-tag.yml) publishes no GitHub Release — it only
+#     cuts the nightly git tag and builds the :nightly images. Kept as a manual
+#     escape hatch for anyone who needs a nightly bundle on demand.
 #
 #   channel = staging  -> ROLLING prerelease + immutable per-rc release.
 #     1) Refreshes the rolling `staging` release (stable tag + stable asset
