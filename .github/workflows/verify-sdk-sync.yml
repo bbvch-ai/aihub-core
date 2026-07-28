@@ -15,7 +15,7 @@ name: Verify SDK Sync
 # work only happens when the relevant backend/SDK paths actually changed.
 on:
   pull_request:
-    branches: [main, release/**]
+    branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   contents: read
