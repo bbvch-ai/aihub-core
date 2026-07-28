@@ -43,8 +43,8 @@ Upgrade SeaweedFS **3.97 → 4.01** and use the now-honored override to force do
 2. **Opt-in disposition, defaulting to current behavior.** `S3AnonymousFileAccessService.generate_sas_url` gains an
    optional `response_content_disposition: str | None = None`; when set, it is passed as `ResponseContentDisposition`
    into the presigned `get_object`. Default `None` preserves inline behavior, so the other callers of this shared method
-   (RAG figure signing per ADR `2026_07_10_inline_rag_figures_as_base64`, and the generic file controller) are
-   untouched — no new abstraction.
+   (RAG figure signing per ADR `2026_07_10_inline_rag_figures_as_base64`, and the generic file controller) are untouched
+   — no new abstraction.
 
 3. **Download vs preview split at the endpoint.** The knowledge document-URL endpoint gains a `download: bool = False`
    query param, threaded to `KnowledgeService.get_document_url(..., as_attachment=)`, which builds
@@ -60,11 +60,12 @@ The 4.x line is a genuine architectural shift, not just the disposition fix:
   volume reads/writes require **JWT** (3.99 #7376, 4.01 #7514). All four SeaweedFS services share
   `WEED_JWT_SIGNING_KEY`, so internal auth continues to work.
 - **Non-root container user** (4.00 #7399) + **`/data` ownership/permission fix** (4.01 #7451) — the primary upgrade
-  risk on existing deployments. In our dev volumes the data files are already owned by the host user, so no
-  permission break occurred; **production upgrades must verify (and if needed `chown`) the mounted volume ownership.**
-- **Bucket-policy enforcement** (4.01 #7471), **auto-create bucket** (4.01 #7549), path/virtual-style addressing
-  changes (3.99 #7357), and S3 error-code changes (3.98: 400 vs 500) — none affected our path-style, explicit-identity
+  risk on existing deployments. In our dev volumes the data files are already owned by the host user, so no permission
+  break occurred; **production upgrades must verify (and if needed `chown`) the mounted volume ownership.**
+- **Bucket-policy enforcement** (4.01 #7471), **auto-create bucket** (4.01 #7549), path/virtual-style addressing changes
+  (3.99 #7357), and S3 error-code changes (3.98: 400 vs 500) — none affected our path-style, explicit-identity
   configuration.
+- **Chunked ETags above 8 MiB** — discovered after the fact, see the Trade-offs entry below.
 
 ## Consequences
 
@@ -84,6 +85,21 @@ The 4.x line is a genuine architectural shift, not just the disposition fix:
   than 3.97; upstream 4.x regressions could surface in future point releases.
 - **Production rollout needs the two operational steps** the dev upgrade could skip: mirror 4.01 to GHCR first, and
   verify/adjust volume-mount ownership for the non-root container user before starting.
+- **ETag format changed above 8 MiB — this broke ingestion (#121).** 4.01 chunks objects larger than 8 MiB server-side
+  and returns a multipart-style ETag `<md5hex>-<n>`, where 3.97 returned a plain MD5 at any size. A boundary sweep
+  confirms it: on 4.01, 8.0 MB yields a plain MD5 while 8.5 MB yields `…-2`; on 3.97, 5/9/15/20 MB are all plain MD5. It
+  is server-side, not client-side — presigned PUT, chunked transfer-encoding, `put_object`, and `upload_fileobj` all
+  produce the same ETag. `S3DataLakeClient._create_data_lake_file_from_s3_object` only handled the plain-MD5 shape and
+  left `hash = None` otherwise, failing `DataLakeFile` validation. Because `get_all_files()` enumerates the whole bucket
+  inside one observable source asset, a single oversized object aborted observation and **halted ingestion for the
+  entire bucket**, not just that file. Fixed by keeping the chunked ETag verbatim as the content-version token; the ≤8
+  MiB base64-MD5 output is deliberately frozen, since `hash` feeds the persisted `DataVersion` and changing it would
+  force a full re-parse and re-embed of every corpus.
+- **Verification gap to close on the next storage bump.** The "whole S3 blast radius re-verified" claim above used only
+  small files, so the 8 MiB threshold went unnoticed. Any future major object-store upgrade must include a >8 MiB
+  document in its checklist. Raising the filer's `-maxMB` above the largest expected document would also avoid chunking
+  without code changes, but was rejected: it pushes very large single chunks at the volume server and merely moves the
+  threshold instead of removing the assumption.
 - **Filename header is not RFC 6266-encoded** — the attachment filename is the S3 key basename interpolated directly;
   unusual characters (embedded quotes, non-ASCII, control chars) are not escaped. Acceptable because keys derive from
   constrained upload filenames, but a future hardening could add `filename*=UTF-8''<encoded>`.
