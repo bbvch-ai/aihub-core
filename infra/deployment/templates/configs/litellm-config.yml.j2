@@ -213,9 +213,10 @@ model_list:
 
   - model_name: transcription/whisper-large-v3
     litellm_params:
-      model: openai/whisper-large-v3
+      model: azure/whisper
       api_base: os.environ/SWISS_LLM_CLOUD_WHISPER_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_WHISPER_API_KEY
+      api_version: '2024-06-01'
       drop_params: true
     model_info:
       mode: audio_transcription
