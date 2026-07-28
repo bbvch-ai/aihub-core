@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput
 from swiss_ai_hub.core.form.constraints import Gt
@@ -30,6 +30,25 @@ class LLMWrappingAgentConfig(AgentConfig):
         LLMConfig,
         Field(description="The LLM configuration for the agent."),
     ]
+    task_llm: Annotated[
+        LLMConfig | None,
+        Field(
+            default=None,
+            description=(
+                "Task LLM used for auxiliary tasks like standalone-question condensation, context/few-shot "
+                "guards, meta-question detection, LLM routing, and conversation title + follow-up question "
+                "generation. Falls back to the main LLM when disabled."
+            ),
+            title="Task LLM",
+        ),
+    ] = None
+
+    @model_validator(mode="after")
+    def default_task_llm_to_main_llm(self) -> Self:
+        """Auxiliary steps read `task_llm` directly, so an unset or blank picker falls back to the main llm."""
+        if self.task_llm is None or not self.task_llm.model_name:
+            self.task_llm = self.llm
+        return self
 
     @classmethod
     def as_form(cls) -> Self:
@@ -54,4 +73,5 @@ class LLMWrappingAgentConfig(AgentConfig):
                 step=1000,
             ),
             llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(),
         )

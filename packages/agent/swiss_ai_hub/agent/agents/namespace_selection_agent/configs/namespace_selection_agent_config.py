@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, KnowledgeDatabaseSelector, LocaleInput
 from swiss_ai_hub.core.form.constraints import Ge, MinLen
@@ -27,6 +27,19 @@ class NamespaceSelectionAgentConfig(AgentConfig):
         Field(description="LLM configuration for namespace determination."),
     ]
 
+    task_llm: Annotated[
+        LLMConfig | None,
+        Field(
+            default=None,
+            description=(
+                "Task LLM used for auxiliary tasks like standalone-question condensation, context/few-shot "
+                "guards, meta-question detection, LLM routing, and conversation title + follow-up question "
+                "generation. Falls back to the main LLM when disabled."
+            ),
+            title="Task LLM",
+        ),
+    ] = None
+
     bucket_names: Annotated[
         list[str] | KnowledgeDatabaseSelector,
         Field(description="List of knowledge databases to fetch namespaces from.", title="Knowledge Databases"),
@@ -49,6 +62,13 @@ class NamespaceSelectionAgentConfig(AgentConfig):
         Field(description="Message template for namespace approval. Use {namespaces} placeholder."),
     ] = AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.defaults.approval_message_template")
 
+    @model_validator(mode="after")
+    def default_task_llm_to_main_llm(self) -> Self:
+        """Auxiliary steps read `task_llm` directly, so an unset or blank picker falls back to the main llm."""
+        if self.task_llm is None or not self.task_llm.model_name:
+            self.task_llm = self.llm
+        return self
+
     @classmethod
     def as_form(cls) -> Self:
         """Factory method to create a form-mode NamespaceSelectionAgentConfig."""
@@ -60,6 +80,7 @@ class NamespaceSelectionAgentConfig(AgentConfig):
             description=base.description,
             icon=base.icon,
             llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(),
             bucket_names=KnowledgeDatabaseSelector(
                 label=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.config.bucket_names.label"),
                 help=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.config.bucket_names.help"),

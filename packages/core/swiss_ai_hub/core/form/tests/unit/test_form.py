@@ -15,6 +15,7 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group/Repeater
 from swiss_ai_hub.core.form.elements.checkbox import Checkbox
 from swiss_ai_hub.core.form.elements.chips_input import ChipsInput
 from swiss_ai_hub.core.form.elements.group import Group
@@ -874,6 +875,13 @@ class FormWithNullableSubForm(Form):
     ] = None
 
 
+class FormWithTitledNonNullableSubForm(Form):
+    """Outer form whose nested form is mandatory but still carries a title and description."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[NullableInnerForm, Field(description="Inner form", title="Inner")]
+
+
 class FormWithNullableLeaf(Form):
     """Form with an optional scalar leaf."""
 
@@ -979,3 +987,49 @@ class TestNullableFlag:
         override = {"inner": None}
         merged = Form.deep_merge(base, override)
         assert merged["inner"] is None
+
+
+class TestGroupHelp:
+    """Tests for help text on nested Groups, rendered on the group's enable toggle."""
+
+    def test_help_comes_from_description_when_the_label_is_an_explicit_title(self) -> None:
+        form = FormWithNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        )
+        inner = next(e for e in form.to_formkit_form() if e.name == "inner")
+
+        assert inner.label == "Inner"
+        assert inner.help == "Inner form"
+
+    def test_placeholder_group_for_a_none_value_also_carries_help(self) -> None:
+        form = FormWithNullableSubForm(name=InputText(label=LocaleString(en="Name")), inner=None)
+        inner = next(e for e in form.to_formkit_form() if e.name == "inner")
+
+        assert inner.help == "Inner form"
+
+    def test_no_help_on_a_non_nullable_group_even_with_a_title(self) -> None:
+        """A non-nullable group has no enable toggle, so help would be data no surface renders."""
+        form = FormWithTitledNonNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        )
+        inner = next(e for e in form.to_formkit_form() if e.name == "inner")
+
+        assert inner.nullable is False
+        assert inner.label == "Inner"
+        assert inner.help is None
+
+    def test_no_help_when_the_label_already_fell_back_to_the_description(self) -> None:
+        """Without a title the label *is* the description — repeating it would print it twice."""
+        form = NestedOuterForm(
+            name=InputText(label=LocaleString(en="Name")),
+            address=NestedInnerForm(
+                street=InputText(label=LocaleString(en="Street")),
+                city=InputText(label=LocaleString(en="City")),
+            ),
+        )
+        address = next(e for e in form.to_formkit_form() if e.name == "address")
+
+        assert address.label == "Address"
+        assert address.help is None

@@ -5918,6 +5918,12 @@ export type Group = {
    */
   label?: LocaleString | string | null;
   /**
+   * Help
+   *
+   * Optional explanatory text rendered on the group's enable toggle
+   */
+  help?: LocaleString | string | null;
+  /**
    * Children
    *
    * Child form elements contained within this group
@@ -19069,6 +19075,12 @@ export type GroupWritable = {
    * Optional label displayed above the group
    */
   label?: LocaleString | string | null;
+  /**
+   * Help
+   *
+   * Optional explanatory text rendered on the group's enable toggle
+   */
+  help?: LocaleString | string | null;
   /**
    * Children
    *

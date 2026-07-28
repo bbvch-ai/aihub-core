@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput
 from swiss_ai_hub.core.form.constraints import Gt
@@ -22,6 +22,18 @@ class McpReactAgentConfig(AgentConfig):
         LLMConfig,
         Field(description="LLM used for reasoning and tool selection."),
     ]
+    task_llm: Annotated[
+        LLMConfig | None,
+        Field(
+            default=None,
+            description=(
+                "Task LLM used for auxiliary tasks like standalone-question condensation, context/few-shot "
+                "guards, meta-question detection, LLM routing, and conversation title + follow-up question "
+                "generation. Falls back to the main LLM when disabled."
+            ),
+            title="Task LLM",
+        ),
+    ] = None
     system_prompt: Annotated[
         LocaleString | LocaleInput | None,
         Field(description="System prompt defining the agent's behavior when reasoning about tool use."),
@@ -37,6 +49,13 @@ class McpReactAgentConfig(AgentConfig):
         Gt(0),
     ]
 
+    @model_validator(mode="after")
+    def default_task_llm_to_main_llm(self) -> Self:
+        """Auxiliary steps read `task_llm` directly, so an unset or blank picker falls back to the main llm."""
+        if self.task_llm is None or not self.task_llm.model_name:
+            self.task_llm = self.llm
+        return self
+
     @classmethod
     def as_form(cls) -> Self:
         base = AgentConfig.as_form()
@@ -47,6 +66,7 @@ class McpReactAgentConfig(AgentConfig):
             icon=base.icon,
             mcp=McpClientConfig.as_form(),
             llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(),
             system_prompt=LocaleInput(
                 label=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.label"),
                 help=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.help"),

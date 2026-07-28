@@ -142,7 +142,9 @@ class McpReactAgent(Agent):
                 chat_model_name=config.llm.model_name,
             )
             # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-            await generate_conversation_metadata(stop_event.chat_messages, config.llm, displayer, t, thread_context)
+            await generate_conversation_metadata(
+                stop_event.chat_messages, config.task_llm, displayer, t, thread_context
+            )
             return stop_event
 
         await run_context.set(CONVERSATION_KEY, [m.model_dump() for m in [*event.input_messages, assistant]])

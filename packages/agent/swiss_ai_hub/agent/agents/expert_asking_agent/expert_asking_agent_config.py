@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import SlackConfig, TeamsConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput, Select
@@ -78,6 +78,18 @@ class ExpertAskingAgentConfig(AgentConfig):
         LLMConfig,
         Field(description="LLM configuration for the agent."),
     ]
+    task_llm: Annotated[
+        LLMConfig | None,
+        Field(
+            default=None,
+            description=(
+                "Task LLM used for auxiliary tasks like standalone-question condensation, context/few-shot "
+                "guards, meta-question detection, LLM routing, and conversation title + follow-up question "
+                "generation. Falls back to the main LLM when disabled."
+            ),
+            title="Task LLM",
+        ),
+    ] = None
     loop_max: Annotated[
         int | InputNumber,
         Field(description="Maximum number of loops to ask experts."),
@@ -106,6 +118,13 @@ class ExpertAskingAgentConfig(AgentConfig):
         Field(title="Channel Configuration", description="Configuration for the expert escalation channel."),
     ]
 
+    @model_validator(mode="after")
+    def default_task_llm_to_main_llm(self) -> Self:
+        """Auxiliary steps read `task_llm` directly, so an unset or blank picker falls back to the main llm."""
+        if self.task_llm is None or not self.task_llm.model_name:
+            self.task_llm = self.llm
+        return self
+
     @classmethod
     def as_form(cls) -> Self:
         """Factory method to create a form-mode ExpertAskingAgentConfig - NO ARGUMENTS."""
@@ -117,6 +136,7 @@ class ExpertAskingAgentConfig(AgentConfig):
             description=base.description,
             icon=base.icon,
             llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(),
             loop_max=InputNumber(
                 label=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.config.loop_max.label"),
                 min=1,
