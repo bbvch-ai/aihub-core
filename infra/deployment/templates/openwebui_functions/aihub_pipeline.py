@@ -1748,6 +1748,27 @@ class Pipe:
         hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
         return str(ObjectId(hashed)).lower()
 
+    @staticmethod
+    async def _merge_agent_class_tag(
+        chat_id: Annotated[str, "OpenWebUI chat ID"],
+        agent_class: Annotated[str, "Agent class handling this turn"],
+        owui_user: Annotated[Any, "OpenWebUI user model"],
+    ) -> Annotated[list[str], "Tag IDs now persisted on the chat"]:
+        """Add the agent-class tag to the chat without dropping the tags already on it.
+
+        ``Chats.update_chat_tags_by_id`` *replaces* ``chat.meta["tags"]`` wholesale and then garbage-
+        collects the tag rows that fell out of it, so passing just the agent class would wipe every
+        user-added tag on each turn and drop the classes of other agents used in the same chat.
+        OpenWebUI stores tags pre-normalized (lowercased, spaces to underscores), so normalize here
+        too — otherwise the containment check re-appends the tag on every turn.
+        """
+        chat = await Chats.get_chat_by_id(chat_id)
+        existing_tags = (chat.meta.get("tags") if chat else None) or []
+        agent_tag = agent_class.replace(" ", "_").lower()
+        merged_tags = existing_tags if agent_tag in existing_tags else [*existing_tags, agent_tag]
+        await Chats.update_chat_tags_by_id(chat_id, merged_tags, owui_user)
+        return merged_tags
+
     async def _set_ui_context(
         self,
         thread_id: Annotated[str, "Thread ID"],
@@ -1889,16 +1910,17 @@ class Pipe:
                 )
 
                 # Layer 1 (tags): deterministic, owned by the pipeline — not LLM-generated and not a
-                # protocol event. Tag the conversation with the agent class that handled it. OpenWebUI's
-                # chat:tags handler re-reads tags from the DB, so persist before emitting. Best-effort:
-                # a tagging failure must never fail the chat turn.
+                # protocol event. Tag the conversation with the agent class that handled it, merged into
+                # the tags already on the chat. OpenWebUI's chat:tags handler re-reads tags from the DB,
+                # so persist before emitting. Best-effort: a tagging failure must never fail the chat turn.
                 chat_id = __metadata__.get("chat_id")
                 try:
+                    tags = [agent_class]
                     if chat_id and not chat_id.startswith(("local:", "channel:")):
                         owui_user = await Users.get_user_by_id(__user__["id"])
                         if owui_user:
-                            await Chats.update_chat_tags_by_id(chat_id, [agent_class], owui_user)
-                    await __event_emitter__({"type": "chat:tags", "data": [agent_class]})
+                            tags = await self._merge_agent_class_tag(chat_id, agent_class, owui_user)
+                    await __event_emitter__({"type": "chat:tags", "data": tags})
                 except Exception as tag_error:
                     logger.warning(f"Failed to set conversation tags: {tag_error}")
 
