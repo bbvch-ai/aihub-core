@@ -38,27 +38,38 @@ EXCLUDE_PATTERNS=(
     ':(exclude)*.drawio'
 )
 
-diff_output="$(git diff "$FROM" "$TO" -- . "${EXCLUDE_PATTERNS[@]}" || true)"
+# Incremental rc (rc.2, rc.3, ...) — the FROM ref is itself an rc tag — gets a
+# compact list of the conventional-commit subjects added since the previous rc,
+# not the full grouped template. rc.1 (FROM = last stable) and latest (FROM =
+# previous stable) keep the full LLM-grouped notes below.
+if printf '%s' "$FROM" | grep -Eq -- '-rc\.[0-9]+$'; then
+    body="$(git log --format='- %s' "${FROM}..${TO}" 2>/dev/null \
+        | grep -E -- '^- (feat|fix|perf|refactor|docs?|test|build|ci|chore|style|revert)(\([^)]+\))?!?: ' \
+        || true)"
+    [ -n "$body" ] || body="_No changes since ${FROM}._"
+else
+    diff_output="$(git diff "$FROM" "$TO" -- . "${EXCLUDE_PATTERNS[@]}" || true)"
 
-# Guard the model's context window / cost on a big release: if the patch is very
-# large, summarise from the diffstat instead of the full patch.
-MAX_DIFF_LINES="${RELEASE_NOTES_MAX_DIFF_LINES:-6000}"
-diff_note=""
-if [ "$(printf '%s\n' "$diff_output" | wc -l)" -gt "$MAX_DIFF_LINES" ]; then
-    diff_output="$(git diff --stat "$FROM" "$TO" -- . "${EXCLUDE_PATTERNS[@]}" || true)"
-    diff_note=" (large release — summarised from the diffstat)"
-fi
+    # Guard the model's context window / cost on a big release: if the patch is very
+    # large, summarise from the diffstat instead of the full patch.
+    MAX_DIFF_LINES="${RELEASE_NOTES_MAX_DIFF_LINES:-6000}"
+    diff_note=""
+    if [ "$(printf '%s\n' "$diff_output" | wc -l)" -gt "$MAX_DIFF_LINES" ]; then
+        diff_output="$(git diff --stat "$FROM" "$TO" -- . "${EXCLUDE_PATTERNS[@]}" || true)"
+        diff_note=" (large release — summarised from the diffstat)"
+    fi
 
-# Natural-language, grouped body via the LLM: system prompt from the file, the
-# diff piped as the user turn. Degrades gracefully if `llm` is unavailable or
-# the call fails, so a release is never blocked on note prose.
-body=""
-if [ -n "$diff_output" ] && command -v llm >/dev/null 2>&1; then
-    body="$(printf 'Here is the git diff from %s to %s%s. Generate the grouped release notes.\n\n%s\n' \
-        "$FROM" "$TO" "$diff_note" "$diff_output" \
-        | llm --no-stream -m "$MODEL" --system "$(cat "$PROMPT_FILE")" 2>/dev/null || true)"
+    # Natural-language, grouped body via the LLM: system prompt from the file, the
+    # diff piped as the user turn. Degrades gracefully if `llm` is unavailable or
+    # the call fails, so a release is never blocked on note prose.
+    body=""
+    if [ -n "$diff_output" ] && command -v llm >/dev/null 2>&1; then
+        body="$(printf 'Here is the git diff from %s to %s%s. Generate the grouped release notes.\n\n%s\n' \
+            "$FROM" "$TO" "$diff_note" "$diff_output" \
+            | llm --no-stream -m "$MODEL" --system "$(cat "$PROMPT_FILE")" 2>/dev/null || true)"
+    fi
+    [ -n "$body" ] || body="_No summarised changes for this range._"
 fi
-[ -n "$body" ] || body="_No summarised changes for this range._"
 
 # References: PR numbers parsed from squash-merge commit subjects in (FROM, TO].
 # Squash merges carry "(#123)" in the subject, so this lists every PR in range.

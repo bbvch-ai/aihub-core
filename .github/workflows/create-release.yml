@@ -5,12 +5,21 @@
 # Builds the self-contained deployment bundle for a version and publishes it as
 # a GitHub Release, in one of two modes:
 #
-#   channel = nightly | staging  -> ROLLING prerelease.
-#     One release per channel, at the moving pointer tag (`nightly`/`staging`),
-#     updated in place with a STABLE asset name (swissaihub-<channel>.tar.gz).
-#     Nightly carries no changelog; staging (rc) carries the rc release notes.
-#     This is the bundle host the staging/nightly VMs fetch (see aihub-playbook
-#     fetch.yml). The Releases list never fills with per-build entries.
+#   channel = nightly  -> ROLLING prerelease (manual dispatch only).
+#     One release at the moving `nightly` pointer tag, STABLE asset name
+#     (swissaihub-nightly.tar.gz), no changelog. NOT published automatically:
+#     the trunk nightly flow (add-tag.yml) publishes no GitHub Release — it only
+#     cuts the nightly git tag and builds the :nightly images. Kept as a manual
+#     escape hatch for anyone who needs a nightly bundle on demand.
+#
+#   channel = staging  -> ROLLING prerelease + immutable per-rc release.
+#     1) Refreshes the rolling `staging` release (stable tag + stable asset
+#        swissaihub-staging.tar.gz) that the QC staging VM fetches — unchanged
+#        deploy contract.
+#     2) Also publishes an immutable, PRESERVED release at the rc tag
+#        vX.Y.Z-rc.N titled "Swiss AI Hub vX.Y.Z-rc.N" (prerelease, not latest,
+#        version-named asset). Both carry the rc release notes (rc.1 = since the
+#        last stable = full; rc.N = since rc.(N-1) = delta).
 #
 #   channel = latest -> VERSIONED release.
 #     A real Release at the flat tag vX.Y.Z, marked Latest, asset
@@ -34,7 +43,7 @@ on:
         required: true
         type: string
       channel:
-        description: 'nightly | staging | latest'
+        description: nightly | staging | latest
         required: true
         type: string
       notes_from:
@@ -48,7 +57,7 @@ on:
         description: Full version, e.g. v0.317.0, v0.317.0-rc.2, v0.317.0-nightly.891
         required: true
       channel:
-        description: 'nightly | staging | latest | backport'
+        description: nightly | staging | latest | backport
         required: true
         type: choice
         options: [nightly, staging, latest, backport]
@@ -83,23 +92,21 @@ jobs:
             echo "::error::release_version '$VERSION' is not a valid version tag."
             exit 1
           fi
+          # `asset` = stable rolling asset name for nightly/staging, version-named
+          # for latest/backport. Release target tag, prerelease and latest flags are
+          # derived per channel in the publish step.
           case "$CHANNEL" in
-            nightly)  target="nightly";  asset="nightly";  prerelease=true;  latest=false; notes=false ;;
-            staging)  target="staging";  asset="staging";  prerelease=true;  latest=false; notes=true ;;
-            latest)   target="$VERSION"; asset="$VERSION"; prerelease=false; latest=true;  notes=true ;;
-            # Backport: a full versioned release for an older line, published but
-            # NOT marked Latest (latest must not move backwards).
-            backport) target="$VERSION"; asset="$VERSION"; prerelease=false; latest=false; notes=true ;;
+            nightly)  asset="nightly";  notes=false ;;
+            staging)  asset="staging";  notes=true ;;
+            latest)   asset="$VERSION"; notes=true ;;
+            backport) asset="$VERSION"; notes=true ;;
             *) echo "::error::channel must be nightly, staging, latest, or backport (got '$CHANNEL')."; exit 1 ;;
           esac
           # Nightly never carries notes; others only when a base ref is given.
           if [ "$notes" = "true" ] && [ -z "$NOTES_FROM" ]; then notes=false; fi
           {
             echo "version=$VERSION"
-            echo "target=$target"
             echo "asset=$asset"
-            echo "prerelease=$prerelease"
-            echo "latest=$latest"
             echo "notes=$notes"
           } >> "$GITHUB_OUTPUT"
       - name: Checkout at the version tag (full history for notes)
@@ -130,16 +137,23 @@ jobs:
             test -f "${DEST}/setup-env.sh"
             find "${DEST}" \( -name '*.yml' -o -name '*.yaml' \) -exec uv run yamlfix {} +
           done
-      - name: Create tar.gz archives with the target asset name
+      - name: Create tar.gz archives (version-named, plus stable rolling name)
         run: |
           set -euo pipefail
           VERSION="${{ steps.in.outputs.version }}"
           ASSET="${{ steps.in.outputs.asset }}"
-          # Asset name is stable per channel for rolling releases (swissaihub-nightly.tar.gz),
-          # or version-named for latest. The inner directory keeps the version; the deploy
-          # extracts with --strip-components=1 so the inner name does not matter.
-          tar -czf "swissaihub-${ASSET}.tar.gz"     -C "dist/release" "swissaihub-${VERSION}"
-          tar -czf "swissaihub-${ASSET}-gpu.tar.gz" -C "dist/release" "swissaihub-${VERSION}-gpu"
+          # Always produce version-named archives — used by latest/backport and by
+          # the immutable per-rc staging release. The inner directory keeps the
+          # version; the deploy extracts with --strip-components=1 so the inner name
+          # does not matter.
+          tar -czf "swissaihub-${VERSION}.tar.gz"     -C "dist/release" "swissaihub-${VERSION}"
+          tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C "dist/release" "swissaihub-${VERSION}-gpu"
+          # Rolling channels (nightly/staging) also need the stable per-channel asset
+          # name for the moving-pointer release the deploy VMs fetch.
+          if [ "$ASSET" != "$VERSION" ]; then
+            cp "swissaihub-${VERSION}.tar.gz"     "swissaihub-${ASSET}.tar.gz"
+            cp "swissaihub-${VERSION}-gpu.tar.gz" "swissaihub-${ASSET}-gpu.tar.gz"
+          fi
       - name: Generate release notes (rc / latest)
         if: steps.in.outputs.notes == 'true'
         env:
@@ -160,29 +174,20 @@ jobs:
           chmod +x infra/release/generate-release-notes.sh
           infra/release/generate-release-notes.sh "$NOTES_FROM" "$VERSION" > release-notes.md
           echo "Generated release notes:"; cat release-notes.md
-      - name: Publish or update the GitHub Release
+      - name: Publish or update the GitHub Release(s)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ steps.in.outputs.version }}
-          TARGET: ${{ steps.in.outputs.target }}
           ASSET: ${{ steps.in.outputs.asset }}
-          PRERELEASE: ${{ steps.in.outputs.prerelease }}
-          LATEST: ${{ steps.in.outputs.latest }}
           NOTES: ${{ steps.in.outputs.notes }}
           CHANNEL: ${{ inputs.channel }}
         run: |-
           set -euo pipefail
-          A1="swissaihub-${ASSET}.tar.gz"
-          A2="swissaihub-${ASSET}-gpu.tar.gz"
-
-          case "$CHANNEL" in
-            nightly)  TITLE="Nightly (rolling) - ${VERSION}" ;;
-            staging)  TITLE="Staging (rolling) - ${VERSION}" ;;
-            latest)   TITLE="Swiss AI Hub ${VERSION}" ;;
-            backport) TITLE="Swiss AI Hub ${VERSION} (backport)" ;;
-          esac
-
+          VER_A1="swissaihub-${VERSION}.tar.gz"
+          VER_A2="swissaihub-${VERSION}-gpu.tar.gz"
+          ROLL_A1="swissaihub-${ASSET}.tar.gz"
+          ROLL_A2="swissaihub-${ASSET}-gpu.tar.gz"
           NOTES_ARGS=()
           if [ "$NOTES" = "true" ] && [ -f release-notes.md ]; then
             NOTES_ARGS=(--notes-file release-notes.md)
@@ -192,16 +197,42 @@ jobs:
             NOTES_ARGS=(--notes "Bundle for ${VERSION}.")
           fi
 
-          if gh release view "$TARGET" >/dev/null 2>&1; then
-            echo "Updating existing release $TARGET in place."
-            gh release edit "$TARGET" --title "$TITLE" \
-              --prerelease="$PRERELEASE" --latest="$LATEST" "${NOTES_ARGS[@]}"
-            gh release upload "$TARGET" "$A1" "$A2" --clobber
-          else
-            echo "Creating release $TARGET."
-            EXTRA=()
-            if [ "$PRERELEASE" = "true" ]; then EXTRA+=(--prerelease); fi
-            if [ "$LATEST" = "true" ]; then EXTRA+=(--latest); else EXTRA+=(--latest=false); fi
-            gh release create "$TARGET" --title "$TITLE" "${NOTES_ARGS[@]}" "${EXTRA[@]}" "$A1" "$A2"
-          fi
-          echo "Published $TARGET (channel=$CHANNEL, prerelease=$PRERELEASE, latest=$LATEST)."
+          # Publish (create) or refresh (edit in place) one release.
+          # args: <target-tag> <title> <prerelease true|false> <latest true|false> <asset...>
+          publish() {
+            local target="$1" title="$2" pre="$3" lat="$4"; shift 4
+            if gh release view "$target" >/dev/null 2>&1; then
+              echo "Updating existing release $target in place."
+              gh release edit "$target" --title "$title" \
+                --prerelease="$pre" --latest="$lat" "${NOTES_ARGS[@]}"
+              gh release upload "$target" "$@" --clobber
+            else
+              echo "Creating release $target."
+              local extra=()
+              if [ "$pre" = "true" ]; then extra+=(--prerelease); fi
+              if [ "$lat" = "true" ]; then extra+=(--latest); else extra+=(--latest=false); fi
+              gh release create "$target" --title "$title" "${NOTES_ARGS[@]}" "${extra[@]}" "$@"
+            fi
+          }
+          case "$CHANNEL" in
+            nightly)
+              publish "nightly" "Nightly (rolling) - ${VERSION}" true false "$ROLL_A1" "$ROLL_A2"
+              ;;
+            staging)
+              # 1) Rolling pointer release the QC staging VM fetches (stable tag + asset).
+              publish "staging" "Staging (rolling) - ${VERSION}" true false "$ROLL_A1" "$ROLL_A2"
+              # 2) Immutable, PRESERVED per-rc release for humans, version-named assets.
+              #    Only for real rc builds (build-rc.yml). promote-to-staging.yml
+              #    promotes a nightly to staging — that must not create a versioned entry.
+              if printf '%s' "$VERSION" | grep -Eq -- '-rc\.[0-9]+$'; then
+                publish "$VERSION" "Swiss AI Hub ${VERSION}" true false "$VER_A1" "$VER_A2"
+              fi
+              ;;
+            latest)
+              publish "$VERSION" "Swiss AI Hub ${VERSION}" false true "$VER_A1" "$VER_A2"
+              ;;
+            backport)
+              publish "$VERSION" "Swiss AI Hub ${VERSION} (backport)" false false "$VER_A1" "$VER_A2"
+              ;;
+          esac
+          echo "Published channel=$CHANNEL for ${VERSION}."
