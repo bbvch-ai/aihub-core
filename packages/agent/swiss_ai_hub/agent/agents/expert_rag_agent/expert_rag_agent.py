@@ -268,7 +268,7 @@ class ExpertRAGAgent(Agent):
             agent_description=t.extract(agent_config.description),
             workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
             chat_history=user_message_event.messages,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )

@@ -46,7 +46,13 @@ async def test_detect_meta_question_uses_task_llm(request, config_fixture: str, 
 
 
 @pytest.mark.asyncio
-async def test_answer_meta_question_stays_on_main_llm(config_with_task_llm) -> None:
+@pytest.mark.parametrize(
+    ("config_fixture", "expected_model"),
+    [("config_with_task_llm", TASK_MODEL), ("config_without_task_llm", MAIN_MODEL)],
+)
+async def test_answer_meta_question_uses_task_llm(request, config_fixture: str, expected_model: str) -> None:
+    config = request.getfixturevalue(config_fixture)
+
     with (
         patch(f"{RAG_MODULE}.do_answer_meta_question", new=AsyncMock()) as answer,
         patch(f"{RAG_MODULE}.summarize_workflow_for_meta_answer", return_value="summary"),
@@ -54,12 +60,12 @@ async def test_answer_meta_question_stays_on_main_llm(config_with_task_llm) -> N
         await RAGAgent().answer_meta_question_step(
             event=_event(),
             user_message_event=_event(messages=[]),
-            agent_config=config_with_task_llm,
+            agent_config=config,
             displayer=MagicMock(),
             t=MagicMock(),
         )
 
-    assert answer.await_args.kwargs["llm_config"].model_name == MAIN_MODEL
+    assert answer.await_args.kwargs["llm_config"].model_name == expected_model
 
 
 @pytest.mark.asyncio

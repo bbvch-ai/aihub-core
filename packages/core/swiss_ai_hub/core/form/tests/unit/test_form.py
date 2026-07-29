@@ -1033,3 +1033,36 @@ class TestGroupHelp:
 
         assert address.label == "Address"
         assert address.help is None
+
+
+class FormWithDataModeSubForm(Form):
+    """Outer form whose nested form is instantiated in data mode, so it renders no elements."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[NullableInnerForm, Field(description="Inner form", title="Inner")] = NullableInnerForm(value=1)
+
+
+class FormWithEmptyNullableSubForm(Form):
+    """Outer form whose optional nested form renders no elements but still needs its enable toggle."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[
+        NullableInnerForm | None,
+        Field(description="Inner form", title="Inner"),
+    ] = NullableInnerForm(value=1)
+
+
+class TestEmptyGroups:
+    """A nested Form that renders no elements must not become an empty fieldset."""
+
+    def test_non_nullable_group_without_children_is_skipped(self) -> None:
+        form = FormWithDataModeSubForm(name=InputText(label=LocaleString(en="Name")))
+
+        assert [element.name for element in form.to_formkit_form()] == ["name"]
+
+    def test_nullable_group_without_children_is_kept_for_its_toggle(self) -> None:
+        form = FormWithEmptyNullableSubForm(name=InputText(label=LocaleString(en="Name")))
+
+        inner = next(e for e in form.to_formkit_form() if e.name == "inner")
+        assert inner.nullable
+        assert inner.children == []

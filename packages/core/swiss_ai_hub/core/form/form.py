@@ -201,6 +201,10 @@ class Form(BaseModel):
             elif isinstance(field_value, Form):
                 nested_prefix = f"{_id_prefix}{field_name}."
                 nested_elements = field_value.to_formkit_form(_id_prefix=nested_prefix)
+                # A data-mode nested Form contributes no elements; a non-nullable group has no
+                # enable toggle either, so it would render as an empty fieldset.
+                if not nested_elements and not allows_none:
+                    continue
                 label = self._extract_label_from_field(field_info)
                 group_condition = self._derive_group_condition(nested_elements)
                 # Use prefixed ref for unique group ID (ref serializes as 'id' in JSON)

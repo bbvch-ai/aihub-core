@@ -27,9 +27,9 @@ class McpReactAgentConfig(AgentConfig):
         Field(
             default=None,
             description=(
-                "Task LLM used for auxiliary tasks like standalone-question condensation, context/few-shot "
-                "guards, meta-question detection, LLM routing, and conversation title + follow-up question "
-                "generation. Falls back to the main LLM when disabled."
+                "Model for this agent's auxiliary steps: conversation title and follow-up question "
+                "generation. The ReAct reasoning loop always uses the main model. Generation parameters are "
+                "inherited from the main model. Falls back to the main model when disabled."
             ),
             title="Task LLM",
         ),
@@ -50,10 +50,13 @@ class McpReactAgentConfig(AgentConfig):
     ]
 
     @model_validator(mode="after")
-    def default_task_llm_to_main_llm(self) -> Self:
-        """Auxiliary steps read `task_llm` directly, so an unset or blank picker falls back to the main llm."""
-        if self.task_llm is None or not self.task_llm.model_name:
-            self.task_llm = self.llm
+    def derive_task_llm_from_main_llm(self) -> Self:
+        """Only the task model is configurable: its generation parameters always mirror the main llm, and
+        an unset or blank picker falls back to the main model."""
+        if not isinstance(self.llm.model_name, str):
+            return self
+        task_model_name = self.task_llm.model_name if self.task_llm else None
+        self.task_llm = self.llm.as_task_llm(task_model_name or self.llm.model_name)
         return self
 
     @classmethod
@@ -66,7 +69,7 @@ class McpReactAgentConfig(AgentConfig):
             icon=base.icon,
             mcp=McpClientConfig.as_form(),
             llm=LLMConfig.as_form(),
-            task_llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(include_default_parameter=False),
             system_prompt=LocaleInput(
                 label=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.label"),
                 help=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.help"),
