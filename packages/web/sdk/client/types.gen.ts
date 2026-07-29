@@ -14403,9 +14403,9 @@ export type TextToSpeechRequest = {
   /**
    * Model
    *
-   * The TTS model to use. Available options: 'tts-1' or 'tts-1-hd'.
+   * The TTS model to use, e.g. 'speech/<model-name>'.
    */
-  model: "tts-1" | "tts-1-hd";
+  model: string;
   /**
    * Input
    *

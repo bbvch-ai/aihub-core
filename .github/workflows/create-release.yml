@@ -216,11 +216,11 @@ jobs:
           }
           case "$CHANNEL" in
             nightly)
-              publish "nightly" "Nightly (rolling) - ${VERSION}" true false "$ROLL_A1" "$ROLL_A2"
+              publish "nightly" "Swiss AI Hub Nightly ${VERSION}" true false "$ROLL_A1" "$ROLL_A2"
               ;;
             staging)
               # 1) Rolling pointer release the QC staging VM fetches (stable tag + asset).
-              publish "staging" "Staging (rolling) - ${VERSION}" true false "$ROLL_A1" "$ROLL_A2"
+              publish "staging" "Swiss AI Hub Staging ${VERSION}" true false "$ROLL_A1" "$ROLL_A2"
               # 2) Immutable, PRESERVED per-rc release for humans, version-named assets.
               #    Only for real rc builds (build-rc.yml). promote-to-staging.yml
               #    promotes a nightly to staging — that must not create a versioned entry.
