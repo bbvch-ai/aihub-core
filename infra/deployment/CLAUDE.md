@@ -39,7 +39,8 @@ deployment/
 │           └── managed/               # Reconciled every start by keycloak-config-cli: 10-roles, 20-client-scopes,
 │                                      #   30-clients, 40-auth-flows, 60-service-accounts
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
-    ├── aihub_pipeline.py
+    ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
+    ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py
@@ -73,10 +74,13 @@ changes AND the regenerated output files.
 | `dev`     | None    | None               | localhost            | Not in compose     | CPU models      | Development (infra only) |
 | `local`   | Yes     | mkcert self-signed | `*.127.0.0.1.nip.io` | `latest` tag       | None            | Local full-stack testing |
 | `build`   | Yes     | mkcert self-signed | `*.127.0.0.1.nip.io` | Built from source  | None            | Source development       |
-| `nightly` | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `nightly` tag      | GPU models      | Pre-production           |
-| `latest`  | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `latest` tag       | GPU models      | Production               |
+| `nightly` | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `nightly` tag      | None\*          | Pre-production           |
+| `latest`  | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `latest` tag       | None\*          | Production               |
 
 Each stage has a `.gpu` variant (e.g., `docker-compose.dev.gpu.yml`) adding NVIDIA GPU support for vLLM and speaches.
+
+\*The current `nightly` and `latest` deployments run the **CPU** compose variants — all inference (chat, embeddings,
+transcription) routes to Swiss LLM Cloud endpoints. The `.gpu` variants exist for GPU-capable installs.
 
 ## compose-config.yml — The Single Source of Truth
 
