@@ -29,6 +29,12 @@
 {%- set config_variant_suffix = config_file_suffix if config_file_suffix is defined else "." + stage_postfix %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
 {%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/gemma-4-31B-it' %}
+{#- OpenWebUI resolves TASK_MODEL against its own registry and denies non-admins any model without a
+    read grant. Only the provisioned workspace model carries grants — the raw LiteLLM name behind it is
+    deliberately left unregistered — so background tasks must name the workspace model, not the raw one.
+    Corollary: chat titles and follow-up questions only work for roles whose access rules grant this
+    model. A role that excludes it loses both features silently (admins are exempt from the check). #}
+{%- set task_model = 'aihub-model-' + default_model | replace('/', '-') %}
 
 {#- ===================================================================
     Internal Service Endpoints (Identical Across All Stages)
@@ -2248,8 +2254,8 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: {{ default_model }}
-      TASK_MODEL_EXTERNAL: {{ default_model }}
+      TASK_MODEL: {{ task_model }}
+      TASK_MODEL_EXTERNAL: {{ task_model }}
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
 
