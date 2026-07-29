@@ -656,8 +656,8 @@ class OpenaiService:
     async def _model_names_by_type(
         model_type: Literal["chat", "embedding", "image_generation"], model_name: str | None = None
     ) -> list[str]:
-        litellm_client = LiteLLMProxySettings().httpx_aclient
-        models = await litellm_client.get("/v1/model/info")
+        async with LiteLLMProxySettings().httpx_aclient as litellm_client:
+            models = await litellm_client.get("/v1/model/info")
         candidates = [
             model["model_name"] for model in models.json()["data"] if model["model_info"]["mode"] == model_type
         ]

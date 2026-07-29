@@ -55,10 +55,7 @@ async def _run(transport: _RecordingTransport, user: UserIdentity) -> str:
         "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service.LiteLLMProxySettings",
         return_value=settings,
     ):
-        try:
-            return await LiteLLMService.api_key_for_user(user)
-        finally:
-            await settings.httpx_aclient.aclose()
+        return await LiteLLMService.api_key_for_user(user)
 
 
 @pytest.mark.asyncio

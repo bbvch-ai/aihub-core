@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import HTTPException
-from httpx import Client
 from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure import LiteLLMService, trace_fn
@@ -19,9 +18,8 @@ class ModelService:
     @staticmethod
     @trace_fn
     async def get_model_list(user: UserIdentity) -> list[ModelDTO]:
-        client: Client = await LiteLLMService.httpx_client_for_user(user)
-
-        response = client.get(url="v1/model/info")
+        async with await LiteLLMService.httpx_aclient_for_user(user) as client:
+            response = await client.get(url="v1/model/info")
         data = response.json()["data"]
         models: list[ModelDTO] = []
         access_checker = AccessChecker.from_user(user)

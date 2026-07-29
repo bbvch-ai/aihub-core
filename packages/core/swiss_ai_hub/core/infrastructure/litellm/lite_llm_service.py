@@ -25,11 +25,11 @@ class LiteLLMService:
         if user.id in LiteLLMService._user_cache:
             return LiteLLMService._user_cache[user.id]
 
-        client = litellm_proxy.httpx_aclient
         api_key = LiteLLMService.generate_key_for_user(user)
 
-        if await LiteLLMService._create_user_if_absent(client, litellm_proxy, user):
-            await LiteLLMService._generate_key(client, user, api_key)
+        async with litellm_proxy.httpx_aclient as client:
+            if await LiteLLMService._create_user_if_absent(client, litellm_proxy, user):
+                await LiteLLMService._generate_key(client, user, api_key)
 
         LiteLLMService._user_cache[user.id] = api_key
         return api_key
@@ -80,14 +80,6 @@ class LiteLLMService:
         # A concurrent provisioner may have already created this deterministic key; 409 means it exists already.
         if key_response.status_code != 409:
             key_response.raise_for_status()
-
-    @staticmethod
-    async def httpx_client_for_user(user: UserIdentity) -> httpx.Client:
-        api_key = await LiteLLMService.api_key_for_user(user)
-        return httpx.Client(
-            headers={"Authorization": f"Bearer {api_key}"},
-            base_url=LiteLLMProxySettings().BASE_URL,
-        )
 
     @staticmethod
     async def httpx_aclient_for_user(user: UserIdentity) -> httpx.AsyncClient:
