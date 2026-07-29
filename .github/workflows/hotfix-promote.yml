@@ -89,7 +89,6 @@ jobs:
           NOTES_FROM="$(printf '%s\n%s\n' "$STABLES" "$VERSION" | sort -V | grep -B1 -x "$VERSION" | awk 'NR==1')"
           if [ "$NOTES_FROM" = "$VERSION" ]; then NOTES_FROM=""; fi
           if [ "$IS_BACKPORT" = "true" ]; then SECONDARY=""; else SECONDARY="latest"; fi
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           HEAD_SHA="$(git rev-parse HEAD)"
@@ -107,7 +106,6 @@ jobs:
             git tag -a "$VERSION" -m "Release $VERSION" "$HEAD_SHA"
             git push origin "refs/tags/$VERSION"
           fi
-
           {
             echo "version=$VERSION"
             echo "is_backport=$IS_BACKPORT"
@@ -115,7 +113,6 @@ jobs:
             echo "secondary_tag=$SECONDARY"
           } >> "$GITHUB_OUTPUT"
           echo "Hotfix $VERSION (backport=$IS_BACKPORT, notes_from=${NOTES_FROM:-<none>}, secondary=${SECONDARY:-<none>})"
-
   fan-out:
     name: Build hotfix images at the tag
     needs: resolve
@@ -142,7 +139,6 @@ jobs:
             gh workflow run "$wf" --ref "$VERSION" \
               -f release_version="$VERSION" -f secondary_tag="$SECONDARY"
           done
-
   publish-npm:
     name: Publish npm
     needs: resolve
@@ -150,7 +146,6 @@ jobs:
     with:
       release_version: ${{ needs.resolve.outputs.version }}
     secrets: inherit
-
   publish-pypi:
     name: Publish PyPI
     needs: resolve
@@ -158,7 +153,6 @@ jobs:
     with:
       release_version: ${{ needs.resolve.outputs.version }}
     secrets: inherit
-
   build-release:
     name: Publish versioned Release (atomic gate)
     needs: [resolve, publish-npm, publish-pypi]
@@ -168,7 +162,6 @@ jobs:
       channel: ${{ needs.resolve.outputs.is_backport == 'true' && 'backport' || 'latest' }}
       notes_from: ${{ needs.resolve.outputs.notes_from }}
     secrets: inherit
-
   finalize-latest:
     name: Move git latest pointer
     needs: [resolve, build-release]
@@ -184,7 +177,7 @@ jobs:
       - name: Move latest git tag to the hotfix commit
         env:
           VERSION: ${{ needs.resolve.outputs.version }}
-        run: |
+        run: |-
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

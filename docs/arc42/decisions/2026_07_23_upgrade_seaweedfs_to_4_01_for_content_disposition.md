@@ -43,8 +43,8 @@ Upgrade SeaweedFS **3.97 → 4.01** and use the now-honored override to force do
 2. **Opt-in disposition, defaulting to current behavior.** `S3AnonymousFileAccessService.generate_sas_url` gains an
    optional `response_content_disposition: str | None = None`; when set, it is passed as `ResponseContentDisposition`
    into the presigned `get_object`. Default `None` preserves inline behavior, so the other callers of this shared method
-   (RAG figure signing per ADR `2026_07_10_inline_rag_figures_as_base64`, and the generic file controller) are
-   untouched — no new abstraction.
+   (RAG figure signing per ADR `2026_07_10_inline_rag_figures_as_base64`, and the generic file controller) are untouched
+   — no new abstraction.
 
 3. **Download vs preview split at the endpoint.** The knowledge document-URL endpoint gains a `download: bool = False`
    query param, threaded to `KnowledgeService.get_document_url(..., as_attachment=)`, which builds
@@ -60,10 +60,10 @@ The 4.x line is a genuine architectural shift, not just the disposition fix:
   volume reads/writes require **JWT** (3.99 #7376, 4.01 #7514). All four SeaweedFS services share
   `WEED_JWT_SIGNING_KEY`, so internal auth continues to work.
 - **Non-root container user** (4.00 #7399) + **`/data` ownership/permission fix** (4.01 #7451) — the primary upgrade
-  risk on existing deployments. In our dev volumes the data files are already owned by the host user, so no
-  permission break occurred; **production upgrades must verify (and if needed `chown`) the mounted volume ownership.**
-- **Bucket-policy enforcement** (4.01 #7471), **auto-create bucket** (4.01 #7549), path/virtual-style addressing
-  changes (3.99 #7357), and S3 error-code changes (3.98: 400 vs 500) — none affected our path-style, explicit-identity
+  risk on existing deployments. In our dev volumes the data files are already owned by the host user, so no permission
+  break occurred; **production upgrades must verify (and if needed `chown`) the mounted volume ownership.**
+- **Bucket-policy enforcement** (4.01 #7471), **auto-create bucket** (4.01 #7549), path/virtual-style addressing changes
+  (3.99 #7357), and S3 error-code changes (3.98: 400 vs 500) — none affected our path-style, explicit-identity
   configuration.
 
 ## Consequences

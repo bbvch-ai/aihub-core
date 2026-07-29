@@ -82,7 +82,6 @@ jobs:
           STABLES="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "$CLEAN" || true)"
           NOTES_FROM="$(printf '%s\n%s\n' "$STABLES" "$CLEAN" | sort -V | grep -B1 -x "$CLEAN" | awk 'NR==1')"
           if [ "$NOTES_FROM" = "$CLEAN" ]; then NOTES_FROM=""; fi
-
           {
             echo "clean=$CLEAN"
             echo "source_tag=$SRC"
@@ -90,7 +89,6 @@ jobs:
             echo "notes_from=$NOTES_FROM"
           } >> "$GITHUB_OUTPUT"
           echo "Promoting $SRC -> $CLEAN (backport=$IS_BACKPORT, notes_from=${NOTES_FROM:-<none>})"
-
   discover-images:
     name: Discover app images
     runs-on: ubuntu-slim
@@ -113,7 +111,6 @@ jobs:
                   and (.value.latest == .key + ":latest"))
                 | .key]')
           echo "matrix={\"image\":$images}" >> "$GITHUB_OUTPUT"
-
   prepare-tag:
     name: Create clean tag
     runs-on: ubuntu-slim
@@ -140,7 +137,6 @@ jobs:
             git tag -a "$CLEAN" -m "Release $CLEAN" "$(git rev-parse HEAD)"
             git push origin "refs/tags/$CLEAN"
           fi
-
   retag-clean-docker:
     name: Retag rc images to clean version
     runs-on: ubuntu-latest
@@ -169,7 +165,6 @@ jobs:
           docker pull "${IMAGE}:${SOURCE_TAG}"
           docker tag "${IMAGE}:${SOURCE_TAG}" "${IMAGE}:${CLEAN}"
           docker push "${IMAGE}:${CLEAN}"
-
   publish-npm:
     name: Publish npm
     needs: [resolve, prepare-tag]
@@ -177,7 +172,6 @@ jobs:
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
     secrets: inherit
-
   publish-pypi:
     name: Publish PyPI
     needs: [resolve, prepare-tag]
@@ -185,7 +179,6 @@ jobs:
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
     secrets: inherit
-
   build-release:
     name: Publish versioned Release (atomic gate)
     # Runs ONLY after every publish + retag succeeded, so the release is marked
@@ -198,7 +191,6 @@ jobs:
       channel: ${{ needs.resolve.outputs.is_backport == 'true' && 'backport' || 'latest' }}
       notes_from: ${{ needs.resolve.outputs.notes_from }}
     secrets: inherit
-
   promote:
     name: Move latest pointers
     runs-on: ubuntu-slim
@@ -215,7 +207,6 @@ jobs:
           set -euo pipefail
           echo "Both registries green. Promoting $CLEAN to latest via set-latest.yml."
           gh workflow run set-latest.yml -f source_tag="$CLEAN"
-
   backport-note:
     name: Backport (latest not moved)
     runs-on: ubuntu-slim
