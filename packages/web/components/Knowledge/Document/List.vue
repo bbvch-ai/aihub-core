@@ -18,6 +18,7 @@
   <DataTable
     v-model:selection="checkedDocuments"
     :value="documents"
+    data-key="id"
     table-style="min-width: 50rem"
     :row-class="getRowClass"
     :sort-field="sortField ?? undefined"
@@ -185,11 +186,16 @@ watch(
 const deletableDocuments = computed(() => props.documents.filter(isDocumentDeletable))
 
 const allDeletableSelected = computed(
-  () => deletableDocuments.value.length > 0 && checkedDocuments.value.length === deletableDocuments.value.length,
+  () => deletableDocuments.value.length > 0
+    && deletableDocuments.value.every(document => checkedDocuments.value.some(selected => selected.id === document.id)),
 )
 
 const onSelectAllChange = ({ checked }: { checked: boolean }) => {
-  checkedDocuments.value = checked ? [...deletableDocuments.value] : []
+  const pageIds = new Set(deletableDocuments.value.map(document => document.id))
+  const selectionFromOtherPages = checkedDocuments.value.filter(selected => !pageIds.has(selected.id))
+  checkedDocuments.value = checked
+    ? [...selectionFromOtherPages, ...deletableDocuments.value]
+    : selectionFromOtherPages
 }
 
 const handleRowClick = (event: DataTableRowClickEvent) => {
