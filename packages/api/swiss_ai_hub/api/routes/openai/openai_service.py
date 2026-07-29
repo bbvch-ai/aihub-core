@@ -494,7 +494,7 @@ class OpenaiService:
 
         image_model_names = await OpenaiService._model_names_by_type("image_generation", model_name)
         if len(image_model_names) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
 
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
         kwargs = OpenaiService._filter_kwargs(client.images.generate, image_generation_request, user=user)
@@ -518,11 +518,11 @@ class OpenaiService:
         Utilizes the specified speech-to-text model and parameters to convert audio into transcription.
         Handles chunking of large audio files to comply with API size limits.
         """
-        OpenaiService._assert_model_access(user, f"transcription/{model_name}")
+        OpenaiService._assert_model_access(user, model_name)
 
-        tts_model_names = await OpenaiService._model_names_by_type("audio_transcription", model_name)
-        if len(tts_model_names) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+        stt_model_names = await OpenaiService._model_names_by_type("audio_transcription", model_name)
+        if len(stt_model_names) == 0:
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
 
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
@@ -581,14 +581,14 @@ class OpenaiService:
         Convert text to speech and return the audio content.
         Sends a TTS request to the designated model and streams the resulting audio bytes.
         """
-        OpenaiService._assert_model_access(user, f"speech/{model_name}")
+        OpenaiService._assert_model_access(user, model_name)
 
         tts_model_names = await OpenaiService._model_names_by_type("audio_speech", model_name)
         if len(tts_model_names) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
 
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
-        kwargs = OpenaiService._filter_kwargs(client.audio.speech.create, tts_request)
+        kwargs = OpenaiService._filter_kwargs(client.audio.speech.create, tts_request, user=user)
 
         return await client.audio.speech.create(input=input_text, **kwargs)
 
@@ -654,7 +654,8 @@ class OpenaiService:
 
     @staticmethod
     async def _model_names_by_type(
-        model_type: Literal["chat", "embedding", "image_generation"], model_name: str | None = None
+        model_type: Literal["chat", "embedding", "image_generation", "audio_transcription", "audio_speech"],
+        model_name: str | None = None,
     ) -> list[str]:
         async with LiteLLMProxySettings().httpx_aclient as litellm_client:
             models = await litellm_client.get("/v1/model/info")

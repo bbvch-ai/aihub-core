@@ -211,11 +211,15 @@ model_list:
 {%- endif %}
 {%- if not has_local_models %}
 
+{#- The whisper upstream differs per environment (Azure OpenAI vs OpenAI-compatible), so the provider-qualified
+    model string comes from the environment next to its URL/key: 'azure/<deployment>' for Azure resources,
+    'openai/<model>' for OpenAI-compatible endpoints. api_version is only consumed by the azure provider. #}
   - model_name: transcription/whisper-large-v3
     litellm_params:
-      model: openai/whisper-large-v3
+      model: os.environ/SWISS_LLM_CLOUD_WHISPER_MODEL
       api_base: os.environ/SWISS_LLM_CLOUD_WHISPER_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_WHISPER_API_KEY
+      api_version: '2024-06-01'
       drop_params: true
     model_info:
       mode: audio_transcription
