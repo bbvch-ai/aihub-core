@@ -71,7 +71,7 @@ class TestServiceInvocationEnforcesModelAccess:
         with patch(f"{_SERVICE}.AccessChecker.from_user", return_value=_checker([])):
             with pytest.raises(HTTPException) as exc:
                 await OpenaiService.stt(
-                    model_name="whisper-large-v3",
+                    model_name="transcription/whisper-large-v3",
                     file=Mock(),
                     user=fake_user(),
                     language=None,
