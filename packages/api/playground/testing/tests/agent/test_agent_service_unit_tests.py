@@ -15,9 +15,11 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
+from swiss_ai_hub.api.routes.agent.dto.agent_config_dto import AgentConfigDTO
 from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import CreateAgentInstanceRequest
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
@@ -246,6 +248,27 @@ class TestAgentServiceUnit:
                     assert len(result) == 2
                     assert first_dto in result
                     assert second_dto in result
+
+    @pytest.mark.asyncio
+    async def test_get_all_agent_instances_skips_record_that_fails_to_build(
+        self, sample_agent_class_entity, sample_config_entity, mock_locale_handler
+    ):
+        """A single instance whose DTO cannot be built must be skipped, not abort the whole sweep."""
+        bad_config = Mock()
+        bad_config.agent_class = "TestAgent"
+        bad_config.agent_id = "bad_agent"
+
+        with patch.object(AgentClassEntity, "get_all", return_value=[sample_agent_class_entity]):
+            with patch.object(
+                AgentConfigEntityDocument, "find_for_class", return_value=[sample_config_entity, bad_config]
+            ):
+                with patch.object(FullAgentInstanceDTO, "from_class_and_config") as mock_from:
+                    good_dto = Mock(spec=FullAgentInstanceDTO)
+                    mock_from.side_effect = [good_dto, ValueError("could not build DTO")]
+
+                    result = await AgentService.get_all_agent_instances(mock_locale_handler)
+
+        assert result == [good_dto]
 
     @pytest.mark.asyncio
     async def test_send_event_success(self, mock_nats, mock_user_identity):
@@ -556,3 +579,26 @@ class TestUpdateAgentInstanceLocksAgentId:
         assert config_entity.config_data["agent_id"] == "intructed_agent_02"
         assert result["agent_id"] == "intructed_agent_02"
         config_entity.save.assert_called_once()
+
+
+class TestAgentConfigDTOEmptyLocale:
+    """Regression: an instance whose localized name/description is empty must build, not raise.
+
+    This is the read-side resilience the fix guarantees — empty localized fields are legitimate
+    data (LocaleStringEntity columns are all optional), so a required-str DTO field coerces to "".
+    """
+
+    def test_empty_locale_name_and_description_coerce_to_empty_string(self):
+        class_entity = Mock()
+        class_entity.form = None
+
+        config_entity = Mock()
+        config_entity.agent_id = "empty_locale_agent"
+        config_entity.name = LocaleStringEntity()
+        config_entity.description = LocaleStringEntity()
+        config_entity.icon = "mage:robot"
+
+        dto = AgentConfigDTO.from_class_and_config(class_entity, config_entity, LocaleHandler())
+
+        assert dto.name == ""
+        assert dto.description == ""
