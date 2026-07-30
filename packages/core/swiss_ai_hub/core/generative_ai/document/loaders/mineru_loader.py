@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -9,6 +10,8 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 from pydantic import BaseModel
+from pypdf import PdfReader
+from pypdf.errors import PyPdfError
 from tenacity import (
     AsyncRetrying,
     RetryCallState,
@@ -42,6 +45,16 @@ class MineruParseResponse(BaseModel):
     backend: str
     version: str
     results: dict[str, dict[str, Any]]
+
+
+class MineruFileResult(BaseModel):
+    """Extracted per-file fields from one or more /file_parse responses."""
+
+    backend: str
+    version: str
+    md_content: str
+    num_pages: int
+    images: dict[str, str]
 
 
 class MineruLoader(BaseReader):
@@ -100,22 +113,6 @@ class MineruLoader(BaseReader):
         include_images: bool = True,
     ) -> list[Document]:
         """Load and process document asynchronously using MinerU API."""
-        try:
-            return await asyncio.wait_for(
-                self._aload_data_impl(file, extra_info, fs, include_images),
-                timeout=self.config.API_TIMEOUT,
-            )
-        except TimeoutError:
-            raise TimeoutError(f"Document loading timed out after {self.config.API_TIMEOUT}s for: {file}")
-
-    async def _aload_data_impl(
-        self,
-        file: str,
-        extra_info: dict | None = None,
-        fs: "AbstractFileSystem | None" = None,
-        include_images: bool = True,
-    ) -> list[Document]:
-        """Internal implementation of aload_data."""
         fs = fs or get_default_fs()
         filename = os.path.basename(file)
 
@@ -189,11 +186,63 @@ class MineruLoader(BaseReader):
         file_bytes: bytes,
         filename: str,
         include_images: bool,
-    ) -> MineruParseResponse:
-        """Call MinerU API to convert document."""
+    ) -> MineruFileResult:
+        """
+        Convert a document via MinerU, splitting large PDFs into page batches.
+
+        MinerU renders all requested pages into memory at once, so parsing a
+        whole large PDF in one request OOMs the server regardless of file size.
+        Page-range requests keep server memory constant per batch.
+        """
+        ext = os.path.splitext(filename)[1].lower()
+        batch_size = self.config.PAGE_BATCH_SIZE
+        if ext != ".pdf" or batch_size <= 0:
+            return await self._convert_batch(file_bytes, filename, include_images, None, None)
+
+        try:
+            total_pages = await asyncio.to_thread(self._count_pdf_pages, file_bytes)
+        except PyPdfError as e:
+            logger.warning(f"[MineruLoader] Page-count probe failed for {filename}, parsing unbatched: {e}")
+            return await self._convert_batch(file_bytes, filename, include_images, None, None)
+
+        ranges = self._page_ranges(total_pages, batch_size)
+        if len(ranges) <= 1:
+            return await self._convert_batch(file_bytes, filename, include_images, None, None)
+
+        semaphore = asyncio.Semaphore(self.config.MAX_CONCURRENT_BATCH_REQUESTS)
+
+        async def convert_range(start: int, end: int) -> MineruFileResult:
+            async with semaphore:
+                logger.info(f"[MineruLoader] {filename}: parsing pages {start + 1}-{end + 1} of {total_pages}")
+                return await self._convert_batch(file_bytes, filename, include_images, start, end)
+
+        async with asyncio.TaskGroup() as task_group:
+            tasks = [task_group.create_task(convert_range(start, end)) for start, end in ranges]
+        return self._merge_results([task.result() for task in tasks])
+
+    @staticmethod
+    def _count_pdf_pages(file_bytes: bytes) -> int:
+        return len(PdfReader(BytesIO(file_bytes)).pages)
+
+    @staticmethod
+    def _page_ranges(total_pages: int, batch_size: int) -> list[tuple[int, int]]:
+        return [(start, min(start + batch_size, total_pages) - 1) for start in range(0, total_pages, batch_size)]
+
+    async def _convert_batch(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        include_images: bool,
+        start_page_id: int | None,
+        end_page_id: int | None,
+    ) -> MineruFileResult:
+        """Call MinerU API for one page range (or the whole document), with retries."""
         async for attempt in AsyncRetrying(**self._retry_kwargs()):
             with attempt:
-                return await self._execute_conversion(file_bytes, filename, include_images)
+                response = await self._execute_conversion(
+                    file_bytes, filename, include_images, start_page_id, end_page_id
+                )
+                return self._extract_file_result(response, filename)
         raise RuntimeError("Retry loop exited unexpectedly")
 
     async def _execute_conversion(
@@ -201,6 +250,8 @@ class MineruLoader(BaseReader):
         file_bytes: bytes,
         filename: str,
         include_images: bool,
+        start_page_id: int | None = None,
+        end_page_id: int | None = None,
     ) -> MineruParseResponse:
         """Execute the conversion request to MinerU API."""
         ext = os.path.splitext(filename)[1].lower()
@@ -211,6 +262,21 @@ class MineruLoader(BaseReader):
         if self.config.VLM_SERVER_API_KEY.get_secret_value():
             vlm_headers["Authorization"] = f"Bearer {self.config.VLM_SERVER_API_KEY.get_secret_value()}"
 
+        data = {
+            "backend": "vlm-http-client",
+            "server_url": f"{vlm_server_url}/v1/chat/completions",
+            "model_name": self.config.VLM_NAME,
+            "return_md": "true",
+            "return_middle_json": "true",
+            "return_images": str(include_images).lower(),
+            "formula_enable": str(self.config.FORMULA_ENABLE).lower(),
+            "table_enable": str(self.config.TABLE_ENABLE).lower(),
+        }
+        if start_page_id is not None:
+            data["start_page_id"] = str(start_page_id)
+        if end_page_id is not None:
+            data["end_page_id"] = str(end_page_id)
+
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(self.config.API_TIMEOUT)) as client:
                 logger.debug(f"[MineruLoader] Calling MinerU API for: {filename}")
@@ -218,16 +284,7 @@ class MineruLoader(BaseReader):
                 response = await client.post(
                     f"{self.config.API_BASE_URL}/file_parse",
                     files={"files": (filename, file_bytes, content_type)},
-                    data={
-                        "backend": "vlm-http-client",
-                        "server_url": f"{vlm_server_url}/v1/chat/completions",
-                        "model_name": self.config.VLM_NAME,
-                        "return_md": "true",
-                        "return_middle_json": "true",
-                        "return_images": str(include_images).lower(),
-                        "formula_enable": str(self.config.FORMULA_ENABLE).lower(),
-                        "table_enable": str(self.config.TABLE_ENABLE).lower(),
-                    },
+                    data=data,
                     headers=vlm_headers if vlm_headers else None,
                 )
 
@@ -249,9 +306,50 @@ class MineruLoader(BaseReader):
             logger.exception(f"[MineruLoader] Network error for {filename}: {type(e).__name__}: {e}")
             raise MineruTransientError(f"Network error: {type(e).__name__}: {e}") from e
 
+    @staticmethod
+    def _extract_file_result(response: MineruParseResponse, filename: str) -> MineruFileResult:
+        file_stem = os.path.splitext(filename)[0]
+
+        file_result = response.results.get(file_stem, {})
+        if not file_result:
+            logger.warning(f"[MineruLoader] No result for stem '{file_stem}', falling back to filename '{filename}'")
+            file_result = response.results.get(filename, {})
+
+        if not file_result:
+            logger.exception(
+                f"[MineruLoader] No result found for {filename}. Available keys: {response.results.keys()}"
+            )
+            raise ValueError(f"No result found for {filename} in MinerU response")
+
+        md_content = file_result.get("md_content", "")
+        if not md_content:
+            logger.warning(f"[MineruLoader] Empty markdown content for {filename}")
+
+        middle_json_str = file_result.get("middle_json", "{}")
+        middle_json = json.loads(middle_json_str) if middle_json_str else {}
+
+        return MineruFileResult(
+            backend=response.backend,
+            version=response.version,
+            md_content=md_content or "",
+            num_pages=len(middle_json.get("pdf_info", [])),
+            images=file_result.get("images", {}),
+        )
+
+    @staticmethod
+    def _merge_results(results: list[MineruFileResult]) -> MineruFileResult:
+        """Stitch page-batch results back together; batches arrive in page order."""
+        return MineruFileResult(
+            backend=results[0].backend,
+            version=results[0].version,
+            md_content="\n\n".join(result.md_content for result in results if result.md_content),
+            num_pages=sum(result.num_pages for result in results),
+            images={name: data for result in results for name, data in result.images.items()},
+        )
+
     async def _process_response(
         self,
-        result: MineruParseResponse,
+        result: MineruFileResult,
         file: str,
         filename: str,
         fs: "AbstractFileSystem",
@@ -259,27 +357,9 @@ class MineruLoader(BaseReader):
         include_images: bool,
         embed_base64: bool = False,
     ) -> list[Document]:
-        """Process MinerU API response into Document objects."""
-        file_stem = os.path.splitext(filename)[0]
-
-        file_result = result.results.get(file_stem, {})
-        if not file_result:
-            logger.warning(f"[MineruLoader] No result for stem '{file_stem}', falling back to filename '{filename}'")
-            file_result = result.results.get(filename, {})
-
-        if not file_result:
-            logger.exception(f"[MineruLoader] No result found for {filename}. Available keys: {result.results.keys()}")
-            raise ValueError(f"No result found for {filename} in MinerU response")
-
-        md_content = file_result.get("md_content", "")
-        middle_json_str = file_result.get("middle_json", "{}")
-        images = file_result.get("images", {})
-
-        if not md_content:
-            logger.warning(f"[MineruLoader] Empty markdown content for {filename}")
-
-        middle_json = json.loads(middle_json_str) if middle_json_str else {}
-        num_pages = len(middle_json.get("pdf_info", []))
+        """Process the merged MinerU result into Document objects."""
+        md_content = result.md_content
+        images = result.images
 
         if include_images and images:
             if embed_base64:
@@ -298,7 +378,7 @@ class MineruLoader(BaseReader):
         md_content = wrap_markdown_tables(md_content)
 
         metadata = {
-            NUMBER_OF_PAGES: num_pages,
+            NUMBER_OF_PAGES: result.num_pages,
             "backend": result.backend,
             "mineru_version": result.version,
         }
@@ -306,7 +386,7 @@ class MineruLoader(BaseReader):
         if extra_info:
             metadata.update(extra_info)
 
-        logger.debug(f"[MineruLoader] Processed {filename}: {num_pages} pages, {len(images)} images")
+        logger.debug(f"[MineruLoader] Processed {filename}: {result.num_pages} pages, {len(images)} images")
 
         return [Document(text=md_content, extra_info=metadata)]
 
