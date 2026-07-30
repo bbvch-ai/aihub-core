@@ -1,70 +1,161 @@
 ---
 # =============================================================================
-# Promote a Release Candidate to Latest (atomic)
+# Promote to Latest (atomic) — rc-promote OR hotfix, one entry point
 # =============================================================================
-# Promote a QC-approved rc to a flat, stable release and move the production
-# `latest` pointer, but ONLY if both npm and PyPI publish succeed.
+# ONE workflow, two modes, so npm/PyPI OIDC trusted publishing only ever needs
+# to trust a single caller filename (this file). npm allows exactly one trusted
+# publisher per package and authorises the CALLER workflow (not the reusable
+# publish-*.yml it invokes), so a separate hotfix-promote.yml could never
+# publish npm without a second publisher slot npm does not offer.
 #
-#   1. resolve          - validate the rc tag, derive the clean vX.Y.Z, detect a
-#                         backport (older line), and find the previous stable tag
-#                         (the cumulative changelog base).
-#   2. prepare-tag      - create the clean vX.Y.Z git tag at the rc commit.
-#   3. retag-clean      - retag the tested rc images to :vX.Y.Z (exact bits).
-#      publish-npm/pypi - OIDC trusted publishing.
-#   4. build-release    - ONLY after every step above is green: create-release
-#                         (channel=latest) publishes the versioned Release marked
-#                         Latest, with the cumulative changelog. Gating it behind
-#                         the publishes keeps `latest` from being marked before
-#                         both registries are green.
-#   5. set-latest       - move git `latest` + retag :latest (+ mark Release Latest).
+#   * rc mode     (input: source_tag)   — promote a QC-approved rc to a flat,
+#                 stable release: retag the tested rc images to :vX.Y.Z (exact
+#                 bits), publish, release, move `latest`.
+#   * hotfix mode (input: hotfix_branch) — urgent fix on an already-released
+#                 line, straight to production (no rc/staging): auto-bump the
+#                 patch on the release branch, tag, build images at the tag,
+#                 publish, release, move `latest`.
 #
-# A backport (version below the current latest) uses channel=backport: it is
-# published as a full release but NOT marked Latest, and set-latest is skipped.
+# Shared tail (both modes): publish-npm + publish-pypi (OIDC) -> build-release
+# (create-release, channel=latest|backport) -> set-latest. build-release is the
+# atomic gate: the versioned Release is marked Latest only after BOTH registries
+# publish green.
+#
+# A backport (version below the current latest) uses channel=backport: published
+# as a full release but NOT marked Latest, and set-latest is skipped.
+#
+# Auto-bump (hotfix) is idempotent: it reuses the tag if HEAD already carries a
+# vX.Y.Z on the line (safe rerun), releases pyproject as-is if it already holds
+# an un-tagged newer patch, and otherwise bumps to (highest released patch + 1),
+# commits via the deploy key, and tags — so a rerun never climbs the version.
 # =============================================================================
 name: Promote to Latest
-run-name: Promote ${{ github.event.inputs.source_tag }}
+run-name: >-
+  ${{ github.event.inputs.hotfix_branch != ''
+      && format('Hotfix promote - {0}', github.event.inputs.hotfix_branch)
+      || format('Promote {0}', github.event.inputs.source_tag) }}
 on:
   workflow_dispatch:
     inputs:
       source_tag:
-        description: QC-approved rc tag to promote (e.g., v0.317.0-rc.2)
-        required: true
+        description: (rc mode) QC-approved rc tag to promote, e.g. v0.317.0-rc.2. Leave empty for a hotfix.
+        required: false
+        default: ''
+      hotfix_branch:
+        description: (hotfix mode) Release branch carrying the patch fix, e.g. release/0.317. Leave empty for an rc promote.
+        required: false
+        default: ''
 permissions:
   contents: write
   packages: write
   id-token: write
   actions: write
 concurrency:
-  group: promote-${{ github.event.inputs.source_tag }}
+  group: promote-${{ github.event.inputs.source_tag }}${{ github.event.inputs.hotfix_branch }}
   cancel-in-progress: false
 jobs:
   resolve:
-    name: Resolve & guard version
-    runs-on: ubuntu-slim
-    timeout-minutes: 5
+    name: Resolve, (bump), tag
+    # ubuntu-latest (not -slim): hotfix auto-bump runs `make version-bump` (+ `uv lock`).
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       clean: ${{ steps.r.outputs.clean }}
-      source_tag: ${{ steps.r.outputs.source_tag }}
+      ref: ${{ steps.r.outputs.ref }}
+      mode: ${{ steps.r.outputs.mode }}
       is_backport: ${{ steps.r.outputs.is_backport }}
       notes_from: ${{ steps.r.outputs.notes_from }}
+      secondary_tag: ${{ steps.r.outputs.secondary_tag }}
     steps:
-      - name: Checkout (full history for tag discovery)
+      - name: Guard exactly one mode
+        env:
+          SRC: ${{ github.event.inputs.source_tag }}
+          HFB: ${{ github.event.inputs.hotfix_branch }}
+        run: |
+          set -euo pipefail
+          if [ -n "$SRC" ] && [ -n "$HFB" ]; then
+            echo "::error::Provide either source_tag OR hotfix_branch, not both."; exit 1
+          fi
+          if [ -z "$SRC" ] && [ -z "$HFB" ]; then
+            echo "::error::Provide one of source_tag (rc promote) or hotfix_branch (hotfix)."; exit 1
+          fi
+      - name: Checkout (rc tag or release branch, full history)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
+          ref: ${{ github.event.inputs.source_tag != '' && github.event.inputs.source_tag || github.event.inputs.hotfix_branch }}
           fetch-depth: 0
-      - name: Validate and resolve
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Setup uv (hotfix bump needs `uv lock`)
+        if: github.event.inputs.hotfix_branch != ''
+        uses: astral-sh/setup-uv@e92bafb6253dcd438e0484186d7669ea7a8ca1cc  # v6.4.3
+      - name: Resolve, auto-bump (hotfix), and tag
         id: r
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           SRC: ${{ github.event.inputs.source_tag }}
+          HFB: ${{ github.event.inputs.hotfix_branch }}
         run: |
           set -euo pipefail
-          if ! printf '%s' "$SRC" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
-            echo "::error::source_tag '$SRC' must be an rc tag, e.g. v0.317.0-rc.2."
-            exit 1
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          read_core() {
+            awk '
+              /^\[/ { in_project = ($0 == "[project]") }
+              in_project && /^version[[:space:]]*=/ {
+                sub(/^version[[:space:]]*=[[:space:]]*"/, ""); sub(/".*/, ""); print; exit
+              }' pyproject.toml
+          }
+
+          if [ -n "$HFB" ]; then
+            MODE=hotfix
+            core="$(read_core)"
+            printf '%s' "$core" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
+              || { echo "::error::pyproject [project] version '$core' is not clean semver."; exit 1; }
+            line="${core%.*}"
+            [ "$HFB" = "release/${line}" ] \
+              || { echo "::error::branch '$HFB' does not match pyproject line (expected release/${line})."; exit 1; }
+
+            HEAD_TAG="$(git tag --points-at HEAD | grep -E "^v${line}\.[0-9]+$" | sort -V | tail -n1 || true)"
+            if [ -n "$HEAD_TAG" ]; then
+              # Idempotent rerun: HEAD already released on this line.
+              CLEAN="$HEAD_TAG"
+              echo "::notice::HEAD already tagged $CLEAN; reusing (idempotent rerun)."
+            else
+              latest="$(git tag -l "v${line}.*" | grep -E "^v${line}\.[0-9]+$" | sort -V | tail -n1 || true)"
+              released_patch="${latest##*.}"; [ -n "$latest" ] || released_patch=-1
+              core_patch="${core##*.}"
+              if [ "$core_patch" -gt "$released_patch" ]; then
+                # pyproject already opened an un-tagged newer patch — release it as-is.
+                target="$core"
+              else
+                target="${line}.$((released_patch + 1))"
+              fi
+              CLEAN="v${target}"
+              if [ "$core" != "$target" ]; then
+                echo "Bumping ${line} ${core} -> ${target}"
+                make version-bump VERSION="$target"
+                git commit -aqm "chore(swiss-ai-hub): Bump version to ${target}"
+                git push origin "HEAD:${HFB}"
+              fi
+              git tag -a "$CLEAN" -m "Release $CLEAN" "$(git rev-parse HEAD)"
+              git push origin "refs/tags/$CLEAN"
+            fi
+            REF="$CLEAN"
+          else
+            MODE=rc
+            printf '%s' "$SRC" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$' \
+              || { echo "::error::source_tag '$SRC' must be an rc tag, e.g. v0.317.0-rc.2."; exit 1; }
+            CLEAN="${SRC%-rc.*}"
+            if git rev-parse "$CLEAN" >/dev/null 2>&1 || git ls-remote --tags origin | grep -q "refs/tags/$CLEAN$"; then
+              echo "::notice::Tag $CLEAN already exists; not recreating."
+            else
+              git tag -a "$CLEAN" -m "Release $CLEAN" "$(git rev-parse "$SRC")"
+              git push origin "refs/tags/$CLEAN"
+            fi
+            REF="$SRC"
           fi
-          CLEAN="${SRC%-rc.*}"
 
           # Backport detection against the current 'Latest' GitHub Release.
           IS_BACKPORT=false
@@ -76,23 +167,26 @@ jobs:
             [ "$HIGHEST" = "$CUR" ] && IS_BACKPORT=true
           fi
 
-          # Cumulative changelog base: the highest stable tag strictly BELOW this
-          # version (via sort -V predecessor), so a backport bases on its own line
-          # instead of walking forward to a newer release.
+          # Cumulative changelog base: highest stable strictly BELOW this version.
           STABLES="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "$CLEAN" || true)"
           NOTES_FROM="$(printf '%s\n%s\n' "$STABLES" "$CLEAN" | sort -V | grep -B1 -x "$CLEAN" | awk 'NR==1')"
-          if [ "$NOTES_FROM" = "$CLEAN" ]; then NOTES_FROM=""; fi
+          [ "$NOTES_FROM" = "$CLEAN" ] && NOTES_FROM=""
+          if [ "$IS_BACKPORT" = "true" ]; then SECONDARY=""; else SECONDARY="latest"; fi
 
           {
             echo "clean=$CLEAN"
-            echo "source_tag=$SRC"
+            echo "ref=$REF"
+            echo "mode=$MODE"
             echo "is_backport=$IS_BACKPORT"
             echo "notes_from=$NOTES_FROM"
+            echo "secondary_tag=$SECONDARY"
           } >> "$GITHUB_OUTPUT"
-          echo "Promoting $SRC -> $CLEAN (backport=$IS_BACKPORT, notes_from=${NOTES_FROM:-<none>})"
+          echo "$MODE: $CLEAN (backport=$IS_BACKPORT, notes_from=${NOTES_FROM:-<none>}, ref=$REF)"
 
+  # ---- rc mode: retag the already-tested rc images to the clean version -------
   discover-images:
     name: Discover app images
+    if: ${{ github.event.inputs.source_tag != '' }}
     runs-on: ubuntu-slim
     timeout-minutes: 5
     needs: resolve
@@ -102,7 +196,7 @@ jobs:
       - name: Checkout at rc tag
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
-          ref: ${{ needs.resolve.outputs.source_tag }}
+          ref: ${{ needs.resolve.outputs.ref }}
       - name: Parse custom app images from compose-config.yml
         id: parse
         run: |
@@ -114,38 +208,12 @@ jobs:
                 | .key]')
           echo "matrix={\"image\":$images}" >> "$GITHUB_OUTPUT"
 
-  prepare-tag:
-    name: Create clean tag
-    runs-on: ubuntu-slim
-    timeout-minutes: 5
-    needs: resolve
-    steps:
-      - name: Checkout at rc tag
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          ref: ${{ needs.resolve.outputs.source_tag }}
-          fetch-depth: 0
-          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
-      - name: Create clean release tag
-        env:
-          CLEAN: ${{ needs.resolve.outputs.clean }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git rev-parse "$CLEAN" >/dev/null 2>&1 \
-            || git ls-remote --tags origin | grep -q "refs/tags/$CLEAN$"; then
-            echo "::notice::Tag $CLEAN already exists; not recreating."
-          else
-            git tag -a "$CLEAN" -m "Release $CLEAN" "$(git rev-parse HEAD)"
-            git push origin "refs/tags/$CLEAN"
-          fi
-
   retag-clean-docker:
     name: Retag rc images to clean version
+    if: ${{ github.event.inputs.source_tag != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [resolve, discover-images, prepare-tag]
+    needs: [resolve, discover-images]
     permissions:
       packages: write
       contents: read
@@ -160,7 +228,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull rc image and push clean tag
         env:
-          SOURCE_TAG: ${{ needs.resolve.outputs.source_tag }}
+          SOURCE_TAG: ${{ github.event.inputs.source_tag }}
           CLEAN: ${{ needs.resolve.outputs.clean }}
           REPO_NAME: ${{ github.event.repository.name }}
         run: |-
@@ -170,9 +238,38 @@ jobs:
           docker tag "${IMAGE}:${SOURCE_TAG}" "${IMAGE}:${CLEAN}"
           docker push "${IMAGE}:${CLEAN}"
 
+  # ---- hotfix mode: build images fresh at the clean tag -----------------------
+  build-hotfix-images:
+    name: Build hotfix images at the tag
+    if: ${{ github.event.inputs.hotfix_branch != '' }}
+    needs: resolve
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Dispatch build workflows at the clean tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.resolve.outputs.clean }}
+          SECONDARY: ${{ needs.resolve.outputs.secondary_tag }}
+        run: |-
+          set -euo pipefail
+          BUILDS=(
+            build-agents.yml build-pipelines.yml build-api-and-bot.yml
+            build-dagster.yml build-web.yml build-backup.yml build-sysadmin.yml
+          )
+          for wf in "${BUILDS[@]}"; do
+            echo "Dispatching $wf @ $VERSION (secondary_tag='${SECONDARY}')"
+            gh workflow run "$wf" --ref "$VERSION" \
+              -f release_version="$VERSION" -f secondary_tag="$SECONDARY"
+          done
+
+  # ---- shared tail: publish -> gated release -> move latest -------------------
   publish-npm:
     name: Publish npm
-    needs: [resolve, prepare-tag]
+    needs: resolve
     uses: ./.github/workflows/publish-npm.yml
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
@@ -180,7 +277,7 @@ jobs:
 
   publish-pypi:
     name: Publish PyPI
-    needs: [resolve, prepare-tag]
+    needs: resolve
     uses: ./.github/workflows/publish-pypi.yml
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
@@ -188,10 +285,16 @@ jobs:
 
   build-release:
     name: Publish versioned Release (atomic gate)
-    # Runs ONLY after every publish + retag succeeded, so the release is marked
-    # Latest only when both registries are green. channel=backport keeps an
-    # older line from being marked Latest.
+    # Gated on BOTH registries green. In rc mode also waits for the image retag;
+    # in hotfix mode retag-clean-docker is skipped (images build async), matching
+    # the previous hotfix behaviour.
     needs: [resolve, retag-clean-docker, publish-npm, publish-pypi]
+    if: >-
+      always()
+      && needs.resolve.result == 'success'
+      && needs.publish-npm.result == 'success'
+      && needs.publish-pypi.result == 'success'
+      && (needs.retag-clean-docker.result == 'success' || needs.retag-clean-docker.result == 'skipped')
     uses: ./.github/workflows/create-release.yml
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
@@ -199,22 +302,49 @@ jobs:
       notes_from: ${{ needs.resolve.outputs.notes_from }}
     secrets: inherit
 
-  promote:
-    name: Move latest pointers
+  # rc: retag images :CLEAN only, so set-latest.yml moves git+docker :latest.
+  move-latest-rc:
+    name: Move latest (rc)
+    if: ${{ github.event.inputs.source_tag != '' && needs.resolve.outputs.is_backport != 'true' }}
     runs-on: ubuntu-slim
     timeout-minutes: 5
     needs: [resolve, build-release]
-    if: needs.resolve.outputs.is_backport != 'true'
     steps:
       - name: Dispatch set-latest for the clean version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
           CLEAN: ${{ needs.resolve.outputs.clean }}
         run: |-
           set -euo pipefail
           echo "Both registries green. Promoting $CLEAN to latest via set-latest.yml."
           gh workflow run set-latest.yml -f source_tag="$CLEAN"
+
+  # hotfix: images already carry :latest (built with secondary_tag=latest), and
+  # create-release(channel=latest) marks the Release Latest — so only the git
+  # `latest` pointer remains. Done inline (not set-latest.yml) to avoid racing its
+  # docker retag against the async hotfix image builds.
+  move-latest-hotfix:
+    name: Move latest (hotfix)
+    if: ${{ github.event.inputs.hotfix_branch != '' && needs.resolve.outputs.is_backport != 'true' }}
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    needs: [resolve, build-release]
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Move the git `latest` pointer to the hotfix commit
+        env:
+          CLEAN: ${{ needs.resolve.outputs.clean }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f latest "$CLEAN"
+          git push origin refs/tags/latest --force
+          echo "Moved 'latest' to $CLEAN. Remember to forward-port the fix to main."
 
   backport-note:
     name: Backport (latest not moved)
