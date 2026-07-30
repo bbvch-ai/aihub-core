@@ -42,8 +42,8 @@ class MinimalProcessInstanceDTO(BaseModel):
         """
         process_config_dto = ProcessConfigDTO(
             process_id=config_entity.process_id,
-            name=t.extract(config_entity.name.to_locale_string()) or "",
-            description=t.extract(config_entity.description.to_locale_string()) or "",
+            name=t.extract_required(config_entity.name.to_locale_string(), field_name="process.name"),
+            description=t.extract_required(config_entity.description.to_locale_string(), field_name="process.description"),
             icon=config_entity.icon,
         )
         return cls(

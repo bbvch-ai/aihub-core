@@ -107,7 +107,14 @@ class AgentService:
 
             configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
-                agents.append(FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+                try:
+                    agents.append(FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+                except Exception:
+                    logger.exception(
+                        "Skipping agent instance %s/%s: could not build its DTO.",
+                        class_entity.agent_class,
+                        getattr(config_entity, "agent_id", "?"),
+                    )
         return agents
 
     @staticmethod

@@ -93,6 +93,20 @@ class LocaleHandler:
             return getattr(locale_data, available_locales[0])
         return None
 
+    def extract_required(self, locale_data: dict[str, Any] | LocaleString, field_name: str | None = None) -> str:
+        """Extract a localized value for a required string field, coercing an unset value to `""`.
+
+        Required DTO fields must render even when a record has no populated locale (legitimate,
+        since the storage columns are optional). Returning `""` instead of `None` keeps a single
+        empty record from aborting an aggregate read such as the endpoint-discovery sweep, and the
+        warning keeps that malformed record discoverable.
+        """
+        value = self.extract(locale_data)
+        if value:
+            return value
+        logger.warning("Localized field %r is empty in every locale; coercing to empty string.", field_name or "?")
+        return ""
+
     def t_object(self, key: str, locale: str | None = None) -> Any:
         locale = self.get_locale(locale)
         folder, filename, *path = key.split(".")
