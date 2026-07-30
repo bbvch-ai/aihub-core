@@ -111,7 +111,9 @@ class AgentRunTracer:
         attributes = {
             SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.CHAIN.value,
             SpanAttributes.SESSION_ID: topic.thread_id,
-            SpanAttributes.INPUT_VALUE: json.dumps(input_values),
+            # default=str mirrors the output path below: step inputs carry types Python-mode model_dump leaves
+            # as objects (nested datetimes, most commonly a mail Date header), which plain json.dumps refuses.
+            SpanAttributes.INPUT_VALUE: json.dumps(input_values, default=str),
             SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
             SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
         }
