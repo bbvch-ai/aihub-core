@@ -252,6 +252,7 @@ jobs:
       - name: Dispatch build workflows at the clean tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.resolve.outputs.clean }}
           SECONDARY: ${{ needs.resolve.outputs.secondary_tag }}
         run: |-
@@ -313,6 +314,7 @@ jobs:
       - name: Dispatch set-latest for the clean version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           CLEAN: ${{ needs.resolve.outputs.clean }}
         run: |-
           set -euo pipefail
