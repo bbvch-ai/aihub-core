@@ -39,3 +39,15 @@ def test_in_locale_strict_returns_none_without_falling_back():
     locale_string = LocaleString(de="Hallo")
     assert locale_string.in_locale("en", fallback=False) is None
     assert locale_string.in_locale("es", fallback=False) is None
+
+
+def test_has_content_true_when_any_locale_is_populated():
+    assert LocaleString(fr="Bonjour").has_content() is True
+
+
+def test_has_content_false_when_all_locales_are_none():
+    assert LocaleString().has_content() is False
+
+
+def test_has_content_false_when_all_locales_are_empty_strings():
+    assert LocaleString(de="", en="", fr="", it="").has_content() is False

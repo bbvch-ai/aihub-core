@@ -333,6 +333,11 @@ class ProcessService:
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
+        process_config_schema = (
+            class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
+        )
+        InstanceConfigHelper.validate_required_locale_fields(config, process_config_schema)
+
         config_model = ModelCreationService.create_process_config_model(
             ProcessConfigSpecs(
                 process_class=(
@@ -340,9 +345,7 @@ class ProcessService:
                     if class_entity.process_config_specs
                     else process_class
                 ),
-                process_config_schema=(
-                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
-                ),
+                process_config_schema=process_config_schema,
             )
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
@@ -393,6 +396,11 @@ class ProcessService:
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
+        process_config_schema = (
+            class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
+        )
+        InstanceConfigHelper.validate_required_locale_fields(configuration, process_config_schema)
+
         config_model = ModelCreationService.create_process_config_model(
             ProcessConfigSpecs(
                 process_class=(
@@ -400,9 +408,7 @@ class ProcessService:
                     if class_entity.process_config_specs
                     else process_class
                 ),
-                process_config_schema=(
-                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
-                ),
+                process_config_schema=process_config_schema,
             )
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)

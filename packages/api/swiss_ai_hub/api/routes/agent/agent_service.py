@@ -362,6 +362,10 @@ class AgentService:
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
+        InstanceConfigHelper.validate_required_locale_fields(
+            configuration, class_entity.agent_config_specs.agent_config_schema
+        )
+
         config_model = ModelCreationService.create_agent_config_model(
             AgentConfigSpecs(
                 agent_class=class_entity.agent_config_specs.agent_class,
@@ -452,6 +456,8 @@ class AgentService:
             )
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
+
+        InstanceConfigHelper.validate_required_locale_fields(config, class_entity.agent_config_specs.agent_config_schema)
 
         config_model = ModelCreationService.create_agent_config_model(
             AgentConfigSpecs(

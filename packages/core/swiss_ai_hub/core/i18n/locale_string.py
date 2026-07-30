@@ -54,6 +54,15 @@ class LocaleString(BaseModel):
     fr: Annotated[str | None, Field(description="French")] = None
     it: Annotated[str | None, Field(description="Italian")] = None
 
+    def has_content(self) -> bool:
+        """Whether at least one locale holds a non-empty value.
+
+        The single source of truth for "is this localized string populated" — a required
+        localized field with no content should be rejected on write, and an empty one yields
+        None on read (`in_locale`).
+        """
+        return any(getattr(self, locale, None) not in (None, "") for locale in ("de", "en", "fr", "it"))
+
     def in_locale(self, locale: str, fallback: bool = True) -> str | None:
         """Extract the string for a locale, falling back to other locales if it is unset.
 
