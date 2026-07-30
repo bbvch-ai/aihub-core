@@ -3,7 +3,7 @@ steps:
   title:
     name: Générer le titre de la conversation
     description: Génère un titre court et stable résumant le sujet de la conversation
-      dès qu'un sujet devient identifiable.
+      dès le premier tour du fil de discussion.
   follow_ups:
     name: Suggérer des questions de suivi
     description: Suggère des questions de suivi que l'utilisateur pourrait vouloir
@@ -11,13 +11,15 @@ steps:
 thoughts:
   generating_title: Je réfléchis à un titre pour cette conversation
   generating_follow_ups: Je réfléchis à des questions de suivi
+default_title: Nouvelle conversation
 prompts:
   title: |
     {% chat role="user" %}
     Génère un titre concis (3-6 mots) résumant le sujet de la conversation suivante. Rédige le titre
-    dans la langue de la conversation. N'utilise pas de guillemets ni de ponctuation finale. Si la
-    conversation n'a pas encore de sujet identifiable — par exemple si elle ne contient que des
-    salutations ou des banalités — renvoie null au lieu de deviner.
+    dans la langue de la conversation. N'utilise pas de guillemets ni de ponctuation finale. Produis
+    toujours un titre simple et naturel, même si la conversation n'est qu'une salutation ou une
+    banalité — par exemple une simple salutation peut être titrée "Salutation" ou "Conversation
+    informelle". Ne renvoie jamais un titre vide.
     <Conversation>
     {% for message in chat_history %}
     <message role="{{ message.role.value }}">

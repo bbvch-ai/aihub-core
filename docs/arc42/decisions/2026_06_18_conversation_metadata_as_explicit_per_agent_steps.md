@@ -1,5 +1,35 @@
 # Conversation Metadata (Title + Follow-up Questions) as Explicit Per-Agent Steps
 
+::: warning Update (2026-07-30)
+Two of this ADR's own stated consequences are reversed:
+
+- **Title generation no longer defers on an unclear-topic verdict.** `do_generate_title` used to leave the
+  `ThreadContext` flag unset when the model judged a turn to have "no identifiable topic yet" (a bare greeting),
+  deferring to a later turn. It now always produces a title on the thread's first check — the prompt no longer permits a
+  null/empty result, `TitleResult.title` is tightened from `str | None` to `str` at the schema level, and a localized
+  generic fallback covers the rare case a model still returns an empty string.
+- **The self-awareness meta-answer branch now generates metadata too**, reversing "left as-is so meta-only conversations
+  keep the default thread name" in Consequences below. `RAGAgent`, `ExpertRAGAgent`, `FewShotAgent`, and
+  `LLMWrappingAgent` (the four self-aware agents that are also metadata adopters — `McpReactAgent` isn't self-aware)
+  each gained a new early, parallel `@step` (`generate_meta_question_title_step`) triggered on the same
+  `MetaQuestionDetectedEvent` as `answer_meta_question_step`, so title generation runs *concurrently* with the meta
+  answer rather than waiting for it — title only needs the user's question, and serializing it behind the answer would
+  add post-answer latency for no reason (the answer is already fully streamed to the user via `ChunkEvent`s by the time
+  the answer step returns, but the stop event — and the client's "generation done" signal — would still be held back).
+  Follow-ups remain inline in `answer_meta_question_step` itself, since they need the answer and so have no earlier
+  point to run.
+
+The same "dispatcher won't dispatch a step waiting on a stop event" mechanic also affected two other exit paths, none
+about meta questions, now fixed the same way: `FewShotAgent`'s guard-reject `stop_step` (both, neither had fired yet)
+and `ExpertRAGAgent`'s `expert_not_answered_step`/`expert_exception_step` (follow-ups only — title already fires early
+there regardless of branch). `McpReactAgent`'s `max_iterations_reached_step` has the identical structural gap but is
+left without metadata by deliberate choice — a run that exhausted its iteration budget without producing an answer isn't
+worth titling.
+
+The shared generators, event types, and the split/inline wiring shape for the *normal* pipeline are unchanged; the rest
+of this ADR stands.
+:::
+
 ::: warning Update (2026-07-24, issue #87)
 For the split agents (`RAGAgent`, `ExpertRAGAgent`) the two metadata events are **no longer both fan-out `@step`s on the
 terminal `LLMEvent`**. Hanging both off the answer event made them run concurrently with the stop step, so their display

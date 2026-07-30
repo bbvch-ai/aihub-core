@@ -59,9 +59,13 @@ def test_detect_step_does_not_run_on_programmatic_start():
 
 
 def test_answer_step_terminates_and_skips_retrieval():
-    """answer_meta_question_step is wired off MetaQuestionDetectedEvent and produces no retrieval."""
+    """answer_meta_question_step is wired off MetaQuestionDetectedEvent and produces no retrieval.
+
+    generate_meta_question_title_step also waits on this event — deliberately, so the dispatcher runs
+    the title generation concurrently with the meta answer instead of serializing it behind the answer.
+    """
     answer_steps = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(MetaQuestionDetectedEvent)}
-    assert answer_steps == {"answer_meta_question_step"}
+    assert answer_steps == {"answer_meta_question_step", "generate_meta_question_title_step"}
 
     retrieval_events = {RetrieverEvent, RetrieveUserMemoryEvent, RetrieveOrganizationMemoryEvent}
     answer_step = next(s for s in RAGAgent.get_steps() if s.__name__ == "answer_meta_question_step")
