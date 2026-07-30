@@ -1,4 +1,3 @@
-import logging
 import time
 from typing import Any
 
@@ -29,8 +28,7 @@ from swiss_ai_hub.api.routes.process.dto.submitted_form_dto import SubmittedForm
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
-
-logger = logging.getLogger(__name__)
+from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
 
 
 class ProcessService:
@@ -291,14 +289,15 @@ class ProcessService:
         instances = []
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         for config_entity in configs:
-            try:
-                instances.append(FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t))
-            except Exception:
-                logger.exception(
-                    "Skipping process instance %s/%s: could not build its DTO.",
-                    process_class,
-                    getattr(config_entity, "process_id", "?"),
-                )
+            dto = InstanceDtoBuilder.build_or_skip(
+                lambda config_entity=config_entity: (
+                    FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                ),
+                kind="process instance",
+                key=f"{process_class}/{getattr(config_entity, 'process_id', '?')}",
+            )
+            if dto is not None:
+                instances.append(dto)
         return instances
 
     @staticmethod
@@ -452,14 +451,15 @@ class ProcessService:
 
             configs = ProcessConfigEntityDocument.find_for_class(class_entity.process_class)
             for config_entity in configs:
-                try:
-                    instances.append(FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t))
-                except Exception:
-                    logger.exception(
-                        "Skipping process instance %s/%s: could not build its DTO.",
-                        class_entity.process_class,
-                        getattr(config_entity, "process_id", "?"),
-                    )
+                dto = InstanceDtoBuilder.build_or_skip(
+                    lambda class_entity=class_entity, config_entity=config_entity: (
+                        FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    ),
+                    kind="process instance",
+                    key=f"{class_entity.process_class}/{getattr(config_entity, 'process_id', '?')}",
+                )
+                if dto is not None:
+                    instances.append(dto)
         return instances
 
     # ==================== Walkthrough Methods ====================
