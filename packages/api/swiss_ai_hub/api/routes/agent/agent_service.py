@@ -43,6 +43,7 @@ from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
+from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,15 @@ class AgentService:
 
             configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
-                agents.append(FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+                dto = InstanceDtoBuilder.build_or_skip(
+                    lambda class_entity=class_entity, config_entity=config_entity: (
+                        FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    ),
+                    kind="agent instance",
+                    key=f"{class_entity.agent_class}/{getattr(config_entity, 'agent_id', '?')}",
+                )
+                if dto is not None:
+                    agents.append(dto)
         return agents
 
     @staticmethod

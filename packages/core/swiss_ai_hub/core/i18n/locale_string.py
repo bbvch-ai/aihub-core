@@ -58,8 +58,8 @@ class LocaleString(BaseModel):
         """Extract the string for a locale, falling back to other locales if it is unset.
 
         With `fallback` (the default), mirrors `LocaleHandler.extract_multi_locale`:
-        requested locale → default locale → first populated locale in the whitelist;
-        unlike that method it returns None instead of raising when every locale is empty.
+        requested locale → default locale → first populated locale in the whitelist,
+        returning None when every locale is empty.
 
         Pass `fallback=False` to read exactly the requested locale (no substitution) — for
         callers that need the requested language verbatim or want their own fallback order.
