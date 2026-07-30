@@ -8,9 +8,11 @@ class InstanceDtoBuilder:
     """Isolates a single corrupt record when building instance DTOs for an aggregate read.
 
     Endpoint-discovery sweeps and list endpoints iterate every persisted instance in one loop.
-    A single record that fails to serialize (empty required locale, missing field, decode error)
-    must not abort the whole batch — historically one bad record took the 60s discovery sweep
-    down and left the platform with no registered endpoints.
+    A single record that fails to serialize (missing field, decode error, or any other
+    unforeseen failure) must not abort the whole batch — historically one bad record took the
+    60s discovery sweep down and left the platform with no registered endpoints. The known
+    empty-locale case is already handled upstream by `LocaleHandler.extract_required`; this is
+    the net for everything else.
 
     This deliberately deviates from the repo's fail-fast convention. The catch is intentionally
     broad: the whole point of the resilience boundary is that *any* unexpected failure in one
