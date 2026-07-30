@@ -8476,6 +8476,22 @@ export const GroupSchema = {
       title: "Label",
       description: "Optional label displayed above the group",
     },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Optional explanatory text rendered on the group's enable toggle",
+    },
     children: {
       items: {
         oneOf: [
@@ -28056,6 +28072,22 @@ export const GroupWritableSchema = {
       ],
       title: "Label",
       description: "Optional label displayed above the group",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Optional explanatory text rendered on the group's enable toggle",
     },
     children: {
       items: {

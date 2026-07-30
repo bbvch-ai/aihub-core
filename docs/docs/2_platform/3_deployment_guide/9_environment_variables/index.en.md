@@ -155,6 +155,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SWISS_LLM_CLOUD_RERANKING_API_KEY` | `litellm-config.yml` | `litellm` |  |
 | `SWISS_LLM_CLOUD_WHISPER_API_BASE_URL` | `litellm-config.yml` | `litellm` |  |
 | `SWISS_LLM_CLOUD_WHISPER_API_KEY` | `litellm-config.yml` | `litellm` |  |
+| `SWISS_LLM_CLOUD_WHISPER_MODEL` | `litellm-config.yml` | `litellm` |  |
 | `TEAMS_BOT_ID` |  | `expert_asking_agent` |  |
 | `TEAMS_CHANNEL_ID` |  | `expert_asking_agent` |  |
 | `TEAMS_TENANT_ID` |  | `expert_asking_agent` |  |

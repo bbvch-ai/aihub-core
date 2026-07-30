@@ -311,7 +311,11 @@ function combineConditions(toggleCondition: string, existing: string | undefined
   return `$: ${toggleCondition.slice(1)} && (${existing.slice(1)})`
 }
 
-function buildNullableToggleNode(element: FormElement, label: string | undefined): Record<string, unknown> {
+function buildNullableToggleNode(
+  element: FormElement,
+  label: string | undefined,
+  help: string | undefined,
+): Record<string, unknown> {
   const fieldName = element.name as string
   const toggleId = nullableToggleId(element)
   return {
@@ -320,17 +324,24 @@ function buildNullableToggleNode(element: FormElement, label: string | undefined
     id: toggleId,
     key: toggleId,
     label: label ? `Enable ${label}` : 'Enable',
+    ...(help ? { help } : {}),
     binary: true,
   }
 }
 
+/**
+ * `help` is only supplied for groups: a group's own node renders no help, so the toggle is the
+ * only place to hang it. Nullable leaves already render their help on the input itself — passing
+ * it here too would print the same sentence twice.
+ */
 function applyNullableToggle(
   element: FormElement,
   baseNode: FormKitSchemaNode | FormKitSchemaNode[],
   label: string | undefined,
+  help?: string,
 ): FormKitSchemaNode[] {
   const nodeArray = Array.isArray(baseNode) ? baseNode : [baseNode]
-  return [buildNullableToggleNode(element, label) as FormKitSchemaNode, ...nodeArray]
+  return [buildNullableToggleNode(element, label, help) as FormKitSchemaNode, ...nodeArray]
 }
 
 function gateElement(element: FormElement, toggleCondition: string): FormElement {
@@ -368,7 +379,8 @@ export function transformElementToSchema(
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    return isNullable ? applyNullableToggle(element, groupNode, label) : groupNode
+    if (!isNullable) return groupNode
+    return applyNullableToggle(element, groupNode, label, getLocalizedString(element.help, locale))
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
@@ -427,7 +439,8 @@ export function transformElementForRepeater(
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    return isNullable ? applyNullableToggle(element, groupNode, label) : groupNode
+    if (!isNullable) return groupNode
+    return applyNullableToggle(element, groupNode, label, getLocalizedString(element.help, locale))
   }
 
   const cleanNode = buildLeafNodeForRepeater(element, formkitType, label, locale, children)

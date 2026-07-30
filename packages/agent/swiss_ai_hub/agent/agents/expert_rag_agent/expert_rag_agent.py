@@ -243,7 +243,7 @@ class ExpertRAGAgent(Agent):
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )
@@ -268,7 +268,7 @@ class ExpertRAGAgent(Agent):
             agent_description=t.extract(agent_config.description),
             workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
             chat_history=user_message_event.messages,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )
@@ -402,7 +402,7 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
     ) -> StandaloneQuestionCondenserEvent:
         return await do_condense_standalone_question(
-            event.limited_history, start_event.last_user_message, agent_config.llm, displayer, t
+            event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t
         )
 
     @step(
@@ -420,7 +420,7 @@ class ExpertRAGAgent(Agent):
         return await do_few_shot_guard(
             event.condensed_chat_message.content,
             agent_config.few_shot_guard_examples,
-            agent_config.llm,
+            agent_config.task_llm,
             displayer,
             t,
         )
@@ -504,7 +504,7 @@ class ExpertRAGAgent(Agent):
             guard_config.check_context_sufficiency,
             guard_config.max_hops,
             run_context,
-            agent_config.llm,
+            agent_config.task_llm,
             displayer,
             t,
             chat_history=chat_history_event.limited_history,
@@ -749,7 +749,7 @@ class ExpertRAGAgent(Agent):
         """
         await generate_title(
             chat_messages=chat_history_event.limited_history,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
             thread_context=thread_context,
@@ -818,7 +818,7 @@ class ExpertRAGAgent(Agent):
         """
         await generate_follow_up_questions(
             chat_messages=llm_event.chat_messages,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )

@@ -39,6 +39,10 @@ class Group(FormkitElement):
     formkit: Annotated[Literal["group"], Field(description="FormKit group element", alias="$formkit")] = "group"
     name: Annotated[str, Field(description="Key name for the grouped data in the form output")]
     label: Annotated[LocaleString | str | None, Field(description="Optional label displayed above the group")] = None
+    help: Annotated[
+        LocaleString | str | None,
+        Field(description="Optional explanatory text rendered on the group's enable toggle"),
+    ] = None
     children: Annotated[list[ALL_FORM_OPTIONS], Field(description="Child form elements contained within this group")]
     access_rule: Annotated[
         str | None,
@@ -59,6 +63,8 @@ class Group(FormkitElement):
         self_copy = self.model_copy(deep=True)
         if isinstance(self_copy.label, LocaleString):
             self_copy.label = t.extract(self_copy.label)
+        if isinstance(self_copy.help, LocaleString):
+            self_copy.help = t.extract(self_copy.help)
         # Type ignore: in_locale returns the same concrete type, but base class signature returns FormkitElement
         self_copy.children = [child.in_locale(t) for child in self_copy.children]  # type: ignore[misc]
         return self_copy
