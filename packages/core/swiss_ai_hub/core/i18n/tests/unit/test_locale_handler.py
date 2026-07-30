@@ -91,6 +91,14 @@ def test_extract_from_multi_locale_with_missing_locale_returns_first_available()
     assert LocaleHandler().extract(partial_locale_data, "de") == "Agente di ricerca"
 
 
+def test_extract_from_empty_multi_locale_returns_none():
+    assert LocaleHandler().extract(LocaleString(), "de") is None
+
+
+def test_extract_from_all_empty_dict_returns_none():
+    assert LocaleHandler().extract({"de": None}, "de") is None
+
+
 def test_t_object_with_nonexistent_file_raises_file_not_found_error():
     with pytest.raises(FileNotFoundError):
         LocaleHandler().t_object("nonexistent.folder.name", "de")

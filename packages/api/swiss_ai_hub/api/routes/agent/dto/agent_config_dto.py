@@ -51,8 +51,8 @@ class AgentConfigDTO(BaseModel):
         """
         form = [form_element.in_locale(t) for form_element in class_entity.form_elements] if class_entity.form else None
 
-        name = t.extract(config_entity.name.to_locale_string())
-        description = t.extract(config_entity.description.to_locale_string())
+        name = t.extract(config_entity.name.to_locale_string()) or ""
+        description = t.extract(config_entity.description.to_locale_string()) or ""
 
         icon = config_entity.icon
 
