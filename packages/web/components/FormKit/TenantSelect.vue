@@ -36,11 +36,11 @@ const props = defineProps<TenantSelectProps>()
 const { t } = useI18n()
 
 const { tenants, tenantsAreLoading } = useTenantMemberships()
-const { activeTenant, activeTenantIsLoading } = useActiveTenantQuery()
+const { tenantId } = useTenant()
 
 const placeholder = computed(() => props.context.placeholder)
 const filter = computed(() => props.context.filter ?? true)
-const isLoading = computed(() => tenantsAreLoading.value || activeTenantIsLoading.value)
+const isLoading = computed(() => tenantsAreLoading.value)
 
 const selectedTenant = computed({
   get: () => props.context.value ?? null,
@@ -52,10 +52,10 @@ const selectedTenant = computed({
 // Pre-select the user's active tenant on a fresh field, while leaving an
 // already-configured value (editing an existing instance) untouched.
 watch(
-  [activeTenant, () => props.context.value],
+  [tenantId, () => props.context.value],
   ([active, current]) => {
-    if (!current && active?.id) {
-      props.context.node.input(active.id)
+    if (!current && active) {
+      props.context.node.input(active)
     }
   },
   { immediate: true },
