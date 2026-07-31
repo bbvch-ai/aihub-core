@@ -156,16 +156,15 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
         md5_hash_str: str | None = None
         if etag:
-            try:
-                # Only convert if ETag looks like a hex string (standard MD5)
-                if len(etag) == 32 and all(c in "0123456789abcdef" for c in etag.lower()):
-                    md5_hash_str = base64.b64encode(bytes.fromhex(etag)).decode("utf-8")
-                else:
-                    # For multipart uploads or other ETag formats, keep as-is
-                    logger.debug(f"Non-standard ETag format for {key}: {etag}")
-            except (ValueError, TypeError) as e:
-                logger.warning(f"Failed to convert ETag to MD5 hash for {key}: {e}")
-                md5_hash_str = None
+            if len(etag) == 32 and all(c in "0123456789abcdef" for c in etag.lower()):
+                # Frozen format: persisted as content_hash and embedded in the DataVersion.
+                # Changing it forces a full re-parse and re-embed of every existing corpus.
+                md5_hash_str = base64.b64encode(bytes.fromhex(etag)).decode("utf-8")
+            else:
+                # SeaweedFS >=4.01 chunks objects above 8 MiB and returns "<md5hex>-<chunks>".
+                # Kept verbatim: deterministic and content-derived, so it still works as a
+                # change-detection token. Do NOT unify with the base64 branch above.
+                md5_hash_str = etag
 
         last_modified_timestamp = int(last_modified.timestamp()) if last_modified else int(datetime.now().timestamp())
 

@@ -148,7 +148,7 @@ class NamespaceSelectionAgent(Agent):
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )
@@ -173,7 +173,7 @@ class NamespaceSelectionAgent(Agent):
             agent_description=t.extract(agent_config.description),
             workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
             chat_history=user_message_event.messages,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )
@@ -254,7 +254,7 @@ class NamespaceSelectionAgent(Agent):
         logger.debug("Formatted namespaces string:\n%s", namespaces_str)
         logger.debug("Conversation history:\n%s", conversation_str)
 
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.task_llm.cost_reporting_llm(displayer) as llm:
             prompt = RichPromptTemplate(t("agent.namespace_selection_agent.prompts.determination"))
             decision: NamespaceDecision = await llm.astructured_predict(
                 NamespaceDecision,

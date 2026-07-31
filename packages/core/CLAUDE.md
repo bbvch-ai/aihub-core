@@ -273,6 +273,13 @@ VectorStoreInput, IconSelector.
 
 - Nested `Form` fields → automatically wrapped in `Group` elements with conditional visibility
 - `list[Form]` fields → automatically wrapped in `Repeater` elements with a template item
+- A `Group`'s `label` comes from the field's `title`, falling back to a short `description`. Only **nullable** groups
+  get `help`, and only when a `title` supplied the label — otherwise the label already is the description and it would
+  render twice. Their generated "Enable X" checkbox is the sole place a group's help is rendered, so a non-nullable
+  group is left without it rather than shipping data no surface reads.
+- A nested `Form` that renders no elements (i.e. it was instantiated in data mode) is skipped entirely, unless it is
+  nullable — a nullable group is still worth emitting for its enable toggle, but a non-nullable one would render as an
+  empty fieldset. This is how `LLMConfig.as_form(include_default_parameter=False)` drops the parameter group.
 
 ## NATS Messaging
 

@@ -127,9 +127,10 @@ reference):
 
 1. **Define the two thin `@step` methods** on the agent: `detect_meta_question_step` (on `UserMessageEvent`) and
    `answer_meta_question_step` (returns `LLMStopEvent` directly). Each delegates to the shared free functions, passing
-   `agent_config.llm`. (There is no separate stop step: once the consumer drains trailing display events before teardown
-   — ADR `2026_06_09_drain_display_event_streams_before_consumer_teardown` — the answer step can emit the terminal
-   `LLMStopEvent` itself without its chunks being raced.)
+   `agent_config.task_llm` — both detection and the answer are auxiliary work, and `task_llm` falls back to the main
+   `llm` when no task model is configured. (There is no separate stop step: once the consumer drains trailing display
+   events before teardown — ADR `2026_06_09_drain_display_event_streams_before_consumer_teardown` — the answer step can
+   emit the terminal `LLMStopEvent` itself without its chunks being raced.)
 
 2. **Gate every raw `UserMessageEvent` entry step** so detection can't be raced. Two equivalent forms depending on the
    agent's start events:

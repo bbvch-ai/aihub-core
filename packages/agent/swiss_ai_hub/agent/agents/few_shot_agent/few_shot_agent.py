@@ -72,7 +72,7 @@ class FewShotAgent(Agent):
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )
@@ -97,7 +97,7 @@ class FewShotAgent(Agent):
             agent_description=t.extract(agent_config.description),
             workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
             chat_history=user_message_event.messages,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )
@@ -136,7 +136,7 @@ class FewShotAgent(Agent):
         displayer: EventDisplayer,
     ) -> AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent:
         messages = event.limited_history
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.task_llm.cost_reporting_llm(displayer) as llm:
             guard_result = await agent_description_guard(
                 agent_description=agent_config.description,
                 llm=llm,
@@ -171,7 +171,7 @@ class FewShotAgent(Agent):
         """
         await displayer.display_thought(t("agent.thought.condense_question"))
 
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.task_llm.cost_reporting_llm(displayer) as llm:
             condensed_question = await condense_standalone_question(
                 chat_history=chat_history_event.limited_history,
                 message=start_event.last_user_message,
@@ -240,7 +240,9 @@ class FewShotAgent(Agent):
             )
 
         # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-        await generate_conversation_metadata(stop_event.chat_messages, agent_config.llm, displayer, t, thread_context)
+        await generate_conversation_metadata(
+            stop_event.chat_messages, agent_config.task_llm, displayer, t, thread_context
+        )
         return stop_event
 
     @step(
