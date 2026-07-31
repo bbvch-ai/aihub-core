@@ -122,9 +122,8 @@ def test_excluded_agents_have_no_conversation_metadata():
     for agent_type in EXCLUDED_AGENTS:
         source = inspect.getsource(agent_type)
         assert INLINE_HELPER not in source
-        assert TITLE_GENERATOR not in source and FOLLOW_UP_GENERATOR not in source, (
-            f"{agent_type.__name__} must not generate conversation metadata"
-        )
+        assert TITLE_GENERATOR not in source, f"{agent_type.__name__} must not call {TITLE_GENERATOR}"
+        assert FOLLOW_UP_GENERATOR not in source, f"{agent_type.__name__} must not call {FOLLOW_UP_GENERATOR}"
         assert not (METADATA_STEP_WRAPPERS & _step_names(agent_type))
 
 
