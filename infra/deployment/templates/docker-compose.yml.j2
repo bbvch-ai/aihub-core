@@ -2885,6 +2885,9 @@ services:
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
       OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+      {#- Same model as open-webui's TASK_MODEL above, but in raw LiteLLM form: the access catalog matches
+          it against the `capability/name` pairs it enumerates, so the workspace-id translation stays there. #}
+      OPENWEBUI_CONVERSATION_METADATA_MODEL: {{ default_model }}
 
 
       # NATs
