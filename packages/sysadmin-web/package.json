@@ -37,13 +37,13 @@
     "@swiss-ai-hub/web": "workspace:*"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.97.1",
+    "@hey-api/openapi-ts": "^0.99.0",
     "@nuxt/eslint": "^1.15.2",
-    "eslint": "^9.39.4",
+    "eslint": "^9.39.5",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-sonarjs": "^4.0.3",
+    "eslint-plugin-sonarjs": "^4.2.0",
     "nuxt": "3.21.0",
     "typescript": "^5.9.3",
-    "vue": "3.5.17"
+    "vue": "3.5.40"
   }
 }
