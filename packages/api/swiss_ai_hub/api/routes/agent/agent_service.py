@@ -13,7 +13,6 @@ from swiss_ai_hub.core.distributor import ExternalAgentEvent, ExternalAgentEvent
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
     AgentConfigSpecs,
-    ConversationTitleEvent,
     DisplayEvent,
     ExceptionEvent,
     HumanInTheLoopRequestEvent,
@@ -272,9 +271,6 @@ class AgentService:
             logger.debug(f"Received event for streaming: {event.event_name}")
 
             await event_queue.put(event)
-
-            if isinstance(event, ConversationTitleEvent):
-                ThreadEntity.update_thread_name(str(thread.id), event.title)
 
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
 

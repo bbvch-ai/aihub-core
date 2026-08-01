@@ -26,6 +26,18 @@ there regardless of branch). `McpReactAgent`'s `max_iterations_reached_step` has
 left without metadata by deliberate choice — a run that exhausted its iteration budget without producing an answer isn't
 worth titling.
 
+**Title persistence moved to a long-lived API subscriber** (review finding on the same PR). Point 4 of the Decision
+below — persisting the title from the API streaming bridge (`AgentService`) and the non-streaming JSON path
+(`ChatService`) — is superseded. Those were per-request NATS-core subscriptions that unsubscribe the instant the run's
+stop event is processed, while `do_generate_title` sets the once-per-thread flag unconditionally on publish: a title
+event landing after the stop event was silently dropped and the thread stayed on its default name permanently. The
+meta-question title step (same trigger event as the answer step, zero head start) made that race much tighter than the
+early-anchored normal-flow step ever did. `ThreadEntity.update_thread_name` is now called exclusively by
+`ThreadTitlePersister` (`packages/api/swiss_ai_hub/api/persistance/threads/`), a sibling of `EventPersister`/
+`WebSocketSender` registered once at API startup in `lifetime_manager.py` and never torn down mid-run. As a side
+effect, the streaming JSON path (`start_stream_chat_interaction`) — which never handled the title event at all — now
+gets title persistence too.
+
 The shared generators, event types, and the split/inline wiring shape for the *normal* pipeline are unchanged; the rest
 of this ADR stands.
 :::
