@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
-    "@hey-api/openapi-ts": "^0.97.1",
+    "@hey-api/openapi-ts": "^0.97.3",
     "@intlify/message-compiler": "^11.4.2",
     "@nuxt/eslint": "^1.15.2",
     "@types/lodash-es": "^4.17.12",
