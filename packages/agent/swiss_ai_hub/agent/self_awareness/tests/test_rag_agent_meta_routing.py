@@ -10,6 +10,8 @@ the deterministic wiring is covered infra-free in test_meta_question_gate.py.
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
+    ConversationTitleEvent,
+    FollowUpQuestionsEvent,
     LLMStopEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
@@ -64,8 +66,19 @@ async def test_meta_question_answers_without_retrieval(monkeypatch):
         answer = ChatMessage(role=MessageRole.ASSISTANT, content="I can answer HR questions.")
         return LLMStopEvent(chat_messages=[answer])
 
+    # generate_title/generate_follow_up_questions are stubbed too, same as detection/answer — this test
+    # stays LLM-free per its docstring. Each fake emits the real event so the assertions below prove the
+    # meta branch actually WIRES the generators in, not just that stubbed functions were called.
+    async def fake_generate_title(*_args, **_kwargs):
+        pass
+
+    async def fake_generate_follow_ups(*_args, **_kwargs):
+        pass
+
     monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
     monkeypatch.setattr(f"{RAG_MODULE}.do_answer_meta_question", fake_answer)
+    monkeypatch.setattr(f"{RAG_MODULE}.generate_title", fake_generate_title)
+    monkeypatch.setattr(f"{RAG_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
 
     runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config())
     async with runner.test_run(delay_before_stop=30) as topic:
@@ -77,6 +90,39 @@ async def test_meta_question_answers_without_retrieval(monkeypatch):
     assert not runner.has_event_of_class(RetrieverEvent), "retrieval ran for a meta question — gate failed"
     assert not runner.has_event_of_class(RetrieveUserMemoryEvent)
     assert not runner.has_event_of_class(RetrieveOrganizationMemoryEvent)
+    assert not runner.has_exception_event
+
+
+@async_test
+async def test_meta_question_branch_generates_title_and_follow_ups(monkeypatch):
+    """The meta branch now generates conversation metadata too (previously left as-is, per ADR
+    2026_06_18) — title in parallel with the answer, follow-ups grounded on it."""
+
+    async def fake_detect(*, user_query, **_):
+        return MetaQuestionDetectedEvent(user_query=user_query, category="identity", reasoning="forced meta")
+
+    async def fake_answer(**_):
+        answer = ChatMessage(role=MessageRole.ASSISTANT, content="I am the HR assistant.")
+        return LLMStopEvent(chat_messages=[answer])
+
+    async def fake_generate_title(chat_messages, llm_config, displayer, t, thread_context):
+        await displayer.display_event(ConversationTitleEvent(title="Fake Title"))
+
+    async def fake_generate_follow_ups(chat_messages, llm_config, displayer, t):
+        await displayer.display_event(FollowUpQuestionsEvent(questions=["Fake follow-up?"]))
+
+    monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{RAG_MODULE}.do_answer_meta_question", fake_answer)
+    monkeypatch.setattr(f"{RAG_MODULE}.generate_title", fake_generate_title)
+    monkeypatch.setattr(f"{RAG_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
+
+    runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config())
+    async with runner.test_run(delay_before_stop=30) as topic:
+        await runner.send_event_from_topic(topic=topic, start_event=_user_message("who are you?"))
+
+    assert runner.has_event_of_class(MetaQuestionDetectedEvent)
+    assert runner.has_event_of_class(ConversationTitleEvent), "meta branch did not generate a title"
+    assert runner.has_event_of_class(FollowUpQuestionsEvent), "meta branch did not generate follow-ups"
     assert not runner.has_exception_event
 
 

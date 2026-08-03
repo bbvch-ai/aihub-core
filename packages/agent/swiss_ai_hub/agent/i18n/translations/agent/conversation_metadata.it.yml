@@ -3,7 +3,7 @@ steps:
   title:
     name: Genera titolo della conversazione
     description: Genera un titolo breve e stabile che riassume l'argomento della conversazione
-      non appena un argomento diventa identificabile.
+      al primo turno del thread.
   follow_ups:
     name: Suggerisci domande di approfondimento
     description: Suggerisce domande di approfondimento che l'utente potrebbe voler
@@ -11,13 +11,15 @@ steps:
 thoughts:
   generating_title: Sto pensando a un titolo per questa conversazione
   generating_follow_ups: Sto pensando a domande di approfondimento
+default_title: Nuova conversazione
 prompts:
   title: |
     {% chat role="user" %}
     Genera un titolo conciso (3-6 parole) che riassume l'argomento della seguente conversazione. Scrivi
-    il titolo nella lingua della conversazione. Non usare virgolette o punteggiatura finale. Se la
-    conversazione non ha ancora un argomento identificabile — per esempio contiene solo saluti o
-    convenevoli — restituisci null invece di indovinare.
+    il titolo nella lingua della conversazione. Non usare virgolette o punteggiatura finale. Genera
+    sempre un titolo semplice e naturale, anche quando la conversazione è solo un saluto o un
+    convenevole — per esempio un semplice saluto può essere titolato "Saluto" o "Chiacchierata
+    informale". Non restituire mai un titolo vuoto.
     <Conversation>
     {% for message in chat_history %}
     <message role="{{ message.role.value }}">

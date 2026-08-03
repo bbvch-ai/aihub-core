@@ -27,7 +27,11 @@ from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_questio
 )
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_conversation_metadata
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
+    generate_conversation_metadata,
+    generate_follow_up_questions,
+    generate_title,
+)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
@@ -91,7 +95,7 @@ class FewShotAgent(Agent):
         t: LocaleHandler,
     ) -> LLMStopEvent:
         """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        return await do_answer_meta_question(
+        stop_event = await do_answer_meta_question(
             event=event,
             agent_name=t.extract(agent_config.name),
             agent_description=t.extract(agent_config.description),
@@ -100,6 +104,41 @@ class FewShotAgent(Agent):
             llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
+        )
+        # Follow-ups only — the title runs in parallel via generate_meta_question_title_step, since it
+        # only needs the topic and doesn't need to wait for this answer to finish.
+        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t)
+        return stop_event
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
+        icon="mdi:format-title",
+        stop_on_error=False,
+    )
+    async def generate_meta_question_title_step(
+        self,
+        event: MetaQuestionDetectedEvent,
+        user_message_event: UserMessageEvent,
+        agent_config: FewShotAgentConfig,
+        thread_context: ThreadContext,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> None:
+        """Generate the thread's title in parallel with the meta answer.
+
+        Triggered by the same `MetaQuestionDetectedEvent` as `answer_meta_question_step`, so the
+        dispatcher runs both concurrently — the title only needs the user's question, not the meta
+        answer, so it must not wait for it (that would add post-answer latency for no reason: the answer
+        is already fully streamed to the user by the time the step returns, but the client's
+        "generation done" signal — and thus the stop event — would still be held back).
+        """
+        await generate_title(
+            chat_messages=user_message_event.messages,
+            llm_config=agent_config.task_llm,
+            displayer=displayer,
+            t=t,
+            thread_context=thread_context,
         )
 
     @step(
@@ -250,5 +289,20 @@ class FewShotAgent(Agent):
         description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.stop.description"),
         icon="mage:cancel",
     )
-    async def stop_step(self, _: AgentSuitabilityRejectEvent) -> StopEvent:
+    async def stop_step(
+        self,
+        event: AgentSuitabilityRejectEvent,
+        start_event: UserMessageEvent,
+        agent_config: FewShotAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        thread_context: ThreadContext,
+    ) -> StopEvent:
+        # Neither title nor follow-ups have fired on this path yet — the guard rejected the request
+        # before the agent produced anything, so both are missing (unlike the meta-question branch,
+        # which already has an early title step). The guard's `reason` is shown to the user
+        # (GuardRejectionEvent.vue), so treat it as the answer text to ground follow-ups on, same as
+        # ExpertRAGAgent's canned decline/error messages.
+        chat_messages = [*start_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=event.reason)]
+        await generate_conversation_metadata(chat_messages, agent_config.task_llm, displayer, t, thread_context)
         return StopEvent()

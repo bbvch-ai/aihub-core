@@ -3,7 +3,7 @@ steps:
   title:
     name: Generate Conversation Title
     description: Generates a short, stable title summarizing the topic of the conversation
-      once a topic becomes identifiable.
+      on the first turn of the thread.
   follow_ups:
     name: Suggest Follow-up Questions
     description: Suggests follow-up questions the user might want to ask next, based
@@ -11,13 +11,15 @@ steps:
 thoughts:
   generating_title: Thinking of a title for this conversation
   generating_follow_ups: Thinking of follow-up questions
+default_title: New Conversation
 prompts:
   title: |
     {% chat role="user" %}
     Generate a concise title (3-6 words) summarizing the topic of the following conversation. Write the
-    title in the language of the conversation. Do not use quotation marks or trailing punctuation. If
-    the conversation has no identifiable topic yet — for example it contains only greetings or small
-    talk — return null instead of guessing.
+    title in the language of the conversation. Do not use quotation marks or trailing punctuation.
+    Always produce a plain, natural title, even when the conversation is just a greeting or small talk
+    — for example a bare greeting can be titled something like "Greeting" or "Casual Chat". Never return
+    an empty title.
     <Conversation>
     {% for message in chat_history %}
     <message role="{{ message.role.value }}">

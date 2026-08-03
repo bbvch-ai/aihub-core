@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pydantic import ValidationError
 from swiss_ai_hub.core.events.agent import ConversationTitleEvent, FollowUpQuestionsEvent
 
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
@@ -96,11 +97,23 @@ async def test_title_is_immutable_when_flag_set(displayer, locale_handler):
     llm.astructured_predict.assert_not_called()
 
 
+def test_title_result_no_longer_permits_a_null_title():
+    """The structured-output schema itself forbids null, not just the prompt wording — a stronger
+    guarantee than prose alone against a model that ignores instructions."""
+    with pytest.raises(ValidationError):
+        TitleResult(title=None)
+
+
 @pytest.mark.asyncio
-async def test_title_deferred_when_no_topic(displayer, locale_handler):
-    """A greeting-only turn yields no determinable title and leaves the flag unset for a retry."""
+async def test_title_falls_back_to_default_when_llm_returns_no_topic(displayer, locale_handler):
+    """A greeting-only turn still gets a title on this first check — no more defer-and-retry.
+
+    The prompt now instructs the model to always produce a plain title (e.g. "Greeting"), and the
+    `TitleResult.title` field itself no longer permits null. This test covers the defensive code-level
+    fallback for the rare case a model still returns an empty string despite both of those.
+    """
     thread_context = FakeThreadContext()
-    llm = _llm_returning(TitleResult(title=None))
+    llm = _llm_returning(TitleResult(title=""))
 
     await do_generate_title(
         [ChatMessage(role=MessageRole.USER, content="hello")],
@@ -110,8 +123,11 @@ async def test_title_deferred_when_no_topic(displayer, locale_handler):
         thread_context,
     )
 
-    displayer.display_event.assert_not_awaited()
-    assert await thread_context.get(TITLE_GENERATED_KEY) is None
+    displayer.display_event.assert_awaited_once()
+    emitted = _emitted(displayer)
+    assert isinstance(emitted, ConversationTitleEvent)
+    assert emitted.title == locale_handler("agent.conversation_metadata.default_title")
+    assert await thread_context.get(TITLE_GENERATED_KEY) is True
 
 
 @pytest.mark.asyncio
