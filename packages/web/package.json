@@ -3,7 +3,7 @@
   "license": "AGPL-3.0-or-later",
   "author": "bbv Software Services AG (https://www.bbv.ch)",
   "type": "module",
-  "version": "0.318.0",
+  "version": "0.319.0",
   "description": "Swiss AI Hub - Admin & Management UI (Nuxt 3 layer)",
   "main": "./nuxt.config.ts",
   "repository": {

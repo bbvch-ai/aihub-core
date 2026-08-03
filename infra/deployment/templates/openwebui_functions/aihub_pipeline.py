@@ -124,13 +124,17 @@ class ThinkingBlock(ContentBlock):
 
     def to_html(self) -> Annotated[str, "HTML details element"]:
         """Convert to HTML details element for reasoning display"""
-        if self.closed and self.duration:
-            return (
-                f'\n<details type="reasoning" done="true" duration="{self.duration}">\n'
-                f"{self.content.strip()}\n"
-                f"</details>\n"
-            )
-        return f'\n<details type="reasoning" done="false">\n{self.content.strip()}</details>\n'
+        if not self.closed:
+            return f'\n<details type="reasoning" done="false">\n{self.content.strip()}</details>\n'
+        # A sub-second thought has a duration of 0. Keep it done="true" — gating done on a truthy
+        # duration made fast thoughts render as an unfinished "Thought" — and just drop the attribute,
+        # since OpenWebUI omits the "for N seconds" suffix when there is nothing to report.
+        duration_attribute = f' duration="{self.duration}"' if self.duration else ""
+        return (
+            f'\n<details type="reasoning" done="true"{duration_attribute}>\n'
+            f"{self.content.strip()}\n"
+            f"</details>\n"
+        )
 
     def is_complete(self) -> Annotated[bool, "Whether block has content"]:
         """Thinking blocks are complete when they have content"""
@@ -357,6 +361,9 @@ class StreamingStateManager:
     def __init__(self):
         self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
         self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
+        self._deferred_thinking: Annotated[
+            Optional[ThinkingBlock], "Thoughts that arrived while an answer was streaming"
+        ] = None
         self._block_factory = ContentBlockFactory()
 
     def start_text_block(self, content: Annotated[str, "Initial text content"] = "") -> None:
@@ -374,6 +381,15 @@ class StreamingStateManager:
 
     def start_thinking_block(self, content: Annotated[str, "Initial reasoning content"] = "") -> None:
         """Start or append to thinking block"""
+        # A thought arriving while an answer is streaming comes from a step running concurrently with
+        # it (title generation, follow-up questions), not from the answer itself — display events carry
+        # no step identity, so arrival order is all we have. Opening a block here would finalize the
+        # text block and cut the answer into two paragraphs with a "Thought" wedged between them, so
+        # redirect it to the run's existing reasoning block and keep the answer contiguous.
+        if isinstance(self._current_block, TextBlock):
+            self._defer_thought(content)
+            return
+
         # Close any open tool blocks
         self._close_tool_block_if_open()
 
@@ -395,6 +411,8 @@ class StreamingStateManager:
         # Close any open blocks
         self._close_open_blocks()
         self._finalize_current_block()
+        # A tool call ends the current phase, so deferred thoughts belong before it, not after the run.
+        self._flush_deferred_thoughts()
 
         self._current_block = self._block_factory.create_tool_block(
             tool_id=tool_id, tool_name=tool_name, tool_params=tool_params
@@ -417,6 +435,41 @@ class StreamingStateManager:
         """Finalize all blocks when stream ends"""
         self._close_open_blocks()
         self._finalize_current_block()
+        self._flush_deferred_thoughts()
+
+    def _defer_thought(self, content: Annotated[str, "Reasoning content to defer"]) -> None:
+        """Route a thought that arrived mid-answer out of the answer's way.
+
+        Preferred target is the reasoning block the run already opened, so one message carries one
+        collapsible and the answer stays last on screen. Its recorded duration is left untouched:
+        the block measures the pre-answer thinking, and stretching it across the answer this thought
+        arrived during would report a wait the user never had.
+        """
+        merge_index = self._last_thinking_block_index()
+        if merge_index is not None:
+            self._content_blocks[merge_index] = self._content_blocks[merge_index].with_content(content)
+            return
+
+        # Nothing to merge into (the run streamed an answer without thinking first), so hold the
+        # thought for a trailing block rather than splitting the answer to place it.
+        block = self._deferred_thinking or self._block_factory.create_thinking_block()
+        self._deferred_thinking = block.with_content(content).with_closure()
+
+    def _last_thinking_block_index(self) -> Annotated[Optional[int], "Index of the newest finalized thinking block"]:
+        """Locate the run's existing reasoning block, if it has one"""
+        for index in reversed(range(len(self._content_blocks))):
+            if isinstance(self._content_blocks[index], ThinkingBlock):
+                return index
+        return None
+
+    def _flush_deferred_thoughts(self) -> None:
+        """Move deferred thoughts behind the content they were held back for"""
+        if not self._deferred_thinking:
+            return
+
+        self._finalize_current_block()
+        self._content_blocks.append(self._deferred_thinking)
+        self._deferred_thinking = None
 
     def _close_open_blocks(self) -> None:
         """Close any blocks that need closing (tool or thinking)"""
@@ -450,6 +503,11 @@ class StreamingStateManager:
         # Render current block if exists
         if self._current_block:
             html_parts.append(self._current_block.to_html())
+
+        # Deferred thoughts render live at the tail so reasoning stays visible while it happens; the
+        # answer above them keeps growing, and flushing later lands them in this same position.
+        if self._deferred_thinking:
+            html_parts.append(self._deferred_thinking.to_html())
 
         return "".join(html_parts)
 
