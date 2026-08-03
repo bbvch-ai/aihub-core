@@ -11,6 +11,12 @@ class NamespaceDecision(BaseModel):
     The LLM analyzes the conversation and available namespaces to decide if it can
     confidently determine which namespaces the user wants to query, or if it needs
     more information via a follow-up question.
+
+    Field descriptions ask for an explicit ``null`` rather than for omission, because strict structured
+    outputs put *all* properties in ``required``: a model that skips a field can never reach a closing
+    brace — the grammar masks it, so the model pads whitespace until ``max_tokens`` and the JSON arrives
+    unterminated. Descriptions alone do not steer this reliably (measured: Gemma ignores them), so the
+    binding instruction lives in the ``prompts.determination`` template; keep both in agreement.
     """
 
     has_enough_information: Annotated[
@@ -29,14 +35,19 @@ class NamespaceDecision(BaseModel):
             description=(
                 "Map of bucket_name to exactly ONE namespace_name. "
                 "Each bucket MUST have exactly one namespace selected - no more, no less. "
-                "Only set if has_enough_information is True."
+                "Always include this field: set it to null when has_enough_information is false."
             )
         ),
     ] = None
 
     follow_up_question: Annotated[
         str | None,
-        Field(description=("Question to ask the user for clarification. Only set if has_enough_information is False.")),
+        Field(
+            description=(
+                "Question to ask the user for clarification. "
+                "Always include this field: set it to null when has_enough_information is true."
+            )
+        ),
     ] = None
 
     reasoning: Annotated[

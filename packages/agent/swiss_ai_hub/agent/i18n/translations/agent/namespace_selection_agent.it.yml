@@ -52,7 +52,8 @@ prompts:
     \ CRITICI:\n- Ogni bucket DEVE avere esattamente UN namespace selezionato - né\
     \ più, né meno.\n- La tua follow_up_question DEVE elencare i nomi esatti dei namespace\
     \ da <available_namespaces> sopra come opzioni.\n- NON inventare nomi - usa solo\
-    \ i nomi reali mostrati sopra.\n"
+    \ i nomi reali mostrati sopra.\n- Includi SEMPRE ogni campo della risposta - scrivi\
+    \ null per qualsiasi campo che non si applica. Non omettere mai un campo.\n"
 steps:
   initialize_determination:
     name: Inizializza determinazione namespace

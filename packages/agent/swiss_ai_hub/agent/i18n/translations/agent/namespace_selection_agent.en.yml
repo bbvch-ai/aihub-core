@@ -51,7 +51,8 @@ prompts:
     \nCRITICAL CONSTRAINTS:\n- Each bucket MUST have exactly ONE namespace selected\
     \ - no more, no less.\n- Your follow_up_question MUST list the exact namespace\
     \ names from <available_namespaces> above as options.\n- Do NOT invent names -\
-    \ use only the actual names shown above.\n"
+    \ use only the actual names shown above.\n- ALWAYS include every field of the\
+    \ answer - write null for any field that does not apply. Never leave a field out.\n"
 steps:
   initialize_determination:
     name: Initialize Namespace Determination

@@ -54,7 +54,9 @@ prompts:
     \ Bucket MUSS genau EINEN Namespace ausgewählt haben - nicht mehr, nicht weniger.\n\
     - Ihre follow_up_question MUSS die exakten Namespace-Namen aus <available_namespaces>\
     \ oben als Optionen auflisten.\n- Erfinden Sie KEINE Namen - verwenden Sie nur\
-    \ die tatsächlichen Namen, die oben angezeigt werden.\n"
+    \ die tatsächlichen Namen, die oben angezeigt werden.\n- Geben Sie IMMER jedes\
+    \ Feld der Antwort an - schreiben Sie null für jedes Feld, das nicht zutrifft.\
+    \ Lassen Sie niemals ein Feld weg.\n"
 steps:
   initialize_determination:
     name: Namespace-Bestimmung initialisieren

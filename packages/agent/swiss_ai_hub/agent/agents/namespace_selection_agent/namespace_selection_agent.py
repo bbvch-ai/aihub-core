@@ -4,6 +4,7 @@ from typing import ClassVar
 
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
+from pydantic import ValidationError
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoop,
@@ -35,7 +36,9 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.events.namespace_approv
     NamespaceApprovalRequestEvent,
     NamespaceApprovalResponseEvent,
 )
-from swiss_ai_hub.agent.agents.namespace_selection_agent.llm.namespace_decision import NamespaceDecision
+from swiss_ai_hub.agent.agents.namespace_selection_agent.llm.predict_namespace_decision import (
+    predict_namespace_decision,
+)
 from swiss_ai_hub.agent.agents.namespace_selection_agent.utils import (
     format_approval_question,
     format_available_namespaces,
@@ -256,12 +259,25 @@ class NamespaceSelectionAgent(Agent):
 
         async with agent_config.task_llm.cost_reporting_llm(displayer) as llm:
             prompt = RichPromptTemplate(t("agent.namespace_selection_agent.prompts.determination"))
-            decision: NamespaceDecision = await llm.astructured_predict(
-                NamespaceDecision,
-                prompt,
-                available_namespaces=namespaces_str,
-                conversation_history=conversation_str,
-            )
+            try:
+                decision = await predict_namespace_decision(
+                    llm=llm,
+                    prompt=prompt,
+                    available_namespaces=namespaces_str,
+                    conversation_history=conversation_str,
+                )
+            except (ValidationError, ValueError) as malformed_structured_output:
+                # Both structured-output mechanisms failed, which is a provider defect rather than
+                # anything the user did. Asking for clarification keeps the conversation usable; the
+                # alternative surfaces a raw parser error in the chat. WARNING, not ERROR: an expected
+                # provider miss must not trip production alerting.
+                logger.warning(
+                    "Namespace determination produced no usable decision, asking for clarification: %s",
+                    malformed_structured_output,
+                )
+                return FollowUpQuestionHitl.invoke(
+                    question=t("agent.namespace_selection_agent.messages.default_follow_up")
+                )
 
         await displayer.display_thought(
             t("agent.namespace_selection_agent.thoughts.llm_decision", reasoning=decision.reasoning)
