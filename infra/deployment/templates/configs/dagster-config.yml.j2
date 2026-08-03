@@ -84,15 +84,8 @@ run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
   config:
-{%- if stage == "local" %}
-    max_concurrent_runs: 2
-{%- elif stage == "nightly" %}
-    max_concurrent_runs: 3
-{%- elif stage == "latest" %}
-    max_concurrent_runs: 5
-{%- else %}
-    max_concurrent_runs: 2
-{%- endif %}
+    max_concurrent_runs:
+      env: DAGSTER_MAX_CONCURRENT_RUNS
 
 python_logs:
   python_log_level: INFO
