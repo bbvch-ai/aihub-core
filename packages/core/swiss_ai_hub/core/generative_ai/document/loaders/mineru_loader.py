@@ -217,7 +217,9 @@ class MineruLoader(BaseReader):
                 return await self._convert_batch(file_bytes, filename, include_images, start, end)
 
         async with asyncio.TaskGroup() as task_group:
-            tasks = [task_group.create_task(convert_range(start, end)) for start, end in ranges]
+            tasks = []
+            for start, end in ranges:
+                tasks.append(task_group.create_task(convert_range(start, end)))
         return self._merge_results([task.result() for task in tasks])
 
     @staticmethod
