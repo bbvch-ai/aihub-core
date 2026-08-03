@@ -23,6 +23,17 @@ class OpenWebuiSettings(EnvironmentSettings):
         ),
     ] = "en"
 
+    CONVERSATION_METADATA_MODEL: Annotated[
+        str,
+        Field(
+            description="LiteLLM name (``capability/name``) of the model generating conversation metadata — chat "
+            "titles and follow-up questions — for chats that have no agent behind them. OpenWebUI runs it under "
+            "the end user's identity, so a role without access to this model loses both features silently; the "
+            "access catalog flags the model for that reason. Same model as the OpenWebUI ``TASK_MODEL`` env var "
+            "but in LiteLLM form, since that one names the workspace model wrapping it."
+        ),
+    ] = "text-generation/gemma-4-31B-it"
+
     @field_validator("MODEL_NAME_LOCALE", mode="before")
     @classmethod
     def _default_blank_locale(cls, value: str | None) -> str:
