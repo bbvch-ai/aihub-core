@@ -28,6 +28,7 @@ from swiss_ai_hub.api.routes.process.dto.submitted_form_dto import SubmittedForm
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
+from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
 
 
 class ProcessService:
@@ -95,8 +96,8 @@ class ProcessService:
                         )
 
                 process_human_input_dto = HumanInDTO(
-                    name=t.extract(human_in_specs.name),
-                    description=t.extract(human_in_specs.description),
+                    name=t.extract_required(human_in_specs.name, field_name="human_input.name"),
+                    description=t.extract_required(human_in_specs.description, field_name="human_input.description"),
                     route=human_in_specs.route,
                     method=human_in_specs.method,
                     form=work_form_elements,
@@ -288,7 +289,15 @@ class ProcessService:
         instances = []
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         for config_entity in configs:
-            instances.append(FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+            dto = InstanceDtoBuilder.build_or_skip(
+                lambda config_entity=config_entity: FullProcessInstanceDTO.from_class_and_config(
+                    class_entity, config_entity, t
+                ),
+                kind="process instance",
+                key=f"{process_class}/{getattr(config_entity, 'process_id', '?')}",
+            )
+            if dto is not None:
+                instances.append(dto)
         return instances
 
     @staticmethod
@@ -442,7 +451,15 @@ class ProcessService:
 
             configs = ProcessConfigEntityDocument.find_for_class(class_entity.process_class)
             for config_entity in configs:
-                instances.append(FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+                dto = InstanceDtoBuilder.build_or_skip(
+                    lambda class_entity=class_entity, config_entity=config_entity: (
+                        FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    ),
+                    kind="process instance",
+                    key=f"{class_entity.process_class}/{getattr(config_entity, 'process_id', '?')}",
+                )
+                if dto is not None:
+                    instances.append(dto)
         return instances
 
     # ==================== Walkthrough Methods ====================
