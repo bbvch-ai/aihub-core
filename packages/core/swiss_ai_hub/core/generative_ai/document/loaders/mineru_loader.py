@@ -441,7 +441,10 @@ class MineruLoader(BaseReader):
 
         return {
             "stop": stop_after_attempt(4),  # 3 retries + 1 initial attempt
-            "wait": wait_exponential(multiplier=1, min=1, max=64),
+            # 5s/10s/20s backoff (~35s window) outlives a typical batch slot occupancy,
+            # so 503 capacity rejections ride out saturation instead of exhausting
+            # retries while all server slots are busy.
+            "wait": wait_exponential(multiplier=5, min=5, max=64),
             "retry": retry_if_exception_type(MineruTransientError),
             "before_sleep": log_retry,
             "reraise": True,

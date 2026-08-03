@@ -307,6 +307,12 @@ class TestErrorClassification:
 
         assert mock.await_count == 1
 
+    def test_retry_backoff_outlives_batch_slot_occupancy(self, loader: MineruLoader):
+        retry_kwargs = loader._retry_kwargs()
+        assert retry_kwargs["stop"].max_attempt_number == 4
+        assert retry_kwargs["wait"].min == 5
+        assert retry_kwargs["wait"].multiplier == 5
+
 
 class TestSyncWrapper:
     def test_load_data_round_trips(self, loader: MineruLoader, tmp_path):
