@@ -29,6 +29,28 @@ the stop event; the **follow-ups** are generated **inline** in the terminal step
 grounded on the answer, so cannot start earlier). The best-effort wrappers now log at WARNING, not ERROR.
 :::
 
+::: warning Update (2026-08-03, aihub-core-private#142)
+**The `response_format` path deadlocks when the model omits a required key — namespace selection now falls back to the
+forced tool call.** Strict structured outputs put *every* property in `required`, including fields typed `X | None` with
+a `None` default. A model that decides to leave one out can never reach `}` or EOS (the grammar masks both), so it pads
+whitespace until `max_tokens` and the JSON arrives unterminated. Measured on `gemma-4-31B-it` with the production
+namespace prompt: 3/3 failures, 8192 tokens and ~76s each, tripled by decision #5's retry into the ~2-minute hang users
+saw.
+
+Two corrections to the evidence in this ADR:
+
+- **The 5/5 pass rates above hold only for schemas whose fields the model always fills.** `TitleResult` and
+  `FollowUpQuestionsResult` have no conditionally-empty field, so they never exercise this. `NamespaceDecision` does.
+- **Neither mechanism is universally safe.** The forced tool call fixes Gemma here (3/3) but returns truncated tool
+  arguments on Kimi-K2.6 (3/3 fail), while `response_format` is the reverse. They fail on complementary models, so the
+  namespace call tries `response_format` first and re-issues with `should_use_structured_outputs=False` on malformed
+  output — decision #1 stays the default, decision #4's opt-in now has a second caller.
+
+The durable rule is prompt-side: ask for an explicit `null` for inapplicable fields, in the prompt itself. Field
+descriptions alone do not steer weaker instruction-followers — old and new `NamespaceDecision` descriptions both hang
+3/3, whereas the prompt constraint passes 4/4. Recorded in `packages/agent/CLAUDE.md` for future schema authors.
+:::
+
 ## Context
 
 Swiss AI Hub routes all chat LLM access through LiteLLM. On CPU (non-GPU) deployments every text-generation model is
