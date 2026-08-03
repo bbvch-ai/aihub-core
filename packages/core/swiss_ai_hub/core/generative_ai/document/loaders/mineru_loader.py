@@ -339,8 +339,7 @@ class MineruLoader(BaseReader):
         if response.status_code == 200:
             return
         logger.error(
-            f"[MineruLoader] API request failed for {filename}: "
-            f"status={response.status_code}, response={response.text}"
+            f"[MineruLoader] API request failed for {filename}: status={response.status_code}, response={response.text}"
         )
         if response.status_code >= 500 or response.status_code == 429:
             raise MineruTransientError(f"MinerU API request failed with status {response.status_code}: {response.text}")
