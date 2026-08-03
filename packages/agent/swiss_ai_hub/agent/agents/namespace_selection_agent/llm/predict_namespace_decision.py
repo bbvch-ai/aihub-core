@@ -10,9 +10,10 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.llm.namespace_decision 
 
 logger = logging.getLogger(__name__)
 
-# A decision is a follow-up question plus a sentence of reasoning — ~200 tokens. The cap exists for the
-# failure mode, not the happy path: a model that omits a required key pads whitespace at ~108 tok/s until
-# max_tokens, so the model's own 8192 costs ~76s per attempt where 1024 costs ~9s.
+# The cap exists for the failure mode, not the happy path: a model that omits a required key pads
+# whitespace at ~108 tok/s until max_tokens, so the model's own 8192 costs ~76s per attempt where 1024
+# costs ~9s. Headroom measured against the longest realistic answer — a vague query over 40 namespaces in
+# 8 buckets, i.e. the case that makes the follow-up question enumerate options — which cost 155-214 tokens.
 MAX_DECISION_TOKENS = 1024
 
 
