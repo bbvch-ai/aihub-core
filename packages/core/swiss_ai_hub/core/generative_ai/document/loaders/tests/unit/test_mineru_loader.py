@@ -3,7 +3,9 @@ import json
 from io import BytesIO
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
+from pydantic import ValidationError
 from pypdf import PdfWriter
 from tenacity import wait_none
 
@@ -11,6 +13,7 @@ from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import (
     MineruFileResult,
     MineruLoader,
     MineruParseResponse,
+    MineruRequestError,
     MineruTransientError,
 )
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
@@ -225,6 +228,84 @@ class TestBatching:
         assert mock.await_count == 1
         assert mock.await_args.args[3] is None
         assert documents[0].text == "content"
+
+
+class TestSettingsValidation:
+    def test_zero_concurrency_rejected(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("MINERU_MAX_CONCURRENT_BATCH_REQUESTS", "0")
+        with pytest.raises(ValidationError):
+            MineruLoader()
+
+    def test_negative_batch_size_rejected(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("MINERU_PAGE_BATCH_SIZE", "-1")
+        with pytest.raises(ValidationError):
+            MineruLoader()
+
+    def test_zero_batch_size_allowed(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("MINERU_PAGE_BATCH_SIZE", "0")
+        assert MineruLoader().config.PAGE_BATCH_SIZE == 0
+
+
+class TestConversionDeadline:
+    @pytest.fixture
+    def slow_loader(self, monkeypatch: pytest.MonkeyPatch) -> MineruLoader:
+        monkeypatch.setenv("MINERU_API_TIMEOUT", "1")
+        monkeypatch.setenv("MINERU_PAGE_BATCH_SIZE", "2")
+        monkeypatch.setenv("MINERU_MAX_CONCURRENT_BATCH_REQUESTS", "2")
+        return MineruLoader()
+
+    @pytest.mark.asyncio
+    async def test_multi_batch_conversion_times_out(self, slow_loader: MineruLoader):
+        async def hang_forever(*args: object, **kwargs: object) -> MineruParseResponse:
+            await asyncio.sleep(30)
+            raise AssertionError("unreachable")
+
+        with patch.object(slow_loader, "_execute_conversion", AsyncMock(side_effect=hang_forever)):
+            with pytest.raises(TimeoutError, match="timed out after"):
+                await slow_loader.aload_data_from_bytes(make_pdf(4), FILENAME, embed_base64=True)
+
+    @pytest.mark.asyncio
+    async def test_unbatched_conversion_times_out(self, slow_loader: MineruLoader):
+        async def hang_forever(*args: object, **kwargs: object) -> MineruParseResponse:
+            await asyncio.sleep(30)
+            raise AssertionError("unreachable")
+
+        with patch.object(slow_loader, "_execute_conversion", AsyncMock(side_effect=hang_forever)):
+            with pytest.raises(TimeoutError, match="timed out after"):
+                await slow_loader.aload_data_from_bytes(b"png-bytes", "scan.png", embed_base64=True)
+
+
+class TestErrorClassification:
+    def make_http_response(self, status_code: int) -> httpx.Response:
+        return httpx.Response(status_code=status_code, text="details")
+
+    def test_server_error_is_transient(self):
+        with pytest.raises(MineruTransientError):
+            MineruLoader._raise_for_status(self.make_http_response(500), FILENAME)
+
+    def test_capacity_rejection_is_transient(self):
+        with pytest.raises(MineruTransientError):
+            MineruLoader._raise_for_status(self.make_http_response(503), FILENAME)
+
+    def test_rate_limit_is_transient(self):
+        with pytest.raises(MineruTransientError):
+            MineruLoader._raise_for_status(self.make_http_response(429), FILENAME)
+
+    def test_client_error_is_not_transient(self):
+        with pytest.raises(MineruRequestError):
+            MineruLoader._raise_for_status(self.make_http_response(400), FILENAME)
+
+    def test_success_passes(self):
+        MineruLoader._raise_for_status(self.make_http_response(200), FILENAME)
+
+    @pytest.mark.asyncio
+    async def test_request_error_is_not_retried(self, loader: MineruLoader):
+        mock = AsyncMock(side_effect=MineruRequestError("unsupported file type"))
+        with patch.object(loader, "_execute_conversion", mock):
+            with pytest.raises(MineruRequestError):
+                await loader.aload_data_from_bytes(make_pdf(2), FILENAME, embed_base64=True)
+
+        assert mock.await_count == 1
 
 
 class TestSyncWrapper:

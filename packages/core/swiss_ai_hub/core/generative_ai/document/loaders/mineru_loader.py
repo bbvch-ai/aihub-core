@@ -1,7 +1,9 @@
 import asyncio
 import json
 import logging
+import math
 import os
+from collections.abc import Awaitable
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
@@ -37,6 +39,10 @@ logger = logging.getLogger(__name__)
 
 class MineruTransientError(Exception):
     """Raised when MinerU API returns an error that can be retried."""
+
+
+class MineruRequestError(Exception):
+    """Raised when MinerU rejects a request for a reason retrying cannot fix."""
 
 
 class MineruParseResponse(BaseModel):
@@ -197,18 +203,34 @@ class MineruLoader(BaseReader):
         ext = os.path.splitext(filename)[1].lower()
         batch_size = self.config.PAGE_BATCH_SIZE
         if ext != ".pdf" or batch_size <= 0:
-            return await self._convert_batch(file_bytes, filename, include_images, None, None)
+            return await self._convert_unbatched(file_bytes, filename, include_images)
 
         try:
             total_pages = await asyncio.to_thread(self._count_pdf_pages, file_bytes)
         except PyPdfError as e:
             logger.warning(f"[MineruLoader] Page-count probe failed for {filename}, parsing unbatched: {e}")
-            return await self._convert_batch(file_bytes, filename, include_images, None, None)
+            return await self._convert_unbatched(file_bytes, filename, include_images)
 
         ranges = self._page_ranges(total_pages, batch_size)
         if len(ranges) <= 1:
-            return await self._convert_batch(file_bytes, filename, include_images, None, None)
+            return await self._convert_unbatched(file_bytes, filename, include_images)
+        return await self._convert_batched(file_bytes, filename, include_images, ranges, total_pages)
 
+    async def _convert_unbatched(self, file_bytes: bytes, filename: str, include_images: bool) -> MineruFileResult:
+        return await self._with_deadline(
+            self._convert_batch(file_bytes, filename, include_images, None, None),
+            num_batches=1,
+            filename=filename,
+        )
+
+    async def _convert_batched(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        include_images: bool,
+        ranges: list[tuple[int, int]],
+        total_pages: int,
+    ) -> MineruFileResult:
         semaphore = asyncio.Semaphore(self.config.MAX_CONCURRENT_BATCH_REQUESTS)
 
         async def convert_range(start: int, end: int) -> MineruFileResult:
@@ -216,11 +238,22 @@ class MineruLoader(BaseReader):
                 logger.info(f"[MineruLoader] {filename}: parsing pages {start + 1}-{end + 1} of {total_pages}")
                 return await self._convert_batch(file_bytes, filename, include_images, start, end)
 
-        async with asyncio.TaskGroup() as task_group:
-            tasks = []
-            for start, end in ranges:
-                tasks.append(task_group.create_task(convert_range(start, end)))
-        return self._merge_results([task.result() for task in tasks])
+        async def convert_all() -> MineruFileResult:
+            async with asyncio.TaskGroup() as task_group:
+                tasks = []
+                for start, end in ranges:
+                    tasks.append(task_group.create_task(convert_range(start, end)))
+            return self._merge_results([task.result() for task in tasks])
+
+        return await self._with_deadline(convert_all(), num_batches=len(ranges), filename=filename)
+
+    async def _with_deadline[T](self, awaitable: Awaitable[T], num_batches: int, filename: str) -> T:
+        """Poison-document guard: the deadline scales with batch waves so a hung backend cannot stall a run forever."""
+        deadline = self.config.API_TIMEOUT * math.ceil(num_batches / self.config.MAX_CONCURRENT_BATCH_REQUESTS)
+        try:
+            return await asyncio.wait_for(awaitable, timeout=deadline)
+        except TimeoutError:
+            raise TimeoutError(f"MinerU conversion timed out after {deadline}s for {filename} ({num_batches} batches)")
 
     @staticmethod
     def _count_pdf_pages(file_bytes: bytes) -> int:
@@ -290,15 +323,7 @@ class MineruLoader(BaseReader):
                     headers=vlm_headers if vlm_headers else None,
                 )
 
-                if response.status_code != 200:
-                    logger.exception(
-                        f"[MineruLoader] API request failed for {filename}: "
-                        f"status={response.status_code}, response={response.text}"
-                    )
-                    raise MineruTransientError(
-                        f"MinerU API request failed with status {response.status_code}: {response.text}"
-                    )
-
+                self._raise_for_status(response, filename)
                 return MineruParseResponse.model_validate(response.json())
 
         except httpx.HTTPError as e:
@@ -307,6 +332,19 @@ class MineruLoader(BaseReader):
         except OSError as e:
             logger.exception(f"[MineruLoader] Network error for {filename}: {type(e).__name__}: {e}")
             raise MineruTransientError(f"Network error: {type(e).__name__}: {e}") from e
+
+    @staticmethod
+    def _raise_for_status(response: httpx.Response, filename: str) -> None:
+        """Only server-side failures are worth retrying; 4xx rejections are deterministic."""
+        if response.status_code == 200:
+            return
+        logger.error(
+            f"[MineruLoader] API request failed for {filename}: "
+            f"status={response.status_code}, response={response.text}"
+        )
+        if response.status_code >= 500 or response.status_code == 429:
+            raise MineruTransientError(f"MinerU API request failed with status {response.status_code}: {response.text}")
+        raise MineruRequestError(f"MinerU API rejected the request with status {response.status_code}: {response.text}")
 
     @staticmethod
     def _extract_file_result(response: MineruParseResponse, filename: str) -> MineruFileResult:

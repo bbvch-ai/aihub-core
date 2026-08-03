@@ -32,11 +32,11 @@ class MineruSettings(EnvironmentSettings):
 
     PAGE_BATCH_SIZE: Annotated[
         int,
-        Field(description="Pages per MinerU request for PDFs; keeps server memory constant. 0 disables batching"),
+        Field(ge=0, description="Pages per MinerU request for PDFs; keeps server memory constant. 0 disables batching"),
     ] = 25
     MAX_CONCURRENT_BATCH_REQUESTS: Annotated[
         int,
-        Field(description="Client-side concurrent page-batch requests per document"),
+        Field(ge=1, description="Client-side concurrent page-batch requests per document"),
     ] = 2
 
     EXTENSIONS: Annotated[
