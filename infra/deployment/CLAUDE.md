@@ -67,6 +67,30 @@ make generate-compose  →  uv run python deployment/generate_compose.py
 **After ANY change to templates or `compose-config.yml`**: run `make generate-compose` and commit BOTH the template
 changes AND the regenerated output files.
 
+Note that `make generate-compose` also runs `make format-yaml`, which is repo-wide: if any YAML outside `infra/` is not
+yamlfix-clean on `main`, it gets reformatted into your working tree. Revert that churn before committing so the diff
+stays reviewable.
+
+### Applying an OpenWebUI function change to a running stack
+
+`configs/openwebui/functions/*.py` is **not** what OpenWebUI executes. The one-shot `openwebui-init` container reads
+those files and upserts each one into the `function` table of the `openwebui` PostgreSQL database (`init-openwebui.sh`,
+`ON CONFLICT DO UPDATE`); OpenWebUI runs the row, and `open-webui` does not even mount the functions directory. So
+editing a function — or regenerating it — changes nothing about the running pipe, and neither does restarting
+`open-webui` on its own, because the stale content is in the database. Re-register, then reload:
+
+```bash
+cd infra && docker compose -f docker-compose.dev.yml --env-file ../.env up openwebui-init
+docker restart open-webui   # re-imports the function module
+```
+
+Verify what is actually live rather than trusting the file:
+
+```bash
+docker exec postgres psql -U admin -d openwebui \
+  -tAc "select id, updated_at, length(content) from function where id='aihub-pipeline';"
+```
+
 ## The Stage x Hardware Matrix
 
 | Stage     | Traefik | SSL                | Domain               | 1st-party services | Local inference | Use case                 |
