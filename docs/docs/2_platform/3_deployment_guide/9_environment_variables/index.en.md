@@ -50,6 +50,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DOMAIN` | `30-clients.json`, `realm-settings.json` | `api`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `keycloak`, `keycloak-config`, `langfuse-web`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed`, `open-webui`, `rag_agent`, `retrieval_agent`, `seaweedfs-s3`, `shared_rag_pipeline`, `sysadmin-api`, `sysadmin-web`, `traefik`, `web` |  |
+| `ENABLE_OTEL_METRICS` |  | `open-webui` |  |
 | `ENV` |  | `api`, `open-webui`, `sysadmin-api` |  |
 | `ETCD_TOKEN` |  | `etcd`, `etcd-init`, `milvus-standalone`, `seaweedfs-filer` |  |
 | `EXPERT_ASKING_CHANNEL_TYPE` |  | `expert_asking_agent` |  |
@@ -92,6 +93,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `MINERU_API_MAX_CONCURRENT_REQUESTS` |  | `mineru-api` |  |
 | `MINERU_API_TIMEOUT` | `MineruSettings.API_TIMEOUT` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Timeout for MinerU API calls in seconds |
 | `MINERU_FORMULA_ENABLE` | `MineruSettings.FORMULA_ENABLE` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Enable formula/equation parsing |
+| `MINERU_MAX_CONCURRENT_BATCH_REQUESTS` | `MineruSettings.MAX_CONCURRENT_BATCH_REQUESTS` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Client-side concurrent page-batch requests per document |
+| `MINERU_PAGE_BATCH_SIZE` | `MineruSettings.PAGE_BATCH_SIZE` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Pages per MinerU request for PDFs; keeps server memory constant. 0 disables batching |
 | `MINERU_TABLE_ENABLE` | `MineruSettings.TABLE_ENABLE` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Enable table detection and parsing |
 | `MINERU_VLM_NAME` | `MineruSettings.VLM_NAME` | `api`, `default_rag_pipeline`, `mineru-api`, `shared_rag_pipeline` | LiteLLM model alias for MinerU VLM |
 | `MONGO_PASSWORD` |  | `api`, `backup-code`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `ferretdb`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `postgres-ferretdb`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline`, `sysadmin-api` |  |
