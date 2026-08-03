@@ -69,7 +69,9 @@ class FullProcessInstanceDTO(MinimalProcessInstanceDTO):
         process_config_dto = ProcessConfigDTO(
             process_id=config_entity.process_id,
             name=t.extract_required(config_entity.name.to_locale_string(), field_name="process.name"),
-            description=t.extract_required(config_entity.description.to_locale_string(), field_name="process.description"),
+            description=t.extract_required(
+                config_entity.description.to_locale_string(), field_name="process.description"
+            ),
             icon=config_entity.icon,
         )
 

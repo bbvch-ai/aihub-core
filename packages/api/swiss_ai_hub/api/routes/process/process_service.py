@@ -290,8 +290,8 @@ class ProcessService:
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         for config_entity in configs:
             dto = InstanceDtoBuilder.build_or_skip(
-                lambda config_entity=config_entity: (
-                    FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                lambda config_entity=config_entity: FullProcessInstanceDTO.from_class_and_config(
+                    class_entity, config_entity, t
                 ),
                 kind="process instance",
                 key=f"{process_class}/{getattr(config_entity, 'process_id', '?')}",
