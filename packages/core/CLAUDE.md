@@ -309,6 +309,11 @@ has `execution_context_id` (run_id for agents, walkthrough_id for processes).
 Both publishers extend `AbstractPublisher[TEvent]`. Both subscribers extend `AbstractSubscriber[TEvent]` with generic
 event type. OTEL trace context propagated via `NATSMessageHeaders`.
 
+`JSSubscriber` acks before processing and sets explicit redelivery config (30s AckWait, max 5 deliveries) instead of
+inheriting server defaults; on start it updates already-deployed durable consumers in place, since nats-py silently
+ignores the config passed to `subscribe` when the durable consumer exists. Delivery is therefore at-least-once —
+handlers (dispatchers) must tolerate duplicate events.
+
 ### Topic Managers
 
 Subject string builders that construct NATS subjects. Each manager provides methods like
