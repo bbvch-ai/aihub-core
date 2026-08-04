@@ -247,9 +247,11 @@ class TestBatchFailurePropagation:
                 raise MineruRequestError("MinerU API rejected the request with status 400") from root_cause
             return make_response(f"pages{start_page_id}", end_page_id - start_page_id + 1)
 
+        pdf_bytes = make_pdf(5)
+
         with patch.object(loader, "_execute_conversion", AsyncMock(side_effect=failing_execute)):
             with pytest.raises(MineruRequestError, match="status 400") as error:
-                await loader.aload_data_from_bytes(make_pdf(5), FILENAME, embed_base64=True)
+                await loader.aload_data_from_bytes(pdf_bytes, FILENAME, embed_base64=True)
 
         assert error.value.__cause__ is root_cause
 
