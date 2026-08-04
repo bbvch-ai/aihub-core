@@ -2117,6 +2117,11 @@ services:
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+      # Environment + host tags stamped onto all app telemetry (see otel-config
+      # resource/deployment). Provided per-VM by aihub-playbook's .env; fall back
+      # to the stage name / "unknown" so dev/local and un-templated runs render.
+      - OTEL_DEPLOYMENT_ENVIRONMENT=${OTEL_DEPLOYMENT_ENVIRONMENT:-{{ stage }}}
+      - OTEL_HOST_NAME=${OTEL_HOST_NAME:-{{ stage }}}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes:

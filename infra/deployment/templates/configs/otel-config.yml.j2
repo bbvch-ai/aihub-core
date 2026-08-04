@@ -36,6 +36,20 @@ processors:
     timeout: 15s
 {%- endif %}
 
+  # Stamp environment + host on ALL telemetry so every span/metric/log clearly
+  # shows which environment (deployment.environment, e.g. staging/nightly/latest)
+  # and which host it came from — alongside the service.name the app already
+  # sets. Values are injected per-VM by the deployment (aihub-playbook env.j2);
+  # the compose supplies a stage-name fallback so dev/local still render.
+  resource/deployment:
+    attributes:
+      - key: deployment.environment
+        value: "${OTEL_DEPLOYMENT_ENVIRONMENT}"
+        action: upsert
+      - key: host.name
+        value: "${OTEL_HOST_NAME}"
+        action: upsert
+
   filter/noise:
     error_mode: ignore
     traces:
@@ -116,37 +130,37 @@ service:
     # Send OpenInference traces to the stack-local Langfuse instance
     traces/langfuse:
       receivers: [ otlp ]
-      processors: [ filter/noise, filter/langfuse, batch ]
+      processors: [ filter/noise, filter/langfuse, resource/deployment, batch ]
       exporters: [ otlphttp/langfuse ]
 
     {%- if stage == 'dev' %}
     # Accept logs but use debug exporter (Langfuse doesn't support logs via OTEL)
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [resource/deployment, batch]
       exporters: [debug]
 
     # Accept metrics but use debug exporter (Langfuse doesn't support metrics via OTEL)
     metrics:
       receivers: [otlp]
-      processors: [filter/metrics_cardinality, batch]
+      processors: [filter/metrics_cardinality, resource/deployment, batch]
       exporters: [debug]
     {%- else %}
     # Send traces to cloud backend
     traces/cloud:
       receivers: [otlp]
-      processors: [filter/noise, batch]
+      processors: [filter/noise, resource/deployment, batch]
       exporters: [otlp/cloud]
 
     # Send metrics to cloud backend
     metrics:
       receivers: [otlp]
-      processors: [filter/metrics_cardinality, batch]
+      processors: [filter/metrics_cardinality, resource/deployment, batch]
       exporters: [otlp/cloud]
 
     # Send logs to cloud backend
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [resource/deployment, batch]
       exporters: [otlp/cloud]
     {%- endif %}
