@@ -88,7 +88,7 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
             f"and queue group '{self.queue_group}'."
         )
 
-    async def _ensure_consumer_config(self):
+    async def _ensure_consumer_config(self) -> None:
         """
         nats-py binds to an existing durable consumer with its server-side config, silently ignoring
         the config passed to subscribe. Redelivery settings drift on already-deployed consumers is

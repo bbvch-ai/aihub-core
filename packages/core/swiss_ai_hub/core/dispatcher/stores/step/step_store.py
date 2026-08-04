@@ -72,7 +72,7 @@ class StepStore(StoreBase):
             logger.debug(f"Execution context {execution_context_id} is crashed")
         return is_crashed
 
-    async def mark_execution_context_as_completed(self, execution_context_id: str):
+    async def mark_execution_context_as_completed(self, execution_context_id: str) -> None:
         """Flags the execution context as completed, marking that its run has been torn down."""
         await self.put_value(execution_context_id, "completed", b"true")
         logger.debug(f"Marked execution context {execution_context_id} as completed")
