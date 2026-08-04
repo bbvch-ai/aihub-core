@@ -204,6 +204,9 @@ def agent_dispatcher(mock_agent_config, nats_client, jetstream_context, redis_cl
     dispatcher.event_store.delete_all = AsyncMock()
     dispatcher.step_store = Mock()
     dispatcher.step_store.mark_execution_context_as_crashed = AsyncMock()
+    dispatcher.step_store.mark_execution_context_as_completed = AsyncMock()
+    dispatcher.step_store.is_execution_context_crashed = AsyncMock(return_value=False)
+    dispatcher.step_store.is_execution_context_completed = AsyncMock(return_value=False)
     dispatcher.step_store.delete_all = AsyncMock()
     dispatcher.step_store.get_execution_count = AsyncMock(return_value=0)
     dispatcher.trace_store = Mock()
@@ -339,6 +342,122 @@ class TestAgentDispatcherHandleEvent:
             agent_dispatcher.event_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
             agent_dispatcher.step_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
             agent_dispatcher.trace_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+            agent_dispatcher.step_store.mark_execution_context_as_completed.assert_called_once_with(
+                agent_topic.execution_context_id
+            )
+
+    @pytest.mark.asyncio
+    async def test_handle_stop_event_does_not_require_agent_config(self, agent_dispatcher, agent_topic):
+        """A terminal event must tear the run down even when the config is already gone."""
+        stop_event = StopEvent()
+        run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
+        await run_context.delete("_agent_config")
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(stop_event, agent_topic)
+
+            agent_dispatcher.event_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+            agent_dispatcher.step_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+            agent_dispatcher.trace_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+
+    @pytest.mark.asyncio
+    async def test_redelivered_stop_event_skips_second_teardown(self, agent_dispatcher, agent_topic):
+        """A redelivered StopEvent after teardown must neither error nor tear down again."""
+        stop_event = StopEvent()
+        agent_dispatcher.step_store.is_execution_context_completed = AsyncMock(return_value=True)
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.delete_all = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(stop_event, agent_topic)
+
+            mock_run_context.delete_all.assert_not_called()
+            agent_dispatcher.event_store.delete_all.assert_not_called()
+            agent_dispatcher.step_store.delete_all.assert_not_called()
+            agent_dispatcher.trace_store.delete_all.assert_not_called()
+            agent_dispatcher.step_store.mark_execution_context_as_completed.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_redelivered_exception_event_skips_second_teardown(self, agent_dispatcher, agent_topic):
+        """A redelivered ExceptionEvent after a crash teardown must not tear down or re-mark."""
+        exception_event = ExceptionEvent(message="Test exception")
+        agent_dispatcher.step_store.is_execution_context_crashed = AsyncMock(return_value=True)
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.delete_all = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(exception_event, agent_topic)
+
+            mock_run_context.delete_all.assert_not_called()
+            agent_dispatcher.event_store.delete_all.assert_not_called()
+            agent_dispatcher.step_store.mark_execution_context_as_crashed.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_redelivered_event_after_teardown_returns_quietly(self, agent_dispatcher, agent_topic):
+        """A redelivered mid-run event after teardown must not raise, dispatch steps, or touch run context."""
+        control_event = ControlEvent()
+        control_event._aihub_headers = {"X-AIHub-Token": "token"}
+        agent_dispatcher.step_store.is_execution_context_completed = AsyncMock(return_value=True)
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.get = AsyncMock(return_value=None)
+        mock_run_context.set = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(control_event, agent_topic)
+
+            mock_run_context.set.assert_not_called()
+            agent_dispatcher.agent.get_steps_waiting_for_event.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_redelivered_start_event_after_teardown_skips_run(self, agent_dispatcher, agent_topic):
+        """A redelivered StartEvent after teardown must not re-fetch config or replay the workflow."""
+        start_event = StartEvent()
+        agent_dispatcher.step_store.is_execution_context_completed = AsyncMock(return_value=True)
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.set = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(start_event, agent_topic)
+
+            agent_dispatcher._config_client.fetch_config.assert_not_called()
+            mock_run_context.set.assert_not_called()
+            agent_dispatcher.agent.get_steps_waiting_for_event.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_handle_exception_event_marks_execution_context_crashed(self, agent_dispatcher, agent_topic):

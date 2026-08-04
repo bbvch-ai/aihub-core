@@ -117,15 +117,22 @@ class AgentDispatcher(BaseDispatcher):
         thread_context = ThreadContext.for_topic(self.redis, topic)
         agent_config_dict: dict[str, Any] | None = None
 
-        # Propagate X-AIHub-* request headers into RunContext so downstream steps can act on behalf
-        # of the user. Written on every header-carrying event, not only StartEvent, so HITL/BITL
-        # responses refresh the stored token instead of reusing a stale one. These are untrusted
-        # client input — a step must validate a header before treating it as an identity claim.
-        if event._aihub_headers:
-            await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
+        # Teardown must run before config resolution: it only needs the run id, and a redelivered
+        # terminal event would otherwise fail on the config its first delivery already deleted.
+        if event.is_stop_event or event.is_exception_event:
+            logger.debug(f"Handling final event: {event.event_name}")
+            await self._teardown_run(event, run_context, topic)
+            return
 
         if event.is_start_event:
             event = cast(StartEvent, event)
+
+            if await self._is_run_torn_down(topic.execution_context_id):
+                logger.info(
+                    f"Duplicate delivery of {event.event_name} after run "
+                    f"{topic.execution_context_id} teardown, skipping"
+                )
+                return
 
             submitted_config = await self._config_client.fetch_config(
                 agent_class=self.agent.__name__,
@@ -140,7 +147,22 @@ class AgentDispatcher(BaseDispatcher):
         if agent_config_dict is None:
             agent_config_dict = await run_context.get(self._AGENT_CONFIG_KEY)
             if agent_config_dict is None:
+                if await self._is_run_torn_down(topic.execution_context_id):
+                    logger.info(
+                        f"Duplicate delivery of {event.event_name} after run "
+                        f"{topic.execution_context_id} teardown, skipping"
+                    )
+                    return
                 raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+
+        # Propagate X-AIHub-* request headers into RunContext so downstream steps can act on behalf
+        # of the user. Written on every header-carrying event, not only StartEvent, so HITL/BITL
+        # responses refresh the stored token instead of reusing a stale one. Written after config
+        # resolution so duplicate deliveries return before re-creating deleted run-context keys.
+        # These are untrusted client input — a step must validate a header before treating it as
+        # an identity claim.
+        if event._aihub_headers:
+            await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
 
         # Transform FormKit-style arrays (dict with numeric keys) to Python lists
         agent_config_dict = transform_formkit_arrays(agent_config_dict)
@@ -162,18 +184,6 @@ class AgentDispatcher(BaseDispatcher):
                 logger.debug(f"Setting key '{key}' in run_context")
                 await run_context.set(key, value)
 
-        if event.is_stop_event or event.is_exception_event:
-            logger.debug(f"Handling final event: {event.event_name}")
-
-            await run_context.delete_all()
-            await self.event_store.delete_all(topic.execution_context_id)
-            await self.step_store.delete_all(topic.execution_context_id)
-            await self.trace_store.delete_all(topic.execution_context_id)
-
-            if event.is_exception_event:
-                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
-            return
-
         steps = self.agent.get_steps_waiting_for_event(type(event))
         for step_method in steps:
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
@@ -191,6 +201,39 @@ class AgentDispatcher(BaseDispatcher):
                 )
                 self._background_tasks.add(task)
                 task.add_done_callback(self._background_tasks.discard)
+
+    async def _is_run_torn_down(self, execution_context_id: Annotated[str, "The run id to check."]) -> bool:
+        return await self.step_store.is_execution_context_completed(
+            execution_context_id
+        ) or await self.step_store.is_execution_context_crashed(execution_context_id)
+
+    async def _teardown_run(
+        self,
+        event: Annotated[ControlEvent, "The terminal (stop or exception) event."],
+        run_context: Annotated[RunContext, "Per-run context to delete."],
+        topic: Annotated[AgentClassTopic, "Topic carrying the execution context id."],
+    ) -> None:
+        """
+        Tears down all run state. Idempotent under JetStream at-least-once redelivery: the
+        completed/crashed marker written after the deletes turns a second delivery into a no-op.
+        """
+        execution_context_id = topic.execution_context_id
+        if await self._is_run_torn_down(execution_context_id):
+            logger.info(
+                f"Duplicate delivery of terminal event {event.event_name} after run "
+                f"{execution_context_id} teardown, skipping"
+            )
+            return
+
+        await run_context.delete_all()
+        await self.event_store.delete_all(execution_context_id)
+        await self.step_store.delete_all(execution_context_id)
+        await self.trace_store.delete_all(execution_context_id)
+
+        if event.is_exception_event:
+            await self.step_store.mark_execution_context_as_crashed(execution_context_id)
+        else:
+            await self.step_store.mark_execution_context_as_completed(execution_context_id)
 
     @override
     async def is_step_ready(

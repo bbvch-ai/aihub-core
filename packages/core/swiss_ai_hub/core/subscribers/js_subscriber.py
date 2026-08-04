@@ -6,6 +6,8 @@ from typing import Annotated
 from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
+from nats.js.api import ConsumerConfig
+from nats.js.errors import NotFoundError
 from opentelemetry import context, trace
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
@@ -40,6 +42,9 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
     # Class-level semaphore to limit concurrent processing
     _process_semaphore = asyncio.Semaphore(1000)
 
+    DEFAULT_ACK_WAIT_SECONDS: float = 30.0
+    DEFAULT_MAX_DELIVER: int = 5
+
     def __init__(
         self,
         name: Annotated[str, "Name of the subscriber shown in otel"],
@@ -51,10 +56,16 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
         event_cls: Annotated[type[TEvent], "Event class to handle in the event handler"],
         handler: Annotated[Callable[[TEvent, Topic], Awaitable[None]], "Event handler"],
         js: Annotated[JetStreamContext, "JetStream instance"],
+        ack_wait: Annotated[
+            float, "Seconds the server waits for an ack before redelivering"
+        ] = DEFAULT_ACK_WAIT_SECONDS,
+        max_deliver: Annotated[int, "Maximum delivery attempts per message"] = DEFAULT_MAX_DELIVER,
     ):
         super().__init__(name, nc, subject, event_cls, handler, protocol="JetStream")
         self.js = js or nc.jetstream()
         self.queue_group = queue_group
+        self.ack_wait = ack_wait
+        self.max_deliver = max_deliver
         self.stream_manager = StreamManager(self.js, stream_name, stream_subject)
         self.js_subscription: JetStreamContext.PushSubscription | None = None
 
@@ -64,15 +75,40 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
         Once started, the subscriber begins consuming messages from JetStream.
         """
         await self.stream_manager.ensure_stream_exists()
+        await self._ensure_consumer_config()
         self.js_subscription = await self.js.subscribe(
             subject=self.subject,
             cb=self.message_handler,
             stream=self.stream_manager.stream_name,
             queue=self.queue_group,
+            config=ConsumerConfig(ack_wait=self.ack_wait, max_deliver=self.max_deliver),
         )
         logger.debug(
             f"{self.name} subscribed to '{self.subject}' with {self.stream_manager} "
             f"and queue group '{self.queue_group}'."
+        )
+
+    async def _ensure_consumer_config(self):
+        """
+        nats-py binds to an existing durable consumer with its server-side config, silently ignoring
+        the config passed to subscribe. Redelivery settings drift on already-deployed consumers is
+        therefore corrected here, before subscribing.
+        """
+        try:
+            consumer_info = await self.js.consumer_info(self.stream_manager.stream_name, self.queue_group)
+        except NotFoundError:
+            return
+
+        consumer_config = consumer_info.config
+        if consumer_config.ack_wait == self.ack_wait and consumer_config.max_deliver == self.max_deliver:
+            return
+
+        consumer_config.ack_wait = self.ack_wait
+        consumer_config.max_deliver = self.max_deliver
+        await self.js.add_consumer(self.stream_manager.stream_name, config=consumer_config)
+        logger.info(
+            f"{self.name} updated consumer '{self.queue_group}' to "
+            f"ack_wait={self.ack_wait}s max_deliver={self.max_deliver}"
         )
 
     async def stop(self):

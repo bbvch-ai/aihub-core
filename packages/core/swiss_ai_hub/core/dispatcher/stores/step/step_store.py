@@ -27,6 +27,12 @@ class StepStore(StoreBase):
     - **is_execution_crashed(execution_context_id)**:
       Checks if a execution is flagged as crashed.
 
+    - **mark_execution_context_as_completed(execution_context_id)**:
+      Marks the execution as completed after teardown, so redelivered events are recognised as duplicates.
+
+    - **is_execution_context_completed(execution_context_id)**:
+      Checks if an execution has already been torn down.
+
     - **get_execution_count(execution_context_id, step_name)**:
       Returns how many times a particular step has already been triggered for the execution context.
 
@@ -65,6 +71,24 @@ class StepStore(StoreBase):
         if is_crashed:
             logger.debug(f"Execution context {execution_context_id} is crashed")
         return is_crashed
+
+    async def mark_execution_context_as_completed(self, execution_context_id: str):
+        """Flags the execution context as completed, marking that its run has been torn down."""
+        await self.put_value(execution_context_id, "completed", b"true")
+        logger.debug(f"Marked execution context {execution_context_id} as completed")
+
+    async def is_execution_context_completed(self, execution_context_id: str) -> bool:
+        """Checks if the execution context has been marked as completed."""
+
+        def transform_to_bool(value):
+            return value is not None and value.decode() == "true"
+
+        is_completed = await self.get_value(
+            execution_context_id, "completed", default_value=False, transform_func=transform_to_bool
+        )
+        if is_completed:
+            logger.debug(f"Execution context {execution_context_id} is completed")
+        return is_completed
 
     async def get_execution_count(self, execution_context_id: str, step_name: str) -> int:
         """Retrieves how many times a given step has executed."""
