@@ -787,9 +787,9 @@ form:
   locale_input:
     translate_tooltip: Traduci in tutte le lingue
   warnings:
-    org_memory_performance: 'Attenzione: la memoria dell''organizzazione presenta attualmente
-      un problema di prestazioni noto — abilitarla rallenta sensibilmente le risposte
-      dell''agente.'
+    org_memory_performance: Questa funzionalità potrebbe non funzionare come previsto
+      in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
+      fino al rilascio di una correzione.
 lib:
   vectorStore:
     label: Archivio vettoriale
