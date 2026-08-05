@@ -790,6 +790,10 @@ process:
 form:
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
+  warnings:
+    org_memory_performance: 'Attention : la mémoire d''organisation présente actuellement
+      un problème de performance connu — son activation ralentit sensiblement les réponses
+      de l''agent.'
 lib:
   vectorStore:
     label: Stockage vectoriel

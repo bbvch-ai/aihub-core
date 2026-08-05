@@ -790,6 +790,9 @@ process:
 form:
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
+  warnings:
+    org_memory_performance: 'Achtung: Der Organisationsspeicher hat derzeit ein bekanntes
+      Performance-Problem — die Aktivierung verlangsamt die Antworten des Agenten merklich.'
 lib:
   vectorStore:
     label: Vektorspeicher

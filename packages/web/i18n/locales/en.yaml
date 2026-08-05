@@ -778,6 +778,9 @@ process:
 form:
   locale_input:
     translate_tooltip: Translate to all languages
+  warnings:
+    org_memory_performance: 'Warning: organization memory currently has a known performance
+      issue — enabling it noticeably slows down agent responses.'
 lib:
   vectorStore:
     label: Vector Store
