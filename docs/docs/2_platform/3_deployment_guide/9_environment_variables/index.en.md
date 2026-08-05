@@ -47,7 +47,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_DB` |  | `backup-code` |  |
 | `DAGSTER_DEBUG_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_INFO_LOG_RETENTION_DAYS` |  | `backup-code` |  |
-| `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver` |  |
+| `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `shared_rag_pipeline` |  |
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DOMAIN` | `30-clients.json`, `realm-settings.json` | `api`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `keycloak`, `keycloak-config`, `langfuse-web`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed`, `open-webui`, `rag_agent`, `retrieval_agent`, `seaweedfs-s3`, `shared_rag_pipeline`, `sysadmin-api`, `sysadmin-web`, `traefik`, `web` |  |

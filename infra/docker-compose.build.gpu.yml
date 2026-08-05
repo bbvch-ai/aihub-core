@@ -3494,7 +3494,10 @@ services:
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
+      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
+      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -3575,7 +3578,10 @@ services:
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
+      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
+      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
