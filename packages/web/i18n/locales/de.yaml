@@ -790,6 +790,10 @@ process:
 form:
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
+  warnings:
+    org_memory_performance: Diese Funktion funktioniert in manchen Fällen möglicherweise
+      nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
+      sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
   vectorStore:
     label: Vektorspeicher
