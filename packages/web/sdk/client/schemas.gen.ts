@@ -12707,6 +12707,32 @@ export const LLMCostEventSchema = {
       description:
         "The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.",
     },
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description:
+        "Invoking user, so spend is queryable per user. None for runs with no user context.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description:
+        "Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -12971,6 +12997,69 @@ export const LLMEventSchema = {
   type: "object",
   required: ["_event_name", "_parent_event_names"],
   title: "LLMEvent",
+} as const;
+
+export const LLMSpendSchema = {
+  properties: {
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description: "Invoking user, None when grouping by tenant.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description: "Acting tenant, None for runs outside a tenant.",
+    },
+    calls: {
+      type: "integer",
+      title: "Calls",
+      description: "Number of LLM calls attributed to this key.",
+      default: 0,
+    },
+    prompt_tokens_costs: {
+      type: "number",
+      title: "Prompt Tokens Costs",
+      description: "Cost of prompt tokens.",
+      default: 0,
+    },
+    completion_tokens_costs: {
+      type: "number",
+      title: "Completion Tokens Costs",
+      description: "Cost of completion tokens.",
+      default: 0,
+    },
+    embedding_tokens_costs: {
+      type: "number",
+      title: "Embedding Tokens Costs",
+      description: "Cost of embedding tokens.",
+      default: 0,
+    },
+    total_costs: {
+      type: "number",
+      title: "Total Costs",
+      description: "Sum of prompt, completion and embedding costs.",
+      default: 0,
+    },
+  },
+  type: "object",
+  title: "LLMSpend",
+  description:
+    "LLM spend aggregated over one attribution key (a user or a tenant).\n\nCosts come from the platform's own `LLMCostEvent` records rather than from LiteLLM's spend log:\nthe gateway can only attribute the user, so the tenant dimension exists here alone (see #1451).",
 } as const;
 
 export const LLMStopEventSchema = {
@@ -30924,6 +31013,32 @@ export const LLMCostEventWritableSchema = {
       title: "Llm Name",
       description:
         "The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.",
+    },
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description:
+        "Invoking user, so spend is queryable per user. None for runs with no user context.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description:
+        "Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.",
     },
   },
   additionalProperties: true,

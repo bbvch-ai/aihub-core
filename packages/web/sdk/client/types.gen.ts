@@ -8552,6 +8552,18 @@ export type LlmCostEvent = {
    */
   llm_name: string;
   /**
+   * User Id
+   *
+   * Invoking user, so spend is queryable per user. None for runs with no user context.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.
+   */
+  tenant_id?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8687,6 +8699,59 @@ export type LlmEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * LLMSpend
+ *
+ * LLM spend aggregated over one attribution key (a user or a tenant).
+ *
+ * Costs come from the platform's own `LLMCostEvent` records rather than from LiteLLM's spend log:
+ * the gateway can only attribute the user, so the tenant dimension exists here alone (see #1451).
+ */
+export type LlmSpend = {
+  /**
+   * User Id
+   *
+   * Invoking user, None when grouping by tenant.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, None for runs outside a tenant.
+   */
+  tenant_id?: string | null;
+  /**
+   * Calls
+   *
+   * Number of LLM calls attributed to this key.
+   */
+  calls?: number;
+  /**
+   * Prompt Tokens Costs
+   *
+   * Cost of prompt tokens.
+   */
+  prompt_tokens_costs?: number;
+  /**
+   * Completion Tokens Costs
+   *
+   * Cost of completion tokens.
+   */
+  completion_tokens_costs?: number;
+  /**
+   * Embedding Tokens Costs
+   *
+   * Cost of embedding tokens.
+   */
+  embedding_tokens_costs?: number;
+  /**
+   * Total Costs
+   *
+   * Sum of prompt, completion and embedding costs.
+   */
+  total_costs?: number;
 };
 
 /**
@@ -20823,6 +20888,18 @@ export type LlmCostEventWritable = {
    * The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.
    */
   llm_name: string;
+  /**
+   * User Id
+   *
+   * Invoking user, so spend is queryable per user. None for runs with no user context.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.
+   */
+  tenant_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -25728,6 +25805,92 @@ export type GetAgentEventTimeseriesResponses = {
 
 export type GetAgentEventTimeseriesResponse =
   GetAgentEventTimeseriesResponses[keyof GetAgentEventTimeseriesResponses];
+
+export type GetLlmSpendByUserData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Since
+     *
+     * Only count calls at or after this time.
+     */
+    since?: Date | null;
+  };
+  url: "/{tenant_id}/events/spend/users";
+};
+
+export type GetLlmSpendByUserErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetLlmSpendByUserError =
+  GetLlmSpendByUserErrors[keyof GetLlmSpendByUserErrors];
+
+export type GetLlmSpendByUserResponses = {
+  /**
+   * Response Get Llm Spend By User  Tenant Id  Events Spend Users Get
+   *
+   * Successful Response
+   */
+  200: Array<LlmSpend>;
+};
+
+export type GetLlmSpendByUserResponse =
+  GetLlmSpendByUserResponses[keyof GetLlmSpendByUserResponses];
+
+export type GetLlmSpendByTenantData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Since
+     *
+     * Only count calls at or after this time.
+     */
+    since?: Date | null;
+  };
+  url: "/{tenant_id}/events/spend/tenants";
+};
+
+export type GetLlmSpendByTenantErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetLlmSpendByTenantError =
+  GetLlmSpendByTenantErrors[keyof GetLlmSpendByTenantErrors];
+
+export type GetLlmSpendByTenantResponses = {
+  /**
+   * Response Get Llm Spend By Tenant  Tenant Id  Events Spend Tenants Get
+   *
+   * Successful Response
+   */
+  200: Array<LlmSpend>;
+};
+
+export type GetLlmSpendByTenantResponse =
+  GetLlmSpendByTenantResponses[keyof GetLlmSpendByTenantResponses];
 
 export type GetLitellmModelsData = {
   body?: never;

@@ -10,6 +10,7 @@ from mongoengine import DictField, Document, ListField, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket import EventBucket
+from swiss_ai_hub.core.persistence.messaging.entities.types.llm_spend import LLMSpend
 from swiss_ai_hub.core.topic_managers.agents.agent_topic_manager import AgentTopicManager
 
 if TYPE_CHECKING:
@@ -81,6 +82,9 @@ class PersistedAgentEventEntity(Document):
             {"fields": ["event_data.created_at"]},
             {"fields": ["display_id"]},
             {"fields": ["thread_id", "event_type", "event_parents"]},
+            # Spend queries filter on event_parents and group by the attribution keys (#1451).
+            {"fields": ["event_parents", "event_data.user_id"]},
+            {"fields": ["event_parents", "event_data.tenant_id"]},
         ],
     }
     agent_class = StringField(required=True)
@@ -429,6 +433,76 @@ class PersistedAgentEventEntity(Document):
         ]
 
         results = list(cls.objects.aggregate(pipeline))
+        return results
+
+    @classmethod
+    @trace_fn
+    def get_llm_spend_by_user(cls, tenant_id: str | None = None, since: datetime | None = None) -> list["LLMSpend"]:
+        """LLM spend grouped per invoking user, optionally narrowed to one tenant and a start time."""
+        return cls._aggregate_llm_spend("user_id", tenant_id=tenant_id, since=since)
+
+    @classmethod
+    @trace_fn
+    def get_llm_spend_by_tenant(cls, since: datetime | None = None) -> list["LLMSpend"]:
+        """LLM spend grouped per acting tenant, optionally from a start time."""
+        return cls._aggregate_llm_spend("tenant_id", since=since)
+
+    @classmethod
+    def _aggregate_llm_spend(
+        cls,
+        group_field: str,
+        tenant_id: str | None = None,
+        since: datetime | None = None,
+    ) -> list["LLMSpend"]:
+        """Sum LLMCostEvent costs over one attribution key.
+
+        Events are de-duplicated by `event_id` first: a cost event redelivered by its consumer would
+        otherwise be counted twice and silently inflate spend. `$ifNull` guards every cost component
+        because `embedding_tokens_costs` is absent on chat-only events, and a missing operand makes
+        `$add` return null — poisoning the whole sum rather than the one field.
+        """
+        match: dict[str, Any] = {"event_parents": "LLMCostEvent"}
+        if tenant_id is not None:
+            match["event_data.tenant_id"] = tenant_id
+        if since is not None:
+            # A naive datetime — which is what FastAPI produces for `?since=2025-01-01T00:00:00` — would
+            # otherwise be read as server-local time by `.timestamp()`, shifting the cutoff by the host's
+            # UTC offset and silently including or excluding hours of spend.
+            cutoff = since if since.tzinfo is not None else since.replace(tzinfo=UTC)
+            match["event_data.created_at"] = {"$gte": int(cutoff.timestamp() * 1e9)}
+
+        cost_fields = ["prompt_tokens_costs", "completion_tokens_costs", "embedding_tokens_costs"]
+        pipeline = [
+            {"$match": match},
+            {"$group": {"_id": "$event_id", "event_data": {"$first": "$event_data"}}},
+            {
+                "$group": {
+                    "_id": f"$event_data.{group_field}",
+                    "calls": {"$sum": 1},
+                    **{field: {"$sum": {"$ifNull": [f"$event_data.{field}", 0]}} for field in cost_fields},
+                }
+            },
+            {"$sort": {"_id": 1}},
+        ]
+
+        # Echo the tenant filter onto each row: when grouping by user, only `user_id` comes from the
+        # aggregation, and leaving `tenant_id` at its default would report tenant-scoped rows as having
+        # no tenant — the opposite of the truth.
+        keys: dict[str, str | None] = {group_field: None}
+        if tenant_id is not None:
+            keys["tenant_id"] = tenant_id
+
+        results = []
+        for row in cls.objects.aggregate(pipeline):
+            costs = {field: row.get(field, 0.0) for field in cost_fields}
+            results.append(
+                LLMSpend(
+                    **{**keys, group_field: row["_id"]},
+                    calls=row["calls"],
+                    total_costs=sum(costs.values()),
+                    **costs,
+                )
+            )
         return results
 
     @classmethod
