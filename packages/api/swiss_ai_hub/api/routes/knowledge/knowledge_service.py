@@ -8,6 +8,7 @@ from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import DoesNotExist, register_connection
 from nats.aio.client import Client as NATS
 from pydantic import Field
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
@@ -204,7 +205,7 @@ class KnowledgeService:
 
     @staticmethod
     async def _create_and_translate_locale_entity(
-        text: str | None, t: LocaleHandler, llm_config: LLMConfig
+        text: str | None, t: LocaleHandler, llm_config: LLMConfig, user: UserIdentity
     ) -> LocaleStringEntity | None:
         """Helper to create and translate a LocaleStringEntity."""
         if not text or text.strip() == "":
@@ -213,7 +214,7 @@ class KnowledgeService:
         locale_string = LocaleString(**{t.locale: text})
 
         translated_locale_string = await TranslationService.translate(
-            locale_string=locale_string, llm_config=llm_config, t=t, source_locale=t.locale
+            locale_string=locale_string, llm_config=llm_config, t=t, user=user, source_locale=t.locale
         )
         return LocaleStringEntity.from_locale_string(translated_locale_string)
 
@@ -223,6 +224,7 @@ class KnowledgeService:
         namespace: str,
         request: CreateNamespaceRequest,
         t: LocaleHandler,
+        user: UserIdentity,
         llm_config: LLMConfig | None = None,
     ) -> NamespaceResponse:
         """
@@ -265,7 +267,11 @@ class KnowledgeService:
 
     @staticmethod
     async def update_namespace(
-        namespace_id: str, request: UpdateNamespaceRequest, t: LocaleHandler, llm_config: LLMConfig | None = None
+        namespace_id: str,
+        request: UpdateNamespaceRequest,
+        t: LocaleHandler,
+        user: UserIdentity,
+        llm_config: LLMConfig | None = None,
     ) -> NamespaceResponse:
         """
         Updates display name and description for an existing namespace.
