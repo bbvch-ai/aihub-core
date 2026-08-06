@@ -778,6 +778,9 @@ process:
 form:
   locale_input:
     translate_tooltip: Translate to all languages
+  warnings:
+    org_memory_performance: This feature may not work as expected in some cases. To
+      avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
   vectorStore:
     label: Vector Store

@@ -132,6 +132,43 @@ export interface TransformOptions {
   locale?: string
   labelTransform?: (label: string) => string
   optionsResolver?: (element: FormElement) => unknown[] | undefined
+  // Resolves a frontend-only warning for an element. The backend form schema carries no
+  // warning of its own, so notices about known platform issues are attached here.
+  fieldWarning?: (element: FormElement) => string | undefined
+}
+
+/**
+ * Warning notice rendered next to a field, styled like a `Message severity="warn"
+ * variant="simple"` (see `.formkit-field-warning` in FormKit/DynamicConfiguration.vue).
+ * A plain `$el` node rather than `$cmp: 'Message'`: PrimeVue components are auto-imported
+ * per component, so FormKitSchema cannot resolve them by name.
+ */
+function buildFieldWarningNode(element: FormElement, text: string): FormKitSchemaNode {
+  const base = (element.id as string | undefined) ?? (element.name as string)
+  return {
+    $el: 'div',
+    key: `${base}__warning`,
+    attrs: { class: 'formkit-field-warning' },
+    children: [
+      { $el: 'i', attrs: { class: 'pi pi-exclamation-triangle' } },
+      { $el: 'span', children: text },
+    ],
+  } as unknown as FormKitSchemaNode
+}
+
+/**
+ * Places the warning directly under the "Enable X" toggle for a nullable element — the
+ * toggle stays mounted when the section is switched off, so the warning remains readable
+ * before the user opts in. Non-nullable elements get it above their own node.
+ */
+function withFieldWarning(
+  nodes: FormKitSchemaNode | FormKitSchemaNode[],
+  warning: FormKitSchemaNode | undefined,
+  afterToggle: boolean,
+): FormKitSchemaNode | FormKitSchemaNode[] {
+  if (!warning) return nodes
+  const nodeArray = Array.isArray(nodes) ? nodes : [nodes]
+  return afterToggle ? [nodeArray[0], warning, ...nodeArray.slice(1)] : [warning, ...nodeArray]
 }
 
 function createGroupNode(
@@ -362,7 +399,7 @@ export function transformElementToSchema(
   const formkitType = getFormkitType(element)
   if (formkitType === 'repeater') return []
 
-  const { locale = 'en', labelTransform, optionsResolver } = options
+  const { locale = 'en', labelTransform, optionsResolver, fieldWarning } = options
 
   const children = (element.children as FormElement[] || []).flatMap(
     child => transformElementToSchema(child, options),
@@ -376,21 +413,26 @@ export function transformElementToSchema(
   const isNullable = element.nullable === true
   const toggleCondition = isNullable ? `$get(${nullableToggleId(element)}).value` : undefined
 
+  const warningText = fieldWarning?.(element)
+  const warningNode = warningText ? buildFieldWarningNode(element, warningText) : undefined
+
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    if (!isNullable) return groupNode
-    return applyNullableToggle(element, groupNode, label, getLocalizedString(element.help, locale))
+    if (!isNullable) return withFieldWarning(groupNode, warningNode, false)
+    const toggledNodes = applyNullableToggle(element, groupNode, label, getLocalizedString(element.help, locale))
+    return withFieldWarning(toggledNodes, warningNode, true)
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
   if (children.length > 0) cleanNode.children = children
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
+    const toggledNodes = applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
+    return withFieldWarning(toggledNodes, warningNode, true)
   }
 
-  return cleanNode as FormKitSchemaNode
+  return withFieldWarning(cleanNode as FormKitSchemaNode, warningNode, false)
 }
 
 function buildLeafNodeForRepeater(
