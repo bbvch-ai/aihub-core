@@ -142,7 +142,9 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             },
         )
 
-    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILike, LLMCostTracker]:
+    def to_llama_index(
+        self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
+    ) -> tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 
@@ -173,7 +175,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         open_ai_like = ResilientOpenAILike(
             model=self.model_name,
             api_base=config.BASE_URL,
-            api_key=config.API_KEY.get_secret_value(),
+            api_key=api_key or config.API_KEY.get_secret_value(),
             temperature=self.default_parameter.temperature,
             context_window=context_size,
             is_chat_model=is_chat_model,
