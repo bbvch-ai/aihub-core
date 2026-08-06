@@ -130,7 +130,7 @@ async def test_meta_question_branch_generates_title_and_follow_ups(monkeypatch):
 async def test_normal_question_opens_the_gate(monkeypatch):
     """When detection clears the message, the normal entry steps are released (gate opens)."""
 
-    async def fake_detect(*, user_query, llm_config, displayer, t):
+    async def fake_detect(*, user_query, llm_config, displayer, t, user):
         return NotAMetaQuestionEvent(reasoning="normal task")
 
     monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)

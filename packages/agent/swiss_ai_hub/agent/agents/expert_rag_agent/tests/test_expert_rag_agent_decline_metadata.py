@@ -64,7 +64,7 @@ def displayer() -> MagicMock:
 async def test_expert_not_answered_generates_follow_ups(monkeypatch, displayer):
     recorded = {}
 
-    async def fake_generate_follow_ups(chat_messages, llm_config, disp, t):
+    async def fake_generate_follow_ups(chat_messages, llm_config, disp, t, user):
         recorded["chat_messages"] = chat_messages
 
     monkeypatch.setattr(f"{EXPERT_RAG_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
@@ -76,6 +76,7 @@ async def test_expert_not_answered_generates_follow_ups(monkeypatch, displayer):
         user_message_event=_user_message(),
         agent_config=_config(),
         t=AgentLocaleHandler("en"),
+        user=fake_user(),
     )
 
     assert result.reason == "expert_declined"
@@ -90,7 +91,7 @@ async def test_expert_not_answered_generates_follow_ups(monkeypatch, displayer):
 async def test_expert_exception_generates_follow_ups(monkeypatch, displayer):
     recorded = {}
 
-    async def fake_generate_follow_ups(chat_messages, llm_config, disp, t):
+    async def fake_generate_follow_ups(chat_messages, llm_config, disp, t, user):
         recorded["chat_messages"] = chat_messages
 
     monkeypatch.setattr(f"{EXPERT_RAG_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
@@ -103,6 +104,7 @@ async def test_expert_exception_generates_follow_ups(monkeypatch, displayer):
         user_message_event=_user_message(),
         agent_config=_config(),
         t=AgentLocaleHandler("en"),
+        user=fake_user(),
     )
 
     assert result.reason == "expert_errored"
