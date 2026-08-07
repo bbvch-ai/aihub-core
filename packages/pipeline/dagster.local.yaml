@@ -1,0 +1,32 @@
+---
+# ===================================================================
+# Dagster instance config for LOCAL `dagster dev` runs only.
+# ===================================================================
+# Installed into $DAGSTER_HOME by the `dagster-home` target in this
+# directory's Makefile (copy-if-absent — your local edits are never
+# overwritten). Dagster only ever reads a file named `dagster.yaml`, so
+# this file is inert where it sits.
+#
+# Containerized Dagster uses infra/configs/dagster/dagster-config.<stage>.yml
+# (Postgres-backed, generated from a Jinja2 template) — not this file.
+#
+# Storage is left at the default (SQLite under $DAGSTER_HOME) so local runs
+# never touch the dev stack's Postgres.
+# ===================================================================
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    # Without this, local runs fall back to DefaultRunCoordinator and fan out
+    # unbounded, storming MinerU into HTTP 503 rejections.
+    #
+    # Deliberately a literal, not `env: DAGSTER_MAX_CONCURRENT_RUNS` as the
+    # deployed stages use: this file is installed into $DAGSTER_HOME, so an
+    # unresolvable env var would break every Dagster process on the machine —
+    # including ones started without the repo .env loaded. Tune it in place.
+    max_concurrent_runs: 2
+telemetry:
+  enabled: false
+python_logs:
+  python_log_level: INFO
+  managed_python_loggers: [swiss_ai_hub]

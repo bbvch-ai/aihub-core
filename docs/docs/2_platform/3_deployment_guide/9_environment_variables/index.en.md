@@ -47,6 +47,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_DB` |  | `backup-code` |  |
 | `DAGSTER_DEBUG_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_INFO_LOG_RETENTION_DAYS` |  | `backup-code` |  |
+| `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `shared_rag_pipeline` |  |
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DOMAIN` | `30-clients.json`, `realm-settings.json` | `api`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `keycloak`, `keycloak-config`, `langfuse-web`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed`, `open-webui`, `rag_agent`, `retrieval_agent`, `seaweedfs-s3`, `shared_rag_pipeline`, `sysadmin-api`, `sysadmin-web`, `traefik`, `web` |  |
@@ -255,6 +256,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `NOTIFICATION_MIN_INTERVAL_SECONDS` | `NotificationSettings.MIN_INTERVAL_SECONDS` | `30` | `default_rag_pipeline`, `shared_rag_pipeline` | Minimum interval between sensor ticks in seconds. |
 | `NOTIFICATION_TITLE_PREFIX` | `NotificationSettings.TITLE_PREFIX` | `'Swiss AI Hub Pipeline'` | `default_rag_pipeline`, `shared_rag_pipeline` | Prefix prepended to the notification title. |
 | `OPENWEBUI_BASE_URL` | `OpenWebuiSettings.BASE_URL` | _(supplied by compose)_ | `api`, `sysadmin-api` | OpenWebUI server base URL |
+| `OPENWEBUI_CONVERSATION_METADATA_MODEL` | `OpenWebuiSettings.CONVERSATION_METADATA_MODEL` | `'text-generation/gemma-4-31B-it'` | `api` | LiteLLM name (``capability/name``) of the model generating conversation metadata — chat titles and follow-up questions — for chats that have no agent behind them. OpenWebUI runs it under the end user's identity, so a role without access to this model loses both features silently; the access catalog flags the model for that reason. Same model as the OpenWebUI ``TASK_MODEL`` env var but in LiteLLM form, since that one names the workspace model wrapping it. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `OpenTelemetrySettings.EXPORTER_OTLP_ENDPOINT` | `None` | `api`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | OTLP exporter endpoint URL |
 | `OTEL_EXPORTER_OTLP_INSECURE` | `OpenTelemetrySettings.EXPORTER_OTLP_INSECURE` | `True` | `open-webui` | Use insecure connection (no TLS) for gRPC |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `OpenTelemetrySettings.EXPORTER_OTLP_PROTOCOL` | `'grpc'` | `api`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | OTLP protocol |

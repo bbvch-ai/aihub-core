@@ -239,10 +239,13 @@ class MineruLoader(BaseReader):
                 return await self._convert_batch(file_bytes, filename, include_images, start, end)
 
         async def convert_all() -> MineruFileResult:
-            async with asyncio.TaskGroup() as task_group:
-                tasks = []
-                for start, end in ranges:
-                    tasks.append(task_group.create_task(convert_range(start, end)))
+            tasks = []
+            try:
+                async with asyncio.TaskGroup() as task_group:
+                    for start, end in ranges:
+                        tasks.append(task_group.create_task(convert_range(start, end)))
+            except ExceptionGroup as exception_group:
+                raise self._unwrap_batch_failure(exception_group, filename)
             return self._merge_results([task.result() for task in tasks])
 
         return await self._with_deadline(convert_all(), num_batches=len(ranges), filename=filename)
@@ -254,6 +257,30 @@ class MineruLoader(BaseReader):
             return await asyncio.wait_for(awaitable, timeout=deadline)
         except TimeoutError:
             raise TimeoutError(f"MinerU conversion timed out after {deadline}s for {filename} ({num_batches} batches)")
+
+    @staticmethod
+    def _unwrap_batch_failure(exception_group: ExceptionGroup, filename: str) -> Exception:
+        """
+        Surface the batch failure itself instead of the TaskGroup wrapper.
+
+        Consumers such as Dagster render only the linear __cause__/__context__ chain, so an
+        ExceptionGroup reaches the UI as "1 sub-exception" with the actual error discarded.
+        """
+        leaves: list[Exception] = []
+        pending: list[Exception] = list(exception_group.exceptions)
+        while pending:
+            exception = pending.pop(0)
+            if isinstance(exception, ExceptionGroup):
+                pending[:0] = exception.exceptions
+            else:
+                leaves.append(exception)
+
+        if len(leaves) > 1:
+            logger.error(
+                f"[MineruLoader] {len(leaves)} page batches failed for {filename}, "
+                f"reporting the first: {[repr(leaf) for leaf in leaves]}"
+            )
+        return leaves[0]
 
     @staticmethod
     def _count_pdf_pages(file_bytes: bytes) -> int:
