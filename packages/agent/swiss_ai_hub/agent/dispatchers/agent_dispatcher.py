@@ -115,7 +115,6 @@ class AgentDispatcher(BaseDispatcher):
         # Retrieve contexts (run and thread)
         run_context = RunContext.for_topic(self.redis, topic)
         thread_context = ThreadContext.for_topic(self.redis, topic)
-        agent_config_dict: dict[str, Any] | None = None
 
         # Propagate X-AIHub-* request headers into RunContext so downstream steps can act on behalf
         # of the user. Written on every header-carrying event, not only StartEvent, so HITL/BITL
@@ -124,27 +123,27 @@ class AgentDispatcher(BaseDispatcher):
         if event._aihub_headers:
             await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
 
-        if event.is_start_event:
-            event = cast(StartEvent, event)
+        # Terminal events retire the run and need no agent config, so they are handled before config
+        # resolution: otherwise the ExceptionEvent published by the guard below would hit the very
+        # validation error it reports, and the run it is meant to retire would never be cleaned up.
+        if event.is_stop_event or event.is_exception_event:
+            logger.debug(f"Handling final event: {event.event_name}")
 
-            submitted_config = await self._config_client.fetch_config(
-                agent_class=self.agent.__name__,
-                agent_id=topic.agent_id,
-            )
+            await run_context.delete_all()
+            await self.event_store.delete_all(topic.execution_context_id)
+            await self.step_store.delete_all(topic.execution_context_id)
+            await self.trace_store.delete_all(topic.execution_context_id)
 
-            # Deep merge: non-configurable values (from form-mode config) + configurable values (from submission)
-            agent_config_dict = Form.deep_merge(self._non_configurable_values, submitted_config)
+            if event.is_exception_event:
+                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
+            return
 
-            await run_context.set(self._AGENT_CONFIG_KEY, agent_config_dict)
+        try:
+            run_agent_config = await self._resolve_run_config(event, topic, run_context)
+        except Exception as unusable_config_exception:
+            await self._report_unusable_config(topic, unusable_config_exception)
+            return
 
-        if agent_config_dict is None:
-            agent_config_dict = await run_context.get(self._AGENT_CONFIG_KEY)
-            if agent_config_dict is None:
-                raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
-
-        # Transform FormKit-style arrays (dict with numeric keys) to Python lists
-        agent_config_dict = transform_formkit_arrays(agent_config_dict)
-        run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
         topic = AgentInstanceTopic.from_agent_class_topic(
             agent_class_topic=topic,
             agent_id=run_agent_config.agent_id,
@@ -161,18 +160,6 @@ class AgentDispatcher(BaseDispatcher):
             for key, value in event_data.items():
                 logger.debug(f"Setting key '{key}' in run_context")
                 await run_context.set(key, value)
-
-        if event.is_stop_event or event.is_exception_event:
-            logger.debug(f"Handling final event: {event.event_name}")
-
-            await run_context.delete_all()
-            await self.event_store.delete_all(topic.execution_context_id)
-            await self.step_store.delete_all(topic.execution_context_id)
-            await self.trace_store.delete_all(topic.execution_context_id)
-
-            if event.is_exception_event:
-                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
-            return
 
         steps = self.agent.get_steps_waiting_for_event(type(event))
         for step_method in steps:
@@ -191,6 +178,58 @@ class AgentDispatcher(BaseDispatcher):
                 )
                 self._background_tasks.add(task)
                 task.add_done_callback(self._background_tasks.discard)
+
+    async def _resolve_run_config(
+        self,
+        event: Annotated[ControlEvent, "The incoming control event to handle."],
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event."],
+        run_context: Annotated[RunContext, "Per-run context holding the merged config."],
+    ) -> AgentConfig:
+        """
+        Fetches the config on a StartEvent (and caches it for the run) or reloads the cached one,
+        then validates it into the agent's config type.
+        """
+        agent_config_dict: dict[str, Any] | None = None
+
+        if event.is_start_event:
+            submitted_config = await self._config_client.fetch_config(
+                agent_class=self.agent.__name__,
+                agent_id=topic.agent_id,
+            )
+
+            # Deep merge: non-configurable values (from form-mode config) + configurable values (from submission)
+            agent_config_dict = Form.deep_merge(self._non_configurable_values, submitted_config)
+
+            await run_context.set(self._AGENT_CONFIG_KEY, agent_config_dict)
+
+        if agent_config_dict is None:
+            agent_config_dict = await run_context.get(self._AGENT_CONFIG_KEY)
+            if agent_config_dict is None:
+                raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+
+        # Transform FormKit-style arrays (dict with numeric keys) to Python lists
+        return self.agent_config_type.model_validate(transform_formkit_arrays(agent_config_dict))
+
+    async def _report_unusable_config(
+        self,
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event whose config could not be resolved."],
+        cause: Annotated[Exception, "Why the config could not be fetched, merged or validated."],
+    ) -> None:
+        """
+        Turns a config failure into an ExceptionEvent instead of letting it escape into the subscriber.
+
+        A config is validated on every dispatched event, before any step runs, so a profile saved with a
+        value the agent's own model rejects (the API validates submissions against a JSON Schema that
+        cannot carry cross-field rules) would otherwise abort each event silently — the subscriber only
+        logs, and the message is acked already — leaving the chat hanging forever with nothing to show.
+        """
+        logger.exception(
+            f"Cannot resolve the configuration of {self.agent.__name__}/{topic.agent_id}, aborting the run: {cause}"
+        )
+        await self.publish_event(
+            ExceptionEvent(message=f"The agent configuration is invalid: {cause}"),
+            AgentInstanceTopic.from_agent_class_topic(agent_class_topic=topic, agent_id=topic.agent_id),
+        )
 
     @override
     async def is_step_ready(

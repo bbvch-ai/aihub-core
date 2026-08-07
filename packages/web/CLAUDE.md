@@ -47,7 +47,8 @@ packages/web/
 
 The `.app/` directory is the actual entry point — it extends the parent via `extends: ['..']` in its `nuxt.config.ts`.
 `pnpm dev` runs `nuxi dev .app`. The parent `packages/web/` provides components, composables, pages, and config. `.app/`
-adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
+adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars). FormKit registration lives in the layer itself
+(`packages/web/formkit.config.ts`, wired via `formkit.configFile` in `nuxt.config.ts`), so extenders inherit it.
 
 ## Page Composition Pattern
 
@@ -146,8 +147,14 @@ The backend defines form schemas (`FormkitElement[]`), the frontend renders them
 **Flow**: Backend `AgentConfig.as_form()` → SDK `FormkitElement[]` → `useFormKitTransform().buildFormKitSchema()` →
 `<FormKitSchema :schema="schema" />` → rendered form.
 
-**Custom FormKit inputs** (registered in `.app/formkit.config.ts`): `agentSelector`, `knowledgeDatabaseSelector`,
-`iconSelector`, `localeInput`, `modelSelect`, `vectorStoreInput`.
+**Custom FormKit inputs** (registered in `formkit.config.ts`): `agentSelector`, `chipsInput`,
+`knowledgeDatabaseSelector`, `iconSelector`, `localeInput`, `modelSelect`, `tenantSelect`, `vectorStoreInput`.
+
+**Custom validation rules** are registered in the same file under `rules`, with their messages under `messages` (one
+entry per locale). The backend attaches a rule to a field via `PrimeVueElement.additional_validation_rules`, which
+surfaces as the FormKit node's `validation` string. Cross-field rules read siblings with `node.at('<field_name>')` —
+FormKit tracks whatever the rule reads, so it re-runs when that sibling changes too. Such rules are advisory: the API
+validates submissions against a JSON Schema and never sees them.
 
 Custom input components receive props via `context` (not Vue props): read from `context.value`, write via
 `context.node.input(newValue)`.
@@ -265,7 +272,7 @@ The UI strictly separates blueprint from profile:
 
 - Nuxt config: `nuxt.config.ts`
 - Nuxt layer entry: `.app/nuxt.config.ts`
-- FormKit config: `.app/formkit.config.ts`
+- FormKit config (inputs, validation rules, messages): `formkit.config.ts`
 - ESLint config: `eslint.config.js`
 - Tailwind config: `tailwind.config.mjs`
 - PrimeVue theme: `themes/aihub-theme.ts`
