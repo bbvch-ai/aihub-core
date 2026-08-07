@@ -23,4 +23,7 @@ def test_token_counter_tokenizes_locally_without_network():
 def test_token_counter_is_stable_across_property_accesses():
     config = LLMConfig(model_name="text-generation/gemma-4-31B-it")
 
-    assert config.token_counter("The quick brown fox.") == config.token_counter("The quick brown fox.")
+    first_access = config.token_counter
+    second_access = config.token_counter
+
+    assert first_access("The quick brown fox.") == second_access("The quick brown fox.")
