@@ -637,6 +637,25 @@ class TestAgentDispatcherErrorHandling:
         published_event = agent_dispatcher.publish_event.await_args.args[0]
         assert isinstance(published_event, ExceptionEvent)
         assert "configuration is invalid" in published_event.message
+        # The field that failed, so the admin can act on it...
+        assert "name" in published_event.message
+
+    @pytest.mark.asyncio
+    async def test_reported_config_failure_carries_no_field_values(self, agent_dispatcher, agent_topic):
+        """...but never the values: an agent config holds credentials and this text reaches the user's chat."""
+        secret = "s3cret-imap-token"
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher._config_client.fetch_config = AsyncMock(
+            return_value={"agent_id": "test_agent", "name": secret, "description": {}, "icon": "test-icon"}
+        )
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(StartEvent(), agent_topic)
+
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert secret not in published_event.message
+        assert "input_value" not in published_event.message
 
     @pytest.mark.asyncio
     async def test_handle_event_with_context_setup_failure(self, agent_dispatcher, agent_topic):

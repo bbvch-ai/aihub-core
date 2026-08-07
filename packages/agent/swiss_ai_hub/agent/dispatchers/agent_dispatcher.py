@@ -8,6 +8,7 @@ from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from opentelemetry import context as otel_context
+from pydantic import ValidationError
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
 from swiss_ai_hub.core.dispatcher import BaseDispatcher, EventsAndKwargs, TraceStore
@@ -227,8 +228,24 @@ class AgentDispatcher(BaseDispatcher):
             f"Cannot resolve the configuration of {self.agent.__name__}/{topic.agent_id}, aborting the run: {cause}"
         )
         await self.publish_event(
-            ExceptionEvent(message=f"The agent configuration is invalid: {cause}"),
+            ExceptionEvent(message=f"The agent configuration is invalid: {self._describe_config_failure(cause)}"),
             AgentInstanceTopic.from_agent_class_topic(agent_class_topic=topic, agent_id=topic.agent_id),
+        )
+
+    @staticmethod
+    def _describe_config_failure(cause: Exception) -> str:
+        """
+        Reduces a validation failure to field locations and reasons.
+
+        An agent config carries credentials — `ImapClientConfig.password` is a plain string — and
+        Pydantic renders the offending value into `str(error)`. This text reaches the user's chat, so
+        the values must not travel with it; the full error stays in the log line above.
+        """
+        if not isinstance(cause, ValidationError):
+            return str(cause)
+        return "; ".join(
+            f"{'.'.join(str(location) for location in error['loc'])}: {error['msg']}"
+            for error in cause.errors(include_url=False, include_input=False)
         )
 
     @override
