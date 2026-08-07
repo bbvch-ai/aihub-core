@@ -308,6 +308,9 @@ DIRECTORY_NAME = "documents"
 NAMESPACE_NAME = DIRECTORY_NAME
 STORE_NAME = CONTAINER_NAME
 
+llm_config = LLMConfig(model_name="azure/gpt-4o-mini")
+embedding_config = EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
+
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
 # Assets
@@ -329,9 +332,7 @@ defs = Definitions(
             llm_config=llm_config,
             embedding_config=embedding_config,
         ),
-        "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
-        ),
+        "embedding_model": EmbeddingModelResource(embedding_config=embedding_config),
     },
 )
 ```

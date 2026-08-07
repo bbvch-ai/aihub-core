@@ -124,6 +124,7 @@ Beginnen Sie mit der Erstellung der Basiskonfiguration und Importe (`my_document
 
 ```python
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
 
 # Import Swiss AI Hub pipeline factories
@@ -218,13 +219,21 @@ storage_resources = {
     ),
 }
 
+# Models used for chunking: the LLM detects table headers, and the embedding model's
+# input limit caps how large a chunk may get.
+llm_config = LLMConfig(model_name="azure/gpt-4o-mini")
+embedding_config = EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
+
 # B. Document Processing Resources  
 processing_resources = {
     # Document parser - uses AI-powered MinerU for PDF/Word/etc
     "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
 
     # Node parser - chunks documents using structural elements
-    "node_parser": MarkdownStructuralNodeParserResource(),
+    "node_parser": MarkdownStructuralNodeParserResource(
+        llm_config=llm_config,
+        embedding_config=embedding_config,
+    ),
 }
 
 # C. Database and Search Resources
@@ -240,11 +249,7 @@ database_resources = {
 # D. AI Model Resources
 ai_resources = {
     # Embedding model for creating vector representations
-    "embedding_model": EmbeddingModelResource(
-        embedding_config=EmbeddingModelConfig(
-            model_name="azure/text-embedding-3-large"
-        ),
-    ),
+    "embedding_model": EmbeddingModelResource(embedding_config=embedding_config),
 }
 
 # Combine all resources
@@ -274,6 +279,7 @@ Hier ist die vollständige Datei mit allen Komponenten zusammen:
 
 ```python
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
@@ -301,6 +307,9 @@ DIRECTORY_NAME = "documents"
 NAMESPACE_NAME = DIRECTORY_NAME
 STORE_NAME = CONTAINER_NAME
 
+llm_config = LLMConfig(model_name="azure/gpt-4o-mini")
+embedding_config = EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
+
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
 # Assets
@@ -318,10 +327,11 @@ defs = Definitions(
         **s3_data_lake_resources(CONTAINER_NAME, DIRECTORY_NAME, "__figures__"),
         **local_mongo_milvus_storage_context_resource("http://localhost:19530", STORE_NAME, NAMESPACE_NAME),
         "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
-        "node_parser": MarkdownStructuralNodeParserResource(),
-        "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
+        "node_parser": MarkdownStructuralNodeParserResource(
+            llm_config=llm_config,
+            embedding_config=embedding_config,
         ),
+        "embedding_model": EmbeddingModelResource(embedding_config=embedding_config),
     },
 )
 ```

@@ -19,7 +19,8 @@ class TestHtmlTableConverter:
         result = HtmlTableConverter.convert(MINERU_TABLE)
 
         assert "<tr>" not in result
-        assert result.startswith("<table>") and result.endswith("</table>")
+        assert result.startswith("<table>")
+        assert result.endswith("</table>")
 
         df = parse_markdown_table(result.removeprefix("<table>").removesuffix("</table>"))
         assert df is not None
