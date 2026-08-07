@@ -8476,6 +8476,22 @@ export const GroupSchema = {
       title: "Label",
       description: "Optional label displayed above the group",
     },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Optional explanatory text rendered on the group's enable toggle",
+    },
     children: {
       items: {
         oneOf: [
@@ -21211,10 +21227,9 @@ export const TextToSpeechRequestSchema = {
   properties: {
     model: {
       type: "string",
-      enum: ["tts-1", "tts-1-hd"],
+      minLength: 1,
       title: "Model",
-      description:
-        "The TTS model to use. Available options: 'tts-1' or 'tts-1-hd'.",
+      description: "The TTS model to use, e.g. 'speech/<model-name>'.",
     },
     input: {
       type: "string",
@@ -28057,6 +28072,22 @@ export const GroupWritableSchema = {
       ],
       title: "Label",
       description: "Optional label displayed above the group",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Optional explanatory text rendered on the group's enable toggle",
     },
     children: {
       items: {

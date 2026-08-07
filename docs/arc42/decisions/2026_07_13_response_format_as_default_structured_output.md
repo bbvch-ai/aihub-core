@@ -1,7 +1,8 @@
 # `response_format` JSON Schema as the Default Structured-Output Mechanism
 
 - Status: accepted
-- Supersedes: [`2026_06_29_resilience_for_reasoning_models_on_infomaniak`](2026_06_29_resilience_for_reasoning_models_on_infomaniak.md)
+- Supersedes:
+  [`2026_06_29_resilience_for_reasoning_models_on_infomaniak`](2026_06_29_resilience_for_reasoning_models_on_infomaniak.md)
 
 ::: warning Update (2026-07-14)
 Two parts of this decision were revised after monitoring:
@@ -11,18 +12,30 @@ Two parts of this decision were revised after monitoring:
   `enable_thinking`; both keys are now sent — `{"thinking": false, "enable_thinking": false}` — dropping detection to
   ~1s and the structured/meta paths to a fraction of their former latency. The mechanism (decision #3) is otherwise
   unchanged.
-- **Conversation metadata (title + follow-up) is disabled again**, pending investigation — decision #6 below is
-  therefore only partially in force. Per-agent self-awareness stays enabled (it now also disables reasoning on the
-  streamed meta answer), **except `McpReactAgent`, which opted out of self-awareness entirely**.
+- **Conversation metadata (title + follow-up) was temporarily disabled again**, pending investigation. Per-agent
+  self-awareness stayed enabled (it now also disables reasoning on the streamed meta answer), **except `McpReactAgent`,
+  which opted out of self-awareness entirely**.
   :::
+
+::: warning Update (2026-07-24, issue #87)
+**Conversation metadata (title + follow-up) is re-enabled — decision #6 is now fully in force.** The earlier production
+errors were not the `response_format` mechanism: they were a race between the fan-out metadata `@step`s (which hung off
+the terminal `LLMEvent`) and the StopEvent teardown, so the title/follow-up display events were emitted after the run
+finalized — dropped or reordered, and logged at ERROR. The fix (see ADR
+`2026_06_18_conversation_metadata_as_explicit_per_agent_steps`) removes the race by wiring the two events differently on
+`RAGAgent`/`ExpertRAGAgent`: the **title** is an early fan-out `@step` anchored on a pre-answer event
+(`LimitChatHistoryEvent`) — it only needs the topic, so it runs in parallel with the answer pipeline and emits before
+the stop event; the **follow-ups** are generated **inline** in the terminal step before the stop event (they are
+grounded on the answer, so cannot start earlier). The best-effort wrappers now log at WARNING, not ERROR.
+:::
 
 ## Context
 
 Swiss AI Hub routes all chat LLM access through LiteLLM. On CPU (non-GPU) deployments every text-generation model is
-served by **Infomaniak's managed inference**; two of them — **Kimi-K2.6** and **Qwen3.5-122B-A10B-FP8** — are *reasoning*
-models. Several agent steps need **structured output** from the LLM via LlamaIndex `astructured_predict`: conversation
-metadata (title + follow-up questions), the per-agent self-awareness meta-question steps, LLM routing, and namespace
-selection.
+served by **Infomaniak's managed inference**; two of them — **Kimi-K2.6** and **Qwen3.5-122B-A10B-FP8** — are
+*reasoning* models. Several agent steps need **structured output** from the LLM via LlamaIndex `astructured_predict`:
+conversation metadata (title + follow-up questions), the per-agent self-awareness meta-question steps, LLM routing, and
+namespace selection.
 
 LlamaIndex `OpenAILike.astructured_predict` picks one of two mechanisms:
 
@@ -38,16 +51,15 @@ the tool-call path.
 
 We re-tested the JSON-schema path directly through LiteLLM, with reasoning disabled
 (`extra_body={"chat_template_kwargs":{"thinking":false,"enable_thinking":false}}`), against the Pydantic result models
-used in production
-(`TitleResult`, `FollowUpQuestionsResult`), 5 runs per model+schema:
+used in production (`TitleResult`, `FollowUpQuestionsResult`), 5 runs per model+schema:
 
-| Model                         | Title parsed | Follow-ups parsed | Fenced/recovered |
-| ----------------------------- | ------------ | ----------------- | ---------------- |
-| Kimi-K2.6 (reasoning)         | 5/5          | 5/5               | 0                |
-| Qwen3.5-122B (reasoning)      | 5/5          | 5/5               | 0                |
-| gemma-4-31B-it (instruct)     | 5/5          | 5/5               | 0                |
-| Apertus-70B (instruct)        | 5/5          | 5/5               | 0                |
-| Ministral-3-14B (instruct)    | 5/5          | 5/5               | 0                |
+| Model                      | Title parsed | Follow-ups parsed | Fenced/recovered |
+| -------------------------- | ------------ | ----------------- | ---------------- |
+| Kimi-K2.6 (reasoning)      | 5/5          | 5/5               | 0                |
+| Qwen3.5-122B (reasoning)   | 5/5          | 5/5               | 0                |
+| gemma-4-31B-it (instruct)  | 5/5          | 5/5               | 0                |
+| Apertus-70B (instruct)     | 5/5          | 5/5               | 0                |
+| Ministral-3-14B (instruct) | 5/5          | 5/5               | 0                |
 
 `response_format` JSON Schema, **with reasoning disabled**, produces clean parseable JSON on every model — reasoning and
 instruct alike — with no fences, no truncation, and no omitted fields. The forced-tool-call incompatibility is specific
@@ -62,16 +74,16 @@ to `tool_choice`, not to structured output in general.
 - **Reasoning is pure latency for these calls.** A title, a follow-up list, a route, or a meta-question label is a
   trivial extraction; letting a reasoning model "think" first adds seconds of latency (measured ~13s for a single-token
   classification on Qwen3.5) and is what produced the fenced/partial output the old ADR saw.
-- **Capability must reflect the deployment, not a static registry.** LlamaIndex's built-in
-  `is_json_schema_supported()` only knows OpenAI's public model names and returns false negatives for custom-named
-  vLLM/Infomaniak models. The deployment's LiteLLM `model_list` is the source of truth.
-- **Meta features must never fail the run.** Conversation metadata and meta-question steps are best-effort
-  enhancements; a structured-output failure must degrade, not surface a 500.
+- **Capability must reflect the deployment, not a static registry.** LlamaIndex's built-in `is_json_schema_supported()`
+  only knows OpenAI's public model names and returns false negatives for custom-named vLLM/Infomaniak models. The
+  deployment's LiteLLM `model_list` is the source of truth.
+- **Meta features must never fail the run.** Conversation metadata and meta-question steps are best-effort enhancements;
+  a structured-output failure must degrade, not surface a 500.
 
 ## Decision
 
-**1. `response_format` JSON Schema is the default structured-output mechanism, gated on deployment-declared capability.**
-`LLMConfig.to_llama_index()` reads `supports_response_schema` from the deployment's LiteLLM `/model/info`
+**1. `response_format` JSON Schema is the default structured-output mechanism, gated on deployment-declared
+capability.** `LLMConfig.to_llama_index()` reads `supports_response_schema` from the deployment's LiteLLM `/model/info`
 (`model_list`, the authoritative capability) and passes it as `should_use_structured_outputs` on `ResilientOpenAILike`.
 When set, LlamaIndex uses `response_format` and drops `tool_choice`. Models that do not declare the capability keep the
 forced-tool-call behaviour, so the switch is inert until the LiteLLM config opts a model in.
@@ -88,17 +100,17 @@ silently ignores `thinking`, other vLLM templates honour `thinking` — so both 
 already used in `text_verdict.py`.
 
 **4. Forced `tool_choice` becomes explicit opt-in.** The conversation-metadata path no longer forces `tool_choice`;
-LlamaIndex's `response_format` path removes it anyway when the capability is declared. A call site that genuinely needs a
-forced tool call passes `llm_kwargs={"tool_choice": "required"}` itself. Forced `tool_choice` is never sent to a model on
-the `response_format` path.
+LlamaIndex's `response_format` path removes it anyway when the capability is declared. A call site that genuinely needs
+a forced tool call passes `llm_kwargs={"tool_choice": "required"}` itself. Forced `tool_choice` is never sent to a model
+on the `response_format` path.
 
 **5. Resilience and best-effort behaviour are retained.** `ResilientOpenAILike` still retries malformed structured
 output a few times. The re-enabled conversation-metadata and self-awareness steps keep their non-blocking wrappers
 (`asyncio.gather(return_exceptions=True)` / `stop_on_error=False`), so a metadata/meta failure is logged and swallowed —
 the answer and its stop event are unaffected.
 
-**6. The meta features are re-enabled.** The temporarily disabled conversation metadata (title + follow-up) and per-agent
-self-awareness meta-question steps are restored on all answer-owning conversational agents.
+**6. The meta features are re-enabled.** The temporarily disabled conversation metadata (title + follow-up) and
+per-agent self-awareness meta-question steps are restored on all answer-owning conversational agents.
 
 ## Consequences
 
@@ -120,8 +132,8 @@ self-awareness meta-question steps are restored on all answer-owning conversatio
   contain the blast radius, but the flag must be set only for verified models (all current ones are).
 - **Reasoning is disabled for structured extraction.** The verdict is a direct judgment rather than a reasoned one —
   acceptable for these trivial extractions, not a pattern to copy for answer generation.
-- **Relevance guards and meta-question detection stay on plain-text verdicts.** Their `text_verdict` conversion from
-  ADR `2026_06_29` remains — it is reliable and even simpler than JSON schema for single-token classification. Only the
+- **Relevance guards and meta-question detection stay on plain-text verdicts.** Their `text_verdict` conversion from ADR
+  `2026_06_29` remains — it is reliable and even simpler than JSON schema for single-token classification. Only the
   structured-object callers move to `response_format`. The security-relevant `sensitive_info_guard` is unchanged.
 - **The real fix is still provider-side.** Forced tool-calling remains broken on Infomaniak's reasoning models; this
   decision routes around it rather than fixing the provider's tool-call/reasoning parser.

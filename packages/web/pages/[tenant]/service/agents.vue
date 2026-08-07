@@ -17,7 +17,7 @@
         />
         <div class="flex items-center gap-4">
           <Button
-            icon="pi pi-upload"
+            icon="pi pi-file-import"
             severity="secondary"
             :label="t('agent.import.button')"
             @click="triggerImport"

@@ -5918,6 +5918,12 @@ export type Group = {
    */
   label?: LocaleString | string | null;
   /**
+   * Help
+   *
+   * Optional explanatory text rendered on the group's enable toggle
+   */
+  help?: LocaleString | string | null;
+  /**
    * Children
    *
    * Child form elements contained within this group
@@ -14397,9 +14403,9 @@ export type TextToSpeechRequest = {
   /**
    * Model
    *
-   * The TTS model to use. Available options: 'tts-1' or 'tts-1-hd'.
+   * The TTS model to use, e.g. 'speech/<model-name>'.
    */
-  model: "tts-1" | "tts-1-hd";
+  model: string;
   /**
    * Input
    *
@@ -19069,6 +19075,12 @@ export type GroupWritable = {
    * Optional label displayed above the group
    */
   label?: LocaleString | string | null;
+  /**
+   * Help
+   *
+   * Optional explanatory text rendered on the group's enable toggle
+   */
+  help?: LocaleString | string | null;
   /**
    * Children
    *
@@ -28483,7 +28495,14 @@ export type GetDocumentUrlData = {
      */
     document_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Download
+     *
+     * Force a browser download (Content-Disposition: attachment) instead of preview
+     */
+    download?: boolean;
+  };
   url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/url";
 };
 

@@ -11,7 +11,7 @@
           {{ t('agent.configuration.description') }}
         </p>
         <Button
-          icon="pi pi-download"
+          icon="pi pi-file-export"
           severity="secondary"
           :label="t('agent.export.button')"
           class="shrink-0"

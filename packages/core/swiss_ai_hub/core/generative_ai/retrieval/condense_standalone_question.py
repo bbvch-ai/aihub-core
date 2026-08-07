@@ -33,6 +33,10 @@ async def condense_standalone_question(
     images) and reformulates it into a self-contained question that can be understood without the conversation
     history. The chat history provides context for resolving references and pronouns in the user's message.
     System messages are filtered out from the chat history before processing.
+
+    Uses ``achat`` (not ``chat``): a synchronous LLM call inside the agent's async event loop blocks every
+    other coroutine for the whole request — on a reasoning model that is ~25s during which no other step,
+    fan-out, or concurrent run can make progress.
     """
     chat_history_without_system_messages = [msg for msg in chat_history if msg.role != MessageRole.SYSTEM]
     chat_history_str = _messages_to_history_str(chat_history_without_system_messages)

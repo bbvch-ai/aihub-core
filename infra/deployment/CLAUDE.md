@@ -39,7 +39,8 @@ deployment/
 │           └── managed/               # Reconciled every start by keycloak-config-cli: 10-roles, 20-client-scopes,
 │                                      #   30-clients, 40-auth-flows, 60-service-accounts
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
-    ├── aihub_pipeline.py
+    ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
+    ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py
@@ -66,6 +67,30 @@ make generate-compose  →  uv run python deployment/generate_compose.py
 **After ANY change to templates or `compose-config.yml`**: run `make generate-compose` and commit BOTH the template
 changes AND the regenerated output files.
 
+Note that `make generate-compose` also runs `make format-yaml`, which is repo-wide: if any YAML outside `infra/` is not
+yamlfix-clean on `main`, it gets reformatted into your working tree. Revert that churn before committing so the diff
+stays reviewable.
+
+### Applying an OpenWebUI function change to a running stack
+
+`configs/openwebui/functions/*.py` is **not** what OpenWebUI executes. The one-shot `openwebui-init` container reads
+those files and upserts each one into the `function` table of the `openwebui` PostgreSQL database (`init-openwebui.sh`,
+`ON CONFLICT DO UPDATE`); OpenWebUI runs the row, and `open-webui` does not even mount the functions directory. So
+editing a function — or regenerating it — changes nothing about the running pipe, and neither does restarting
+`open-webui` on its own, because the stale content is in the database. Re-register, then reload:
+
+```bash
+cd infra && docker compose -f docker-compose.dev.yml --env-file ../.env up openwebui-init
+docker restart open-webui   # re-imports the function module
+```
+
+Verify what is actually live rather than trusting the file:
+
+```bash
+docker exec postgres psql -U admin -d openwebui \
+  -tAc "select id, updated_at, length(content) from function where id='aihub-pipeline';"
+```
+
 ## The Stage x Hardware Matrix
 
 | Stage     | Traefik | SSL                | Domain               | 1st-party services | Local inference | Use case                 |
@@ -73,10 +98,13 @@ changes AND the regenerated output files.
 | `dev`     | None    | None               | localhost            | Not in compose     | CPU models      | Development (infra only) |
 | `local`   | Yes     | mkcert self-signed | `*.127.0.0.1.nip.io` | `latest` tag       | None            | Local full-stack testing |
 | `build`   | Yes     | mkcert self-signed | `*.127.0.0.1.nip.io` | Built from source  | None            | Source development       |
-| `nightly` | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `nightly` tag      | GPU models      | Pre-production           |
-| `latest`  | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `latest` tag       | GPU models      | Production               |
+| `nightly` | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `nightly` tag      | None\*          | Pre-production           |
+| `latest`  | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `latest` tag       | None\*          | Production               |
 
 Each stage has a `.gpu` variant (e.g., `docker-compose.dev.gpu.yml`) adding NVIDIA GPU support for vLLM and speaches.
+
+\*The current `nightly` and `latest` deployments run the **CPU** compose variants — all inference (chat, embeddings,
+transcription) routes to Swiss LLM Cloud endpoints. The `.gpu` variants exist for GPU-capable installs.
 
 ## compose-config.yml — The Single Source of Truth
 

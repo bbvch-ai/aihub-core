@@ -50,7 +50,14 @@ class S3AnonymousFileAccessService:
         self._s3_config = s3_settings
 
     @trace_fn
-    def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24, internal: bool = False) -> str:
+    def generate_sas_url(
+        self,
+        container: str,
+        file_path: str,
+        lifetime_hours: int = 24,
+        internal: bool = False,
+        response_content_disposition: str | None = None,
+    ) -> str:
         """
         Generate a presigned URL for temporary read-only access to an S3 object.
 
@@ -65,6 +72,11 @@ class S3AnonymousFileAccessService:
         Docker DNS rather than the public domain. Signing is offline, so this works from
         the host even when the in-cluster host is not resolvable there.
 
+        `response_content_disposition` sets the S3 `response-content-disposition` query
+        override so the server returns a `Content-Disposition` header (e.g.
+        `attachment; filename="..."` to force a browser download). Requires SeaweedFS
+        ≥ 4.01, which is the first version to honor the override.
+
         The maximum lifetime for presigned URLs is 7 days (168 hours).
         """
         if not container or not container.strip():
@@ -74,12 +86,16 @@ class S3AnonymousFileAccessService:
         if lifetime_hours <= 0 or lifetime_hours > 168:  # 7 days max
             raise ValueError("Lifetime must be between 1 and 168 hours")
 
+        params = {"Bucket": container, "Key": file_path}
+        if response_content_disposition:
+            params["ResponseContentDisposition"] = response_content_disposition
+
         signing_client = self._s3_internal_client if internal else self._s3_public_client
         try:
             # so the URL is accessible from browsers
             presigned_url = signing_client.generate_presigned_url(
                 "get_object",
-                Params={"Bucket": container, "Key": file_path},
+                Params=params,
                 ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds
             )
             logger.debug(f"Generated presigned URL for {container}/{file_path}, expires in {lifetime_hours}h")

@@ -30,6 +30,15 @@ class MineruSettings(EnvironmentSettings):
     FORMULA_ENABLE: Annotated[bool, Field(description="Enable formula/equation parsing")] = True
     TABLE_ENABLE: Annotated[bool, Field(description="Enable table detection and parsing")] = True
 
+    PAGE_BATCH_SIZE: Annotated[
+        int,
+        Field(ge=0, description="Pages per MinerU request for PDFs; keeps server memory constant. 0 disables batching"),
+    ] = 25
+    MAX_CONCURRENT_BATCH_REQUESTS: Annotated[
+        int,
+        Field(ge=1, description="Client-side concurrent page-batch requests per document"),
+    ] = 2
+
     EXTENSIONS: Annotated[
         list[str],
         Field(description="File extensions supported by MinerU"),

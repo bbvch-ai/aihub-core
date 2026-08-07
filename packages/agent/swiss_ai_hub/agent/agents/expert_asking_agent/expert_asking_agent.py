@@ -105,7 +105,7 @@ class ExpertAskingAgent(Agent):
             template_str=t("lib.prompt.router.instructions.expert_answer_sufficient"),
         ).format(chat_history=chat_history, query=initial_question_event.question_to_expert)
 
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.task_llm.cost_reporting_llm(displayer) as llm:
             return await route_to_event_using_llm(
                 instructions=instructions,
                 routes=[
@@ -209,7 +209,7 @@ class ExpertAskingAgent(Agent):
         chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage(**message) for message in chat_history]
 
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.task_llm.cost_reporting_llm(displayer) as llm:
             chat = RichPromptTemplate(template_str=t("agent.expert_asking_agent.follow_up_question")).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,

@@ -47,9 +47,11 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_DB` |  | `backup-code` |  |
 | `DAGSTER_DEBUG_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_INFO_LOG_RETENTION_DAYS` |  | `backup-code` |  |
+| `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `shared_rag_pipeline` |  |
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DOMAIN` | `30-clients.json`, `realm-settings.json` | `api`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `keycloak`, `keycloak-config`, `langfuse-web`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed`, `open-webui`, `rag_agent`, `retrieval_agent`, `seaweedfs-s3`, `shared_rag_pipeline`, `sysadmin-api`, `sysadmin-web`, `traefik`, `web` |  |
+| `ENABLE_OTEL_METRICS` |  | `open-webui` |  |
 | `ENV` |  | `api`, `open-webui`, `sysadmin-api` |  |
 | `ETCD_TOKEN` |  | `etcd`, `etcd-init`, `milvus-standalone`, `seaweedfs-filer` |  |
 | `EXPERT_ASKING_CHANNEL_TYPE` |  | `expert_asking_agent` |  |
@@ -92,6 +94,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `MINERU_API_MAX_CONCURRENT_REQUESTS` |  | `mineru-api` |  |
 | `MINERU_API_TIMEOUT` | `MineruSettings.API_TIMEOUT` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Timeout for MinerU API calls in seconds |
 | `MINERU_FORMULA_ENABLE` | `MineruSettings.FORMULA_ENABLE` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Enable formula/equation parsing |
+| `MINERU_MAX_CONCURRENT_BATCH_REQUESTS` | `MineruSettings.MAX_CONCURRENT_BATCH_REQUESTS` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Client-side concurrent page-batch requests per document |
+| `MINERU_PAGE_BATCH_SIZE` | `MineruSettings.PAGE_BATCH_SIZE` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Pages per MinerU request for PDFs; keeps server memory constant. 0 disables batching |
 | `MINERU_TABLE_ENABLE` | `MineruSettings.TABLE_ENABLE` | `api`, `default_rag_pipeline`, `shared_rag_pipeline` | Enable table detection and parsing |
 | `MINERU_VLM_NAME` | `MineruSettings.VLM_NAME` | `api`, `default_rag_pipeline`, `mineru-api`, `shared_rag_pipeline` | LiteLLM model alias for MinerU VLM |
 | `MONGO_PASSWORD` |  | `api`, `backup-code`, `bot`, `default_rag_pipeline`, `expert_asking_agent`, `expert_rag_agent`, `ferretdb`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `postgres-ferretdb`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline`, `sysadmin-api` |  |
@@ -155,6 +159,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SWISS_LLM_CLOUD_RERANKING_API_KEY` | `litellm-config.yml` | `litellm` |  |
 | `SWISS_LLM_CLOUD_WHISPER_API_BASE_URL` | `litellm-config.yml` | `litellm` |  |
 | `SWISS_LLM_CLOUD_WHISPER_API_KEY` | `litellm-config.yml` | `litellm` |  |
+| `SWISS_LLM_CLOUD_WHISPER_MODEL` | `litellm-config.yml` | `litellm` |  |
 | `TEAMS_BOT_ID` |  | `expert_asking_agent` |  |
 | `TEAMS_CHANNEL_ID` |  | `expert_asking_agent` |  |
 | `TEAMS_TENANT_ID` |  | `expert_asking_agent` |  |
@@ -251,6 +256,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `NOTIFICATION_MIN_INTERVAL_SECONDS` | `NotificationSettings.MIN_INTERVAL_SECONDS` | `30` | `default_rag_pipeline`, `shared_rag_pipeline` | Minimum interval between sensor ticks in seconds. |
 | `NOTIFICATION_TITLE_PREFIX` | `NotificationSettings.TITLE_PREFIX` | `'Swiss AI Hub Pipeline'` | `default_rag_pipeline`, `shared_rag_pipeline` | Prefix prepended to the notification title. |
 | `OPENWEBUI_BASE_URL` | `OpenWebuiSettings.BASE_URL` | _(supplied by compose)_ | `api`, `sysadmin-api` | OpenWebUI server base URL |
+| `OPENWEBUI_CONVERSATION_METADATA_MODEL` | `OpenWebuiSettings.CONVERSATION_METADATA_MODEL` | `'text-generation/gemma-4-31B-it'` | `api` | LiteLLM name (``capability/name``) of the model generating conversation metadata — chat titles and follow-up questions — for chats that have no agent behind them. OpenWebUI runs it under the end user's identity, so a role without access to this model loses both features silently; the access catalog flags the model for that reason. Same model as the OpenWebUI ``TASK_MODEL`` env var but in LiteLLM form, since that one names the workspace model wrapping it. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `OpenTelemetrySettings.EXPORTER_OTLP_ENDPOINT` | `None` | `api`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | OTLP exporter endpoint URL |
 | `OTEL_EXPORTER_OTLP_INSECURE` | `OpenTelemetrySettings.EXPORTER_OTLP_INSECURE` | `True` | `open-webui` | Use insecure connection (no TLS) for gRPC |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `OpenTelemetrySettings.EXPORTER_OTLP_PROTOCOL` | `'grpc'` | `api`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | OTLP protocol |

@@ -87,6 +87,9 @@ capabilities:
     model:
       use:
         description: Utiliser ce modèle.
+        conversation_metadata_description: Utiliser ce modèle. Il génère aussi les
+          titres de conversation et les questions de suivi — sans accès, ces deux
+          fonctions sont indisponibles.
     memory:
       org:
         label: Utiliser la mémoire d'organisation

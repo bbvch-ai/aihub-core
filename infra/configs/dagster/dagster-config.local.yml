@@ -51,7 +51,8 @@ run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
   config:
-    max_concurrent_runs: 2
+    max_concurrent_runs:
+      env: DAGSTER_MAX_CONCURRENT_RUNS
 python_logs:
   python_log_level: INFO
   managed_python_loggers: [swiss_ai_hub]

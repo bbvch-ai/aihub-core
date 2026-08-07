@@ -37,11 +37,19 @@ from urllib.parse import urlparse
 import httpx
 from pydantic import BaseModel, Field
 from bson import ObjectId
+from open_webui.models.chats import Chats
 from open_webui.models.files import Files
+from open_webui.models.users import Users
 from opentelemetry.propagate import inject
 from opentelemetry import trace
 
 logger = logging.getLogger(__name__)
+
+# Redis key under which the pipeline stashes the agent-produced conversation title so the
+# ``aihub_title_filter`` outlet can re-apply it AFTER OpenWebUI's first-turn title fallback overwrites
+# the chat title with the user's prompt. Must stay in sync with the key in ``aihub_title_filter.py``.
+AIHUB_TITLE_REDIS_KEY = "aihub:title:{chat_id}"
+AIHUB_TITLE_REDIS_TTL_SECONDS = 600
 
 
 # ============================================================================
@@ -116,13 +124,17 @@ class ThinkingBlock(ContentBlock):
 
     def to_html(self) -> Annotated[str, "HTML details element"]:
         """Convert to HTML details element for reasoning display"""
-        if self.closed and self.duration:
-            return (
-                f'\n<details type="reasoning" done="true" duration="{self.duration}">\n'
-                f"{self.content.strip()}\n"
-                f"</details>\n"
-            )
-        return f'\n<details type="reasoning" done="false">\n{self.content.strip()}</details>\n'
+        if not self.closed:
+            return f'\n<details type="reasoning" done="false">\n{self.content.strip()}</details>\n'
+        # A sub-second thought has a duration of 0. Keep it done="true" — gating done on a truthy
+        # duration made fast thoughts render as an unfinished "Thought" — and just drop the attribute,
+        # since OpenWebUI omits the "for N seconds" suffix when there is nothing to report.
+        duration_attribute = f' duration="{self.duration}"' if self.duration else ""
+        return (
+            f'\n<details type="reasoning" done="true"{duration_attribute}>\n'
+            f"{self.content.strip()}\n"
+            f"</details>\n"
+        )
 
     def is_complete(self) -> Annotated[bool, "Whether block has content"]:
         """Thinking blocks are complete when they have content"""
@@ -349,6 +361,9 @@ class StreamingStateManager:
     def __init__(self):
         self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
         self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
+        self._deferred_thinking: Annotated[
+            Optional[ThinkingBlock], "Thoughts that arrived while an answer was streaming"
+        ] = None
         self._block_factory = ContentBlockFactory()
 
     def start_text_block(self, content: Annotated[str, "Initial text content"] = "") -> None:
@@ -366,6 +381,15 @@ class StreamingStateManager:
 
     def start_thinking_block(self, content: Annotated[str, "Initial reasoning content"] = "") -> None:
         """Start or append to thinking block"""
+        # A thought arriving while an answer is streaming comes from a step running concurrently with
+        # it (title generation, follow-up questions), not from the answer itself — display events carry
+        # no step identity, so arrival order is all we have. Opening a block here would finalize the
+        # text block and cut the answer into two paragraphs with a "Thought" wedged between them, so
+        # redirect it to the run's existing reasoning block and keep the answer contiguous.
+        if isinstance(self._current_block, TextBlock):
+            self._defer_thought(content)
+            return
+
         # Close any open tool blocks
         self._close_tool_block_if_open()
 
@@ -387,6 +411,8 @@ class StreamingStateManager:
         # Close any open blocks
         self._close_open_blocks()
         self._finalize_current_block()
+        # A tool call ends the current phase, so deferred thoughts belong before it, not after the run.
+        self._flush_deferred_thoughts()
 
         self._current_block = self._block_factory.create_tool_block(
             tool_id=tool_id, tool_name=tool_name, tool_params=tool_params
@@ -409,6 +435,41 @@ class StreamingStateManager:
         """Finalize all blocks when stream ends"""
         self._close_open_blocks()
         self._finalize_current_block()
+        self._flush_deferred_thoughts()
+
+    def _defer_thought(self, content: Annotated[str, "Reasoning content to defer"]) -> None:
+        """Route a thought that arrived mid-answer out of the answer's way.
+
+        Preferred target is the reasoning block the run already opened, so one message carries one
+        collapsible and the answer stays last on screen. Its recorded duration is left untouched:
+        the block measures the pre-answer thinking, and stretching it across the answer this thought
+        arrived during would report a wait the user never had.
+        """
+        merge_index = self._last_thinking_block_index()
+        if merge_index is not None:
+            self._content_blocks[merge_index] = self._content_blocks[merge_index].with_content(content)
+            return
+
+        # Nothing to merge into (the run streamed an answer without thinking first), so hold the
+        # thought for a trailing block rather than splitting the answer to place it.
+        block = self._deferred_thinking or self._block_factory.create_thinking_block()
+        self._deferred_thinking = block.with_content(content).with_closure()
+
+    def _last_thinking_block_index(self) -> Annotated[Optional[int], "Index of the newest finalized thinking block"]:
+        """Locate the run's existing reasoning block, if it has one"""
+        for index in reversed(range(len(self._content_blocks))):
+            if isinstance(self._content_blocks[index], ThinkingBlock):
+                return index
+        return None
+
+    def _flush_deferred_thoughts(self) -> None:
+        """Move deferred thoughts behind the content they were held back for"""
+        if not self._deferred_thinking:
+            return
+
+        self._finalize_current_block()
+        self._content_blocks.append(self._deferred_thinking)
+        self._deferred_thinking = None
 
     def _close_open_blocks(self) -> None:
         """Close any blocks that need closing (tool or thinking)"""
@@ -443,6 +504,11 @@ class StreamingStateManager:
         if self._current_block:
             html_parts.append(self._current_block.to_html())
 
+        # Deferred thoughts render live at the tail so reasoning stays visible while it happens; the
+        # answer above them keeps growing, and flushing later lands them in this same position.
+        if self._deferred_thinking:
+            html_parts.append(self._deferred_thinking.to_html())
+
         return "".join(html_parts)
 
 
@@ -464,6 +530,9 @@ class EventContext:
         agent_id: Annotated[str, "Agent instance identifier"],
         thread_id: Annotated[str, "Thread identifier"],
         stream_service: Annotated[Any, "Streaming service instance"],
+        chat_id: Annotated[Optional[str], "OpenWebUI chat id, for persisting title/follow-ups"] = None,
+        message_id: Annotated[Optional[str], "OpenWebUI message id, for persisting follow-ups"] = None,
+        redis: Annotated[Any, "OpenWebUI async redis client, for stashing the agent title"] = None,
     ):
         self.state_manager = state_manager
         self.emitter = emitter
@@ -473,6 +542,9 @@ class EventContext:
         self.agent_id = agent_id
         self.thread_id = thread_id
         self.stream_service = stream_service
+        self.chat_id = chat_id
+        self.message_id = message_id
+        self.redis = redis
 
 
 class EventHandler(ABC):
@@ -982,6 +1054,71 @@ class RetrieveOrganizationMemoryEventHandler(EventHandler):
         return source_data
 
 
+class ConversationTitleEventHandler(EventHandler):
+    """Relay the agent-produced conversation title to OpenWebUI (sets the chat title).
+
+    OpenWebUI's ``chat:title`` socket handler only refreshes the UI from the DB — it does not persist.
+    So we write the title to the chat first (mirroring OpenWebUI's own title task), then emit the event
+    to update the live view. The emit payload is the bare title string, as the frontend does
+    ``chatTitle.set(data)``.
+
+    On the first turn OpenWebUI's post-response ``background_tasks_handler`` overwrites the chat title
+    with the user's prompt (its built-in fallback, which fires regardless of ``ENABLE_TITLE_GENERATION``
+    and runs *after* this pipe). To win that race we also stash the title in Redis; the
+    ``aihub_title_filter`` outlet — which runs after ``background_tasks_handler`` — re-applies it.
+    """
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if event contains ConversationTitleEvent"]:
+        return "ConversationTitleEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Conversation title event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        title = event.get("title")
+        if title:
+            if context.chat_id and not context.chat_id.startswith(("local:", "channel:")):
+                await Chats.update_chat_title_by_id(context.chat_id, title)
+                if context.redis is not None:
+                    await context.redis.set(
+                        AIHUB_TITLE_REDIS_KEY.format(chat_id=context.chat_id),
+                        title,
+                        ex=AIHUB_TITLE_REDIS_TTL_SECONDS,
+                    )
+            await context.emitter({"type": "chat:title", "data": title})
+        return True
+
+
+class FollowUpQuestionsEventHandler(EventHandler):
+    """Relay the agent-produced follow-up questions to OpenWebUI (renders follow-up suggestions)."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if event contains FollowUpQuestionsEvent"]:
+        return "FollowUpQuestionsEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Follow-up questions event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        questions = event.get("questions") or []
+        if questions:
+            await context.emitter({"type": "chat:message:follow_ups", "data": {"follow_ups": questions}})
+            if (
+                context.chat_id
+                and context.message_id
+                and not context.chat_id.startswith(("local:", "channel:"))
+            ):
+                await Chats.upsert_message_to_chat_by_id_and_message_id(
+                    context.chat_id, context.message_id, {"followUps": questions}
+                )
+        return True
+
+
 class DefaultEventHandler(EventHandler):
     """Default handler for unrecognized display events"""
 
@@ -1034,6 +1171,8 @@ class EventProcessorFactory:
             RetrieverEventHandler(),
             RetrieveUserMemoryEventHandler(),
             RetrieveOrganizationMemoryEventHandler(),
+            ConversationTitleEventHandler(),
+            FollowUpQuestionsEventHandler(),
             DefaultEventHandler(),
         ]
 
@@ -1086,6 +1225,9 @@ class StreamingService:
         event_emitter: Annotated[EventEmitter, "Event emitter function"],
         event_caller: Annotated[EventCaller, "Event caller function"],
         state_manager: Annotated[StreamingStateManager, "State manager"],
+        chat_id: Annotated[Optional[str], "OpenWebUI chat id, for persisting title/follow-ups"] = None,
+        message_id: Annotated[Optional[str], "OpenWebUI message id, for persisting follow-ups"] = None,
+        redis: Annotated[Any, "OpenWebUI async redis client, for stashing the agent title"] = None,
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
     ) -> None:
         """Stream an event and process responses"""
@@ -1103,6 +1245,9 @@ class StreamingService:
             agent_id=agent_id,
             thread_id=thread_id,
             stream_service=self,
+            chat_id=chat_id,
+            message_id=message_id,
+            redis=redis,
         )
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
@@ -1305,6 +1450,9 @@ class StreamingService:
             context.emitter,
             context.caller,
             context.state_manager,
+            chat_id=context.chat_id,
+            message_id=context.message_id,
+            redis=context.redis,
         )
 
 
@@ -1515,6 +1663,18 @@ class FileProcessingService:
 # ============================================================================
 
 
+def is_auxiliary_task_request(metadata: dict[str, Any]) -> bool:
+    """True when OpenWebUI is calling the pipeline as its "task model", not for a real chat turn.
+
+    OpenWebUI sets ``metadata["task"]`` for its internal auxiliary generations (title, tags, follow-up,
+    query enhancement, autocomplete, …). The agent pipeline must not run the full RAG agent for these —
+    their output would otherwise leak into the chat answer. The agent already emits the title and
+    follow-up questions as protocol events on the real chat turn (relayed to OpenWebUI by the handlers
+    above), and tags are set deterministically here, so there is nothing for a task model to produce.
+    """
+    return bool(metadata.get("task"))
+
+
 class Pipe:
     """
     AI-Hub Agent Connector Pipeline - Main Facade
@@ -1646,6 +1806,27 @@ class Pipe:
         hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
         return str(ObjectId(hashed)).lower()
 
+    @staticmethod
+    async def _merge_agent_class_tag(
+        chat_id: Annotated[str, "OpenWebUI chat ID"],
+        agent_class: Annotated[str, "Agent class handling this turn"],
+        owui_user: Annotated[Any, "OpenWebUI user model"],
+    ) -> Annotated[list[str], "Tag IDs now persisted on the chat"]:
+        """Add the agent-class tag to the chat without dropping the tags already on it.
+
+        ``Chats.update_chat_tags_by_id`` *replaces* ``chat.meta["tags"]`` wholesale and then garbage-
+        collects the tag rows that fell out of it, so passing just the agent class would wipe every
+        user-added tag on each turn and drop the classes of other agents used in the same chat.
+        OpenWebUI stores tags pre-normalized (lowercased, spaces to underscores), so normalize here
+        too — otherwise the containment check re-appends the tag on every turn.
+        """
+        chat = await Chats.get_chat_by_id(chat_id)
+        existing_tags = (chat.meta.get("tags") if chat else None) or []
+        agent_tag = agent_class.replace(" ", "_").lower()
+        merged_tags = existing_tags if agent_tag in existing_tags else [*existing_tags, agent_tag]
+        await Chats.update_chat_tags_by_id(chat_id, merged_tags, owui_user)
+        return merged_tags
+
     async def _set_ui_context(
         self,
         thread_id: Annotated[str, "Thread ID"],
@@ -1706,6 +1887,13 @@ class Pipe:
         """Main pipeline entry point"""
         # Extract agent information
         agent_class, agent_id = self._extract_agent_info(body["model"])
+
+        # Layer 2 (defense in depth): if OpenWebUI is calling us as its task model (title/tag/follow-up/
+        # query/autocomplete generation), short-circuit instead of running the full RAG agent — the agent
+        # already produces title/follow-ups as protocol events on the real chat turn.
+        if is_auxiliary_task_request(__metadata__):
+            logger.info(f"Short-circuiting auxiliary task-model request (task={__metadata__.get('task')})")
+            return ""
 
         # Generate IDs (salt thread_id with the agent so distinct agents in one chat get distinct threads)
         thread_id, display_id = self._generate_ids(
@@ -1779,6 +1967,21 @@ class Pipe:
                     }
                 )
 
+                # Layer 1 (tags): deterministic, owned by the pipeline — not LLM-generated and not a
+                # protocol event. Tag the conversation with the agent class that handled it, merged into
+                # the tags already on the chat. OpenWebUI's chat:tags handler re-reads tags from the DB,
+                # so persist before emitting. Best-effort: a tagging failure must never fail the chat turn.
+                chat_id = __metadata__.get("chat_id")
+                try:
+                    tags = [agent_class]
+                    if chat_id and not chat_id.startswith(("local:", "channel:")):
+                        owui_user = await Users.get_user_by_id(__user__["id"])
+                        if owui_user:
+                            tags = await self._merge_agent_class_tag(chat_id, agent_class, owui_user)
+                    await __event_emitter__({"type": "chat:tags", "data": tags})
+                except Exception as tag_error:
+                    logger.warning(f"Failed to set conversation tags: {tag_error}")
+
                 async def stream_start_callback():
                     await self._set_ui_context(thread_id, hitl_display_id, __event_emitter__)
 
@@ -1794,7 +1997,10 @@ class Pipe:
                     __event_emitter__,
                     __event_call__,
                     state_manager,
-                    stream_start_callback,
+                    chat_id=chat_id,
+                    message_id=__metadata__.get("message_id"),
+                    redis=getattr(getattr(getattr(__request__, "app", None), "state", None), "redis", None),
+                    stream_start_callback=stream_start_callback,
                 )
 
                 # Emit completion status

@@ -3,9 +3,21 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
 
 _MOCK_SCIM = MagicMock(name="mock_scim_client")
+
+
+@pytest.fixture(autouse=True)
+def unregistered_base_models():
+    """Defaults every sync to the healthy state — raw bases carry no registry entry.
+
+    Tests exercising the shadowing repair shadow this with their own instance-level
+    ``list_base_models`` patch, which takes precedence over this class-level one.
+    """
+    with patch.object(OpenWebuiClient, "list_base_models", return_value=[]):
+        yield
 
 
 @asynccontextmanager

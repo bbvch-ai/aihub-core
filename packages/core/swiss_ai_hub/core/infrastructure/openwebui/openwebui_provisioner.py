@@ -495,6 +495,35 @@ class OpenWebuiProvisioner:
             if role.tenant_id in tenant_name_by_id
         }
 
+    async def _delete_shadowing_base_models(
+        self, http: httpx.AsyncClient, managed_models: list[dict[str, Any]]
+    ) -> None:
+        """Removes registry entries that shadow the raw models our workspace models point at.
+
+        Both ``_build_model_data`` and ``_build_llm_model_data`` depend on those bases staying
+        unregistered. Once an entry exists for one, OpenWebUI's ``has_base_model_access`` walks
+        workspace model -> base and denies everyone lacking a grant on that entry, so the model stays
+        visible in the picker but chatting with it fails with "Model not found". Saving the model list
+        in the OpenWebUI workspace (``POST /models/sync``) writes such an entry for every model it
+        renders, so reassert the invariant on every sync rather than cleaning up once.
+
+        Derived from each workspace model's own ``base_model_id`` so agent pipes and raw LiteLLM
+        models are covered by the same pass.
+        """
+        shadowing_ids = {m.get("id", "") for m in await self._openwebui.list_base_models(http)}
+        preset_by_base = {
+            m["base_model_id"]: m["id"]
+            for m in managed_models
+            if m.get("base_model_id") and m["base_model_id"] in shadowing_ids
+        }
+
+        for base_model_id, preset_id in preset_by_base.items():
+            await self._openwebui.delete_model(http, base_model_id)
+            logger.warning(
+                f"OpenWebUI: Deleted registry entry '{base_model_id}' shadowing the raw model behind "
+                f"'{preset_id}' — it denied every non-admin access to the workspace model above it"
+            )
+
     async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
         existing_models = await self._openwebui.list_models(http)
         aihub_models = [
@@ -503,6 +532,8 @@ class OpenWebuiProvisioner:
 
         if not aihub_models:
             return
+
+        await self._delete_shadowing_base_models(http, aihub_models)
 
         async with self._openwebui.scim_session() as scim:
             all_groups = await self._openwebui.list_groups(scim=scim)

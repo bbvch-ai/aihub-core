@@ -102,6 +102,7 @@ async def test_unrecognized_label_falls_back_to_gate(displayer, locale_handler):
     )
 
     assert isinstance(result, NotAMetaQuestionEvent)
+    assert "unrecognized classification" in result.reasoning
 
 
 @pytest.mark.asyncio
@@ -119,3 +120,44 @@ async def test_transport_error_falls_back_to_gate(displayer, locale_handler):
     )
 
     assert isinstance(result, NotAMetaQuestionEvent)
+    assert "detection call failed" in result.reasoning
+
+
+@pytest.mark.asyncio
+async def test_degraded_fallback_is_distinguishable_from_a_genuine_normal_verdict(displayer, locale_handler):
+    """A silently-failing classifier used to be indistinguishable from a working one in the event log."""
+    verdict = await do_detect_meta_question(
+        user_query="What is the vacation policy?",
+        llm_config=_llm_config(_llm_returning("NORMAL")),
+        displayer=displayer,
+        t=locale_handler,
+    )
+    degraded = await do_detect_meta_question(
+        user_query="What is the vacation policy?",
+        llm_config=_llm_config(_llm_returning("no idea")),
+        displayer=displayer,
+        t=locale_handler,
+    )
+
+    assert verdict.reasoning != degraded.reasoning
+
+
+@pytest.mark.parametrize(
+    ("label", "category"),
+    [
+        ("META_IDENTITY", "identity"),
+        ("META_CAPABILITIES", "capabilities"),
+        ("META_BEHAVIOR", "behavior"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_every_meta_label_maps_to_its_category(label, category, displayer, locale_handler):
+    result = await do_detect_meta_question(
+        user_query="who are you?",
+        llm_config=_llm_config(_llm_returning(label)),
+        displayer=displayer,
+        t=locale_handler,
+    )
+
+    assert isinstance(result, MetaQuestionDetectedEvent)
+    assert result.category == category

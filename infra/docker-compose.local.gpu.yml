@@ -85,7 +85,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     expose:
       - '9333'   # Master HTTP port
@@ -123,7 +123,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     expose: ['8080', '18080']
     command: >
@@ -155,7 +155,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     ports: [8889:8888, '18888']
     command: >
@@ -207,7 +207,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     ports: [9000:9000]
     volumes:
@@ -1604,6 +1604,7 @@ services:
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
       SWISS_LLM_CLOUD_RERANKING_API_KEY: ${SWISS_LLM_CLOUD_RERANKING_API_KEY}
+      SWISS_LLM_CLOUD_WHISPER_MODEL: ${SWISS_LLM_CLOUD_WHISPER_MODEL}
       SWISS_LLM_CLOUD_WHISPER_API_BASE_URL: ${SWISS_LLM_CLOUD_WHISPER_API_BASE_URL}
       SWISS_LLM_CLOUD_WHISPER_API_KEY: ${SWISS_LLM_CLOUD_WHISPER_API_KEY}
       SWISS_LLM_CLOUD_OCR_API_BASE_URL: ${SWISS_LLM_CLOUD_OCR_API_BASE_URL}
@@ -1803,7 +1804,8 @@ services:
       MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
-      # Processing configuration
+      # Processing configuration. This cap is the only server-wide memory bound:
+      # baseline + cap x (MINERU_PAGE_BATCH_SIZE x ~30 MB) must fit the memory limit below.
       MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8000/openapi.json]
@@ -1949,8 +1951,12 @@ services:
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
+      # Traces always on. Metrics are opt-in: OpenWebUI emits very high-cardinality
+      # HTTP-server metrics that dominate SigNoz ingestion (see issue 1496), so they
+      # default off (ENABLE_OTEL_METRICS=false in .env.dev/.env.prod) and any deploy
+      # can turn them back on via its own env.
       ENABLE_OTEL: true
-      ENABLE_OTEL_METRICS: true
+      ENABLE_OTEL_METRICS: ${ENABLE_OTEL_METRICS}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_INSECURE: true
@@ -1999,14 +2005,20 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
-      TASK_MODEL_EXTERNAL: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
+      TASK_MODEL: aihub-model-text-generation-Qwen3-VL-30B-A3B-Instruct-FP8
+      TASK_MODEL_EXTERNAL: aihub-model-text-generation-Qwen3-VL-30B-A3B-Instruct-FP8
       ENABLE_OLLAMA_API: false
       ENABLE_OPENAI_API: true
+      # Conversation metadata is owned by the agent pipeline (#1047): the agent emits the title and
+      # follow-up questions as protocol events and the pipeline relays them (plus deterministic tags),
+      # so OpenWebUI must NOT generate its own — otherwise it overwrites the agent-produced values.
+      ENABLE_TITLE_GENERATION: false
+      ENABLE_TAGS_GENERATION: false
+      ENABLE_FOLLOW_UP_GENERATION: false
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
-      AUDIO_STT_MODEL: transcription
+      AUDIO_STT_MODEL: transcription/faster-whisper-large-v3
       AUDIO_STT_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -2284,6 +2296,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
       LOG_LEVEL: ${LOG_LEVEL}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:3000/server_info]
@@ -2317,6 +2330,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
       LOG_LEVEL: ${LOG_LEVEL}
     healthcheck:
       test: [CMD, dagster-daemon, liveness-check]
@@ -2543,6 +2557,7 @@ services:
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
       OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+      OPENWEBUI_CONVERSATION_METADATA_MODEL: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -2574,6 +2589,8 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3422,6 +3439,8 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
@@ -3436,7 +3455,10 @@ services:
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
+      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
+      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -3499,6 +3521,8 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
@@ -3513,7 +3537,10 @@ services:
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
+      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
+      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000

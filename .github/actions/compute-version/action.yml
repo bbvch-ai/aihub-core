@@ -12,7 +12,7 @@ description: Derive a channel-suffixed version from the pyproject core version a
 # changes pyproject (see the versioning process doc).
 inputs:
   channel:
-    description: 'Release channel: nightly, staging, or stable'
+    description: 'Release channel: nightly, rc, or stable'
     required: true
 outputs:
   version:
@@ -56,9 +56,18 @@ runs:
         fi
         case "$CHANNEL" in
           nightly) version="v${core}-nightly.${build}" ;;
-          staging) version="v${core}-staging.${build}" ;;
+          rc)
+            # Release candidates are numbered per release line, counting up from
+            # rc.1. The build number is NOT the global git-height (that would
+            # collide confusingly with nightly): it is 1 + the number of rc tags
+            # that already exist for this exact core version. Requires tags to be
+            # present (full-history checkout with tags fetched).
+            existing_rc="$(git tag -l "v${core}-rc.*" | wc -l | tr -d ' ')"
+            build="$((existing_rc + 1))"
+            version="v${core}-rc.${build}"
+            ;;
           stable)  version="v${core}" ;;
-          *) echo "::error::Unknown channel '$CHANNEL' (expected nightly, staging, or stable)."; exit 1 ;;
+          *) echo "::error::Unknown channel '$CHANNEL' (expected nightly, rc, or stable)."; exit 1 ;;
         esac
         {
           echo "core=v${core}"

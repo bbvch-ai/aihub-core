@@ -6,9 +6,7 @@
   >
     <div class="flex items-center justify-between gap-4">
       <div class="flex items-center justify-start gap-2">
-        <div
-          class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
-        >
+        <div class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900">
           <Icon
             :name="agent.agent_config.icon"
             size="1.5em"
@@ -45,7 +43,7 @@
         />
         <Button
           v-tooltip.top="t('agent.export.button')"
-          icon="pi pi-download"
+          icon="pi pi-file-export"
           severity="secondary"
           text
           rounded

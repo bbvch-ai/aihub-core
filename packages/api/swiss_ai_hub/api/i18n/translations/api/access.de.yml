@@ -87,6 +87,8 @@ capabilities:
     model:
       use:
         description: Dieses Modell nutzen.
+        conversation_metadata_description: Dieses Modell nutzen. Es erzeugt ausserdem
+          Chat-Titel und Folgefragen — ohne Zugriff darauf fehlen beide Funktionen.
     memory:
       org:
         label: Organisationsspeicher nutzen

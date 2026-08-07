@@ -20,7 +20,7 @@ global:
 # -------------------------------------------------------------------
 image_tags:
   # --- Core Infrastructure (mostly static) ---
-  seaweedfs: seaweedfs:3.97
+  seaweedfs: seaweedfs:4.01
   aws_cli: aws-cli-alpine:3.22.1
   etcd: etcd:v3.5.25
   milvus: milvus:v2.6.7
