@@ -37,7 +37,8 @@ class MarkdownStructuralNodeParserResource(ConfigurableResource):
             assets=[asset1],
             resources={
                 "node_parser": MarkdownStructuralNodeParserResource(
-                    llm_config=my_llm_config
+                    llm_config=my_llm_config,
+                    embedding_config=my_embedding_config,
                 ),
             }
         )
