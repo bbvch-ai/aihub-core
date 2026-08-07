@@ -41,6 +41,9 @@ CONTAINER_NAME = AIHubSettings().DEFAULT_BUCKET_NAME
 # LLM configuration for document parsing and node processing
 llm_config = LLMConfig(model_name="text-generation/gemma-4-31B-it")
 
+# The node parser needs this too, to cap nodes at the embedding model's input limit
+embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
+
 # Dynamic partitions for scalable document processing
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
@@ -75,7 +78,7 @@ defs = Definitions(
         **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME),
         # Document processing resources
         "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
-        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
+        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config, embedding_config=embedding_config),
         "summary_parser": RecursiveSummaryParserResource(),
         # Vector store and document store (MongoDB + Milvus)
         **local_mongo_milvus_storage_context_resource(
@@ -88,7 +91,7 @@ defs = Definitions(
         ),
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="embedding/bge-m3"),
+            embedding_config=embedding_config,
         ),
         "language_model": LanguageModelResource(llm_config=llm_config),
     },
