@@ -263,6 +263,14 @@ These are `AfterValidator`s that skip validation when the value is a `FormkitEle
 6. **Injection**: `agent_config_type.model_validate(merged_dict)` reconstructs typed config in data mode. Injected into
    `@step()` methods that declare the `AgentConfig` subclass as a parameter.
 
+**This runs on every dispatched event, before any step.** So a config-level validation error is not a validation error —
+it stops the whole agent for that profile. The dispatcher reports it as an `ExceptionEvent` rather than letting it
+escape (see below), but the rule for config authors is: **do not raise in a config `model_validator` for an invariant
+only some code paths need.** Enforce it where it is used, inside a step, where the failure is scoped and visible. Note
+also that the API cannot run such validators at save time at all — it validates submissions against a JSON Schema
+rebuilt from the model, which cannot express cross-field rules — so a config violating one saves regardless. See ADR
+`2026_08_07_agent_config_failures_surface_as_exception_events`.
+
 ## AgentRunner & AgentDispatcher
 
 **AgentRunner**: Connects agent to infrastructure (NATS, JetStream, Redis, Milvus, MongoDB). Responds to discovery
@@ -282,7 +290,12 @@ await runner.run_forever()
 - Instantiates a fresh `agent()` for each step execution (stateless)
 - Publishes output events to JetStream (control) or NATS Core (display)
 - Checks idempotency: skips if step was already called with same input events
-- On `StopEvent`/`ExceptionEvent`: cleans up `RunContext`, marks completion
+- On `StopEvent`/`ExceptionEvent`: cleans up `RunContext`, marks completion. Handled **before** config resolution —
+  teardown needs no config, and the `ExceptionEvent` below would otherwise hit the same failure it reports and never
+  retire its run
+- If the config cannot be fetched, merged or validated: publishes an `ExceptionEvent` and aborts the run, so the chat
+  shows an error instead of hanging forever. The message carries field locations and reasons only — an agent config
+  holds credentials (e.g. `ImapClientConfig.password`) and this text reaches the user's chat
 
 ## Topic Hierarchy
 
