@@ -18,6 +18,17 @@ from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import (
 )
 
 
+def mock_llm_config_with_budget(max_input_tokens: int | None = 8192) -> MagicMock:
+    """
+    Refinement now sizes each table against the model's input limit, so a bare MagicMock is not enough:
+    it has to answer get_model_info() and token_counter() the way LiteLLMBase does.
+    """
+    llm_config = MagicMock()
+    llm_config.get_model_info.return_value = {"model_info": {"max_input_tokens": max_input_tokens}}
+    llm_config.token_counter.side_effect = lambda text: [0] * (len(text) // 4)
+    return llm_config
+
+
 class TestFormatForLlm:
     """Tests for format_for_llm function."""
 
@@ -278,7 +289,7 @@ class TestRefineDocumentTablesWithMetadataContent:
     def test_no_tables_returns_unchanged(self) -> None:
         """Test that text without tables is returned unchanged."""
         text = "Some regular markdown text without any tables."
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
 
         result = refine_document_tables_with_metadata(text, mock_llm_config)
 
@@ -292,7 +303,7 @@ class TestRefineDocumentTablesWithMetadataContent:
 | 1 | 2 |</table>
 Some text after."""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
 
         with (
             patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
@@ -318,7 +329,7 @@ Middle text.
 |---|
 | 2 |</table>"""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
 
         with (
             patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
@@ -333,7 +344,7 @@ Middle text.
         """Test that invalid tables are skipped without error."""
         text = """<table>Not a valid table</table>"""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
 
         with (
             patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
@@ -350,7 +361,7 @@ Middle text.
         """Test that empty tables are skipped."""
         text = """<table></table>"""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
 
         with (
             patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
@@ -367,7 +378,7 @@ Middle text.
 |---|---|
 | 1 | 2 |</table>"""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
 
         with (
             patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
@@ -392,7 +403,7 @@ Middle text.
 | 1 |</table>
 After table."""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
 
         with (
             patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
@@ -411,7 +422,7 @@ class TestRefineDocumentTablesWithMetadata:
     def test_no_tables_returns_empty_metadata(self) -> None:
         """Test that text without tables returns empty metadata."""
         text = "Some regular markdown text without any tables."
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
 
         result = refine_document_tables_with_metadata(text, mock_llm_config)
 
@@ -427,7 +438,7 @@ class TestRefineDocumentTablesWithMetadata:
 |---|---|
 | 1 | 2 |</table>"""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
         mock_stats = TableRefinementStats(
             original_rows=2,
             was_split=False,
@@ -455,7 +466,7 @@ class TestRefineDocumentTablesWithMetadata:
 |---|---|
 | 1 | 2 |</table>"""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
         mock_stats = TableRefinementStats(
             original_rows=4,
             was_split=True,
@@ -488,7 +499,7 @@ class TestRefineDocumentTablesWithMetadata:
 |---|
 | 2 |</table>"""
 
-        mock_llm_config = MagicMock()
+        mock_llm_config = mock_llm_config_with_budget()
         mock_stats_1 = TableRefinementStats(
             original_rows=2,
             was_split=True,
@@ -518,3 +529,96 @@ class TestRefineDocumentTablesWithMetadata:
             assert result.metadata.tables_split == 1  # Only first table was split
             assert result.metadata.total_tables_after_split == 3  # 2 + 1
             assert len(result.metadata.table_stats) == 2
+
+
+class TestRefinementWithMineruShapedTables:
+    """
+    Regression cover for the Docling -> MinerU migration.
+
+    Every other fixture here wraps *markdown* in <table> tags, which is what DoclingLoader produced. MinerU
+    emits raw HTML, so refinement detected each table and then silently skipped it, while still reporting the
+    tables as processed. These tests pin the reporting so the same swap cannot go unnoticed again.
+    """
+
+    MINERU_TABLE = (
+        "<table>"
+        '<tr><td rowspan="2">Erwerbseinkommen</td><td colspan="2">Beitrag</td></tr>'
+        "<tr><td>9 800</td><td>474.80</td><td>39.55</td></tr>"
+        "</table>"
+    )
+
+    def test_html_table_is_reported_as_unparseable_not_processed(self) -> None:
+        mock_llm_config = mock_llm_config_with_budget()
+
+        with patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"):
+            result = refine_document_tables_with_metadata(self.MINERU_TABLE, mock_llm_config)
+
+        assert result.metadata.tables_found == 1
+        assert result.metadata.tables_processed == 0
+        assert result.metadata.tables_unparseable == 1
+
+    def test_html_table_content_is_left_untouched(self) -> None:
+        mock_llm_config = mock_llm_config_with_budget()
+
+        with patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"):
+            result = refine_document_tables_with_metadata(self.MINERU_TABLE, mock_llm_config)
+
+        assert result.content == self.MINERU_TABLE
+
+
+class TestOversizedTableSkipsRefinement:
+    """A table wider than the model's context must not be sent to it — that is a second 400 in the same path."""
+
+    @staticmethod
+    def _large_markdown_table(rows: int) -> str:
+        lines = ["| A | B | C |", "|---|---|---|"]
+        lines.extend(f"| value{i} | value{i} | value{i} |" for i in range(rows))
+        return "<table>" + "\n".join(lines) + "</table>"
+
+    def test_oversized_table_is_not_sent_to_the_llm(self) -> None:
+        mock_llm_config = mock_llm_config_with_budget(max_input_tokens=1100)
+
+        with (
+            patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            result = refine_document_tables_with_metadata(self._large_markdown_table(2000), mock_llm_config)
+
+        mock_refine.assert_not_called()
+        assert result.metadata.tables_skipped_oversized == 1
+        assert result.metadata.tables_processed == 0
+
+    def test_oversized_table_content_is_preserved_for_downstream_chunking(self) -> None:
+        text = self._large_markdown_table(2000)
+        mock_llm_config = mock_llm_config_with_budget(max_input_tokens=1100)
+
+        with patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"):
+            result = refine_document_tables_with_metadata(text, mock_llm_config)
+
+        assert result.content == text
+
+    def test_table_within_budget_is_still_refined(self) -> None:
+        mock_llm_config = mock_llm_config_with_budget(max_input_tokens=8192)
+
+        with (
+            patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            mock_refine.return_value = (["| A | B |\n|---|---|\n| 1 | 2 |"], None)
+            result = refine_document_tables_with_metadata(self._large_markdown_table(5), mock_llm_config)
+
+        mock_refine.assert_called_once()
+        assert result.metadata.tables_processed == 1
+        assert result.metadata.tables_skipped_oversized == 0
+
+    def test_null_max_input_tokens_falls_back_to_a_default(self) -> None:
+        mock_llm_config = mock_llm_config_with_budget(max_input_tokens=None)
+
+        with (
+            patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("swiss_ai_hub.core.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            mock_refine.return_value = (["| A | B |\n|---|---|\n| 1 | 2 |"], None)
+            result = refine_document_tables_with_metadata(self._large_markdown_table(5), mock_llm_config)
+
+        assert result.metadata.tables_processed == 1

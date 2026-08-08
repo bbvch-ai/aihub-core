@@ -24,6 +24,12 @@ logger = logging.getLogger(__name__)
 
 TABLE_PATTERN = re.compile(r"<table>(.*?)</table>", re.DOTALL)
 
+DEFAULT_LLM_MAX_INPUT_TOKENS = 8192
+
+# Headroom for the prompt template, the structured-output schema and the response itself. The analysis prompts
+# embed the whole table, so without this a wide table fits the raw budget and still overflows the request.
+PROMPT_TEMPLATE_TOKEN_ALLOWANCE = 1024
+
 
 def refine_document_tables_with_metadata(
     markdown_text: str,
@@ -46,20 +52,27 @@ def refine_document_tables_with_metadata(
         return TableRefinementResult(
             content=markdown_text,
             metadata=TableRefinementMetadata(
+                tables_found=0,
                 tables_processed=0,
+                tables_unparseable=0,
+                tables_skipped_oversized=0,
                 tables_split=0,
                 total_tables_after_split=0,
                 table_stats=[],
             ),
         )
 
-    logger.info(f"Refining {len(matches)} table(s) with LLM")
+    logger.info(f"Found {len(matches)} table(s) to consider for refinement")
 
     analyzer = TableAnalyzer(llm_config, extra_headers=extra_headers)
+    prompt_budget = _prompt_budget(llm_config)
     result = markdown_text
     offset = 0
     table_stats: list[TableRefinementStats] = []
     tables_split = 0
+    tables_processed = 0
+    tables_unparseable = 0
+    tables_skipped_oversized = 0
     total_tables_after_split = 0
 
     for match in matches:
@@ -67,9 +80,26 @@ def refine_document_tables_with_metadata(
         df = parse_markdown_table(table_content, include_header_as_data=True)
 
         if df is None or df.empty:
-            logger.debug(f"Could not parse table, skipping. Content preview: {table_content[:200]!r}")
+            # Warn, not debug: a parser change upstream can silently route every table here, and a debug line
+            # made that invisible while the run still reported the tables as processed.
+            tables_unparseable += 1
+            logger.warning(f"Could not parse table, skipping refinement. Content preview: {table_content[:200]!r}")
             continue
 
+        table_for_llm = format_for_llm(df)
+        # A token is never fewer than one character, so a table shorter than the budget is under it without
+        # spending a LiteLLM round trip to find out.
+        if len(table_for_llm) > prompt_budget:
+            table_tokens = len(llm_config.token_counter(table_for_llm))
+            if table_tokens > prompt_budget:
+                tables_skipped_oversized += 1
+                logger.warning(
+                    f"Table of {len(df)} rows needs {table_tokens} tokens, over the {prompt_budget} available for "
+                    f"analysis - skipping LLM refinement. The table is left as-is and still chunked downstream."
+                )
+                continue
+
+        tables_processed += 1
         refined_tables, stats = _refine_single_table(df, analyzer)
 
         if stats:
@@ -85,15 +115,28 @@ def refine_document_tables_with_metadata(
         result = result[:start] + wrapped_tables + result[end:]
         offset += len(wrapped_tables) - (end - start)
 
+    logger.info(
+        f"Refined {tables_processed} of {len(matches)} table(s) "
+        f"({tables_unparseable} unparseable, {tables_skipped_oversized} too large for the model)"
+    )
+
     return TableRefinementResult(
         content=result,
         metadata=TableRefinementMetadata(
-            tables_processed=len(matches),
+            tables_found=len(matches),
+            tables_processed=tables_processed,
+            tables_unparseable=tables_unparseable,
+            tables_skipped_oversized=tables_skipped_oversized,
             tables_split=tables_split,
             total_tables_after_split=total_tables_after_split,
             table_stats=table_stats,
         ),
     )
+
+
+def _prompt_budget(llm_config: "LLMConfig") -> int:
+    max_input_tokens = llm_config.get_model_info()["model_info"].get("max_input_tokens")
+    return (max_input_tokens or DEFAULT_LLM_MAX_INPUT_TOKENS) - PROMPT_TEMPLATE_TOKEN_ALLOWANCE
 
 
 def _refine_single_table(df: pd.DataFrame, analyzer: TableAnalyzer) -> tuple[list[str], TableRefinementStats | None]:

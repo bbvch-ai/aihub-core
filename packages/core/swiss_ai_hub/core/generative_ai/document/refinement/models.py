@@ -41,7 +41,12 @@ class TableRefinementStats(BaseModel):
 class TableRefinementMetadata(BaseModel):
     """Aggregated metadata for all table refinements in a document."""
 
-    tables_processed: Annotated[int, Field(description="Number of tables processed")]
+    tables_found: Annotated[int, Field(description="Number of <table> blocks found in the document")]
+    tables_processed: Annotated[int, Field(description="Number of tables actually refined by the LLM")]
+    tables_unparseable: Annotated[int, Field(description="Number of tables that could not be parsed into a table")]
+    tables_skipped_oversized: Annotated[
+        int, Field(description="Number of tables too large to fit the LLM's input limit")
+    ]
     tables_split: Annotated[int, Field(description="Number of tables that were split")]
     total_tables_after_split: Annotated[int, Field(description="Total tables after all splitting")]
     table_stats: Annotated[list[TableRefinementStats], Field(description="Per-table statistics")]
