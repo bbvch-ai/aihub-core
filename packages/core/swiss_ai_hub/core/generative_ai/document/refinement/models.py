@@ -13,18 +13,23 @@ class TableBoundary(BaseModel):
 class TableSplitAnalysis(BaseModel):
     """LLM analysis result for detecting merged tables."""
 
+    # reasoning is declared first on purpose. Under guided JSON decoding the field order is the generation
+    # order, and a model that emits the answer first has nothing left to say for a trailing required
+    # explanation - but the grammar forbids closing the object without it. Whitespace stays legal, so the
+    # model emits it until max_tokens. Measured on gemma-4-31B: answer-first deadlocks every call,
+    # reasoning-first returns valid JSON in ~1s.
+    reasoning: Annotated[str, Field(description="Brief explanation of why tables were split or kept together")]
     tables: Annotated[
         list[TableBoundary],
         Field(description="List of table boundaries. First table always starts at row 0."),
     ]
-    reasoning: Annotated[str, Field(description="Brief explanation of why tables were split or kept together")]
 
 
 class HeaderAnalysis(BaseModel):
     """LLM analysis result for detecting header rows."""
 
-    num_header_rows: Annotated[int, Field(description="Number of header rows (1-4)")]
     reasoning: Annotated[str, Field(description="Brief explanation of header structure detected")]
+    num_header_rows: Annotated[int, Field(description="Number of header rows (1-4)")]
 
 
 # Result Models
