@@ -622,3 +622,11 @@ class TestOversizedTableSkipsRefinement:
             result = refine_document_tables_with_metadata(self._large_markdown_table(5), mock_llm_config)
 
         assert result.metadata.tables_processed == 1
+
+
+class TestSchemaFieldOrder:
+    """Answer-before-explanation deadlocks guided decoding; see the comment in models.py."""
+
+    def test_reasoning_is_declared_before_the_answer(self) -> None:
+        for model in (TableSplitAnalysis, HeaderAnalysis):
+            assert next(iter(model.model_json_schema()["properties"])) == "reasoning"
