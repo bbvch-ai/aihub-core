@@ -211,8 +211,9 @@ class ImapClient:
 
         created = await asyncio.to_thread(self._connection.list_folders)
         if configured not in {name for _flags, _delim, name in created}:
+            reason = creation_error or "the server accepted the creation but does not list the folder"
             raise ValueError(
-                f"folder {configured!r} does not exist on the server and could not be created: {creation_error}. "
+                f"folder {configured!r} does not exist on the server and could not be created: {reason}. "
                 f"The message was left in {self._inbox_folder}."
             )
 

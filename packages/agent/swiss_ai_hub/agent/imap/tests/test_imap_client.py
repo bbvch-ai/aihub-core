@@ -271,6 +271,19 @@ async def test_move_message_reports_a_refused_creation_without_touching_the_mess
 
 
 @async_test
+async def test_move_message_reports_a_creation_the_server_acknowledged_but_did_not_perform():
+    connection = _connection(fetch={101: {b"FLAGS": ()}})
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="accepted the creation but does not list the folder"):
+        await client.move_message("101", "Invoices")
+
+    connection.move.assert_not_called()
+    connection.select_folder.assert_not_called()
+
+
+@async_test
 async def test_move_message_still_files_when_the_server_refuses_to_subscribe_the_new_folder():
     connection = _connection(fetch={101: {b"FLAGS": ()}}, folders=_folders_after_creating("Invoices"))
     connection.has_capability = MagicMock(return_value=True)
