@@ -82,21 +82,22 @@ class LiteLLMService:
             key_response.raise_for_status()
 
     @staticmethod
-    async def httpx_aclient_for_user(user: UserIdentity) -> httpx.AsyncClient:
-        """Shared per user, and callers must not close it — see `LiteLLMProxySettings.httpx_client`."""
-        api_key = await LiteLLMService.api_key_for_user(user)
-        base_url = LiteLLMProxySettings().BASE_URL
-        return LiteLLMProxySettings.pooled_async_client(
-            f"httpx:{base_url}:{user.id}",
-            lambda: httpx.AsyncClient(headers={"Authorization": f"Bearer {api_key}"}, base_url=base_url),
-        )
+    async def authorization_header_for_user(user: UserIdentity) -> dict[str, str]:
+        """
+        Pass this per request on the shared `LiteLLMProxySettings.httpx_aclient` rather than minting a client
+        per user: httpx merges request headers over the client's, so the user's key wins over the master key.
+
+        A per-user client would only differ by this header while owning a connection pool nothing bounds or
+        evicts, growing with the user count for the process lifetime.
+        """
+        return {"Authorization": f"Bearer {await LiteLLMService.api_key_for_user(user)}"}
 
     @staticmethod
     async def openai_aclient_for_user(user: UserIdentity) -> openai.AsyncClient:
-        """Shared per user, and callers must not close it — see `LiteLLMProxySettings.httpx_client`."""
-        api_key = await LiteLLMService.api_key_for_user(user)
-        base_url = LiteLLMProxySettings().BASE_URL
-        return LiteLLMProxySettings.pooled_async_client(
-            f"openai:{base_url}:{user.id}",
-            lambda: openai.AsyncClient(api_key=api_key, base_url=base_url),
-        )
+        """
+        Scoped to the user's key, and callers must not close it — see `LiteLLMProxySettings.httpx_client`.
+
+        `with_options` copies the shared client while reusing its underlying httpx client, so per-user
+        authentication costs an object rather than a connection pool.
+        """
+        return LiteLLMProxySettings().openai_aclient.with_options(api_key=await LiteLLMService.api_key_for_user(user))

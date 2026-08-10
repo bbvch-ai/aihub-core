@@ -51,9 +51,16 @@ async def test_closing_the_pools_closes_every_client() -> None:
 
     await LiteLLMProxySettings.aclose_pooled_clients()
 
-    assert httpx_aclient.is_closed
-    assert openai_aclient.is_closed
-    assert sync_client.is_closed
+    # Read raw, the OpenAI SDK's `is_closed` is a bound method and so truthy even while open.
+    assert LiteLLMProxySettings.client_is_closed(httpx_aclient)
+    assert LiteLLMProxySettings.client_is_closed(openai_aclient)
+    assert LiteLLMProxySettings.client_is_closed(sync_client)
+
+
+@pytest.mark.asyncio
+async def test_an_open_openai_client_is_not_reported_as_closed() -> None:
+    """`openai.AsyncClient.is_closed` is a method, so the raw attribute is truthy on an open client."""
+    assert not LiteLLMProxySettings.client_is_closed(_settings().openai_aclient)
 
 
 @pytest.mark.asyncio
@@ -66,6 +73,28 @@ async def test_pools_rebuild_after_being_closed() -> None:
     second = _settings().httpx_aclient
     assert second is not first
     assert not second.is_closed
+
+
+@pytest.mark.asyncio
+async def test_a_client_closed_by_its_caller_is_replaced_rather_than_handed_out() -> None:
+    """Only a docstring stops a caller closing a pooled client; a poisoned entry must not outlive it."""
+    closed_by_caller = _settings().httpx_aclient
+    await closed_by_caller.aclose()
+
+    replacement = _settings().httpx_aclient
+
+    assert replacement is not closed_by_caller
+    assert not replacement.is_closed
+
+
+def test_a_sync_client_closed_by_its_caller_is_replaced_rather_than_handed_out() -> None:
+    closed_by_caller = _settings().httpx_client
+    closed_by_caller.close()
+
+    replacement = _settings().httpx_client
+
+    assert replacement is not closed_by_caller
+    assert not replacement.is_closed
 
 
 def test_each_event_loop_gets_its_own_client() -> None:

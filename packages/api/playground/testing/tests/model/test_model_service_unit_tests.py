@@ -23,7 +23,8 @@ _LITELLM_MODELS = [
 class _FakeAsyncClient:
     """Fakes the shared, never-closed client ``get_model_list`` drives."""
 
-    async def get(self, url: str) -> Mock:
+    async def get(self, url: str, headers: dict[str, str]) -> Mock:
+        assert headers == {"Authorization": "Bearer sk-user"}
         return Mock(json=Mock(return_value={"data": _LITELLM_MODELS}))
 
 
@@ -38,8 +39,12 @@ def _patched_backend(access_rules: list[str], *, is_sys_admin: bool = False):
 
     with (
         patch(
-            f"{_MODEL_SERVICE}.LiteLLMService.httpx_aclient_for_user",
-            new=AsyncMock(return_value=_FakeAsyncClient()),
+            f"{_MODEL_SERVICE}.LiteLLMProxySettings",
+            return_value=Mock(httpx_aclient=_FakeAsyncClient()),
+        ),
+        patch(
+            f"{_MODEL_SERVICE}.LiteLLMService.authorization_header_for_user",
+            new=AsyncMock(return_value={"Authorization": "Bearer sk-user"}),
         ),
         patch(f"{_MODEL_SERVICE}.AccessChecker.from_user", return_value=checker),
     ):

@@ -55,15 +55,25 @@ class LiteLLMProxySettings(EnvironmentSettings):
         return {"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"}
 
     @staticmethod
+    def client_is_closed(client: Any) -> bool:
+        """`httpx` exposes `is_closed` as a property, the OpenAI SDK as a method — reading it raw is truthy."""
+        is_closed = client.is_closed
+        return is_closed() if callable(is_closed) else is_closed
+
+    @staticmethod
     def pooled_async_client[TClient](key: str, create: Callable[[], TClient]) -> TClient:
         """
         Return the process-wide client for `key`, creating it on first use.
 
         Keyed by event loop as well: a client's pooled connections belong to the loop that opened them, so
         one cached from another loop fails on reuse. The weak keys let a finished loop drop its clients.
+
+        A closed client is replaced rather than handed out: `aclose_pooled_clients` drops its entries before
+        closing them, but nothing stops a caller from closing one directly, and a poisoned entry would
+        otherwise fail every later access for the process lifetime.
         """
         loop_clients = LiteLLMProxySettings._async_clients.setdefault(asyncio.get_running_loop(), {})
-        if key not in loop_clients:
+        if key not in loop_clients or LiteLLMProxySettings.client_is_closed(loop_clients[key]):
             loop_clients[key] = create()
         return loop_clients[key]
 
@@ -91,9 +101,11 @@ class LiteLLMProxySettings(EnvironmentSettings):
         Shared, and callers must not close it.
 
         A client owns a connection pool, so minting one per access throws away keep-alive and — since httpx
-        clients have no finaliser — leaks the pool unless every caller closes it.
+        clients have no finaliser — leaks the pool unless every caller closes it. A closed client is
+        replaced rather than handed out, for the reason given on `pooled_async_client`.
         """
-        if self.BASE_URL not in LiteLLMProxySettings._sync_clients:
+        pooled_client = LiteLLMProxySettings._sync_clients.get(self.BASE_URL)
+        if pooled_client is None or pooled_client.is_closed:
             LiteLLMProxySettings._sync_clients[self.BASE_URL] = httpx.Client(
                 headers=self.authorization_header,
                 base_url=self.BASE_URL,

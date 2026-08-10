@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterator
 from unittest.mock import MagicMock, patch
 
@@ -26,6 +27,10 @@ class _RecordingTransport(httpx.MockTransport):
 
 def _user(user_id: str) -> UserIdentity:
     return UserIdentity(id=user_id, name="Ada Lovelace", email="ada@example.com", roles=[])
+
+
+def _settings() -> LiteLLMProxySettings:
+    return LiteLLMProxySettings(BASE_URL="http://litellm:4000", API_KEY="sk-master")
 
 
 @pytest.fixture(autouse=True)
@@ -124,29 +129,50 @@ async def test_key_generate_conflict_is_treated_as_success() -> None:
 
 
 @pytest.mark.asyncio
-async def test_per_user_clients_are_reused_instead_of_leaked_per_call() -> None:
-    """Neither httpx nor the OpenAI SDK has a finaliser, so a per-call client leaks its connection pool."""
-    user, other_user = _user("cached-client-user"), _user("other-user")
+async def test_per_user_openai_clients_share_one_connection_pool() -> None:
+    """
+    The per-user client dimension is unbounded — no maxsize, no TTL, no eviction — so it must not be a
+    dimension of the pool. `with_options` re-uses the shared client's httpx client, costing no extra pool.
+    """
+    user, other_user = _user("pooled-client-user"), _user("other-user")
     LiteLLMService._user_cache[user.id] = "sk-cached"
     LiteLLMService._user_cache[other_user.id] = "sk-other"
 
-    settings_class = MagicMock()
-    settings_class.return_value.BASE_URL = "http://litellm:4000"
-    settings_class.pooled_async_client = LiteLLMProxySettings.pooled_async_client
-
     with patch(
         "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service.LiteLLMProxySettings",
-        settings_class,
+        return_value=_settings(),
     ):
-        first_openai_client = await LiteLLMService.openai_aclient_for_user(user)
-        second_openai_client = await LiteLLMService.openai_aclient_for_user(user)
-        first_httpx_client = await LiteLLMService.httpx_aclient_for_user(user)
-        second_httpx_client = await LiteLLMService.httpx_aclient_for_user(user)
-        other_user_client = await LiteLLMService.httpx_aclient_for_user(other_user)
+        client, other_client = (
+            await LiteLLMService.openai_aclient_for_user(user),
+            await LiteLLMService.openai_aclient_for_user(other_user),
+        )
 
-        assert first_openai_client is second_openai_client
-        assert first_httpx_client is second_httpx_client
-        assert first_httpx_client is not other_user_client
+        assert client.api_key == "sk-cached"
+        assert other_client.api_key == "sk-other"
+        assert client._client is other_client._client
+        assert len(LiteLLMProxySettings._async_clients[asyncio.get_running_loop()]) == 1
+
+
+@pytest.mark.asyncio
+async def test_authorization_header_carries_the_users_key() -> None:
+    user = _user("header-user")
+    LiteLLMService._user_cache[user.id] = "sk-cached"
+
+    assert await LiteLLMService.authorization_header_for_user(user) == {"Authorization": "Bearer sk-cached"}
+
+
+@pytest.mark.asyncio
+async def test_the_users_key_overrides_the_shared_clients_master_key() -> None:
+    """The shared client authenticates as the master key, so the per-request header has to win."""
+    user = _user("overriding-user")
+    LiteLLMService._user_cache[user.id] = "sk-cached"
+    shared_client = _settings().httpx_aclient
+
+    request = shared_client.build_request(
+        "GET", "/v1/model/info", headers=await LiteLLMService.authorization_header_for_user(user)
+    )
+
+    assert request.headers["authorization"] == "Bearer sk-cached"
 
 
 @pytest.mark.asyncio
