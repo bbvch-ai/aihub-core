@@ -247,7 +247,8 @@ class AgentDispatcher(BaseDispatcher):
     ) -> None:
         """
         Tears down all run state. Idempotent under JetStream at-least-once redelivery: the
-        completed/crashed marker written after the deletes turns a second delivery into a no-op.
+        completed/crashed marker recorded here outlives the deletes — ``StepStore`` keeps markers
+        outside the namespace ``delete_all`` clears — so a second delivery finds it and returns.
         """
         execution_context_id = topic.execution_context_id
         if await self._is_run_torn_down(execution_context_id):

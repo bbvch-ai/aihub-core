@@ -41,9 +41,13 @@ class StepStore(StoreBase):
 
     ### Persistence Details
     - Each execution gets its own KV store
-    - Keys include:
-      - "crashed": Indicates if the execution is crashed.
+    - Step data lives under `steps:{execution_context_id}:*` and is cleared by `delete_all` at teardown:
       - For execution counts, one key per execution with pattern: step_name.counter.{timestamp}.{random}
+      - For idempotency, one key per step and input-event set: step_name.parameters.{md5}
+    - Terminal markers live under `step_markers:{execution_context_id}:*` and deliberately survive
+      `delete_all`, since they are what makes a redelivered terminal event a no-op:
+      - "crashed": the execution ended in an exception.
+      - "completed": the execution ended normally and its run was torn down.
     - Default TTL and storage settings inherited from `StoreBase`.
 
     ### Example
@@ -53,10 +57,16 @@ class StepStore(StoreBase):
 
     def __init__(self, redis: Redis):
         super().__init__(redis, prefix="steps")
+        # Markers record that a run is finished, so they must outlive the teardown that clears the
+        # run's step data. ``delete_all`` globs ``steps:{id}:*``, which would match a marker stored
+        # under the same prefix — the marker would then survive only because teardown happens to
+        # write it after deleting. A separate prefix puts them outside that glob, so the order of
+        # those calls cannot silently disable duplicate-delivery detection.
+        self._markers = StoreBase(redis, prefix="step_markers")
 
     async def mark_execution_context_as_crashed(self, execution_context_id: str):
         """Flags the execution context as crashed."""
-        await self.put_value(execution_context_id, "crashed", b"true")
+        await self._markers.put_value(execution_context_id, "crashed", b"true")
         logger.debug(f"Marked execution context {execution_context_id} as crashed")
 
     async def is_execution_context_crashed(self, execution_context_id: str) -> bool:
@@ -65,7 +75,7 @@ class StepStore(StoreBase):
         def transform_to_bool(value):
             return value is not None and value.decode() == "true"
 
-        is_crashed = await self.get_value(
+        is_crashed = await self._markers.get_value(
             execution_context_id, "crashed", default_value=False, transform_func=transform_to_bool
         )
         if is_crashed:
@@ -74,7 +84,7 @@ class StepStore(StoreBase):
 
     async def mark_execution_context_as_completed(self, execution_context_id: str) -> None:
         """Flags the execution context as completed, marking that its run has been torn down."""
-        await self.put_value(execution_context_id, "completed", b"true")
+        await self._markers.put_value(execution_context_id, "completed", b"true")
         logger.debug(f"Marked execution context {execution_context_id} as completed")
 
     async def is_execution_context_completed(self, execution_context_id: str) -> bool:
@@ -83,7 +93,7 @@ class StepStore(StoreBase):
         def transform_to_bool(value):
             return value is not None and value.decode() == "true"
 
-        is_completed = await self.get_value(
+        is_completed = await self._markers.get_value(
             execution_context_id, "completed", default_value=False, transform_func=transform_to_bool
         )
         if is_completed:

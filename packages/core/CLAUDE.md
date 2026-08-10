@@ -347,6 +347,12 @@ Abstract orchestrator that drives workflow execution. Handles:
 - State management: all state in JetStream (events) + Redis (steps via `StepStore`). No instance state on the dispatcher
   — enables horizontal scaling and load balancing via JetStream consumer groups.
 
+`StepStore` splits its keyspace deliberately: per-run step data lives under `steps:{execution_context_id}:*` and is
+cleared by `delete_all` at teardown, while the terminal `completed`/`crashed` markers live under
+`step_markers:{execution_context_id}:*` so they survive it. Those markers are what make a redelivered terminal event a
+no-op, so they must outlive the teardown that writes them — keeping them in a separate namespace makes that independent
+of the order in which a dispatcher deletes and marks. Do not collapse the two prefixes.
+
 ### DispatchableWorkflow
 
 Abstract base class for both agents and processes. Methods annotated with `@step` (agents) or `@process_step`

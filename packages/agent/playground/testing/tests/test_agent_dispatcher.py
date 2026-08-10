@@ -1,3 +1,4 @@
+from fnmatch import fnmatch
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -7,6 +8,7 @@ from bson import ObjectId
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.dispatcher import StepStore
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
@@ -79,8 +81,24 @@ def redis_client():
         redis_data[key] = value.encode() if isinstance(value, str) else value
         return True
 
-    async def mock_delete(key):
-        return redis_data.pop(key, None) is not None
+    async def mock_delete(*keys):
+        return sum(1 for key in keys if redis_data.pop(key, None) is not None)
+
+    def mock_scan_iter(match=None, count=None):
+        async def _iter():
+            for key in list(redis_data):
+                if match is None or fnmatch(key, match):
+                    yield key
+
+        return _iter()
+
+    async def mock_incrby(key, amount):
+        value = int(redis_data.get(key, b"0")) + amount
+        redis_data[key] = str(value).encode()
+        return value
+
+    async def mock_expire(key, ttl):
+        return True
 
     async def mock_hget(name, key):
         hash_data = redis_data.get(name, {})
@@ -116,6 +134,12 @@ def redis_client():
     mock_redis.get = mock_get
     mock_redis.set = mock_set
     mock_redis.delete = mock_delete
+    # scan_iter/incrby/expire let a real StepStore run against this fake. StoreBase.delete_all
+    # logs and swallows its own errors, so without scan_iter it deletes nothing silently and
+    # any ordering assertion would pass vacuously.
+    mock_redis.scan_iter = mock_scan_iter
+    mock_redis.incrby = mock_incrby
+    mock_redis.expire = mock_expire
     mock_redis.hget = mock_hget
     mock_redis.hset = mock_hset
     mock_redis.hdel = mock_hdel
@@ -458,6 +482,47 @@ class TestAgentDispatcherHandleEvent:
             agent_dispatcher._config_client.fetch_config.assert_not_called()
             mock_run_context.set.assert_not_called()
             agent_dispatcher.agent.get_steps_waiting_for_event.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_redelivered_terminal_event_is_a_no_op_against_a_real_step_store(
+        self, agent_dispatcher, agent_topic, redis_client
+    ):
+        """Teardown must leave a marker that outlives its own deletes.
+
+        The other redelivery tests stub ``is_execution_context_completed`` to True, so they prove
+        the skip branch works *given* a marker but never that teardown produces one. A real
+        StepStore is used here so the marker is written and read through real Redis keys: teardown
+        clears ``steps:{id}:*`` while markers live under ``step_markers:{id}:*``, and this asserts
+        the marker is genuinely still readable afterwards rather than mocked into existence.
+        """
+        agent_dispatcher.step_store = StepStore(redis_client)
+        stop_event = StopEvent()
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.delete_all = AsyncMock()
+        mock_run_context.get = AsyncMock(return_value=None)
+        mock_run_context.set = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(stop_event, agent_topic)
+
+            assert await agent_dispatcher.step_store.is_execution_context_completed(agent_topic.execution_context_id), (
+                "teardown left no completed marker — its own deletes wiped it"
+            )
+
+            await agent_dispatcher.handle_event(stop_event, agent_topic)
+
+            assert agent_dispatcher.event_store.delete_all.call_count == 1, (
+                "redelivered terminal event tore the run down a second time"
+            )
+            assert mock_run_context.delete_all.call_count == 1
 
     @pytest.mark.asyncio
     async def test_handle_exception_event_marks_execution_context_crashed(self, agent_dispatcher, agent_topic):
