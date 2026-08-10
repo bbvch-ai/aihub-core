@@ -130,6 +130,23 @@ and in CI.
 > **Settings are not auto-loaded from the environment.** The SDK reads connection settings only when constructed, so
 > make sure the variables above are exported in the process that runs Dagster (`set -a && source .env && set +a`).
 
+### Make targets
+
+`make playground`, `make quickstart`, and `make rag-pipelines` wrap the three steps above: they source the repo-root
+`.env` and install `dagster.local.yaml` into `$DAGSTER_HOME` (`~/.dagster_home` unless you export something else) as
+`dagster.yaml` if no config is there yet.
+
+Both parts matter. Without `DAGSTER_HOME`, `dagster dev` builds a throwaway instance in a `.tmp_dagster_home_*` folder
+under the working directory on every start — run history is lost between sessions. And without an instance config,
+Dagster falls back to `DefaultRunCoordinator`, which launches runs with no concurrency cap and overwhelms MinerU. The
+local config uses `QueuedRunCoordinator`, the same coordinator the deployed stages use, with `max_concurrent_runs` as a
+literal `2` — deployed stages read that number from `DAGSTER_MAX_CONCURRENT_RUNS`, but a `$DAGSTER_HOME` config has no
+guarantee the variable is set, and an unresolvable one breaks every Dagster process on the machine. Edit the installed
+copy to tune it.
+
+The copy is skipped when `$DAGSTER_HOME/dagster.yaml` already exists, so local tuning is never overwritten. Delete that
+file to pick the repo version back up.
+
 ## Production
 
 In production a pipeline runs as a **Dagster code location**: a gRPC server in a container that the platform's Dagster

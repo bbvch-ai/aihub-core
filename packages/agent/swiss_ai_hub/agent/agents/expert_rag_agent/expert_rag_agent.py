@@ -243,7 +243,7 @@ class ExpertRAGAgent(Agent):
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )
@@ -262,15 +262,50 @@ class ExpertRAGAgent(Agent):
         t: LocaleHandler,
     ) -> LLMStopEvent:
         """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        return await do_answer_meta_question(
+        stop_event = await do_answer_meta_question(
             event=event,
             agent_name=t.extract(agent_config.name),
             agent_description=t.extract(agent_config.description),
             workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
             chat_history=user_message_event.messages,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
+        )
+        # Follow-ups only — the title runs in parallel via generate_meta_question_title_step, since it
+        # only needs the topic and doesn't need to wait for this answer to finish.
+        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t)
+        return stop_event
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
+        icon="mdi:format-title",
+        stop_on_error=False,
+    )
+    async def generate_meta_question_title_step(
+        self,
+        event: MetaQuestionDetectedEvent,
+        user_message_event: UserMessageEvent,
+        agent_config: ExpertRAGAgentConfig,
+        thread_context: ThreadContext,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> None:
+        """Generate the thread's title in parallel with the meta answer.
+
+        Triggered by the same `MetaQuestionDetectedEvent` as `answer_meta_question_step`, so the
+        dispatcher runs both concurrently — the title only needs the user's question, not the meta
+        answer, so it must not wait for it (that would add post-answer latency for no reason: the answer
+        is already fully streamed to the user by the time the step returns, but the client's
+        "generation done" signal — and thus the stop event — would still be held back).
+        """
+        await generate_title(
+            chat_messages=user_message_event.messages,
+            llm_config=agent_config.task_llm,
+            displayer=displayer,
+            t=t,
+            thread_context=thread_context,
         )
 
     @step(
@@ -402,7 +437,7 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
     ) -> StandaloneQuestionCondenserEvent:
         return await do_condense_standalone_question(
-            event.limited_history, start_event.last_user_message, agent_config.llm, displayer, t
+            event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t
         )
 
     @step(
@@ -420,7 +455,7 @@ class ExpertRAGAgent(Agent):
         return await do_few_shot_guard(
             event.condensed_chat_message.content,
             agent_config.few_shot_guard_examples,
-            agent_config.llm,
+            agent_config.task_llm,
             displayer,
             t,
         )
@@ -504,7 +539,7 @@ class ExpertRAGAgent(Agent):
             guard_config.check_context_sufficiency,
             guard_config.max_hops,
             run_context,
-            agent_config.llm,
+            agent_config.task_llm,
             displayer,
             t,
             chat_history=chat_history_event.limited_history,
@@ -663,6 +698,8 @@ class ExpertRAGAgent(Agent):
         self,
         displayer: EventDisplayer,
         _: AgentInTheLoop.response,
+        user_message_event: UserMessageEvent | RAGStartEvent,
+        agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
     ) -> RAGFailureStopEvent:
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_unable_to_answer"))
@@ -670,6 +707,14 @@ class ExpertRAGAgent(Agent):
         await displayer.display_chunk(
             unable_to_answer_message,
             model_name=ExpertRAGAgent.__name__,
+        )
+        # Title already fired early (fan-out step on LimitChatHistoryEvent); only follow-ups are missing
+        # on this decline path, grounded on the canned decline message as the "answer".
+        await generate_follow_up_questions(
+            [*user_message_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=unable_to_answer_message)],
+            agent_config.task_llm,
+            displayer,
+            t,
         )
         return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_DECLINED, answer=unable_to_answer_message)
 
@@ -682,6 +727,8 @@ class ExpertRAGAgent(Agent):
         self,
         displayer: EventDisplayer,
         exception_event: AgentInTheLoop.exception,
+        user_message_event: UserMessageEvent | RAGStartEvent,
+        agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
     ) -> RAGFailureStopEvent:
         await displayer.display_thought(
@@ -695,6 +742,14 @@ class ExpertRAGAgent(Agent):
         await displayer.display_chunk(
             error_occurred_message,
             model_name=ExpertRAGAgent.__name__,
+        )
+        # Title already fired early (fan-out step on LimitChatHistoryEvent); only follow-ups are missing
+        # on this error path, grounded on the canned error message as the "answer".
+        await generate_follow_up_questions(
+            [*user_message_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=error_occurred_message)],
+            agent_config.task_llm,
+            displayer,
+            t,
         )
         return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_ERRORED, answer=error_occurred_message)
 
@@ -749,7 +804,7 @@ class ExpertRAGAgent(Agent):
         """
         await generate_title(
             chat_messages=chat_history_event.limited_history,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
             thread_context=thread_context,
@@ -818,7 +873,7 @@ class ExpertRAGAgent(Agent):
         """
         await generate_follow_up_questions(
             chat_messages=llm_event.chat_messages,
-            llm_config=agent_config.llm,
+            llm_config=agent_config.task_llm,
             displayer=displayer,
             t=t,
         )

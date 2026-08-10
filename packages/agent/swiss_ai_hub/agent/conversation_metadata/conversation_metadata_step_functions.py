@@ -45,10 +45,12 @@ async def do_generate_title(
 ) -> str | None:
     """Generate a stable conversation title once per thread and emit it as a display event.
 
-    A thread keeps a single, stable title: once one is generated and the ThreadContext flag is set,
-    later turns short-circuit without an LLM call. Until then, undeterminable turns (greetings, small
-    talk) leave the flag unset so a later turn can retry. Returns the emitted title (or ``None`` when
-    this turn produced none) for observability.
+    A thread keeps a single, stable title: this fires on the first check for a thread (the
+    ``ThreadContext`` flag unset) and never again — even a greeting gets a title on that first check,
+    never deferred to a later turn. Returns ``None`` only when this turn skipped generation entirely
+    (flag already set); a genuine failure propagates to the best-effort wrapper instead, which leaves the
+    flag unset so a later turn retries — that is a different concern (transient error) from "the model
+    judged the topic unclear."
     """
     if await thread_context.get(TITLE_GENERATED_KEY):
         return None
@@ -63,9 +65,7 @@ async def do_generate_title(
             chat_history=_conversation_messages(chat_messages),
         )
 
-    title = (result.title or "").strip()
-    if not title:
-        return None
+    title = result.title.strip() or t("agent.conversation_metadata.default_title")
 
     await displayer.display_event(ConversationTitleEvent(title=title))
     await thread_context.set(TITLE_GENERATED_KEY, True)

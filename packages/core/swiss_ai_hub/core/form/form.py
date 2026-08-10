@@ -181,6 +181,7 @@ class Form(BaseModel):
                             Group(
                                 name=field_name,
                                 label=label,
+                                help=self._extract_help_from_field(field_info),
                                 children=nested_elements,
                                 ref=group_ref,
                                 nullable=True,
@@ -200,6 +201,10 @@ class Form(BaseModel):
             elif isinstance(field_value, Form):
                 nested_prefix = f"{_id_prefix}{field_name}."
                 nested_elements = field_value.to_formkit_form(_id_prefix=nested_prefix)
+                # A data-mode nested Form contributes no elements; a non-nullable group has no
+                # enable toggle either, so it would render as an empty fieldset.
+                if not nested_elements and not allows_none:
+                    continue
                 label = self._extract_label_from_field(field_info)
                 group_condition = self._derive_group_condition(nested_elements)
                 # Use prefixed ref for unique group ID (ref serializes as 'id' in JSON)
@@ -207,6 +212,7 @@ class Form(BaseModel):
                 group = Group(
                     name=field_name,
                     label=label,
+                    help=self._extract_help_from_field(field_info) if allows_none else None,
                     children=nested_elements,
                     condition_if=group_condition,
                     ref=group_ref,
@@ -341,6 +347,20 @@ class Form(BaseModel):
             desc = field_info.description
             if len(desc) <= 50:
                 return desc
+        return None
+
+    @staticmethod
+    def _extract_help_from_field(field_info: FieldInfo) -> str | None:
+        """
+        Extract help text for nullable nested Groups from the field's description.
+
+        Only when the label came from an explicit title — otherwise `_extract_label_from_field`
+        already used the description as the label and repeating it would print it twice. Callers
+        restrict this to nullable groups: their generated "Enable X" toggle is the only place a
+        group's help is rendered, so a non-nullable group carrying help would ship unread data.
+        """
+        if field_info.title and field_info.description:
+            return field_info.description
         return None
 
     @staticmethod

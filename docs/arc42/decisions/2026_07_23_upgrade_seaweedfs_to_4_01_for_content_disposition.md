@@ -65,6 +65,7 @@ The 4.x line is a genuine architectural shift, not just the disposition fix:
 - **Bucket-policy enforcement** (4.01 #7471), **auto-create bucket** (4.01 #7549), path/virtual-style addressing changes
   (3.99 #7357), and S3 error-code changes (3.98: 400 vs 500) — none affected our path-style, explicit-identity
   configuration.
+- **Chunked ETags above 8 MiB** — discovered after the fact, see the Trade-offs entry below.
 
 ## Consequences
 
@@ -84,6 +85,21 @@ The 4.x line is a genuine architectural shift, not just the disposition fix:
   than 3.97; upstream 4.x regressions could surface in future point releases.
 - **Production rollout needs the two operational steps** the dev upgrade could skip: mirror 4.01 to GHCR first, and
   verify/adjust volume-mount ownership for the non-root container user before starting.
+- **ETag format changed above 8 MiB — this broke ingestion (#121).** 4.01 chunks objects larger than 8 MiB server-side
+  and returns a multipart-style ETag `<md5hex>-<n>`, where 3.97 returned a plain MD5 at any size. A boundary sweep
+  confirms it: on 4.01, 8.0 MB yields a plain MD5 while 8.5 MB yields `…-2`; on 3.97, 5/9/15/20 MB are all plain MD5. It
+  is server-side, not client-side — presigned PUT, chunked transfer-encoding, `put_object`, and `upload_fileobj` all
+  produce the same ETag. `S3DataLakeClient._create_data_lake_file_from_s3_object` only handled the plain-MD5 shape and
+  left `hash = None` otherwise, failing `DataLakeFile` validation. Because `get_all_files()` enumerates the whole bucket
+  inside one observable source asset, a single oversized object aborted observation and **halted ingestion for the
+  entire bucket**, not just that file. Fixed by keeping the chunked ETag verbatim as the content-version token; the ≤8
+  MiB base64-MD5 output is deliberately frozen, since `hash` feeds the persisted `DataVersion` and changing it would
+  force a full re-parse and re-embed of every corpus.
+- **Verification gap to close on the next storage bump.** The "whole S3 blast radius re-verified" claim above used only
+  small files, so the 8 MiB threshold went unnoticed. Any future major object-store upgrade must include a >8 MiB
+  document in its checklist. Raising the filer's `-maxMB` above the largest expected document would also avoid chunking
+  without code changes, but was rejected: it pushes very large single chunks at the volume server and merely moves the
+  threshold instead of removing the assumption.
 - **Filename header is not RFC 6266-encoded** — the attachment filename is the S3 key basename interpolated directly;
   unusual characters (embedded quotes, non-ASCII, control chars) are not escaped. Acceptable because keys derive from
   constrained upload filenames, but a future hardening could add `filename*=UTF-8''<encoded>`.

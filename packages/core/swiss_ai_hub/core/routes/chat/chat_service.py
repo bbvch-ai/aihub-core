@@ -16,7 +16,6 @@ from swiss_ai_hub.core.distributor.external_agent_event_distributor import Exter
 from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
 from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
 from swiss_ai_hub.core.events.agent.display.chunk_event import ChunkEvent
-from swiss_ai_hub.core.events.agent.display.conversation_title_event import ConversationTitleEvent
 from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
 from swiss_ai_hub.core.events.agent.display.thought_event import ThoughtEvent
 from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_chat_request_event import (
@@ -372,8 +371,6 @@ class ChatService:
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             if event.is_chunk_event:
                 resources.chunk_events.append(event)
-            elif isinstance(event, ConversationTitleEvent):
-                ThreadEntity.update_thread_name(topic_manager.thread_id, event.title)
             elif event.is_hitl_request_event:
                 resources.stop_event = event
                 await subscriber.stop()

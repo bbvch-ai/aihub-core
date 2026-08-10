@@ -26,6 +26,7 @@ from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicMana
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.persistance.events.event_persister import EventPersister
+from swiss_ai_hub.api.persistance.threads.thread_title_persister import ThreadTitlePersister
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
@@ -154,6 +155,18 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         await ws_subscriber.start()
 
+        # Persist conversation titles onto threads from a subscriber that never tears down mid-run —
+        # a per-request aggregator unsubscribes on the run's stop event, so a title emitted concurrently
+        # with the answer could be dropped (permanently, since the producer-side once-per-thread flag is
+        # set on publish).
+        thread_title_subscriber = AgentNCSubscriber.for_all_agents_display_events(
+            nc=nc,
+            topic_manager=agent_topic_manager,
+            handler=ThreadTitlePersister.persist_thread_title,
+            subscriber_name="ThreadTitlePersister",
+        )
+        await thread_title_subscriber.start()
+
         external_agent_event_distributor = ExternalAgentEventDistributor(
             nc=nc, js=js, name="AgentExternalAgentEventDistributor"
         )
@@ -243,6 +256,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await agent_event_persist_subscriber.stop()
         await process_event_persist_subscriber.stop()
         await ws_subscriber.stop()
+        await thread_title_subscriber.stop()
 
         # Stop RPC responders
         if hasattr(app.state, "agent_config_responder"):

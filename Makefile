@@ -103,7 +103,7 @@ pr-ready:
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.318.0
+TAG ?= v0.319.0
 
 changelog:
 	@echo "Generating changelog"
@@ -158,7 +158,7 @@ down-dev:
 # Requires `make up-dev` first. UI at http://localhost:3000.
 playground:
 	@echo "Starting Dagster playground at http://localhost:3000 ..."
-	cd packages/pipeline && uv run dagster dev -m playground
+	@$(MAKE) -C packages/pipeline playground
 
 up-dev-gpu:
 	@echo "Starting development GPU environment with Docker Compose..."

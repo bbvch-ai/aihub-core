@@ -163,6 +163,27 @@ class TestProcessServiceUnit:
             assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
+    async def test_get_all_process_instances_skips_record_that_fails_to_build(self, mock_locale_handler):
+        """A single instance whose DTO cannot be built must be skipped, not abort the whole sweep."""
+        mock_class_entity = Mock(spec=ProcessClassEntity)
+        mock_class_entity.is_online = True
+        mock_class_entity.process_class = "TestProcess"
+        good_config = Mock(spec=ProcessConfigEntityDocument)
+        good_config.process_id = "good"
+        bad_config = Mock(spec=ProcessConfigEntityDocument)
+        bad_config.process_id = "bad"
+
+        with patch.object(ProcessClassEntity, "get_all", return_value=[mock_class_entity]):
+            with patch.object(ProcessConfigEntityDocument, "find_for_class", return_value=[good_config, bad_config]):
+                with patch.object(FullProcessInstanceDTO, "from_class_and_config") as mock_from:
+                    good_dto = Mock(spec=FullProcessInstanceDTO)
+                    mock_from.side_effect = [good_dto, ValueError("could not build DTO")]
+
+                    result = await ProcessService.get_all_process_instances(mock_locale_handler)
+
+        assert result == [good_dto]
+
+    @pytest.mark.asyncio
     async def test_send_event_success(self, mock_user_identity):
         """Test send_event successfully sends event to process."""
         event = HumanStartEvent(

@@ -107,15 +107,39 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
     ] = LLMParameter()
 
     @classmethod
-    def as_form(cls) -> Self:
-        """Factory method to create a form-mode LLMConfig."""
+    def as_form(cls, include_default_parameter: bool = True) -> Self:
+        """
+        Factory method to create a form-mode LLMConfig.
+
+        Pass `include_default_parameter=False` to render the model picker alone, for configs whose
+        generation parameters are derived from another LLMConfig rather than chosen by the user.
+        """
         return cls(
             model_name=ModelSelect(
                 label=LocaleString.from_i18n_path("lib.llm.config.model.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.model.help"),
                 mode="chat",
             ),
-            default_parameter=LLMParameter.as_form(),
+            default_parameter=LLMParameter.as_form() if include_default_parameter else LLMParameter(),
+        )
+
+    def as_task_llm(self, model_name: str) -> Self:
+        """
+        A task variant of this config for auxiliary/classification steps.
+
+        Those steps reuse the main model's generation parameters and never need log probabilities,
+        so only the model itself is configurable.
+        """
+        return self.model_copy(
+            deep=True,
+            update={
+                "model_name": model_name,
+                "default_parameter": LLMParameter(
+                    temperature=self.default_parameter.temperature,
+                    timeout=self.default_parameter.timeout,
+                    logprobs=False,
+                ),
+            },
         )
 
     def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILike, LLMCostTracker]:
