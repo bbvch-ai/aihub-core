@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,9 +18,29 @@ _FOLDERS = [
 ]
 
 
-def _connection(search: list[int] | None = None, fetch: dict | None = None, folders: list | None = None) -> MagicMock:
+def _folders_after_creating(name: str, base: list | None = None) -> Callable[..., list]:
+    """LIST answers that only contain ``name`` from the second call on — i.e. once the client has created it."""
+    existing = _FOLDERS if base is None else base
+    delimiter = next((delim for _flags, delim, _name in existing if delim), None)
+    calls: list[int] = []
+
+    def list_folders(*_args) -> list:
+        calls.append(1)
+        if len(calls) == 1:
+            return existing
+        return [*existing, ((b"\\HasNoChildren",), delimiter, name)]
+
+    return list_folders
+
+
+def _connection(
+    search: list[int] | None = None, fetch: dict | None = None, folders: list | Callable[..., list] | None = None
+) -> MagicMock:
     connection = MagicMock()
-    connection.list_folders = MagicMock(return_value=_FOLDERS if folders is None else folders)
+    if callable(folders):
+        connection.list_folders = MagicMock(side_effect=folders)
+    else:
+        connection.list_folders = MagicMock(return_value=_FOLDERS if folders is None else folders)
     connection.search = MagicMock(return_value=[101, 102] if search is None else search)
     if fetch is not None:
         connection.fetch = MagicMock(return_value=fetch)
@@ -168,15 +189,107 @@ async def test_move_message_refuses_when_neither_move_nor_uidplus():
 
 
 @async_test
-async def test_move_message_raises_actionable_error_when_target_folder_missing():
+async def test_move_message_leaves_an_existing_target_folder_untouched():
     connection = _connection(fetch={101: {b"FLAGS": ()}})
     connection.has_capability = MagicMock(return_value=True)
     client = _client(connection)
 
-    with pytest.raises(ValueError, match="does not exist"):
-        await client.move_message("101", "DoesNotExist")
+    folder_created = await client.move_message("101", "Processed")
+
+    assert folder_created is False
+    connection.create_folder.assert_not_called()
+    connection.move.assert_called_once_with([101], "Processed")
+
+
+@async_test
+async def test_move_message_creates_the_target_folder_when_it_does_not_exist():
+    connection = _connection(fetch={101: {b"FLAGS": ()}}, folders=_folders_after_creating("Invoices"))
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    folder_created = await client.move_message("101", "Invoices")
+
+    assert folder_created is True
+    connection.create_folder.assert_called_once_with("Invoices")
+    connection.subscribe_folder.assert_called_once_with("Invoices")
+    connection.move.assert_called_once_with([101], "Invoices")
+
+
+@async_test
+async def test_move_message_creates_each_ancestor_of_a_nested_target_folder():
+    connection = _connection(fetch={101: {b"FLAGS": ()}}, folders=_folders_after_creating("Invoices/2026/Q1"))
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    await client.move_message("101", "Invoices/2026/Q1")
+
+    assert [call.args[0] for call in connection.create_folder.call_args_list] == [
+        "Invoices",
+        "Invoices/2026",
+        "Invoices/2026/Q1",
+    ]
+
+
+@async_test
+async def test_move_message_creates_the_full_name_at_once_in_a_flat_namespace():
+    flat = [((b"\\HasNoChildren",), None, "INBOX")]
+    connection = _connection(fetch={101: {b"FLAGS": ()}}, folders=_folders_after_creating("Invoices.2026", flat))
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    await client.move_message("101", "Invoices.2026")
+
+    connection.create_folder.assert_called_once_with("Invoices.2026")
+
+
+@async_test
+async def test_move_message_files_the_message_when_a_concurrent_run_created_the_folder_first():
+    connection = _connection(fetch={101: {b"FLAGS": ()}}, folders=_folders_after_creating("Invoices"))
+    connection.has_capability = MagicMock(return_value=True)
+    connection.create_folder = MagicMock(side_effect=IMAPClientError("[ALREADYEXISTS] Mailbox exists"))
+    client = _client(connection)
+
+    folder_created = await client.move_message("101", "Invoices")
+
+    assert folder_created is True
+    connection.move.assert_called_once_with([101], "Invoices")
+
+
+@async_test
+async def test_move_message_reports_a_refused_creation_without_touching_the_message():
+    connection = _connection(fetch={101: {b"FLAGS": ()}})
+    connection.has_capability = MagicMock(return_value=True)
+    connection.create_folder = MagicMock(side_effect=IMAPClientError("[CANNOT] Permission denied"))
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="could not be created: .*Permission denied"):
+        await client.move_message("101", "Invoices")
 
     connection.move.assert_not_called()
+    connection.copy.assert_not_called()
+    connection.select_folder.assert_not_called()
+
+
+@async_test
+async def test_move_message_still_files_when_the_server_refuses_to_subscribe_the_new_folder():
+    connection = _connection(fetch={101: {b"FLAGS": ()}}, folders=_folders_after_creating("Invoices"))
+    connection.has_capability = MagicMock(return_value=True)
+    connection.subscribe_folder = MagicMock(side_effect=IMAPClientError("SUBSCRIBE unsupported"))
+    client = _client(connection)
+
+    assert await client.move_message("101", "Invoices") is True
+    connection.move.assert_called_once_with([101], "Invoices")
+
+
+@async_test
+async def test_move_message_creates_the_target_folder_on_the_copy_fallback_too():
+    connection = _connection(fetch={101: {b"FLAGS": ()}}, folders=_folders_after_creating("Invoices"))
+    connection.has_capability = MagicMock(side_effect=lambda capability: capability == b"UIDPLUS")
+    client = _client(connection)
+
+    assert await client.move_message("101", "Invoices") is True
+    connection.create_folder.assert_called_once_with("Invoices")
+    connection.copy.assert_called_once_with([101], "Invoices")
 
 
 @async_test

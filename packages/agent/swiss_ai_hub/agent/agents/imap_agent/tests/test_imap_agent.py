@@ -59,9 +59,12 @@ def _summary(uid: str) -> UnreadMailSummary:
     return UnreadMailSummary(message_id=uid, sender="alice@test", subject=f"Subject {uid}")
 
 
-def _make_client(unread: list[UnreadMailSummary], undrafted: list[UnreadMailSummary]) -> AsyncMock:
+def _make_client(
+    unread: list[UnreadMailSummary], undrafted: list[UnreadMailSummary], folder_created: bool = False
+) -> AsyncMock:
     client = AsyncMock()
     client.list_unread = AsyncMock(return_value=unread)
+    client.move_message = AsyncMock(return_value=folder_created)
     client.fetch_message = AsyncMock(
         return_value=ParsedMessage(
             message_id="1",
@@ -103,6 +106,17 @@ def _() -> dict:
 @given("an ImapAgent runner with moving enabled and a mocked IMAP inbox", target_fixture="scenario")
 def _moving_enabled() -> dict:
     return {"unread": [_summary("1")], "undrafted": [], "enable_move": True, "enable_draft": False}
+
+
+@given("an ImapAgent runner with moving enabled and a missing target folder", target_fixture="scenario")
+def _moving_into_missing_folder() -> dict:
+    return {
+        "unread": [_summary("1")],
+        "undrafted": [],
+        "enable_move": True,
+        "enable_draft": False,
+        "folder_created": True,
+    }
 
 
 @given("an ImapAgent runner with an empty IMAP inbox", target_fixture="scenario")
@@ -154,7 +168,7 @@ async def _run(scenario: dict, start_event: BaseEvent) -> AgentTestRunner:
     agent_runner = AgentTestRunner(
         agent_type=ImapAgent, agent_config=_config(scenario["enable_move"], scenario["enable_draft"])
     )
-    client = _make_client(scenario["unread"], scenario["undrafted"])
+    client = _make_client(scenario["unread"], scenario["undrafted"], scenario.get("folder_created", False))
     await _drive(agent_runner, client, start_event)
     return agent_runner
 
@@ -198,6 +212,15 @@ def _(agent_runner: AgentTestRunner):
     events = _dedupe(agent_runner.get_events_of_class(MailMovedEvent))
     assert len(events) == 1
     assert events[0].target_folder == "Processed"
+    assert events[0].folder_created is False
+
+
+@then("a MailMovedEvent that records the created folder was emitted")
+def _(agent_runner: AgentTestRunner):
+    events = _dedupe(agent_runner.get_events_of_class(MailMovedEvent))
+    assert len(events) == 1
+    assert events[0].target_folder == "Processed"
+    assert events[0].folder_created is True
 
 
 @then("no MailMovedEvent was emitted")

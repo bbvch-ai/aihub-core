@@ -14137,6 +14137,13 @@ export const MailMovedEventSchema = {
       title: "Target Folder",
       description: "Folder the message was moved into.",
     },
+    folder_created: {
+      type: "boolean",
+      title: "Folder Created",
+      description:
+        "Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.",
+      default: false,
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -32073,6 +32080,13 @@ export const MailMovedEventWritableSchema = {
       type: "string",
       title: "Target Folder",
       description: "Folder the message was moved into.",
+    },
+    folder_created: {
+      type: "boolean",
+      title: "Folder Created",
+      description:
+        "Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.",
+      default: false,
     },
   },
   additionalProperties: true,

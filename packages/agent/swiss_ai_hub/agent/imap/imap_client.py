@@ -7,6 +7,7 @@ from email.message import EmailMessage
 from email.policy import default as default_policy
 
 from imapclient import IMAPClient
+from imapclient.exceptions import IMAPClientError
 from swiss_ai_hub.core.events.agent import UnreadMailSummary
 from swiss_ai_hub.core.imap import ImapClientConfig
 
@@ -118,15 +119,20 @@ class ImapClient:
         message = self._parse_bytes(fetched[uid][_BODY_KEY])
         return MailParser.parse_message(message_id, message, self._max_body_bytes, self._max_attachment_bytes)
 
-    async def move_message(self, message_id: str, target_folder: str) -> None:
+    async def move_message(self, message_id: str, target_folder: str) -> bool:
         """Move a message by UID from the inbox folder into target_folder, opening the folder writable.
+
+        Creates the target folder when it does not exist yet, and reports whether it did — a classifying agent
+        files into one folder per category, so the folders cannot be pre-created by hand. Creation runs before
+        the inbox is even selected, so a server that refuses it aborts the move with the message still in the
+        inbox rather than half-filed.
 
         Uses the atomic IMAP ``MOVE`` (RFC 6851) when the server supports it; otherwise falls back to
         ``COPY`` + ``UID EXPUNGE`` (RFC 4315, UIDPLUS), which purges only this UID. A server offering neither
         is refused rather than expunged with a blind ``EXPUNGE`` that would also destroy other clients'
         ``\\Deleted`` mail.
         """
-        target_folder = await self._resolve_folder(target_folder, None)
+        target_folder, folder_created = await self._resolve_or_create_folder(target_folder)
         await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=False)
         uid = int(message_id)
 
@@ -136,7 +142,7 @@ class ImapClient:
 
         if await asyncio.to_thread(self._connection.has_capability, _MOVE_CAPABILITY):
             await asyncio.to_thread(self._connection.move, [uid], target_folder)
-            return
+            return folder_created
 
         if not await asyncio.to_thread(self._connection.has_capability, _UIDPLUS_CAPABILITY):
             raise ValueError(
@@ -147,6 +153,7 @@ class ImapClient:
         await asyncio.to_thread(self._connection.copy, [uid], target_folder)
         await asyncio.to_thread(self._connection.delete_messages, [uid])
         await asyncio.to_thread(self._connection.uid_expunge, [uid])
+        return folder_created
 
     async def append_draft(self, drafts_folder: str, raw_message: bytes) -> tuple[str, str | None]:
         """Append a reply as a ``\\Draft``-flagged message to the drafts folder; never sends (no SMTP path exists).
@@ -161,7 +168,7 @@ class ImapClient:
         response = await asyncio.to_thread(self._connection.append, target, raw_message, flags=[_DRAFT_FLAG])
         return target, self._parse_appenduid(response)
 
-    async def _resolve_folder(self, configured: str, special_use_flag: bytes | None) -> str:
+    async def _resolve_folder(self, configured: str, special_use_flag: bytes) -> str:
         """Return the server's exact folder name: the configured one if it exists verbatim, else the special-use match.
 
         Never trust a retyped name — folder names are the server's bytes (mUTF-7), so a visually-identical config value
@@ -172,16 +179,55 @@ class ImapClient:
         if configured and configured in names:
             return configured
 
-        if special_use_flag is not None:
-            for flags, _delim, name in folders:
-                if special_use_flag in flags:
-                    return name
+        for flags, _delim, name in folders:
+            if special_use_flag in flags:
+                return name
 
         available = ", ".join(sorted(names))
         raise ValueError(
             f"folder {configured!r} does not exist on the server and no {special_use_flag!r} special-use folder was "
             f"found. Available folders: {available}"
         )
+
+    async def _resolve_or_create_folder(self, configured: str) -> tuple[str, bool]:
+        """Return the target folder name and whether it had to be created — no special-use fallback applies here.
+
+        Each level of the hierarchy is created separately (``Invoices`` before ``Invoices/2026``) because RFC 3501 only
+        *recommends* that a server create superior names on its own. Creation failures are not raised directly: a
+        parent that already exists fails the same way as a genuinely refused create, and a concurrent run may have won
+        the race, so the ``LIST`` afterwards is the sole authority on whether the folder is now there.
+        """
+        folders = await asyncio.to_thread(self._connection.list_folders)
+        if configured in {name for _flags, _delim, name in folders}:
+            return configured, False
+
+        delimiter = next((delim.decode() for _flags, delim, _name in folders if delim), None)
+        creation_error: IMAPClientError | None = None
+        for path in self._hierarchy_paths(configured, delimiter):
+            try:
+                await asyncio.to_thread(self._connection.create_folder, path)
+            except IMAPClientError as error:
+                creation_error = error
+
+        created = await asyncio.to_thread(self._connection.list_folders)
+        if configured not in {name for _flags, _delim, name in created}:
+            raise ValueError(
+                f"folder {configured!r} does not exist on the server and could not be created: {creation_error}. "
+                f"The message was left in {self._inbox_folder}."
+            )
+
+        # A folder nobody is subscribed to stays invisible in most mail clients — the filed mail would look lost.
+        with suppress(Exception):
+            await asyncio.to_thread(self._connection.subscribe_folder, configured)
+        return configured, True
+
+    @staticmethod
+    def _hierarchy_paths(folder: str, delimiter: str | None) -> list[str]:
+        """Expand a folder name into itself preceded by each of its ancestors; a flat namespace yields just itself."""
+        if not delimiter:
+            return [folder]
+        segments = folder.split(delimiter)
+        return [delimiter.join(segments[:depth]) for depth in range(1, len(segments) + 1)]
 
     @staticmethod
     def _parse_appenduid(response: bytes | str | None) -> str | None:

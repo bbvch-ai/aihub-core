@@ -9485,6 +9485,12 @@ export type MailMovedEvent = {
    */
   target_folder: string;
   /**
+   * Folder Created
+   *
+   * Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.
+   */
+  folder_created?: boolean;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -21528,6 +21534,12 @@ export type MailMovedEventWritable = {
    * Folder the message was moved into.
    */
   target_folder: string;
+  /**
+   * Folder Created
+   *
+   * Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.
+   */
+  folder_created?: boolean;
   [key: string]: unknown;
 };
 

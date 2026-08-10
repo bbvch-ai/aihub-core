@@ -155,12 +155,20 @@ class ImapAgent(Agent):
             imap_config.processed_folder,
         )
         async with ImapClientFactory.create(imap_config) as client:
-            await client.move_message(event.message_id, imap_config.processed_folder)
-        logger.info("[imap] move_mail_step: moved uid=%s -> %s", event.message_id, imap_config.processed_folder)
+            folder_created = await client.move_message(event.message_id, imap_config.processed_folder)
+        logger.info(
+            "[imap] move_mail_step: moved uid=%s -> %s folder_created=%s",
+            event.message_id,
+            imap_config.processed_folder,
+            folder_created,
+        )
+        if folder_created:
+            await displayer.display_thought(f"Created the folder {imap_config.processed_folder} before filing there.")
         return MailMovedEvent(
             message_id=event.message_id,
             source_folder=imap_config.inbox_folder,
             target_folder=imap_config.processed_folder,
+            folder_created=folder_created,
         )
 
     @step(
