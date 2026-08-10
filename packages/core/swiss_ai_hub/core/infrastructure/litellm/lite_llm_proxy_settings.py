@@ -67,6 +67,24 @@ class LiteLLMProxySettings(EnvironmentSettings):
             loop_clients[key] = create()
         return loop_clients[key]
 
+    @classmethod
+    async def aclose_pooled_clients(cls) -> None:
+        """
+        Close the clients pooled for the running loop, plus the process-wide sync client.
+
+        Dropping them from the pools lets a later access rebuild them: a process that starts a second app on
+        the same loop — the API test runners do — must not inherit closed clients.
+        """
+        for client in cls._async_clients.pop(asyncio.get_running_loop(), {}).values():
+            if isinstance(client, httpx.AsyncClient):
+                await client.aclose()
+            else:
+                await client.close()
+
+        for sync_client in cls._sync_clients.values():
+            sync_client.close()
+        cls._sync_clients.clear()
+
     @property
     def httpx_client(self) -> httpx.Client:
         """

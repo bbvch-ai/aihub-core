@@ -37,6 +37,33 @@ async def test_distinct_base_urls_get_distinct_clients() -> None:
     assert _settings().httpx_aclient is not _settings().openai_aclient
 
 
+@pytest.mark.asyncio
+async def test_closing_the_pools_closes_every_client() -> None:
+    httpx_aclient, openai_aclient, sync_client = (
+        _settings().httpx_aclient,
+        _settings().openai_aclient,
+        _settings().httpx_client,
+    )
+
+    await LiteLLMProxySettings.aclose_pooled_clients()
+
+    assert httpx_aclient.is_closed
+    assert openai_aclient.is_closed
+    assert sync_client.is_closed
+
+
+@pytest.mark.asyncio
+async def test_pools_rebuild_after_being_closed() -> None:
+    """A process that starts a second app on the same loop must not inherit the first app's closed clients."""
+    first = _settings().httpx_aclient
+
+    await LiteLLMProxySettings.aclose_pooled_clients()
+
+    second = _settings().httpx_aclient
+    assert second is not first
+    assert not second.is_closed
+
+
 def test_each_event_loop_gets_its_own_client() -> None:
     """A client's pooled connections belong to the loop that opened them, so they must not cross loops."""
     first = asyncio.run(_resolve_aclient())

@@ -12,6 +12,7 @@ from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, Externa
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
     LangfuseProvisioner,
+    LiteLLMProxySettings,
     MilvusSettings,
     MongoSettings,
     NatsSettings,
@@ -267,6 +268,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Close S3 connections
         s3_client.close()
         s3_public_client.close()
+
+        # Close the pooled LiteLLM clients
+        await LiteLLMProxySettings.aclose_pooled_clients()
 
     finally:
         # Close NATS connection on exit
