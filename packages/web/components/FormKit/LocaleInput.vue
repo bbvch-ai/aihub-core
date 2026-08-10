@@ -7,6 +7,7 @@
         :options="localeOptions"
         option-label="label"
         option-value="value"
+        :allow-empty="false"
         size="small"
       >
         <template #option="{ option }">
@@ -100,15 +101,24 @@ const localeOptions = locales.map(lang => ({
 
 const activeLocale = ref<Locale>('en')
 
+function isLocale(value: unknown): value is Locale {
+  return locales.includes(value as Locale)
+}
+
 // Get the current locale string value
 const localeValue = computed<LocaleStringDto>(() => {
   return props.context.value ?? { de: null, en: null, fr: null, it: null }
 })
 
 // Current input value for the active locale
+// The guard is belt-and-braces next to `:allow-empty="false"`: with an unset `activeLocale`
+// this setter used to write under the key `"null"`, producing a value whose four locales
+// were all empty but which no longer looked like a locale object to the backend's
+// normalization — so it slipped past validation and saved a blank name (issue #135).
 const currentValue = computed({
-  get: () => localeValue.value[activeLocale.value] ?? '',
+  get: () => (isLocale(activeLocale.value) ? localeValue.value[activeLocale.value] ?? '' : ''),
   set: (newVal: string) => {
+    if (!isLocale(activeLocale.value)) return
     const updated: LocaleStringDto = {
       ...localeValue.value,
       [activeLocale.value]: newVal || null,

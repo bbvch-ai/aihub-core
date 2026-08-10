@@ -10,9 +10,33 @@ import { en, de, fr, it } from '@formkit/i18n'
 import { createInput } from '@formkit/vue'
 import { primeInputs } from '@sfxcode/formkit-primevue'
 
+import type { FormKitNode } from '@formkit/core'
 import type { DefaultConfigOptions } from '@formkit/vue'
 
+const LOCALES = ['de', 'en', 'fr', 'it'] as const
+
+// FormKit's built-in `required` rule only asks whether a value is present, and a localeInput's
+// value is always a `{de, en, fr, it}` object — non-empty, so `required` passes even when every
+// locale inside it is blank. Backend `LocaleInput` elements emit `localeRequired` instead
+// (see packages/core/swiss_ai_hub/core/form/elements/locale_input.py).
+function localeRequired(node: FormKitNode): boolean {
+  const value = node.value as Record<string, string | null> | null | undefined
+  if (!value) return false
+  return LOCALES.some(locale => !!value[locale]?.trim())
+}
+
+const localeRequiredMessages = {
+  de: 'Mindestens eine Sprache muss ausgefüllt sein.',
+  en: 'At least one language must be filled in.',
+  fr: 'Au moins une langue doit être renseignée.',
+  it: 'Almeno una lingua deve essere compilata.',
+}
+
 const config: DefaultConfigOptions = {
+  rules: { localeRequired },
+  messages: Object.fromEntries(
+    LOCALES.map(locale => [locale, { validation: { localeRequired: localeRequiredMessages[locale] } }]),
+  ),
   inputs: {
     ...primeInputs,
     agentSelector: createInput(AgentSelector, {

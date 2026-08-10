@@ -99,6 +99,7 @@ const submitConfiguration = async (formData: Record<string, unknown>) => {
     toast.add({
       severity: 'error',
       summary: t('process.configuration.saveError'),
+      detail: error instanceof Error ? error.message : String(error),
       life: 5000,
     })
   }
