@@ -27,9 +27,9 @@ class LiteLLMService:
 
         api_key = LiteLLMService.generate_key_for_user(user)
 
-        async with litellm_proxy.httpx_aclient as client:
-            if await LiteLLMService._create_user_if_absent(client, litellm_proxy, user):
-                await LiteLLMService._generate_key(client, user, api_key)
+        client = litellm_proxy.httpx_aclient
+        if await LiteLLMService._create_user_if_absent(client, litellm_proxy, user):
+            await LiteLLMService._generate_key(client, user, api_key)
 
         LiteLLMService._user_cache[user.id] = api_key
         return api_key
@@ -83,16 +83,20 @@ class LiteLLMService:
 
     @staticmethod
     async def httpx_aclient_for_user(user: UserIdentity) -> httpx.AsyncClient:
+        """Shared per user, and callers must not close it — see `LiteLLMProxySettings.httpx_client`."""
         api_key = await LiteLLMService.api_key_for_user(user)
-        return httpx.AsyncClient(
-            headers={"Authorization": f"Bearer {api_key}"},
-            base_url=LiteLLMProxySettings().BASE_URL,
+        base_url = LiteLLMProxySettings().BASE_URL
+        return LiteLLMProxySettings.pooled_async_client(
+            f"httpx:{base_url}:{user.id}",
+            lambda: httpx.AsyncClient(headers={"Authorization": f"Bearer {api_key}"}, base_url=base_url),
         )
 
     @staticmethod
     async def openai_aclient_for_user(user: UserIdentity) -> openai.AsyncClient:
+        """Shared per user, and callers must not close it — see `LiteLLMProxySettings.httpx_client`."""
         api_key = await LiteLLMService.api_key_for_user(user)
-        return openai.AsyncClient(
-            api_key=api_key,
-            base_url=LiteLLMProxySettings().BASE_URL,
+        base_url = LiteLLMProxySettings().BASE_URL
+        return LiteLLMProxySettings.pooled_async_client(
+            f"openai:{base_url}:{user.id}",
+            lambda: openai.AsyncClient(api_key=api_key, base_url=base_url),
         )

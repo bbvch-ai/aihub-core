@@ -5,6 +5,7 @@ import httpx
 import pytest
 
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
 
 pytestmark = pytest.mark.unit
@@ -30,8 +31,10 @@ def _user(user_id: str) -> UserIdentity:
 @pytest.fixture(autouse=True)
 def _clear_cache() -> Iterator[None]:
     LiteLLMService._user_cache.clear()
+    LiteLLMProxySettings._async_clients.clear()
     yield
     LiteLLMService._user_cache.clear()
+    LiteLLMProxySettings._async_clients.clear()
 
 
 def _patched_settings(transport: _RecordingTransport) -> MagicMock:
@@ -118,6 +121,28 @@ async def test_key_generate_conflict_is_treated_as_success() -> None:
 
     assert key == LiteLLMService.generate_key_for_user(user)
     assert transport.requests == [("GET", "/user/info"), ("POST", "/user/new"), ("POST", "/key/generate")]
+
+
+@pytest.mark.asyncio
+async def test_per_user_clients_are_reused_instead_of_leaked_per_call() -> None:
+    """Neither httpx nor the OpenAI SDK has a finaliser, so a per-call client leaks its connection pool."""
+    user, other_user = _user("cached-client-user"), _user("other-user")
+    LiteLLMService._user_cache[user.id] = "sk-cached"
+    LiteLLMService._user_cache[other_user.id] = "sk-other"
+
+    settings_class = MagicMock()
+    settings_class.return_value.BASE_URL = "http://litellm:4000"
+    settings_class.pooled_async_client = LiteLLMProxySettings.pooled_async_client
+
+    with patch(
+        "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service.LiteLLMProxySettings",
+        settings_class,
+    ):
+        assert await LiteLLMService.openai_aclient_for_user(user) is await LiteLLMService.openai_aclient_for_user(user)
+        assert await LiteLLMService.httpx_aclient_for_user(user) is await LiteLLMService.httpx_aclient_for_user(user)
+        assert await LiteLLMService.httpx_aclient_for_user(user) is not await LiteLLMService.httpx_aclient_for_user(
+            other_user
+        )
 
 
 @pytest.mark.asyncio

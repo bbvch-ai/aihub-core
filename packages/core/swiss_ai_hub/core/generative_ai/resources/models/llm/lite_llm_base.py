@@ -19,8 +19,7 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=1)
 def _fetch_all_model_info_cached() -> dict[str, Any]:
-    with LiteLLMProxySettings().httpx_client as client:
-        return client.get("/v1/model/info").json()
+    return LiteLLMProxySettings().httpx_client.get("/v1/model/info").json()
 
 
 class LiteLLMBase[OpenAILike](Form, abc.ABC):

@@ -168,10 +168,9 @@ class OpenWebuiProvisioner:
         Filters on ``mode == "chat"`` rather than the capability prefix so non-chat models
         (embedding/rerank/transcription/image) never reach the chat picker.
         """
-        async with LiteLLMProxySettings().httpx_aclient as client:
-            response = await client.get("/v1/model/info")
-            response.raise_for_status()
-            data = response.json()["data"]
+        response = await LiteLLMProxySettings().httpx_aclient.get("/v1/model/info")
+        response.raise_for_status()
+        data = response.json()["data"]
 
         models: list[AvailableModel] = []
         for entry in data:

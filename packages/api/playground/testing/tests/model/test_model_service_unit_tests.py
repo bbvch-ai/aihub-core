@@ -21,13 +21,7 @@ _LITELLM_MODELS = [
 
 
 class _FakeAsyncClient:
-    """Fakes the ``async with client as c: await c.get(...)`` shape ``get_model_list`` drives."""
-
-    async def __aenter__(self) -> "_FakeAsyncClient":
-        return self
-
-    async def __aexit__(self, *args: object) -> None:
-        return None
+    """Fakes the shared, never-closed client ``get_model_list`` drives."""
 
     async def get(self, url: str) -> Mock:
         return Mock(json=Mock(return_value={"data": _LITELLM_MODELS}))

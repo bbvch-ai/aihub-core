@@ -18,8 +18,9 @@ class ModelService:
     @staticmethod
     @trace_fn
     async def get_model_list(user: UserIdentity) -> list[ModelDTO]:
-        async with await LiteLLMService.httpx_aclient_for_user(user) as client:
-            response = await client.get(url="v1/model/info")
+        client = await LiteLLMService.httpx_aclient_for_user(user)
+
+        response = await client.get(url="v1/model/info")
         data = response.json()["data"]
         models: list[ModelDTO] = []
         access_checker = AccessChecker.from_user(user)

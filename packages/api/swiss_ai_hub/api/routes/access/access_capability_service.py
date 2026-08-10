@@ -200,10 +200,9 @@ class AccessCapabilityService:
         rows. Uses the master client so the whole catalog is built; per-subject and per-ceiling filtering
         happens downstream in ``_capability_for_guard``. Models without a capability prefix are skipped —
         they cannot form a ``aihub.user.model.<capability>.<name>`` rule."""
-        async with LiteLLMProxySettings().httpx_aclient as client:
-            response = await client.get("/v1/model/info")
-            response.raise_for_status()
-            data = response.json()["data"]
+        response = await LiteLLMProxySettings().httpx_aclient.get("/v1/model/info")
+        response.raise_for_status()
+        data = response.json()["data"]
         models_by_capability: dict[str, list[str]] = {}
         for entry in data:
             capability, _, name = entry["model_name"].partition("/")
