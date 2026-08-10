@@ -255,9 +255,10 @@ def test_undeclared_keys_do_count_toward_the_dynamic_field() -> None:
 
 def test_declared_field_names_are_resolved_once_and_cached() -> None:
     store = _make_store_with_stub_client()
+    expected = {"id", DOCUMENT_ID, NAMESPACE, "embedding", "sparse_embedding", "text"}
 
-    assert store._declared_field_names() == {"id", DOCUMENT_ID, NAMESPACE, "embedding", "sparse_embedding", "text"}
-    assert store._declared_field_names() == store._declared_field_names()
+    assert store._declared_field_names() == expected
+    assert store._declared_field_names() == expected
     assert store.client.describe_calls == 1
 
 
@@ -275,8 +276,9 @@ def test_guard_measures_bytes_not_characters() -> None:
     store = _make_store()
     payload = "ü" * (MILVUS_DYNAMIC_FIELD_MAX_BYTES // 2)
     dynamic_field = {"_node_content": payload}
+    node = _make_summary_node(child_count=0)
 
     assert len(json.dumps(dynamic_field, ensure_ascii=False)) < MILVUS_DYNAMIC_FIELD_MAX_BYTES
 
     with pytest.raises(ValueError):
-        store._verify_dynamic_field_fits(dynamic_field, _make_summary_node(child_count=0))
+        store._verify_dynamic_field_fits(dynamic_field, node)
