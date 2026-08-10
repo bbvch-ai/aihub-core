@@ -5,9 +5,10 @@ from typing import Annotated
 
 from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
+from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js import JetStreamContext
 from nats.js.api import ConsumerConfig
-from nats.js.errors import NotFoundError
+from nats.js.errors import APIError, NotFoundError
 from opentelemetry import context, trace
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
@@ -97,15 +98,41 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
         try:
             consumer_info = await self.js.consumer_info(self.stream_manager.stream_name, self.queue_group)
         except NotFoundError:
+            # NotFoundError is how nats-py answers "does this consumer exist?" — there is no
+            # exists() call. Nothing to reconcile on a first deployment; subscribe() creates the
+            # consumer with the config it is passed. Any other failure propagates.
+            logger.debug(
+                f"{self.name} found no existing consumer '{self.queue_group}' on stream "
+                f"'{self.stream_manager.stream_name}'; subscribe will create it"
+            )
             return
 
         consumer_config = consumer_info.config
         if consumer_config.ack_wait == self.ack_wait and consumer_config.max_deliver == self.max_deliver:
+            logger.debug(
+                f"{self.name} consumer '{self.queue_group}' already at "
+                f"ack_wait={self.ack_wait}s max_deliver={self.max_deliver}"
+            )
             return
 
         consumer_config.ack_wait = self.ack_wait
         consumer_config.max_deliver = self.max_deliver
-        await self.js.add_consumer(self.stream_manager.stream_name, config=consumer_config)
+        try:
+            await self.js.add_consumer(self.stream_manager.stream_name, config=consumer_config)
+        except (APIError, NatsTimeoutError):
+            # Reconciling redelivery settings is best-effort. The consumer already exists and keeps
+            # consuming with its current config, so a failure here degrades to the behaviour that was
+            # in place before this call — not a reason to refuse to start and take the whole service
+            # down with it. Programming errors still propagate; only JetStream API and transport
+            # failures are tolerated.
+            logger.warning(
+                f"{self.name} could not update consumer '{self.queue_group}' to "
+                f"ack_wait={self.ack_wait}s max_deliver={self.max_deliver}; "
+                f"continuing with its existing redelivery settings",
+                exc_info=True,
+            )
+            return
+
         logger.info(
             f"{self.name} updated consumer '{self.queue_group}' to "
             f"ack_wait={self.ack_wait}s max_deliver={self.max_deliver}"
