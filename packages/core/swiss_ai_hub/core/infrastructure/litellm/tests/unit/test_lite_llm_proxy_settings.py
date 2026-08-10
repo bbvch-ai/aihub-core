@@ -22,13 +22,17 @@ def _clear_pools() -> Iterator[None]:
 
 
 def test_sync_client_is_reused_across_accesses_and_instances() -> None:
-    assert _settings().httpx_client is _settings().httpx_client
+    first_instance, second_instance = _settings(), _settings()
+
+    assert first_instance.httpx_client is second_instance.httpx_client
 
 
 @pytest.mark.asyncio
 async def test_async_clients_are_reused_across_accesses_and_instances() -> None:
-    assert _settings().httpx_aclient is _settings().httpx_aclient
-    assert _settings().openai_aclient is _settings().openai_aclient
+    first_instance, second_instance = _settings(), _settings()
+
+    assert first_instance.httpx_aclient is second_instance.httpx_aclient
+    assert first_instance.openai_aclient is second_instance.openai_aclient
 
 
 @pytest.mark.asyncio

@@ -138,11 +138,15 @@ async def test_per_user_clients_are_reused_instead_of_leaked_per_call() -> None:
         "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service.LiteLLMProxySettings",
         settings_class,
     ):
-        assert await LiteLLMService.openai_aclient_for_user(user) is await LiteLLMService.openai_aclient_for_user(user)
-        assert await LiteLLMService.httpx_aclient_for_user(user) is await LiteLLMService.httpx_aclient_for_user(user)
-        assert await LiteLLMService.httpx_aclient_for_user(user) is not await LiteLLMService.httpx_aclient_for_user(
-            other_user
-        )
+        first_openai_client = await LiteLLMService.openai_aclient_for_user(user)
+        second_openai_client = await LiteLLMService.openai_aclient_for_user(user)
+        first_httpx_client = await LiteLLMService.httpx_aclient_for_user(user)
+        second_httpx_client = await LiteLLMService.httpx_aclient_for_user(user)
+        other_user_client = await LiteLLMService.httpx_aclient_for_user(other_user)
+
+        assert first_openai_client is second_openai_client
+        assert first_httpx_client is second_httpx_client
+        assert first_httpx_client is not other_user_client
 
 
 @pytest.mark.asyncio
