@@ -30,9 +30,7 @@ def _sse_body(contents: list[str]) -> str:
 def _streaming_client(contents: list[str]) -> openai.AsyncOpenAI:
     """A real SDK client over a mock transport, so closing it fails the way a closed pooled client would."""
     transport = httpx.MockTransport(
-        lambda _request: httpx.Response(
-            200, headers={"content-type": "text/event-stream"}, content=_sse_body(contents)
-        )
+        lambda _request: httpx.Response(200, headers={"content-type": "text/event-stream"}, content=_sse_body(contents))
     )
     return openai.AsyncOpenAI(
         api_key="sk-test",
