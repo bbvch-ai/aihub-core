@@ -96,10 +96,11 @@ const submitConfiguration = async (formData: Record<string, unknown>) => {
   }
   catch (error) {
     console.error('Failed to save process configuration:', error)
+    // See the agent configuration page: the SDK's global onResponseError already surfaces the
+    // backend `detail`, so adding `error.message` here would only duplicate the toast with a URL.
     toast.add({
       severity: 'error',
       summary: t('process.configuration.saveError'),
-      detail: error instanceof Error ? error.message : String(error),
       life: 5000,
     })
   }

@@ -117,10 +117,12 @@ const submitConfiguration = async (formData: Record<string, unknown>) => {
   }
   catch (error) {
     console.error('Failed to save agent configuration:', error)
+    // No `detail` here on purpose: the SDK's global onResponseError (app.vue) already toasts the
+    // backend's `detail`, and formats pydantic's array-shaped errors while doing it. Passing
+    // `error.message` would only add a second toast reading `[PUT] "<url>": 400 Bad Request`.
     toast.add({
       severity: 'error',
       summary: t('agent.configuration.saveError'),
-      detail: error instanceof Error ? error.message : String(error),
       life: 5000,
     })
   }

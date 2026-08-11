@@ -25,6 +25,12 @@ function localeRequired(node: FormKitNode): boolean {
   return LOCALES.some(locale => !!value[locale]?.trim())
 }
 
+// FormKit skips a rule entirely when the node's value is empty, unless the rule opts out —
+// which is why the built-in `required` sets this too. Without it the rule would never run on a
+// never-touched field, whose value is still `null`, and a blank Name would pass on a fresh
+// create form: precisely the case this rule exists to catch.
+localeRequired.skipEmpty = false
+
 const localeRequiredMessages = {
   de: 'Mindestens eine Sprache muss ausgefüllt sein.',
   en: 'At least one language must be filled in.',
