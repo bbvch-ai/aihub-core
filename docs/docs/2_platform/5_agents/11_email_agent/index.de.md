@@ -1,7 +1,7 @@
 ---
 title: E-Mail-Agent
 description: Ein Postfach-Agent, der ungelesene E-Mails aus einem IMAP-Posteingang liest, sie ablegt und Antworten zur Prüfung durch einen Menschen entwirft — versendet wird nie.
-source_sha: 9bea49d9fefcea8b3f5e29c0aaa98679259cdcb27ee500b450c066c9246e721d
+source_sha: fd9620f92f3f3cbfa6230c9c03c900e2adca9a34506f781c55471a10286d57fb
 ---
 
 # E-Mail-Agent
@@ -82,6 +82,14 @@ Verschieben verlagert eine Nachricht; gelöscht wird nie.
 3. **Speichern und markieren.** Jeder Entwurf wird an den Entwürfe-Ordner angehängt, und erst danach wird die
    Quellnachricht als entworfen markiert. Die Quellnachricht bleibt **ungelesen** — ein Mensch sieht sie weiterhin als
    neue Post, die Aufmerksamkeit braucht.
+
+::: details Welches Flag eine Nachricht als entworfen markiert
+Der Agent bevorzugt ein privates Keyword (`$AiHubDrafted`), das nur er selbst versteht, damit eine Nachricht mit einem
+ungesendeten Entwurf nicht nach etwas aussieht, das sie nicht ist. Nicht jeder Mailserver unterstützt jedoch
+benutzerdefinierte Keywords. Auf einem Server ohne diese Unterstützung weicht der Agent auf das Standard-Flag
+`\Answered` aus — solche Nachrichten erscheinen in Ihrem Mail-Client dann als **beantwortet**, obwohl noch nichts
+gesendet wurde. Falls Ihr Postfach unerwartete „beantwortet"-Markierungen zeigt, ist das der Grund.
+:::
 
 ::: details Warum die Quellnachricht ungelesen bleibt
 Das Entwerfen ist ein Vorbereitungsschritt, keine Erledigung. Der Sinn ist, dass ein Mensch das Postfach öffnet, die

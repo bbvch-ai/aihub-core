@@ -80,6 +80,13 @@ deletes one.
 3. **Save and mark.** Each draft is appended to the drafts folder, and only then is the source message flagged as
    drafted. The source message stays **unread** — a person still sees it as new mail waiting for attention.
 
+::: details Which flag marks a message as drafted
+The agent prefers a private keyword (`$AiHubDrafted`) that only it understands, so a message with an unsent draft is not
+made to look like something it is not. Not every mail server supports custom keywords, though. On a server that does
+not, the agent falls back to the standard `\Answered` flag — and those messages will show up as **replied** in your mail
+client even though nothing has been sent yet. If your mailbox shows unexpected "replied" markers, this is why.
+:::
+
 ::: details Why the source message stays unread
 Drafting is a preparation step, not a resolution. The point is that a human opens the mailbox, sees the message as
 unread and unhandled, finds a draft reply already waiting, and decides what to do. Marking mail as read would hide work
