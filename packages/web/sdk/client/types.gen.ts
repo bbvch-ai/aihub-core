@@ -9140,6 +9140,13 @@ export type LocaleInput = {
   placeholder?: LocaleString | string | null;
   /**
    * Validation
+   *
+   * Emits `localeRequired` where other elements emit FormKit's `required`.
+   *
+   * FormKit's `required` rule only asks whether a value is present, and this element's
+   * value is always a `{de, en, fr, it}` object — non-empty, therefore passing, even when
+   * every locale inside it is blank. `localeRequired` (registered in the frontend FormKit
+   * config) looks at the locale values themselves.
    */
   readonly validation: string;
   [key: string]: unknown;
