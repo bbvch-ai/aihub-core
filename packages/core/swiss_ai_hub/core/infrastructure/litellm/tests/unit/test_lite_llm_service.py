@@ -35,11 +35,10 @@ def _settings() -> LiteLLMProxySettings:
 
 @pytest.fixture(autouse=True)
 def _clear_cache() -> Iterator[None]:
+    """Only the key cache; the pools belong to `_no_pool_residue`, which asserts rather than clears."""
     LiteLLMService._user_cache.clear()
-    LiteLLMProxySettings._async_clients.clear()
     yield
     LiteLLMService._user_cache.clear()
-    LiteLLMProxySettings._async_clients.clear()
 
 
 def _patched_settings(transport: _RecordingTransport) -> MagicMock:
@@ -152,6 +151,38 @@ async def test_per_user_openai_clients_share_one_connection_pool() -> None:
         assert client._client is other_client._client
         assert len(LiteLLMProxySettings._async_clients[asyncio.get_running_loop()]) == 1
 
+    await LiteLLMProxySettings.aclose_pooled_clients()
+
+
+@pytest.mark.asyncio
+async def test_pool_size_is_independent_of_user_count(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    User count must not be a dimension of the pool at all, which is a stronger claim than any bound on it:
+    asserting a `maxsize`/TTL would concede the dimension exists and only cap how far it grows.
+
+    Settings come from the environment rather than a patched class, so the real `pooled_async_client` runs —
+    patching the class out replaces the pool itself, and the growth this guards against would go unseen.
+    The pool is deliberately not cleared between rounds, so the last one resolves the 551st distinct user
+    against the same single entry.
+    """
+    monkeypatch.setenv("LITE_LLM_PROXY_BASE_URL", "http://litellm:4000")
+    monkeypatch.setenv("LITE_LLM_PROXY_API_KEY", "sk-master")
+
+    pool_sizes = [await _pool_size_after_resolving_clients_for(user_count) for user_count in (1, 50, 500)]
+
+    assert pool_sizes == [1, 1, 1]
+
+    await LiteLLMProxySettings.aclose_pooled_clients()
+
+
+async def _pool_size_after_resolving_clients_for(user_count: int) -> int:
+    for index in range(user_count):
+        user = _user(f"user-{user_count}-{index}")
+        LiteLLMService._user_cache[user.id] = f"sk-{user_count}-{index}"
+        await LiteLLMService.openai_aclient_for_user(user)
+
+    return len(LiteLLMProxySettings._async_clients[asyncio.get_running_loop()])
+
 
 @pytest.mark.asyncio
 async def test_authorization_header_carries_the_users_key() -> None:
@@ -173,6 +204,8 @@ async def test_the_users_key_overrides_the_shared_clients_master_key() -> None:
     )
 
     assert request.headers["authorization"] == "Bearer sk-cached"
+
+    await LiteLLMProxySettings.aclose_pooled_clients()
 
 
 @pytest.mark.asyncio
