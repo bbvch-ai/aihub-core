@@ -225,6 +225,11 @@ rag_start_event:
     relevanten Kontext aus den ausgewählten Wissensquellen ab – unter Verwendung der
     gewählten Namensräume und optionaler Metadatenfilter – bevor eine Antwort generiert
     wird.
+scheduled_start_event:
+  name: Geplanter Lauf Gestartet
+  description: Ein geplanter Lauf wurde vom Cron-Scheduler automatisch zur konfigurierten
+    Zeit gestartet. Kein Benutzer hat ihn ausgelöst — der Lauf wird als Systemlauf
+    ohne Ausführungsidentität ausgeführt.
 rag_success_stop_event:
   name: RAG Erfolg
   description: Der Retrieval-Augmented-Lauf hat eine Antwort für den Benutzer erzeugt.

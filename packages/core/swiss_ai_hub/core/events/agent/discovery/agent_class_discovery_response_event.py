@@ -33,6 +33,9 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
     is_conversational: Annotated[
         bool, Field(description="Whether the agent can participate in a chat-based conversation")
     ]
+    is_schedulable: Annotated[
+        bool, Field(description="Whether the agent can be run automatically on a cron schedule")
+    ] = False
     form: Annotated[
         list[ALL_FORM_OPTIONS],
         Field(

@@ -94,6 +94,9 @@ class AgentClassEntity(Document):
     form = ListField(DictField(), default=list, description="FormKit elements defining the agent configuration form.")
     agent_config_specs = EmbeddedDocumentField(AgentConfigSpecsEntity, required=False)
     is_conversational = BooleanField(required=True)
+    # Defaulted, unlike is_conversational: classes discovered before this field existed have no stored
+    # value, and reads must not yield None into the non-optional DTO field. Self-heals on next discovery.
+    is_schedulable = BooleanField(required=True, default=False)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     hitl_request_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
@@ -129,6 +132,7 @@ class AgentClassEntity(Document):
         form: list[dict],
         agent_config_specs: AgentConfigSpecsEntity | None,
         is_conversational: bool,
+        is_schedulable: bool,
         start_events: list[EventSpec],
         stop_events: list[EventSpec],
         hitl_request_events: list[EventSpec],
@@ -146,6 +150,7 @@ class AgentClassEntity(Document):
             form=form,
             agent_config_specs=agent_config_specs,
             is_conversational=is_conversational,
+            is_schedulable=is_schedulable,
             start_events=start_events,
             stop_events=stop_events,
             hitl_request_events=hitl_request_events,
@@ -169,6 +174,7 @@ class AgentClassEntity(Document):
         form: list[ALL_FORM_OPTIONS],
         agent_config_specs: AgentConfigSpecs,
         is_conversational: bool,
+        is_schedulable: bool,
         start_events: list[EventSpecs],
         stop_events: list[EventSpecs],
         hitl_request_events: list[EventSpecs],
@@ -204,6 +210,7 @@ class AgentClassEntity(Document):
             existing_agent.form = form_dicts
             existing_agent.agent_config_specs = agent_config_specs_entity
             existing_agent.is_conversational = is_conversational
+            existing_agent.is_schedulable = is_schedulable
             existing_agent.start_events = start_events_entities
             existing_agent.stop_events = stop_events_entities
             existing_agent.hitl_request_events = hitl_request_events_entities
@@ -222,6 +229,7 @@ class AgentClassEntity(Document):
                 form=form_dicts,
                 agent_config_specs=agent_config_specs_entity,
                 is_conversational=is_conversational,
+                is_schedulable=is_schedulable,
                 start_events=start_events_entities,
                 stop_events=stop_events_entities,
                 hitl_request_events=hitl_request_events_entities,
@@ -241,6 +249,13 @@ class AgentClassEntity(Document):
     def get_online_conversational(cls) -> list["AgentClassEntity"]:
         threshold = datetime.now() - cls.ONLINE_THRESHOLD
         return list(cls.objects(is_conversational=True, last_discovered__gte=threshold))
+
+    @classmethod
+    @trace_fn
+    def get_online_schedulable(cls) -> list["AgentClassEntity"]:
+        """Schedulable classes currently online — the scheduler only fires runs an agent can consume."""
+        threshold = datetime.now() - cls.ONLINE_THRESHOLD
+        return list(cls.objects(is_schedulable=True, last_discovered__gte=threshold))
 
     @classmethod
     @trace_fn

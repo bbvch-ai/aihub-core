@@ -176,6 +176,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                     form=agent_class_dto.form,
                     agent_config_specs=agent_class_dto.agent_config_specs,
                     is_conversational=agent_class_dto.is_conversational,
+                    is_schedulable=agent_class_dto.is_schedulable,
                     start_events=agent_class_dto.start_events,
                     stop_events=agent_class_dto.stop_events,
                     hitl_request_events=agent_class_dto.hitl_request_events,

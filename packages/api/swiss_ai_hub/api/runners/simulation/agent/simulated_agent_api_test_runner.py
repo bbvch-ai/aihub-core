@@ -304,6 +304,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             form=self.agent_config.to_formkit_form(),
             agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
             is_conversational=True,
+            is_schedulable=False,
             start_events=self.start_events or [],
             stop_events=self.stop_events or [],
             hitl_request_events=self.hitl_request_events or [],
