@@ -465,6 +465,14 @@ role assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` /
 storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserDashboardEntity` (dashboard config),
 `NotificationEntity`, `LocaleStringEntity`.
 
+**Vector store — children are not persisted**: `PartitionAwareMilvusVectorStore.add` strips `NodeRelationship.CHILD`
+before serializing. LlamaIndex packs every relationship into `_node_content` inside Milvus' dynamic field, which is
+capped at 65536 bytes, and a hierarchical summary node carries one entry per descendant — so a wide summary tree fails
+the insert outright. The edge is recoverable because each child persists its own `PARENT`, which is that edge's exact
+inverse; read it that way rather than expecting `child_nodes`, which comes back `None`. `add` also verifies the dynamic
+field fits before writing any node, so a new metadata key that reintroduces the overflow fails with the offending
+document and node named instead of Milvus' `code=1100`.
+
 ## Infrastructure Settings
 
 ~20 Pydantic `BaseSettings` classes for external service connections. Environment variables are NOT auto-loaded — they
