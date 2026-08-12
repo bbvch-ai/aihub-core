@@ -226,13 +226,13 @@ message carries a fresh higher UID and the effective order is **move order**. Co
   the sorted order rather than in server response order — a 50-message listing drops from 50 round trips to 2.
 - **The fallback path is O(folder size), deliberately.** Round trips fall, but the *volume* of the client-side ordering
   fetch grows with the number of matches rather than with `limit`, where the previous code fetched exactly `limit`
-  headers. This is inherent: which message is oldest cannot be known without dating every candidate, so a server
-  without `SORT` must page through all of them. Bounding the search instead — a `SINCE` window derived from the
-  schedule, for example — was rejected because the mail it would drop is precisely the oldest mail, the thing this
-  change exists to surface. What limits the cost in practice is the dedup flag: `UNKEYWORD $AiHubDrafted` matches only
-  never-drafted mail, so a folder in steady state stays small and the worst case is a first run over a large existing
-  archive. Only `ENVELOPE` and `INTERNALDATE` are fetched, never bodies.
+  headers. This is inherent: which message is oldest cannot be known without dating every candidate, so a server without
+  `SORT` must page through all of them. Bounding the search instead — a `SINCE` window derived from the schedule, for
+  example — was rejected because the mail it would drop is precisely the oldest mail, the thing this change exists to
+  surface. What limits the cost in practice is the dedup flag: `UNKEYWORD $AiHubDrafted` matches only never-drafted
+  mail, so a folder in steady state stays small and the worst case is a first run over a large existing archive. Only
+  `ENVELOPE` and `INTERNALDATE` are fetched, never bodies.
 - **Expunge races skip rather than fail.** A UID can be expunged by another client between the `SEARCH` and either
-  `FETCH`. Batching raises the stakes — one vanished message would fail the entire listing, whereas the old per-UID
-  loop failed only that message — so a UID missing from the ordering fetch sorts last and one missing from the summary
-  fetch is skipped. This is not error suppression: a message that no longer exists is not a listing candidate.
+  `FETCH`. Batching raises the stakes — one vanished message would fail the entire listing, whereas the old per-UID loop
+  failed only that message — so a UID missing from the ordering fetch sorts last and one missing from the summary fetch
+  is skipped. This is not error suppression: a message that no longer exists is not a listing candidate.
