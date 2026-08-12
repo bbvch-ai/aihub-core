@@ -111,7 +111,24 @@ The window start is clamped to `now - 15 minutes`. Without a bound, a scheduler 
 fire seventy-odd stale hourly runs at once. Occurrences dropped by the clamp are logged, not silently discarded. A cold
 start adopts the current time and fires nothing.
 
-### 7. `croniter` for cron parsing
+### 7. The watermark stays free to move backwards, and says so in the log
+
+A tick that outruns its 120s lease lets a second replica tick concurrently. No run is duplicated — the per-occurrence
+claims hold — but the two replicas capture `now` at different moments and write it in whichever order they finish, so
+the watermark can move backwards and the next tick re-scans a window it already covered.
+
+Making the watermark monotonic was considered and **rejected**. The watermark is wall-clock, so a replica with a fast
+clock (or an NTP step) writes one ahead of real time; every replica then computes an inverted window and fires nothing.
+Today that heals itself the moment a correctly-clocked replica writes the next watermark. Under a monotonic rule the bad
+value becomes a floor nobody can go below, turning a self-correcting inefficiency into a silent, unrecoverable outage.
+Enforcing it atomically would also need a Lua `EVAL`, since read-compare-write across replicas is racy and Redis has no
+"set if greater" — a new mechanism with no precedent here, bought for a benign issue.
+
+So the behaviour is kept and made observable instead: a tick logs when the stored watermark sits ahead of this replica's
+clock (the dangerous, otherwise-silent case), and when its own duration exceeded the lease (the benign root cause). Both
+are warnings that can be alerted on; neither changes what runs.
+
+### 8. `croniter` for cron parsing
 
 Nothing in the tree parsed cron. `croniter` is a small, widely used library with timezone-aware iteration; the
 alternative is hand-rolling field parsing, ranges, steps, and DST handling.

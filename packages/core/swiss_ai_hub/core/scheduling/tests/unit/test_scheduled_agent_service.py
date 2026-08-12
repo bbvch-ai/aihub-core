@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
@@ -204,6 +205,56 @@ class TestInstanceSelection:
         await _run_tick(service, schedulable=False)
 
         distributor.distribute_event.assert_not_awaited()
+
+
+class TestDiagnostics:
+    """These only log. The behaviour they describe is deliberate, so the tests assert that it is
+    still in force — a warning that had quietly become a behaviour change would be worse than none."""
+
+    @pytest.mark.asyncio
+    async def test_warns_when_the_watermark_sits_in_the_future(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A fast-clocked replica writes a watermark ahead of real time and every replica then fires
+        nothing, with no error to show for it. The warning is the only signal that this is happening."""
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(service, watermark=_NOW + timedelta(hours=1))
+
+        assert "ahead of this replica's clock" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_a_future_watermark_is_still_allowed_to_be_overwritten(self, service: ScheduledAgentService) -> None:
+        """The watermark must stay free to move backwards — that is what lets a correctly-clocked
+        replica repair a skewed one. Making it monotonic would freeze the skew in place permanently."""
+        await _run_tick(service, watermark=_NOW + timedelta(hours=1))
+
+        service._store.set_watermark.assert_awaited_once_with(_NOW)
+
+    @pytest.mark.asyncio
+    async def test_stays_quiet_on_a_normal_tick(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A watermark inside the catch-up window and a clock that agrees with it — no diagnostics."""
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(service, watermark=_NOW - timedelta(minutes=5))
+
+        assert caplog.text == ""
+
+    def test_warns_when_a_tick_outruns_its_lease(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING):
+            service._warn_if_tick_outran_its_lease(service._lease_ttl + 1)
+
+        assert "outrunning its" in caplog.text
+
+    def test_silent_when_a_tick_finishes_inside_its_lease(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING):
+            service._warn_if_tick_outran_its_lease(0.01)
+
+        assert caplog.text == ""
 
 
 class TestCatchUp:

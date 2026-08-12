@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from datetime import UTC, datetime, timedelta
 
 from bson import ObjectId
@@ -44,6 +45,7 @@ class ScheduledAgentService:
     ) -> None:
         self._distributor = external_agent_event_distributor
         self._tick_interval = tick_interval
+        self._lease_ttl = lease_ttl
         self._max_catchup = max_catchup
         # Claims must outlive the catch-up window, or an occurrence dropped from a replayed window
         # could be claimed a second time after its key expired.
@@ -101,11 +103,54 @@ class ScheduledAgentService:
                 logger.info("Scheduler watermark initialised; first window starts from now")
                 return
 
+            self._warn_if_clock_is_behind_watermark(watermark, now)
+
+            started = time.monotonic()
             window_start = self._clamp_window_start(watermark, now)
             for schedule, config in self._due_instances():
                 await self._fire_occurrences(schedule, config, window_start, now)
 
             await self._store.set_watermark(now)
+            self._warn_if_tick_outran_its_lease(time.monotonic() - started)
+
+    @staticmethod
+    def _warn_if_clock_is_behind_watermark(watermark: datetime, now: datetime) -> None:
+        """Surfaces a watermark that sits in this replica's future, which otherwise fires nothing silently.
+
+        The watermark is wall-clock, so a replica whose clock runs fast writes one ahead of real time.
+        Every replica then computes an inverted window and fires nothing at all until the clock catches
+        up — no error, no empty-result signal, just silence. The system does repair itself once a
+        correctly-clocked replica writes the next watermark, which is precisely why the watermark is
+        left free to move backwards; this warning is what makes the interim visible.
+        """
+        if now >= watermark:
+            return
+
+        logger.warning(
+            "Scheduler watermark %s is ahead of this replica's clock (%s) by %s — nothing will fire "
+            "until the clock passes it. Check for clock skew between replicas.",
+            watermark.isoformat(),
+            now.isoformat(),
+            watermark - now,
+        )
+
+    def _warn_if_tick_outran_its_lease(self, duration_seconds: float) -> None:
+        """Surfaces a tick that ran longer than its lease, which lets a second replica tick concurrently.
+
+        No run is duplicated when that happens — the per-occurrence claims hold — but the two replicas
+        write watermarks out of order, so the next tick re-scans a window it already covered. Wasted
+        work rather than a fault, and worth knowing about because a tick is normally sub-second.
+        """
+        if duration_seconds < self._lease_ttl:
+            return
+
+        logger.warning(
+            "Scheduler tick took %.1fs, outrunning its %ss lease — another replica may have ticked "
+            "concurrently and the watermark may have moved backwards. Runs are still fired exactly "
+            "once; the next tick will re-scan an already-covered window.",
+            duration_seconds,
+            self._lease_ttl,
+        )
 
     def _clamp_window_start(self, watermark: datetime, now: datetime) -> datetime:
         """Bounds how far back a tick replays, so downtime does not produce a burst of stale runs."""
