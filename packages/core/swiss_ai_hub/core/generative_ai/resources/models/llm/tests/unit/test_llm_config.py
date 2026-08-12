@@ -86,16 +86,13 @@ class TestAsTaskLlm:
 
 
 class TestToLlamaIndex:
-    def test_to_llama_index_requests_usage_on_streamed_calls(self) -> None:
+    def test_usage_reporting_is_not_baked_into_every_request(self) -> None:
+        """
+        ``stream_options`` is requested per streamed call by ``ResilientOpenAILike``, which can retry
+        without it. Baking it into ``additional_kwargs`` here would make that retry impossible, since
+        ``additional_kwargs`` wins over per-call kwargs in ``_get_model_kwargs``.
+        """
         llm, _ = _build_llm()
 
-        assert llm.additional_kwargs == {"stream_options": {"include_usage": True}}
-
-    def test_stream_options_only_sent_when_actually_streaming(self) -> None:
-        llm, _ = _build_llm()
-
-        non_streaming_kwargs = llm._get_model_kwargs()
-        streaming_kwargs = llm._get_model_kwargs(stream=True)
-
-        assert "stream_options" not in non_streaming_kwargs
-        assert streaming_kwargs["stream_options"] == {"include_usage": True}
+        assert "stream_options" not in llm.additional_kwargs
+        assert "stream_options" not in llm._get_model_kwargs(stream=True)

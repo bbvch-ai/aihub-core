@@ -146,9 +146,10 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 
-        ``stream_options.include_usage`` asks the gateway to report real token usage on the final
-        streamed chunk, so ``TokenCountingHandler`` doesn't fall back to re-tokenizing the whole
-        chat history locally on every call.
+        Streamed calls ask the gateway to report real token usage on the final chunk, so
+        ``TokenCountingHandler`` doesn't fall back to re-tokenizing the whole chat history locally on
+        every call. That request lives in ``ResilientOpenAILike`` rather than in ``additional_kwargs``
+        here, because endpoints that reject ``stream_options`` need a plain-stream retry.
         """
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
@@ -186,7 +187,6 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,
             default_headers=default_headers,
-            additional_kwargs={"stream_options": {"include_usage": True}},
         )
 
         return open_ai_like, cost_tracker
