@@ -49,7 +49,11 @@ class ScheduleStateStore:
             try:
                 await lock.release()
             except LockError:
-                logger.warning("Scheduler leader lease expired before release; consider raising SCHEDULER_LEASE_TTL")
+                logger.warning(
+                    "Scheduler leader lease expired mid-tick; another replica may already hold it. "
+                    "Raise the lease_ttl passed to ScheduledAgentService if ticks routinely outrun %ss",
+                    self._lease_ttl,
+                )
 
     async def claim_occurrence(self, agent_class: str, agent_id: str, occurrence: datetime) -> bool:
         """Claims one occurrence for firing, returning False if it was already claimed.

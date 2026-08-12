@@ -5,8 +5,9 @@ from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
 from swiss_ai_hub.core.scheduling.cron_schedule_calculator import CronScheduleCalculator
 
 _ZURICH = ZoneInfo("Europe/Zurich")
-_HOURLY = AgentSchedule(minute="0", hour="*")
-_DAILY_NOON_ZURICH = AgentSchedule(minute="0", hour="12", timezone="Europe/Zurich")
+_EVERY_DAY = {"day_of_month": "*", "month": "*", "day_of_week": "*"}
+_HOURLY = AgentSchedule(minute="0", hour="*", **_EVERY_DAY)
+_DAILY_NOON_ZURICH = AgentSchedule(minute="0", hour="12", timezone="Europe/Zurich", **_EVERY_DAY)
 
 
 def _utc(year: int, month: int, day: int, hour: int, minute: int = 0) -> datetime:

@@ -167,6 +167,36 @@ class TestInstanceSelection:
         assert fired == {"a", "b"}
 
     @pytest.mark.asyncio
+    async def test_one_malformed_schedule_does_not_starve_the_others(
+        self, service: ScheduledAgentService, distributor: MagicMock
+    ) -> None:
+        """The config save path validates against a generated schema that cannot carry AgentSchedule's
+        validators, so a malformed schedule can reach storage. Letting it raise would abort the tick
+        before the watermark advanced and every later tick would rediscover the same row — one bad
+        profile would permanently stop every other schedule."""
+        malformed = _config(
+            agent_id="broken",
+            schedule={
+                "minute": "99",
+                "hour": "*",
+                "day_of_month": "*",
+                "month": "*",
+                "day_of_week": "*",
+                "timezone": "UTC",
+            },
+        )
+        await _run_tick(service, configs=[malformed, _config(agent_id="healthy")])
+
+        fired = {call.kwargs["target_agent"].agent_id for call in distributor.distribute_event.call_args_list}
+        assert fired == {"healthy"}
+
+    @pytest.mark.asyncio
+    async def test_a_malformed_schedule_still_advances_the_watermark(self, service: ScheduledAgentService) -> None:
+        await _run_tick(service, configs=[_config(agent_id="broken", schedule={"minute": "99"})])
+
+        service._store.set_watermark.assert_awaited_once_with(_NOW)
+
+    @pytest.mark.asyncio
     async def test_does_nothing_when_no_class_is_schedulable(
         self, service: ScheduledAgentService, distributor: MagicMock
     ) -> None:

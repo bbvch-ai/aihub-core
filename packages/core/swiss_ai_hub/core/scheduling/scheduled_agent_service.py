@@ -3,6 +3,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from bson import ObjectId
+from pydantic import ValidationError
 from redis.asyncio import Redis
 
 from swiss_ai_hub.core.distributor.events.external_agent_event import ExternalAgentEvent
@@ -131,7 +132,22 @@ class ScheduledAgentService:
             raw_schedule = (config.config_data or {}).get(SCHEDULE_CONFIG_KEY)
             if not raw_schedule:
                 continue
-            instances.append((AgentSchedule.model_validate(raw_schedule), config))
+            # Deliberately not fail-fast. The profile store is shared, and the config save path
+            # validates against a generated JSON-schema model that cannot carry AgentSchedule's cron
+            # and timezone validators — so a malformed schedule can reach storage. Letting it raise
+            # here would abort the tick before the watermark advanced, and every subsequent tick would
+            # rediscover the same row: one bad profile would permanently starve every other schedule.
+            try:
+                schedule = AgentSchedule.model_validate(raw_schedule)
+            except ValidationError as invalid_schedule:
+                logger.error(
+                    "Skipping %s/%s: stored schedule is not valid — %s",
+                    config.agent_class,
+                    config.agent_id,
+                    invalid_schedule,
+                )
+                continue
+            instances.append((schedule, config))
         return instances
 
     async def _fire_occurrences(

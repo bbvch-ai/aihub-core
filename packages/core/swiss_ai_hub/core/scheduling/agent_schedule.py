@@ -2,7 +2,7 @@ from typing import Annotated, Self
 from zoneinfo import ZoneInfo, available_timezones
 
 from croniter import croniter
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from swiss_ai_hub.core.form.form import Form
 
@@ -18,11 +18,16 @@ class AgentSchedule(Form):
     occurrences are computed in this zone and converted to UTC, so a daily schedule survives DST shifts.
     """
 
-    minute: Annotated[str, Field(description="Cron minute position (0-59).")] = "0"
-    hour: Annotated[str, Field(description="Cron hour position (0-23).")] = "*"
-    day_of_month: Annotated[str, Field(description="Cron day-of-month position (1-31).")] = "*"
-    month: Annotated[str, Field(description="Cron month position (1-12).")] = "*"
-    day_of_week: Annotated[str, Field(description="Cron day-of-week position (0-6, Sunday is 0).")] = "*"
+    # Every position is required, and unknown keys are rejected. Defaulting them would make an
+    # unrecognised payload — a form-mode CronInput dict that reached storage, say — validate silently
+    # into "every hour" and start unattended runs nobody configured.
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
+
+    minute: Annotated[str, Field(description="Cron minute position (0-59).")]
+    hour: Annotated[str, Field(description="Cron hour position (0-23).")]
+    day_of_month: Annotated[str, Field(description="Cron day-of-month position (1-31).")]
+    month: Annotated[str, Field(description="Cron month position (1-12).")]
+    day_of_week: Annotated[str, Field(description="Cron day-of-week position (0-6, Sunday is 0).")]
     timezone: Annotated[
         str,
         Field(description="IANA timezone the cron positions are interpreted in, e.g. 'Europe/Zurich'."),
