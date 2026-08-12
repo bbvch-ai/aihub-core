@@ -35,9 +35,7 @@ class TestValidation:
 
     def test_rejects_unknown_timezone(self):
         with pytest.raises(ValueError, match="Unknown timezone"):
-            AgentSchedule(
-                minute="0", hour="*", day_of_month="*", month="*", day_of_week="*", timezone="Mars/Olympus"
-            )
+            AgentSchedule(minute="0", hour="*", day_of_month="*", month="*", day_of_week="*", timezone="Mars/Olympus")
 
     def test_accepts_step_and_list_syntax(self):
         schedule = AgentSchedule(minute="*/15", hour="*", day_of_month="*", month="*", day_of_week="1,3,5")

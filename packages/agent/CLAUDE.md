@@ -318,10 +318,10 @@ constructing NATS subjects at each specificity level. See `packages/core/swiss_a
 
 - `ControlEvent` — workflow state transitions (dispatched via JetStream, consumed by steps)
 - `StartEvent` — triggers a new run (subclass of `ControlEvent`)
-- `ScheduledStartEvent` — a cron-fired run. Handling it is what makes a blueprint **schedulable**: `AgentRunner`
-  derives `is_schedulable` from the declared start events, exactly as `UserMessageEvent` derives
-  `is_conversational`. Scheduled runs are system runs — `user` is `None` and the thread has no members, so a step
-  must not depend on an initiating identity; take tenant context from the agent's own profile instead
+- `ScheduledStartEvent` — a cron-fired run. Handling it is what makes a blueprint **schedulable**: `AgentRunner` derives
+  `is_schedulable` from the declared start events, exactly as `UserMessageEvent` derives `is_conversational`. Scheduled
+  runs are system runs — `user` is `None` and the thread has no members, so a step must not depend on an initiating
+  identity; take tenant context from the agent's own profile instead
 - `StopEvent` — terminates a run (subclass of `ControlEvent`)
 - `DisplayEvent` — observability (dispatched via NATS Core, consumed by API/frontend)
 - `HumanInTheLoopRequestEvent` / `ResponseEvent` — HITL pause/resume
