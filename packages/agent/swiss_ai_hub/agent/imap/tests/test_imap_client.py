@@ -347,7 +347,7 @@ async def test_list_undrafted_uses_server_sort_when_supported():
 
     _flag, summaries = await client.list_undrafted("Processed", limit=5)
 
-    connection.sort.assert_called_once_with(["DATE"], ["UNKEYWORD", "$AiHubDrafted"])
+    connection.sort.assert_called_once_with(("DATE",), ["UNKEYWORD", "$AiHubDrafted"])
     connection.search.assert_not_called()
     assert [s.message_id for s in summaries] == ["11", "12"]
 
