@@ -197,3 +197,42 @@ drafting is scheduled separately and must be able to work through mail that accu
   events). `ReplyComposer` gained `compose_from_parsed` so the batch drafter can build the threaded envelope from a
   freshly-fetched `ParsedMessage` instead of a `MailFetchedEvent`. This supersedes the move-follower single-draft step
   and its per-draft `MailDraftCreatedEvent` in the workflow.
+
+## Oldest-first candidate ordering (#118)
+
+Neither chain ordered its candidates: both list methods ran an IMAP `SEARCH` and truncated the result (`uids[:limit]`)
+with no sort key anywhere. RFC 3501 does not guarantee `SEARCH` result order, and the de-facto UID order is *arrival
+into that folder* — so in the accumulate-then-draft flow, where `source_folder` points at the processed folder, a moved
+message carries a fresh higher UID and the effective order is **move order**. Combined with truncate-before-sort,
+`batch_size` picked an arbitrary slice rather than the head of the backlog.
+
+- **Sort key is the sent date, with an `INTERNALDATE` fallback.** Not `INTERNALDATE` alone: a moved message gets a fresh
+  one, which is the cause above. Ties break on UID so the order is total.
+- **Server-side `SORT` when advertised, client-side otherwise.** `SORT` (RFC 5256) is an extension rather than part of
+  IMAP4rev1 — Dovecot offers it, Gmail does not — so the path is chosen at runtime from `has_capability(b"SORT")` rather
+  than assumed. The fallback issues one batched `FETCH (INTERNALDATE ENVELOPE)` over the matched UIDs and sorts in the
+  client. The criterion is `DATE` and deliberately **not `ARRIVAL`**: RFC 5256 defines `SORT DATE` as the sent date
+  falling back to `INTERNALDATE`, which is exactly what the client-side branch computes, so the two paths agree.
+  `ARRIVAL` ignores the sent date and would disagree on precisely the moved-mail case.
+- **Sorting happens before truncation**, so the limit takes the oldest N rather than reordering an arbitrary N.
+- **Flag semantics are untouched.** Both list methods already ran inside a read-only `SELECT` (`EXAMINE`), and the new
+  helpers add no `SELECT` of their own; `ENVELOPE`, `INTERNALDATE` and `SORT` cannot implicitly set `\Seen` (RFC 3501
+  §6.4.5 limits that to `RFC822`, `RFC822.TEXT` and non-peek `BODY[<section>]`). The search criteria are unchanged —
+  drafting candidacy is still "not carrying the dedup flag", never `UNSEEN`, per the section above.
+- **The ids must stay UIDs.** `imapclient` issues `UID SORT` because the connection is built with the default
+  `use_uid=True`; the returned ids flow into `mark_drafted`, so a `use_uid=False` connection would flag the wrong
+  message while replying to another. Do not override it in `ImapClientFactory`.
+- **Summary fetches are batched.** The per-UID header fetch became a single `FETCH` over all selected UIDs, iterated in
+  the sorted order rather than in server response order — a 50-message listing drops from 50 round trips to 2.
+- **The fallback path is O(folder size), deliberately.** Round trips fall, but the *volume* of the client-side ordering
+  fetch grows with the number of matches rather than with `limit`, where the previous code fetched exactly `limit`
+  headers. This is inherent: which message is oldest cannot be known without dating every candidate, so a server
+  without `SORT` must page through all of them. Bounding the search instead — a `SINCE` window derived from the
+  schedule, for example — was rejected because the mail it would drop is precisely the oldest mail, the thing this
+  change exists to surface. What limits the cost in practice is the dedup flag: `UNKEYWORD $AiHubDrafted` matches only
+  never-drafted mail, so a folder in steady state stays small and the worst case is a first run over a large existing
+  archive. Only `ENVELOPE` and `INTERNALDATE` are fetched, never bodies.
+- **Expunge races skip rather than fail.** A UID can be expunged by another client between the `SEARCH` and either
+  `FETCH`. Batching raises the stakes — one vanished message would fail the entire listing, whereas the old per-UID
+  loop failed only that message — so a UID missing from the ordering fetch sorts last and one missing from the summary
+  fetch is skipped. This is not error suppression: a message that no longer exists is not a listing candidate.

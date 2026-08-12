@@ -3,8 +3,10 @@ import email
 import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
+from datetime import datetime
 from email.message import EmailMessage
 from email.policy import default as default_policy
+from typing import Any
 
 from imapclient import IMAPClient
 from swiss_ai_hub.core.events.agent import UnreadMailSummary
@@ -17,8 +19,12 @@ _FLAGS_KEY = b"FLAGS"
 _HEADER_KEY = b"BODY[HEADER]"
 _BODY_KEY = b"BODY[]"
 _SIZE_KEY = b"RFC822.SIZE"
+_ENVELOPE_KEY = b"ENVELOPE"
+_INTERNALDATE_KEY = b"INTERNALDATE"
 _MOVE_CAPABILITY = b"MOVE"
 _UIDPLUS_CAPABILITY = b"UIDPLUS"
+_SORT_CAPABILITY = b"SORT"
+_SENT_DATE_SORT = ["DATE"]
 _DRAFT_FLAG = b"\\Draft"
 _DRAFTS_SPECIAL_USE = b"\\Drafts"
 _PERMANENT_FLAGS_KEY = b"PERMANENTFLAGS"
@@ -52,21 +58,17 @@ class ImapClient:
         self._max_message_bytes = max_message_bytes
 
     async def list_unread(self) -> list[UnreadMailSummary]:
-        """List unread messages as header summaries, identified by UID so ids stay valid across connections."""
-        await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=True)
-        uids = await asyncio.to_thread(self._connection.search, ["UNSEEN"])
+        """List the oldest unread messages as header summaries, identified by UID so ids stay valid across connections.
 
-        summaries: list[UnreadMailSummary] = []
-        for uid in uids[: self._max_messages]:
-            fetched = await asyncio.to_thread(self._connection.fetch, [uid], ["BODY.PEEK[HEADER]", "FLAGS"])
-            data = fetched[uid]
-            message = self._parse_bytes(data[_HEADER_KEY])
-            flags = [flag.decode(errors="replace") for flag in data.get(_FLAGS_KEY, ())]
-            summaries.append(MailParser.parse_summary(str(uid), message, flags))
-        return summaries
+        Capped at ``max_messages``, oldest sent first — see ``_search_oldest_first`` for why ordering cannot be left to
+        the server's ``SEARCH`` order.
+        """
+        await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=True)
+        uids = await self._search_oldest_first(["UNSEEN"], self._max_messages)
+        return await self._fetch_summaries(uids)
 
     async def list_undrafted(self, folder: str, limit: int) -> tuple[str, list[UnreadMailSummary]]:
-        """List up to ``limit`` not-yet-drafted messages in ``folder``, and the dedup flag used to identify them.
+        """List the ``limit`` oldest not-yet-drafted messages in ``folder``, with the dedup flag identifying them.
 
         The dedup flag is resolved from the same read-only ``SELECT`` used for the search: a custom keyword
         (``$AiHubDrafted``) when the folder's ``PERMANENTFLAGS`` advertises ``\\*``, else ``\\Answered`` — the custom
@@ -78,16 +80,71 @@ class ImapClient:
         supports_keywords = _CUSTOM_KEYWORDS_WILDCARD in response.get(_PERMANENT_FLAGS_KEY, ())
         drafted_flag = _DRAFTED_KEYWORD if supports_keywords else _ANSWERED_FLAG
         criteria = ["UNKEYWORD", drafted_flag] if supports_keywords else ["UNANSWERED"]
-        uids = await asyncio.to_thread(self._connection.search, criteria)
+        uids = await self._search_oldest_first(criteria, limit)
+        return drafted_flag, await self._fetch_summaries(uids)
 
+    async def _search_oldest_first(self, criteria: list[str], limit: int) -> list[int]:
+        """Search the selected folder and return at most ``limit`` UIDs, oldest sent date first.
+
+        Ordering must be explicit: RFC 3501 does not guarantee ``SEARCH`` result order, and the de-facto UID order is
+        arrival into *this* folder — a moved message gets a fresh, higher UID, so in the processed folder UID order is
+        move order, not send order. Truncation happens after the sort, never before.
+
+        The sort key is the sent date with an ``INTERNALDATE`` fallback, matching RFC 5256 ``SORT DATE`` so the
+        server-side and client-side paths agree. ``ARRIVAL`` would not — it ignores the sent date, and would disagree
+        with the fallback on exactly the moved-mail case above.
+
+        The client-side branch costs one metadata fetch over *every* match, not over ``limit``: which mail is oldest is
+        unknowable without dating all the candidates. Narrowing the search (a ``SINCE`` window, say) would make this
+        cheap by dropping exactly the oldest mail this method exists to find, so the cost stands as the price of
+        correctness on servers without ``SORT``.
+        """
+        if await asyncio.to_thread(self._connection.has_capability, _SORT_CAPABILITY):
+            uids = await asyncio.to_thread(self._connection.sort, _SENT_DATE_SORT, criteria)
+            return uids[:limit]
+
+        uids = await asyncio.to_thread(self._connection.search, criteria)
+        if not uids:
+            return []
+
+        dated = await asyncio.to_thread(self._connection.fetch, uids, ["INTERNALDATE", "ENVELOPE"])
+        return sorted(uids, key=lambda uid: self._sent_at(dated.get(uid, {}), uid))[:limit]
+
+    @staticmethod
+    def _sent_at(data: dict[bytes, Any], uid: int) -> tuple[datetime, int]:
+        """Sort key for one message: its sent date, else its arrival, else last — with the UID breaking ties.
+
+        Every candidate date comes from imapclient, whose ``normalise_times`` yields naive datetimes throughout, so
+        ``datetime.max`` is a valid sentinel and the comparison never mixes naive with aware values. Do not feed an
+        aware datetime into this key without normalising every branch.
+        """
+        envelope = data.get(_ENVELOPE_KEY)
+        sent_date = envelope.date if envelope else None
+        return sent_date or data.get(_INTERNALDATE_KEY) or datetime.max, uid
+
+    async def _fetch_summaries(self, uids: list[int]) -> list[UnreadMailSummary]:
+        """Fetch header summaries for ``uids`` in a single round trip, preserving the given order.
+
+        The results are indexed by the requested UIDs rather than iterated from the response, so the ordering
+        established by ``_search_oldest_first`` survives whatever order the server answers in.
+
+        A UID absent from the response was expunged by another client between the ``SEARCH`` and this ``FETCH`` — it is
+        skipped rather than raising, because a message that no longer exists is not a listing candidate. Batching makes
+        this matter: one vanished message would otherwise fail the whole listing instead of only itself.
+        """
+        if not uids:
+            return []
+
+        fetched = await asyncio.to_thread(self._connection.fetch, uids, ["BODY.PEEK[HEADER]", "FLAGS"])
         summaries: list[UnreadMailSummary] = []
-        for uid in uids[:limit]:
-            fetched = await asyncio.to_thread(self._connection.fetch, [uid], ["BODY.PEEK[HEADER]", "FLAGS"])
-            data = fetched[uid]
+        for uid in uids:
+            data = fetched.get(uid)
+            if data is None:
+                continue
             message = self._parse_bytes(data[_HEADER_KEY])
             flags = [flag.decode(errors="replace") for flag in data.get(_FLAGS_KEY, ())]
             summaries.append(MailParser.parse_summary(str(uid), message, flags))
-        return drafted_flag, summaries
+        return summaries
 
     async def mark_drafted(self, folder: str, message_id: str, drafted_flag: str) -> None:
         """Flag a message as drafted (writable ``SELECT`` + ``STORE``) without setting ``\\Seen`` — it stays unread."""

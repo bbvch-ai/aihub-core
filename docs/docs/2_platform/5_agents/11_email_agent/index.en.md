@@ -40,7 +40,7 @@ flowchart TD
         A[Read trigger] --> B[List unread mail]
         B --> C{Any unread<br/>messages?}
         C -- No --> D[Stop]
-        C -- Yes --> E[Fetch first message<br/>+ attachments]
+        C -- Yes --> E[Fetch oldest message<br/>+ attachments]
         E --> F{Move enabled?}
         F -- No --> G[Leave in inbox, stop]
         F -- Yes --> H[Move to processed folder]
@@ -57,9 +57,9 @@ flowchart TD
 
 ### Reading and filing
 
-1. **List unread mail.** The agent opens the configured inbox folder and returns a summary of every unread message, up
-   to the **Max Unread Messages** cap.
-2. **Fetch a message.** The first unread message is fetched in full — sender, subject, date, body, and attachments. If
+1. **List unread mail.** The agent opens the configured inbox folder and returns a summary of every unread message,
+   **oldest sent first**, up to the **Max Unread Messages** cap.
+2. **Fetch a message.** The oldest unread message is fetched in full — sender, subject, date, body, and attachments. If
    the inbox has no unread mail, the run simply stops here. Attachment bytes are written to the platform's file storage
    and the message event carries only *references* to them, so the audit trail and the event stream stay small.
 3. **File it away.** If **Move Fetched Mail** is enabled, the message is moved into the processed folder. If it is
@@ -72,8 +72,9 @@ deletes one.
 ### Drafting replies
 
 1. **Find candidates.** The drafter reads up to **Draft Batch Size** messages from its own source folder that have not
-   been drafted yet. Already-drafted messages are recognised by an IMAP flag the agent sets, so re-running the job does
-   not produce duplicate drafts.
+   been drafted yet, **taking the oldest-sent ones first** — so a backlog drains in the order it arrived and the batch
+   size never leaves the oldest mail waiting behind newer arrivals. Already-drafted messages are recognised by an IMAP
+   flag the agent sets, so re-running the job does not produce duplicate drafts.
 2. **Draft each reply.** For every message, the configured chat model is given your **Draft Prompt** and the original
    message, and writes a reply body. The result is wrapped in a properly threaded reply envelope, so the draft shows up
    in the right conversation in your mail client.
@@ -107,7 +108,7 @@ without a draft existing. Losing work is treated as worse than doing a little of
 - **It has no knowledge base.** Drafts are written from the original message plus your prompt — the agent does not
   search your documents. For grounded, cited answers, use the
   [Document Intelligence Assistant](../5_document_intelligence_assistant/).
-- **It reads one message per read run.** The read/move chain lists all unread mail but fetches and files the first
+- **It reads one message per read run.** The read/move chain lists all unread mail but fetches and files the oldest
   message only. Schedule it more frequently to work through a backlog; the drafting chain is the one that processes a
   batch.
 
@@ -158,7 +159,7 @@ Ask your platform administrator if a legitimate workload runs into one of these.
 
 ::: details How the settings combine at runtime
 A **read** trigger connects with the mailbox settings, lists up to **Max Unread Messages** from **Inbox Folder**,
-fetches the first one, and — if **Move Fetched Mail** is on — moves it to **Processed Folder**.
+fetches the oldest one, and — if **Move Fetched Mail** is on — moves it to **Processed Folder**.
 
 A **draft** trigger is independent. If **Draft Reply** is on, it reads up to **Draft Batch Size** not-yet-drafted
 messages from **Draft Source Folder**, calls the selected **LLM Model** once per message with your **Draft Prompt**,
