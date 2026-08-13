@@ -7,7 +7,7 @@ from imapclient.response_types import Envelope
 from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.testing import async_test
 
-from swiss_ai_hub.agent.imap.imap_client import ImapClient, ImapClientFactory
+from swiss_ai_hub.agent.imap.imap_client import _MAX_ORDERING_CANDIDATES, ImapClient, ImapClientFactory
 
 _HEADER = b"From: Alice <alice@example.com>\r\nSubject: Report\r\nDate: Mon, 05 Jan 2026 10:00:00 +0000\r\n\r\n"
 
@@ -429,6 +429,72 @@ async def test_list_undrafted_sorts_before_applying_limit():
     _flag, summaries = await client.list_undrafted("Processed", limit=2)
 
     assert [s.message_id for s in summaries] == ["12", "13"]
+
+
+@async_test
+async def test_ordering_fetch_is_capped_at_the_candidate_window():
+    """The metadata fetch must be bounded: unbounded, it serializes into a command line servers reject outright."""
+    matches = list(range(1, _MAX_ORDERING_CANDIDATES + 501))
+    connection = _connection(
+        search=matches,
+        dated=_dated({uid: datetime(2026, 1, 1, 9, 0) for uid in matches}),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    await client.list_undrafted("Processed", limit=5)
+
+    ordering_fetch = next(call for call in connection.fetch.call_args_list if "ENVELOPE" in call.args[1])
+    assert ordering_fetch.args[0] == matches[:_MAX_ORDERING_CANDIDATES]
+
+
+@async_test
+async def test_ordering_window_takes_the_lowest_uids_not_the_search_response_order():
+    """RFC 3501 does not guarantee SEARCH ordering, so the window must not depend on the order the server replied in."""
+    matches = list(reversed(range(1, _MAX_ORDERING_CANDIDATES + 501)))
+    connection = _connection(
+        search=matches,
+        dated=_dated({uid: datetime(2026, 1, 1, 9, 0) for uid in matches}),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    await client.list_undrafted("Processed", limit=5)
+
+    ordering_fetch = next(call for call in connection.fetch.call_args_list if "ENVELOPE" in call.args[1])
+    assert ordering_fetch.args[0] == sorted(matches)[:_MAX_ORDERING_CANDIDATES]
+
+
+@async_test
+async def test_ordering_below_the_window_still_dates_every_candidate():
+    """Under the window the result stays exact — the cap must not truncate a folder small enough to date fully."""
+    matches = [11, 12, 13]
+    connection = _connection(
+        search=matches,
+        dated=_dated({11: datetime(2026, 9, 1, 9, 0), 12: datetime(2026, 1, 1, 9, 0), 13: datetime(2026, 2, 1, 9, 0)}),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=3)
+
+    ordering_fetch = next(call for call in connection.fetch.call_args_list if "ENVELOPE" in call.args[1])
+    assert ordering_fetch.args[0] == matches
+    assert [s.message_id for s in summaries] == ["12", "13", "11"]
+
+
+@async_test
+async def test_server_sort_is_not_capped_by_the_candidate_window():
+    """SORT returns bare ordered integers, so the window would only discard correct ordering the server already did."""
+    ordered = list(range(1, _MAX_ORDERING_CANDIDATES + 501))
+    connection = _connection(search=ordered, supports_sort=True)
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=3)
+
+    assert [s.message_id for s in summaries] == ["1", "2", "3"]
+    assert not [call for call in connection.fetch.call_args_list if "ENVELOPE" in call.args[1]]
 
 
 @async_test

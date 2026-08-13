@@ -25,6 +25,7 @@ _MOVE_CAPABILITY = b"MOVE"
 _UIDPLUS_CAPABILITY = b"UIDPLUS"
 _SORT_CAPABILITY = b"SORT"
 _SENT_DATE_SORT = ("DATE",)
+_MAX_ORDERING_CANDIDATES = 1000
 _DRAFT_FLAG = b"\\Draft"
 _DRAFTS_SPECIAL_USE = b"\\Drafts"
 _PERMANENT_FLAGS_KEY = b"PERMANENTFLAGS"
@@ -94,10 +95,23 @@ class ImapClient:
         server-side and client-side paths agree. ``ARRIVAL`` would not — it ignores the sent date, and would disagree
         with the fallback on exactly the moved-mail case above.
 
-        The client-side branch costs one metadata fetch over *every* match, not over ``limit``: which mail is oldest is
-        unknowable without dating all the candidates. Narrowing the search (a ``SINCE`` window, say) would make this
-        cheap by dropping exactly the oldest mail this method exists to find, so the cost stands as the price of
-        correctness on servers without ``SORT``.
+        The server-side branch needs no bound: ``SORT`` returns bare integers the server has already ordered, so
+        ``limit`` alone is enough. Asking a server to return only part of a ``SORT`` would need RFC 5267
+        ``CONTEXT=SEARCH``/``PARTIAL``, which neither Gmail nor GreenMail advertises.
+
+        The client-side branch cannot know which mail is oldest without dating the candidates, so it is bounded instead
+        at ``_MAX_ORDERING_CANDIDATES`` by taking the *lowest* UIDs — the oldest arrivals. That bounds both the metadata
+        fetch and the command line it is serialized into: imapclient comma-joins every UID without collapsing ranges,
+        and servers cap command length (Dovecot's default 64 KB is roughly 9000 UIDs), so an unbounded fetch over a
+        large archive fails outright rather than merely running slow.
+
+        The window costs exactness on one shape of folder. Arrival order is only a proxy for sent order, and in a
+        *processed* folder UID order is move order — so with more candidates than the window, the true oldest can fall
+        outside it and be missed. Below the window the result is exact. The proxy is sound for an inbox, where the
+        oldest-sent mail is all but certainly among the oldest-arrived.
+
+        The lowest UIDs are taken by sorting rather than by slicing the response, because RFC 3501 does not guarantee
+        ``SEARCH`` result order — slicing it raw would make the window server-dependent.
         """
         if await asyncio.to_thread(self._connection.has_capability, _SORT_CAPABILITY):
             uids = await asyncio.to_thread(self._connection.sort, _SENT_DATE_SORT, criteria)
@@ -107,8 +121,9 @@ class ImapClient:
         if not uids:
             return []
 
-        dated = await asyncio.to_thread(self._connection.fetch, uids, ["INTERNALDATE", "ENVELOPE"])
-        return sorted(uids, key=lambda uid: self._sent_at(dated.get(uid, {}), uid))[:limit]
+        candidates = sorted(uids)[:_MAX_ORDERING_CANDIDATES]
+        dated = await asyncio.to_thread(self._connection.fetch, candidates, ["INTERNALDATE", "ENVELOPE"])
+        return sorted(candidates, key=lambda uid: self._sent_at(dated.get(uid, {}), uid))[:limit]
 
     @staticmethod
     def _sent_at(data: dict[bytes, Any], uid: int) -> tuple[datetime, int]:
