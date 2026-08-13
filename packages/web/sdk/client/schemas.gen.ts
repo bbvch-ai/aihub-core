@@ -13689,6 +13689,8 @@ export const LocaleInputSchema = {
     validation: {
       type: "string",
       title: "Validation",
+      description:
+        "Emits `localeRequired` where other elements emit FormKit's `required`.\n\nFormKit's `required` rule only asks whether a value is present, and this element's\nvalue is always a `{de, en, fr, it}` object — non-empty, therefore passing, even when\nevery locale inside it is blank. `localeRequired` (registered in the frontend FormKit\nconfig) looks at the locale values themselves.",
       readOnly: true,
     },
   },

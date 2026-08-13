@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
@@ -57,6 +57,23 @@ class LocaleInput(PrimeVueElement):
     ] = 3
 
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text for each language")] = None
+
+    @computed_field
+    @property
+    def validation(self) -> str:
+        """Emits `localeRequired` where other elements emit FormKit's `required`.
+
+        FormKit's `required` rule only asks whether a value is present, and this element's
+        value is always a `{de, en, fr, it}` object — non-empty, therefore passing, even when
+        every locale inside it is blank. `localeRequired` (registered in the frontend FormKit
+        config) looks at the locale values themselves.
+        """
+        rules: list[str] = []
+        if self.required:
+            rules.append("localeRequired")
+        if self.additional_validation_rules:
+            rules.append(self.additional_validation_rules)
+        return "|".join(rules)
 
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)

@@ -146,8 +146,10 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 
-        This uses the OpenAILike wrapper since it mimics OpenAI-like APIs. The tokenizer is retrieved
-        from the local model, and parameters are merged to configure the model's behavior.
+        Streamed calls ask the gateway to report real token usage on the final chunk, so
+        ``TokenCountingHandler`` doesn't fall back to re-tokenizing the whole chat history locally on
+        every call. That request lives in ``ResilientOpenAILike`` rather than in ``additional_kwargs``
+        here, because endpoints that reject ``stream_options`` need a plain-stream retry.
         """
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
@@ -179,7 +181,6 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             is_chat_model=is_chat_model,
             is_function_calling_model=is_function_calling_model,
             should_use_structured_outputs=supports_response_schema,
-            tokenizer=self.tokenizer,
             max_tokens=max_tokens,
             logprobs=self.default_parameter.logprobs,
             top_logprobs=self.default_parameter.top_logprobs,

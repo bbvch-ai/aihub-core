@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 22.07.2026
+Generated on: 29.07.2026
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -379,7 +379,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | stringcase                                       | 1.2.0           | MIT                                                     |                                                                      |
 | ✅     | striprtf                                         | 0.0.26          | BSD License                                             |                                                                      |
 | ✅     | structlog                                        | 25.5.0          | MIT OR Apache-2.0                                       |                                                                      |
-| ✅     | swiss-ai-hub                                     | 0.316.2         | Apache-2.0                                              |                                                                      |
+| ✅     | swiss-ai-hub                                     | 0.318.0         | Apache-2.0                                              |                                                                      |
 | ✅     | swiss-ai-hub-jambo                               | 0.5.0           | MIT                                                     |                                                                      |
 | ✅     | sympy                                            | 1.14.0          | BSD License                                             |                                                                      |
 | ✅     | tabulate                                         | 0.10.0          | MIT                                                     |                                                                      |
@@ -468,7 +468,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | @csstools/selector-specificity                     | 5.0.0         | MIT-0                                         |                                                                                                             |
 | ✅     | @dxup/nuxt                                         | 0.3.2         | MIT                                           |                                                                                                             |
 | ✅     | @dxup/unimport                                     | 0.1.2         | MIT                                           |                                                                                                             |
-| ✅     | @esbuild/linux-arm64                               | 0.25.12       | MIT                                           |                                                                                                             |
+| ✅     | @esbuild/linux-x64                                 | 0.25.12       | MIT                                           |                                                                                                             |
 | ✅     | @eslint-community/eslint-utils                     | 4.9.1         | MIT                                           |                                                                                                             |
 | ✅     | @eslint-community/regexpp                          | 4.12.2        | MIT                                           |                                                                                                             |
 | ✅     | @eslint/config-array                               | 0.21.2        | Apache-2.0                                    |                                                                                                             |
@@ -559,12 +559,12 @@ This document contains license information for all dependencies across the monor
 | ✅     | @nuxtjs/mdc                                        | 0.22.0        | MIT                                           |                                                                                                             |
 | ✅     | @nuxtjs/robots                                     | 6.0.8         | MIT                                           |                                                                                                             |
 | ✅     | @nuxtjs/tailwindcss                                | 6.14.0        | MIT                                           |                                                                                                             |
-| ✅     | @oxc-minify/binding-linux-arm64-gnu                | 0.110.0       | MIT                                           |                                                                                                             |
-| ✅     | @oxc-parser/binding-linux-arm64-gnu                | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-minify/binding-linux-x64-gnu                  | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-parser/binding-linux-x64-gnu                  | 0.110.0       | MIT                                           |                                                                                                             |
 | ✅     | @oxc-project/types                                 | 0.110.0       | MIT                                           |                                                                                                             |
-| ✅     | @oxc-transform/binding-linux-arm64-gnu             | 0.110.0       | MIT                                           |                                                                                                             |
+| ✅     | @oxc-transform/binding-linux-x64-gnu               | 0.110.0       | MIT                                           |                                                                                                             |
 | ✅     | @parcel/watcher                                    | 2.5.6         | MIT                                           |                                                                                                             |
-| ✅     | @parcel/watcher-linux-arm64-glibc                  | 2.5.6         | MIT                                           |                                                                                                             |
+| ✅     | @parcel/watcher-linux-x64-glibc                    | 2.5.6         | MIT                                           |                                                                                                             |
 | ✅     | @parcel/watcher-wasm                               | 2.5.6         | MIT                                           |                                                                                                             |
 | ✅     | @pinia/colada                                      | 1.3.0         | MIT                                           |                                                                                                             |
 | ✅     | @pinia/colada-nuxt                                 | 1.0.1         | MIT                                           |                                                                                                             |
@@ -595,7 +595,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | @rollup/plugin-terser                              | 1.0.0         | MIT                                           |                                                                                                             |
 | ✅     | @rollup/plugin-yaml                                | 4.1.2         | MIT                                           |                                                                                                             |
 | ✅     | @rollup/pluginutils                                | 5.3.0         | MIT                                           |                                                                                                             |
-| ✅     | @rollup/rollup-linux-arm64-gnu                     | 4.60.3        | MIT                                           |                                                                                                             |
+| ✅     | @rollup/rollup-linux-x64-gnu                       | 4.60.3        | MIT                                           |                                                                                                             |
 | ✅     | @sfxcode/formkit-primevue                          | 4.0.0         | MIT                                           |                                                                                                             |
 | ✅     | @sfxcode/formkit-primevue-nuxt                     | 1.7.0         | MIT                                           |                                                                                                             |
 | ✅     | @shikijs/core                                      | 4.0.2         | MIT                                           |                                                                                                             |
@@ -1020,7 +1020,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | lazystream                                         | 1.0.1         | MIT                                           |                                                                                                             |
 | ✅     | levn                                               | 0.4.1         | MIT                                           |                                                                                                             |
 | ✅     | lightningcss                                       | 1.32.0        | MPL-2.0                                       |                                                                                                             |
-| ✅     | lightningcss-linux-arm64-gnu                       | 1.32.0        | MPL-2.0                                       |                                                                                                             |
+| ✅     | lightningcss-linux-x64-gnu                         | 1.32.0        | MPL-2.0                                       |                                                                                                             |
 | ✅     | lilconfig                                          | 3.1.3         | MIT                                           |                                                                                                             |
 | ✅     | lines-and-columns                                  | 1.2.4         | MIT                                           |                                                                                                             |
 | ✅     | listhen                                            | 1.10.0        | MIT                                           |                                                                                                             |

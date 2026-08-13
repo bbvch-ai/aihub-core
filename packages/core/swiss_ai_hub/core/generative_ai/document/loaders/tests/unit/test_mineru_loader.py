@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from io import BytesIO
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -228,6 +229,55 @@ class TestBatching:
         assert mock.await_count == 1
         assert mock.await_args.args[3] is None
         assert documents[0].text == "content"
+
+
+class TestBatchFailurePropagation:
+    @pytest.mark.asyncio
+    async def test_batch_failure_replaces_exception_group(self, loader: MineruLoader):
+        root_cause = httpx.ConnectError("connection refused")
+
+        async def failing_execute(
+            file_bytes: bytes,
+            filename: str,
+            include_images: bool,
+            start_page_id: int | None = None,
+            end_page_id: int | None = None,
+        ) -> MineruParseResponse:
+            if start_page_id == 2:
+                raise MineruRequestError("MinerU API rejected the request with status 400") from root_cause
+            return make_response(f"pages{start_page_id}", end_page_id - start_page_id + 1)
+
+        pdf_bytes = make_pdf(5)
+
+        with patch.object(loader, "_execute_conversion", AsyncMock(side_effect=failing_execute)):
+            with pytest.raises(MineruRequestError, match="status 400") as error:
+                await loader.aload_data_from_bytes(pdf_bytes, FILENAME, embed_base64=True)
+
+        assert error.value.__cause__ is root_cause
+
+    def test_unwraps_arbitrarily_nested_groups_and_reports_first_leaf(self, caplog: pytest.LogCaptureFixture):
+        first = MineruRequestError("first batch")
+        second = MineruTransientError("second batch")
+        third = MineruTransientError("third batch")
+        group = ExceptionGroup(
+            "unhandled errors in a TaskGroup",
+            [ExceptionGroup("outer", [ExceptionGroup("inner", [first, ExceptionGroup("deepest", [second])])]), third],
+        )
+
+        with caplog.at_level(logging.ERROR):
+            assert MineruLoader._unwrap_batch_failure(group, FILENAME) is first
+
+        assert f"3 page batches failed for {FILENAME}" in caplog.text
+        assert "second batch" in caplog.text
+        assert "third batch" in caplog.text
+
+    def test_single_failure_is_not_logged(self, caplog: pytest.LogCaptureFixture):
+        only = MineruTransientError("only batch")
+
+        with caplog.at_level(logging.ERROR):
+            assert MineruLoader._unwrap_batch_failure(ExceptionGroup("group", [only]), FILENAME) is only
+
+        assert caplog.text == ""
 
 
 class TestSettingsValidation:
