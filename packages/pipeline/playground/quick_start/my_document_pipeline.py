@@ -79,7 +79,7 @@ defs = Definitions(
         # Document processing resources
         "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
         "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config, embedding_config=embedding_config),
-        "summary_parser": RecursiveSummaryParserResource(),
+        "summary_parser": RecursiveSummaryParserResource(llm_config=llm_config),
         # Vector store and document store (MongoDB + Milvus)
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri="http://localhost:19530",
