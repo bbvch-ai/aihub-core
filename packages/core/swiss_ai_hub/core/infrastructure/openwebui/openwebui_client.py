@@ -23,6 +23,19 @@ SCIM_PAGE_SIZE = 100
 # Backstop so a server that ignores startIndex can't spin the provisioner forever.
 MAX_SCIM_PAGES = 10_000
 
+# Backstop so a server that ignores the page parameter can't spin the provisioner forever.
+MODELS_MAX_PAGES = 10_000
+
+
+def _raise_with_detail(response: httpx.Response) -> None:
+    """OpenWebUI names the real cause in the response body (e.g. MODEL_ID_TAKEN behind a 401),
+    which a bare ``raise_for_status`` discards."""
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exception:
+        exception.add_note(response.text)
+        raise
+
 
 class OpenWebuiClient:
     def __init__(self, base_url: str, secret_key: str, scim_token: str, service_account_id: str) -> None:
@@ -155,10 +168,41 @@ class OpenWebuiClient:
     # ------------------------------------------------------------------
 
     async def list_models(self, http: httpx.AsyncClient) -> list[dict[str, Any]]:
-        response = await http.get(f"{self._base_url}{MODELS_ENDPOINT}/list", headers=self._jwt_headers)
-        response.raise_for_status()
-        data = response.json()
-        return data.get("items", []) if isinstance(data, dict) else data
+        """Returns every workspace model, following OpenWebUI's page-based pagination.
+
+        OpenWebUI caps ``/models/list`` at a fixed server-side page size (30) with no way to
+        raise it, so a bare GET silently drops every model past the first page — the provisioner
+        then re-creates existing models and never reconciles grants for the rest. The explicit
+        ``order_by`` matters: the server only orders implicitly when its access filter is empty,
+        and paging over an unordered result set can repeat and drop rows.
+
+        Termination keys off the server's reported ``total`` (counted before pagination), with
+        an empty page as fallback — never a short page, since the server's page size is not ours
+        to assume across versions.
+        """
+        results: list[dict[str, Any]] = []
+        page = 1
+        for _ in range(MODELS_MAX_PAGES):
+            response = await http.get(
+                f"{self._base_url}{MODELS_ENDPOINT}/list",
+                headers=self._jwt_headers,
+                params={"page": page, "order_by": "created_at", "direction": "desc"},
+            )
+            _raise_with_detail(response)
+            data = response.json()
+            if isinstance(data, list):
+                return data
+            items = data.get("items", [])
+            results.extend(items)
+            total = data.get("total")
+            if total is not None and len(results) >= total:
+                break
+            if not items:
+                break
+            page += 1
+        else:
+            raise RuntimeError(f"OpenWebUI model pagination exceeded {MODELS_MAX_PAGES} pages")
+        return results
 
     async def list_base_models(self, http: httpx.AsyncClient) -> list[dict[str, Any]]:
         """Lists registry entries that override a raw provider model (``base_model_id`` unset).
@@ -167,18 +211,42 @@ class OpenWebuiClient:
         base-model overrides are invisible to it — and to the workspace UI that renders it.
         """
         response = await http.get(f"{self._base_url}{MODELS_ENDPOINT}/base", headers=self._jwt_headers)
-        response.raise_for_status()
+        _raise_with_detail(response)
         return response.json()
 
     async def create_model(self, http: httpx.AsyncClient, model_data: dict[str, Any]) -> dict[str, Any]:
+        """Creates a model, or updates the existing one if the id is already registered.
+
+        Concurrent syncs can race the list→create window, and OpenWebUI signals a taken id with
+        HTTP 401 MODEL_ID_TAKEN — the same status as a genuine permission denial, so the body's
+        ``detail`` is inspected rather than the status code. Falling back to update reconciles
+        name/meta/base_model_id and leaves access grants untouched (the update endpoint ignores
+        an absent ``access_grants``).
+        """
         model_data.setdefault("params", {})
         response = await http.post(
             f"{self._base_url}{MODELS_ENDPOINT}/create",
             headers=self._jwt_headers,
             json=model_data,
         )
-        response.raise_for_status()
+        if response.is_success:
+            return response.json()
+        if "already registered" in self._error_detail(response):
+            logger.warning(
+                "OpenWebUI model '%s' already exists; updating it instead of creating a duplicate",
+                model_data["id"],
+            )
+            return await self.update_model(http, model_data)
+        _raise_with_detail(response)
         return response.json()
+
+    @staticmethod
+    def _error_detail(response: httpx.Response) -> str:
+        try:
+            data = response.json()
+        except ValueError:
+            return response.text
+        return data.get("detail", "") if isinstance(data, dict) else response.text
 
     async def update_model(self, http: httpx.AsyncClient, model_data: dict[str, Any]) -> dict[str, Any]:
         model_data.setdefault("params", {})
@@ -187,7 +255,7 @@ class OpenWebuiClient:
             headers=self._jwt_headers,
             json=model_data,
         )
-        response.raise_for_status()
+        _raise_with_detail(response)
         return response.json()
 
     async def delete_model(self, http: httpx.AsyncClient, model_id: str) -> None:
@@ -196,7 +264,7 @@ class OpenWebuiClient:
             headers=self._jwt_headers,
             json={"id": model_id},
         )
-        response.raise_for_status()
+        _raise_with_detail(response)
 
     async def get_model(self, http: httpx.AsyncClient, model_id: str) -> dict[str, Any]:
         response = await http.get(
@@ -204,7 +272,7 @@ class OpenWebuiClient:
             headers=self._jwt_headers,
             params={"id": model_id},
         )
-        response.raise_for_status()
+        _raise_with_detail(response)
         return response.json()
 
     async def update_model_access(
@@ -228,5 +296,5 @@ class OpenWebuiClient:
             headers=self._jwt_headers,
             json=form,
         )
-        response.raise_for_status()
+        _raise_with_detail(response)
         return response.json()

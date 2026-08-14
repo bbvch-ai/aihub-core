@@ -5,6 +5,7 @@ import httpx
 import pytest
 from scim2_models import Group, User
 
+import swiss_ai_hub.core.infrastructure.openwebui.openwebui_client as openwebui_client_module
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import SCIM_PAGE_SIZE, OpenWebuiClient
 
 BASE_URL = "http://open-webui:8080"
@@ -72,15 +73,76 @@ class TestUpdateModel:
             await owui_client.update_model(mock_client, {"id": "m1", "name": "New Name"})
 
 
+def _model_pages(pages: list[list[dict]], *, total: int | None = -1) -> list[httpx.Response]:
+    """One paginated ``/models/list`` response per page; ``total`` defaults to the overall count,
+    pass ``None`` to simulate a server that omits it."""
+    overall = sum(len(p) for p in pages)
+    return [_response(json_data={"items": page, "total": overall if total == -1 else total}) for page in pages]
+
+
 class TestListModels:
     @pytest.mark.asyncio
-    async def test_list_models_handles_dict_response_with_items(self, owui_client: OpenWebuiClient) -> None:
+    async def test_single_page_below_cap_needs_one_request(self, owui_client: OpenWebuiClient) -> None:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
-        mock_client.get.return_value = _response(json_data={"items": [{"id": "m1"}]})
+        mock_client.get.side_effect = _model_pages([[{"id": f"m{i}"} for i in range(6)]])
 
         result = await owui_client.list_models(mock_client)
 
-        assert result == [{"id": "m1"}]
+        assert len(result) == 6
+        assert mock_client.get.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_follows_all_pages(self, owui_client: OpenWebuiClient) -> None:
+        pages = [
+            [{"id": f"m{i}"} for i in range(30)],
+            [{"id": f"m{i}"} for i in range(30, 60)],
+            [{"id": f"m{i}"} for i in range(60, 65)],
+        ]
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.side_effect = _model_pages(pages)
+
+        result = await owui_client.list_models(mock_client)
+
+        assert [m["id"] for m in result] == [f"m{i}" for i in range(65)]
+        assert mock_client.get.await_count == 3
+        for call, expected_page in zip(mock_client.get.await_args_list, (1, 2, 3), strict=True):
+            params = call.kwargs["params"]
+            assert params["page"] == expected_page
+            assert params["order_by"] == "created_at"
+            assert params["direction"] == "desc"
+
+    @pytest.mark.asyncio
+    async def test_stops_at_exact_page_multiple(self, owui_client: OpenWebuiClient) -> None:
+        pages = [[{"id": f"m{i}"} for i in range(30)], [{"id": f"m{i}"} for i in range(30, 60)]]
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.side_effect = _model_pages(pages)
+
+        result = await owui_client.list_models(mock_client)
+
+        assert len(result) == 60
+        assert mock_client.get.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_missing_total_stops_on_empty_page(self, owui_client: OpenWebuiClient) -> None:
+        pages = [[{"id": f"m{i}"} for i in range(30)], [{"id": f"m{i}"} for i in range(30, 60)], []]
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.side_effect = _model_pages(pages, total=None)
+
+        result = await owui_client.list_models(mock_client)
+
+        assert len(result) == 60
+        assert mock_client.get.await_count == 3
+
+    @pytest.mark.asyncio
+    async def test_backstop_raises_when_pagination_never_terminates(
+        self, owui_client: OpenWebuiClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(openwebui_client_module, "MODELS_MAX_PAGES", 3)
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = _response(json_data={"items": [{"id": "m"}] * 30, "total": None})
+
+        with pytest.raises(RuntimeError, match="pagination exceeded"):
+            await owui_client.list_models(mock_client)
 
     @pytest.mark.asyncio
     async def test_list_models_handles_bare_list_response(self, owui_client: OpenWebuiClient) -> None:
@@ -90,6 +152,40 @@ class TestListModels:
         result = await owui_client.list_models(mock_client)
 
         assert result == [{"id": "m1"}]
+        assert mock_client.get.await_count == 1
+
+
+MODEL_ID_TAKEN_DETAIL = "Uh-oh! This model id is already registered. Please choose another model id string."
+
+
+class TestCreateModelIdempotent:
+    @pytest.mark.asyncio
+    async def test_falls_back_to_update_when_model_id_taken(
+        self, owui_client: OpenWebuiClient, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.post.side_effect = [
+            _response(status_code=401, json_data={"detail": MODEL_ID_TAKEN_DETAIL}),
+            _response(json_data={"id": "m1", "name": "Updated"}),
+        ]
+
+        with caplog.at_level("WARNING"):
+            result = await owui_client.create_model(mock_client, {"id": "m1", "name": "Updated"})
+
+        assert result == {"id": "m1", "name": "Updated"}
+        assert mock_client.post.await_count == 2
+        assert mock_client.post.await_args_list[1].args[0].endswith("/api/v1/models/model/update")
+        assert "already exists" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_raises_on_genuine_unauthorized(self, owui_client: OpenWebuiClient) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.post.return_value = _response(status_code=401, json_data={"detail": "Unauthorized"})
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await owui_client.create_model(mock_client, {"id": "m1"})
+
+        assert mock_client.post.await_count == 1
 
 
 class TestErrorPropagation:
@@ -102,12 +198,16 @@ class TestErrorPropagation:
             await owui_client.list_models(mock_client)
 
     @pytest.mark.asyncio
-    async def test_create_model_raises_on_validation_error(self, owui_client: OpenWebuiClient) -> None:
+    async def test_create_model_raises_on_validation_error_with_body_attached(
+        self, owui_client: OpenWebuiClient
+    ) -> None:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
-        mock_client.post.return_value = _response(status_code=422)
+        mock_client.post.return_value = _response(status_code=422, json_data={"detail": "field required"})
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(httpx.HTTPStatusError) as excinfo:
             await owui_client.create_model(mock_client, {"id": "test"})
+
+        assert any("field required" in note for note in excinfo.value.__notes__)
 
     @pytest.mark.asyncio
     async def test_delete_model_raises_on_not_found(self, owui_client: OpenWebuiClient) -> None:
