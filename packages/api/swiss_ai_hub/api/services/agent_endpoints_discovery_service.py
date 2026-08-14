@@ -168,22 +168,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 agent_class_dto = AgentClassDTO.from_discovery_event(response)
                 unique_agents_dict[unique_key] = agent_class_dto
 
-                AgentClassEntity.create_or_update(
-                    agent_class=agent_class_dto.agent_class,
-                    name=agent_class_dto.name,
-                    description=agent_class_dto.description,
-                    icon=agent_class_dto.icon,
-                    form=agent_class_dto.form,
-                    agent_config_specs=agent_class_dto.agent_config_specs,
-                    is_conversational=agent_class_dto.is_conversational,
-                    is_schedulable=agent_class_dto.is_schedulable,
-                    start_events=agent_class_dto.start_events,
-                    stop_events=agent_class_dto.stop_events,
-                    hitl_request_events=agent_class_dto.hitl_request_events,
-                    hitl_response_events=agent_class_dto.hitl_response_events,
-                    network_graph=agent_class_dto.network_graph,
-                    templates=[t.model_dump() for t in response.templates],
-                )
+                AgentClassEntity.create_or_update(response)
 
         return list(unique_agents_dict.values())
 

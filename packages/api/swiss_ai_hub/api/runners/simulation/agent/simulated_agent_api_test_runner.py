@@ -297,19 +297,21 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         - AgentConfigEntityDocument: Instance-level configuration
         """
         AgentClassEntity.create_or_update(
-            agent_class=self.agent_class,
-            name=self.agent_config.name,
-            description=self.agent_config.description,
-            icon=self.agent_config.icon,
-            form=self.agent_config.to_formkit_form(),
-            agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
-            is_conversational=True,
-            is_schedulable=False,
-            start_events=self.start_events or [],
-            stop_events=self.stop_events or [],
-            hitl_request_events=self.hitl_request_events or [],
-            hitl_response_events=self.hitl_response_events or [],
-            network_graph=WorkflowGraph(nodes=[], links=[]),
+            AgentClassDiscoveryResponseEvent(
+                agent_class=self.agent_class,
+                name=self.agent_config.name,
+                description=self.agent_config.description,
+                icon=self.agent_config.icon,
+                form=self.agent_config.to_formkit_form(),
+                agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
+                is_conversational=True,
+                is_schedulable=False,
+                start_events=self.start_events or [],
+                stop_events=self.stop_events or [],
+                hitl_request_events=self.hitl_request_events or [],
+                hitl_response_events=self.hitl_response_events or [],
+                network_graph=WorkflowGraph(nodes=[], links=[]),
+            )
         )
 
         existing = AgentConfigEntityDocument.find_for_class_and_id(self.agent_class, self.agent_id)
