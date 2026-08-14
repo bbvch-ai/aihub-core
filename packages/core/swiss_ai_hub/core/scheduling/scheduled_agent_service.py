@@ -184,12 +184,11 @@ class ScheduledAgentService:
             # rediscover the same row: one bad profile would permanently starve every other schedule.
             try:
                 schedule = AgentSchedule.model_validate(raw_schedule)
-            except ValidationError as invalid_schedule:
-                logger.error(
-                    "Skipping %s/%s: stored schedule is not valid — %s",
+            except ValidationError:
+                logger.exception(
+                    "Skipping %s/%s: stored schedule is not valid",
                     config.agent_class,
                     config.agent_id,
-                    invalid_schedule,
                 )
                 continue
             instances.append((schedule, config))
