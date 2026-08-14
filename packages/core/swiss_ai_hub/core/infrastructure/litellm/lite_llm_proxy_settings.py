@@ -1,4 +1,7 @@
-from typing import Annotated
+import asyncio
+import weakref
+from collections.abc import Callable
+from typing import Annotated, Any, ClassVar
 
 import httpx
 import openai
@@ -9,6 +12,11 @@ from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
 class LiteLLMProxySettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("LITE_LLM_PROXY_")
+
+    _sync_clients: ClassVar[dict[str, httpx.Client]] = {}
+    _async_clients: ClassVar[weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, dict[str, Any]]] = (
+        weakref.WeakKeyDictionary()
+    )
 
     BASE_URL: Annotated[str, Field(description="The base URL of the model.")]
     API_KEY: Annotated[
@@ -43,22 +51,79 @@ class LiteLLMProxySettings(EnvironmentSettings):
     ] = None
 
     @property
+    def authorization_header(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"}
+
+    @staticmethod
+    def client_is_closed(client: Any) -> bool:
+        """`httpx` exposes `is_closed` as a property, the OpenAI SDK as a method — reading it raw is truthy."""
+        is_closed = client.is_closed
+        return is_closed() if callable(is_closed) else is_closed
+
+    @staticmethod
+    def pooled_async_client[TClient](key: str, create: Callable[[], TClient]) -> TClient:
+        """
+        Return the process-wide client for `key`, creating it on first use.
+
+        Keyed by event loop as well: a client's pooled connections belong to the loop that opened them, so
+        one cached from another loop fails on reuse. The weak keys let a finished loop drop its clients.
+
+        A closed client is replaced rather than handed out: `aclose_pooled_clients` drops its entries before
+        closing them, but nothing stops a caller from closing one directly, and a poisoned entry would
+        otherwise fail every later access for the process lifetime.
+        """
+        loop_clients = LiteLLMProxySettings._async_clients.setdefault(asyncio.get_running_loop(), {})
+        if key not in loop_clients or LiteLLMProxySettings.client_is_closed(loop_clients[key]):
+            loop_clients[key] = create()
+        return loop_clients[key]
+
+    @classmethod
+    async def aclose_pooled_clients(cls) -> None:
+        """
+        Close the clients pooled for the running loop, plus the process-wide sync client.
+
+        Dropping them from the pools lets a later access rebuild them: a process that starts a second app on
+        the same loop — the API test runners do — must not inherit closed clients.
+        """
+        for client in cls._async_clients.pop(asyncio.get_running_loop(), {}).values():
+            if isinstance(client, httpx.AsyncClient):
+                await client.aclose()
+            else:
+                await client.close()
+
+        for sync_client in cls._sync_clients.values():
+            sync_client.close()
+        cls._sync_clients.clear()
+
+    @property
     def httpx_client(self) -> httpx.Client:
-        return httpx.Client(
-            headers={"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"},
-            base_url=self.BASE_URL,
-        )
+        """
+        Shared, and callers must not close it.
+
+        A client owns a connection pool, so minting one per access throws away keep-alive and — since httpx
+        clients have no finaliser — leaks the pool unless every caller closes it. A closed client is
+        replaced rather than handed out, for the reason given on `pooled_async_client`.
+        """
+        pooled_client = LiteLLMProxySettings._sync_clients.get(self.BASE_URL)
+        if pooled_client is None or pooled_client.is_closed:
+            LiteLLMProxySettings._sync_clients[self.BASE_URL] = httpx.Client(
+                headers=self.authorization_header,
+                base_url=self.BASE_URL,
+            )
+        return LiteLLMProxySettings._sync_clients[self.BASE_URL]
 
     @property
     def httpx_aclient(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(
-            headers={"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"},
-            base_url=self.BASE_URL,
+        """Shared, and callers must not close it — see `httpx_client`."""
+        return LiteLLMProxySettings.pooled_async_client(
+            f"httpx:{self.BASE_URL}",
+            lambda: httpx.AsyncClient(headers=self.authorization_header, base_url=self.BASE_URL),
         )
 
     @property
     def openai_aclient(self) -> openai.AsyncClient:
-        return openai.AsyncClient(
-            api_key=self.API_KEY.get_secret_value(),
-            base_url=self.BASE_URL,
+        """Shared, and callers must not close it — see `httpx_client`."""
+        return LiteLLMProxySettings.pooled_async_client(
+            f"openai:{self.BASE_URL}",
+            lambda: openai.AsyncClient(api_key=self.API_KEY.get_secret_value(), base_url=self.BASE_URL),
         )

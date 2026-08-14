@@ -4,6 +4,12 @@ from llama_index.core.node_parser import SentenceSplitter
 
 from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk import TextChunk
 
+# Worst-case tokens per character assumed by `_within_budget`'s accept short-circuit -- see the identical
+# constant and rationale in recursive_summary_parser.py. Kept separate since the two budgets are independent
+# decisions that happen to share this assumption: deployments process Latin-script EU-language content, not
+# CJK, so a character costs at most ~2 tokens even under byte-level BPE fallback for multi-byte accents.
+SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER = 2
+
 
 class TextChunkSizeLimiter:
     """
@@ -36,7 +42,13 @@ class TextChunkSizeLimiter:
         Short-circuit on character count before paying for a token count.
 
         `token_counter` is a LiteLLM round trip per call, and nearly every chunk arriving here is a ~512-token
-        split that cannot possibly breach the ceiling. A token is never fewer than one character, so a chunk
-        shorter than the budget is under it by construction - the check is exact, not an estimate.
+        split that cannot possibly breach the ceiling. The short-circuit is an estimate, not exact: a chunk
+        comfortably under budget / SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER skips the real count; anything past
+        4x the budget is rejected without one either, since no tokenizer this routes through produces more
+        tokens than it has characters.
         """
-        return len(content) <= self.max_tokens or self.token_counter(content) <= self.max_tokens
+        if len(content) <= self.max_tokens // SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER:
+            return True
+        if len(content) > self.max_tokens * 4:
+            return False
+        return self.token_counter(content) <= self.max_tokens

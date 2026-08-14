@@ -41,7 +41,7 @@ flowchart TD
         A[Lese-Trigger] --> B[Ungelesene E-Mails auflisten]
         B --> C{Ungelesene<br/>Nachrichten?}
         C -- Nein --> D[Stopp]
-        C -- Ja --> E[Erste Nachricht abrufen<br/>+ Anhänge]
+        C -- Ja --> E[Älteste Nachricht abrufen<br/>+ Anhänge]
         E --> F{Verschieben<br/>aktiviert?}
         F -- Nein --> G[Im Posteingang lassen, Stopp]
         F -- Ja --> H[In Verarbeitet-Ordner verschieben]
@@ -59,8 +59,9 @@ flowchart TD
 ### Lesen und ablegen
 
 1. **Ungelesene E-Mails auflisten.** Der Agent öffnet den konfigurierten Posteingang-Ordner und liefert eine
-   Zusammenfassung jeder ungelesenen Nachricht, begrenzt durch **Max. ungelesene E-Mails**.
-2. **Eine Nachricht abrufen.** Die erste ungelesene Nachricht wird vollständig abgerufen — Absender, Betreff, Datum,
+   Zusammenfassung jeder ungelesenen Nachricht — **älteste zuerst nach Sendedatum** —, begrenzt durch **Max. ungelesene
+   E-Mails**.
+2. **Eine Nachricht abrufen.** Die älteste ungelesene Nachricht wird vollständig abgerufen — Absender, Betreff, Datum,
    Text und Anhänge. Enthält der Posteingang keine ungelesene Post, endet der Lauf hier einfach. Die Anhangsdaten werden
    in den Dateispeicher der Plattform geschrieben, und das Nachrichten-Event trägt lediglich *Referenzen* darauf, damit
    Audit-Trail und Event-Stream klein bleiben.
@@ -74,8 +75,10 @@ Verschieben verlagert eine Nachricht; gelöscht wird nie.
 ### Antworten entwerfen
 
 1. **Kandidaten finden.** Der Entwurfsdienst liest bis zu **Entwurfs-Stapelgröße** Nachrichten aus seinem eigenen
-   Quellordner, für die noch kein Entwurf existiert. Bereits entworfene Nachrichten erkennt er an einem IMAP-Flag, das
-   der Agent setzt — ein erneuter Lauf erzeugt daher keine doppelten Entwürfe.
+   Quellordner, für die noch kein Entwurf existiert, und nimmt dabei **die ältesten zuerst** — ein Rückstand wird also
+   in der Reihenfolge des Eingangs abgearbeitet, und die Stapelgröße lässt die älteste Post nie hinter neueren Eingängen
+   liegen. Bereits entworfene Nachrichten erkennt er an einem IMAP-Flag, das der Agent setzt — ein erneuter Lauf erzeugt
+   daher keine doppelten Entwürfe.
 2. **Jede Antwort entwerfen.** Für jede Nachricht erhält das konfigurierte Chat-Modell Ihren **Entwurfs-Prompt** und die
    Originalnachricht und schreibt einen Antworttext. Das Ergebnis wird in einen korrekt verketteten Antwort-Umschlag
    verpackt, sodass der Entwurf in Ihrem Mail-Client in der richtigen Konversation erscheint.
@@ -113,8 +116,8 @@ als ein wenig davon doppelt zu tun.
   Ihre Dokumente nicht. Für fundierte, mit Quellen belegte Antworten verwenden Sie den
   [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 - **Er liest eine Nachricht pro Lese-Lauf.** Die Lesen/Verschieben-Kette listet alle ungelesenen E-Mails auf, ruft und
-  legt aber nur die erste Nachricht ab. Planen Sie sie häufiger ein, um einen Rückstand abzuarbeiten; die Entwurfs-Kette
-  ist diejenige, die einen Stapel verarbeitet.
+  legt aber nur die älteste Nachricht ab. Planen Sie sie häufiger ein, um einen Rückstand abzuarbeiten; die
+  Entwurfs-Kette ist diejenige, die einen Stapel verarbeitet.
 
 ## Konfiguration
 
@@ -163,8 +166,8 @@ Fragen Sie Ihre Plattform-Administration, falls eine legitime Arbeitslast an ein
 
 ::: details Wie die Einstellungen zur Laufzeit zusammenspielen
 Ein **Lese**-Trigger verbindet sich mit den Postfach-Einstellungen, listet bis zu **Max. ungelesene E-Mails** aus dem
-**Posteingang-Ordner** auf, ruft die erste ab und verschiebt sie — wenn **Abgerufene E-Mail verschieben** aktiv ist — in
-den **Verarbeitet-Ordner**.
+**Posteingang-Ordner** auf, ruft die älteste ab und verschiebt sie — wenn **Abgerufene E-Mail verschieben** aktiv ist —
+in den **Verarbeitet-Ordner**.
 
 Ein **Entwurfs**-Trigger ist davon unabhängig. Ist **Antwort entwerfen** aktiv, liest er bis zu **Entwurfs-Stapelgröße**
 noch nicht entworfene Nachrichten aus dem **Quellordner für Entwurf**, ruft das gewählte **LLM-Modell** einmal pro

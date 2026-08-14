@@ -17,7 +17,7 @@
 name: Forward-port Check
 on:
   push:
-    branches: ['release/**']
+    branches: [release/**]
 permissions:
   contents: read
 jobs:
@@ -33,7 +33,7 @@ jobs:
       - name: Report commits not yet forward-ported to main
         env:
           BRANCH: ${{ github.ref_name }}
-        run: |
+        run: |-
           set -euo pipefail
           git fetch origin main --quiet
 
@@ -41,13 +41,11 @@ jobs:
           # '+' when no patch-equivalent commit exists on main, '-' when it does.
           # Keep the '+' lines and drop reverts (they stay on the release line).
           missing="$(git cherry -v origin/main HEAD | grep '^+ ' | grep -viE '^\+ [0-9a-f]+ Revert ' || true)"
-
           if [ -z "$missing" ]; then
             echo "All commits on $BRANCH are present on main. Nothing to forward-port."
             echo "All commits on \`$BRANCH\` are present on main. Nothing to forward-port." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-
           echo "::warning::Commits on $BRANCH are not on main. Forward-port hotfixes (cherry-pick to main); leave reverts on the release line."
           echo "$missing"
           {

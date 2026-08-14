@@ -213,7 +213,8 @@ assets.
 - `DocumentParserResource` — Selects parser by filetype. `LoaderType.MINERU` (default) or `DOCUMENT_INTELLIGENCE`.
   Fallbacks: `EpubReader`, `IPYNBReader`, `RawLoader`, `RTFReader`, `ImageLoader`.
 - `MarkdownStructuralNodeParserResource` — LlamaIndex MD structural parser for chunking.
-- `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG.
+- `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG. Takes `llm_config` and caps
+  each prompt to the LLM's input limit, map-reducing over oversized rollups instead of sending them whole.
 - `TableRefinementResource` — LLM-powered table detection and structure splitting.
 
 **LLM/Embedding**: `EmbeddingModelResource` (wraps `EmbeddingModelConfig`), `LanguageModelResource` (wraps `LLMConfig`).
