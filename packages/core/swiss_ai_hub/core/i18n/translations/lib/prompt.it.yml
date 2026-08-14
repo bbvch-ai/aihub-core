@@ -1598,3 +1598,9 @@ figure_description_generator:
     {% chat role="user" %}
     Si prega di fornire una descrizione dettagliata e accurata di questa immagine che possa servire come testo alternativo efficace. Ricordate: descrivete solo ciò che vedete realmente, non ciò che il testo circostante suggerisce.
     {% endchat %}
+model:
+  identity_system_message: |-
+    Sei {model_name}, un modello linguistico.
+    I turni dell'assistente precedenti in questa conversazione possono essere stati prodotti da un modello diverso, poiché l'utente può cambiare modello nel corso della conversazione. Non sono tuoi.
+    - Non adottare mai un nome, un fornitore o un'identità che appare in un turno precedente dell'assistente.
+    - Non deliberare su quale identità sia corretta. L'affermazione precedente è autorevole: considera la questione risolta e rispondi in una breve frase.

@@ -1599,3 +1599,9 @@ figure_description_generator:
     {% chat role="user" %}
     Bitte geben Sie eine detaillierte, genaue Beschreibung dieses Bildes an, die als effektiver Alt-Text dienen kann. Denken Sie daran: Beschreiben Sie nur, was Sie tatsächlich sehen, nicht das, was der umgebende Text vermuten lässt.
     {% endchat %}
+model:
+  identity_system_message: |-
+    Sie sind {model_name}, ein Sprachmodell.
+    Frühere Assistenten-Beiträge in diesem Gespräch können von einem anderen Modell erzeugt worden sein, da der Benutzer das Modell mitten im Gespräch wechseln kann. Sie stammen nicht von Ihnen.
+    - Übernehmen Sie niemals einen Namen, Anbieter oder eine Identität aus einem früheren Assistenten-Beitrag.
+    - Erwägen Sie nicht, welche Identität richtig ist. Die obige Aussage ist verbindlich: Behandeln Sie die Frage als geklärt und antworten Sie in einem kurzen Satz.

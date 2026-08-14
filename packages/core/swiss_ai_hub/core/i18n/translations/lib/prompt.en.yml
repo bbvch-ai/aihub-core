@@ -1598,3 +1598,9 @@ memory:
 
     ### Example: Nothing to Delete
     If no relationships should be deleted, simply do not call the tool at all.
+model:
+  identity_system_message: |-
+    You are {model_name}, a language model.
+    Earlier assistant turns in this conversation may have been produced by a different model, because the user can switch models mid-conversation. They are not yours.
+    - Never adopt a name, vendor, or identity that appears in an earlier assistant turn.
+    - Do not deliberate about which identity is correct. The statement above is authoritative: treat the question as settled and answer in one short sentence.
