@@ -89,6 +89,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.imap.mail_attachment_ref import MailAttachmentRef
     from swiss_ai_hub.core.events.agent.imap.mail_batch_drafted_event import MailBatchDraftedEvent
     from swiss_ai_hub.core.events.agent.imap.mail_fetched_event import MailFetchedEvent
+    from swiss_ai_hub.core.events.agent.imap.mail_message_ref import MailMessageRef
     from swiss_ai_hub.core.events.agent.imap.mail_moved_event import MailMovedEvent
     from swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event import UnreadMailListedEvent
     from swiss_ai_hub.core.events.agent.imap.unread_mail_summary import UnreadMailSummary
@@ -196,6 +197,7 @@ __all__ = [
     "MailAttachmentRef",
     "MailBatchDraftedEvent",
     "MailFetchedEvent",
+    "MailMessageRef",
     "MailMovedEvent",
     "Message",
     "MetaQuestionDetectedEvent",
@@ -294,6 +296,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "MailAttachmentRef": "swiss_ai_hub.core.events.agent.imap.mail_attachment_ref",
     "MailBatchDraftedEvent": "swiss_ai_hub.core.events.agent.imap.mail_batch_drafted_event",
     "MailFetchedEvent": "swiss_ai_hub.core.events.agent.imap.mail_fetched_event",
+    "MailMessageRef": "swiss_ai_hub.core.events.agent.imap.mail_message_ref",
     "MailMovedEvent": "swiss_ai_hub.core.events.agent.imap.mail_moved_event",
     "Message": "swiss_ai_hub.core.events.agent.semantic.llm.message",
     "MetaQuestionDetectedEvent": "swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event",

@@ -26,9 +26,14 @@ class MailParser:
         message: EmailMessage,
         max_body_bytes: int,
         max_attachment_bytes: int,
+        raw: bytes = b"",
     ) -> ParsedMessage:
         """Parse a MIME message, truncating bodies and dropping oversized attachments so a hostile or
-        oversized mail can never bloat the persisted/streamed event or the agent's memory footprint."""
+        oversized mail can never bloat the persisted/streamed event or the agent's memory footprint.
+
+        ``raw`` is carried through untouched — the truncation above is what the *event* may show, never
+        what is archived, so the stored original stays byte-identical to what the server sent.
+        """
         body_text: str | None = None
         body_html: str | None = None
         attachments: list[ParsedAttachment] = []
@@ -67,6 +72,7 @@ class MailParser:
             body_text=body_text,
             body_html=body_html,
             attachments=attachments,
+            raw=raw,
         )
 
     @staticmethod

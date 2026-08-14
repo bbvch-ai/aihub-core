@@ -260,3 +260,56 @@ message carries a fresh higher UID and the effective order is **move order**. Co
   `FETCH`. Batching raises the stakes — one vanished message would fail the entire listing, whereas the old per-UID loop
   failed only that message — so a UID missing from the ordering fetch sorts last and one missing from the summary fetch
   is skipped. This is not error suppression: a message that no longer exists is not a listing candidate.
+
+## Archiving the original message (#1575)
+
+Only attachments were persisted; the message they arrived in was parsed, summarised onto `MailFetchedEvent`, and then
+lost. Issue [#1575](https://github.com/bbvch-ai/aihub-core/issues/1575) requires the original mail itself to be kept
+"for future reference and processing".
+
+- **The raw RFC822 bytes are archived, not a projection of the parsed fields.** A JSON envelope of what
+  `MailFetchedEvent` carries would preserve only what we happened to model, which fails the story's own criterion that
+  the stored mail "preserves all original content". The raw bytes *are* the original by definition, so they also carry
+  what the event deliberately omits — the **recipients**, which `MailParser` never extracted at all (`To`/`Cc` appear
+  nowhere in the parsed model), and the HTML body kept off the event for XSS reasons.
+
+- **It costs no extra IMAP round-trip.** `fetch_message` already downloads the whole message with `BODY.PEEK[]` and
+  threw the bytes away after handing them to `email.message_from_bytes`. `ParsedMessage.raw` keeps what was already in
+  memory, alongside `body_html` and under the same rule: it never enters an event. Peak memory is unchanged and still
+  bounded by the pre-download `RFC822.SIZE` check against `max_message_bytes`.
+
+- **`max_body_bytes` must not reach the archive.** That cap exists to bound what an event may carry. Applying it to the
+  stored copy would make the "original" a silently truncated one, so the raw bytes bypass every truncation the parser
+  applies — pinned by a test.
+
+- **The archive is deliberately NOT sanitized, and must not become so.** Sanitizing the HTML before storing was
+  considered and rejected: it invalidates any DKIM/S-MIME signature, so the archived mail could no longer be shown to be
+  authentic; and it destroys precisely the markup an email **classifier** needs — link structure (display text vs real
+  `href`), tracking pixels and obfuscated markup are the phishing signals, and stripping them is irreversible. XSS is an
+  output-encoding problem, and nothing renders these objects today. The obligation is therefore deferred to the
+  consumer: **anything that renders HTML out of an archived `.eml` must sanitize at render time.** As a transport-level
+  guard the object is written with `ContentType: message/rfc822` and `ContentDisposition: attachment`, so a browser
+  handed the signed URL downloads it instead of rendering it. Whoever later finds unsanitized markup in the data lake
+  should not "fix" it at the storage layer.
+
+- **Attachments are stored twice.** Once inline inside the archived `.eml`, once as their own objects. Accepted so the
+  existing attachment contract (and its `MailAttachmentRef` consumers) stays unchanged; the cost is roughly the base64
+  inflation of the attachment bytes per message.
+
+- **Only the read chain archives.** `fetch_mail_step` stores; `draft_batch_step` does not, even though it also calls
+  `fetch_message`. Archiving there would re-store what the read chain already kept, once per message per batch run.
+
+- **`MailAttachmentStore` became `MailStore`** (`store_attachments` + `store_message`) — it no longer stores only
+  attachments. Breaking rename with no compatibility shim, per the repository convention.
+
+- **`MailFetchedEvent.original_message`** is a nullable `MailMessageRef` (mirroring `MailAttachmentRef`, resolving its
+  S3 location through `UserUploadedFile` so all file contracts share one layout). Nullable because a message parsed
+  without raw bytes has nothing to archive, and a missing archive must not fail the run. No `DisplayEvents` union change
+  is needed — a new field on an event already in the union does not re-tag it.
+
+- **Retrieval needs no new endpoint.** `resolve_s3_location` yields the bucket and key, and the existing
+  `GET /files/logged-in/url/{container}/{file_path:path}` issues the signed URL — the same path attachments already use.
+
+- **Retention is unresolved.** The archive now holds complete inbound mail, headers and all, in the `agent-files`
+  bucket, which carries no lifecycle policy. That is a deliberate acceptance for this story, not an oversight, and a
+  data-protection follow-up if the posture needs to tighten — the same open question the at-rest mailbox secrets raise.

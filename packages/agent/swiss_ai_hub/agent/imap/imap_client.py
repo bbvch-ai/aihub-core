@@ -187,8 +187,9 @@ class ImapClient:
             )
 
         fetched = await asyncio.to_thread(self._connection.fetch, [uid], ["BODY.PEEK[]"])
-        message = self._parse_bytes(fetched[uid][_BODY_KEY])
-        return MailParser.parse_message(message_id, message, self._max_body_bytes, self._max_attachment_bytes)
+        raw = fetched[uid][_BODY_KEY]
+        message = self._parse_bytes(raw)
+        return MailParser.parse_message(message_id, message, self._max_body_bytes, self._max_attachment_bytes, raw=raw)
 
     async def move_message(self, message_id: str, target_folder: str) -> None:
         """Move a message by UID from the inbox folder into target_folder, opening the folder writable.
