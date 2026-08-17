@@ -54,10 +54,10 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 28 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 29 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 28 concrete form elements
+│   └── elements/                    # 29 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension
 │   ├── document/                    # Loaders (MinerU, DocumentIntelligence), parsers, refinement
@@ -114,6 +114,7 @@ packages/core/swiss_ai_hub/core/
 │   └── health/                      # HealthController, HealthServer, health checks
 ├── rpc/                             # AgentConfigClient, ProcessConfigClient (request-reply)
 ├── runners/                         # Execution runners
+├── scheduling/                      # Cron-scheduled agent runs (AgentSchedule, calculator, Redis state, service)
 ├── settings/                        # App-level configuration (EnvironmentSettings)
 ├── streams/                         # StreamManager (JetStream stream lifecycle)
 ├── subscribers/                     # JSSubscriber + NCSubscriber + agent/process specializations
@@ -262,12 +263,12 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 28 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 29 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector.
+VectorStoreInput, IconSelector, CronInput.
 
 ### Nested Forms
 
@@ -582,7 +583,7 @@ Real-time event emission for streaming LLM output to the UI:
 
 - `core/form/form.py` — form duality system
 - `core/form/base/prime_vue_element.py` — form element base
-- `core/form/elements/` — 28 form elements
+- `core/form/elements/` — 29 form elements
 
 **Workflow engine**:
 
