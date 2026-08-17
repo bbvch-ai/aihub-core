@@ -61,9 +61,16 @@ storage through the generic config route. The scheduler therefore treats an unpa
 skip-with-error rather than letting it raise — see the read-side note under "Consequences".
 
 Consequence: nothing in the backend prevents a non-schedulable blueprint from declaring a schedule field, or a
-schedulable one from omitting it. A stray schedule is simply never read. The alternative — a platform-injected field on
-`AgentConfigEntityDocument` outside `config_data` — would enforce the pairing but needs its own DTO and route surface
-and has no precedent in the codebase.
+schedulable one from omitting it or naming it something else. A stray schedule is simply never read. The alternative —
+a platform-injected field on `AgentConfigEntityDocument` outside `config_data` — would enforce the pairing but needs its
+own DTO and route surface and has no precedent in the codebase.
+
+The dangerous half of that consequence is the schedulable blueprint whose cron field is named anything but `schedule`:
+it is advertised as schedulable, it saves whatever an admin enters, and it never fires. `ScheduledAgentService` cannot
+repair this — the field name belongs to the blueprint — so it inspects the discovered form and logs a warning naming
+the class and the cron fields it did find. Warned once per class and re-armed on correction, since the tick runs every
+30s. Baking the schedule in as a non-configurable value is not an escape hatch: non-configurable values are merged in at
+dispatch time and never reach `config_data`, so a readable schedule has to be a configurable field.
 
 ### 3. The scheduler lives in `packages/core`, wired from the API
 

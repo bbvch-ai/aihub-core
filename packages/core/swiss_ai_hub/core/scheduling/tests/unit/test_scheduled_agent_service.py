@@ -12,6 +12,7 @@ from swiss_ai_hub.core.scheduling.scheduled_agent_service import ScheduledAgentS
 _MODULE = "swiss_ai_hub.core.scheduling.scheduled_agent_service"
 _NOW = datetime(2026, 8, 11, 12, 0, 30, tzinfo=UTC)
 _HOURLY = {"minute": "0", "hour": "*", "day_of_month": "*", "month": "*", "day_of_week": "*", "timezone": "UTC"}
+_SCHEDULE_FORM = [{"formkit": "cronInput", "name": "schedule", "ref": "schedule"}]
 
 
 def _config(agent_class: str = "ScheduledDemoAgent", agent_id: str = "demo", schedule: dict | None = _HOURLY):
@@ -20,6 +21,10 @@ def _config(agent_class: str = "ScheduledDemoAgent", agent_id: str = "demo", sch
         agent_id=agent_id,
         config_data={"schedule": schedule} if schedule else {},
     )
+
+
+def _agent_class(agent_class: str = "ScheduledDemoAgent", form: list[dict] | None = None):
+    return SimpleNamespace(agent_class=agent_class, form=_SCHEDULE_FORM if form is None else form)
 
 
 @pytest.fixture
@@ -47,6 +52,7 @@ async def _run_tick(
     claimed: bool = True,
     configs: list | None = None,
     schedulable: bool = True,
+    agent_classes: list | None = None,
 ) -> MagicMock:
     """Runs one tick with everything it reaches out to patched, returning the thread-creation mock.
 
@@ -57,7 +63,7 @@ async def _run_tick(
     service._store.set_watermark = AsyncMock()
     service._store.claim_occurrence = AsyncMock(return_value=claimed)
 
-    online_classes = [SimpleNamespace(agent_class="ScheduledDemoAgent")] if schedulable else []
+    online_classes = (agent_classes if agent_classes is not None else [_agent_class()]) if schedulable else []
     with (
         patch(f"{_MODULE}.datetime", **{"now.return_value": _NOW}),
         patch(f"{_MODULE}.AgentClassEntity.get_online_schedulable", return_value=online_classes),
@@ -255,6 +261,95 @@ class TestDiagnostics:
             service._warn_if_tick_outran_its_lease(0.01)
 
         assert caplog.text == ""
+
+
+class TestUnreachableScheduleField:
+    """A blueprint is schedulable because it handles ScheduledStartEvent, but its schedule is read by
+    name. Name the field anything but `schedule` and the blueprint still advertises itself, still saves
+    what an admin enters, and still never fires — the one failure mode the derivation cannot rule out."""
+
+    @pytest.mark.asyncio
+    async def test_warns_when_the_cron_field_is_named_something_else(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        misnamed = [{"formkit": "cronInput", "name": "cron", "ref": "cron"}]
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(service, agent_classes=[_agent_class(form=misnamed)])
+
+        assert "exposes no top-level 'schedule' field" in caplog.text
+        assert "Cron fields on this blueprint: cron" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_warns_when_the_blueprint_declares_no_cron_field_at_all(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(service, agent_classes=[_agent_class(form=[{"formkit": "text", "name": "name"}])])
+
+        assert "Cron fields on this blueprint: none" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_reports_a_cron_field_buried_in_a_group(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Nested is readable to a person and still unreachable to the scheduler, which only reads the
+        top level of `config_data` — so the path is named rather than counted as a match."""
+        nested = [
+            {
+                "formkit": "group",
+                "name": "advanced",
+                "children": [{"formkit": "cronInput", "name": "schedule", "ref": "advanced.schedule"}],
+            }
+        ]
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(service, agent_classes=[_agent_class(form=nested)])
+
+        assert "Cron fields on this blueprint: advanced.schedule" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_warns_only_once_per_class(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """The misconfiguration persists and the tick runs every 30s, so repeating would drown the log."""
+        misnamed = [_agent_class(form=[{"formkit": "cronInput", "name": "cron"}])]
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(service, agent_classes=misnamed)
+            await _run_tick(service, agent_classes=misnamed)
+
+        assert caplog.text.count("exposes no top-level") == 1
+
+    @pytest.mark.asyncio
+    async def test_warns_again_after_the_blueprint_is_fixed_and_broken_again(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        misnamed = [_agent_class(form=[{"formkit": "cronInput", "name": "cron"}])]
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(service, agent_classes=misnamed)
+            await _run_tick(service, agent_classes=[_agent_class()])
+            await _run_tick(service, agent_classes=misnamed)
+
+        assert caplog.text.count("exposes no top-level") == 2
+
+    @pytest.mark.asyncio
+    async def test_stays_quiet_for_a_correctly_named_field(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(service, watermark=_NOW - timedelta(minutes=5))
+
+        assert caplog.text == ""
+
+    @pytest.mark.asyncio
+    async def test_a_misnamed_field_does_not_stop_other_blueprints_firing(
+        self, service: ScheduledAgentService, distributor: MagicMock
+    ) -> None:
+        await _run_tick(
+            service,
+            agent_classes=[_agent_class("BrokenAgent", form=[]), _agent_class()],
+            configs=[_config(agent_class="ScheduledDemoAgent", agent_id="demo")],
+        )
+
+        distributor.distribute_event.assert_awaited_once()
 
 
 class TestCatchUp:
