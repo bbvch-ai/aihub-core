@@ -14058,6 +14058,18 @@ export const MailFetchedEventSchema = {
       title: "Attachments",
       description: "References to the message's attachments stored in S3.",
     },
+    original_message: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/MailMessageRef",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Reference to the original RFC822 message stored in S3, or null when it was not stored.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -14088,6 +14100,43 @@ export const MailFetchedEventSchema = {
   title: "MailFetchedEvent",
   description:
     "Carries a single fetched message — headers, body, and references to its stored attachments.",
+} as const;
+
+export const MailMessageRefSchema = {
+  properties: {
+    filename: {
+      type: "string",
+      pattern: "^[^/\\\\]+$",
+      title: "Filename",
+      description:
+        "Filename the message is stored under, e.g. '1234.eml'. Must not contain path separators.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "MIME type of the stored message.",
+      default: "message/rfc822",
+    },
+    file_id: {
+      type: "string",
+      pattern:
+        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      title: "File Id",
+      description:
+        "UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.",
+    },
+    size_bytes: {
+      type: "integer",
+      minimum: 0,
+      title: "Size Bytes",
+      description: "Size of the stored message in bytes.",
+    },
+  },
+  type: "object",
+  required: ["filename", "file_id", "size_bytes"],
+  title: "MailMessageRef",
+  description:
+    "Reference to a fetched message's original RFC822 bytes, stored in S3 rather than carried in the event.\n\nMirrors ``MailAttachmentRef``: the message is referenced by ``file_id`` so the raw mail — which may be\norders of magnitude larger than the summary the event carries — never enters the audit trail or the\nWebSocket stream. The stored object is the message **verbatim**, so it also preserves what the event\ndeliberately omits: the recipients and the untrusted HTML body.",
 } as const;
 
 export const MailMovedEventSchema = {
@@ -32017,6 +32066,18 @@ export const MailFetchedEventWritableSchema = {
       type: "array",
       title: "Attachments",
       description: "References to the message's attachments stored in S3.",
+    },
+    original_message: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/MailMessageRef",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Reference to the original RFC822 message stored in S3, or null when it was not stored.",
     },
   },
   additionalProperties: true,
