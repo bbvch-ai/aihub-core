@@ -33,9 +33,12 @@ class TestScheduledThreadId:
     thread, without a lookup two replicas could race into creating a second one."""
 
     def test_is_stable_for_the_same_profile(self):
-        agent = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+        """Two equal refs, not one ref twice: the id has to survive the process that built it, since
+        the replica resolving the thread is rarely the one that created it."""
+        first = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+        second = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
 
-        assert ThreadEntity.scheduled_thread_id(agent) == ThreadEntity.scheduled_thread_id(agent)
+        assert ThreadEntity.scheduled_thread_id(first) == ThreadEntity.scheduled_thread_id(second)
 
     def test_differs_per_profile_of_one_class(self):
         first = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
