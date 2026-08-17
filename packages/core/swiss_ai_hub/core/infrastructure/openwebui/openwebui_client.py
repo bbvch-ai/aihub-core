@@ -173,14 +173,21 @@ class OpenWebuiClient:
         OpenWebUI caps ``/models/list`` at a fixed server-side page size (30) with no way to
         raise it, so a bare GET silently drops every model past the first page — the provisioner
         then re-creates existing models and never reconciles grants for the rest. The explicit
-        ``order_by`` matters: the server only orders implicitly when its access filter is empty,
-        and paging over an unordered result set can repeat and drop rows.
+        ``order_by`` narrows that: the server only orders implicitly when its access filter is
+        empty, so paging over an unordered result set can repeat and drop rows outright.
+
+        ``created_at`` is not unique, though, so ties can still shuffle between two OFFSET queries
+        and hand the same row back twice. Accumulating by id absorbs that — and, crucially, keeps
+        the ``total`` check counting *distinct* models: against a raw running count a repeat would
+        satisfy it early and silently strip whichever row the repeat displaced. Drops need a stable
+        server-side tiebreaker to prevent, so a short final result is reported rather than hidden.
 
         Termination keys off the server's reported ``total`` (counted before pagination), with
         an empty page as fallback — never a short page, since the server's page size is not ours
         to assume across versions.
         """
-        results: list[dict[str, Any]] = []
+        by_id: dict[str, dict[str, Any]] = {}
+        total: int | None = None
         page = 1
         for _ in range(MODELS_MAX_PAGES):
             response = await http.get(
@@ -193,16 +200,23 @@ class OpenWebuiClient:
             if isinstance(data, list):
                 return data
             items = data.get("items", [])
-            results.extend(items)
+            for item in items:
+                by_id.setdefault(item["id"], item)
             total = data.get("total")
-            if total is not None and len(results) >= total:
+            if total is not None and len(by_id) >= total:
                 break
             if not items:
                 break
             page += 1
         else:
             raise RuntimeError(f"OpenWebUI model pagination exceeded {MODELS_MAX_PAGES} pages")
-        return results
+
+        if total is not None and len(by_id) < total:
+            logger.warning(
+                f"OpenWebUI reported total={total} models but pagination yielded {len(by_id)} distinct ones; "
+                f"rows were dropped (unstable sort on the non-unique created_at key)"
+            )
+        return list(by_id.values())
 
     async def list_base_models(self, http: httpx.AsyncClient) -> list[dict[str, Any]]:
         """Lists registry entries that override a raw provider model (``base_model_id`` unset).

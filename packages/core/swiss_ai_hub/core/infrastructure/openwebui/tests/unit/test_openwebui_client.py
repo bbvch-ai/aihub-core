@@ -1,3 +1,4 @@
+import logging
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -153,6 +154,44 @@ class TestListModels:
 
         assert result == [{"id": "m1"}]
         assert mock_client.get.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_repeated_row_is_returned_once_and_does_not_end_pagination_early(
+        self, owui_client: OpenWebuiClient
+    ) -> None:
+        """``created_at`` is not unique, so ties can reshuffle between OFFSET queries and repeat a row.
+
+        Counting raw rows against ``total`` would satisfy the check one row short and silently strip
+        whichever model the repeat displaced — here, m59 on the last page.
+        """
+        pages = [
+            [{"id": f"m{i}"} for i in range(30)],
+            [{"id": "m29"}] + [{"id": f"m{i}"} for i in range(30, 59)],
+            [{"id": "m59"}],
+        ]
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.side_effect = _model_pages(pages, total=60)
+
+        result = await owui_client.list_models(mock_client)
+
+        assert [m["id"] for m in result] == [f"m{i}" for i in range(60)]
+        assert mock_client.get.await_count == 3
+
+    @pytest.mark.asyncio
+    async def test_dropped_rows_are_reported_rather_than_hidden(
+        self, owui_client: OpenWebuiClient, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A drop needs a stable server-side tiebreaker to prevent, so the gap is surfaced instead."""
+        pages = [[{"id": f"m{i}"} for i in range(30)], [{"id": f"m{i}"} for i in range(30, 60)], []]
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.side_effect = _model_pages(pages, total=61)
+
+        with caplog.at_level(logging.WARNING):
+            result = await owui_client.list_models(mock_client)
+
+        assert len(result) == 60
+        assert "total=61" in caplog.text
+        assert "60 distinct" in caplog.text
 
 
 MODEL_ID_TAKEN_DETAIL = "Uh-oh! This model id is already registered. Please choose another model id string."
