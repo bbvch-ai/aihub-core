@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 import boto3
@@ -43,6 +43,17 @@ from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
 
 logger = logging.getLogger(__name__)
 _background_tasks: set[asyncio.Task] = set()
+
+
+async def _provision_non_fatal(name: str, provision: Callable[[], Awaitable[None]]) -> None:
+    """Provisioning targets external services; their outage must not stop the API from serving.
+
+    The periodic discovery sync already reconciles OpenWebUI non-fatally, so a startup failure
+    here only degrades the model picker until the next cycle instead of crash-looping the pod."""
+    try:
+        await provision()
+    except Exception as exception:
+        logger.exception(f"{name} provisioning failed (non-fatal): {exception}")
 
 
 @asynccontextmanager
@@ -247,10 +258,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await initialize_knowledge_buckets()
 
         # Provision Langfuse with AI-Hub LLM connections
-        await langfuse_provisioner.provision()
+        await _provision_non_fatal("Langfuse", langfuse_provisioner.provision)
 
         # Provision OpenWebUI with groups, workspace models, and access grants
-        await openwebui_provisioner.provision()
+        await _provision_non_fatal("OpenWebUI", openwebui_provisioner.provision)
 
         # Re-sync OpenWebUI when access entities change (active tenant switches notify explicitly)
         AccessChangeHook.connect(openwebui_provisioner)

@@ -332,6 +332,13 @@ class OpenWebuiProvisioner:
 
         to_create, to_update, to_delete = self._compute_model_diff(online_agents, existing_aihub)
 
+        if not online_agents and to_delete:
+            logger.warning(
+                f"OpenWebUI: Skipping deletion of {len(to_delete)} workspace models — no agent class is "
+                f"online, which reads as agent downtime rather than deprovisioning"
+            )
+            to_delete = set()
+
         for agent in to_create:
             model_data = self._build_model_data(agent)
             await self._openwebui.create_model(http, model_data)
