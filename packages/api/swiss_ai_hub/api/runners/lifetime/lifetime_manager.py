@@ -52,7 +52,7 @@ async def _provision_non_fatal(name: str, provision: Callable[[], Awaitable[None
     try:
         await provision()
     except Exception as exception:
-        logger.error(f"{name} provisioning failed (non-fatal): {exception}", exc_info=True)
+        logger.exception(f"{name} provisioning failed (non-fatal): {exception}")
 
 
 @asynccontextmanager
