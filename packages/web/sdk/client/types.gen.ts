@@ -355,6 +355,7 @@ export type AgentClassDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -420,6 +421,12 @@ export type AgentClassDto = {
    */
   is_conversational: boolean;
   /**
+   * Is Schedulable
+   *
+   * Whether the agent class can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
+  /**
    * Is Online
    *
    * Indicates whether the agent class is online and reachable.
@@ -482,6 +489,7 @@ export type AgentConfigDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -3850,6 +3858,7 @@ export type ContextualizedAgentEvent = {
     | ToolEvent
     | UserMessageEvent
     | RagStartEvent
+    | ScheduledStartEvent
     | ExceptionEvent
     | RagSuccessStopEvent
     | RagFailureStopEvent
@@ -4139,6 +4148,144 @@ export type CreateTokenResponse = {
    * The generated API token, only returned at creation
    */
   token: string;
+};
+
+/**
+ * CronInput
+ *
+ * A FormKit element for editing the cron schedule of a schedulable agent profile.
+ *
+ * The element renders the five cron positions plus a timezone selector, and the submitted value
+ * matches the fields of `AgentSchedule`:
+ * {
+ * "minute": str,
+ * "hour": str,
+ * "day_of_month": str,
+ * "month": str,
+ * "day_of_week": str,
+ * "timezone": str,
+ * }
+ *
+ * Presets and the plain-language summary of the current schedule are delivered by the Admin UI
+ * (see the cron schedule configuration UI issue); this element only declares the contract.
+ *
+ * ### Form Duality
+ * ```python
+ * from swiss_ai_hub.core.form.elements.cron_input import CronInput
+ * from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+ *
+ * class MyAgentConfig(AgentConfig):
+ * schedule: Annotated[
+ * AgentSchedule | CronInput | None,
+ * Field(description="When this profile runs automatically"),
+ * ] = None
+ *
+ * # Form mode - for rendering:
+ * config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
+ *
+ * # Data mode - from submission (Pydantic validates into AgentSchedule):
+ * config = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))
+ * ```
+ */
+export type CronInput = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Cron schedule input element.
+   */
+  formkit?: "cronInput";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Timezoneplaceholder
+   *
+   * Placeholder for the timezone select
+   */
+  timezonePlaceholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search on the timezone select
+   */
+  filter?: boolean;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -5639,6 +5786,12 @@ export type FullAgentInstanceDto = {
    */
   is_conversational: boolean;
   /**
+   * Is Schedulable
+   *
+   * Whether the agent can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -5749,6 +5902,7 @@ export type FullProcessInstanceDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -5935,6 +6089,7 @@ export type Group = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -6290,6 +6445,7 @@ export type HumanInDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -6370,6 +6526,7 @@ export type HumanInSpecs = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -10013,6 +10170,12 @@ export type MinimalAgentInstanceDto = {
    * Whether the agent can participate in a chat-based conversation
    */
   is_conversational: boolean;
+  /**
+   * Is Schedulable
+   *
+   * Whether the agent can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
 };
 
 /**
@@ -11489,6 +11652,7 @@ export type ProcessClassDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -12523,6 +12687,7 @@ export type Repeater = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -13103,6 +13268,70 @@ export type RunStatistics = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDto;
+};
+
+/**
+ * ScheduledStartEvent
+ *
+ * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
+ *
+ * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
+ * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
+ * that consumes this event, with no separate registration.
+ *
+ * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
+ * initiating identity. Whatever tenant context the agent needs comes from its own profile
+ * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
+ */
+export type ScheduledStartEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * The locale the scheduled run reports its display output in.
+   */
+  locale?: string;
+  /**
+   * Always None — scheduled runs are system-initiated and carry no execution identity.
+   */
+  user?: UserIdentity | null;
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
 };
 
 /**
@@ -16618,6 +16847,7 @@ export type AgentClassDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -16683,6 +16913,12 @@ export type AgentClassDtoWritable = {
    */
   is_conversational: boolean;
   /**
+   * Is Schedulable
+   *
+   * Whether the agent class can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
+  /**
    * Is Online
    *
    * Indicates whether the agent class is online and reachable.
@@ -16745,6 +16981,7 @@ export type AgentConfigDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -18261,6 +18498,7 @@ export type ContextualizedAgentEventWritable = {
     | ToolEventWritable
     | UserMessageEventWritable
     | RagStartEventWritable
+    | ScheduledStartEventWritable
     | ExceptionEventWritable
     | RagSuccessStopEventWritable
     | RagFailureStopEventWritable
@@ -18351,6 +18589,140 @@ export type ConversationTitleEventWritable = {
    * The generated title for the conversation.
    */
   title: string;
+  [key: string]: unknown;
+};
+
+/**
+ * CronInput
+ *
+ * A FormKit element for editing the cron schedule of a schedulable agent profile.
+ *
+ * The element renders the five cron positions plus a timezone selector, and the submitted value
+ * matches the fields of `AgentSchedule`:
+ * {
+ * "minute": str,
+ * "hour": str,
+ * "day_of_month": str,
+ * "month": str,
+ * "day_of_week": str,
+ * "timezone": str,
+ * }
+ *
+ * Presets and the plain-language summary of the current schedule are delivered by the Admin UI
+ * (see the cron schedule configuration UI issue); this element only declares the contract.
+ *
+ * ### Form Duality
+ * ```python
+ * from swiss_ai_hub.core.form.elements.cron_input import CronInput
+ * from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+ *
+ * class MyAgentConfig(AgentConfig):
+ * schedule: Annotated[
+ * AgentSchedule | CronInput | None,
+ * Field(description="When this profile runs automatically"),
+ * ] = None
+ *
+ * # Form mode - for rendering:
+ * config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
+ *
+ * # Data mode - from submission (Pydantic validates into AgentSchedule):
+ * config = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))
+ * ```
+ */
+export type CronInputWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Cron schedule input element.
+   */
+  formkit?: "cronInput";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Timezoneplaceholder
+   *
+   * Placeholder for the timezone select
+   */
+  timezonePlaceholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search on the timezone select
+   */
+  filter?: boolean;
   [key: string]: unknown;
 };
 
@@ -18865,6 +19237,12 @@ export type FullAgentInstanceDtoWritable = {
    */
   is_conversational: boolean;
   /**
+   * Is Schedulable
+   *
+   * Whether the agent can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -18975,6 +19353,7 @@ export type FullProcessInstanceDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -19100,6 +19479,7 @@ export type GroupWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -19303,6 +19683,7 @@ export type HumanInDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -19383,6 +19764,7 @@ export type HumanInSpecsWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -21668,6 +22050,12 @@ export type MinimalAgentInstanceDtoWritable = {
    * Whether the agent can participate in a chat-based conversation
    */
   is_conversational: boolean;
+  /**
+   * Is Schedulable
+   *
+   * Whether the agent can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
 };
 
 /**
@@ -22281,6 +22669,7 @@ export type ProcessClassDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -22952,6 +23341,7 @@ export type RepeaterWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -23335,6 +23725,57 @@ export type RunStatisticsWritable = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDtoWritable;
+};
+
+/**
+ * ScheduledStartEvent
+ *
+ * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
+ *
+ * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
+ * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
+ * that consumes this event, with no separate registration.
+ *
+ * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
+ * initiating identity. Whatever tenant context the agent needs comes from its own profile
+ * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
+ */
+export type ScheduledStartEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * The locale the scheduled run reports its display output in.
+   */
+  locale?: string;
+  /**
+   * Always None — scheduled runs are system-initiated and carry no execution identity.
+   */
+  user?: UserIdentity | null;
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
+  [key: string]: unknown;
 };
 
 /**

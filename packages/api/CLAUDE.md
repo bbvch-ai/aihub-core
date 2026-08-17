@@ -215,10 +215,16 @@ without needing it baked into event payloads.
 `runners/lifetime/lifetime_manager.py` — FastAPI lifespan context manager wiring all infrastructure at startup.
 
 **Startup order**: MongoDB → Redis/Milvus/S3 → NATS + JetStream → event persistence subscribers → WebSocket
-infrastructure → event distributors → RPC responders → discovery services → DB initialization (default roles, knowledge
-buckets, Langfuse provisioning).
+infrastructure → event distributors → RPC responders → discovery services → scheduled-agent service → DB initialization
+(default roles, knowledge buckets, Langfuse provisioning).
 
 All resources stored in `app.state`, accessible via the dependencies listed above.
+
+**`ScheduledAgentService`**: Fires cron-scheduled agent runs. Lives in `swiss_ai_hub.core.scheduling` and is only
+*wired* here — it takes no FastAPI objects and registers no routes, so the move into `aihub-daemon` (#1203) is the dozen
+lines in `lifetime_manager.py`, not a port. Correct across N replicas via a Redis leader lease; all its state
+(leadership, tick watermark, per-occurrence claims) is in Redis and nowhere else. See ADR
+`2026_08_11_cron_scheduled_agent_runs`.
 
 ## Testing
 
