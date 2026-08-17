@@ -144,6 +144,26 @@ async def test_fetch_message_uses_readonly_select_and_peek():
 
 
 @async_test
+async def test_fetch_message_drops_the_raw_bytes_unless_they_are_asked_for():
+    """The batch drafting chain holds several results alive across its LLM calls and never archives, so
+    retaining the downloaded bytes there would cost up to max_message_bytes per message for nothing."""
+    body = b"From: alice@example.com\r\nSubject: Report\r\n\r\nhello"
+    connection = _connection(fetch={101: {b"RFC822.SIZE": len(body), b"BODY[]": body}})
+    client = _client(connection)
+
+    assert (await client.fetch_message("101")).raw == b""
+
+
+@async_test
+async def test_fetch_message_retains_the_raw_bytes_for_the_archiving_caller():
+    body = b"From: alice@example.com\r\nSubject: Report\r\n\r\nhello"
+    connection = _connection(fetch={101: {b"RFC822.SIZE": len(body), b"BODY[]": body}})
+    client = _client(connection)
+
+    assert (await client.fetch_message("101", with_raw=True)).raw == body
+
+
+@async_test
 async def test_fetch_message_refuses_oversized_message_without_downloading_body():
     connection = _connection(fetch={101: {b"RFC822.SIZE": 500}})
     client = _client(connection, max_message_bytes=100)

@@ -11,7 +11,7 @@ _MAX_ATTACHMENT_BYTES = 10_000_000
 def _parse(
     message: EmailMessage, max_body_bytes: int = _MAX_BODY_BYTES, max_attachment_bytes: int = _MAX_ATTACHMENT_BYTES
 ):
-    return MailParser.parse_message("42", message, max_body_bytes, max_attachment_bytes)
+    return MailParser.parse_message("42", message, max_body_bytes, max_attachment_bytes, b"")
 
 
 def _from_bytes(message: EmailMessage) -> EmailMessage:

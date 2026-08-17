@@ -166,12 +166,16 @@ class ImapClient:
         await asyncio.to_thread(self._connection.select_folder, folder, readonly=False)
         await asyncio.to_thread(self._connection.add_flags, [int(message_id)], [drafted_flag])
 
-    async def fetch_message(self, message_id: str, folder: str | None = None) -> ParsedMessage:
+    async def fetch_message(self, message_id: str, folder: str | None = None, with_raw: bool = False) -> ParsedMessage:
         """Fetch a single message by UID from ``folder`` (defaults to the inbox), including body and attachments,
         without setting the Seen flag.
 
         The raw size is checked (a cheap ``RFC822.SIZE`` fetch) before the body is downloaded, so an
         oversized message is refused rather than pulled into memory — this is what bounds peak fetch memory.
+
+        ``with_raw`` decides whether the downloaded bytes are *retained* on the result. Only the archiving
+        caller asks for them: a batch caller holding several results alive across LLM round-trips would
+        otherwise retain up to ``max_message_bytes`` per message for data it never reads.
         """
         source_folder = folder or self._inbox_folder
         await asyncio.to_thread(self._connection.select_folder, source_folder, readonly=True)
@@ -189,7 +193,13 @@ class ImapClient:
         fetched = await asyncio.to_thread(self._connection.fetch, [uid], ["BODY.PEEK[]"])
         raw = fetched[uid][_BODY_KEY]
         message = self._parse_bytes(raw)
-        return MailParser.parse_message(message_id, message, self._max_body_bytes, self._max_attachment_bytes, raw=raw)
+        return MailParser.parse_message(
+            message_id,
+            message,
+            self._max_body_bytes,
+            self._max_attachment_bytes,
+            raw=raw if with_raw else b"",
+        )
 
     async def move_message(self, message_id: str, target_folder: str) -> None:
         """Move a message by UID from the inbox folder into target_folder, opening the folder writable.

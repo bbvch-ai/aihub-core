@@ -296,8 +296,13 @@ lost. Issue [#1575](https://github.com/bbvch-ai/aihub-core/issues/1575) requires
   existing attachment contract (and its `MailAttachmentRef` consumers) stays unchanged; the cost is roughly the base64
   inflation of the attachment bytes per message.
 
-- **Only the read chain archives.** `fetch_mail_step` stores; `draft_batch_step` does not, even though it also calls
-  `fetch_message`. Archiving there would re-store what the read chain already kept, once per message per batch run.
+- **Only the read chain archives, and the fetch signature enforces it.** `fetch_mail_step` stores; `draft_batch_step`
+  does not, even though it also calls `fetch_message`. Archiving there would re-store what the read chain already kept,
+  once per message per batch run. The raw bytes are therefore retained only under `fetch_message(with_raw=True)`, which
+  only `fetch_mail_step` passes. Without that gate the drafting chain would hold the raw bytes of a whole batch alive
+  across its per-message LLM calls — up to `batch_size` × `max_message_bytes` of data it never reads. `parse_message`
+  takes `raw` with no default for the same reason: a caller that does not archive says so explicitly rather than
+  dropping the original by omission.
 
 - **`MailAttachmentStore` became `MailStore`** (`store_attachments` + `store_message`) — it no longer stores only
   attachments. Breaking rename with no compatibility shim, per the repository convention.

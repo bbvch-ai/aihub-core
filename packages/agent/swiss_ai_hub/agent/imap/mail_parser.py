@@ -26,13 +26,15 @@ class MailParser:
         message: EmailMessage,
         max_body_bytes: int,
         max_attachment_bytes: int,
-        raw: bytes = b"",
+        raw: bytes,
     ) -> ParsedMessage:
         """Parse a MIME message, truncating bodies and dropping oversized attachments so a hostile or
         oversized mail can never bloat the persisted/streamed event or the agent's memory footprint.
 
         ``raw`` is carried through untouched — the truncation above is what the *event* may show, never
-        what is archived, so the stored original stays byte-identical to what the server sent.
+        what is archived, so the stored original stays byte-identical to what the server sent. It has no
+        default: a caller that does not archive must say so with ``b""`` rather than lose the original by
+        omission.
         """
         body_text: str | None = None
         body_html: str | None = None
