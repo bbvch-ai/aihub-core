@@ -745,6 +745,7 @@ export {
   type MailBatchDraftedEventWritable,
   type MailFetchedEvent,
   type MailFetchedEventWritable,
+  type MailMessageRef,
   type MailMovedEvent,
   type MailMovedEventWritable,
   type MemoriesResponse,

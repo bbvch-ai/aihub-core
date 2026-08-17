@@ -20,7 +20,7 @@ from swiss_ai_hub.agent.agents.imap_agent.events.read_mail_start_event import Re
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
-from swiss_ai_hub.agent.imap.mail_attachment_store import MailAttachmentStore
+from swiss_ai_hub.agent.imap.mail_store import MailStore
 from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -104,7 +104,7 @@ class ImapAgent(Agent):
         message_id = event.messages[0].message_id
         logger.info("[imap] fetch_mail_step: fetching message uid=%s", message_id)
         async with ImapClientFactory.create(imap_config) as client:
-            parsed = await client.fetch_message(message_id)
+            parsed = await client.fetch_message(message_id, with_raw=True)
         logger.info(
             "[imap] fetch_mail_step: fetched from=%s subject=%r date=%s attachments=%d body_len=%d",
             parsed.sender,
@@ -114,8 +114,17 @@ class ImapAgent(Agent):
             len(parsed.body_text or ""),
         )
 
-        attachments = await MailAttachmentStore.store(
+        attachments = await MailStore.store_attachments(
             parsed.attachments,
+            agent_class=topic.agent_class,
+            agent_id=topic.agent_id,
+        )
+        # Only this chain archives the original, which is why it is the only ``with_raw=True`` fetch above.
+        # draft_batch_step also fetches messages, but archiving there would re-store what this step already
+        # did, once per batch run.
+        original_message = await MailStore.store_message(
+            parsed.raw,
+            message_id=parsed.message_id,
             agent_class=topic.agent_class,
             agent_id=topic.agent_id,
         )
@@ -129,6 +138,7 @@ class ImapAgent(Agent):
             references=parsed.references,
             reply_to=parsed.reply_to,
             attachments=attachments,
+            original_message=original_message,
         )
 
     @step(

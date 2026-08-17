@@ -5,6 +5,7 @@ from pydantic import Field
 
 from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
 from swiss_ai_hub.core.events.agent.imap.mail_attachment_ref import MailAttachmentRef
+from swiss_ai_hub.core.events.agent.imap.mail_message_ref import MailMessageRef
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
@@ -32,4 +33,11 @@ class MailFetchedEvent(ControlAndDisplayEvent):
     attachments: Annotated[
         list[MailAttachmentRef],
         Field(default_factory=list, description="References to the message's attachments stored in S3."),
+    ]
+    original_message: Annotated[
+        MailMessageRef | None,
+        Field(
+            default=None,
+            description="Reference to the original RFC822 message stored in S3, or null when it was not stored.",
+        ),
     ]

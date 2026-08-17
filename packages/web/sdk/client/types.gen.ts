@@ -9591,6 +9591,10 @@ export type MailFetchedEvent = {
    */
   attachments?: Array<MailAttachmentRef>;
   /**
+   * Reference to the original RFC822 message stored in S3, or null when it was not stored.
+   */
+  original_message?: MailMessageRef | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -9604,6 +9608,43 @@ export type MailFetchedEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * MailMessageRef
+ *
+ * Reference to a fetched message's original RFC822 bytes, stored in S3 rather than carried in the event.
+ *
+ * Mirrors ``MailAttachmentRef``: the message is referenced by ``file_id`` so the raw mail — which may be
+ * orders of magnitude larger than the summary the event carries — never enters the audit trail or the
+ * WebSocket stream. The stored object is the message **verbatim**, so it also preserves what the event
+ * deliberately omits: the recipients and the untrusted HTML body.
+ */
+export type MailMessageRef = {
+  /**
+   * Filename
+   *
+   * Filename the message is stored under, e.g. '1234.eml'. Must not contain path separators.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * MIME type of the stored message.
+   */
+  content_type?: string;
+  /**
+   * File Id
+   *
+   * UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.
+   */
+  file_id: string;
+  /**
+   * Size Bytes
+   *
+   * Size of the stored message in bytes.
+   */
+  size_bytes: number;
 };
 
 /**
@@ -21872,6 +21913,10 @@ export type MailFetchedEventWritable = {
    * References to the message's attachments stored in S3.
    */
   attachments?: Array<MailAttachmentRef>;
+  /**
+   * Reference to the original RFC822 message stored in S3, or null when it was not stored.
+   */
+  original_message?: MailMessageRef | null;
   [key: string]: unknown;
 };
 
