@@ -33,7 +33,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "matplotlib>=3.10.1",
+    "matplotlib>=3.11.1",
     "seaborn>=0.13.2",
 ]
 
