@@ -23,8 +23,16 @@ def _config(agent_class: str = "ScheduledDemoAgent", agent_id: str = "demo", sch
     )
 
 
-def _agent_class(agent_class: str = "ScheduledDemoAgent", form: list[dict] | None = None):
-    return SimpleNamespace(agent_class=agent_class, form=_SCHEDULE_FORM if form is None else form)
+def _agent_class(
+    agent_class: str = "ScheduledDemoAgent",
+    form: list[dict] | None = None,
+    last_discovered: datetime = _NOW - timedelta(hours=2),
+):
+    return SimpleNamespace(
+        agent_class=agent_class,
+        form=_SCHEDULE_FORM if form is None else form,
+        last_discovered=last_discovered,
+    )
 
 
 @pytest.fixture
@@ -53,8 +61,9 @@ async def _run_tick(
     configs: list | None = None,
     schedulable: bool = True,
     agent_classes: list | None = None,
+    offline_classes: list | None = None,
 ) -> MagicMock:
-    """Runs one tick with everything it reaches out to patched, returning the thread-creation mock.
+    """Runs one tick with everything it reaches out to patched, returning the thread-resolution mock.
 
     Only the scheduling logic is left real — leadership, persistence, and the distributor are all fakes.
     """
@@ -67,12 +76,13 @@ async def _run_tick(
     with (
         patch(f"{_MODULE}.datetime", **{"now.return_value": _NOW}),
         patch(f"{_MODULE}.AgentClassEntity.get_online_schedulable", return_value=online_classes),
+        patch(f"{_MODULE}.AgentClassEntity.get_offline_schedulable", return_value=offline_classes or []),
         patch(f"{_MODULE}.AgentConfigEntityDocument.find_for_classes", return_value=configs or [_config()]),
-        patch(f"{_MODULE}.ThreadEntity.create_thread") as create_thread,
+        patch(f"{_MODULE}.ThreadEntity.get_or_create_scheduled_thread") as scheduled_thread,
     ):
-        create_thread.return_value = SimpleNamespace(id="thread-1")
+        scheduled_thread.return_value = SimpleNamespace(id="thread-1")
         await service._tick()
-        return create_thread
+        return scheduled_thread
 
 
 class TestLeadership:
@@ -125,11 +135,14 @@ class TestFiring:
         assert (target.agent_class, target.agent_id) == ("ScheduledDemoAgent", "demo")
 
     @pytest.mark.asyncio
-    async def test_creates_a_thread_with_no_members(self, service: ScheduledAgentService) -> None:
-        """v1 fires into a system thread; configurable membership is a separate concern."""
-        create_thread = await _run_tick(service)
+    async def test_fires_into_the_profile_thread(self, service: ScheduledAgentService) -> None:
+        """One thread per profile, not per occurrence: a five-minute schedule would otherwise leave
+        ~105k single-run threads a year with nothing to clean them up. Membership is #1582's concern;
+        the thread this resolves to still has none."""
+        scheduled_thread = await _run_tick(service)
 
-        assert create_thread.call_args.kwargs["users"] == []
+        agent = scheduled_thread.call_args[0][1]
+        assert (agent.agent_class, agent.agent_id) == ("ScheduledDemoAgent", "demo")
 
     @pytest.mark.asyncio
     async def test_advances_the_watermark(self, service: ScheduledAgentService) -> None:
@@ -259,6 +272,65 @@ class TestDiagnostics:
     ) -> None:
         with caplog.at_level(logging.WARNING):
             service._warn_if_tick_outran_its_lease(0.01)
+
+        assert caplog.text == ""
+
+
+class TestOccurrencesDroppedWhileOffline:
+    """An occurrence falling due with no runner online is dropped, not queued — the watermark advances
+    either way. That is deliberate, and it used to be indistinguishable from having nothing due."""
+
+    @pytest.mark.asyncio
+    async def test_warns_about_what_was_dropped(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        offline_since = _NOW - timedelta(hours=2)
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(
+                service,
+                schedulable=False,
+                offline_classes=[_agent_class(last_discovered=offline_since)],
+            )
+
+        assert "Skipped 1 occurrence(s) for ScheduledDemoAgent/demo" in caplog.text
+        assert str(offline_since) in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_still_fires_nothing_for_an_offline_class(
+        self, service: ScheduledAgentService, distributor: MagicMock
+    ) -> None:
+        """The warning reports the drop; it must not become a late run."""
+        await _run_tick(service, schedulable=False, offline_classes=[_agent_class()])
+
+        distributor.distribute_event.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_stays_quiet_when_an_offline_class_had_nothing_due(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Offline is not itself the problem — only losing a run to it is."""
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(
+                service,
+                schedulable=False,
+                offline_classes=[_agent_class()],
+                watermark=_NOW - timedelta(seconds=5),
+            )
+
+        assert caplog.text == ""
+
+    @pytest.mark.asyncio
+    async def test_stays_quiet_when_an_offline_profile_has_no_schedule(
+        self, service: ScheduledAgentService, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING):
+            await _run_tick(
+                service,
+                schedulable=False,
+                offline_classes=[_agent_class()],
+                configs=[_config(schedule=None)],
+                watermark=_NOW - timedelta(minutes=5),
+            )
 
         assert caplog.text == ""
 

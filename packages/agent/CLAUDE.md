@@ -321,7 +321,11 @@ constructing NATS subjects at each specificity level. See `packages/core/swiss_a
 - `ScheduledStartEvent` — a cron-fired run. Handling it is what makes a blueprint **schedulable**: `AgentRunner` derives
   `is_schedulable` from the declared start events, exactly as `UserMessageEvent` derives `is_conversational`. Scheduled
   runs are system runs — `user` is `None` and the thread has no members, so a step must not depend on an initiating
-  identity; take tenant context from the agent's own profile instead
+  identity; take tenant context from the agent's own profile instead. Two things the derivation cannot enforce for you:
+  the config field holding the schedule must be named exactly `schedule` (`ScheduledAgentService` reads it by name and
+  logs a warning naming your blueprint if it is missing), and **every scheduled run of one profile shares one thread**,
+  so `ThreadContext` persists across runs while `RunContext` does not — deliberate, but a step that assumed a fresh
+  thread per run will now see the previous run's state
 - `StopEvent` — terminates a run (subclass of `ControlEvent`)
 - `DisplayEvent` — observability (dispatched via NATS Core, consumed by API/frontend)
 - `HumanInTheLoopRequestEvent` / `ResponseEvent` — HITL pause/resume

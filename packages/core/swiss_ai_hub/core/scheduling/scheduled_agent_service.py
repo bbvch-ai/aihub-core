@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 SCHEDULE_CONFIG_KEY = "schedule"
 _CRON_FORMKIT_TYPE = "cronInput"
-_SCHEDULED_THREAD_NAME = "scheduled"
+_SCHEDULED_THREAD_NAME = "Scheduled runs"
 
 
 class ScheduledAgentService:
@@ -113,6 +113,7 @@ class ScheduledAgentService:
             window_start = self._clamp_window_start(watermark, now)
             for schedule, config in self._due_instances():
                 await self._fire_occurrences(schedule, config, window_start, now)
+            self._warn_about_occurrences_dropped_while_offline(window_start, now)
 
             await self._store.set_watermark(now)
             self._warn_if_tick_outran_its_lease(time.monotonic() - started)
@@ -230,9 +231,13 @@ class ScheduledAgentService:
         for entity in schedulable_entities:
             self._warn_if_schedule_field_is_unreachable(entity)
 
-        schedulable_classes = [entity.agent_class for entity in schedulable_entities]
+        return self._scheduled_profiles([entity.agent_class for entity in schedulable_entities])
+
+    @staticmethod
+    def _scheduled_profiles(agent_classes: list[str]) -> list[tuple[AgentSchedule, AgentConfigEntityDocument]]:
+        """Profiles of the given classes that carry a parseable schedule, paired with that schedule."""
         instances: list[tuple[AgentSchedule, AgentConfigEntityDocument]] = []
-        for config in AgentConfigEntityDocument.find_for_classes(schedulable_classes):
+        for config in AgentConfigEntityDocument.find_for_classes(agent_classes):
             raw_schedule = (config.config_data or {}).get(SCHEDULE_CONFIG_KEY)
             if not raw_schedule:
                 continue
@@ -252,6 +257,35 @@ class ScheduledAgentService:
                 continue
             instances.append((schedule, config))
         return instances
+
+    @classmethod
+    def _warn_about_occurrences_dropped_while_offline(cls, window_start: datetime, now: datetime) -> None:
+        """Reports the occurrences this tick passed over because the blueprint had no runner online.
+
+        Dropping them is the intended behaviour — the scheduler does not queue work for an agent that
+        cannot consume it, and a run whose moment has passed is rarely worth firing late. But the
+        watermark advances either way, so they are gone rather than deferred, and silence made that
+        indistinguishable from a schedule that simply had nothing due.
+
+        Not rate-limited, unlike the misnamed-field warning: every line here reports distinct work that
+        was actually lost, and its frequency is the schedule's own, not the tick's.
+        """
+        offline_entities = AgentClassEntity.get_offline_schedulable()
+        if not offline_entities:
+            return
+
+        last_seen = {entity.agent_class: entity.last_discovered for entity in offline_entities}
+        for schedule, config in cls._scheduled_profiles(list(last_seen)):
+            dropped = CronScheduleCalculator.occurrences_between(schedule, window_start, now)
+            if not dropped:
+                continue
+            logger.warning(
+                "Skipped %d occurrence(s) for %s/%s — class offline since %s",
+                len(dropped),
+                config.agent_class,
+                config.agent_id,
+                last_seen[config.agent_class],
+            )
 
     async def _fire_occurrences(
         self,
@@ -274,7 +308,7 @@ class ScheduledAgentService:
     async def _start_run(self, config: AgentConfigEntityDocument, occurrence: datetime) -> None:
         """Publishes a scheduled start event on the normal agent control path."""
         agent = AgentInstanceRef(agent_class=config.agent_class, agent_id=config.agent_id)
-        thread = ThreadEntity.create_thread(_SCHEDULED_THREAD_NAME, users=[], agents=[agent])
+        thread = ThreadEntity.get_or_create_scheduled_thread(_SCHEDULED_THREAD_NAME, agent)
 
         external_event = ExternalAgentEvent(
             thread_id=str(thread.id),

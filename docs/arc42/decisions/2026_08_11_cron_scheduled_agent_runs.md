@@ -61,15 +61,15 @@ storage through the generic config route. The scheduler therefore treats an unpa
 skip-with-error rather than letting it raise — see the read-side note under "Consequences".
 
 Consequence: nothing in the backend prevents a non-schedulable blueprint from declaring a schedule field, or a
-schedulable one from omitting it or naming it something else. A stray schedule is simply never read. The alternative —
-a platform-injected field on `AgentConfigEntityDocument` outside `config_data` — would enforce the pairing but needs its
+schedulable one from omitting it or naming it something else. A stray schedule is simply never read. The alternative — a
+platform-injected field on `AgentConfigEntityDocument` outside `config_data` — would enforce the pairing but needs its
 own DTO and route surface and has no precedent in the codebase.
 
 The dangerous half of that consequence is the schedulable blueprint whose cron field is named anything but `schedule`:
 it is advertised as schedulable, it saves whatever an admin enters, and it never fires. `ScheduledAgentService` cannot
-repair this — the field name belongs to the blueprint — so it inspects the discovered form and logs a warning naming
-the class and the cron fields it did find. Warned once per class and re-armed on correction, since the tick runs every
-30s. Baking the schedule in as a non-configurable value is not an escape hatch: non-configurable values are merged in at
+repair this — the field name belongs to the blueprint — so it inspects the discovered form and logs a warning naming the
+class and the cron fields it did find. Warned once per class and re-armed on correction, since the tick runs every 30s.
+Baking the schedule in as a non-configurable value is not an escape hatch: non-configurable values are merged in at
 dispatch time and never reach `config_data`, so a readable schedule has to be a configurable field.
 
 ### 3. The scheduler lives in `packages/core`, wired from the API
@@ -83,11 +83,23 @@ relocates twelve lines of wiring, not 558 lines of logic. The scheduler needs a 
 mongoengine connection; unlike `AgentEndpointsDiscoveryService` it takes no `FastAPI` or controller and registers no
 routes, so nothing ties it to the API process.
 
-### 4. Scheduled runs are system runs
+### 4. Scheduled runs are system runs, sharing one thread per profile
 
 The run carries `user=None` and fires into a thread with no members. `ExternalAgentEventDistributor.distribute_event`
 already accepts `user=None` and skips the thread-membership check in that case, so no new control path is needed and the
 agent runner consumes the event unchanged.
+
+Every scheduled run of one profile lands in the **same** thread, whose id is derived from
+`sha256("{agent_class}/{agent_id}")`. One thread per occurrence was the first shape and is rejected: a profile running
+every five minutes would leave ~105k single-run threads a year with nothing to clean them up — harmless only while the
+threads have no members, and a wall of identical entries in the user's list the moment
+[#1582](https://github.com/bbvch-ai/aihub-core/issues/1582) gives them some. Many runs in one thread is the ordinary
+Thread → Display → Run model; a chat conversation is exactly that, and the fix is far cheaper before a backlog exists
+than after.
+
+Deriving the id beats looking the thread up by field: two replicas racing a leadership handover converge on one document
+instead of creating a second. The cost is that the id no longer encodes a creation time the way a generated `ObjectId`
+does, so a scheduled thread's age must be read from `created_at`.
 
 This is safe because the agent runtime never reads tenancy from the initiating user — `packages/agent` contains no
 reference to `acting_within_tenant`. Where an agent needs a tenant it reads one from its own profile
@@ -165,8 +177,13 @@ alternative is hand-rolling field parsing, ranges, steps, and DST handling.
   any, so letting one bad row raise would abort the tick before the watermark advanced — and every later tick would
   rediscover the same row. One malformed profile would permanently starve every other schedule. It is logged at error
   level and skipped instead, confining the blast radius to the profile that is actually broken.
-- **Memberless threads accumulate.** Every occurrence creates a `ThreadEntity` that no retention path prunes; a `*/5`
-  schedule produces 288 a day. Acceptable at v1 volumes, but it should be revisited alongside thread membership.
+- **A profile's scheduled runs all share one thread, forever.** Bounding thread growth to one per profile means that
+  thread's run history only ever grows. Nothing prunes it, so a long-lived `*/5` schedule eventually makes an expensive
+  thread to open. That is a retention problem on one document rather than a proliferation problem across 105k, and it is
+  the same problem a long-running chat already has.
+- **Occurrences due while a blueprint is offline are dropped, not queued.** Deliberate — the scheduler does not queue
+  work for an agent that cannot consume it, and the watermark advances regardless — but it means a runner that crashes
+  overnight loses that night's runs. Each drop is logged with the class, the profile, and how long it has been offline.
 - **A run that fails to start is not retried.** The claim is taken *before* the run is published, so if publishing
   raises, the tick aborts without advancing the watermark and the next tick finds the occurrence already claimed. This
   makes the failure at-most-once rather than at-least-once, which is the right way round given the acceptance criterion

@@ -247,6 +247,17 @@ class AgentClassEntity(Document):
 
     @classmethod
     @trace_fn
+    def get_offline_schedulable(cls) -> list["AgentClassEntity"]:
+        """Schedulable classes with no runner online — the exact complement of `get_online_schedulable`.
+
+        The scheduler needs these to report the occurrences it drops rather than queues, which it cannot
+        do from the online set alone.
+        """
+        threshold = datetime.now() - cls.ONLINE_THRESHOLD
+        return list(cls.objects(is_schedulable=True, last_discovered__lt=threshold))
+
+    @classmethod
+    @trace_fn
     def get_by_id(cls, agent_class_entity_id: str) -> Self:
         """Get an agent class by its MongoDB document ID."""
         return cls.objects().get(id=ObjectId(agent_class_entity_id))
