@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import httpx
 import openai
 import pytest
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
 
 from swiss_ai_hub.api.routes.openai.dto.chat_completion_request import ChatCompletionRequest
@@ -61,10 +62,17 @@ async def test_streaming_response_outlives_the_handler() -> None:
         patch(f"{_SERVICE}.LiteLLMService.openai_aclient_for_user", new=AsyncMock(return_value=client)),
     ):
         response = await OpenaiService.chat_completion(
-            model_name=_MODEL, chat_completion_request=request, user=fake_user(), t=Mock(locale="en")
+            model_name=_MODEL, chat_completion_request=request, user=fake_user(), t=LocaleHandler(locale="en")
         )
 
     streamed = [chunk async for chunk in response.body_iterator]
 
     assert _streamed_contents(streamed) == ["Hello", " world"]
     assert not client.is_closed()
+
+    # The only happy path through `chat_completion` in the suite, so it is the only place the identity
+    # injection's call site can be pinned: every test in test_openai_model_identity_unit_tests.py either
+    # calls `_apply_model_identity` directly or asserts it did *not* run, so deleting the call from
+    # `chat_completion` would otherwise leave the suite green and silently reopen issue #144.
+    assert request.messages[0]["role"] == "system"
+    assert "gemma-4-31B-it" in request.messages[0]["content"]

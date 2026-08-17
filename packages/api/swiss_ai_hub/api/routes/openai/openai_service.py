@@ -157,6 +157,22 @@ class OpenaiService:
             )
 
     @staticmethod
+    def _apply_model_identity(
+        chat_completion_request: ChatCompletionRequest, model_name: str, t: LocaleHandler
+    ) -> None:
+        """Names the model to itself, because OpenWebUI keeps one history across a model switch and a model
+        asked who it is otherwise answers from the transcript — adopting whichever model spoke earlier, and
+        looping on the conflict until it exhausts its output budget. Applies to every plain-model request:
+        OpenWebUI reaches this endpoint through its own OpenAI connection, whose payload is indistinguishable
+        from an external SDK client's, so there is nothing to gate on. Leads the list because Qwen3.5 rejects
+        a system message that follows any user or assistant turn. See ADR 2026_08_14."""
+        identity = t("lib.prompt.model.identity_system_message").format(model_name=model_name.rpartition("/")[2])
+        chat_completion_request.messages = [
+            {"role": "system", "content": identity},
+            *(chat_completion_request.messages or []),
+        ]
+
+    @staticmethod
     @trace_fn
     async def get_embeddings(
         *,
@@ -206,6 +222,10 @@ class OpenaiService:
         """
         await OpenaiService.get_model(model_name)  # Ensures model exists
         OpenaiService._assert_model_access(user, model_name)
+        # Must stay after get_model: its 404 is what routes an assistant to chat_completion_with_assistants'
+        # agent branch, and agents own their identity (ADR 2026_06_04). Injecting before it would hand every
+        # agent a contradicting persona.
+        OpenaiService._apply_model_identity(chat_completion_request, model_name, t)
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
