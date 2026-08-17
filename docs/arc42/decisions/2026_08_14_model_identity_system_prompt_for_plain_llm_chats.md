@@ -62,7 +62,18 @@ three things:
 
 - names the model as itself;
 - states that earlier assistant turns may come from a different model and are not its own;
-- declares the statement authoritative and forbids deliberating about which identity is correct.
+- declares the statement authoritative and, **for identity questions only**, forbids deliberating and asks for a
+  one-sentence answer.
+
+That last clause is scoped on purpose. Injection is unconditional (Decision 3), so the message also leads OpenWebUI's
+*task-model* calls: search- and retrieval-query generation both default to on in v0.9.5
+(`ENABLE_SEARCH_QUERY_GENERATION`, `ENABLE_RETRIEVAL_QUERY_GENERATION`), neither is set in any compose file, and both
+route through `TASK_MODEL` to this same endpoint. Their prompt demands a strict JSON object, and an unscoped *"answer in
+one short sentence"* would lead it. The damage would be silent: on a parse failure OpenWebUI turns the raw response into
+a single search query rather than erroring (`utils/middleware.py`). Gating the injection off those calls is not
+available — OpenWebUI pops `metadata`, which is what carries `task`, before forwarding (`routers/openai.py:1101`), so a
+task call arrives indistinguishable from a chat turn. Wording is the only lever. The sweep below sampled identity
+questions exclusively, so scoping the clause to exactly that traffic leaves every cell of it valid.
 
 The middle clause is the one that fixes the bug. **"served by Swiss AI Hub" is deliberately absent and must not be added
 back for branding**: models routinely conflate "served by" with "created by", so naming the deployment next to an
@@ -80,6 +91,11 @@ caller still wins on task behaviour. Multiple leading system messages are alread
 (`extend_chat_history_with_user_memory` inserts after existing leading system messages), so no merging is needed. The
 display name is `model_name.rpartition("/")[2]`, which strips the capability prefix (`text-generation/Kimi-K2.6` →
 `Kimi-K2.6`) and leaves an unprefixed name untouched.
+
+The call site is pinned by `test_streaming_response_outlives_the_handler`, the suite's only happy path through
+`chat_completion`. Every other identity test either calls `_apply_model_identity` directly or asserts it did *not* run,
+so without that assertion the call could be deleted from `chat_completion` and the whole suite would stay green while
+#144 silently returned.
 
 **3 — Injection is unconditional.** OpenWebUI does **not** reach this endpoint through `openai_pipeline`; it reaches it
 through its own native OpenAI connection (`OPENAI_API_BASE_URL=…/api/v1/active/openai`), and the models users actually
@@ -176,6 +192,9 @@ convention for no measured gain.
   `LiteLLMService.openai_aclient_for_user`, so none of that ADR's reasoning-model mitigations apply here.
 - **Mitigation, not a guarantee.** A long transcript with many contrary assistant turns can still outweigh a single
   leading system message.
+- **Task-model calls still receive the identity message.** Query generation for web search and RAG retrieval gets the
+  two identity clauses prepended to a JSON-only prompt. They are inert for that task — neither names a format nor asks
+  for brevity — but they are tokens those calls did not ask for, and no sweep covers non-identity traffic.
 - **One existing test double had to become real.** `test_streaming_response_outlives_the_handler` passed
   `t=Mock(locale="en")`, which reached the message list as an unserializable `Mock` once `chat_completion` began
   resolving a translation through `t`. The test now uses a real `LocaleHandler`; making the production code tolerate a

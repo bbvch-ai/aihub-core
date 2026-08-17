@@ -69,3 +69,10 @@ async def test_streaming_response_outlives_the_handler() -> None:
 
     assert _streamed_contents(streamed) == ["Hello", " world"]
     assert not client.is_closed()
+
+    # The only happy path through `chat_completion` in the suite, so it is the only place the identity
+    # injection's call site can be pinned: every test in test_openai_model_identity_unit_tests.py either
+    # calls `_apply_model_identity` directly or asserts it did *not* run, so deleting the call from
+    # `chat_completion` would otherwise leave the suite green and silently reopen issue #144.
+    assert request.messages[0]["role"] == "system"
+    assert "gemma-4-31B-it" in request.messages[0]["content"]
