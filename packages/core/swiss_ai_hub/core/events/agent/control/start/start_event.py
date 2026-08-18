@@ -31,8 +31,14 @@ class StartEvent(ControlAndDisplayEvent):
         """
         Returns a dictionary suitable for context injection, excluding internal event fields like
         event_id and created_at. This helps workflows pass only essential context to downstream steps.
+
+        Dumped in JSON mode because the dispatcher writes every value here into `RunContext`, which
+        serializes with `json.dumps` and reads back with `json.loads`. Python mode left the two halves
+        inconsistent: a field of any type JSON cannot represent — a `datetime`, say — dumped fine here
+        and then raised `TypeError` inside the store, killing the run before a single step executed.
+        JSON mode is what the read path already returns, so it aligns them.
         """
-        non_private = {k: v for k, v in self.model_dump().items() if not k.startswith("_")}
+        non_private = {k: v for k, v in self.model_dump(mode="json").items() if not k.startswith("_")}
         del non_private["event_id"]
         del non_private["created_at"]
         return non_private

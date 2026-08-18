@@ -47,8 +47,20 @@ class TestValidation:
         with pytest.raises(ValidationError):
             AgentSchedule.model_validate({"$formkit": "cronInput", "label": "Schedule"})
 
-    def test_rejects_unknown_keys(self):
-        with pytest.raises(ValidationError):
-            AgentSchedule.model_validate(
-                {"minute": "0", "hour": "*", "day_of_month": "*", "month": "*", "day_of_week": "*", "label": "x"}
-            )
+    def test_survives_its_own_dump(self):
+        """A schedule stored from a model instance must be readable again.
+
+        `Form` emits `_form_name` as a computed field, so forbidding extras made a schedule fail to
+        validate its own `model_dump()` — every profile written that way became unreadable and the
+        scheduler skipped it forever, silently."""
+        schedule = AgentSchedule(minute="0", hour="12", day_of_month="*", month="*", day_of_week="*")
+
+        assert AgentSchedule.model_validate(schedule.model_dump()) == schedule
+
+    def test_tolerates_surplus_keys_while_still_requiring_positions(self):
+        """Required positions, not forbidden extras, are what reject a non-schedule payload."""
+        schedule = AgentSchedule.model_validate(
+            {"minute": "0", "hour": "*", "day_of_month": "*", "month": "*", "day_of_week": "*", "label": "x"}
+        )
+
+        assert schedule.expression == "0 * * * *"
