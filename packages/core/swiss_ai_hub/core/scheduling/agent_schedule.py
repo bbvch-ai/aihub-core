@@ -21,7 +21,13 @@ class AgentSchedule(Form):
     # Every position is required, and unknown keys are rejected. Defaulting them would make an
     # unrecognised payload — a form-mode CronInput dict that reached storage, say — validate silently
     # into "every hour" and start unattended runs nobody configured.
-    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
+    # Extras are tolerated, unlike an earlier `extra="forbid"`. Form emits `_form_name` as a computed
+    # field, so forbidding extras made a schedule unable to survive its own `model_dump()` — anything
+    # that stored one from a model instance rather than raw request JSON became permanently unreadable,
+    # and the scheduler skipped that profile forever. Requiring every position below is what actually
+    # guards the case forbidding was added for: an unrecognised payload has none of them and is
+    # rejected on the missing fields, not on the surplus ones.
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     minute: Annotated[str, Field(description="Cron minute position (0-59).")]
     hour: Annotated[str, Field(description="Cron hour position (0-23).")]
