@@ -37,9 +37,17 @@ pytestmark = pytest.mark.self_hosted
 RAG_MODULE = "swiss_ai_hub.agent.agents.rag_agent.rag_agent"
 
 
-def _config() -> RAGAgentConfig:
+def _config(agent_id: str) -> RAGAgentConfig:
+    """Each test gets its own agent_id.
+
+    The dispatcher's JetStream consumer is durable and named from the agent identity, so tests
+    sharing one competed for the same queue group: whichever runner was still subscribed when the
+    next test started could receive that test's start event and drop it, and the waiting test timed
+    out. It failed a different subset on each run, which reads as an agent bug rather than tests
+    interfering with each other.
+    """
     return RAGAgentConfig(
-        agent_id="meta_routing_rag",
+        agent_id=agent_id,
         name=LocaleString(en="Test RAG"),
         description=LocaleString(en="A test RAG agent."),
         llm=LLMConfig(model_name="text-generation/dummy"),
@@ -80,7 +88,7 @@ async def test_meta_question_answers_without_retrieval(monkeypatch):
     monkeypatch.setattr(f"{RAG_MODULE}.generate_title", fake_generate_title)
     monkeypatch.setattr(f"{RAG_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
 
-    runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config())
+    runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config("meta_routing_answers"))
     async with runner.test_run(delay_before_stop=30) as topic:
         await runner.send_event_from_topic(topic=topic, start_event=_user_message("What can you do?"))
 
@@ -116,7 +124,7 @@ async def test_meta_question_branch_generates_title_and_follow_ups(monkeypatch):
     monkeypatch.setattr(f"{RAG_MODULE}.generate_title", fake_generate_title)
     monkeypatch.setattr(f"{RAG_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
 
-    runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config())
+    runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config("meta_routing_metadata"))
     async with runner.test_run(delay_before_stop=30) as topic:
         await runner.send_event_from_topic(topic=topic, start_event=_user_message("who are you?"))
 
@@ -135,7 +143,7 @@ async def test_normal_question_opens_the_gate(monkeypatch):
 
     monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
 
-    runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config())
+    runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config("meta_routing_gate"))
     async with runner.test_run(delay_before_stop=20) as topic:
         await runner.send_event_from_topic(topic=topic, start_event=_user_message("What is the vacation policy?"))
 
