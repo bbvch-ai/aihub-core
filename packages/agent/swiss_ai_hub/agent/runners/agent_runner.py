@@ -9,7 +9,12 @@ from pymilvus import MilvusClient
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
-from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent, AgentConfigSpecs, UserMessageEvent
+from swiss_ai_hub.core.events.agent import (
+    AgentClassDiscoveryResponseEvent,
+    AgentConfigSpecs,
+    ScheduledStartEvent,
+    UserMessageEvent,
+)
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MilvusSettings, MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.publishers import NCPublisher
@@ -152,6 +157,7 @@ class AgentRunner(HealthCheckProvider):
             form=self.form,
             agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
+            is_schedulable=any(issubclass(event, ScheduledStartEvent) for event in start_events),
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             hitl_request_events=hitl_request_event_specs,

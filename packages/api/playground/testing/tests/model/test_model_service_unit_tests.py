@@ -20,6 +20,14 @@ _LITELLM_MODELS = [
 ]
 
 
+class _FakeAsyncClient:
+    """Fakes the shared, never-closed client ``get_model_list`` drives."""
+
+    async def get(self, url: str, headers: dict[str, str]) -> Mock:
+        assert headers == {"Authorization": "Bearer sk-user"}
+        return Mock(json=Mock(return_value={"data": _LITELLM_MODELS}))
+
+
 @contextmanager
 def _patched_backend(access_rules: list[str], *, is_sys_admin: bool = False):
     """Stubs the LiteLLM model listing and pins the AccessChecker to explicit rules.
@@ -27,14 +35,16 @@ def _patched_backend(access_rules: list[str], *, is_sys_admin: bool = False):
     Patching ``AccessChecker.from_user`` avoids the DB round-trip it makes via
     ``RoleEntity.get_access_rules_for_roles`` and lets each test state the grant directly.
     """
-    fake_client = Mock()
-    fake_client.get = Mock(return_value=Mock(json=Mock(return_value={"data": _LITELLM_MODELS})))
     checker = AccessChecker(access_rules, tenant_access_rules=["aihub.admin.>"], is_sys_admin=is_sys_admin)
 
     with (
         patch(
-            f"{_MODEL_SERVICE}.LiteLLMService.httpx_client_for_user",
-            new=AsyncMock(return_value=fake_client),
+            f"{_MODEL_SERVICE}.LiteLLMProxySettings",
+            return_value=Mock(httpx_aclient=_FakeAsyncClient()),
+        ),
+        patch(
+            f"{_MODEL_SERVICE}.LiteLLMService.authorization_header_for_user",
+            new=AsyncMock(return_value={"Authorization": "Bearer sk-user"}),
         ),
         patch(f"{_MODEL_SERVICE}.AccessChecker.from_user", return_value=checker),
     ):

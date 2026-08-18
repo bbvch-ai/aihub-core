@@ -1,6 +1,7 @@
+import json
 from typing import Any
 
-from llama_index.core.schema import BaseNode
+from llama_index.core.schema import BaseNode, NodeRelationship
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores import MetadataFilters
 from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode, VectorStoreQueryResult
@@ -9,7 +10,7 @@ from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction
 from pymilvus import MilvusClient
 
-from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
     MAX_PARTITIONS,
     get_partition_name_for_namespace,
@@ -22,6 +23,8 @@ except ImportError:
     AnnSearchRequest = None
     RRFRanker = None
     WeightedRanker = None
+
+MILVUS_DYNAMIC_FIELD_MAX_BYTES = 65536
 
 
 class PartitionAwareMilvusVectorStore(MilvusVectorStore):
@@ -65,6 +68,7 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         self._milvusclient = client
 
         self._has_manual_partitions: bool | None = None
+        self._declared_fields: set[str] | None = None
 
     def _ensure_collection_loaded(self, partition_names: list[str] | None = None) -> None:
         """Lazily load partitions (or whole collection if none specified). Idempotent — blocks until ready.
@@ -91,9 +95,20 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         return self._has_manual_partitions
 
     def add(self, nodes: list[BaseNode], **add_kwargs: Any) -> list[str]:
-        """Insert nodes into their hashed partitions (or fallback to base class if no manual partitions)."""
+        """
+        Insert nodes into their hashed partitions (or fallback to base class if no manual partitions).
+
+        Sanitize and verify every node before writing any of them: a batch spans namespaces and is inserted
+        one partition at a time, so validating at the insert site would leave earlier partitions written
+        behind a rejected one. Verifying here also covers the super().add() fallback, which builds its own
+        entries. Re-deriving the entry costs one node_to_metadata_dict per node, negligible against embedding.
+        """
         if not nodes:
             return []
+
+        nodes = [self._without_child_relationship(node) for node in nodes]
+        for node in nodes:
+            self._verify_entry_fits(node_to_metadata_dict(node, remove_text=True, text_field=self.text_key), node)
 
         if not self._check_has_manual_partitions():
             self._ensure_collection_loaded()
@@ -112,6 +127,70 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
             self.client.flush(self.collection_name)
 
         return all_ids
+
+    @staticmethod
+    def _without_child_relationship(node: BaseNode) -> BaseNode:
+        """
+        Drop parent -> children before serialization: node_to_metadata_dict packs relationships into the
+        dynamic field, which Milvus caps at 65536 bytes, and a hierarchical summary node carries one entry
+        per descendant — unbounded. The edge is not lost, since every child persists its own parent edge and
+        this is that edge's exact inverse; recovering it means scanning the document's nodes, as it is inside
+        the _node_content JSON string rather than a queryable key.
+
+        Returns a copy: the caller's nodes continue to downstream ops, so writing them must not change them.
+        """
+        if NodeRelationship.CHILD not in node.relationships:
+            return node
+
+        relationships = {
+            relationship: info
+            for relationship, info in node.relationships.items()
+            if relationship != NodeRelationship.CHILD
+        }
+        return node.model_copy(update={"relationships": relationships})
+
+    def _declared_field_names(self) -> set[str]:
+        """
+        Resolve declared columns from the live collection rather than restating the schema, which lives in
+        milvus_vector_store_factory and would drift. The store attributes alone are not enough either —
+        namespace is a declared column with no corresponding attribute.
+        """
+        if self._declared_fields is None:
+            description = self.client.describe_collection(collection_name=self.collection_name)
+            self._declared_fields = {field["name"] for field in description["fields"]}
+
+        return self._declared_fields
+
+    def _verify_entry_fits(self, entry: dict[str, Any], node: BaseNode) -> None:
+        """Split declared columns from the dynamic remainder exactly as pymilvus does before packing it."""
+        declared_fields = self._declared_field_names()
+        dynamic_field = {key: value for key, value in entry.items() if key not in declared_fields}
+        self._verify_dynamic_field_fits(dynamic_field, node)
+
+    @classmethod
+    def _verify_dynamic_field_fits(cls, dynamic_field: dict[str, Any], node: BaseNode) -> None:
+        """Fail with a diagnosable message instead of Milvus' code=1100, which names neither the document
+        nor the node."""
+        size = cls._json_size_in_bytes(dynamic_field)
+        if size <= MILVUS_DYNAMIC_FIELD_MAX_BYTES:
+            return
+
+        by_size = sorted(dynamic_field, key=lambda key: cls._json_size_in_bytes(dynamic_field[key]), reverse=True)
+        largest_keys = [f"{key}={cls._json_size_in_bytes(dynamic_field[key])}B" for key in by_size[:3]]
+        raise ValueError(
+            f"Node {node.node_id} of document {node.metadata.get(DOCUMENT_ID)} serializes to {size} bytes of "
+            f"Milvus dynamic field, over the {MILVUS_DYNAMIC_FIELD_MAX_BYTES} limit. "
+            f"Largest keys: {largest_keys}"
+        )
+
+    @staticmethod
+    def _json_size_in_bytes(value: Any) -> int:
+        """
+        Mirror how pymilvus packs the dynamic field: orjson.dumps, which emits compact separators and raw
+        UTF-8. Milvus then measures the result in bytes, which diverges from character count on the very
+        German documents most likely to breach the limit.
+        """
+        return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode())
 
     @staticmethod
     def _group_nodes_by_namespace(nodes: list[BaseNode]) -> dict[str, list[BaseNode]]:

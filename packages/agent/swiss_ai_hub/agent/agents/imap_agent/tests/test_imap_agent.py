@@ -9,6 +9,7 @@ from swiss_ai_hub.core.events.agent import (
     MailAttachmentRef,
     MailBatchDraftedEvent,
     MailFetchedEvent,
+    MailMessageRef,
     MailMovedEvent,
     UnreadMailListedEvent,
     UnreadMailSummary,
@@ -27,10 +28,12 @@ from swiss_ai_hub.agent.runners import AgentTestRunner
 scenarios("./features/imap_agent.feature")
 
 _FACTORY = "swiss_ai_hub.agent.imap.imap_client.ImapClientFactory.create"
-_STORE = "swiss_ai_hub.agent.imap.mail_attachment_store.MailAttachmentStore.store"
+_STORE_ATTACHMENTS = "swiss_ai_hub.agent.imap.mail_store.MailStore.store_attachments"
+_STORE_MESSAGE = "swiss_ai_hub.agent.imap.mail_store.MailStore.store_message"
 _LLM_STREAM = "swiss_ai_hub.core.displayers.event_displayer.EventDisplayer.display_llm_stream"
 _COST_LLM = "swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base.LiteLLMBase.cost_reporting_llm"
 _FILE_ID = "0d5f7a1c-3b2e-4c8d-9a6f-1e2d3c4b5a6f"
+_MESSAGE_FILE_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
 
 
 def _config(enable_move: bool = False, enable_draft: bool = False) -> ImapAgentConfig:
@@ -143,14 +146,16 @@ def _drafting_disabled() -> dict:
 
 
 def _patches(client: AsyncMock) -> tuple:
-    """The infrastructure patches shared by every draft/read test: the IMAP factory, the attachment store, and the
-    LLM (cost-reporting client + stream)."""
+    """The infrastructure patches shared by every draft/read test: the IMAP factory, the mail store (attachments
+    and the archived original), and the LLM (cost-reporting client + stream)."""
     stored_refs = [
         MailAttachmentRef(filename="report.pdf", content_type="application/pdf", file_id=_FILE_ID, size_bytes=8)
     ]
+    stored_message = MailMessageRef(filename="1.eml", file_id=_MESSAGE_FILE_ID, size_bytes=64)
     return (
         patch(_FACTORY, side_effect=lambda config: _fake_create(client, config)),
-        patch(_STORE, new=AsyncMock(return_value=stored_refs)),
+        patch(_STORE_ATTACHMENTS, new=AsyncMock(return_value=stored_refs)),
+        patch(_STORE_MESSAGE, new=AsyncMock(return_value=stored_message)),
         patch(_COST_LLM, new=_fake_cost_reporting_llm),
         patch(_LLM_STREAM, new=AsyncMock(return_value=_fake_llm_event())),
     )
@@ -200,6 +205,9 @@ def _(agent_runner: AgentTestRunner):
     events = _dedupe(agent_runner.get_events_of_class(MailFetchedEvent))
     assert len(events) == 1
     assert events[0].attachments[0].filename == "report.pdf"
+    # The archived original is referenced alongside the attachments, never instead of them.
+    assert events[0].original_message is not None
+    assert events[0].original_message.content_type == "message/rfc822"
 
 
 @then("no MailFetchedEvent was emitted")

@@ -20,7 +20,7 @@ from swiss_ai_hub.agent.agents.imap_agent.events.read_mail_start_event import Re
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
-from swiss_ai_hub.agent.imap.mail_attachment_store import MailAttachmentStore
+from swiss_ai_hub.agent.imap.mail_store import MailStore
 from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -31,11 +31,13 @@ logger = logging.getLogger(__name__)
 class ImapAgent(Agent):
     """Demonstrator for the IMAP capability with two independent, separately-triggered chains.
 
-    - **Read + move** (``ReadMailStartEvent``): list unread inbox mail → fetch the first message with attachments →
+    - **Read + move** (``ReadMailStartEvent``): list unread inbox mail → fetch the oldest message with attachments →
       optionally move it to the processed folder → finish.
-    - **Draft** (``DraftMailStartEvent``): read a batch of not-yet-drafted messages from the configured source folder →
-      draft an LLM reply for each and append it to the drafts folder → mark each source message as drafted (leaving it
-      unread) → finish.
+    - **Draft** (``DraftMailStartEvent``): read a batch of the oldest not-yet-drafted messages from the configured
+      source folder → draft an LLM reply for each and append it to the drafts folder → mark each source message as
+      drafted (leaving it unread) → finish.
+
+    Both chains work oldest sent first, so a backlog drains in the order it arrived rather than in IMAP UID order.
 
     Non-conversational (like RetrievalAgent): triggered programmatically (e.g. by a scheduler), configured via its form,
     not exposed in the chat UI.
@@ -65,7 +67,7 @@ class ImapAgent(Agent):
         _event: ReadMailStartEvent,
         imap_config: ImapClientConfig,
     ) -> UnreadMailListedEvent:
-        """Open the inbox and return header summaries of all unread messages."""
+        """Open the inbox and return header summaries of the unread messages, oldest sent first."""
         logger.info(
             "[imap] list_unread_step: connecting to %s as %s, folder=%s",
             imap_config.host,
@@ -90,7 +92,10 @@ class ImapAgent(Agent):
         topic: AgentInstanceTopic,
         displayer: EventDisplayer,
     ) -> MailFetchedEvent | StopEvent:
-        """Fetch the first unread message including body and attachments; stop early if the inbox is empty."""
+        """Fetch the oldest unread message including body and attachments; stop early if the inbox is empty.
+
+        The listing step already ordered the summaries oldest sent first, so taking the head picks the oldest.
+        """
         if not event.messages:
             logger.info("[imap] fetch_mail_step: inbox has no unread mail — stopping")
             await displayer.display_thought("No unread messages in the inbox.")
@@ -99,7 +104,7 @@ class ImapAgent(Agent):
         message_id = event.messages[0].message_id
         logger.info("[imap] fetch_mail_step: fetching message uid=%s", message_id)
         async with ImapClientFactory.create(imap_config) as client:
-            parsed = await client.fetch_message(message_id)
+            parsed = await client.fetch_message(message_id, with_raw=True)
         logger.info(
             "[imap] fetch_mail_step: fetched from=%s subject=%r date=%s attachments=%d body_len=%d",
             parsed.sender,
@@ -109,8 +114,17 @@ class ImapAgent(Agent):
             len(parsed.body_text or ""),
         )
 
-        attachments = await MailAttachmentStore.store(
+        attachments = await MailStore.store_attachments(
             parsed.attachments,
+            agent_class=topic.agent_class,
+            agent_id=topic.agent_id,
+        )
+        # Only this chain archives the original, which is why it is the only ``with_raw=True`` fetch above.
+        # draft_batch_step also fetches messages, but archiving there would re-store what this step already
+        # did, once per batch run.
+        original_message = await MailStore.store_message(
+            parsed.raw,
+            message_id=parsed.message_id,
             agent_class=topic.agent_class,
             agent_id=topic.agent_id,
         )
@@ -124,6 +138,7 @@ class ImapAgent(Agent):
             references=parsed.references,
             reply_to=parsed.reply_to,
             attachments=attachments,
+            original_message=original_message,
         )
 
     @step(
@@ -191,10 +206,11 @@ class ImapAgent(Agent):
         draft: DraftEmailSettings,
         displayer: EventDisplayer,
     ) -> MailBatchDraftedEvent | StopEvent:
-        """Draft LLM replies for a batch of not-yet-drafted messages from ``draft.source_folder`` and append them.
+        """Draft LLM replies for a batch of the oldest not-yet-drafted messages from ``draft.source_folder``.
 
         Independent of the read/move chain. See ADR ``2026_07_05_agent_imap_read_capability`` for the design —
-        source stays unread, flag-based dedup, and at-least-once (append before flag) ordering.
+        source stays unread, flag-based dedup, at-least-once (append before flag) ordering, and oldest-sent-first
+        candidate selection so ``batch_size`` takes the head of the backlog rather than an arbitrary slice.
         """
         if not draft.enable_draft:
             logger.info("[imap] draft_batch_step: enable_draft=False — nothing to draft, stopping")

@@ -410,6 +410,9 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -543,6 +546,13 @@ export const AgentClassDTOSchema = {
       description:
         "Whether the agent class can participate in a chat-based conversation",
     },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
+    },
     is_online: {
       anyOf: [
         {
@@ -629,6 +639,9 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/ColorPicker",
+              },
+              {
+                $ref: "#/components/schemas/CronInput",
               },
               {
                 $ref: "#/components/schemas/DatePicker",
@@ -5635,6 +5648,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/RAGStartEvent",
         },
         {
+          $ref: "#/components/schemas/ScheduledStartEvent",
+        },
+        {
           $ref: "#/components/schemas/ExceptionEvent",
         },
         {
@@ -6046,6 +6062,192 @@ export const CreateTokenResponseSchema = {
   type: "object",
   required: ["id", "name", "expiry_date", "token"],
   title: "CreateTokenResponse",
+} as const;
+
+export const CronInputSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "cronInput",
+      title: "Formkit",
+      description: "Cron schedule input element.",
+      default: "cronInput",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    timezonePlaceholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timezoneplaceholder",
+      description: "Placeholder for the timezone select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search on the timezone select",
+      default: true,
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "CronInput",
+  description:
+    'A FormKit element for editing the cron schedule of a schedulable agent profile.\n\nThe element renders the five cron positions plus a timezone selector, and the submitted value\nmatches the fields of `AgentSchedule`:\n{\n    "minute": str,\n    "hour": str,\n    "day_of_month": str,\n    "month": str,\n    "day_of_week": str,\n    "timezone": str,\n}\n\nPresets and the plain-language summary of the current schedule are delivered by the Admin UI\n(see the cron schedule configuration UI issue); this element only declares the contract.\n\n### Form Duality\n```python\nfrom swiss_ai_hub.core.form.elements.cron_input import CronInput\nfrom swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule\n\nclass MyAgentConfig(AgentConfig):\n    schedule: Annotated[\n        AgentSchedule | CronInput | None,\n        Field(description="When this profile runs automatically"),\n    ] = None\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))\n\n# Data mode - from submission (Pydantic validates into AgentSchedule):\nconfig = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))\n```',
 } as const;
 
 export const Custom_OutputSchema = {
@@ -8057,6 +8259,13 @@ export const FullAgentInstanceDTOSchema = {
       description:
         "Whether the agent can participate in a chat-based conversation",
     },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -8217,6 +8426,9 @@ export const FullProcessInstanceDTOSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
           },
           {
             $ref: "#/components/schemas/DatePicker",
@@ -8512,6 +8724,9 @@ export const GroupSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
           },
           {
             $ref: "#/components/schemas/DatePicker",
@@ -9030,6 +9245,9 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -9174,6 +9392,9 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
           },
           {
             $ref: "#/components/schemas/DatePicker",
@@ -13689,6 +13910,8 @@ export const LocaleInputSchema = {
     validation: {
       type: "string",
       title: "Validation",
+      description:
+        "Emits `localeRequired` where other elements emit FormKit's `required`.\n\nFormKit's `required` rule only asks whether a value is present, and this element's\nvalue is always a `{de, en, fr, it}` object — non-empty, therefore passing, even when\nevery locale inside it is blank. `localeRequired` (registered in the frontend FormKit\nconfig) looks at the locale values themselves.",
       readOnly: true,
     },
   },
@@ -14056,6 +14279,18 @@ export const MailFetchedEventSchema = {
       title: "Attachments",
       description: "References to the message's attachments stored in S3.",
     },
+    original_message: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/MailMessageRef",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Reference to the original RFC822 message stored in S3, or null when it was not stored.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -14086,6 +14321,43 @@ export const MailFetchedEventSchema = {
   title: "MailFetchedEvent",
   description:
     "Carries a single fetched message — headers, body, and references to its stored attachments.",
+} as const;
+
+export const MailMessageRefSchema = {
+  properties: {
+    filename: {
+      type: "string",
+      pattern: "^[^/\\\\]+$",
+      title: "Filename",
+      description:
+        "Filename the message is stored under, e.g. '1234.eml'. Must not contain path separators.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "MIME type of the stored message.",
+      default: "message/rfc822",
+    },
+    file_id: {
+      type: "string",
+      pattern:
+        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      title: "File Id",
+      description:
+        "UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.",
+    },
+    size_bytes: {
+      type: "integer",
+      minimum: 0,
+      title: "Size Bytes",
+      description: "Size of the stored message in bytes.",
+    },
+  },
+  type: "object",
+  required: ["filename", "file_id", "size_bytes"],
+  title: "MailMessageRef",
+  description:
+    "Reference to a fetched message's original RFC822 bytes, stored in S3 rather than carried in the event.\n\nMirrors ``MailAttachmentRef``: the message is referenced by ``file_id`` so the raw mail — which may be\norders of magnitude larger than the summary the event carries — never enters the audit trail or the\nWebSocket stream. The stored object is the message **verbatim**, so it also preserves what the event\ndeliberately omits: the recipients and the untrusted HTML body.",
 } as const;
 
 export const MailMovedEventSchema = {
@@ -14843,6 +15115,13 @@ export const MinimalAgentInstanceDTOSchema = {
       title: "Is Conversational",
       description:
         "Whether the agent can participate in a chat-based conversation",
+    },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent can be run automatically on a cron schedule",
+      default: false,
     },
   },
   type: "object",
@@ -16993,6 +17272,9 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -18544,6 +18826,9 @@ export const RepeaterSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -19387,6 +19672,92 @@ export const RunStatisticsSchema = {
   required: ["run_id", "agent"],
   title: "RunStatistics",
   description: "Statistics for a single run, intended for API response.",
+} as const;
+
+export const ScheduledStartEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    locale: {
+      type: "string",
+      title: "Locale",
+      description:
+        "The locale the scheduled run reports its display output in.",
+      default: "de",
+    },
+    user: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Always None — scheduled runs are system-initiated and carry no execution identity.",
+    },
+    scheduled_for: {
+      type: "string",
+      format: "date-time",
+      title: "Scheduled For",
+      description:
+        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["scheduled_for", "_event_name", "_parent_event_names"],
+  title: "ScheduledStartEvent",
+  description:
+    "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
 } as const;
 
 export const SearchContextCostPerQueryDTOSchema = {
@@ -24360,6 +24731,9 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -24493,6 +24867,13 @@ export const AgentClassDTOWritableSchema = {
       description:
         "Whether the agent class can participate in a chat-based conversation",
     },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
+    },
     is_online: {
       anyOf: [
         {
@@ -24579,6 +24960,9 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/ColorPickerWritable",
+              },
+              {
+                $ref: "#/components/schemas/CronInputWritable",
               },
               {
                 $ref: "#/components/schemas/DatePickerWritable",
@@ -26874,6 +27258,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/RAGStartEventWritable",
         },
         {
+          $ref: "#/components/schemas/ScheduledStartEventWritable",
+        },
+        {
           $ref: "#/components/schemas/ExceptionEventWritable",
         },
         {
@@ -27035,6 +27422,187 @@ export const ConversationTitleEventWritableSchema = {
   title: "ConversationTitleEvent",
   description:
     "Carries a generated title for the whole conversation (thread), produced by the agent once a\ntopic becomes identifiable. The agent has the richest context about the conversation, so it\nowns this metadata instead of leaving it to the chat UI's task model.\n\nA thread receives a single, stable title: the agent emits this event only on the turn where a\ntitle is first determined and never again for that thread.",
+} as const;
+
+export const CronInputWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "cronInput",
+      title: "Formkit",
+      description: "Cron schedule input element.",
+      default: "cronInput",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    timezonePlaceholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timezoneplaceholder",
+      description: "Placeholder for the timezone select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search on the timezone select",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "CronInput",
+  description:
+    'A FormKit element for editing the cron schedule of a schedulable agent profile.\n\nThe element renders the five cron positions plus a timezone selector, and the submitted value\nmatches the fields of `AgentSchedule`:\n{\n    "minute": str,\n    "hour": str,\n    "day_of_month": str,\n    "month": str,\n    "day_of_week": str,\n    "timezone": str,\n}\n\nPresets and the plain-language summary of the current schedule are delivered by the Admin UI\n(see the cron schedule configuration UI issue); this element only declares the contract.\n\n### Form Duality\n```python\nfrom swiss_ai_hub.core.form.elements.cron_input import CronInput\nfrom swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule\n\nclass MyAgentConfig(AgentConfig):\n    schedule: Annotated[\n        AgentSchedule | CronInput | None,\n        Field(description="When this profile runs automatically"),\n    ] = None\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))\n\n# Data mode - from submission (Pydantic validates into AgentSchedule):\nconfig = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))\n```',
 } as const;
 
 export const DatePickerWritableSchema = {
@@ -27731,6 +28299,13 @@ export const FullAgentInstanceDTOWritableSchema = {
       description:
         "Whether the agent can participate in a chat-based conversation",
     },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -27891,6 +28466,9 @@ export const FullProcessInstanceDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
           },
           {
             $ref: "#/components/schemas/DatePickerWritable",
@@ -28116,6 +28694,9 @@ export const GroupWritableSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
           },
           {
             $ref: "#/components/schemas/DatePickerWritable",
@@ -28417,6 +28998,9 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -28561,6 +29145,9 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
           },
           {
             $ref: "#/components/schemas/DatePickerWritable",
@@ -32023,6 +32610,18 @@ export const MailFetchedEventWritableSchema = {
       title: "Attachments",
       description: "References to the message's attachments stored in S3.",
     },
+    original_message: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/MailMessageRef",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Reference to the original RFC822 message stored in S3, or null when it was not stored.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -32284,6 +32883,13 @@ export const MinimalAgentInstanceDTOWritableSchema = {
       title: "Is Conversational",
       description:
         "Whether the agent can participate in a chat-based conversation",
+    },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent can be run automatically on a cron schedule",
+      default: false,
     },
   },
   type: "object",
@@ -33182,6 +33788,9 @@ export const ProcessClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
           },
           {
             $ref: "#/components/schemas/DatePickerWritable",
@@ -34289,6 +34898,9 @@ export const RepeaterWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -34899,6 +35511,75 @@ export const RunStatisticsWritableSchema = {
   required: ["run_id", "agent"],
   title: "RunStatistics",
   description: "Statistics for a single run, intended for API response.",
+} as const;
+
+export const ScheduledStartEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    locale: {
+      type: "string",
+      title: "Locale",
+      description:
+        "The locale the scheduled run reports its display output in.",
+      default: "de",
+    },
+    user: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Always None — scheduled runs are system-initiated and carry no execution identity.",
+    },
+    scheduled_for: {
+      type: "string",
+      format: "date-time",
+      title: "Scheduled For",
+      description:
+        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["scheduled_for"],
+  title: "ScheduledStartEvent",
+  description:
+    "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
 } as const;
 
 export const SelectWritableSchema = {

@@ -198,6 +198,127 @@ drafting is scheduled separately and must be able to work through mail that accu
   freshly-fetched `ParsedMessage` instead of a `MailFetchedEvent`. This supersedes the move-follower single-draft step
   and its per-draft `MailDraftCreatedEvent` in the workflow.
 
+## Oldest-first candidate ordering (#118)
+
+Neither chain ordered its candidates: both list methods ran an IMAP `SEARCH` and truncated the result (`uids[:limit]`)
+with no sort key anywhere. RFC 3501 does not guarantee `SEARCH` result order, and the de-facto UID order is *arrival
+into that folder* — so in the accumulate-then-draft flow, where `source_folder` points at the processed folder, a moved
+message carries a fresh higher UID and the effective order is **move order**. Combined with truncate-before-sort,
+`batch_size` picked an arbitrary slice rather than the head of the backlog.
+
+- **Sort key is the sent date, with an `INTERNALDATE` fallback.** Not `INTERNALDATE` alone: a moved message gets a fresh
+  one, which is the cause above. Ties break on UID so the order is total.
+
+- **Server-side `SORT` when advertised, client-side otherwise.** `SORT` (RFC 5256) is an extension rather than part of
+  IMAP4rev1 — Dovecot offers it, Gmail does not — so the path is chosen at runtime from `has_capability(b"SORT")` rather
+  than assumed. The fallback issues one batched `FETCH (INTERNALDATE ENVELOPE)` over the matched UIDs and sorts in the
+  client. The criterion is `DATE` and deliberately **not `ARRIVAL`**: RFC 5256 defines `SORT DATE` as the sent date
+  falling back to `INTERNALDATE`, which is exactly what the client-side branch computes, so the two paths agree.
+  `ARRIVAL` ignores the sent date and would disagree on precisely the moved-mail case.
+
+  That agreement holds only for servers implementing the fallback. GreenMail advertises `SORT` but sorts mail with no
+  parseable `Date:` header *last* instead of falling back to `INTERNALDATE`, so on such a server the ordering of
+  Date-less mail differs between the two paths. Not worked around: real mail carries a `Date:` header, the client-side
+  branch is the RFC-conforming one, and compensating for a server-side deviation would mean re-dating every candidate,
+  discarding the entire benefit of the `SORT` path.
+
+- **Sorting happens before truncation**, so the limit takes the oldest N rather than reordering an arbitrary N.
+
+- **Flag semantics are untouched.** Both list methods already ran inside a read-only `SELECT` (`EXAMINE`), and the new
+  helpers add no `SELECT` of their own; `ENVELOPE`, `INTERNALDATE` and `SORT` cannot implicitly set `\Seen` (RFC 3501
+  §6.4.5 limits that to `RFC822`, `RFC822.TEXT` and non-peek `BODY[<section>]`). The search criteria are unchanged —
+  drafting candidacy is still "not carrying the dedup flag", never `UNSEEN`, per the section above.
+
+- **The ids must stay UIDs.** `imapclient` issues `UID SORT` because the connection is built with the default
+  `use_uid=True`; the returned ids flow into `mark_drafted`, so a `use_uid=False` connection would flag the wrong
+  message while replying to another. Do not override it in `ImapClientFactory`.
+
+- **Summary fetches are batched.** The per-UID header fetch became a single `FETCH` over all selected UIDs, iterated in
+  the sorted order rather than in server response order — a 50-message listing drops from 50 round trips to 2.
+
+- **The fallback path is bounded to the 1000 oldest arrivals.** The client-side ordering fetch grows with the number of
+  matches rather than with `limit`, because which message is oldest cannot be known without dating every candidate. Left
+  unbounded that is not merely slow but a hard failure: `imapclient` comma-joins every UID into one command line without
+  collapsing ranges, and servers cap command length — Dovecot's default 64 KB is roughly 9000 UIDs. So the candidate set
+  is capped at `_MAX_ORDERING_CANDIDATES` (1000), and the window is the **lowest UIDs**, taken by sorting rather than by
+  slicing the `SEARCH` response, since RFC 3501 does not guarantee that response's order. Only `ENVELOPE` and
+  `INTERNALDATE` are fetched, never bodies.
+
+  The window trades exactness on one shape of folder. UID order is arrival order, only a proxy for sent order — and in a
+  processed folder it is *move* order. So with more than 1000 candidates there, the true oldest can fall outside the
+  window and be missed; below 1000 the result is exact. The proxy holds for an inbox, where the oldest-sent mail is all
+  but certainly among the oldest-arrived. A `SINCE` window was rejected as the bound instead: it discards mail by age,
+  which is precisely the mail this change exists to surface. The dedup flag limits the cost further —
+  `UNKEYWORD $AiHubDrafted` matches only never-drafted mail, so the worst case is a first run over a large existing
+  archive.
+
+  The server-side path is deliberately **not** capped: `SORT` returns bare integers the server has already ordered, so
+  `limit` alone bounds it and a window could only discard correct ordering. Returning part of a `SORT` would anyway
+  require RFC 5267 `CONTEXT=SEARCH`/`PARTIAL`, which neither Gmail nor GreenMail advertises.
+
+- **Expunge races skip rather than fail.** A UID can be expunged by another client between the `SEARCH` and either
+  `FETCH`. Batching raises the stakes — one vanished message would fail the entire listing, whereas the old per-UID loop
+  failed only that message — so a UID missing from the ordering fetch sorts last and one missing from the summary fetch
+  is skipped. This is not error suppression: a message that no longer exists is not a listing candidate.
+
+## Archiving the original message (#1575)
+
+Only attachments were persisted; the message they arrived in was parsed, summarised onto `MailFetchedEvent`, and then
+lost. Issue [#1575](https://github.com/bbvch-ai/aihub-core/issues/1575) requires the original mail itself to be kept
+"for future reference and processing".
+
+- **The raw RFC822 bytes are archived, not a projection of the parsed fields.** A JSON envelope of what
+  `MailFetchedEvent` carries would preserve only what we happened to model, which fails the story's own criterion that
+  the stored mail "preserves all original content". The raw bytes *are* the original by definition, so they also carry
+  what the event deliberately omits — the **recipients**, which `MailParser` never extracted at all (`To`/`Cc` appear
+  nowhere in the parsed model), and the HTML body kept off the event for XSS reasons.
+
+- **It costs no extra IMAP round-trip.** `fetch_message` already downloads the whole message with `BODY.PEEK[]` and
+  threw the bytes away after handing them to `email.message_from_bytes`. `ParsedMessage.raw` keeps what was already in
+  memory, alongside `body_html` and under the same rule: it never enters an event. Peak memory is unchanged and still
+  bounded by the pre-download `RFC822.SIZE` check against `max_message_bytes`.
+
+- **`max_body_bytes` must not reach the archive.** That cap exists to bound what an event may carry. Applying it to the
+  stored copy would make the "original" a silently truncated one, so the raw bytes bypass every truncation the parser
+  applies — pinned by a test.
+
+- **The archive is deliberately NOT sanitized, and must not become so.** Sanitizing the HTML before storing was
+  considered and rejected: it invalidates any DKIM/S-MIME signature, so the archived mail could no longer be shown to be
+  authentic; and it destroys precisely the markup an email **classifier** needs — link structure (display text vs real
+  `href`), tracking pixels and obfuscated markup are the phishing signals, and stripping them is irreversible. XSS is an
+  output-encoding problem, and nothing renders these objects today. The obligation is therefore deferred to the
+  consumer: **anything that renders HTML out of an archived `.eml` must sanitize at render time.** As a transport-level
+  guard the object is written with `ContentType: message/rfc822` and `ContentDisposition: attachment`, so a browser
+  handed the signed URL downloads it instead of rendering it. Whoever later finds unsanitized markup in the data lake
+  should not "fix" it at the storage layer.
+
+- **Attachments are stored twice.** Once inline inside the archived `.eml`, once as their own objects. Accepted so the
+  existing attachment contract (and its `MailAttachmentRef` consumers) stays unchanged; the cost is roughly the base64
+  inflation of the attachment bytes per message.
+
+- **Only the read chain archives, and the fetch signature enforces it.** `fetch_mail_step` stores; `draft_batch_step`
+  does not, even though it also calls `fetch_message`. Archiving there would re-store what the read chain already kept,
+  once per message per batch run. The raw bytes are therefore retained only under `fetch_message(with_raw=True)`, which
+  only `fetch_mail_step` passes. Without that gate the drafting chain would hold the raw bytes of a whole batch alive
+  across its per-message LLM calls — up to `batch_size` × `max_message_bytes` of data it never reads. `parse_message`
+  takes `raw` with no default for the same reason: a caller that does not archive says so explicitly rather than
+  dropping the original by omission.
+
+- **`MailAttachmentStore` became `MailStore`** (`store_attachments` + `store_message`) — it no longer stores only
+  attachments. Breaking rename with no compatibility shim, per the repository convention.
+
+- **`MailFetchedEvent.original_message`** is a nullable `MailMessageRef` (mirroring `MailAttachmentRef`, resolving its
+  S3 location through `UserUploadedFile` so all file contracts share one layout). Nullable because a message parsed
+  without raw bytes has nothing to archive, and a missing archive must not fail the run. No `DisplayEvents` union change
+  is needed — a new field on an event already in the union does not re-tag it.
+
+- **Retrieval needs no new endpoint.** `resolve_s3_location` yields the bucket and key, and the existing
+  `GET /files/logged-in/url/{container}/{file_path:path}` issues the signed URL — the same path attachments already use.
+
+- **Retention is unresolved.** The archive now holds complete inbound mail, headers and all, in the `agent-files`
+  bucket, which carries no lifecycle policy. That is a deliberate acceptance for this story, not an oversight, and a
+  data-protection follow-up if the posture needs to tighten — the same open question the at-rest mailbox secrets raise.
+
 ## Verify-or-create target folders (#1636)
 
 The move step originally required its target folder to already exist, which holds for a single fixed processed-folder an

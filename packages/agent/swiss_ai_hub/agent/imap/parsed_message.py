@@ -17,6 +17,9 @@ class ParsedMessage(BaseModel):
     ``body_html`` is untrusted, sender-controlled markup. It is intentionally NOT surfaced on
     ``MailFetchedEvent`` (which is persisted and streamed to the frontend) — a consumer that needs it
     must sanitize it server-side first. It is kept here only as the in-process parse result.
+
+    ``raw`` is the message exactly as the server sent it, kept so the original can be archived verbatim.
+    Like ``body_html`` it never enters an event; it is written to S3 and referenced by ``MailMessageRef``.
     """
 
     message_id: str
@@ -29,3 +32,4 @@ class ParsedMessage(BaseModel):
     body_text: str | None = None
     body_html: str | None = None
     attachments: list[ParsedAttachment] = []
+    raw: bytes = b""

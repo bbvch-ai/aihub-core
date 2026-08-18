@@ -1,12 +1,14 @@
 from collections.abc import Callable
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
 from imapclient.exceptions import IMAPClientError, LoginError
+from imapclient.response_types import Envelope
 from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.testing import async_test
 
-from swiss_ai_hub.agent.imap.imap_client import ImapClient, ImapClientFactory
+from swiss_ai_hub.agent.imap.imap_client import _MAX_ORDERING_CANDIDATES, ImapClient, ImapClientFactory
 
 _HEADER = b"From: Alice <alice@example.com>\r\nSubject: Report\r\nDate: Mon, 05 Jan 2026 10:00:00 +0000\r\n\r\n"
 
@@ -16,6 +18,8 @@ _FOLDERS = [
     ((b"\\HasNoChildren",), b"/", "Processed"),
     ((b"\\Drafts", b"\\HasNoChildren"), b"/", "[Gmail]/Drafts"),
 ]
+
+_KEYWORD_FOLDER = {b"PERMANENTFLAGS": (b"\\Seen", b"\\*")}
 
 
 def _folders_after_creating(name: str, base: list | None = None) -> Callable[..., list]:
@@ -33,20 +37,49 @@ def _folders_after_creating(name: str, base: list | None = None) -> Callable[...
     return list_folders
 
 
+def _envelope(sent_at: datetime | None) -> Envelope:
+    """A minimal Envelope carrying only the sent date — naive, exactly as imapclient's normalise_times produces."""
+    return Envelope(sent_at, None, None, None, None, None, None, None, None, None)
+
+
+def _dated(dates: dict[int, datetime | None], internaldates: dict[int, datetime] | None = None) -> dict:
+    """FETCH response for the ordering fetch: an ENVELOPE per UID, plus INTERNALDATE where the server reports one."""
+    internaldates = internaldates or {}
+    return {
+        uid: {b"ENVELOPE": _envelope(sent_at)} | ({b"INTERNALDATE": internaldates[uid]} if uid in internaldates else {})
+        for uid, sent_at in dates.items()
+    }
+
+
+def _summary_fetch(uids: list[int]) -> dict:
+    return {uid: {b"BODY[HEADER]": _HEADER, b"FLAGS": (b"\\Recent",)} for uid in uids}
+
+
 def _connection(
-    search: list[int] | None = None, fetch: dict | None = None, folders: list | Callable[..., list] | None = None
+    search: list[int] | None = None,
+    fetch: dict | None = None,
+    folders: list | Callable[..., list] | None = None,
+    supports_sort: bool = False,
+    dated: dict | None = None,
 ) -> MagicMock:
+    """A mocked IMAP connection.
+
+    ``supports_sort`` defaults to False so the client-side ordering path is what the bulk of the suite exercises; a
+    bare MagicMock would make ``has_capability`` truthy and silently route every test through the server-side branch.
+    """
     connection = MagicMock()
     if callable(folders):
         connection.list_folders = MagicMock(side_effect=folders)
     else:
         connection.list_folders = MagicMock(return_value=_FOLDERS if folders is None else folders)
     connection.search = MagicMock(return_value=[101, 102] if search is None else search)
+    connection.has_capability = MagicMock(side_effect=lambda capability: supports_sort and capability == b"SORT")
+    connection.sort = MagicMock(return_value=[101, 102] if search is None else search)
     if fetch is not None:
         connection.fetch = MagicMock(return_value=fetch)
     else:
         connection.fetch = MagicMock(
-            side_effect=lambda uids, _items: {uids[0]: {b"BODY[HEADER]": _HEADER, b"FLAGS": (b"\\Recent",)}}
+            side_effect=lambda uids, items: dated if dated is not None and "ENVELOPE" in items else _summary_fetch(uids)
         )
     return connection
 
@@ -81,7 +114,19 @@ async def test_list_unread_respects_max_messages():
     summaries = await client.list_unread()
 
     assert len(summaries) == 1
-    assert connection.fetch.call_count == 1
+    assert connection.fetch.call_args.args == ([101], ["BODY.PEEK[HEADER]", "FLAGS"])
+
+
+@async_test
+async def test_list_unread_batches_the_summary_fetch_into_one_round_trip():
+    connection = _connection(search=[101, 102, 103])
+    client = _client(connection)
+
+    summaries = await client.list_unread()
+
+    assert [s.message_id for s in summaries] == ["101", "102", "103"]
+    summary_fetches = [c.args for c in connection.fetch.call_args_list if "FLAGS" in c.args[1]]
+    assert summary_fetches == [([101, 102, 103], ["BODY.PEEK[HEADER]", "FLAGS"])]
 
 
 @async_test
@@ -115,6 +160,26 @@ async def test_fetch_message_uses_readonly_select_and_peek():
     connection.select_folder.assert_called_once_with("INBOX", readonly=True)
     fetch_calls = [call.args for call in connection.fetch.call_args_list]
     assert fetch_calls == [([101], ["RFC822.SIZE"]), ([101], ["BODY.PEEK[]"])]
+
+
+@async_test
+async def test_fetch_message_drops_the_raw_bytes_unless_they_are_asked_for():
+    """The batch drafting chain holds several results alive across its LLM calls and never archives, so
+    retaining the downloaded bytes there would cost up to max_message_bytes per message for nothing."""
+    body = b"From: alice@example.com\r\nSubject: Report\r\n\r\nhello"
+    connection = _connection(fetch={101: {b"RFC822.SIZE": len(body), b"BODY[]": body}})
+    client = _client(connection)
+
+    assert (await client.fetch_message("101")).raw == b""
+
+
+@async_test
+async def test_fetch_message_retains_the_raw_bytes_for_the_archiving_caller():
+    body = b"From: alice@example.com\r\nSubject: Report\r\n\r\nhello"
+    connection = _connection(fetch={101: {b"RFC822.SIZE": len(body), b"BODY[]": body}})
+    client = _client(connection)
+
+    assert (await client.fetch_message("101", with_raw=True)).raw == body
 
 
 @async_test
@@ -416,6 +481,228 @@ async def test_list_undrafted_falls_back_to_unanswered_without_keyword_support_a
     assert drafted_flag == "\\Answered"
     assert len(summaries) == 2
     assert connection.search.call_args.args[0] == ["UNANSWERED"]
+
+
+@async_test
+async def test_list_undrafted_uses_server_sort_when_supported():
+    connection = _connection(search=[11, 12], supports_sort=True)
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=5)
+
+    connection.sort.assert_called_once_with(("DATE",), ["UNKEYWORD", "$AiHubDrafted"])
+    connection.search.assert_not_called()
+    assert [s.message_id for s in summaries] == ["11", "12"]
+
+
+@async_test
+async def test_list_undrafted_returns_server_sort_ids_verbatim():
+    connection = _connection(search=[97, 12, 45], supports_sort=True)
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=5)
+
+    assert [s.message_id for s in summaries] == ["97", "12", "45"]
+
+
+@async_test
+async def test_list_undrafted_sorts_by_sent_date_when_sort_unsupported():
+    connection = _connection(
+        search=[13, 11, 12],
+        dated=_dated(
+            {
+                13: datetime(2026, 1, 5, 10, 0),
+                11: datetime(2026, 3, 9, 8, 30),
+                12: datetime(2026, 2, 1, 12, 0),
+            }
+        ),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=5)
+
+    assert [s.message_id for s in summaries] == ["13", "12", "11"]
+
+
+@async_test
+async def test_list_undrafted_falls_back_to_internaldate_without_envelope_date():
+    connection = _connection(
+        search=[11, 12],
+        dated=_dated({11: None, 12: datetime(2026, 2, 1, 12, 0)}, internaldates={11: datetime(2026, 1, 1, 9, 0)}),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=5)
+
+    assert [s.message_id for s in summaries] == ["11", "12"]
+
+
+@async_test
+async def test_list_undrafted_places_undatable_messages_last_with_uid_tiebreak():
+    connection = _connection(
+        search=[30, 20, 11],
+        dated=_dated({30: None, 20: None, 11: datetime(2026, 6, 1, 9, 0)}),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=5)
+
+    assert [s.message_id for s in summaries] == ["11", "20", "30"]
+
+
+@async_test
+async def test_list_undrafted_sorts_before_applying_limit():
+    connection = _connection(
+        search=[11, 12, 13],
+        dated=_dated(
+            {
+                11: datetime(2026, 9, 1, 9, 0),
+                12: datetime(2026, 1, 1, 9, 0),
+                13: datetime(2026, 2, 1, 9, 0),
+            }
+        ),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=2)
+
+    assert [s.message_id for s in summaries] == ["12", "13"]
+
+
+@async_test
+async def test_ordering_fetch_is_capped_at_the_candidate_window():
+    """The metadata fetch must be bounded: unbounded, it serializes into a command line servers reject outright."""
+    matches = list(range(1, _MAX_ORDERING_CANDIDATES + 501))
+    connection = _connection(
+        search=matches,
+        dated=_dated({uid: datetime(2026, 1, 1, 9, 0) for uid in matches}),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    await client.list_undrafted("Processed", limit=5)
+
+    ordering_fetch = next(call for call in connection.fetch.call_args_list if "ENVELOPE" in call.args[1])
+    assert ordering_fetch.args[0] == matches[:_MAX_ORDERING_CANDIDATES]
+
+
+@async_test
+async def test_ordering_window_takes_the_lowest_uids_not_the_search_response_order():
+    """RFC 3501 does not guarantee SEARCH ordering, so the window must not depend on the order the server replied in."""
+    matches = list(reversed(range(1, _MAX_ORDERING_CANDIDATES + 501)))
+    connection = _connection(
+        search=matches,
+        dated=_dated({uid: datetime(2026, 1, 1, 9, 0) for uid in matches}),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    await client.list_undrafted("Processed", limit=5)
+
+    ordering_fetch = next(call for call in connection.fetch.call_args_list if "ENVELOPE" in call.args[1])
+    assert ordering_fetch.args[0] == sorted(matches)[:_MAX_ORDERING_CANDIDATES]
+
+
+@async_test
+async def test_ordering_below_the_window_still_dates_every_candidate():
+    """Under the window the result stays exact — the cap must not truncate a folder small enough to date fully."""
+    matches = [11, 12, 13]
+    connection = _connection(
+        search=matches,
+        dated=_dated({11: datetime(2026, 9, 1, 9, 0), 12: datetime(2026, 1, 1, 9, 0), 13: datetime(2026, 2, 1, 9, 0)}),
+    )
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=3)
+
+    ordering_fetch = next(call for call in connection.fetch.call_args_list if "ENVELOPE" in call.args[1])
+    assert ordering_fetch.args[0] == matches
+    assert [s.message_id for s in summaries] == ["12", "13", "11"]
+
+
+@async_test
+async def test_server_sort_is_not_capped_by_the_candidate_window():
+    """SORT returns bare ordered integers, so the window would only discard correct ordering the server already did."""
+    ordered = list(range(1, _MAX_ORDERING_CANDIDATES + 501))
+    connection = _connection(search=ordered, supports_sort=True)
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=3)
+
+    assert [s.message_id for s in summaries] == ["1", "2", "3"]
+    assert not [call for call in connection.fetch.call_args_list if "ENVELOPE" in call.args[1]]
+
+
+@async_test
+async def test_list_unread_sorts_before_applying_max_messages():
+    connection = _connection(
+        search=[101, 102, 103],
+        dated=_dated(
+            {
+                101: datetime(2026, 9, 1, 9, 0),
+                102: datetime(2026, 1, 1, 9, 0),
+                103: datetime(2026, 2, 1, 9, 0),
+            }
+        ),
+    )
+    client = _client(connection, max_messages=2)
+
+    summaries = await client.list_unread()
+
+    assert [s.message_id for s in summaries] == ["102", "103"]
+
+
+@async_test
+@pytest.mark.parametrize("supports_sort", [True, False])
+async def test_ordering_never_selects_writable_nor_requests_seen_setting_fetch_items(supports_sort: bool):
+    connection = _connection(search=[11, 12], supports_sort=supports_sort, dated=_dated({11: None, 12: None}))
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    client = _client(connection)
+
+    await client.list_undrafted("Processed", limit=5)
+
+    assert all(call.kwargs["readonly"] for call in connection.select_folder.call_args_list)
+    requested = [item for call in connection.fetch.call_args_list for item in call.args[1]]
+    assert not any(item.startswith("RFC822") or item.startswith("BODY[") for item in requested)
+
+
+@async_test
+async def test_list_undrafted_skips_a_message_expunged_between_search_and_fetch():
+    dated = _dated({11: datetime(2026, 1, 1, 9, 0), 12: datetime(2026, 2, 1, 9, 0)})
+    connection = _connection(search=[11, 12])
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    connection.fetch = MagicMock(
+        side_effect=lambda uids, items: dated if "ENVELOPE" in items else _summary_fetch([u for u in uids if u != 12])
+    )
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=5)
+
+    assert [s.message_id for s in summaries] == ["11"]
+
+
+@async_test
+async def test_list_undrafted_sorts_an_undatable_expunged_message_last():
+    connection = _connection(search=[11, 12])
+    connection.select_folder = MagicMock(return_value=_KEYWORD_FOLDER)
+    connection.fetch = MagicMock(
+        side_effect=lambda uids, items: (
+            _dated({12: datetime(2026, 2, 1, 9, 0)}) if "ENVELOPE" in items else _summary_fetch(uids)
+        )
+    )
+    client = _client(connection)
+
+    _flag, summaries = await client.list_undrafted("Processed", limit=5)
+
+    assert [s.message_id for s in summaries] == ["12", "11"]
 
 
 @async_test
