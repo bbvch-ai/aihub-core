@@ -78,7 +78,7 @@ class TestAuthHandler(AuthHandler):
         concealed it by mocking the role lookup; interactively the server authenticated fine and then
         refused every request. The name is deliberately unmistakable in a role list.
         """
-        if RoleEntity.objects(name=TEST_USER_ROLE_NAME, tenant_id=tenant_id).first():
+        if RoleEntity.tenant_role_exists(TEST_USER_ROLE_NAME, tenant_id):
             return
 
         RoleEntity.create_tenant_role(
@@ -102,7 +102,7 @@ class TestAuthHandler(AuthHandler):
         """
         requested = (request.path_params.get("tenant_id") or "").strip()
         if requested and requested != AuthHandler.ACTIVE_TENANT_SLUG:
-            tenant = TenantMetadataEntity.objects(id=requested).first()
+            tenant = TenantMetadataEntity.get_metadata_by_tenant_id(requested)
             if tenant:
                 return TenantIdentity.from_tenant_metadata_entity(tenant)
         return await TestAuthHandler.get_active_tenant_for_user(user_id)
