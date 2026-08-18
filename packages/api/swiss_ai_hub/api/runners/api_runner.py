@@ -52,7 +52,6 @@ class ApiRunner(Runner):
     ```python
     runner = ApiRunner(api_path="/api/v1", title="My API")
     runner.mount(UserController(), ProductController())  # Mount controllers
-    runner.mount_frontend("path/to/frontend/dist")  # Optional: serve frontend
     app = runner.create_app()  # Get the FastAPI instance
     ```
 
