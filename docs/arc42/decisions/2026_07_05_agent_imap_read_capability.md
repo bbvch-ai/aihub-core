@@ -318,3 +318,34 @@ lost. Issue [#1575](https://github.com/bbvch-ai/aihub-core/issues/1575) requires
 - **Retention is unresolved.** The archive now holds complete inbound mail, headers and all, in the `agent-files`
   bucket, which carries no lifecycle policy. That is a deliberate acceptance for this story, not an oversight, and a
   data-protection follow-up if the posture needs to tighten — the same open question the at-rest mailbox secrets raise.
+
+## Verify-or-create target folders (#1636)
+
+The move step originally required its target folder to already exist, which holds for a single fixed processed-folder an
+admin creates once by hand but not for classification, which files into one folder per category plus a fallback. Filing
+now creates the folder when it is missing:
+
+- **Creation, not just resolution.** `move_message` resolves through `_resolve_or_create_folder` instead of the
+  special-use-aware `_resolve_folder` that `append_draft` still uses. Drafts must never create: their fallback is the
+  server's `\Drafts` SPECIAL-USE folder, and inventing a second drafts folder would split the human handoff.
+- **This widens the mailbox mutation surface.** The move story characterised itself as non-destructive — moves, never
+  deletes, never sends. Folder creation keeps that property (it is additive and nothing is removed) but it is the first
+  capability that changes mailbox *structure* rather than the location of one message, which is why the effect is
+  recorded in the protocol rather than only in logs: `MailMovedEvent.folder_created` puts "the agent added a folder to
+  this mailbox" in the audit trail, and the step emits a matching thought.
+- **Per-level creation.** Each level of the hierarchy is created in turn (`Invoices`, then `Invoices/2026`), using the
+  delimiter the server reports in its own `LIST` response, because RFC 3501 only *recommends* that a server create
+  superior names. A `NIL` delimiter (flat namespace) creates the full name in one call.
+- **The follow-up `LIST` is the only authority on success.** A `create` that fails because a parent already exists and
+  one refused outright are indistinguishable at the protocol level, and a concurrent run may legitimately have won the
+  race, so creation errors are not raised where they occur — the folder is looked up again afterwards and only its
+  continued absence raises, carrying the server's reason.
+- **Ordering is what protects the message.** Resolution and creation run before the inbox is selected writable and
+  before any `MOVE`/`COPY`/`EXPUNGE`, so a server that refuses the folder fails the step with the message untouched in
+  the inbox rather than half-filed. A test asserts `select_folder` is never reached on that path.
+- **New folders are subscribed.** Creation is followed by a best-effort `SUBSCRIBE`: most mail clients only show
+  subscribed folders, so an unsubscribed target would make correctly-filed mail look lost to the human who has to read
+  it. A server that refuses to subscribe does not fail the move.
+- **Unconditional, no new config.** Creation applies to every agent using the move capability rather than sitting behind
+  a toggle — a per-category classifier cannot enumerate its folders in advance, so a disabled-by-default switch would
+  only reintroduce the same first-run failure.

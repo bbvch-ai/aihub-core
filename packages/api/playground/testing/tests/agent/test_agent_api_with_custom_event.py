@@ -49,6 +49,8 @@ async def agent_api_client():
         ) as client:
             yield client
 
+    await runner.stop_simulation()
+
 
 @pytest.fixture
 def cleanup_db_and_cache():
