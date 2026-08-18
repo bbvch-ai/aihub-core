@@ -49,3 +49,30 @@ config:
   draft_prompt:
     label: Draft Prompt
     help: Instructions steering how the LLM drafts the reply body.
+  category_name:
+    label: Category
+    help: Name of the category, e.g. support_request. Must be unique.
+  category_folder:
+    label: Target Folder
+    help: Mailbox folder messages in this category are filed into. Created automatically
+      if it does not exist yet.
+  category_description:
+    label: What Belongs Here
+    help: Describe the kind of mail that belongs in this category. This is what the
+      model classifies on, so be concrete about intent rather than listing keywords.
+  fallback_folder:
+    label: Fallback Folder
+    help: Folder for mail the model is not confident about. Such mail is never guessed
+      into a category and never left in the inbox.
+  confidence_threshold:
+    label: Confidence Threshold
+    help: Minimum confidence for filing into a category. Below this the message goes
+      to the fallback folder. Model confidence is only roughly calibrated — tune this
+      against real mail.
+  classification_model:
+    label: Classification Model
+    help: Chat model used to classify each message. Leave empty to use the agent's
+      main model.
+  classification_prompt:
+    label: Classification Prompt
+    help: Instructions steering how the model chooses a category.

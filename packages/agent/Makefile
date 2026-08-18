@@ -55,3 +55,6 @@ run-memory-writer-agent:
 
 run-imap-agent:
 	uv run python app/imap_agent/main.py
+
+run-email-classification-agent:
+	uv run python app/email_classification_agent/main.py

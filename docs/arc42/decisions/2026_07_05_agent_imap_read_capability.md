@@ -349,3 +349,69 @@ now creates the folder when it is missing:
 - **Unconditional, no new config.** Creation applies to every agent using the move capability rather than sitting behind
   a toggle — a per-category classifier cannot enumerate its folders in advance, so a disabled-by-default switch would
   only reintroduce the same first-run failure.
+
+## Classification into per-category folders (#1637)
+
+The customer use case is a mailbox that triages itself: read unread mail, classify each message, file it into the folder
+for its category. `ImapAgent` cannot do this — it is a demonstrator that fetches only the *first* unread message and
+moves it into one fixed processed-folder with no description attached. A new `EmailClassificationAgent` blueprint does
+the whole batch and routes per category.
+
+- **A separate blueprint, not a third chain on `ImapAgent`.** Two mailbox chains on one agent would both emit
+  `UnreadMailListedEvent`, and the dispatcher routes an event to *every* step waiting on it, so the chains would
+  cross-trigger; both would also consume unread INBOX mail, so on one profile whichever ran first would steal the
+  other's work. `ImapAgent` is unchanged in behaviour and stays as the demonstrator and the fallback for testing.
+
+- **The orchestration glue is shared, not copied.** `list`, `fetch-and-archive` and `file` moved into
+  `agent/imap/step_functions.py` as `do_*` free functions, following `rag/step_functions.py` and
+  `self_awareness_step_functions.py`; both blueprints are now thin `@step` wrappers over them. This is what keeps
+  #1575's archiving in *one* place: copy-pasting the fetch body would have left two archives to maintain, and the read
+  chain that owns archiving today stops running the moment classification takes over the mailbox.
+
+- **Categories are configuration, not a taxonomy in code.** A `MailCategory` repeater (`category`, `imap_folder`,
+  `description`) plus a fallback folder. The description is load-bearing: a model cannot reliably choose between
+  `information_request` and `support_request` from folder names, but it can from "we can resolve this by providing
+  information" versus "this requires an action from our team". A customer adds or renames a category without a
+  deployment.
+
+- **The model returns an index, never a folder name.** The response schema is built at runtime from the configured list
+  with `ge=0, lt=len(categories)`, so the index cannot address a category that does not exist. This is the containment
+  boundary for prompt injection: inbound mail is attacker-controlled and enters the prompt, but the worst a hostile
+  message can achieve is misfiling into a folder the admin already configured — it cannot invent a destination or reach
+  any other capability.
+
+- **Two independent routes to the fallback folder.** An explicit `selected_index: null` ("none of these fit") *and* a
+  confidence below the configured threshold. Both exist because self-reported LLM confidence is only roughly calibrated
+  — a wrong model is often a confident one, so the threshold alone is not a sufficient escape hatch and the explicit
+  decline is not either. Mail is never forced into a bucket.
+
+- **Filing is the deduplication mechanism.** Every message — confident or fallback — leaves the inbox, so the next
+  `UNSEEN` listing cannot see it. Unlike drafting, no `$AiHubDrafted`-style flag is needed. A batch that fails half-way
+  is therefore safe: filed messages stay filed, the rest are still unread and get picked up next run. IMAP UIDs are
+  stable, so filing one message never shifts another's.
+
+- **One looping step, three phases, two connections.** Fan-out was not usable — the engine's fixed-size join needs a
+  compile-time constant and the message count is only known at runtime, the same constraint `draft_batch_step` hit. The
+  IMAP connection is opened to fetch, **closed** for the model calls, and reopened to file, because many servers drop a
+  socket left idle across a slow batch of LLM round-trips.
+
+- **Archiving was pulled in ahead of its own ticket.** #1637 lists it out of scope, deferring to #1575 — but #1575 is
+  merged and lives in the read chain that classification displaces. Leaving it out would have silently un-shipped a
+  closed story for the agent that actually reads production mail. It costs nothing here: `do_fetch_and_archive` already
+  retains the raw bytes under `with_raw=True`.
+
+- **A single batch event, not one per message.** `MailBatchClassifiedEvent` carries `count`, `per_category`,
+  `fallback_count` and the per-message `MailClassificationRef`s, matching the `MailBatchDraftedEvent` precedent. Each
+  ref records the confidence and the model's stated reason, so a misfile is explainable after the fact.
+
+- **Known cost: one folder `LIST` per filed message.** `move_message` lists every folder on the server to decide whether
+  the target exists (#1636), so fifty messages into three existing folders still pay fifty listings. Accepted rather
+  than optimised away — it is bounded by `max_messages` and trivial beside the LLM call it follows. The fix, if
+  profiling ever justifies it, is a batch `ensure_folders` before the loop plus a relocate-only path on the client.
+
+- **`enable_move` / `processed_folder` are baked non-configurable** on this blueprint's form. A single fixed
+  processed-folder is meaningless when the classifier picks the destination, and a field that must not exist is not the
+  same as a field that is conditionally hidden.
+
+Drafting replies per category (#1639), grounding those drafts in per-category knowledge (#1720) and running the agent on
+a schedule (#1638) are separate stories, all blocked on this one.

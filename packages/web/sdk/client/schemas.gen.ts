@@ -5722,6 +5722,9 @@ export const ContextualizedAgentEventSchema = {
         {
           $ref: "#/components/schemas/MailBatchDraftedEvent",
         },
+        {
+          $ref: "#/components/schemas/MailBatchClassifiedEvent",
+        },
       ],
       title: "Event",
       description: "Data of the event itself.",
@@ -14082,6 +14085,101 @@ export const MailAttachmentRefSchema = {
     "Reference to a fetched mail attachment whose bytes are stored in S3, not carried in the event.\n\nMirrors ``UserUploadedFile``: attachments are referenced by ``file_id`` (the S3 object key within the\nagent's dedicated bucket) so large binaries never bloat the persisted/streamed event.",
 } as const;
 
+export const MailBatchClassifiedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the classified messages were read from.",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+      description: "Number of messages classified and filed in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many messages were filed under each configured category.",
+    },
+    fallback_count: {
+      type: "integer",
+      title: "Fallback Count",
+      description:
+        "How many messages went to the fallback folder instead of a category.",
+      default: 0,
+    },
+    classified: {
+      items: {
+        $ref: "#/components/schemas/MailClassificationRef",
+      },
+      type: "array",
+      title: "Classified",
+      description:
+        "Per-message classification verdicts and filing destinations.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["source_folder", "count", "_event_name", "_parent_event_names"],
+  title: "MailBatchClassifiedEvent",
+  description:
+    "Summarises one classification run: how many messages were classified and where each was filed.\n\nOne event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in\n`classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread\nlisting cannot see it again.",
+} as const;
+
 export const MailBatchDraftedEventSchema = {
   properties: {
     event_id: {
@@ -14158,6 +14256,95 @@ export const MailBatchDraftedEventSchema = {
   title: "MailBatchDraftedEvent",
   description:
     "Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.\n\nThe agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and\nmarked as drafted so it is not drafted again on the next run.",
+} as const;
+
+export const MailClassificationRefSchema = {
+  properties: {
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the message within the source folder.",
+    },
+    sender: {
+      type: "string",
+      title: "Sender",
+      description: "Raw From header of the message.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject header of the message.",
+    },
+    category: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Category",
+      description:
+        "Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted or confidence was below the threshold.",
+    },
+    target_folder: {
+      type: "string",
+      title: "Target Folder",
+      description: "Folder the message was filed into.",
+    },
+    confidence: {
+      type: "number",
+      maximum: 1,
+      minimum: 0,
+      title: "Confidence",
+      description: "Model's self-reported confidence in the category it chose.",
+    },
+    reason: {
+      type: "string",
+      title: "Reason",
+      description:
+        "Model's stated reason for the choice — the audit trail for a misfile.",
+    },
+    folder_created: {
+      type: "boolean",
+      title: "Folder Created",
+      description:
+        "Whether the target folder did not exist and was created while filing this message.",
+      default: false,
+    },
+    attachments: {
+      items: {
+        $ref: "#/components/schemas/MailAttachmentRef",
+      },
+      type: "array",
+      title: "Attachments",
+      description: "References to the message's attachments stored in S3.",
+    },
+    original_message: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/MailMessageRef",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Reference to the original RFC822 message stored in S3.",
+    },
+  },
+  type: "object",
+  required: [
+    "message_id",
+    "sender",
+    "subject",
+    "target_folder",
+    "confidence",
+    "reason",
+  ],
+  title: "MailClassificationRef",
+  description:
+    "One classified message and where it was filed — the per-message detail behind a run summary.",
 } as const;
 
 export const MailFetchedEventSchema = {
@@ -27332,6 +27519,9 @@ export const ContextualizedAgentEventWritableSchema = {
         {
           $ref: "#/components/schemas/MailBatchDraftedEventWritable",
         },
+        {
+          $ref: "#/components/schemas/MailBatchClassifiedEventWritable",
+        },
       ],
       title: "Event",
       description: "Data of the event itself.",
@@ -32428,6 +32618,84 @@ export const LocaleInputWritableSchema = {
   title: "LocaleInput",
   description:
     'A FormKit element for entering multi-language text (LocaleString values).\n\nThis element renders as a text input with language switching capability,\nallowing users to enter translations for all supported languages (de, en, fr, it)\nin a single compact UI component.\n\nThe frontend renders this as an input field with a language selector, where users\ncan switch between languages to enter the corresponding translation.\n\n### Form Duality\nWhen used in a Form, this element captures a LocaleString value with translations\nfor each language. The form submission returns a dict with language keys.\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    custom_greeting: Annotated[\n        LocaleString | LocaleInput,\n        Field(description="Custom greeting message"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    ...,\n    custom_greeting=LocaleInput(label=LocaleString(en="Greeting", de="Begrüßung")),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    ...,\n    custom_greeting=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"),\n)\n```',
+} as const;
+
+export const MailBatchClassifiedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the classified messages were read from.",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+      description: "Number of messages classified and filed in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many messages were filed under each configured category.",
+    },
+    fallback_count: {
+      type: "integer",
+      title: "Fallback Count",
+      description:
+        "How many messages went to the fallback folder instead of a category.",
+      default: 0,
+    },
+    classified: {
+      items: {
+        $ref: "#/components/schemas/MailClassificationRef",
+      },
+      type: "array",
+      title: "Classified",
+      description:
+        "Per-message classification verdicts and filing destinations.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["source_folder", "count"],
+  title: "MailBatchClassifiedEvent",
+  description:
+    "Summarises one classification run: how many messages were classified and where each was filed.\n\nOne event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in\n`classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread\nlisting cannot see it again.",
 } as const;
 
 export const MailBatchDraftedEventWritableSchema = {

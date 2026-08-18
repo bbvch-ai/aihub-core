@@ -66,6 +66,20 @@ async def fake_cost_reporting_llm(*_args, **_kwargs) -> AsyncIterator[AsyncMock]
     yield AsyncMock()
 
 
+def fake_cost_reporting_llm_yielding(llm: AsyncMock):
+    """A ``cost_reporting_llm`` replacement that hands out a caller-supplied LLM double.
+
+    Lets a test configure ``astructured_predict`` and exercise the real prompting code, rather than patching the
+    caller of the LLM and skipping the logic under test.
+    """
+
+    @asynccontextmanager
+    async def _yield_llm(*_args, **_kwargs) -> AsyncIterator[AsyncMock]:
+        yield llm
+
+    return _yield_llm
+
+
 def stored_attachment_refs() -> list[MailAttachmentRef]:
     return [
         MailAttachmentRef(
@@ -78,15 +92,17 @@ def stored_message_ref() -> MailMessageRef:
     return MailMessageRef(filename="1.eml", file_id=MESSAGE_FILE_ID, size_bytes=64)
 
 
-def infrastructure_patches(client: AsyncMock, llm_event: object | None = None) -> tuple:
+def infrastructure_patches(client: AsyncMock, llm_event: object | None = None, llm: AsyncMock | None = None) -> tuple:
     """The IMAP factory, the mail store (attachments + archived original), and the LLM, all patched.
 
     ``llm_event`` is what a patched ``display_llm_stream`` returns; pass the shape the calling suite expects.
+    ``llm`` is the double ``cost_reporting_llm`` hands out — pass one to drive real prompting code.
     """
+    cost_llm = fake_cost_reporting_llm_yielding(llm) if llm is not None else fake_cost_reporting_llm
     return (
         patch(FACTORY, side_effect=lambda config: fake_create(client, config)),
         patch(STORE_ATTACHMENTS, new=AsyncMock(return_value=stored_attachment_refs())),
         patch(STORE_MESSAGE, new=AsyncMock(return_value=stored_message_ref())),
-        patch(COST_LLM, new=fake_cost_reporting_llm),
+        patch(COST_LLM, new=cost_llm),
         patch(LLM_STREAM, new=AsyncMock(return_value=llm_event)),
     )
