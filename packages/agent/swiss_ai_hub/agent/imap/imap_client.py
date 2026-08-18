@@ -209,11 +209,6 @@ class ImapClient:
         files into one folder per category, so the folders cannot be pre-created by hand. Creation runs before
         the inbox is even selected, so a server that refuses it aborts the move with the message still in the
         inbox rather than half-filed.
-
-        Uses the atomic IMAP ``MOVE`` (RFC 6851) when the server supports it; otherwise falls back to
-        ``COPY`` + ``UID EXPUNGE`` (RFC 4315, UIDPLUS), which purges only this UID. A server offering neither
-        is refused rather than expunged with a blind ``EXPUNGE`` that would also destroy other clients'
-        ``\\Deleted`` mail.
         """
         target_folder, folder_created = await self._resolve_or_create_folder(target_folder)
         await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=False)
@@ -223,20 +218,30 @@ class ImapClient:
         if uid not in present:
             raise ValueError(f"message {message_id} not found in {self._inbox_folder} — it may have been expunged")
 
+        await self._relocate_uid(uid, target_folder)
+        return folder_created
+
+    async def _relocate_uid(self, uid: int, target_folder: str) -> None:
+        """Relocate one UID out of the already-selected inbox into ``target_folder``.
+
+        Uses the atomic IMAP ``MOVE`` (RFC 6851) when the server supports it; otherwise falls back to
+        ``COPY`` + ``UID EXPUNGE`` (RFC 4315, UIDPLUS), which purges only this UID. A server offering neither
+        is refused rather than expunged with a blind ``EXPUNGE`` that would also destroy other clients'
+        ``\\Deleted`` mail.
+        """
         if await asyncio.to_thread(self._connection.has_capability, _MOVE_CAPABILITY):
             await asyncio.to_thread(self._connection.move, [uid], target_folder)
-            return folder_created
+            return
 
         if not await asyncio.to_thread(self._connection.has_capability, _UIDPLUS_CAPABILITY):
             raise ValueError(
-                f"IMAP server supports neither MOVE nor UIDPLUS — cannot move message {message_id} without risking "
+                f"IMAP server supports neither MOVE nor UIDPLUS — cannot move message {uid} without risking "
                 "other clients' deleted mail"
             )
 
         await asyncio.to_thread(self._connection.copy, [uid], target_folder)
         await asyncio.to_thread(self._connection.delete_messages, [uid])
         await asyncio.to_thread(self._connection.uid_expunge, [uid])
-        return folder_created
 
     async def append_draft(self, drafts_folder: str, raw_message: bytes) -> tuple[str, str | None]:
         """Append a reply as a ``\\Draft``-flagged message to the drafts folder; never sends (no SMTP path exists).
