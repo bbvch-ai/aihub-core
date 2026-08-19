@@ -200,14 +200,17 @@ class ApiRunner(Runner):
             logger.info("OpenTelemetry instrumentation disabled: OTEL_ENABLED=False")
             return
 
-        # NoOpMeterProvider suppresses the http.server.duration histogram that FastAPI
-        # instrumentation emits as a side-effect. Metrics are not deliberately used here
-        # and the unbounded histogram was the SigNoz cost driver — see issue #1496.
+        # Metrics are a separate opt-in from tracing (OTEL_METRICS_ENABLED, default off): the
+        # FastAPI/ASGI auto-instrumentation's request-count/duration histograms were the
+        # unbounded, high-cardinality metric source behind issue #1496. configure_metrics()
+        # returns None (NoOpMeterProvider fallback) unless explicitly enabled.
+        meter_provider = otel_settings.configure_metrics() or NoOpMeterProvider()
+
         FastAPIInstrumentor.instrument_app(
             self._api_app,
             exclude_spans=["receive", "send"],
             http_capture_headers_server_request=CAPTURED_REQUEST_HEADERS,
-            meter_provider=NoOpMeterProvider(),
+            meter_provider=meter_provider,
         )
         logger.info("FastAPI application instrumented with OpenTelemetry")
         logger.info("Note: Core OpenTelemetry, MongoDB, and HTTP client configuration handled in lifetime_manager")
