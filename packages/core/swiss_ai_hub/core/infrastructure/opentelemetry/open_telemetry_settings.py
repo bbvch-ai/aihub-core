@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
 from opentelemetry import trace
 from opentelemetry._logs import set_logger_provider
@@ -23,6 +23,12 @@ class OpenTelemetrySettings(EnvironmentSettings):
     """OpenTelemetry configuration settings for any OTLP-compatible backend."""
 
     model_config = EnvironmentSettings.create_settings_config("OTEL_")
+
+    # Loggers the ASGI server re-parents away from root: gunicorn's UvicornWorker gives them
+    # its own handlers and sets propagate=False, so the root handler never sees "Exception in
+    # ASGI application" — the only record carrying the traceback of an unhandled 500, and thus
+    # the reason those 500s were invisible in the observability backend.
+    SERVER_LOGGER_NAMES: ClassVar[tuple[str, ...]] = ("uvicorn", "uvicorn.error", "gunicorn.error")
 
     ENABLED: Annotated[bool, Field(description="Enable/disable OpenTelemetry tracing entirely")] = False
     RESOURCE_SERVICE_NAME: Annotated[str | None, Field(description="Resource service name")] = None
@@ -115,10 +121,24 @@ class OpenTelemetrySettings(EnvironmentSettings):
 
         set_logger_provider(logger_provider)
 
-        root_logger = logging.getLogger()
-        has_otel_handler = any(isinstance(h, LoggingHandler) for h in root_logger.handlers)
-        if not has_otel_handler:
-            otel_handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
-            root_logger.addHandler(otel_handler)
+        otel_handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+        OpenTelemetrySettings._attach_handler(logging.getLogger(), otel_handler)
+        OpenTelemetrySettings._attach_to_server_loggers(otel_handler)
 
         return logger_provider
+
+    @staticmethod
+    def _attach_to_server_loggers(handler: LoggingHandler) -> None:
+        """Only the ones that stopped propagating: a server logger left on the default chain
+        already reaches the root handler, and handling it twice would export every record twice."""
+        for logger_name in OpenTelemetrySettings.SERVER_LOGGER_NAMES:
+            server_logger = logging.getLogger(logger_name)
+            if not server_logger.propagate:
+                OpenTelemetrySettings._attach_handler(server_logger, handler)
+
+    @staticmethod
+    def _attach_handler(target: logging.Logger, handler: LoggingHandler) -> None:
+        """Idempotent because configure_logging runs once per worker process and a stacked
+        handler would export every record twice."""
+        if not any(isinstance(existing, LoggingHandler) for existing in target.handlers):
+            target.addHandler(handler)

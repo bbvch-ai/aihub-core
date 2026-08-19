@@ -40,6 +40,18 @@ def _streaming_client(contents: list[str]) -> openai.AsyncOpenAI:
     )
 
 
+def _rejecting_client(status_code: int) -> openai.AsyncOpenAI:
+    """Same wiring as `_streaming_client`, except the gateway rejects the request outright."""
+    transport = httpx.MockTransport(
+        lambda _request: httpx.Response(status_code, json={"error": {"message": "Invalid model name"}})
+    )
+    return openai.AsyncOpenAI(
+        api_key="sk-test",
+        base_url="http://litellm:4000",
+        http_client=httpx.AsyncClient(transport=transport, base_url="http://litellm:4000"),
+    )
+
+
 def _streamed_contents(response) -> list[str]:
     return [json.loads(chunk.removeprefix("data: "))["choices"][0]["delta"]["content"] for chunk in response]
 
@@ -76,3 +88,25 @@ async def test_streaming_response_outlives_the_handler() -> None:
     # `chat_completion` would otherwise leave the suite green and silently reopen issue #144.
     assert request.messages[0]["role"] == "system"
     assert "gemma-4-31B-it" in request.messages[0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_streaming_upstream_rejection_surfaces_in_the_handler_scope() -> None:
+    """
+    The stream is opened by `chat_completion` itself, not by the generator Starlette drains later, so a
+    gateway rejection still reaches `ModelGatewayErrorHandler` and can be answered with a body that names
+    the cause. Issued from inside the generator it would instead truncate an already-started response,
+    leaving the caller with a dead stream and no message.
+    """
+    client = _rejecting_client(400)
+    request = ChatCompletionRequest(model=_MODEL, messages=[{"role": "user", "content": "hi"}], stream=True)
+
+    with (
+        patch.object(OpenaiService, "get_model", new=AsyncMock()),
+        patch.object(OpenaiService, "_assert_model_access", new=Mock()),
+        patch(f"{_SERVICE}.LiteLLMService.openai_aclient_for_user", new=AsyncMock(return_value=client)),
+    ):
+        with pytest.raises(openai.APIStatusError):
+            await OpenaiService.chat_completion(
+                model_name=_MODEL, chat_completion_request=request, user=fake_user(), t=LocaleHandler(locale="en")
+            )

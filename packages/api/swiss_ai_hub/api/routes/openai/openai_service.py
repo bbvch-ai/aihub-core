@@ -231,19 +231,22 @@ class OpenaiService:
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
 
         if chat_completion_request.stream:
+            kwargs = OpenaiService._filter_kwargs(
+                client.chat.completions.create,
+                chat_completion_request,
+                user=user,
+                locale=t.locale,
+                thread_id=thread_id,
+                display_id=display_id,
+            )
+            # Opened here rather than inside the generator so that an upstream rejection (unknown
+            # model, exhausted quota) is still raised in the endpoint's scope, where
+            # ModelGatewayErrorHandler can turn it into a response that names the cause. Once
+            # StreamingResponse has begun, the caller can only observe a truncated stream.
+            response = await client.chat.completions.create(**kwargs)
 
             async def stream_chat_completion() -> AsyncGenerator[str]:
                 """Handles streaming responses from OpenAI's API."""
-                kwargs = OpenaiService._filter_kwargs(
-                    client.chat.completions.create,
-                    chat_completion_request,
-                    user=user,
-                    locale=t.locale,
-                    thread_id=thread_id,
-                    display_id=display_id,
-                )
-                response = await client.chat.completions.create(**kwargs)
-
                 async for chunk in response:
                     yield f"data: {chunk.model_dump_json()}\n\n"
                     await asyncio.sleep(0)
