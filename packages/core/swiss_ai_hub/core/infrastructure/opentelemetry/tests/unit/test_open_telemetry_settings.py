@@ -28,6 +28,18 @@ def _enabled_settings(**overrides: Any) -> OpenTelemetrySettings:
     )
 
 
+def _enabled_provider(**overrides: Any) -> MeterProvider:
+    """
+    Narrowing accessor for the tests that exercise the enabled path. configure_metrics() returns
+    MeterProvider | None, so chaining onto it directly would dereference an Optional — and would
+    surface a configuration regression as an AttributeError rather than as this assertion.
+    """
+    provider = _enabled_settings(**overrides).configure_metrics()
+
+    assert provider is not None
+    return provider
+
+
 def test_metrics_are_off_by_default() -> None:
     """Regression guard for issue #1496: request metrics must never be on unless asked for."""
     assert OpenTelemetrySettings.model_fields["METRICS_ENABLED"].default is False
@@ -63,9 +75,8 @@ def test_configure_metrics_does_not_set_the_global_meter_provider() -> None:
     set_meter_provider() after the first, so an identity check silently passes.
     """
     with patch.object(metrics, "set_meter_provider") as set_global_provider:
-        provider = _enabled_settings().configure_metrics()
+        provider = _enabled_provider()
 
-    assert provider is not None
     set_global_provider.assert_not_called()
     provider.shutdown()
 
@@ -84,8 +95,7 @@ def test_grpc_protocol_passes_the_insecure_flag() -> None:
     which does not accept it.
     """
     with patch.object(settings_module, "GRPCMetricExporter") as grpc_exporter:
-        settings = _enabled_settings(EXPORTER_OTLP_PROTOCOL="grpc", EXPORTER_OTLP_INSECURE=True)
-        settings.configure_metrics().shutdown()
+        _enabled_provider(EXPORTER_OTLP_PROTOCOL="grpc", EXPORTER_OTLP_INSECURE=True).shutdown()
 
     grpc_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT, insecure=True)
 
@@ -93,7 +103,7 @@ def test_grpc_protocol_passes_the_insecure_flag() -> None:
 def test_http_protocol_uses_the_http_exporter_without_insecure() -> None:
     """The HTTP arm was the branch left uncovered when metrics were introduced."""
     with patch.object(settings_module, "HTTPMetricExporter") as http_exporter:
-        _enabled_settings(EXPORTER_OTLP_PROTOCOL="http").configure_metrics().shutdown()
+        _enabled_provider(EXPORTER_OTLP_PROTOCOL="http").shutdown()
 
     http_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT)
 
