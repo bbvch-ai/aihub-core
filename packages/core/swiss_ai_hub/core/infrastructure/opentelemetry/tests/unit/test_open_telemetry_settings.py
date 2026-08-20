@@ -141,10 +141,11 @@ def test_failed_validation_starts_no_exporter_thread() -> None:
     on every tick for the life of the process. Everything the reader needs must therefore be
     validated before it is constructed.
     """
+    settings = _enabled_settings(RESOURCE_SERVICE_NAMESPACE=None)
     threads_before = {id(thread) for thread in threading.enumerate()}
 
     with pytest.raises(ValueError, match="OTEL_RESOURCE_SERVICE_NAME"):
-        _enabled_settings(RESOURCE_SERVICE_NAMESPACE=None).configure_metrics()
+        settings.configure_metrics()
 
     leaked = [thread.name for thread in threading.enumerate() if id(thread) not in threads_before]
     assert leaked == []
