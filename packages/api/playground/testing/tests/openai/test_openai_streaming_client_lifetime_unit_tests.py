@@ -1,3 +1,4 @@
+import functools
 import json
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -110,3 +111,64 @@ async def test_streaming_upstream_rejection_surfaces_in_the_handler_scope() -> N
             await OpenaiService.chat_completion(
                 model_name=_MODEL, chat_completion_request=request, user=fake_user(), t=LocaleHandler(locale="en")
             )
+
+
+@pytest.mark.asyncio
+async def test_abandoned_stream_is_closed_when_the_consumer_stops_early() -> None:
+    """
+    A browser tab closed mid-answer makes Starlette call `aclose()` on the body iterator, which raises
+    `GeneratorExit` at the `yield`. Opening the stream in the handler's scope is what lets an upstream
+    rejection be converted, but it also means an abandoned response has a live httpx stream attached —
+    and `with_options()` hands every user a copy over one shared pool, so a leak there is everyone's.
+
+    The `async with` inside the generator is what closes it. Not covered here, because nothing can
+    cover it: a generator that is never started at all runs no code on `aclose()`.
+    """
+    client = _streaming_client(["Hello", " world", " again"])
+    request = ChatCompletionRequest(model=_MODEL, messages=[{"role": "user", "content": "hi"}], stream=True)
+
+    # The stream is created inside the handler and only the generator closes over it, so it has to be
+    # captured on the way out to be asserted on at all.
+    opened: list[openai.AsyncStream] = []
+    real_create = client.chat.completions.create
+
+    # functools.wraps so `_filter_kwargs` still sees the real signature — it filters by it, and an
+    # untyped **kwargs wrapper makes it drop every argument.
+    @functools.wraps(real_create)
+    async def capturing_create(**kwargs):
+        stream = await real_create(**kwargs)
+        opened.append(stream)
+        return stream
+
+    with (
+        patch.object(OpenaiService, "get_model", new=AsyncMock()),
+        patch.object(OpenaiService, "_assert_model_access", new=Mock()),
+        patch(f"{_SERVICE}.LiteLLMService.openai_aclient_for_user", new=AsyncMock(return_value=client)),
+        patch.object(client.chat.completions, "create", new=capturing_create),
+    ):
+        response = await OpenaiService.chat_completion(
+            model_name=_MODEL, chat_completion_request=request, user=fake_user(), t=LocaleHandler(locale="en")
+        )
+
+    iterator = response.body_iterator
+    assert await anext(iterator)
+
+    # Asserted on the close call rather than on `response.is_closed`: httpx.MockTransport buffers the
+    # body, so the response reads as closed after the first chunk whether or not anything closed it.
+    stream = opened[0]
+    closes: list[bool] = []
+    real_close = stream.close
+
+    async def spy_close() -> None:
+        closes.append(True)
+        await real_close()
+
+    stream.close = spy_close
+
+    assert closes == []
+
+    await iterator.aclose()
+
+    assert closes == [True], "abandoning the response must close the upstream stream"
+    # The stream, not the client: the pooled client stays open for everyone else by design.
+    assert client.is_closed() is False

@@ -1581,8 +1581,12 @@ services:
       # in .env.dev/.env.prod" rule: an empty value makes the processor fail to build and the
       # collector exit, and nothing depends_on it — so an unset var would silently take down all
       # telemetry instead of just this attribute. The fallback keeps that impossible.
+      # The stage name is a truthful degradation for the environment — it *is* the stage. It is not
+      # one for the host: it would fill SigNoz's Hostname filter with a value that reads as a real
+      # machine and collapse every VM in the stage into one entry, which is worse than the empty
+      # column this fixes, because empty is visibly broken and "latest" is not.
       - OTEL_DEPLOYMENT_ENVIRONMENT=${OTEL_DEPLOYMENT_ENVIRONMENT:-dev}
-      - OTEL_HOST_NAME=${OTEL_HOST_NAME:-dev}
+      - OTEL_HOST_NAME=${OTEL_HOST_NAME:-unset-dev}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes: [./configs/otel/otel-config.dev.gpu.yml:/etc/otel-config.yml]

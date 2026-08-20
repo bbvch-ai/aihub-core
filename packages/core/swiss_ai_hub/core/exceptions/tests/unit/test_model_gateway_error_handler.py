@@ -6,7 +6,16 @@ import httpx
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError
+from openai import (
+    APIConnectionError,
+    APIResponseValidationError,
+    APIStatusError,
+    APITimeoutError,
+    BadRequestError,
+    ContentFilterFinishReasonError,
+    LengthFinishReasonError,
+    OpenAIError,
+)
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -113,8 +122,10 @@ class TestLogSeverityFollowsWhoMustAct:
             await ModelGatewayErrorHandler.handle_status_error(_fake_request(), exception)
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("upstream", [400, 401, 404, 500, 503])
+    @pytest.mark.parametrize("upstream", [400, 401, 404])
     async def test_deployment_faults_log_error_with_traceback(self, caplog, upstream: int):
+        """5xx is deliberately absent — it is ERROR too, but without the traceback. See
+        TestRepeatingFailuresDoNotCarryATraceback."""
         with caplog.at_level(logging.DEBUG):
             await self._handle(upstream)
 
@@ -197,3 +208,120 @@ class TestHandlerIsReachedThroughTheAppStack:
         assert response.status_code == 400
         assert response.json()["error"]["message"] == UPSTREAM_MESSAGE
         assert response.json()["detail"] == UPSTREAM_MESSAGE
+
+
+class TestNothingInTheFamilyStaysOpaque:
+    """Several members of the SDK's error family are siblings of ``APIStatusError``, not subclasses,
+    so the three specific registrations left them falling through to Starlette's plain-text 500 —
+    including the one a wrongly-shaped LiteLLM response raises."""
+
+    @pytest.mark.parametrize(
+        "error_class", [APIResponseValidationError, LengthFinishReasonError, ContentFilterFinishReasonError]
+    )
+    def test_these_are_not_reachable_through_the_specific_handlers(self, error_class: type[Exception]):
+        """The premise of the base registration. If this ever fails the SDK reorganised its
+        hierarchy and the extra handler may no longer be needed."""
+        assert not issubclass(error_class, APIStatusError)
+        assert not issubclass(error_class, APIConnectionError)
+        assert issubclass(error_class, OpenAIError)
+
+    def test_base_registration_covers_them(self):
+        handlers = _MinimalRunner()._api_app.exception_handlers
+
+        assert handlers[OpenAIError] == ModelGatewayErrorHandler.handle_gateway_error
+
+    @pytest.mark.asyncio
+    async def test_a_malformed_upstream_body_becomes_a_named_502(self):
+        app = FastAPI()
+        ModelGatewayErrorHandler.register(app)
+
+        @app.get("/chat")
+        async def chat() -> None:
+            raise APIResponseValidationError(
+                response=httpx.Response(200, request=httpx.Request("POST", UPSTREAM_URL), json={"unexpected": 1}),
+                body=None,
+            )
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.get("/chat")
+
+        assert response.status_code == ModelGatewayErrorHandler.BAD_GATEWAY
+        assert response.json()["error"]["message"]
+        assert response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_a_status_error_still_reaches_the_specific_handler(self):
+        """Starlette resolves along the MRO, so adding the base must not shadow the status handler
+        — losing that would drop the status reclassification and the message unwrapping."""
+        app = FastAPI()
+        ModelGatewayErrorHandler.register(app)
+
+        @app.get("/transcribe")
+        async def transcribe() -> None:
+            raise BadRequestError(
+                "Error code: 400",
+                response=httpx.Response(400, request=httpx.Request("POST", UPSTREAM_URL), json=UPSTREAM_BODY),
+                body=UPSTREAM_BODY,
+            )
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.get("/transcribe")
+
+        assert response.status_code == 400
+        assert response.json()["error"]["message"] == UPSTREAM_MESSAGE
+
+
+class TestRepeatingFailuresDoNotCarryATraceback:
+    """The level says who must act; the traceback is a separate axis and says whether the call site
+    adds anything. An outage returns 5xx on every request, so its stack is as repetitive as a rate
+    limit's — the ADR's own cost driver applies to it just as much."""
+
+    @staticmethod
+    async def _handle(upstream_status: int) -> None:
+        try:
+            raise _status_error(upstream_status, UPSTREAM_BODY)
+        except APIStatusError as exception:
+            await ModelGatewayErrorHandler.handle_status_error(_fake_request(), exception)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("upstream", [500, 502, 503])
+    async def test_upstream_server_errors_log_error_without_traceback(self, caplog, upstream: int):
+        with caplog.at_level(logging.DEBUG):
+            await self._handle(upstream)
+
+        record = caplog.records[-1]
+        assert record.levelno == logging.ERROR
+        assert record.exc_info is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("upstream", [400, 401, 403, 404])
+    async def test_configuration_faults_keep_the_traceback(self, caplog, upstream: int):
+        """These happen once per misconfiguration, and the call site is what identifies them."""
+        with caplog.at_level(logging.DEBUG):
+            await self._handle(upstream)
+
+        record = caplog.records[-1]
+        assert record.levelno == logging.ERROR
+        assert record.exc_info[0] is APIStatusError
+
+    @pytest.mark.asyncio
+    async def test_connection_failure_logs_without_traceback(self, caplog):
+        exception = APIConnectionError(request=httpx.Request("POST", UPSTREAM_URL))
+
+        with caplog.at_level(logging.DEBUG):
+            await ModelGatewayErrorHandler.handle_connection_error(_fake_request(), exception)
+
+        record = caplog.records[-1]
+        assert record.levelno == logging.ERROR
+        assert record.exc_info is None
+
+    @pytest.mark.asyncio
+    async def test_timeout_logs_without_traceback(self, caplog):
+        exception = APITimeoutError(request=httpx.Request("POST", UPSTREAM_URL))
+
+        with caplog.at_level(logging.DEBUG):
+            await ModelGatewayErrorHandler.handle_timeout_error(_fake_request(), exception)
+
+        record = caplog.records[-1]
+        assert record.levelno == logging.ERROR
+        assert record.exc_info is None
