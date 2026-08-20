@@ -209,8 +209,20 @@ class ImapClient:
         files into one folder per category, so the folders cannot be pre-created by hand. Creation runs before
         the inbox is even selected, so a server that refuses it aborts the move with the message still in the
         inbox rather than half-filed.
+
+        Costs one ``LIST`` per call. A caller filing a whole batch should instead call ``ensure_folders`` once and
+        then ``relocate_message`` per message.
         """
         target_folder, folder_created = await self._resolve_or_create_folder(target_folder)
+        await self.relocate_message(message_id, target_folder)
+        return folder_created
+
+    async def relocate_message(self, message_id: str, target_folder: str) -> None:
+        """Move a message into a folder already known to exist — no ``LIST``, no creation.
+
+        Split out of ``move_message`` so a batch caller pays for folder resolution once for the whole run rather
+        than once per message.
+        """
         await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=False)
         uid = int(message_id)
 
@@ -219,7 +231,6 @@ class ImapClient:
             raise ValueError(f"message {message_id} not found in {self._inbox_folder} — it may have been expunged")
 
         await self._relocate_uid(uid, target_folder)
-        return folder_created
 
     async def _relocate_uid(self, uid: int, target_folder: str) -> None:
         """Relocate one UID out of the already-selected inbox into ``target_folder``.
@@ -278,37 +289,52 @@ class ImapClient:
         )
 
     async def _resolve_or_create_folder(self, configured: str) -> tuple[str, bool]:
-        """Return the target folder name and whether it had to be created — no special-use fallback applies here.
+        """Return the target folder name and whether it had to be created — no special-use fallback applies here."""
+        created = await self.ensure_folders([configured])
+        return configured, configured in created
+
+    async def ensure_folders(self, folders: list[str]) -> set[str]:
+        """Make sure every folder exists, creating the missing ones, and report which ones had to be created.
+
+        Takes the whole set at once so a batch pays two ``LIST`` commands in total rather than one per folder — and,
+        via ``do_file_messages``, one per *message*. Creating up front also means a server that refuses a folder
+        aborts before any message has moved, instead of half-way through a batch.
 
         Each level of the hierarchy is created separately (``Invoices`` before ``Invoices/2026``) because RFC 3501 only
         *recommends* that a server create superior names on its own. Creation failures are not raised directly: a
         parent that already exists fails the same way as a genuinely refused create, and a concurrent run may have won
         the race, so the ``LIST`` afterwards is the sole authority on whether the folder is now there.
         """
-        folders = await asyncio.to_thread(self._connection.list_folders)
-        if configured in {name for _flags, _delim, name in folders}:
-            return configured, False
+        listed = await asyncio.to_thread(self._connection.list_folders)
+        existing = {name for _flags, _delim, name in listed}
+        missing = [folder for folder in folders if folder not in existing]
+        if not missing:
+            return set()
 
-        delimiter = next((delim.decode() for _flags, delim, _name in folders if delim), None)
+        delimiter = next((delim.decode() for _flags, delim, _name in listed if delim), None)
         creation_error: IMAPClientError | None = None
-        for path in self._hierarchy_paths(configured, delimiter):
-            try:
-                await asyncio.to_thread(self._connection.create_folder, path)
-            except IMAPClientError as error:
-                creation_error = error
+        for folder in missing:
+            for path in self._hierarchy_paths(folder, delimiter):
+                try:
+                    await asyncio.to_thread(self._connection.create_folder, path)
+                except IMAPClientError as error:
+                    creation_error = error
 
-        created = await asyncio.to_thread(self._connection.list_folders)
-        if configured not in {name for _flags, _delim, name in created}:
+        relisted = await asyncio.to_thread(self._connection.list_folders)
+        now_existing = {name for _flags, _delim, name in relisted}
+        still_missing = [folder for folder in missing if folder not in now_existing]
+        if still_missing:
             reason = creation_error or "the server accepted the creation but does not list the folder"
             raise ValueError(
-                f"folder {configured!r} does not exist on the server and could not be created: {reason}. "
-                f"The message was left in {self._inbox_folder}."
+                f"folder(s) {', '.join(repr(f) for f in still_missing)} do not exist on the server and could not be "
+                f"created: {reason}. No message was moved out of {self._inbox_folder}."
             )
 
         # A folder nobody is subscribed to stays invisible in most mail clients — the filed mail would look lost.
-        with suppress(Exception):
-            await asyncio.to_thread(self._connection.subscribe_folder, configured)
-        return configured, True
+        for folder in missing:
+            with suppress(Exception):
+                await asyncio.to_thread(self._connection.subscribe_folder, folder)
+        return set(missing)
 
     @staticmethod
     def _hierarchy_paths(folder: str, delimiter: str | None) -> list[str]:
