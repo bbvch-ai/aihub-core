@@ -104,6 +104,19 @@ class ModelGatewayErrorHandler:
         return ModelGatewayErrorHandler.BAD_GATEWAY
 
     @staticmethod
+    def cause_of(exception: Exception) -> str:
+        """The gateway's own description of a failure, for callers outside the HTTP boundary.
+
+        Agent steps fail through the same SDK but report through NATS and logs rather than a
+        response, and ``str(exception)`` there is the SDK's ``Error code: N - {…}`` wrapper — the
+        cause is inside it, so it is searchable but not readable, and it reaches the chat UI that
+        way too. Anything that is not a gateway error is returned unchanged.
+        """
+        if isinstance(exception, APIStatusError):
+            return ModelGatewayErrorHandler._upstream_message(exception)
+        return str(exception)
+
+    @staticmethod
     def _upstream_message(exception: APIStatusError) -> str:
         """Unwraps the OpenAI error envelope, whose ``error.message`` is what actually names the
         cause ("Invalid model name passed in model=..."). ``exception.message`` only wraps that
