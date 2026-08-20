@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Annotated, Self
 
@@ -70,7 +71,10 @@ class EventController(TenantScopedController):
                     detail=NO_THREAD_ACCESS_DETAIL,
                 )
 
-            return EventService.get_events_in_thread(
+            # Offloaded: reads and deserialises every display event in the thread, so its cost grows
+            # with conversation length. On the event loop that stalls every concurrent request.
+            return await asyncio.to_thread(
+                EventService.get_events_in_thread,
                 locale=t.locale,
                 thread_id=str_to_object_id(thread_id),
                 display_id=str_to_object_id(display_id) if display_id else None,
@@ -166,8 +170,16 @@ class EventController(TenantScopedController):
                         detail=NO_THREAD_ACCESS_DETAIL,
                     )
 
-            return EventService.get_event_timeseries(
-                time_range, agent_id=agent_id, agent_class=agent_class, event_name=event_name, thread_id=thread_id
+            # Offloaded: an unfiltered range aggregates the whole agent_events collection, which took
+            # minutes in production and, on the event loop, pushed concurrent token validation past
+            # its Keycloak timeout — failing valid logins with 500s (aihub-core-private#186).
+            return await asyncio.to_thread(
+                EventService.get_event_timeseries,
+                time_range,
+                agent_id=agent_id,
+                agent_class=agent_class,
+                event_name=event_name,
+                thread_id=thread_id,
             )
 
         return self
