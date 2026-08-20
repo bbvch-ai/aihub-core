@@ -93,6 +93,13 @@ class OpenTelemetrySettings(EnvironmentSettings):
                 "to disable metrics or provide a valid OTLP endpoint."
             )
 
+        # Built before the exporter, not inline in the MeterProvider call: constructing a
+        # PeriodicExportingMetricReader already starts a daemon thread, so a validation error
+        # raised after it would orphan that thread — it would then log "Cannot call collect on a
+        # MetricReader until it is registered on a MeterProvider" on every tick for the life of
+        # the process.
+        resource = self._build_resource()
+
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
             otlp_exporter = GRPCMetricExporter(
                 endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE
@@ -101,7 +108,7 @@ class OpenTelemetrySettings(EnvironmentSettings):
             otlp_exporter = HTTPMetricExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT)
 
         metric_reader = PeriodicExportingMetricReader(otlp_exporter)
-        return MeterProvider(resource=self._build_resource(), metric_readers=[metric_reader])
+        return MeterProvider(resource=resource, metric_readers=[metric_reader])
 
     def _build_resource(self) -> Resource:
         """The three service attributes every backend keys on; shared by all configure_* methods."""

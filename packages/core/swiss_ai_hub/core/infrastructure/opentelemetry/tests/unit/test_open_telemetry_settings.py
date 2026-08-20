@@ -1,3 +1,4 @@
+import threading
 from typing import Any
 from unittest.mock import patch
 
@@ -45,7 +46,10 @@ def test_metrics_disabled_needs_no_otlp_endpoint() -> None:
 
 
 def test_both_flags_enabled_returns_a_real_meter_provider() -> None:
-    assert isinstance(_enabled_settings().configure_metrics(), MeterProvider)
+    provider = _enabled_settings().configure_metrics()
+
+    assert isinstance(provider, MeterProvider)
+    provider.shutdown()
 
 
 def test_configure_metrics_does_not_set_the_global_meter_provider() -> None:
@@ -59,9 +63,11 @@ def test_configure_metrics_does_not_set_the_global_meter_provider() -> None:
     set_meter_provider() after the first, so an identity check silently passes.
     """
     with patch.object(metrics, "set_meter_provider") as set_global_provider:
-        assert _enabled_settings().configure_metrics() is not None
+        provider = _enabled_settings().configure_metrics()
 
+    assert provider is not None
     set_global_provider.assert_not_called()
+    provider.shutdown()
 
 
 def test_metrics_enabled_without_endpoint_fails_loudly() -> None:
@@ -78,7 +84,8 @@ def test_grpc_protocol_passes_the_insecure_flag() -> None:
     which does not accept it.
     """
     with patch.object(settings_module, "GRPCMetricExporter") as grpc_exporter:
-        _enabled_settings(EXPORTER_OTLP_PROTOCOL="grpc", EXPORTER_OTLP_INSECURE=True).configure_metrics()
+        settings = _enabled_settings(EXPORTER_OTLP_PROTOCOL="grpc", EXPORTER_OTLP_INSECURE=True)
+        settings.configure_metrics().shutdown()
 
     grpc_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT, insecure=True)
 
@@ -86,7 +93,7 @@ def test_grpc_protocol_passes_the_insecure_flag() -> None:
 def test_http_protocol_uses_the_http_exporter_without_insecure() -> None:
     """The HTTP arm was the branch left uncovered when metrics were introduced."""
     with patch.object(settings_module, "HTTPMetricExporter") as http_exporter:
-        _enabled_settings(EXPORTER_OTLP_PROTOCOL="http").configure_metrics()
+        _enabled_settings(EXPORTER_OTLP_PROTOCOL="http").configure_metrics().shutdown()
 
     http_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT)
 
@@ -114,3 +121,20 @@ def test_the_resource_carries_all_three_service_attributes() -> None:
     assert resource.attributes["service.name"] == "api"
     assert resource.attributes["service.version"] == "0.0.1"
     assert resource.attributes["service.namespace"] == "swiss-ai-hub"
+
+
+def test_failed_validation_starts_no_exporter_thread() -> None:
+    """
+    Ordering guard. PeriodicExportingMetricReader starts a daemon thread in its constructor, so
+    validating after building it orphans that thread: nothing owns it, nothing can shut it down,
+    and it logs "Cannot call collect on a MetricReader until it is registered on a MeterProvider"
+    on every tick for the life of the process. Everything the reader needs must therefore be
+    validated before it is constructed.
+    """
+    threads_before = {id(thread) for thread in threading.enumerate()}
+
+    with pytest.raises(ValueError, match="OTEL_RESOURCE_SERVICE_NAME"):
+        _enabled_settings(RESOURCE_SERVICE_NAMESPACE=None).configure_metrics()
+
+    leaked = [thread.name for thread in threading.enumerate() if id(thread) not in threads_before]
+    assert leaked == []
