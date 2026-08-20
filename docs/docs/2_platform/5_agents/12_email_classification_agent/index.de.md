@@ -11,7 +11,13 @@ und verschiebt sie in den Ordner dieser Kategorie. Alles, wozu keine Kategorie p
 statt in eine Kategorie geraten zu werden.
 
 Wie der [E-Mail-Agent](../11_email_agent/) hat er **keine Chat-Oberfläche**. Sie konfigurieren ihn einmal in der
-Admin-UI und lösen ihn programmatisch aus — durch einen Scheduler, einen anderen Workflow oder die API.
+Admin-UI und lösen ihn programmatisch aus — durch einen anderen Workflow oder über die API.
+
+::: warning Noch kein eingebauter Zeitplan
+Der Agent hat keinen wiederkehrenden Auslöser, den Sie in der Admin-UI einstellen könnten. Jeder Lauf muss von aussen
+gestartet werden — «sortiert sich selbst» heisst also «sortiert sich bei jedem Anstoss selbst». Bis die Planung
+verfügbar ist, stossen Sie ihn aus dem an, was in Ihrer Umgebung ohnehin nach Zeitplan läuft.
+:::
 
 ::: warning Er versendet niemals E-Mails
 Der Agent spricht ausschliesslich IMAP — es gibt nirgends SMTP. Er liest, legt ab und erstellt Ordner. Er kann keine
@@ -127,7 +133,8 @@ falschen Ordner, schärfen Sie die Beschreibungen der beiden verwechselten Kateg
    Überarbeitung braucht.
 4. **Beheben Sie Fehlablagen in den Beschreibungen.** Sie sind der einzige Hebel — und der richtige: fast jede
    Fehlablage geht auf zwei Kategorien mit überlappenden Beschreibungen zurück.
-5. **Danach planen Sie ihn** alle paar Minuten ein — und der Posteingang leert sich von selbst.
+5. **Danach stossen Sie ihn regelmässig an** — aus dem, was bei Ihnen ohnehin nach Zeitplan läuft — und der Posteingang
+   leert sich von selbst.
 
 ## Was er *nicht* tut
 
@@ -136,6 +143,11 @@ falschen Ordner, schärfen Sie die Beschreibungen der beiden verwechselten Kateg
 - **Er liest zum Klassifizieren keine Anhänge.** Die Klassifizierung nutzt Kopfzeilen und den Textkörper. Anhänge werden
   archiviert, beeinflussen die Kategorie aber nicht.
 - **Er hat keine Chat-Oberfläche** und keine Wissensdatenbank.
+- **Er überspringt keine Nachricht, die er nicht verarbeiten kann.** Ein Lauf ist ganz oder gar nicht: Scheitert die
+  Klassifizierung einer Nachricht, wird nichts aus diesem Stapel abgelegt und der ganze Stapel im nächsten Lauf erneut
+  versucht. Das verhindert, dass eine vorübergehende Störung Post in den Ausweichordner streut — bedeutet aber, dass
+  eine dauerhaft unverarbeitbare Nachricht das Postfach blockiert, bis Sie sie von Hand herausnehmen. Achten Sie auf
+  Läufe, die jedes Mal mit einem Fehler und ohne Ablage enden.
 
 ::: warning Eingehende E-Mails sind nicht vertrauenswürdig Jede und jeder kann Ihrem Postfach alles schicken, und der
 Textkörper geht in den Prompt des Modells. Der Agent ist so gebaut, dass der schlimmste Fall begrenzt bleibt: Das Modell

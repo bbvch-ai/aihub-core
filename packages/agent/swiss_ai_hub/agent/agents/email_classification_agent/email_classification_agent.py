@@ -83,7 +83,7 @@ class EmailClassificationAgent(Agent):
         for the model calls, and reopened to file: many servers drop a socket left idle across a slow batch of LLM
         round-trips.
         """
-        self._validate(classification)
+        self._validate(classification, imap_config.inbox_folder)
 
         if not event.messages:
             logger.info("[classify] inbox has no unread mail — nothing to classify")
@@ -122,7 +122,7 @@ class EmailClassificationAgent(Agent):
         return StopEvent()
 
     @staticmethod
-    def _validate(classification: EmailClassificationSettings) -> None:
+    def _validate(classification: EmailClassificationSettings, inbox_folder: str) -> None:
         """Fail the run rather than silently filing everything into the fallback folder."""
         if not classification.categories:
             raise ValueError("no categories are configured — the agent has nothing to classify into")
@@ -135,6 +135,21 @@ class EmailClassificationAgent(Agent):
             raise ValueError(f"category names must be unique, got {names}")
         if len(set(folders)) != len(folders):
             raise ValueError(f"category folders must be unique, got {folders}")
+        if classification.fallback_folder in folders:
+            raise ValueError(
+                f"fallback_folder {classification.fallback_folder!r} is also a category folder — the run summary "
+                "could not tell a categorised message from an uncategorised one"
+            )
+
+        # Filing out of the inbox is the only dedup this agent has, and a target equal to the inbox defeats it.
+        # On the COPY + UID EXPUNGE path the original is replaced by a fresh unread copy in the same folder, so the
+        # next run classifies the copy, archives it again, and repeats without termination. Folder names are
+        # admin-entered free text, so this is reachable by a typo rather than only by misuse.
+        if inbox_folder in {*folders, classification.fallback_folder}:
+            raise ValueError(
+                f"a target folder equals the inbox folder {inbox_folder!r} — filed mail would stay unread in the "
+                "inbox and be reprocessed on every run"
+            )
 
     async def _classify_all(
         self,

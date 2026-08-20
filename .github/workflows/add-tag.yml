@@ -105,6 +105,7 @@ jobs:
           gh api "repos/${{ github.repository }}/dispatches" \
             -F event_type=release-ready \
             -F "client_payload[release_version]=$VERSION"
+
   publish-nightly-bundle:
     name: Refresh rolling nightly prerelease
     needs: nightly-tag

@@ -9634,7 +9634,7 @@ export type MailClassificationRef = {
   /**
    * Folder Created
    *
-   * Whether the target folder did not exist and was created while filing this message.
+   * Whether this message's target folder was created during the run. Folders are created once up front for the whole batch, so every message routed to a newly created folder carries this, not only the first one.
    */
   folder_created?: boolean;
   /**

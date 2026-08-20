@@ -49,14 +49,12 @@ def test_every_category_is_fully_described(template: EmailClassificationAgentCon
 
 
 def test_the_taxonomy_passes_the_agents_own_validation(template: EmailClassificationAgentConfig):
-    """A template must never produce a config that the agent rejects at runtime."""
-    EmailClassificationAgent._validate(template.classification)
+    """A template must never produce a config that the agent rejects at runtime.
 
-
-def test_the_fallback_folder_is_not_also_a_category_folder(template: EmailClassificationAgentConfig):
-    """Sharing the folder would make fallback_count and per_category indistinguishable in the run summary."""
-    folders = {category.imap_folder for category in template.classification.categories}
-    assert template.classification.fallback_folder not in folders
+    This now also covers the fallback-vs-category and target-vs-inbox rules, which `_validate` enforces for every
+    config rather than only for the shipped templates.
+    """
+    EmailClassificationAgent._validate(template.classification, template.imap.inbox_folder)
 
 
 def test_name_and_description_are_translated(template: EmailClassificationAgentConfig):

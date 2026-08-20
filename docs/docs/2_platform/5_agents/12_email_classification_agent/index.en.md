@@ -10,7 +10,13 @@ unread message in the inbox, decides which of your categories it belongs to, and
 Anything no category fits goes to a fallback folder rather than being guessed into a bucket.
 
 Like the [Email Agent](../11_email_agent/), it has **no chat interface**. You configure it once in the Admin UI and
-trigger it programmatically — by a scheduler, another workflow, or the API.
+trigger it programmatically — by another workflow, or via the API.
+
+::: warning There is no built-in schedule yet
+The agent has no recurring trigger you can set in the Admin UI. Every run has to be started from outside, so "triages
+itself" means "triages itself each time something asks it to". Until scheduling lands, drive it from whatever already
+runs on a timer in your environment.
+:::
 
 ::: warning It never sends email
 The agent speaks IMAP only — there is no SMTP anywhere in it. It reads, it files, it creates folders. It cannot put a
@@ -124,7 +130,7 @@ wrong folder, sharpen the descriptions of the two categories being confused.
    reason is the fastest way to find a description that needs rewording.
 4. **Fix misfiling in the descriptions.** They are the only lever there is, and they are the right one — nearly all
    misfiling traces back to two categories whose descriptions overlap.
-5. **Then schedule it** to run every few minutes, and the inbox drains itself.
+5. **Then trigger it regularly** from whatever already runs on a timer for you, and the inbox drains itself.
 
 ## What it does *not* do
 
@@ -133,6 +139,10 @@ wrong folder, sharpen the descriptions of the two categories being confused.
 - **It does not read attachments to classify.** Classification uses the headers and the plain-text body. Attachments are
   archived, but their contents do not influence the category.
 - **It has no chat interface** and no knowledge base.
+- **It does not skip a message it cannot handle.** A run is all-or-nothing: if one message fails to classify, nothing in
+  that batch is filed and the whole batch is retried next run. That keeps a transient outage from scattering mail into
+  the fallback folder, but it does mean one persistently unprocessable message blocks the mailbox until you move it out
+  by hand. Watch for a run that reports an error every time with nothing filed.
 
 ::: warning Inbound mail is untrusted
 Anyone can send your mailbox anything, and the body goes into the model's prompt. The agent is built so the worst case

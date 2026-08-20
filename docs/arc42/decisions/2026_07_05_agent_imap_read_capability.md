@@ -401,6 +401,27 @@ the whole batch and routes per category.
   is therefore safe: filed messages stay filed, the rest are still unread and get picked up next run. IMAP UIDs are
   stable, so filing one message never shifts another's.
 
+  Two limits on that guarantee, both deliberate:
+
+  **A target folder equal to the inbox would defeat it entirely**, so it is rejected at validation. Filing into the
+  inbox is not a no-op: on the `COPY` + `UID EXPUNGE` path the original is expunged and a fresh *unread* copy takes its
+  place, so the next run classifies the copy, archives it again and never terminates. Folder names are admin-entered
+  free text, so a typo reaches this. `fallback_folder` is checked the same way, as is the weaker case of a fallback
+  folder that duplicates a category folder (which would make `per_category` and `fallback_count` indistinguishable).
+
+  **Dedup only starts once filing does.** Fetch-and-archive runs for the whole batch before the first message moves, so
+  a message that fails classification — an unparseable body, a context-window overflow — aborts the run with nothing
+  filed, and the next run re-fetches and re-archives the entire batch to S3. Since listing is oldest-first, the same
+  message leads every attempt, so a single bad message wedges the mailbox and grows the archive on every run. This
+  compounds the unresolved retention gap below.
+
+  Per-message isolation was considered and rejected. Routing a message whose classification *failed* into
+  `fallback_folder` would unwedge the mailbox, but it converts a loud failure into a quiet one: with the LLM gateway
+  down, every message in the batch would be filed as "uncategorised" and the run would report success, scattering mail
+  on a transient outage. Failing the run keeps the mailbox untouched and the cause visible, which for a mailbox nobody
+  is watching is the safer default. Revisit if wedging is observed in practice; the fix then is to isolate only
+  *per-message* errors (parse, context length) and keep failing fast on infrastructure errors.
+
 - **One looping step, three phases, two connections.** Fan-out was not usable — the engine's fixed-size join needs a
   compile-time constant and the message count is only known at runtime, the same constraint `draft_batch_step` hit. The
   IMAP connection is opened to fetch, **closed** for the model calls, and reopened to file, because many servers drop a

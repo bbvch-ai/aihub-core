@@ -61,28 +61,62 @@ def test_the_response_schema_bounds_the_index_to_the_configured_categories():
 
 def test_no_categories_is_rejected():
     with pytest.raises(ValueError, match="no categories are configured"):
-        EmailClassificationAgent._validate(_settings(categories=[]))
+        EmailClassificationAgent._validate(_settings(categories=[]), "INBOX")
 
 
 def test_an_empty_fallback_folder_is_rejected():
     settings = _settings()
     settings.fallback_folder = ""
     with pytest.raises(ValueError, match="fallback_folder is empty"):
-        EmailClassificationAgent._validate(settings)
+        EmailClassificationAgent._validate(settings, "INBOX")
 
 
 def test_duplicate_category_names_are_rejected():
     duplicate = MailCategory(category="support_request", imap_folder="Other", description="Also support.")
     with pytest.raises(ValueError, match="category names must be unique"):
-        EmailClassificationAgent._validate(_settings(categories=[_SUPPORT, duplicate]))
+        EmailClassificationAgent._validate(_settings(categories=[_SUPPORT, duplicate]), "INBOX")
 
 
 def test_duplicate_category_folders_are_rejected():
     """Two categories filing into one folder makes the run summary unauditable — you cannot tell them apart."""
     duplicate = MailCategory(category="escalation", imap_folder="Triage/Support", description="Escalated support.")
     with pytest.raises(ValueError, match="category folders must be unique"):
-        EmailClassificationAgent._validate(_settings(categories=[_SUPPORT, duplicate]))
+        EmailClassificationAgent._validate(_settings(categories=[_SUPPORT, duplicate]), "INBOX")
 
 
 def test_a_valid_taxonomy_passes():
-    EmailClassificationAgent._validate(_settings())
+    EmailClassificationAgent._validate(_settings(), "INBOX")
+
+
+def test_a_category_folder_equal_to_the_inbox_is_rejected():
+    """Filing out of the inbox is the only dedup there is.
+
+    A target equal to the inbox defeats it outright: on the COPY + UID EXPUNGE path the original is replaced by a
+    fresh unread copy in the same folder, so the next run picks the copy up, archives it again, and never terminates.
+    """
+    into_inbox = MailCategory(category="everything", imap_folder="INBOX", description="Straight back where it came.")
+    with pytest.raises(ValueError, match="equals the inbox folder"):
+        EmailClassificationAgent._validate(_settings(categories=[into_inbox]), "INBOX")
+
+
+def test_a_fallback_folder_equal_to_the_inbox_is_rejected():
+    settings = _settings()
+    settings.fallback_folder = "INBOX"
+    with pytest.raises(ValueError, match="equals the inbox folder"):
+        EmailClassificationAgent._validate(settings, "INBOX")
+
+
+def test_the_inbox_check_uses_the_configured_folder_not_a_hardcoded_name():
+    """A mailbox reading from something other than INBOX must be protected just the same."""
+    settings = _settings()
+    settings.fallback_folder = "Shared/Support"
+    with pytest.raises(ValueError, match="equals the inbox folder"):
+        EmailClassificationAgent._validate(settings, "Shared/Support")
+
+
+def test_a_fallback_folder_that_is_also_a_category_folder_is_rejected():
+    """Sharing the folder makes per_category and fallback_count indistinguishable in the run summary."""
+    settings = _settings()
+    settings.fallback_folder = _SUPPORT.imap_folder
+    with pytest.raises(ValueError, match="is also a category folder"):
+        EmailClassificationAgent._validate(settings, "INBOX")
