@@ -31,6 +31,8 @@ class OpenTelemetrySettings(EnvironmentSettings):
     SERVER_LOGGER_NAMES: ClassVar[tuple[str, ...]] = ("uvicorn", "uvicorn.error", "gunicorn.error")
 
     ENABLED: Annotated[bool, Field(description="Enable/disable OpenTelemetry tracing entirely")] = False
+    BLRP_MAX_QUEUE_SIZE: Annotated[int, Field(description="Log records buffered before new ones are dropped")] = 16384
+    BLRP_MAX_EXPORT_BATCH_SIZE: Annotated[int, Field(description="Log records per OTLP export")] = 2048
     RESOURCE_SERVICE_NAME: Annotated[str | None, Field(description="Resource service name")] = None
     RESOURCE_SERVICE_VERSION: Annotated[str | None, Field(description="Resource service version")] = None
     RESOURCE_SERVICE_NAMESPACE: Annotated[str | None, Field(description="Resource service namespace")] = None
@@ -116,7 +118,18 @@ class OpenTelemetrySettings(EnvironmentSettings):
         else:
             otlp_log_exporter = HTTPLogExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT)
 
-        log_processor = BatchLogRecordProcessor(otlp_log_exporter)
+        # The SDK defaults (2048 queued, 512 per export) silently discard records once the queue is
+        # full, and nothing logs the discard — so a burst looks like a complete log in the backend
+        # while records are missing from it. Measured against a real collector on a 20k-record
+        # burst: the defaults delivered 17985/20000, these values delivered 20000/20000. The batch
+        # size matters as much as the queue, since it is what lets the export worker drain faster
+        # than a burst fills it. Field names match the OTel spec's OTEL_BLRP_* variables, so an
+        # operator can still tune a single service without a code change.
+        log_processor = BatchLogRecordProcessor(
+            otlp_log_exporter,
+            max_queue_size=self.BLRP_MAX_QUEUE_SIZE,
+            max_export_batch_size=self.BLRP_MAX_EXPORT_BATCH_SIZE,
+        )
         logger_provider.add_log_record_processor(log_processor)
 
         set_logger_provider(logger_provider)
