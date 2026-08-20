@@ -22,18 +22,20 @@ receivers:
         # gRPC defaults to a 4 MiB receive limit, and an over-limit request is rejected whole —
         # every record in that batch is lost, the collector logs nothing (the error goes to the
         # client), and the SDK's own report of it has nowhere to go but the failing exporter.
-        # A batch of tracebacks reaches that size easily: measured with 8 KB records, 4 MiB
-        # delivered 4 of 4096; 64 MiB delivered 4096 of 4096. 32 covers the app's own ceiling
-        # (max_export_batch_size 2048 x a ~16 KB record) with headroom.
+        # A batch of tracebacks reaches that size easily: measured with 1000 records of 6 KB and
+        # counting arrivals, 4 MiB delivered 0 of them and logged "larger than max"; 32 MiB
+        # delivered all 1000. 32 covers the app's own ceiling (max_export_batch_size 2048 x a
+        # ~16 KB record) with headroom.
         max_recv_msg_size_mib: 32
       http:
         endpoint: 0.0.0.0:4318
 processors:
   # send_batch_size is only a trigger — without send_batch_max_size a batch has no upper bound, and
   # the backend rejects an over-limit request as a PERMANENT error, so the exporter drops it without
-  # retrying. Measured against a backend capped at gRPC's own 4 MiB default, with 8 KB records
-  # (traceback-sized): 2000/unbounded delivered 0 of 4096 and logged "Exporting failed. Dropping
-  # data ... ResourceExhausted"; 500/500 delivered all of them.
+  # retrying. Reproduced against a second collector standing in for the backend, capped at gRPC's
+  # own 4 MiB default, with traceback-sized records: 2000/unbounded reached it with nothing and
+  # logged "Exporting failed. Dropping data ... not retryable error: Permanent error ...
+  # ResourceExhausted ... larger than max 4194304"; 500/500 delivered, with no such error.
   #
   # The cap has to be low enough that count x record size stays under that limit, which is why the
   # per-stage scaling (1000 on nightly, 2000 on latest) is gone: a cap the batch never reaches is

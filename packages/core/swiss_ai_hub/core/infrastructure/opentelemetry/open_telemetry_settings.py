@@ -120,8 +120,9 @@ class OpenTelemetrySettings(EnvironmentSettings):
 
         # The SDK defaults (2048 queued, 512 per export) silently discard records once the queue is
         # full, and nothing logs the discard — so a burst looks like a complete log in the backend
-        # while records are missing from it. Measured against a real collector on a 20k-record
-        # burst: the defaults delivered 17985/20000, these values delivered 20000/20000. The batch
+        # while records are missing from it. Measured against a real collector on a 5000-record
+        # burst, counting the records that arrived: the defaults delivered 2986, these values
+        # delivered 5000. The batch
         # size matters as much as the queue, since it is what lets the export worker drain faster
         # than a burst fills it. Field names match the OTel spec's OTEL_BLRP_* variables, so an
         # operator can still tune a single service without a code change.

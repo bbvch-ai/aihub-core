@@ -29,8 +29,8 @@ def _settings() -> OpenTelemetrySettings:
 class TestLogExportIsSizedForBursts:
     """The SDK's defaults drop records once the queue is full and log nothing when they do, so a
     burst reads as a complete log in the backend while records are missing from it. Measured on a
-    20k-record burst against a real collector: 17985/20000 delivered with the defaults, 20000/20000
-    with these values."""
+    5000-record burst against a real collector, counting arrivals: 2986 delivered with the defaults,
+    5000 with these values."""
 
     def test_batching_is_raised_above_the_sdk_defaults(self):
         settings = _settings()
