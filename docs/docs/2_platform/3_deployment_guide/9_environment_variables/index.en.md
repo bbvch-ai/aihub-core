@@ -127,6 +127,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `OTEL_CLOUD_ENDPOINT` | `otel-config.yml` | `otel-collector` |  |
 | `OTEL_CLOUD_HEADERS` | `otel-config.yml` | `otel-collector` |  |
 | `OTEL_ENABLED` | `OpenTelemetrySettings.ENABLED` | `api`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | Enable/disable OpenTelemetry tracing entirely |
+| `OTEL_METRICS_ENABLED` | `OpenTelemetrySettings.METRICS_ENABLED` | `api` | Enable/disable OpenTelemetry request metrics (separate from tracing) |
 | `POSTGRES_PASSWORD` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `shared_rag_pipeline` |  |
 | `POSTGRES_PORT` | `openwebui-init-openwebui.sh` | `backup-code`, `openwebui-init` |  |
 | `POSTGRES_USER` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `shared_rag_pipeline` |  |

@@ -165,12 +165,30 @@ class OpenaiService:
         looping on the conflict until it exhausts its output budget. Applies to every plain-model request:
         OpenWebUI reaches this endpoint through its own OpenAI connection, whose payload is indistinguishable
         from an external SDK client's, so there is nothing to gate on. Leads the list because Qwen3.5 rejects
-        a system message that follows any user or assistant turn. See ADR 2026_08_14."""
+        a system message that follows any user or assistant turn — which is also why a caller's own system
+        message is merged into this one instead of being left as a second one. See ADR 2026_08_14."""
         identity = t("lib.prompt.model.identity_system_message").format(model_name=model_name.rpartition("/")[2])
-        chat_completion_request.messages = [
-            {"role": "system", "content": identity},
-            *(chat_completion_request.messages or []),
-        ]
+        messages = list(chat_completion_request.messages or [])
+        leading_message = next(iter(messages), None)
+
+        if leading_message is not None and leading_message.get("role") == "system":
+            merged_system_message = OpenaiService._prefixed_system_message(leading_message, identity)
+            chat_completion_request.messages = [merged_system_message, *messages[1:]]
+        else:
+            chat_completion_request.messages = [{"role": "system", "content": identity}, *messages]
+
+    @staticmethod
+    def _prefixed_system_message(system_message: dict[str, Any], identity: str) -> dict[str, Any]:
+        """Puts the identity ahead of the caller's own system prompt inside a single system message, so the
+        caller still wins on task behaviour without the payload carrying a second system message. Qwen3.5 on
+        Infomaniak rejects the latter with `400 - System message must be at the beginning`, which reaches the
+        user as an empty response — see ADR 2026_06_29."""
+        content = system_message.get("content")
+        if isinstance(content, str):
+            merged: Any = f"{identity}\n\n{content}" if content else identity
+        else:
+            merged = [{"type": "text", "text": identity}, *(content or [])]
+        return {**system_message, "content": merged}
 
     @staticmethod
     @trace_fn

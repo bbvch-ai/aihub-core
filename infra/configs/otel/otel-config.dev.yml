@@ -155,8 +155,14 @@ service:
       processors: [resource/deployment, batch]
       exporters: [debug]
 
-    # Accept metrics but use debug exporter (Langfuse doesn't support metrics via OTEL)
+    # Accept metrics but use debug exporter (Langfuse doesn't support metrics via OTEL).
+    # Deliberately WITHOUT filter/metrics_cardinality: that guard exists because SigNoz bills
+    # per ingested series (issue 1496), and this exporter is stdout. Keeping it here dropped
+    # every metric the FastAPI/ASGI instrumentation emits — its name list is exhaustive of them
+    # — so OTEL_METRICS_ENABLED=true produced no observable output at all, and there was no way
+    # to tell a broken metrics setup from a filtered one. The non-dev pipelines below keep the
+    # filter, so the paid backend stays protected.
     metrics:
       receivers: [otlp]
-      processors: [filter/metrics_cardinality, resource/deployment, batch]
+      processors: [resource/deployment, batch]
       exporters: [debug]
