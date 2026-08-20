@@ -10,13 +10,15 @@ from swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings impo
 
 pytestmark = pytest.mark.unit
 
+OTLP_ENDPOINT = "http://localhost:4317"
+
 
 def _enabled_settings(**overrides: Any) -> OpenTelemetrySettings:
     return OpenTelemetrySettings(
         **{
             "ENABLED": True,
             "METRICS_ENABLED": True,
-            "EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+            "EXPORTER_OTLP_ENDPOINT": OTLP_ENDPOINT,
             "RESOURCE_SERVICE_NAME": "api",
             "RESOURCE_SERVICE_VERSION": "0.0.1",
             "RESOURCE_SERVICE_NAMESPACE": "swiss-ai-hub",
@@ -78,7 +80,7 @@ def test_grpc_protocol_passes_the_insecure_flag() -> None:
     with patch.object(settings_module, "GRPCMetricExporter") as grpc_exporter:
         _enabled_settings(EXPORTER_OTLP_PROTOCOL="grpc", EXPORTER_OTLP_INSECURE=True).configure_metrics()
 
-    grpc_exporter.assert_called_once_with(endpoint="http://localhost:4317", insecure=True)
+    grpc_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT, insecure=True)
 
 
 def test_http_protocol_uses_the_http_exporter_without_insecure() -> None:
@@ -86,7 +88,7 @@ def test_http_protocol_uses_the_http_exporter_without_insecure() -> None:
     with patch.object(settings_module, "HTTPMetricExporter") as http_exporter:
         _enabled_settings(EXPORTER_OTLP_PROTOCOL="http").configure_metrics()
 
-    http_exporter.assert_called_once_with(endpoint="http://localhost:4317")
+    http_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT)
 
 
 @pytest.mark.parametrize(
