@@ -94,7 +94,6 @@
 </template>
 
 <script setup lang="ts">
-import { getAgentClasses, getAgentClassInstances } from '@core/sdk/client'
 import { capitalCase } from 'change-case'
 
 import type { AgentClassDto, FullAgentInstanceDto, LocaleString } from '@core/sdk/client'
@@ -147,7 +146,6 @@ interface AgentSelectorProps {
 
 const props = defineProps<AgentSelectorProps>()
 const { t, locale } = useI18n()
-const { tenantId } = useTenant()
 
 // Get custom props from context (FormKit passes them there, not as direct props)
 const startEvent = computed(() => props.context.startEvent)
@@ -155,27 +153,29 @@ const classPlaceholder = computed(() => props.context.classPlaceholder)
 const idPlaceholder = computed(() => props.context.idPlaceholder)
 const filter = computed(() => props.context.filter ?? true)
 
-// State
-const agentClasses = ref<AgentClassDto[]>([])
-const agentInstances = ref<FullAgentInstanceDto[]>([])
-const isLoading = ref(false)
-const isLoadingInstances = ref(false)
-
 // Get current value from context
 const currentValue = computed(() => props.context.value ?? null)
+
+// Shared cached queries rather than per-mount fetches: a form renders several of these and
+// re-renders remount them, which previously issued one request per mount. Instances follow the
+// selected class through the query key, so no imperative refetch on selection.
+const { agentClasses: fetchedClasses, agentClassesAreLoading: isLoading } = useAgentClasses()
+const agentClasses = computed<AgentClassDto[]>(() => fetchedClasses.value ?? [])
+
+const { agentInstances: fetchedInstances, agentInstancesAreLoading: isLoadingInstances }
+  = useAgentInstancesByClass(() => currentValue.value?.agent_class)
+const agentInstances = computed<FullAgentInstanceDto[]>(() => fetchedInstances.value ?? [])
 
 // Selected class (computed property that syncs with the form value)
 const selectedClass = computed({
   get: () => currentValue.value?.agent_class ?? null,
   set: (value: string | null) => {
     if (value) {
-      // When class changes, reset agent ID and fetch instances
+      // Resetting the id re-keys the instances query onto the new class.
       emitValue(value, '')
-      fetchInstances(value)
     }
     else {
       props.context.node.input(null)
-      agentInstances.value = []
     }
   },
 })
@@ -252,58 +252,10 @@ function getIdDisplayName(id: string): string {
   return option?.displayName ?? id
 }
 
-async function fetchClasses() {
-  isLoading.value = true
-  try {
-    const response = await getAgentClasses({
-      composable: '$fetch',
-      path: { tenant_id: tenantId.value! },
-    })
-    agentClasses.value = response
-  }
-  catch (error) {
-    console.error('Failed to fetch agent classes:', error)
-    agentClasses.value = []
-  }
-  finally {
-    isLoading.value = false
-  }
-}
-
-async function fetchInstances(agentClass: string) {
-  isLoadingInstances.value = true
-  try {
-    const response = await getAgentClassInstances({
-      composable: '$fetch',
-      path: { tenant_id: tenantId.value!, agent_class: agentClass },
-    })
-    agentInstances.value = response
-  }
-  catch (error) {
-    console.error(`Failed to fetch instances for class "${agentClass}":`, error)
-    agentInstances.value = []
-  }
-  finally {
-    isLoadingInstances.value = false
-  }
-}
-
-// Fetch classes on mount
-onMounted(() => {
-  fetchClasses()
-
-  // If there's already a selected class, fetch its instances
-  if (currentValue.value?.agent_class) {
-    fetchInstances(currentValue.value.agent_class)
-  }
-})
-
-// Refetch if startEvent changes
+// Clear the selection if a changed startEvent filter no longer admits the selected class.
 watch(startEvent, () => {
-  // Clear selection if current class no longer matches filter
   if (selectedClass.value && !filteredClassOptions.value.some(opt => opt.name === selectedClass.value)) {
     props.context.node.input(null)
-    agentInstances.value = []
   }
 })
 </script>

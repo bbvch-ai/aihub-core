@@ -51,12 +51,17 @@ const selectedTenant = computed({
 
 // Pre-select the user's active tenant on a fresh field, while leaving an
 // already-configured value (editing an existing instance) untouched.
+// `preSelected` makes this idempotent: a commit re-renders the form, and re-emitting the same
+// value from a re-created input would commit again, driving the input/commit loop that froze
+// the configuration tab.
+let preSelected: string | null = null
+
 watch(
   [tenantId, () => props.context.value],
   ([active, current]) => {
-    if (!current && active) {
-      props.context.node.input(active)
-    }
+    if (current || !active || preSelected === active) return
+    preSelected = active
+    props.context.node.input(active)
   },
   { immediate: true },
 )
