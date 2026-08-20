@@ -29,8 +29,19 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 processors:
+  # send_batch_size is only a trigger — without send_batch_max_size a batch has no upper bound, and
+  # the backend rejects an over-limit request as a PERMANENT error, so the exporter drops it without
+  # retrying. Measured against a backend capped at gRPC's own 4 MiB default, with 8 KB records
+  # (traceback-sized): 2000/unbounded delivered 0 of 4096 and logged "Exporting failed. Dropping
+  # data ... ResourceExhausted"; 500/500 delivered all of them.
+  #
+  # The cap has to be low enough that count x record size stays under that limit, which is why the
+  # per-stage scaling (1000 on nightly, 2000 on latest) is gone: a cap the batch never reaches is
+  # not a cap. The collector enforces send_batch_max_size >= send_batch_size, so raising throughput
+  # again means raising both, and re-measuring. Only the timeout still varies by stage.
   batch:
     send_batch_size: 500
+    send_batch_max_size: 500
     timeout: 5s
 
   # Stamp environment + host on all app telemetry. SigNoz keys its Environment and Hostname
