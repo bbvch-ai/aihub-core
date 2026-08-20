@@ -8,9 +8,12 @@ from fastmcp import FastMCP
 from fastmcp.server.openapi import MCPType, RouteMap
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.metrics import NoOpMeterProvider
+from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, generate_latest
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
-from starlette.routing import Mount
+from starlette.requests import Request
+from starlette.responses import Response
+from starlette.routing import Mount, Route
 from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.routes import Controller
 from swiss_ai_hub.core.runners import OpenApiSchemaService, Runner
@@ -116,7 +119,10 @@ class ApiRunner(Runner):
         self._api_app.state = app.state
         mcp_app.state = app.state
 
-        self._configure_opentelemetry()
+        prometheus_registry = self._configure_opentelemetry()
+        if prometheus_registry is not None:
+            app.routes.append(self._build_metrics_route(prometheus_registry))
+            logger.info("Prometheus scrape endpoint served at /metrics")
 
         return app
 
@@ -188,9 +194,12 @@ class ApiRunner(Runner):
 
         return self
 
-    def _configure_opentelemetry(self) -> None:
+    def _configure_opentelemetry(self) -> CollectorRegistry | None:
         """
         Configure FastAPI-specific OpenTelemetry instrumentation.
+
+        Returns the registry backing the scrape endpoint when Prometheus metrics are enabled, so
+        create_app() knows whether to serve /metrics; None otherwise.
         """
         from swiss_ai_hub.core.infrastructure import OpenTelemetrySettings
 
@@ -198,13 +207,18 @@ class ApiRunner(Runner):
 
         if not otel_settings.ENABLED:
             logger.info("OpenTelemetry instrumentation disabled: OTEL_ENABLED=False")
-            return
+            return None
 
         # Metrics are a separate opt-in from tracing (OTEL_METRICS_ENABLED, default off): the
         # FastAPI/ASGI auto-instrumentation's request-count/duration histograms were the
         # unbounded, high-cardinality metric source behind issue #1496. configure_metrics()
         # returns None (NoOpMeterProvider fallback) unless explicitly enabled.
-        meter_provider = otel_settings.configure_metrics() or NoOpMeterProvider()
+        #
+        # A registry per app instance, never prometheus_client's global REGISTRY: the test suite
+        # builds many apps in one process, and a shared registry raises "Duplicated timeseries"
+        # on the second one.
+        prometheus_registry = CollectorRegistry() if otel_settings.METRICS_ENABLED else None
+        meter_provider = otel_settings.configure_metrics(prometheus_registry) or NoOpMeterProvider()
 
         FastAPIInstrumentor.instrument_app(
             self._api_app,
@@ -214,3 +228,22 @@ class ApiRunner(Runner):
         )
         logger.info("FastAPI application instrumented with OpenTelemetry")
         logger.info("Note: Core OpenTelemetry, MongoDB, and HTTP client configuration handled in lifetime_manager")
+
+        return prometheus_registry
+
+    @staticmethod
+    def _build_metrics_route(registry: CollectorRegistry) -> Route:
+        """
+        Serve the scrape endpoint on the OUTER Starlette app, deliberately not under api_path.
+
+        Three consequences follow from that placement, all of them wanted: Traefik routes the API
+        on PathPrefix(`/api/v1`) only, so /metrics is unreachable from the internet and stays a
+        cluster-internal target; FastMCP.from_fastapi() turns every GET on the inner app into an
+        MCP resource, which this must not become; and the inner app's auth and i18n middleware
+        never runs for a scraper that carries no token and no Accept-Language.
+        """
+
+        async def serve_metrics(_: Request) -> Response:
+            return Response(generate_latest(registry), media_type=CONTENT_TYPE_LATEST)
+
+        return Route("/metrics", serve_metrics, methods=["GET"])

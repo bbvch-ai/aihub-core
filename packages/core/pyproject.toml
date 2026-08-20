@@ -87,6 +87,7 @@ dependencies = [
     "rank-bm25>=0.2.2",
     "starlette>=1.0.1",
     "croniter>=6.2.4",
+    "opentelemetry-exporter-prometheus>=0.63b0",
 ]
 
 [dependency-groups]

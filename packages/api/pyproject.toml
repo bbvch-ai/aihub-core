@@ -42,6 +42,7 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.60b1",
     "starlette>=1.0.1",
     "swiss-ai-hub-jambo>=0.5.0",
+    "prometheus-client>=0.26.0",
 ]
 
 [dependency-groups]
