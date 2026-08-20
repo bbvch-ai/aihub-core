@@ -56,7 +56,7 @@ class EmailClassificationAgentConfig(AgentConfig):
 
         The values assigned here are not the runtime values: `get_non_configurable_values()` only walks top-level
         fields, so a leaf baked inside a nested group never reaches the merged config and the field defaults apply.
-        That is harmless because nothing on this blueprint reads either field — `do_file_message` is always given the
+        That is harmless because nothing on this blueprint reads either field — `do_file_messages` is always given the
         target folder explicitly. Do not add a reader without first making the value reach runtime.
         """
         form = ImapClientConfig.as_form()

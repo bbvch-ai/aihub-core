@@ -7,7 +7,7 @@ description: A mailbox agent that reads every unread message, decides which cate
 
 The **Email Classification Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every
 unread message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder.
-Anything it is not confident about goes to a fallback folder rather than being guessed into a bucket.
+Anything no category fits goes to a fallback folder rather than being guessed into a bucket.
 
 Like the [Email Agent](../11_email_agent/), it has **no chat interface**. You configure it once in the Admin UI and
 trigger it programmatically — by a scheduler, another workflow, or the API.
@@ -31,7 +31,7 @@ flowchart TD
     C -- No --> D[Report an empty run, stop]
     C -- Yes --> E[Fetch each message<br/>+ archive the original]
     E --> F[Ask the model which<br/>category each belongs to]
-    F --> G{Confident, and<br/>a category fits?}
+    F --> G{Does a category fit?}
     G -- Yes --> H[File into the<br/>category's folder]
     G -- No --> I[File into the<br/>fallback folder]
     H --> J[Report how many<br/>were filed, per category]
@@ -48,7 +48,7 @@ flowchart TD
 5. **Report.** The run records how many messages were filed and how many landed in each category.
 
 ::: details Why re-running is safe
-Filing is what prevents double work. Every message — confident or not — leaves the inbox, so the next run's unread
+Filing is what prevents double work. Every message — categorised or not — leaves the inbox, so the next run's unread
 listing simply cannot see it again. There is no flag to get out of sync and nothing to clean up. If a run fails
 half-way, the messages it already filed stay filed and the rest are still sitting unread, ready for the next run.
 :::
@@ -85,25 +85,33 @@ team"*. Describe the sender's **intent** and what handling the mail would involv
 one clear sentence about what the category is for.
 :::
 
+::: warning Nested folder names use *your server's* separator
+A target folder like `Triage/Support` builds a real folder tree only on servers whose hierarchy separator is `/` — Gmail
+among them. On a server that uses `.` you would get one flat folder literally named `Triage/Support`; write
+`Triage.Support` there instead. Mail is filed correctly either way, but only the matching separator gives you a tree. If
+you are unsure, use flat names like `Support` and `Invoices`.
+:::
+
 ### Classifier
 
 | Field                     | Default                | Description                                                                                        |
 | ------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------- |
 | **Fallback Folder**       | `Uncategorised`        | Where mail the model is unsure about goes. Never guessed into a category, never left in the inbox. |
-| **Confidence Threshold**  | `0.6`                  | Below this, a message goes to the fallback folder even if the model picked a category.             |
 | **Classification Model**  | *(empty)*              | The model that classifies. Leave empty to use the agent's main model.                              |
 | **Classification Prompt** | *(a sensible default)* | Instructions steering how the model chooses.                                                       |
 
-::: details Two ways a message ends up in the fallback folder
-The model can say outright that **none of the categories fit**, and it can pick one but report **low confidence**.
-Either sends the message to the fallback folder.
+::: details How a message ends up in the fallback folder
+The model is given one way out: it can say outright that **none of the categories fit**. When it does, the message goes
+to the fallback folder instead of a category folder.
 
-Both exist on purpose. A model that is wrong is often also confident, so a confidence threshold alone is not a reliable
-safety net — and a model asked to always choose will always choose something. Giving it an explicit way to decline,
-*and* a floor on confidence, catches more of the mail that a human should look at.
+An earlier version also asked the model to rate its own confidence and diverted anything below a threshold. That setting
+was removed. A self-reported score is written in the same breath as the answer rather than measured, so it adds no
+information the choice does not already carry — measured across the platform's chat models on a deliberately ambiguous
+message, the explicit decline caught it four times out of five while the threshold never once fired, and the one model
+that misfiled did so at 0.95 confidence.
 
-Treat `0.6` as a starting point. Watch where your real mail lands and adjust: raise it if wrong mail is being filed
-confidently, lower it if the fallback folder is filling up with mail that was obviously classifiable.
+The practical consequence: **your category descriptions are the safety net, not a dial.** If mail is landing in the
+wrong folder, sharpen the descriptions of the two categories being confused.
 :::
 
 ## Getting started
@@ -114,7 +122,8 @@ confidently, lower it if the fallback folder is filling up with mail that was ob
    them — that way the names always match exactly.
 3. **Watch the first runs in the event timeline.** Every message shows the category chosen and the model's reason. That
    reason is the fastest way to find a description that needs rewording.
-4. **Tune the descriptions before the threshold.** Most misfiling is a vague description, not a wrong threshold.
+4. **Fix misfiling in the descriptions.** They are the only lever there is, and they are the right one — nearly all
+   misfiling traces back to two categories whose descriptions overlap.
 5. **Then schedule it** to run every few minutes, and the inbox drains itself.
 
 ## What it does *not* do

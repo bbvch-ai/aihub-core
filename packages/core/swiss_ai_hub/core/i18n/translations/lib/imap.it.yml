@@ -70,11 +70,6 @@ config:
     label: Cartella di riserva
     help: Cartella per la posta su cui il modello non è sicuro. Tale posta non viene
       mai indovinata in una categoria né lasciata nella posta in arrivo.
-  confidence_threshold:
-    label: Soglia di confidenza
-    help: Confidenza minima per archiviare in una categoria. Sotto questa soglia il
-      messaggio va nella cartella di riserva. La confidenza del modello è solo approssimativamente
-      calibrata — regolala sulla posta reale.
   classification_model:
     label: Modello di classificazione
     help: Modello di chat usato per classificare ogni messaggio. Lascia vuoto per

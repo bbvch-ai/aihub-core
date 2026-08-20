@@ -7,7 +7,12 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.imap.mail_store import MailStore
     from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment, ParsedMessage
     from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
-    from swiss_ai_hub.agent.imap.step_functions import do_fetch_and_archive, do_file_message, do_list_unread
+    from swiss_ai_hub.agent.imap.step_functions import (
+        do_fetch_and_archive,
+        do_file_message,
+        do_file_messages,
+        do_list_unread,
+    )
 
 __all__ = [
     "FetchedMail",
@@ -21,6 +26,7 @@ __all__ = [
     # Step functions - mailbox business logic shared by IMAP-backed blueprints
     "do_fetch_and_archive",
     "do_file_message",
+    "do_file_messages",
     "do_list_unread",
 ]
 
@@ -39,6 +45,7 @@ _LAZY_IMPORTS = {
     "ReplyComposer": "swiss_ai_hub.agent.imap.reply_composer",
     "do_fetch_and_archive": _STEP_FUNCTIONS_MODULE,
     "do_file_message": _STEP_FUNCTIONS_MODULE,
+    "do_file_messages": _STEP_FUNCTIONS_MODULE,
     "do_list_unread": _STEP_FUNCTIONS_MODULE,
 }
 

@@ -1,15 +1,11 @@
 """LLM classification of one message against a configured category taxonomy."""
 
-import logging
-
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
 from pydantic import BaseModel, Field, create_model
 from swiss_ai_hub.core.imap import EmailClassificationSettings, MailCategory
 
 from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
-
-logger = logging.getLogger(__name__)
 
 _PROMPT = """{{ instructions }}
 
@@ -30,7 +26,6 @@ class CategoryVerdict(BaseModel):
     """Where one message belongs, resolved against the configured taxonomy."""
 
     category: MailCategory | None
-    confidence: float
     reason: str
 
     @property
@@ -77,32 +72,21 @@ class MailClassifier:
                     description="Zero-based index of the category that fits, or null when none clearly fits.",
                 ),
             ),
-            confidence=(
-                float,
-                Field(ge=0.0, le=1.0, description="How confident you are in this category, from 0.0 to 1.0."),
-            ),
             reason=(str, Field(description="One sentence explaining the choice.")),
             __doc__="The category a message belongs to.",
         )
 
     @staticmethod
     def _resolve(selection: BaseModel, settings: EmailClassificationSettings) -> CategoryVerdict:
-        """Two independent routes to 'no category': the model declining, and low confidence.
+        """The model declining is the only route to the fallback folder.
 
-        Both exist because self-reported confidence is only roughly calibrated — a model that is wrong is often also
-        confident, so an explicit "none of these" escape hatch is worth more than the threshold alone.
+        An earlier version also compared a self-reported ``confidence`` score against a configurable threshold. That
+        score was removed: it is generated in the same forward pass as the answer rather than measured, so it carries
+        no information the choice does not already contain. Measured across the gateway's chat models on an ambiguous
+        message, the explicit decline fired four times out of five and the threshold never fired — and the one model
+        that misfiled did so at 0.95, which no usable threshold would have caught.
         """
         index: int | None = selection.selected_index
-        confidence: float = selection.confidence
-        reason: str = selection.reason
-
         if index is None:
-            return CategoryVerdict(category=None, confidence=confidence, reason=reason)
-        if confidence < settings.confidence_threshold:
-            logger.info(
-                "[classify] confidence %.2f below threshold %.2f — falling back",
-                confidence,
-                settings.confidence_threshold,
-            )
-            return CategoryVerdict(category=None, confidence=confidence, reason=reason)
-        return CategoryVerdict(category=settings.categories[index], confidence=confidence, reason=reason)
+            return CategoryVerdict(category=None, reason=selection.reason)
+        return CategoryVerdict(category=settings.categories[index], reason=selection.reason)

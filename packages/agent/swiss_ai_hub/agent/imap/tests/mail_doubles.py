@@ -44,11 +44,25 @@ def make_client(
     unread: list[UnreadMailSummary] | None = None,
     undrafted: list[UnreadMailSummary] | None = None,
     folder_created: bool = False,
+    created_folders: set[str] | None = None,
 ) -> AsyncMock:
-    """An ImapClient double whose every method matches the real client's signature and return shape."""
+    """An ImapClient double whose every method matches the real client's signature and return shape.
+
+    ``folder_created`` drives the single-message ``move_message`` path. ``created_folders`` drives the batch
+    ``ensure_folders`` path; when it is not given, ``folder_created`` decides whether every requested folder counts
+    as newly created, so a scenario only has to state the intent once.
+    """
+
+    async def ensure_folders(folders: list[str]) -> set[str]:
+        if created_folders is not None:
+            return created_folders
+        return set(folders) if folder_created else set()
+
     client = AsyncMock()
     client.list_unread = AsyncMock(return_value=unread or [])
     client.move_message = AsyncMock(return_value=folder_created)
+    client.relocate_message = AsyncMock(return_value=None)
+    client.ensure_folders = AsyncMock(side_effect=ensure_folders)
     client.fetch_message = AsyncMock(return_value=parsed_message())
     client.list_undrafted = AsyncMock(return_value=("$AiHubDrafted", undrafted or []))
     client.mark_drafted = AsyncMock()

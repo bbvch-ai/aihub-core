@@ -380,12 +380,23 @@ the whole batch and routes per category.
   message can achieve is misfiling into a folder the admin already configured — it cannot invent a destination or reach
   any other capability.
 
-- **Two independent routes to the fallback folder.** An explicit `selected_index: null` ("none of these fit") *and* a
-  confidence below the configured threshold. Both exist because self-reported LLM confidence is only roughly calibrated
-  — a wrong model is often a confident one, so the threshold alone is not a sufficient escape hatch and the explicit
-  decline is not either. Mail is never forced into a bucket.
+- **One route to the fallback folder: the model declining.** An explicit `selected_index: null` ("none of these fit") is
+  the only way a message reaches the fallback folder. Mail is never forced into a bucket.
 
-- **Filing is the deduplication mechanism.** Every message — confident or fallback — leaves the inbox, so the next
+  The first implementation also had the model rate its own confidence and diverted anything below a configurable
+  threshold. That was removed after measuring it. `confidence` was never an API signal — it is a field we invented in
+  our own response schema, so the model writes the number as output tokens in the same forward pass that produces the
+  answer. Across all five chat models on the gateway, given a deliberately ambiguous message, the explicit decline fired
+  four times out of five and the threshold fired zero times; the one model that misfiled did so at **0.95**, which no
+  usable threshold would catch. A knob that never fires but must still be tuned is worse than no knob. The field was
+  dropped from the response schema and from `MailClassificationRef` as well as from the settings — keeping a number
+  nothing acts on invites a later reader to trust it. `reason` is retained and is the better audit trail.
+
+  If a real confidence signal is ever wanted, token **logprobs** are the measured one, and `LLMParameter` already plumbs
+  them. They are not reachable from this code path today: `astructured_predict` returns only the validated model and
+  discards the raw response.
+
+- **Filing is the deduplication mechanism.** Every message — categorised or fallback — leaves the inbox, so the next
   `UNSEEN` listing cannot see it. Unlike drafting, no `$AiHubDrafted`-style flag is needed. A batch that fails half-way
   is therefore safe: filed messages stay filed, the rest are still unread and get picked up next run. IMAP UIDs are
   stable, so filing one message never shifts another's.
@@ -402,12 +413,52 @@ the whole batch and routes per category.
 
 - **A single batch event, not one per message.** `MailBatchClassifiedEvent` carries `count`, `per_category`,
   `fallback_count` and the per-message `MailClassificationRef`s, matching the `MailBatchDraftedEvent` precedent. Each
-  ref records the confidence and the model's stated reason, so a misfile is explainable after the fact.
+  ref records the model's stated reason, so a misfile is explainable after the fact.
 
-- **Known cost: one folder `LIST` per filed message.** `move_message` lists every folder on the server to decide whether
-  the target exists (#1636), so fifty messages into three existing folders still pay fifty listings. Accepted rather
-  than optimised away — it is bounded by `max_messages` and trivial beside the LLM call it follows. The fix, if
-  profiling ever justifies it, is a batch `ensure_folders` before the loop plus a relocate-only path on the client.
+- **Filing is batched: one connection and one folder check per run.** The first implementation filed message by message
+  through `do_file_message`, which opens its own connection and runs a full folder `LIST` inside `move_message`. A
+  fifty-message batch therefore cost fifty-two connections and fifty-plus `LIST` commands. That was initially accepted
+  as a bounded inefficiency, which under-read it: servers that cap concurrent or per-interval connections (Gmail among
+  them) refuse the extra connections rather than merely slow them down, making it a correctness problem.
+
+  `ImapClient` now splits into `ensure_folders(folders)` — one `LIST`, create the missing hierarchies, one verifying
+  `LIST`, subscribe what it made — and `relocate_message`, the move with resolution already done. `move_message` remains
+  their composition so `ImapAgent`'s single-message step is unchanged. `do_file_messages` holds one connection for the
+  batch: three connections per run in total, down from fifty-two.
+
+  A second benefit falls out of the ordering: because every folder is created before any message moves, a folder the
+  server refuses aborts the batch with the whole inbox intact, instead of stranding it half-filed. Filing itself stays
+  sequential, so a mid-batch failure still leaves the filed messages filed and the rest unread for the next run.
+
+- **Configured folder names are delimiter-specific, and the platform does not translate them.** `_hierarchy_paths`
+  splits on the delimiter the server reports in its `LIST` response, which is correct but means one configured name
+  produces different mailboxes on different servers. Verified against GreenMail (delimiter `.`): `Triage/Support` is
+  created as a *single flat folder literally named* `Triage/Support`, with no `Triage` parent, while the same name on
+  Gmail (delimiter `/`) creates a real `Triage` → `Support` tree. Supplying `Triage.Support` to GreenMail does produce
+  the parent-and-children tree, confirming the hierarchy logic itself is right.
+
+  Nothing is broken either way — mail is filed and found in both shapes — so no translation layer was added. Admins
+  configuring nested categories need to use their own server's delimiter, and the shipped template's `Triage/…` names
+  assume Gmail's.
+
+- **Verified against two real servers, not only mocks.** `ImapClient` was probed end-to-end against GreenMail 2.1.5 and
+  a live Gmail account: capability detection, `list_unread` ordering, `BODY.PEEK` leaving mail unread, attachment
+  parsing, batch `ensure_folders` creating and subscribing folders that did not exist, filing, and a second run finding
+  nothing left to do. Both passed every check.
+
+  The two exercise genuinely different code paths, which is the value of running both:
+
+  |                    | GreenMail 2.1.5 | Gmail      |
+  | ------------------ | --------------- | ---------- |
+  | `MOVE` / `UIDPLUS` | yes / yes       | yes / yes  |
+  | `SORT`             | advertised      | **absent** |
+  | `LIST` delimiter   | `.`             | `/`        |
+  | SPECIAL-USE        | no              | yes        |
+
+  Gmail does not advertise `SORT`, so it is the client-side ordering fallback that runs there — the branch that matters
+  most in production, and the one a GreenMail-only check would never reach. Gmail's localized `[Gmail]/…` namespace (the
+  test account lists its special folders in Vietnamese) appears in `LIST` without confusing `ensure_folders`, because
+  the batch matches configured names literally and only creates what is missing.
 
 - **`enable_move` / `processed_folder` are baked non-configurable** on this blueprint's form. A single fixed
   processed-folder is meaningless when the classifier picks the destination, and a field that must not exist is not the

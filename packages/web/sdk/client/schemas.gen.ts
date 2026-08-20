@@ -14286,19 +14286,12 @@ export const MailClassificationRefSchema = {
       ],
       title: "Category",
       description:
-        "Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted or confidence was below the threshold.",
+        "Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted.",
     },
     target_folder: {
       type: "string",
       title: "Target Folder",
       description: "Folder the message was filed into.",
-    },
-    confidence: {
-      type: "number",
-      maximum: 1,
-      minimum: 0,
-      title: "Confidence",
-      description: "Model's self-reported confidence in the category it chose.",
     },
     reason: {
       type: "string",
@@ -14334,14 +14327,7 @@ export const MailClassificationRefSchema = {
     },
   },
   type: "object",
-  required: [
-    "message_id",
-    "sender",
-    "subject",
-    "target_folder",
-    "confidence",
-    "reason",
-  ],
+  required: ["message_id", "sender", "subject", "target_folder", "reason"],
   title: "MailClassificationRef",
   description:
     "One classified message and where it was filed — the per-message detail behind a run summary.",

@@ -3,10 +3,9 @@ from typing import Annotated, Self
 from pydantic import Field
 
 from swiss_ai_hub.core.agents.agent_config import StepConfig
-from swiss_ai_hub.core.form.constraints import Ge, Le, MinLen
+from swiss_ai_hub.core.form.constraints import MinLen
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
-from swiss_ai_hub.core.form.elements.slider import Slider
 from swiss_ai_hub.core.form.elements.textarea import Textarea
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.imap.mail_category import MailCategory
@@ -44,16 +43,6 @@ class EmailClassificationSettings(StepConfig):
         ),
         MinLen(1),
     ]
-    confidence_threshold: Annotated[
-        float | Slider,
-        Field(
-            default=0.6,
-            description="Minimum confidence for filing into a category. Below this the message goes to the fallback "
-            "folder. Self-reported model confidence is only roughly calibrated — tune this against real mail.",
-        ),
-        Ge(0.0),
-        Le(1.0),
-    ]
     model_name: Annotated[
         str | ModelSelect,
         Field(default="", description="Chat model used to classify. Leave empty to use the agent's main model."),
@@ -70,13 +59,6 @@ class EmailClassificationSettings(StepConfig):
             fallback_folder=InputText(
                 label=LocaleString.from_i18n_path("lib.imap.config.fallback_folder.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.fallback_folder.help"),
-            ),
-            confidence_threshold=Slider(
-                label=LocaleString.from_i18n_path("lib.imap.config.confidence_threshold.label"),
-                help=LocaleString.from_i18n_path("lib.imap.config.confidence_threshold.help"),
-                min=0.0,
-                max=1.0,
-                step=0.05,
             ),
             model_name=ModelSelect(
                 label=LocaleString.from_i18n_path("lib.imap.config.classification_model.label"),

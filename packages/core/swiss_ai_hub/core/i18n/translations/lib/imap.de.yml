@@ -68,11 +68,6 @@ config:
     label: Ausweichordner
     help: Ordner für E-Mails, bei denen sich das Modell unsicher ist. Solche E-Mails
       werden nie in eine Kategorie geraten und nie im Posteingang belassen.
-  confidence_threshold:
-    label: Konfidenzschwelle
-    help: Mindestkonfidenz für die Ablage in einer Kategorie. Darunter geht die Nachricht
-      in den Ausweichordner. Die Modellkonfidenz ist nur grob kalibriert — passen
-      Sie den Wert anhand echter E-Mails an.
   classification_model:
     label: Klassifizierungsmodell
     help: Chat-Modell, das jede Nachricht klassifiziert. Leer lassen, um das Hauptmodell

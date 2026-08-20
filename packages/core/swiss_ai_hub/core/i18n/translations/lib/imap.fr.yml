@@ -70,11 +70,6 @@ config:
     label: Dossier de repli
     help: Dossier pour le courrier dont le modèle n'est pas sûr. Ce courrier n'est
       jamais deviné dans une catégorie ni laissé dans la boîte de réception.
-  confidence_threshold:
-    label: Seuil de confiance
-    help: Confiance minimale pour classer dans une catégorie. En dessous, le message
-      va dans le dossier de repli. La confiance du modèle n'est calibrée qu'approximativement
-      — ajustez ce seuil sur du courrier réel.
   classification_model:
     label: Modèle de classification
     help: Modèle de chat utilisé pour classer chaque message. Laissez vide pour utiliser

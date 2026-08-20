@@ -9616,7 +9616,7 @@ export type MailClassificationRef = {
   /**
    * Category
    *
-   * Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted or confidence was below the threshold.
+   * Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted.
    */
   category?: string | null;
   /**
@@ -9625,12 +9625,6 @@ export type MailClassificationRef = {
    * Folder the message was filed into.
    */
   target_folder: string;
-  /**
-   * Confidence
-   *
-   * Model's self-reported confidence in the category it chose.
-   */
-  confidence: number;
   /**
    * Reason
    *

@@ -17,13 +17,10 @@ class MailClassificationRef(BaseModel):
         Field(
             default=None,
             description="Configured category the message was filed under, or null when it went to the fallback "
-            "folder because no category clearly fitted or confidence was below the threshold.",
+            "folder because no category clearly fitted.",
         ),
     ]
     target_folder: Annotated[str, Field(description="Folder the message was filed into.")]
-    confidence: Annotated[
-        float, Field(ge=0.0, le=1.0, description="Model's self-reported confidence in the category it chose.")
-    ]
     reason: Annotated[str, Field(description="Model's stated reason for the choice — the audit trail for a misfile.")]
     folder_created: Annotated[
         bool,

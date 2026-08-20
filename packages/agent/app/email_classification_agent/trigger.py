@@ -78,7 +78,6 @@ async def main():
             classification=EmailClassificationSettings(
                 categories=_CATEGORIES,
                 fallback_folder=os.environ.get("IMAP_FALLBACK", "Triage/Uncategorised"),
-                confidence_threshold=float(os.environ.get("IMAP_CONFIDENCE", "0.6")),
             ),
         ),
     )

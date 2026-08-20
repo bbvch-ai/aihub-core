@@ -22,7 +22,7 @@ from swiss_ai_hub.agent.agents.email_classification_agent.events.classify_mail_s
 from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import CategoryVerdict, MailClassifier
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.fetched_mail import FetchedMail
-from swiss_ai_hub.agent.imap.step_functions import do_fetch_and_archive, do_file_message, do_list_unread
+from swiss_ai_hub.agent.imap.step_functions import do_fetch_and_archive, do_file_messages, do_list_unread
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 logger = logging.getLogger(__name__)
@@ -154,11 +154,10 @@ class EmailClassificationAgent(Agent):
             for mail in fetched:
                 verdict = await MailClassifier.classify(mail.parsed, classification, llm)
                 logger.info(
-                    "[classify] uid=%s subject=%r -> %s (confidence=%.2f)",
+                    "[classify] uid=%s subject=%r -> %s",
                     mail.parsed.message_id,
                     mail.parsed.subject,
                     verdict.category_name or "<fallback>",
-                    verdict.confidence,
                 )
                 await displayer.display_thought(
                     f"{mail.parsed.subject} → {verdict.category_name or classification.fallback_folder}: "
@@ -175,29 +174,35 @@ class EmailClassificationAgent(Agent):
         classification: EmailClassificationSettings,
         displayer: EventDisplayer,
     ) -> list[MailClassificationRef]:
-        """Move each message into its target folder, creating the folder when it does not exist yet.
+        """Move every message into its target folder on one connection, creating the missing folders first.
+
+        The whole batch shares a connection and a single folder check — filing message by message would reconnect
+        and re-list the mailbox for each one.
 
         A failure here aborts the run: messages already filed stay filed, and everything still in the inbox is
-        unread, so the next run picks it up. Filing is the only dedup mechanism, so a partial batch is safe.
+        unread, so the next run picks it up. Filing is the only dedup mechanism, so a partial batch is safe. A
+        folder the server refuses fails before anything has moved at all.
         """
-        classified: list[MailClassificationRef] = []
-        for mail, verdict in zip(fetched, verdicts, strict=True):
-            target_folder = verdict.category.imap_folder if verdict.category else classification.fallback_folder
-            folder_created = await do_file_message(imap_config, mail.parsed.message_id, target_folder)
-            if folder_created:
-                await displayer.display_thought(f"Created the folder {target_folder} before filing there.")
-            classified.append(
-                MailClassificationRef(
-                    message_id=mail.parsed.message_id,
-                    sender=mail.parsed.sender,
-                    subject=mail.parsed.subject,
-                    category=verdict.category_name,
-                    target_folder=target_folder,
-                    confidence=verdict.confidence,
-                    reason=verdict.reason,
-                    folder_created=folder_created,
-                    attachments=mail.attachments,
-                    original_message=mail.original_message,
-                )
+        targets = [
+            verdict.category.imap_folder if verdict.category else classification.fallback_folder for verdict in verdicts
+        ]
+        assignments = [(mail.parsed.message_id, folder) for mail, folder in zip(fetched, targets, strict=True)]
+        created = await do_file_messages(imap_config, assignments)
+
+        for folder in sorted(created):
+            await displayer.display_thought(f"Created the folder {folder} before filing there.")
+
+        return [
+            MailClassificationRef(
+                message_id=mail.parsed.message_id,
+                sender=mail.parsed.sender,
+                subject=mail.parsed.subject,
+                category=verdict.category_name,
+                target_folder=target_folder,
+                reason=verdict.reason,
+                folder_created=target_folder in created,
+                attachments=mail.attachments,
+                original_message=mail.original_message,
             )
-        return classified
+            for mail, verdict, target_folder in zip(fetched, verdicts, targets, strict=True)
+        ]

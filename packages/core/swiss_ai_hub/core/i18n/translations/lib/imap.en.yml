@@ -64,11 +64,6 @@ config:
     label: Fallback Folder
     help: Folder for mail the model is not confident about. Such mail is never guessed
       into a category and never left in the inbox.
-  confidence_threshold:
-    label: Confidence Threshold
-    help: Minimum confidence for filing into a category. Below this the message goes
-      to the fallback folder. Model confidence is only roughly calibrated — tune this
-      against real mail.
   classification_model:
     label: Classification Model
     help: Chat model used to classify each message. Leave empty to use the agent's

@@ -7,7 +7,7 @@ description: Ein Postfach-Agent, der jede ungelesene Nachricht liest, entscheide
 
 Der **E-Mail-Klassifizierungsagent** macht aus einem gemeinsamen Postfach eine Warteschlange, die sich selbst sortiert.
 Bei jedem Lauf liest er jede ungelesene Nachricht im Posteingang, entscheidet, zu welcher Ihrer Kategorien sie gehört,
-und verschiebt sie in den Ordner dieser Kategorie. Alles, bei dem er nicht sicher ist, landet in einem Ausweichordner,
+und verschiebt sie in den Ordner dieser Kategorie. Alles, wozu keine Kategorie passt, landet in einem Ausweichordner,
 statt in eine Kategorie geraten zu werden.
 
 Wie der [E-Mail-Agent](../11_email_agent/) hat er **keine Chat-Oberfläche**. Sie konfigurieren ihn einmal in der
@@ -33,7 +33,7 @@ flowchart TD
     C -- Nein --> D[Leeren Lauf melden, stoppen]
     C -- Ja --> E[Jede Nachricht abrufen<br/>+ Original archivieren]
     E --> F[Modell fragen, zu welcher<br/>Kategorie jede gehört]
-    F --> G{Sicher, und eine<br/>Kategorie passt?}
+    F --> G{Passt eine<br/>Kategorie?}
     G -- Ja --> H[In den Ordner der<br/>Kategorie ablegen]
     G -- Nein --> I[In den Ausweich-<br/>ordner ablegen]
     H --> J[Melden, wie viele je<br/>Kategorie abgelegt wurden]
@@ -88,28 +88,33 @@ erfordert eine Handlung unseres Teams". Beschreiben Sie die **Absicht** der Abse
 würde. Stichwortlisten funktionieren deutlich schlechter als ein klarer Satz darüber, wozu die Kategorie da ist.
 :::
 
+::: warning Verschachtelte Ordnernamen nutzen das Trennzeichen *Ihres* Servers
+Ein Zielordner wie `Triage/Support` ergibt nur auf Servern eine echte Ordnerstruktur, deren Trennzeichen `/` ist — etwa
+Gmail. Auf einem Server mit `.` entstünde ein einzelner flacher Ordner mit dem Namen `Triage/Support`; schreiben Sie
+dort stattdessen `Triage.Support`. Abgelegt wird die Post in beiden Fällen korrekt, eine Baumstruktur erhalten Sie aber
+nur mit dem passenden Trennzeichen. Im Zweifel verwenden Sie flache Namen wie `Support` und `Invoices`.
+:::
+
 ### Klassifizierer
 
-| Feld                        | Standard                | Beschreibung                                                                                    |
-| --------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
-| **Ausweichordner**          | `Uncategorised`         | Wohin unsichere E-Mails gehen. Nie in eine Kategorie geraten, nie im Posteingang belassen.      |
-| **Konfidenzschwelle**       | `0.6`                   | Darunter geht eine Nachricht in den Ausweichordner, auch wenn das Modell eine Kategorie wählte. |
-| **Klassifizierungsmodell**  | *(leer)*                | Das klassifizierende Modell. Leer lassen, um das Hauptmodell des Agenten zu verwenden.          |
-| **Klassifizierungs-Prompt** | *(sinnvoller Standard)* | Anweisungen, wie das Modell auswählt.                                                           |
+| Feld                        | Standard                | Beschreibung                                                                           |
+| --------------------------- | ----------------------- | -------------------------------------------------------------------------------------- |
+| **Ausweichordner**          | `Uncategorised`         | Wohin E-Mails ohne passende Kategorie gehen. Nie geraten, nie im Posteingang belassen. |
+| **Klassifizierungsmodell**  | *(leer)*                | Das klassifizierende Modell. Leer lassen, um das Hauptmodell des Agenten zu verwenden. |
+| **Klassifizierungs-Prompt** | *(sinnvoller Standard)* | Anweisungen, wie das Modell auswählt.                                                  |
 
-::: details Zwei Wege in den Ausweichordner
-Das Modell kann ausdrücklich sagen, dass **keine der Kategorien passt**, und es kann eine wählen, dabei aber **geringe
-Konfidenz** melden. Beides schickt die Nachricht in den Ausweichordner.
+::: details Der Weg in den Ausweichordner
+Das Modell hat genau einen Ausweg: Es kann ausdrücklich sagen, dass **keine der Kategorien passt**. Dann geht die
+Nachricht in den Ausweichordner statt in einen Kategorieordner.
 
-Beides existiert mit Absicht. Ein Modell, das falsch liegt, ist häufig auch überzeugt — eine Konfidenzschwelle allein
-ist also kein verlässliches Sicherheitsnetz. Und ein Modell, das immer wählen muss, wählt immer irgendetwas. Ihm
-ausdrücklich die Möglichkeit zur Ablehnung zu geben *und* eine Untergrenze für die Konfidenz zu setzen, fängt mehr von
-der Post ab, die ein Mensch ansehen sollte.
+Eine frühere Fassung liess das Modell zusätzlich seine eigene Konfidenz bewerten und leitete alles unterhalb einer
+Schwelle um. Diese Einstellung wurde entfernt. Ein selbst gemeldeter Wert entsteht im selben Zug wie die Antwort, statt
+gemessen zu werden — er trägt also nichts bei, was in der Wahl nicht ohnehin steckt. Über die Chat-Modelle der Plattform
+hinweg an einer bewusst mehrdeutigen Nachricht gemessen, fing die ausdrückliche Ablehnung sie in vier von fünf Fällen
+ab, während die Schwelle kein einziges Mal griff; das eine Modell, das falsch ablegte, tat dies mit 0.95 Konfidenz.
 
-Betrachten Sie `0.6` als Ausgangspunkt. Beobachten Sie, wo Ihre echte Post landet, und passen Sie an: erhöhen, wenn
-falsche E-Mails selbstbewusst abgelegt werden; senken, wenn sich der Ausweichordner mit offensichtlich klassifizierbarer
-Post füllt.
-:::
+Die praktische Folge: **Ihre Kategoriebeschreibungen sind das Sicherheitsnetz, nicht ein Regler.** Landet Post im
+falschen Ordner, schärfen Sie die Beschreibungen der beiden verwechselten Kategorien.
 
 ## Erste Schritte
 
@@ -120,8 +125,8 @@ Post füllt.
 3. **Verfolgen Sie die ersten Läufe in der Ereignis-Timeline.** Bei jeder Nachricht sind die gewählte Kategorie und die
    Begründung des Modells sichtbar. Diese Begründung ist der schnellste Weg zu einer Beschreibung, die eine
    Überarbeitung braucht.
-4. **Justieren Sie die Beschreibungen vor der Schwelle.** Die meisten Fehlablagen sind eine vage Beschreibung, keine
-   falsche Schwelle.
+4. **Beheben Sie Fehlablagen in den Beschreibungen.** Sie sind der einzige Hebel — und der richtige: fast jede
+   Fehlablage geht auf zwei Kategorien mit überlappenden Beschreibungen zurück.
 5. **Danach planen Sie ihn** alle paar Minuten ein — und der Posteingang leert sich von selbst.
 
 ## Was er *nicht* tut
@@ -132,11 +137,10 @@ Post füllt.
   archiviert, beeinflussen die Kategorie aber nicht.
 - **Er hat keine Chat-Oberfläche** und keine Wissensdatenbank.
 
-::: warning Eingehende E-Mails sind nicht vertrauenswürdig
-Jede und jeder kann Ihrem Postfach alles schicken, und der Textkörper geht in den Prompt des Modells. Der Agent ist so
-gebaut, dass der schlimmste Fall begrenzt bleibt: Das Modell wählt aus **Ihrer** Kategorienliste und kann immer nur eine
-Position in dieser Liste zurückgeben — eine Nachricht mit eingebetteten Anweisungen kann also keinen Zielordner erfinden
-und den Agenten zu nichts anderem bringen als zum Ablegen von Post. Der PII-Schutz der Plattform anonymisiert
-personenbezogene Daten am LLM-Gateway. Behandeln Sie den Ordner, in dem eine Nachricht gelandet ist, dennoch als
-Vorschlag, nicht als Urteil.
+::: warning Eingehende E-Mails sind nicht vertrauenswürdig Jede und jeder kann Ihrem Postfach alles schicken, und der
+Textkörper geht in den Prompt des Modells. Der Agent ist so gebaut, dass der schlimmste Fall begrenzt bleibt: Das Modell
+wählt aus **Ihrer** Kategorienliste und kann immer nur eine Position in dieser Liste zurückgeben — eine Nachricht mit
+eingebetteten Anweisungen kann also keinen Zielordner erfinden und den Agenten zu nichts anderem bringen als zum Ablegen
+von Post. Der PII-Schutz der Plattform anonymisiert personenbezogene Daten am LLM-Gateway. Behandeln Sie den Ordner, in
+dem eine Nachricht gelandet ist, dennoch als Vorschlag, nicht als Urteil.
 :::

@@ -44,46 +44,37 @@ def _config(categories: list[MailCategory] | None = None) -> EmailClassification
         classification=EmailClassificationSettings(
             categories=[_SUPPORT, _INVOICE] if categories is None else categories,
             fallback_folder=_FALLBACK_FOLDER,
-            confidence_threshold=0.6,
         ),
     )
 
 
-def _verdict(category: MailCategory | None, confidence: float) -> CategoryVerdict:
-    return CategoryVerdict(category=category, confidence=confidence, reason="because the body says so")
+def _verdict(category: MailCategory | None) -> CategoryVerdict:
+    return CategoryVerdict(category=category, reason="because the body says so")
 
 
-def _selection(selected_index: int | None, confidence: float) -> SimpleNamespace:
+def _selection(selected_index: int | None) -> SimpleNamespace:
     """What the LLM returns before MailClassifier resolves it — an index, not a folder."""
-    return SimpleNamespace(selected_index=selected_index, confidence=confidence, reason="because the body says so")
+    return SimpleNamespace(selected_index=selected_index, reason="because the body says so")
 
 
 # --- fixtures ---
 
 
 @given(
-    "an EmailClassificationAgent runner with three unread messages the model is confident about",
+    "an EmailClassificationAgent runner with three unread messages the model classifies into categories",
     target_fixture="scenario",
 )
-def _confident_batch() -> dict:
+def _classified_batch() -> dict:
     return {
         "unread": [summary("1"), summary("2"), summary("3")],
-        "verdicts": [_verdict(_SUPPORT, 0.9), _verdict(_SUPPORT, 0.8), _verdict(_INVOICE, 0.95)],
+        "verdicts": [_verdict(_SUPPORT), _verdict(_SUPPORT), _verdict(_INVOICE)],
     }
-
-
-@given(
-    "an EmailClassificationAgent runner with one unread message classified below the confidence threshold",
-    target_fixture="scenario",
-)
-def _low_confidence() -> dict:
-    """Drives the real MailClassifier: stubbing the verdict here would skip the threshold under test."""
-    return {"unread": [summary("1")], "selections": [_selection(selected_index=0, confidence=0.2)]}
 
 
 @given("an EmailClassificationAgent runner with one unread message no category fits", target_fixture="scenario")
 def _no_category_fits() -> dict:
-    return {"unread": [summary("1")], "selections": [_selection(selected_index=None, confidence=0.9)]}
+    """Drives the real MailClassifier: stubbing the verdict here would skip the decline route under test."""
+    return {"unread": [summary("1")], "selections": [_selection(selected_index=None)]}
 
 
 @given("an EmailClassificationAgent runner with an empty inbox", target_fixture="scenario")
@@ -93,7 +84,7 @@ def _empty_inbox() -> dict:
 
 @given("an EmailClassificationAgent runner whose category folder does not exist yet", target_fixture="scenario")
 def _missing_folder() -> dict:
-    return {"unread": [summary("1")], "verdicts": [_verdict(_SUPPORT, 0.9)], "folder_created": True}
+    return {"unread": [summary("1")], "verdicts": [_verdict(_SUPPORT)], "folder_created": True}
 
 
 @given("an EmailClassificationAgent runner with no categories configured", target_fixture="scenario")
@@ -114,8 +105,8 @@ async def _(scenario: dict) -> AgentTestRunner:
     client.fetch_message = AsyncMock(side_effect=lambda message_id, **_: parsed_message(message_id=message_id))
     agent_runner.imap_client = client
 
-    # A scenario supplies either raw LLM selections — exercising the real classifier, including the threshold —
-    # or ready-made verdicts when only the agent's filing behaviour is under test.
+    # A scenario supplies either raw LLM selections — exercising the real classifier, including how it resolves
+    # a decline — or ready-made verdicts when only the agent's filing behaviour is under test.
     llm = AsyncMock() if "selections" in scenario else None
     if llm is not None:
         llm.astructured_predict = AsyncMock(side_effect=list(scenario["selections"]))
@@ -156,7 +147,7 @@ def _(agent_runner: AgentTestRunner):
     event = _summary_event(agent_runner)
     filed = {ref.message_id: ref.target_folder for ref in event.classified}
     assert filed == {"1": "Triage/Support", "2": "Triage/Support", "3": "Triage/Invoices"}
-    assert agent_runner.imap_client.move_message.await_count == 3
+    assert agent_runner.imap_client.relocate_message.await_count == 3
 
 
 @then(parsers.parse("the summary counts {support:d} support_request and {invoice:d} invoice"))
@@ -182,13 +173,20 @@ def _(agent_runner: AgentTestRunner, count: int):
 
 @then("no message was filed")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.imap_client.move_message.await_count == 0
+    assert agent_runner.imap_client.relocate_message.await_count == 0
 
 
 @then("the created folder is recorded on the classification")
 def _(agent_runner: AgentTestRunner):
     event = _summary_event(agent_runner)
     assert event.classified[0].folder_created is True
+
+
+@then("the whole batch shares one folder check")
+def _(agent_runner: AgentTestRunner):
+    """One ensure_folders for the run, not one per message — the reason filing is batched at all."""
+    assert agent_runner.imap_client.ensure_folders.await_count == 1
+    assert agent_runner.imap_client.ensure_folders.await_args.args[0] == ["Triage/Invoices", "Triage/Support"]
 
 
 @then("every classified message references its archived original and attachments")

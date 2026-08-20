@@ -79,11 +79,47 @@ async def do_fetch_and_archive(
     return fetched
 
 
+async def do_file_messages(
+    imap_config: ImapClientConfig,
+    assignments: list[tuple[str, str]],
+) -> set[str]:
+    """File a whole batch on one connection: ensure every target folder exists, then move each message.
+
+    ``assignments`` pairs a message id with the folder it belongs in; the returned set names the folders that had to
+    be created. Filing per message via ``do_file_message`` would open a connection and run a folder ``LIST`` for each
+    one — fifty messages cost fifty of both, which servers that cap concurrent or per-interval connections (Gmail
+    among them) refuse outright rather than merely slow down.
+
+    Folder creation happening up front also changes the failure mode for the better: a folder the server refuses
+    aborts the batch before anything has moved. Filing itself stays sequential, so a mid-batch failure still leaves
+    the already-filed messages filed and the rest unread for the next run.
+    """
+    if not assignments:
+        return set()
+
+    target_folders = sorted({folder for _message_id, folder in assignments})
+    logger.info(
+        "[imap] do_file_messages: filing %d message(s) from %s into %s",
+        len(assignments),
+        imap_config.inbox_folder,
+        target_folders,
+    )
+    async with ImapClientFactory.create(imap_config) as client:
+        created = await client.ensure_folders(target_folders)
+        if created:
+            logger.info("[imap] do_file_messages: created folder(s) %s", sorted(created))
+        for message_id, target_folder in assignments:
+            await client.relocate_message(message_id, target_folder)
+            logger.info("[imap] do_file_messages: moved uid=%s -> %s", message_id, target_folder)
+    return created
+
+
 async def do_file_message(imap_config: ImapClientConfig, message_id: str, target_folder: str) -> bool:
     """Move one message out of the inbox into ``target_folder``, reporting whether the folder had to be created.
 
     The folder is created when missing (#1636), so a caller filing into per-category folders nobody made by hand
-    still succeeds on its first run against a fresh mailbox.
+    still succeeds on its first run against a fresh mailbox. Use ``do_file_messages`` for a batch — this opens its
+    own connection and lists folders, which is only worth it for a single message.
     """
     logger.info(
         "[imap] do_file_message: moving uid=%s from %s to %s", message_id, imap_config.inbox_folder, target_folder
