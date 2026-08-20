@@ -1,15 +1,17 @@
+from typing import Any
 from unittest.mock import patch
 
 import pytest
 from opentelemetry import metrics
 from opentelemetry.sdk.metrics import MeterProvider
 
+from swiss_ai_hub.core.infrastructure.opentelemetry import open_telemetry_settings as settings_module
 from swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings import OpenTelemetrySettings
 
 pytestmark = pytest.mark.unit
 
 
-def _enabled_settings(**overrides) -> OpenTelemetrySettings:
+def _enabled_settings(**overrides: Any) -> OpenTelemetrySettings:
     return OpenTelemetrySettings(
         **{
             "ENABLED": True,
@@ -65,3 +67,48 @@ def test_metrics_enabled_without_endpoint_fails_loudly() -> None:
 
     with pytest.raises(ValueError, match="OTEL_EXPORTER_OTLP_ENDPOINT"):
         settings.configure_metrics()
+
+
+def test_grpc_protocol_passes_the_insecure_flag() -> None:
+    """
+    The two exporter arms are asymmetric on purpose — only gRPC takes `insecure`, mirroring
+    configure_tracing(). Pinning it keeps a later "tidy-up" from passing it to the HTTP exporter,
+    which does not accept it.
+    """
+    with patch.object(settings_module, "GRPCMetricExporter") as grpc_exporter:
+        _enabled_settings(EXPORTER_OTLP_PROTOCOL="grpc", EXPORTER_OTLP_INSECURE=True).configure_metrics()
+
+    grpc_exporter.assert_called_once_with(endpoint="http://localhost:4317", insecure=True)
+
+
+def test_http_protocol_uses_the_http_exporter_without_insecure() -> None:
+    """The HTTP arm was the branch left uncovered when metrics were introduced."""
+    with patch.object(settings_module, "HTTPMetricExporter") as http_exporter:
+        _enabled_settings(EXPORTER_OTLP_PROTOCOL="http").configure_metrics()
+
+    http_exporter.assert_called_once_with(endpoint="http://localhost:4317")
+
+
+@pytest.mark.parametrize(
+    "missing_attribute",
+    ["RESOURCE_SERVICE_NAME", "RESOURCE_SERVICE_VERSION", "RESOURCE_SERVICE_NAMESPACE"],
+)
+def test_every_service_attribute_is_required(missing_attribute: str) -> None:
+    """
+    All three attributes gate the resource, not just the first one. Worth pinning now that a
+    single _build_resource() serves tracing, metrics and logging: a regression here would
+    silently ship unidentifiable telemetry from all three at once.
+    """
+    settings = _enabled_settings(**{missing_attribute: None})
+
+    with pytest.raises(ValueError, match="OTEL_RESOURCE_SERVICE_NAME"):
+        settings.configure_metrics()
+
+
+def test_the_resource_carries_all_three_service_attributes() -> None:
+    """Guards the extraction itself: the shared resource must still describe the service."""
+    resource = _enabled_settings()._build_resource()
+
+    assert resource.attributes["service.name"] == "api"
+    assert resource.attributes["service.version"] == "0.0.1"
+    assert resource.attributes["service.namespace"] == "swiss-ai-hub"

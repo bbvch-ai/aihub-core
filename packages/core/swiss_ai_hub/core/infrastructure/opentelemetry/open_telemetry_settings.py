@@ -51,24 +51,9 @@ class OpenTelemetrySettings(EnvironmentSettings):
                 "Either set OTEL_ENABLED=False to disable tracing or provide a valid OTLP endpoint."
             )
 
-        if not all([self.RESOURCE_SERVICE_NAME, self.RESOURCE_SERVICE_VERSION, self.RESOURCE_SERVICE_NAMESPACE]):
-            raise ValueError(
-                "OpenTelemetry is enabled but missing required service configuration. "
-                "Please set OTEL_RESOURCE_SERVICE_NAME, OTEL_RESOURCE_SERVICE_VERSION, "
-                "and OTEL_RESOURCE_SERVICE_NAMESPACE."
-            )
-
-        resource = Resource.create(
-            {
-                "service.name": self.RESOURCE_SERVICE_NAME,
-                "service.version": self.RESOURCE_SERVICE_VERSION,
-                "service.namespace": self.RESOURCE_SERVICE_NAMESPACE,
-            }
-        )
-
         # RetrieverEvent spans can exceed the default 128-attribute limit
         span_limits = SpanLimits(max_attributes=512)
-        tracer_provider = TracerProvider(resource=resource, span_limits=span_limits)
+        tracer_provider = TracerProvider(resource=self._build_resource(), span_limits=span_limits)
 
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
             otlp_exporter = GRPCSpanExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE)
@@ -108,21 +93,6 @@ class OpenTelemetrySettings(EnvironmentSettings):
                 "to disable metrics or provide a valid OTLP endpoint."
             )
 
-        if not all([self.RESOURCE_SERVICE_NAME, self.RESOURCE_SERVICE_VERSION, self.RESOURCE_SERVICE_NAMESPACE]):
-            raise ValueError(
-                "OpenTelemetry is enabled but missing required service configuration. "
-                "Please set OTEL_RESOURCE_SERVICE_NAME, OTEL_RESOURCE_SERVICE_VERSION, "
-                "and OTEL_RESOURCE_SERVICE_NAMESPACE."
-            )
-
-        resource = Resource.create(
-            {
-                "service.name": self.RESOURCE_SERVICE_NAME,
-                "service.version": self.RESOURCE_SERVICE_VERSION,
-                "service.namespace": self.RESOURCE_SERVICE_NAMESPACE,
-            }
-        )
-
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
             otlp_exporter = GRPCMetricExporter(
                 endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE
@@ -131,7 +101,24 @@ class OpenTelemetrySettings(EnvironmentSettings):
             otlp_exporter = HTTPMetricExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT)
 
         metric_reader = PeriodicExportingMetricReader(otlp_exporter)
-        return MeterProvider(resource=resource, metric_readers=[metric_reader])
+        return MeterProvider(resource=self._build_resource(), metric_readers=[metric_reader])
+
+    def _build_resource(self) -> Resource:
+        """The three service attributes every backend keys on; shared by all configure_* methods."""
+        if not all([self.RESOURCE_SERVICE_NAME, self.RESOURCE_SERVICE_VERSION, self.RESOURCE_SERVICE_NAMESPACE]):
+            raise ValueError(
+                "OpenTelemetry is enabled but missing required service configuration. "
+                "Please set OTEL_RESOURCE_SERVICE_NAME, OTEL_RESOURCE_SERVICE_VERSION, "
+                "and OTEL_RESOURCE_SERVICE_NAMESPACE."
+            )
+
+        return Resource.create(
+            {
+                "service.name": self.RESOURCE_SERVICE_NAME,
+                "service.version": self.RESOURCE_SERVICE_VERSION,
+                "service.namespace": self.RESOURCE_SERVICE_NAMESPACE,
+            }
+        )
 
     def configure_logging(self) -> LoggerProvider | None:
         """Configure OpenTelemetry logging for any OTLP-compatible backend."""
@@ -145,22 +132,7 @@ class OpenTelemetrySettings(EnvironmentSettings):
                 "Either set OTEL_ENABLED=False to disable logging or provide a valid OTLP endpoint."
             )
 
-        if not all([self.RESOURCE_SERVICE_NAME, self.RESOURCE_SERVICE_VERSION, self.RESOURCE_SERVICE_NAMESPACE]):
-            raise ValueError(
-                "OpenTelemetry is enabled but missing required service configuration. "
-                "Please set OTEL_RESOURCE_SERVICE_NAME, OTEL_RESOURCE_SERVICE_VERSION, "
-                "and OTEL_RESOURCE_SERVICE_NAMESPACE."
-            )
-
-        resource = Resource.create(
-            {
-                "service.name": self.RESOURCE_SERVICE_NAME,
-                "service.version": self.RESOURCE_SERVICE_VERSION,
-                "service.namespace": self.RESOURCE_SERVICE_NAMESPACE,
-            }
-        )
-
-        logger_provider = LoggerProvider(resource=resource)
+        logger_provider = LoggerProvider(resource=self._build_resource())
 
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
             otlp_log_exporter = GRPCLogExporter(
