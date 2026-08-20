@@ -85,12 +85,26 @@ It uses `str.format` brace interpolation, not Jinja, because `jinja2` is not a d
 substitution in this very file. Note that yamlfix strips blank lines inside the YAML block scalar, so the prompt reaches
 the model as consecutive lines; do not reintroduce them expecting them to survive.
 
-**2 — Injection happens in `OpenaiService._apply_model_identity`,** called from `chat_completion`. The message is
-**prepended**, satisfying Qwen3.5's constraint, and any caller-supplied system prompt is preserved after ours — so the
-caller still wins on task behaviour. Multiple leading system messages are already production behaviour on this stack
-(`extend_chat_history_with_user_memory` inserts after existing leading system messages), so no merging is needed. The
-display name is `model_name.rpartition("/")[2]`, which strips the capability prefix (`text-generation/Kimi-K2.6` →
-`Kimi-K2.6`) and leaves an unprefixed name untouched.
+**2 — Injection happens in `OpenaiService._apply_model_identity`,** called from `chat_completion`. The identity
+**leads the message list**, satisfying Qwen3.5's constraint, and any caller-supplied system prompt is preserved after
+ours — so the caller still wins on task behaviour. When the caller already sent a leading system message, the identity
+is **merged into it** (prefixed, separated by a blank line, other message fields kept) rather than added as a second
+system message. The display name is `model_name.rpartition("/")[2]`, which strips the capability prefix
+(`text-generation/Kimi-K2.6` → `Kimi-K2.6`) and leaves an unprefixed name untouched.
+
+> **Amendment 2026-08-20 — the merge replaces the original prepend.** As shipped, this decision prepended a *second*
+> system message and justified it with "multiple leading system messages are already production behaviour on this stack"
+> (`extend_chat_history_with_user_memory`). That claim does not hold for Qwen3.5 on Infomaniak: it rejects a payload
+> whose system message is not the first one — including a second system message at index 1 — and the streaming path
+> surfaces that 400 as an **empty response** with no error in the UI. The regression became visible when a user enabled
+> **Open Terminal**, because OpenWebUI injects the terminal server's `OPEN_TERMINAL_SYSTEM_PROMPT` as `messages[0]`
+> (`add_or_update_system_message`, `utils/middleware.py`), turning every subsequent chat turn into a two-system-message
+> payload. Verified against staging: with Open Terminal enabled, `gemma-4-31B-it`, `Ministral-3-14B` and `Kimi-K2.6`
+> answered normally while Qwen3.5 returned a zero-byte stream; Qwen3.5 failed identically **without** the terminal as
+> soon as any caller system message was present, and answered normally with none. Release `0.318` was unaffected because
+> the plain-model path did not inject anything yet. Any OpenWebUI feature that carries a system prompt is affected the
+> same way — workspace-model system prompts, `RAG_SYSTEM_CONTEXT`, direct tool servers — so the fix is the merge, not a
+> terminal-specific special case. Pinned by `TestASecondSystemMessageIsNeverEmitted`.
 
 The call site is pinned by `test_streaming_response_outlives_the_handler`, the suite's only happy path through
 `chat_completion`. Every other identity test either calls `_apply_model_identity` directly or asserts it did *not* run,
@@ -181,7 +195,9 @@ convention for no measured gain.
   this endpoint will reproduce #144 and must set their own system prompt. They own their message list, so they own the
   fix — and per Decision 3 we cannot tell them apart from the hub anyway.
 - **The endpoint is no longer a byte-for-byte passthrough.** Every plain-model caller receives a leading system message
-  it did not author.
+  it did not author — and when the caller sent one of its own, that message's own `content` is rewritten with our text
+  prefixed, so a caller inspecting what it sent versus what the model saw finds one modified message rather than an
+  extra one.
 - **The identity string is config-derived.** It comes from the LiteLLM `model_name`, so renaming a model in
   `litellm-config.yml.j2` silently changes what the model calls itself.
 - **The localization is nominal on this path.** Because the locale always resolves to `de` here, the fr/it translations

@@ -67,16 +67,37 @@ class TestIdentitySystemMessage:
 
         assert request.messages[1:] == _CONTAMINATED_HISTORY
 
-    def test_orders_a_client_system_prompt_after_ours(self):
-        """A caller's own system prompt must survive and stay later in the list, so it still wins on task
-        behaviour while the platform identity is merely the default."""
-        client_prompt = {"role": "system", "content": "You only answer in haiku."}
-        request = _hub_request([client_prompt, *_CONTAMINATED_HISTORY])
+    def test_merges_a_client_system_prompt_into_the_leading_system_message(self):
+        """A caller's own system prompt must survive and stay after ours, so it still wins on task behaviour
+        while the platform identity is merely the default — but inside the *same* message. A second system
+        message is what broke Open Terminal on Qwen3.5 (see `TestASecondSystemMessageIsNeverEmitted`)."""
+        request = _hub_request([{"role": "system", "content": "You only answer in haiku."}, *_CONTAMINATED_HISTORY])
 
         OpenaiService._apply_model_identity(request, _QWEN, _en())
 
-        assert _roles(request) == ["system", "system", "user", "assistant", "user"]
-        assert request.messages[1] == client_prompt
+        assert _roles(request) == ["system", "user", "assistant", "user"]
+        assert "Qwen3.5-122B-A10B-FP8" in request.messages[0]["content"]
+        assert request.messages[0]["content"].endswith("You only answer in haiku.")
+        assert request.messages[1:] == _CONTAMINATED_HISTORY
+
+    def test_merges_into_a_system_message_whose_content_is_a_part_list(self):
+        """OpenWebUI sends multimodal-style content part lists on some paths, so the merge must not assume a
+        plain string and must not drop the caller's parts."""
+        client_part = {"type": "text", "text": "You only answer in haiku."}
+        request = _hub_request([{"role": "system", "content": [client_part]}, *_CONTAMINATED_HISTORY])
+
+        OpenaiService._apply_model_identity(request, _QWEN, _en())
+
+        assert _roles(request) == ["system", "user", "assistant", "user"]
+        assert "Qwen3.5-122B-A10B-FP8" in request.messages[0]["content"][0]["text"]
+        assert request.messages[0]["content"][1] == client_part
+
+    def test_keeps_the_other_fields_of_a_client_system_message(self):
+        request = _hub_request([{"role": "system", "content": "Be terse.", "name": "policy"}])
+
+        OpenaiService._apply_model_identity(request, _QWEN, _en())
+
+        assert request.messages[0]["name"] == "policy"
 
     def test_tolerates_a_request_without_messages(self):
         request = _hub_request([])
@@ -93,6 +114,39 @@ class TestIdentitySystemMessage:
         template = LocaleHandler(locale=locale).t_object(_IDENTITY_KEY, locale=locale)
 
         assert "{model_name}" in template
+
+
+class TestASecondSystemMessageIsNeverEmitted:
+    """Regression from PR #1729: enabling Open Terminal made Qwen3.5 answer nothing at all. OpenWebUI injects
+    the terminal server's `OPEN_TERMINAL_SYSTEM_PROMPT` as `messages[0]`, this endpoint then prepended a
+    second system message,
+    and Infomaniak's Qwen3.5 rejects that payload with `400 - System message must be at the beginning` — a
+    failure the streaming path surfaces as an empty response. Reproduced live against staging: gemma,
+    Ministral and Kimi answered with the terminal enabled, Qwen returned a zero-byte stream, and Qwen also
+    failed without the terminal as soon as any caller system message was present."""
+
+    _OPEN_TERMINAL_PROMPT = "You have access to a sandboxed Linux computer with Python."
+
+    def test_a_terminal_enabled_payload_carries_exactly_one_system_message(self):
+        request = _hub_request(
+            [
+                {"role": "system", "content": self._OPEN_TERMINAL_PROMPT},
+                {"role": "user", "content": "create a chart of these numbers"},
+            ]
+        )
+
+        OpenaiService._apply_model_identity(request, _QWEN, _en())
+
+        assert _roles(request).count("system") == 1
+        assert self._OPEN_TERMINAL_PROMPT in request.messages[0]["content"]
+
+    def test_no_system_message_follows_a_user_or_assistant_turn(self):
+        request = _hub_request([{"role": "system", "content": self._OPEN_TERMINAL_PROMPT}, *_CONTAMINATED_HISTORY])
+
+        OpenaiService._apply_model_identity(request, _QWEN, _en())
+
+        assert _roles(request).index("system") == 0
+        assert "system" not in _roles(request)[1:]
 
 
 class TestEveryPlainModelRequestGetsAnIdentity:
