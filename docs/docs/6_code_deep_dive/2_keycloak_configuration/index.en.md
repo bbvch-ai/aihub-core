@@ -23,10 +23,10 @@ the session-lifespan migration via `kcadm`; it no longer reconciles clients, flo
 
 ### What lives in each lifecycle
 
-| Lifecycle     | Realm objects                                                                                                                                                                                                                    |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Bootstrap** | Realm-level settings (login theme, brute-force protection, session lifespans, SMTP), the user-profile component, the startup **tenant group** seed, the **superuser** seed, and the **identity providers** (Azure AD + mappers). |
-| **Managed**   | Realm **roles**, **client scopes**, **clients**, custom **authentication flows** (incl. the Langfuse sysadmin gate and its `browserFlow` binding), and the `aihub-api-service` **service account**.                              |
+| Lifecycle     | Realm objects                                                                                                                                                                                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Bootstrap** | Realm-level settings (login theme, brute-force protection, token and session lifespans, SMTP), the user-profile component, the startup **tenant group** seed, the **superuser** seed, and the **identity providers** (Azure AD + mappers). |
+| **Managed**   | Realm **roles**, **client scopes**, **clients**, custom **authentication flows** (incl. the Langfuse sysadmin gate and its `browserFlow` binding), and the `aihub-api-service` **service account**.                                        |
 
 ::: tip Rule of thumb
 If you change something in `bootstrap/` and need it on an existing deployment, you must apply it manually (admin
@@ -129,7 +129,7 @@ What this means in practice when upgrading AI-Hub:
 - **Bootstrap** changes (realm settings, the tenant-group seed, the superuser, **identity providers**) do **not** reach
   an already-initialized realm. Apply them in the Keycloak admin console, or re-seed by resetting the realm database.
   Conversely, this is exactly why operator edits to those objects (e.g. rotating an Azure client secret in the console,
-  tuning session lifespans) survive upgrades.
+  tuning token or session lifespans) survive upgrades.
 
 The Langfuse sysadmin gate follows the managed path (its flows live in `managed/40-auth-flows.json.j2`); details in
 [Langfuse Sysadmin Gate](1_langfuse_sysadmin_gate/).
