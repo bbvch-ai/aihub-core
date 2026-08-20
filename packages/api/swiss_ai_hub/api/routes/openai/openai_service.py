@@ -169,13 +169,13 @@ class OpenaiService:
         message is merged into this one instead of being left as a second one. See ADR 2026_08_14."""
         identity = t("lib.prompt.model.identity_system_message").format(model_name=model_name.rpartition("/")[2])
         messages = list(chat_completion_request.messages or [])
+        leading_message = next(iter(messages), None)
 
-        if messages and messages[0].get("role") == "system":
-            messages[0] = OpenaiService._prefixed_system_message(messages[0], identity)
+        if leading_message is not None and leading_message.get("role") == "system":
+            merged_system_message = OpenaiService._prefixed_system_message(leading_message, identity)
+            chat_completion_request.messages = [merged_system_message, *messages[1:]]
         else:
-            messages.insert(0, {"role": "system", "content": identity})
-
-        chat_completion_request.messages = messages
+            chat_completion_request.messages = [{"role": "system", "content": identity}, *messages]
 
     @staticmethod
     def _prefixed_system_message(system_message: dict[str, Any], identity: str) -> dict[str, Any]:
