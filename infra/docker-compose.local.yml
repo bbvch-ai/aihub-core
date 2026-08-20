@@ -2382,7 +2382,12 @@ services:
       MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # OpenTelemetry Configuration
+      # Traces always on. Request metrics are opt-in: the FastAPI auto-instrumentation's
+      # http.server.* histograms were the high-cardinality driver behind issue 1496, so they
+      # default off (OTEL_METRICS_ENABLED=false in .env.dev/.env.prod) and any deploy can turn
+      # them back on via its own env.
       OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: api
