@@ -14,12 +14,15 @@ class ModelGatewayErrorHandler:
     """
     Turns LiteLLM and model-provider failures into responses that name their cause.
 
-    Every model call in this API goes through the OpenAI SDK, whose errors are not
-    ``HTTPException``. Unhandled, they left the app as Starlette's plain-text 500: the caller
-    learned nothing (OpenWebUI could only report "500 Server Error ... Internal Server Error"),
-    and the ASGI instrumentation left the server span unmarked — it has no exception branch —
-    so the request did not surface as an error in the observability backend either. Both are
-    resolved here, at the HTTP boundary that owns protocol conversion.
+    Every model call goes through the OpenAI SDK, whose errors are not ``HTTPException``.
+    Unhandled, they left the app as Starlette's plain-text 500: the caller learned nothing
+    (OpenWebUI could only report "500 Server Error ... Internal Server Error"), and the only
+    record naming the cause was the ASGI server's traceback, which never left the container.
+    Both are resolved here, at the HTTP boundary that owns protocol conversion.
+
+    Registered by ``Runner`` so it covers any app built from that base, not just the main API. It
+    fires only for exceptions that actually reach the boundary: ``BaseChatBot`` catches its own, so
+    the bot's chat path keeps translating them in-route instead.
     """
 
     BAD_GATEWAY = 502
@@ -134,10 +137,11 @@ class ModelGatewayErrorHandler:
 
     @staticmethod
     def _mark_span_failed(exception: Exception) -> None:
-        """Handling the exception means the server span would otherwise end with the status of a
-        normal response. The instrumentation's own status setter runs afterwards but cannot undo
-        this: the SDK ignores a set_status back to UNSET, which is what it derives from the 4xx
-        this handler may return."""
+        """The FastAPI instrumentation marks the server span from an exception that propagates out
+        of the middleware stack. A handled one never does — ``ExceptionMiddleware`` converts it to
+        a response below that point — so nothing else marks this span. The instrumentation's status
+        setter still runs afterwards but cannot undo this: the SDK ignores a set_status back to
+        UNSET, which is what it derives from the 4xx this handler may return."""
         span = get_current_span()
         span.set_attribute("error.type", type(exception).__name__)
         span.record_exception(exception)

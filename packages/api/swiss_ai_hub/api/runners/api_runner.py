@@ -15,7 +15,6 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.routes import Controller
 from swiss_ai_hub.core.runners import OpenApiSchemaService, Runner
 
-from swiss_ai_hub.api.exceptions.model_gateway_error_handler import ModelGatewayErrorHandler
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
@@ -156,8 +155,6 @@ class ApiRunner(Runner):
 
         # Internationalization middleware
         app.add_middleware(I18nMiddleware)
-
-        ModelGatewayErrorHandler.register(app)
         return app
 
     def mount(self, *controllers: Controller) -> Self:

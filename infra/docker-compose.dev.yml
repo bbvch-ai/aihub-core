@@ -1356,6 +1356,13 @@ services:
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+      # Read by otel-config's resource/deployment processor. Written per-VM into .env by
+      # aihub-playbook (env.j2). The `:-` default is a deliberate exception to the "defaults live
+      # in .env.dev/.env.prod" rule: an empty value makes the processor fail to build and the
+      # collector exit, and nothing depends_on it — so an unset var would silently take down all
+      # telemetry instead of just this attribute. The fallback keeps that impossible.
+      - OTEL_DEPLOYMENT_ENVIRONMENT=${OTEL_DEPLOYMENT_ENVIRONMENT:-dev}
+      - OTEL_HOST_NAME=${OTEL_HOST_NAME:-dev}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes: [./configs/otel/otel-config.dev.yml:/etc/otel-config.yml]

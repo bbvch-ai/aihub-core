@@ -9,6 +9,7 @@ from fastapi.routing import APIRoute
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
+from swiss_ai_hub.core.exceptions.model_gateway_error_handler import ModelGatewayErrorHandler
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.routes.controller import Controller
 
@@ -95,6 +96,10 @@ class Runner(abc.ABC):
             debug=AIHubSettings().API_DEBUG_MODE,
             redirect_slashes=True,
         )
+
+        # Every runner mounts controllers that reach the model gateway through the OpenAI SDK, so
+        # the translation belongs here rather than in one service's runner.
+        ModelGatewayErrorHandler.register(app)
 
         return app
 
