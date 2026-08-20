@@ -9,6 +9,10 @@ class AgentTopicManager(TopicManager):
     DISPLAY_EVENT: ClassVar[str] = "display_event"
     CONTROL_EVENT: ClassVar[str] = "control_event"
 
+    # Publisher identity for events a user emits themselves. No AgentClassEntity backs it, so
+    # anything resolving agent classes must skip it rather than look it up.
+    USER_AGENT_CLASS: ClassVar[str] = "UserAgent"
+
     def get_agent_config_rpc_subject(
         self,
         agent_class: Annotated[str, "Agent class identifier or '*' for wildcard"] = "*",

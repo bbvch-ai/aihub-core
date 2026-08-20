@@ -354,7 +354,7 @@ class PersistedAgentEventEntity(Document):
                             "agent_id": "$agent_id",
                             "event_time": "$event_time",
                             "is_start": {"$in": ["StartEvent", "$event_parents"]},
-                            "is_not_user": {"$ne": ["$agent_class", "UserAgent"]},
+                            "is_not_user": {"$ne": ["$agent_class", AgentTopicManager.USER_AGENT_CLASS]},
                             "is_control": {"$eq": ["$event_type", AgentTopicManager.CONTROL_EVENT]},
                         }
                     },
@@ -388,6 +388,16 @@ class PersistedAgentEventEntity(Document):
                                 "as": "event",
                                 "cond": {"$and": ["$$event.is_start", "$$event.is_not_user", "$$event.is_control"]},
                             }
+                        }
+                    },
+                    # The user's own events carry the UserAgent pseudo-class, which no
+                    # AgentClassEntity backs. Callers resolve these entries against the agent
+                    # catalog, so drop it here as `start_event_info` already does.
+                    "participating_agents_in_run": {
+                        "$filter": {
+                            "input": "$participating_agents_in_run",
+                            "as": "agent",
+                            "cond": {"$ne": ["$$agent.agent_class", AgentTopicManager.USER_AGENT_CLASS]},
                         }
                     },
                 }

@@ -32,10 +32,11 @@ def _persist_event(
     display_id: str = "disp",
     agent_id: str = "test",
     run_id: str = "run",
+    agent_class: str = "TestAgent",
 ) -> None:
     """Insert a minimal event. Only thread_id / event_id / event_parents / event_type drive classification."""
     PersistedAgentEventEntity(
-        agent_class="TestAgent",
+        agent_class=agent_class,
         agent_id=agent_id,
         thread_id=thread_id,
         display_id=display_id,
@@ -121,3 +122,39 @@ class TestThreadIdForDisplay:
         _persist_event("t_b", ["StartEvent"], "e2", display_id="d_b")
         assert PersistedAgentEventEntity.thread_id_for_display("d_a") == "t_a"
         assert PersistedAgentEventEntity.thread_id_for_display("d_b") == "t_b"
+
+
+class TestAggregatedRunStatistics:
+    def test_user_agent_is_not_a_participating_agent(self):
+        # A user's own display events are published under the UserAgent pseudo-class, which no
+        # AgentClassEntity backs — callers resolve participants against the agent catalog.
+        _persist_event("t_run", ["StartEvent"], "e1", agent_id="rag")
+        _persist_event(
+            "t_run",
+            ["ChunkEvent"],
+            "e2",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            agent_class=AgentTopicManager.USER_AGENT_CLASS,
+            agent_id="user-uuid",
+        )
+
+        runs = PersistedAgentEventEntity.get_aggregated_run_statistics("t_run")
+
+        assert len(runs) == 1
+        participants = runs[0]["participating_agents_in_run"]
+        assert participants == [{"agent_class": "TestAgent", "agent_id": "rag"}]
+
+    def test_run_started_only_by_the_user_reports_no_start_agent(self):
+        _persist_event(
+            "t_user_only",
+            ["StartEvent"],
+            "e1",
+            agent_class=AgentTopicManager.USER_AGENT_CLASS,
+            agent_id="user-uuid",
+        )
+
+        runs = PersistedAgentEventEntity.get_aggregated_run_statistics("t_user_only")
+
+        assert len(runs) == 1
+        assert runs[0].get("start_agent_class") is None
+        assert runs[0]["participating_agents_in_run"] == []

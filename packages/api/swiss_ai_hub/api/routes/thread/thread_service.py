@@ -355,10 +355,16 @@ class ThreadService:
 
             display_agg.update_from_run_data(run_data)
 
-            # Attempt to fetch the agent that started the run using the cached method
+            # Attempt to fetch the agent that started the run using the cached method.
+            # Both are None for a run with no qualifying control StartEvent (the aggregation
+            # projects them from an empty `start_event_info`), which is not an agent to look up.
             start_agent_class = run_data.get("start_agent_class")
             start_agent_id = run_data.get("start_agent_id")
-            run_agent_dto = ThreadService._fetch_minimal_agent_dto(start_agent_class, start_agent_id, t)
+            run_agent_dto = (
+                ThreadService._fetch_minimal_agent_dto(start_agent_class, start_agent_id, t)
+                if start_agent_class and start_agent_id
+                else None
+            )
 
             if run_agent_dto:
                 try:
