@@ -17,8 +17,8 @@ whether an edit reaches an *already-running* deployment on the next AI-Hub upgra
 | **Managed**   | `keycloak/managed/`   | Every container start — by the one-shot `keycloak-config` service ([keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli)) over the admin API | **Yes.** File wins, including deletions; admin-console drift on these objects is reverted on the next restart.                                                                                  |
 
 `keycloak-entrypoint.sh.j2` orchestrates the first-start import (env-var substitution + `--import-realm`) and applies
-the session-lifespan migration via `kcadm`; it no longer reconciles clients, flows, or identity providers — that is the
-`keycloak-config` service's job. The decision and mechanics are recorded in ADR
+the token- and session-lifespan migration via `kcadm`; it no longer reconciles clients, flows, or identity providers —
+that is the `keycloak-config` service's job. The decision and mechanics are recorded in ADR
 `2026_06_12_declarative_keycloak_realm_reconciliation`.
 
 ### What lives in each lifecycle
