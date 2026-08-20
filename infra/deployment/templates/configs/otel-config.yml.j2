@@ -20,6 +20,13 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
+        # gRPC defaults to a 4 MiB receive limit, and an over-limit request is rejected whole —
+        # every record in that batch is lost, the collector logs nothing (the error goes to the
+        # client), and the SDK's own report of it has nowhere to go but the failing exporter.
+        # A batch of tracebacks reaches that size easily: measured with 8 KB records, 4 MiB
+        # delivered 4 of 4096; 64 MiB delivered 4096 of 4096. 32 covers the app's own ceiling
+        # (max_export_batch_size 2048 x a ~16 KB record) with headroom.
+        max_recv_msg_size_mib: 32
       http:
         endpoint: 0.0.0.0:4318
 
