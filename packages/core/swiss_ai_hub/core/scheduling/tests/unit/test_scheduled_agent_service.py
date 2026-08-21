@@ -169,6 +169,53 @@ class TestExactlyOnce:
         )
 
 
+class TestPublishFailureIsolation:
+    """A publish that raises used to propagate out of the whole tick, taking every other profile with it."""
+
+    @pytest.mark.asyncio
+    async def test_a_failing_publish_does_not_starve_the_other_profiles(
+        self, service: ScheduledAgentService, distributor: MagicMock, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Same rationale as a malformed schedule: the loop over profiles is shared, so an uncaught failure
+        aborts the window before the watermark advances and every later tick rediscovers the same row."""
+
+        async def fail_only_for_broken(_event, *, user, target_agent):
+            if target_agent.agent_id == "broken":
+                raise RuntimeError("NATS unavailable")
+
+        distributor.distribute_event.side_effect = fail_only_for_broken
+
+        with caplog.at_level(logging.ERROR):
+            await _run_tick(service, configs=[_config(agent_id="broken"), _config(agent_id="healthy")])
+
+        attempted = {call.kwargs["target_agent"].agent_id for call in distributor.distribute_event.call_args_list}
+        assert attempted == {"broken", "healthy"}
+        assert "Failed to start scheduled run for ScheduledDemoAgent/broken" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_a_failing_publish_still_advances_the_watermark(
+        self, service: ScheduledAgentService, distributor: MagicMock
+    ) -> None:
+        """Leaving the watermark behind would replay the whole window on the next tick."""
+        distributor.distribute_event.side_effect = RuntimeError("NATS unavailable")
+
+        await _run_tick(service, configs=[_config(agent_id="broken")])
+
+        service._store.set_watermark.assert_awaited_once_with(_NOW)
+
+    @pytest.mark.asyncio
+    async def test_a_failed_occurrence_keeps_its_claim(
+        self, service: ScheduledAgentService, distributor: MagicMock
+    ) -> None:
+        """At-most-once is the right way round given the no-duplicate-runs guarantee: the claim is taken
+        before publishing, so a failure drops the occurrence rather than retrying it."""
+        distributor.distribute_event.side_effect = RuntimeError("NATS unavailable")
+
+        await _run_tick(service, configs=[_config(agent_id="broken")])
+
+        service._store.claim_occurrence.assert_awaited_once()
+
+
 class TestInstanceSelection:
     @pytest.mark.asyncio
     async def test_ignores_instances_without_a_schedule(
