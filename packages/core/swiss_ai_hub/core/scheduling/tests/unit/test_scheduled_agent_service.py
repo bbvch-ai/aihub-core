@@ -12,6 +12,7 @@ from swiss_ai_hub.core.scheduling.scheduled_agent_service import ScheduledAgentS
 _MODULE = "swiss_ai_hub.core.scheduling.scheduled_agent_service"
 _NOW = datetime(2026, 8, 11, 12, 0, 30, tzinfo=UTC)
 _HOURLY = {"minute": "0", "hour": "*", "day_of_month": "*", "month": "*", "day_of_week": "*", "timezone": "UTC"}
+_EVERY_FIVE_MINUTES = {**_HOURLY, "minute": "*/5"}
 _SCHEDULE_FORM = [{"formkit": "cronInput", "name": "schedule", "ref": "schedule"}]
 
 
@@ -204,16 +205,39 @@ class TestPublishFailureIsolation:
         service._store.set_watermark.assert_awaited_once_with(_NOW)
 
     @pytest.mark.asyncio
-    async def test_a_failed_occurrence_keeps_its_claim(
+    async def test_a_failure_does_not_stop_later_occurrences_of_the_same_profile(
         self, service: ScheduledAgentService, distributor: MagicMock
     ) -> None:
-        """At-most-once is the right way round given the no-duplicate-runs guarantee: the claim is taken
-        before publishing, so a failure drops the occurrence rather than retrying it."""
+        """The guard sits inside the per-occurrence loop, not around it.
+
+        Profile-level isolation comes from the caller's loop, so it survives the guard being hoisted to
+        wrap this whole method — which is exactly the "simplification" someone would reach for. Only a
+        profile with several due occurrences pins where the guard actually belongs.
+        """
+        distributor.distribute_event.side_effect = [RuntimeError("NATS unavailable"), None, None]
+
+        # A */5 schedule over the clamped 15-minute catch-up window: three occurrences, one profile.
+        await _run_tick(service, configs=[_config(schedule=_EVERY_FIVE_MINUTES)])
+
+        assert distributor.distribute_event.await_count == 3
+
+    @pytest.mark.asyncio
+    async def test_a_failed_occurrence_is_not_released(
+        self, service: ScheduledAgentService, distributor: MagicMock
+    ) -> None:
+        """At-most-once is the right way round given the no-duplicate-runs guarantee, so a failed
+        occurrence must not be handed back.
+
+        There is no release path today, and this pins that there isn't one: the tempting fix for a
+        transient publish failure is to release the claim so the next tick retries it, which would turn a
+        dropped run into a duplicated one. The claim is a Redis key, so releasing it means deleting it.
+        """
         distributor.distribute_event.side_effect = RuntimeError("NATS unavailable")
 
         await _run_tick(service, configs=[_config(agent_id="broken")])
 
-        service._store.claim_occurrence.assert_awaited_once()
+        removals = [call for call in service._store._redis.mock_calls if "delete" in call[0] or "unlink" in call[0]]
+        assert removals == []
 
 
 class TestInstanceSelection:
