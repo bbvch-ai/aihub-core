@@ -164,8 +164,10 @@ async def test_a_failed_move_leaves_the_rest_of_the_batch_unfiled():
     client = make_client()
     client.relocate_message = AsyncMock(side_effect=[None, ValueError("uid 2 was expunged")])
 
+    imap_config = _config()
+
     with patch(FACTORY, side_effect=lambda config: fake_create(client, config)):
         with pytest.raises(ValueError, match="expunged"):
-            await do_file_messages(_config(), [("1", "A"), ("2", "A"), ("3", "A")])
+            await do_file_messages(imap_config, [("1", "A"), ("2", "A"), ("3", "A")])
 
     assert client.relocate_message.await_count == 2

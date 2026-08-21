@@ -60,8 +60,9 @@ def test_the_response_schema_bounds_the_index_to_the_configured_categories():
 
 
 def test_no_categories_is_rejected():
+    settings = _settings(categories=[])
     with pytest.raises(ValueError, match="no categories are configured"):
-        EmailClassificationAgent._validate(_settings(categories=[]), "INBOX")
+        EmailClassificationAgent._validate(settings, "INBOX")
 
 
 def test_an_empty_fallback_folder_is_rejected():
@@ -73,15 +74,17 @@ def test_an_empty_fallback_folder_is_rejected():
 
 def test_duplicate_category_names_are_rejected():
     duplicate = MailCategory(category="support_request", imap_folder="Other", description="Also support.")
+    settings = _settings(categories=[_SUPPORT, duplicate])
     with pytest.raises(ValueError, match="category names must be unique"):
-        EmailClassificationAgent._validate(_settings(categories=[_SUPPORT, duplicate]), "INBOX")
+        EmailClassificationAgent._validate(settings, "INBOX")
 
 
 def test_duplicate_category_folders_are_rejected():
     """Two categories filing into one folder makes the run summary unauditable — you cannot tell them apart."""
     duplicate = MailCategory(category="escalation", imap_folder="Triage/Support", description="Escalated support.")
+    settings = _settings(categories=[_SUPPORT, duplicate])
     with pytest.raises(ValueError, match="category folders must be unique"):
-        EmailClassificationAgent._validate(_settings(categories=[_SUPPORT, duplicate]), "INBOX")
+        EmailClassificationAgent._validate(settings, "INBOX")
 
 
 def test_a_valid_taxonomy_passes():
@@ -95,8 +98,9 @@ def test_a_category_folder_equal_to_the_inbox_is_rejected():
     fresh unread copy in the same folder, so the next run picks the copy up, archives it again, and never terminates.
     """
     into_inbox = MailCategory(category="everything", imap_folder="INBOX", description="Straight back where it came.")
+    settings = _settings(categories=[into_inbox])
     with pytest.raises(ValueError, match="equals the inbox folder"):
-        EmailClassificationAgent._validate(_settings(categories=[into_inbox]), "INBOX")
+        EmailClassificationAgent._validate(settings, "INBOX")
 
 
 def test_a_fallback_folder_equal_to_the_inbox_is_rejected():

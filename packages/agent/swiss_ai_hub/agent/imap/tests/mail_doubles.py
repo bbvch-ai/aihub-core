@@ -53,7 +53,7 @@ def make_client(
     as newly created, so a scenario only has to state the intent once.
     """
 
-    async def ensure_folders(folders: list[str]) -> set[str]:
+    def ensure_folders(folders: list[str]) -> set[str]:
         if created_folders is not None:
             return created_folders
         return set(folders) if folder_created else set()
