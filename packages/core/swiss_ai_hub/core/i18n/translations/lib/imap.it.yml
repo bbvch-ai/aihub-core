@@ -54,3 +54,26 @@ config:
   draft_prompt:
     label: Prompt di redazione
     help: Istruzioni che guidano il modo in cui l'LLM redige il corpo della risposta.
+  category_name:
+    label: Categoria
+    help: Nome della categoria, ad es. support_request. Deve essere univoco.
+  category_folder:
+    label: Cartella di destinazione
+    help: Cartella della casella in cui vengono archiviati i messaggi di questa categoria.
+      Creata automaticamente se non esiste ancora.
+  category_description:
+    label: Cosa appartiene qui
+    help: Descrivi il tipo di posta che appartiene a questa categoria. È su questo
+      che il modello classifica, quindi sii concreto sull'intento invece di elencare
+      parole chiave.
+  fallback_folder:
+    label: Cartella di riserva
+    help: Cartella per la posta su cui il modello non è sicuro. Tale posta non viene
+      mai indovinata in una categoria né lasciata nella posta in arrivo.
+  classification_model:
+    label: Modello di classificazione
+    help: Modello di chat usato per classificare ogni messaggio. Lascia vuoto per
+      usare il modello principale dell'agente.
+  classification_prompt:
+    label: Prompt di classificazione
+    help: Istruzioni che guidano il modo in cui il modello sceglie una categoria.

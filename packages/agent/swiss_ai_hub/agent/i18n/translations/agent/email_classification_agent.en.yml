@@ -1,0 +1,13 @@
+---
+metadata:
+  name: Email Classification Agent
+  description: Reads every unread message in a mailbox, decides which category it
+    belongs to, and files it into that category's folder. Mail it is unsure about
+    goes to a fallback folder. It never sends.
+steps:
+  list_unread:
+    name: List unread mail
+  classify_and_file:
+    name: Classify and file
+  finish:
+    name: Finish

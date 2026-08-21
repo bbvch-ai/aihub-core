@@ -3882,7 +3882,8 @@ export type ContextualizedAgentEvent = {
     | UnreadMailListedEvent
     | MailFetchedEvent
     | MailMovedEvent
-    | MailBatchDraftedEvent;
+    | MailBatchDraftedEvent
+    | MailBatchClassifiedEvent;
 };
 
 /**
@@ -9452,6 +9453,82 @@ export type MailAttachmentRef = {
 };
 
 /**
+ * MailBatchClassifiedEvent
+ *
+ * Summarises one classification run: how many messages were classified and where each was filed.
+ *
+ * One event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in
+ * `classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread
+ * listing cannot see it again.
+ */
+export type MailBatchClassifiedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the classified messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of messages classified and filed in this run.
+   */
+  count: number;
+  /**
+   * Per Category
+   *
+   * How many messages were filed under each configured category.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Fallback Count
+   *
+   * How many messages went to the fallback folder instead of a category.
+   */
+  fallback_count?: number;
+  /**
+   * Classified
+   *
+   * Per-message classification verdicts and filing destinations.
+   */
+  classified?: Array<MailClassificationRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * MailBatchDraftedEvent
  *
  * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
@@ -9510,6 +9587,66 @@ export type MailBatchDraftedEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * MailClassificationRef
+ *
+ * One classified message and where it was filed — the per-message detail behind a run summary.
+ */
+export type MailClassificationRef = {
+  /**
+   * Message Id
+   *
+   * IMAP UID of the message within the source folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Category
+   *
+   * Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted.
+   */
+  category?: string | null;
+  /**
+   * Target Folder
+   *
+   * Folder the message was filed into.
+   */
+  target_folder: string;
+  /**
+   * Reason
+   *
+   * Model's stated reason for the choice — the audit trail for a misfile.
+   */
+  reason: string;
+  /**
+   * Folder Created
+   *
+   * Whether this message's target folder was created during the run. Folders are created once up front for the whole batch, so every message routed to a newly created folder carries this, not only the first one.
+   */
+  folder_created?: boolean;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  /**
+   * Reference to the original RFC822 message stored in S3.
+   */
+  original_message?: MailMessageRef | null;
 };
 
 /**
@@ -18569,7 +18706,8 @@ export type ContextualizedAgentEventWritable = {
     | UnreadMailListedEventWritable
     | MailFetchedEventWritable
     | MailMovedEventWritable
-    | MailBatchDraftedEventWritable;
+    | MailBatchDraftedEventWritable
+    | MailBatchClassifiedEventWritable;
 };
 
 /**
@@ -21790,6 +21928,69 @@ export type LocaleInputWritable = {
    * Placeholder text for each language
    */
   placeholder?: LocaleString | string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MailBatchClassifiedEvent
+ *
+ * Summarises one classification run: how many messages were classified and where each was filed.
+ *
+ * One event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in
+ * `classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread
+ * listing cannot see it again.
+ */
+export type MailBatchClassifiedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the classified messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of messages classified and filed in this run.
+   */
+  count: number;
+  /**
+   * Per Category
+   *
+   * How many messages were filed under each configured category.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Fallback Count
+   *
+   * How many messages went to the fallback folder instead of a category.
+   */
+  fallback_count?: number;
+  /**
+   * Classified
+   *
+   * Per-message classification verdicts and filing destinations.
+   */
+  classified?: Array<MailClassificationRef>;
   [key: string]: unknown;
 };
 

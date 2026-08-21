@@ -88,7 +88,9 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.events.agent.imap.drafted_reply_ref import DraftedReplyRef
     from swiss_ai_hub.core.events.agent.imap.mail_attachment_ref import MailAttachmentRef
+    from swiss_ai_hub.core.events.agent.imap.mail_batch_classified_event import MailBatchClassifiedEvent
     from swiss_ai_hub.core.events.agent.imap.mail_batch_drafted_event import MailBatchDraftedEvent
+    from swiss_ai_hub.core.events.agent.imap.mail_classification_ref import MailClassificationRef
     from swiss_ai_hub.core.events.agent.imap.mail_fetched_event import MailFetchedEvent
     from swiss_ai_hub.core.events.agent.imap.mail_message_ref import MailMessageRef
     from swiss_ai_hub.core.events.agent.imap.mail_moved_event import MailMovedEvent
@@ -196,7 +198,9 @@ __all__ = [
     "LimitChatHistoryEvent",
     "DraftedReplyRef",
     "MailAttachmentRef",
+    "MailBatchClassifiedEvent",
     "MailBatchDraftedEvent",
+    "MailClassificationRef",
     "MailFetchedEvent",
     "MailMessageRef",
     "MailMovedEvent",
@@ -296,7 +300,9 @@ _LAZY_IMPORTS: dict[str, str] = {
     "LimitChatHistoryEvent": "swiss_ai_hub.core.events.agent.common.limit_chat_history_event",
     "DraftedReplyRef": "swiss_ai_hub.core.events.agent.imap.drafted_reply_ref",
     "MailAttachmentRef": "swiss_ai_hub.core.events.agent.imap.mail_attachment_ref",
+    "MailBatchClassifiedEvent": "swiss_ai_hub.core.events.agent.imap.mail_batch_classified_event",
     "MailBatchDraftedEvent": "swiss_ai_hub.core.events.agent.imap.mail_batch_drafted_event",
+    "MailClassificationRef": "swiss_ai_hub.core.events.agent.imap.mail_classification_ref",
     "MailFetchedEvent": "swiss_ai_hub.core.events.agent.imap.mail_fetched_event",
     "MailMessageRef": "swiss_ai_hub.core.events.agent.imap.mail_message_ref",
     "MailMovedEvent": "swiss_ai_hub.core.events.agent.imap.mail_moved_event",

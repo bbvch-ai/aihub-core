@@ -40,6 +40,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
+    MailBatchClassifiedEvent,
     MailBatchDraftedEvent,
     MailFetchedEvent,
     MailMovedEvent,
@@ -133,6 +134,7 @@ DisplayEvents = (
     | Annotated[MailFetchedEvent, Tag("MailFetchedEvent")]
     | Annotated[MailMovedEvent, Tag("MailMovedEvent")]
     | Annotated[MailBatchDraftedEvent, Tag("MailBatchDraftedEvent")]
+    | Annotated[MailBatchClassifiedEvent, Tag("MailBatchClassifiedEvent")]
 )
 
 
