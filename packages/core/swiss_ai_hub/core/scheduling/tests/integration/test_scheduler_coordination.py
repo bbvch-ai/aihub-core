@@ -71,7 +71,10 @@ def _scheduler(redis: Redis, key_prefix: str, distributor: MagicMock) -> CronSch
         settings=SchedulerSettings(REDIS_KEY_PREFIX=key_prefix),
     )
     # Only Redis is real here — the point is the coordination, not the persistence reads.
-    scheduler._load_schedulable_snapshot = lambda _now: _SchedulableSnapshot(online=[_profile()])
+    scheduler._load_schedulable_snapshot = lambda now, watermark: _SchedulableSnapshot(
+        online=[_profile()],
+        window_start=scheduler._clamp_window_start(watermark, now),
+    )
     return scheduler
 
 

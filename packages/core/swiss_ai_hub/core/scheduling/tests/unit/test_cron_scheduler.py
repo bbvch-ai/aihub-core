@@ -16,8 +16,10 @@ _MODULE = "swiss_ai_hub.core.scheduling.cron_scheduler"
 _NOW = datetime(2026, 8, 11, 12, 0, 30, tzinfo=UTC)
 _HOURLY = {"minute": "0", "hour": "*", "day_of_month": "*", "month": "*", "day_of_week": "*", "timezone": "UTC"}
 _EVERY_FIVE_MINUTES = {**_HOURLY, "minute": "*/5"}
-# AgentClassEntity.last_discovered is stored naive, and the online/offline split compares against it.
-_NAIVE_NOW = _NOW.replace(tzinfo=None)
+# AgentClassEntity.last_discovered is stored naive *local* time, so a fixture standing in for a freshly
+# discovered class has to be built in the host's zone — not by stripping tzinfo off a UTC value, which is
+# the mistake this suite previously encoded.
+_LOCAL_NOW = _NOW.astimezone().replace(tzinfo=None)
 
 
 def _config(agent_class: str = "CronDemoAgent", agent_id: str = "demo", schedule: dict | None = _HOURLY):
@@ -32,7 +34,7 @@ def _agent_class(agent_class: str = "CronDemoAgent", last_discovered: datetime |
     """A discovered class, online by default. Pass an older `last_discovered` to make it offline."""
     return SimpleNamespace(
         agent_class=agent_class,
-        last_discovered=_NAIVE_NOW if last_discovered is None else last_discovered,
+        last_discovered=_LOCAL_NOW if last_discovered is None else last_discovered,
     )
 
 
@@ -48,7 +50,7 @@ def _snapshot(online: list | None = None) -> _SchedulableSnapshot:
 
 
 def _offline_agent_class(agent_class: str = "CronDemoAgent"):
-    return _agent_class(agent_class, last_discovered=_NAIVE_NOW - timedelta(hours=2))
+    return _agent_class(agent_class, last_discovered=_LOCAL_NOW - timedelta(hours=2))
 
 
 @pytest.fixture
@@ -360,7 +362,7 @@ class TestOccurrencesDroppedWhileOffline:
 
     @pytest.mark.asyncio
     async def test_warns_about_what_was_dropped(self, service: CronScheduler, caplog: pytest.LogCaptureFixture) -> None:
-        offline_since = _NAIVE_NOW - timedelta(hours=2)
+        offline_since = _LOCAL_NOW - timedelta(hours=2)
         with caplog.at_level(logging.WARNING):
             await _run_tick(
                 service,
@@ -430,21 +432,32 @@ class TestCatchUp:
     def test_clamps_the_window_start_to_the_catch_up_horizon(self, service: CronScheduler) -> None:
         stale = _NOW - timedelta(days=3)
 
-        assert service._clamp_window_start(stale, _NOW, _snapshot(), _TickReport()) == _NOW - timedelta(minutes=15)
+        assert service._clamp_window_start(stale, _NOW) == _NOW - timedelta(minutes=15)
 
     def test_keeps_a_recent_watermark(self, service: CronScheduler) -> None:
         recent = _NOW - timedelta(minutes=1)
 
-        assert service._clamp_window_start(recent, _NOW, _snapshot(), _TickReport()) == recent
+        assert service._clamp_window_start(recent, _NOW) == recent
 
     def test_counts_the_occurrences_the_clamp_discarded(self, service: CronScheduler) -> None:
         """The lag alone does not say whether any business work was actually lost."""
-        report = _TickReport()
+        watermark = _NOW - timedelta(days=1)
         schedule = CronSchedule.model_validate(_HOURLY)
 
-        service._clamp_window_start(_NOW - timedelta(days=1), _NOW, _snapshot([(schedule, _config())]), report)
+        dropped = service._count_clamped_away(
+            [(schedule, _config())], watermark, service._clamp_window_start(watermark, _NOW)
+        )
 
-        assert report.dropped_by_clamp == 23
+        assert dropped == 23
+
+    def test_counting_the_drop_happens_off_the_event_loop(self, service: CronScheduler) -> None:
+        """The discarded span is the whole outage and the watermark key has no TTL, so this is the one
+        unbounded enumeration in a tick — it must not run where it can stall HTTP traffic."""
+        import inspect
+
+        assert not inspect.iscoroutinefunction(service._count_clamped_away)
+        source = inspect.getsource(type(service)._load_schedulable_snapshot)
+        assert "_count_clamped_away" in source
 
 
 class TestTheTickStaysOffTheEventLoop:
@@ -514,17 +527,77 @@ class TestRetention:
         prune.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_a_slow_prune_does_not_fail_the_tick(self, distributor: MagicMock) -> None:
-        """Retention is housekeeping; the runs are what matter. The next interval retries."""
+    async def test_a_slow_prune_does_not_fail_the_tick(
+        self, distributor: MagicMock, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Retention is housekeeping; the runs are what matter. The next interval retries.
+
+        Patches the prune itself rather than `wait_for`: an earlier version stubbed `wait_for` with a
+        two-item side_effect, but the first item was an empty snapshot, which short-circuits the
+        `not scheduled_thread_ids` guard so the TimeoutError was never reached. That test passed with
+        the whole `except TimeoutError` block deleted.
+        """
         service = CronScheduler(
             redis=MagicMock(),
             external_agent_event_distributor=distributor,
             settings=SchedulerSettings(EVENT_RETENTION_DAYS=7),
         )
-        with patch(f"{_MODULE}.asyncio.wait_for", side_effect=[_SchedulableSnapshot(), TimeoutError()]):
+        with (
+            patch(f"{_MODULE}.PersistedAgentEventEntity.delete_events_older_than", side_effect=TimeoutError),
+            caplog.at_level(logging.WARNING),
+        ):
             await _run_tick(service, claim_retention=True)
 
-        service._store.set_watermark.assert_awaited_once()
+        service._store.set_watermark.assert_awaited_once_with(_NOW)
+        assert "was abandoned" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_the_prune_budget_is_what_is_left_of_the_lease(self, distributor: MagicMock) -> None:
+        """A flat `lease_ttl` here would let one tick run to 1.5x the lease, because the snapshot read may
+        already have spent half of it — breaking the invariant the lease exists to hold."""
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(EVENT_RETENTION_DAYS=7, LEASE_TTL_SECONDS=120),
+        )
+        service._store.claim_retention_window = AsyncMock(return_value=True)
+
+        with (
+            patch(f"{_MODULE}.PersistedAgentEventEntity.delete_events_older_than", return_value=0),
+            patch(f"{_MODULE}.asyncio.wait_for", wraps=asyncio.wait_for) as wait_for,
+        ):
+            await service._prune_scheduled_history(
+                _SchedulableSnapshot(scheduled_thread_ids=["thread-1"]),
+                _NOW,
+                _TickReport(),
+                elapsed_seconds=100.0,
+            )
+
+        assert wait_for.call_args.kwargs["timeout"] == pytest.approx(20.0)
+
+    @pytest.mark.asyncio
+    async def test_an_exhausted_lease_still_leaves_a_usable_budget(self, distributor: MagicMock) -> None:
+        """Passing zero or a negative timeout to `wait_for` fails instantly, which would turn a slow tick
+        into a prune that can never run rather than one that gets a little less room."""
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(EVENT_RETENTION_DAYS=7, LEASE_TTL_SECONDS=120),
+        )
+        service._store.claim_retention_window = AsyncMock(return_value=True)
+
+        with (
+            patch(f"{_MODULE}.PersistedAgentEventEntity.delete_events_older_than", return_value=0),
+            patch(f"{_MODULE}.asyncio.wait_for", wraps=asyncio.wait_for) as wait_for,
+        ):
+            await service._prune_scheduled_history(
+                _SchedulableSnapshot(scheduled_thread_ids=["thread-1"]),
+                _NOW,
+                _TickReport(),
+                elapsed_seconds=500.0,
+            )
+
+        assert wait_for.call_args.kwargs["timeout"] > 0
 
 
 class TestPublishFailureReporting:

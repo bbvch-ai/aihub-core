@@ -95,3 +95,22 @@ class TestRejectsAnUnfireableSchedule:
             )
 
         assert raised.value.status_code == 400
+
+
+class TestAnUntouchedScheduleIsNotASchedule:
+    """`normalize_empty_objects_to_none` only nullifies a literally empty dict, but a group of text
+    inputs nobody filled in serialises as blank strings."""
+
+    def test_all_blank_positions_are_treated_as_unscheduled(self) -> None:
+        """Rejecting this would 400 every save on a schedulable agent whose owner wants no schedule."""
+        _validate({key: "" for key in _VALID})
+
+    def test_blank_with_whitespace_is_also_unscheduled(self) -> None:
+        _validate({key: "   " for key in _VALID})
+
+    def test_a_partially_filled_schedule_is_still_rejected(self) -> None:
+        """Someone who filled in one position meant to set a schedule and got it wrong."""
+        with pytest.raises(HTTPException) as raised:
+            _validate({**{key: "" for key in _VALID}, "hour": "9"})
+
+        assert raised.value.status_code == 400

@@ -35,6 +35,12 @@ class _SchedulableSnapshot:
     online: list[_ScheduledProfile] = field(default_factory=list)
     offline: list[tuple[_ScheduledProfile, datetime]] = field(default_factory=list)
     scheduled_thread_ids: list[str] = field(default_factory=list)
+    # Both computed in the worker thread alongside the reads. The clamp's dropped-occurrence count is
+    # the only unbounded enumeration in a tick — the watermark key has no TTL, so after a long outage
+    # it spans the whole downtime — and counting it on the event loop would reintroduce exactly the
+    # stall the snapshot exists to remove.
+    window_start: datetime | None = None
+    dropped_by_clamp: int = 0
 
 
 @dataclass
@@ -157,12 +163,12 @@ class CronScheduler:
             # Bounded at half the lease so a slow database costs a skipped tick, not a pinned lease —
             # cancellation cannot kill the worker thread, but it does let the lease go.
             snapshot = await asyncio.wait_for(
-                asyncio.to_thread(self._load_schedulable_snapshot, now),
+                asyncio.to_thread(self._load_schedulable_snapshot, now, watermark),
                 timeout=self._lease_ttl / 2,
             )
             report.profiles_scanned = len(snapshot.online) + len(snapshot.offline)
-
-            window_start = self._clamp_window_start(watermark, now, snapshot, report)
+            report.dropped_by_clamp = snapshot.dropped_by_clamp
+            window_start = snapshot.window_start
             for schedule, config in snapshot.online:
                 await self._fire_occurrences(schedule, config, window_start, now, report)
             self._report_occurrences_dropped_while_offline(snapshot, window_start, now, report)
@@ -171,27 +177,26 @@ class CronScheduler:
             # Measured before pruning, so retention time cannot masquerade as a slow firing pass.
             self._warn_if_tick_outran_its_lease(time.monotonic() - started)
 
-            await self._prune_scheduled_history(snapshot, now, report)
+            await self._prune_scheduled_history(snapshot, now, report, time.monotonic() - started)
             self._log_tick_summary(report, time.monotonic() - started)
 
-    def _load_schedulable_snapshot(self, now: datetime) -> _SchedulableSnapshot:
+    def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
         """Reads every schedulable class and its profiles in one pass. Synchronous — runs in a thread.
 
         `now` is passed in rather than read here so the online/offline split uses the same instant as the
-        window this tick is computing, and it is converted to naive because `last_discovered` is stored
-        naive; comparing an aware value against it would classify every class as offline.
+        window this tick is computing. It stays aware — `AgentClassEntity.is_online_at` owns the
+        conversion to the local wall clock `last_discovered` is stored in, which is not the same as
+        stripping the tzinfo off a UTC value.
         """
         entities = AgentClassEntity.get_all_schedulable()
         if not entities:
-            return _SchedulableSnapshot()
+            return _SchedulableSnapshot(window_start=self._clamp_window_start(watermark, now))
 
-        naive_now = now.replace(tzinfo=None)
-        online_classes, offline_last_seen = [], {}
-        for entity in entities:
-            if AgentClassEntity.is_online_at(entity, naive_now):
-                online_classes.append(entity.agent_class)
-            else:
-                offline_last_seen[entity.agent_class] = entity.last_discovered
+        offline_last_seen = {
+            entity.agent_class: entity.last_discovered
+            for entity in entities
+            if not AgentClassEntity.is_online_at(entity, now)
+        }
 
         online: list[_ScheduledProfile] = []
         offline: list[tuple[_ScheduledProfile, datetime]] = []
@@ -202,9 +207,12 @@ class CronScheduler:
             else:
                 online.append(profile)
 
+        window_start = self._clamp_window_start(watermark, now)
         return _SchedulableSnapshot(
             online=online,
             offline=offline,
+            window_start=window_start,
+            dropped_by_clamp=self._count_clamped_away(online, watermark, window_start),
             # Recomputed from live profiles rather than read from a marker on the thread, which is what
             # makes over-deletion unrepresentable: only a thread derived from a current profile can be
             # pruned. ThreadEntity carries no discriminator, and adding one would leave every already
@@ -254,31 +262,36 @@ class CronScheduler:
             self._lease_ttl,
         )
 
-    def _clamp_window_start(
-        self,
-        watermark: datetime,
-        now: datetime,
-        snapshot: _SchedulableSnapshot,
-        report: _TickReport,
-    ) -> datetime:
+    def _clamp_window_start(self, watermark: datetime, now: datetime) -> datetime:
         """Bounds how far back a tick replays, so downtime does not produce a burst of stale runs."""
         earliest = now - self._max_catchup
-        if watermark >= earliest:
-            return watermark
+        return watermark if watermark >= earliest else earliest
 
-        # Count what the clamp discards, not just how far behind we were. The lag alone does not say
-        # whether any business work was actually lost, which is the part worth alerting on.
-        report.dropped_by_clamp = sum(
-            len(CronScheduleCalculator.occurrences_between(schedule, watermark, earliest))
-            for schedule, _ in snapshot.online
+    def _count_clamped_away(
+        self,
+        online: list[_ScheduledProfile],
+        watermark: datetime,
+        window_start: datetime,
+    ) -> int:
+        """Occurrences the clamp discarded, counted so a drop is reported rather than merely implied.
+
+        The lag alone does not say whether any business work was actually lost. Called from the worker
+        thread: the discarded span is the whole outage, so a stale watermark and a minute-by-minute
+        schedule make this the heaviest thing a tick does.
+        """
+        if window_start <= watermark:
+            return 0
+
+        dropped = sum(
+            len(CronScheduleCalculator.occurrences_between(schedule, watermark, window_start)) for schedule, _ in online
         )
         logger.warning(
             "Scheduler was behind by %s; dropping %d occurrence(s) older than the %s catch-up window",
-            now - watermark,
-            report.dropped_by_clamp,
+            window_start - watermark,
+            dropped,
             self._max_catchup,
         )
-        return earliest
+        return dropped
 
     @staticmethod
     def _scheduled_profiles(agent_classes: list[str]) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
@@ -425,6 +438,7 @@ class CronScheduler:
         snapshot: _SchedulableSnapshot,
         now: datetime,
         report: _TickReport,
+        elapsed_seconds: float,
     ) -> None:
         """Bounds how much run history one scheduled thread accumulates.
 
@@ -443,6 +457,10 @@ class CronScheduler:
             return
 
         started = time.monotonic()
+        # Bounded by what is *left* of the lease, not by the whole of it. The snapshot read may already
+        # have spent up to half, so a flat `lease_ttl` here would let one tick run to 1.5x the lease and
+        # break the invariant the lease exists to hold.
+        remaining_lease = max(1.0, self._lease_ttl - elapsed_seconds)
         try:
             report.events_pruned = await asyncio.wait_for(
                 asyncio.to_thread(
@@ -450,13 +468,14 @@ class CronScheduler:
                     snapshot.scheduled_thread_ids,
                     now - retention,
                 ),
-                timeout=self._lease_ttl,
+                timeout=remaining_lease,
             )
         except TimeoutError:
             # Never fail the tick over retention: the runs are what matter, and the next interval retries.
             logger.warning(
-                "Pruning scheduled-run history exceeded %ss and was abandoned; it will be retried",
-                self._lease_ttl,
+                "Pruning scheduled-run history exceeded the %.0fs left of the lease and was abandoned; "
+                "it will be retried next interval",
+                remaining_lease,
             )
             return
 
