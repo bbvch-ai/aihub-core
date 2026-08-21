@@ -82,6 +82,9 @@ class EmailClassificationAgent(Agent):
         Three phases, and the split between them is deliberate. The IMAP connection is opened for the fetch, closed
         for the model calls, and reopened to file: many servers drop a socket left idle across a slow batch of LLM
         round-trips.
+
+        The batch can come back shorter than the listing: this is a shared mailbox, so a human may file or delete a
+        message by hand between the two, and one that vanished is skipped rather than failing the run.
         """
         self._validate(classification, imap_config.inbox_folder)
 
@@ -95,6 +98,7 @@ class EmailClassificationAgent(Agent):
             [message.message_id for message in event.messages],
             agent_class=topic.agent_class,
             agent_id=topic.agent_id,
+            skip_vanished=True,
         )
         verdicts = await self._classify_all(fetched, agent_config, classification, displayer)
         classified = await self._file_all(fetched, verdicts, imap_config, classification, displayer)

@@ -14,6 +14,7 @@ from swiss_ai_hub.core.events.agent import UnreadMailSummary
 from swiss_ai_hub.core.imap import ImapClientConfig
 
 from swiss_ai_hub.agent.imap.mail_parser import MailParser
+from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
 from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 
 _FLAGS_KEY = b"FLAGS"
@@ -184,7 +185,7 @@ class ImapClient:
 
         sized = await asyncio.to_thread(self._connection.fetch, [uid], ["RFC822.SIZE"])
         if uid not in sized:
-            raise ValueError(f"message {message_id} not found in {source_folder} — it may have been expunged")
+            raise MessageVanishedError(f"message {message_id} not found in {source_folder} — it may have been expunged")
         size = sized[uid].get(_SIZE_KEY, 0)
         if size > self._max_message_bytes:
             raise ValueError(
@@ -228,7 +229,9 @@ class ImapClient:
 
         present = await asyncio.to_thread(self._connection.fetch, [uid], ["FLAGS"])
         if uid not in present:
-            raise ValueError(f"message {message_id} not found in {self._inbox_folder} — it may have been expunged")
+            raise MessageVanishedError(
+                f"message {message_id} not found in {self._inbox_folder} — it may have been expunged"
+            )
 
         await self._relocate_uid(uid, target_folder)
 

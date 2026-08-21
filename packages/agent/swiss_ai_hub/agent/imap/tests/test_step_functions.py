@@ -5,6 +5,7 @@ import pytest
 from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.testing import async_test
 
+from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
 from swiss_ai_hub.agent.imap.step_functions import (
     do_fetch_and_archive,
     do_file_message,
@@ -82,6 +83,95 @@ async def test_fetch_and_archive_always_retains_the_raw_bytes():
         await do_fetch_and_archive(_config(), ["1"], _AGENT_CLASS, _AGENT_ID)
 
     assert client.fetch_message.await_args.kwargs["with_raw"] is True
+
+
+@async_test
+async def test_fetch_and_archive_returns_no_raw_or_attachment_bytes():
+    """A batch caller holds these across every LLM round-trip, so the bytes must not survive the archive.
+
+    ``max_message_bytes`` bounds one message, not a run of ``max_messages`` of them — retaining the batch would put
+    the ceiling at the product of the two, for fields nothing downstream reads once the S3 refs exist.
+    """
+    client = make_client()
+    client.fetch_message = AsyncMock(side_effect=lambda message_id, **_: parsed_message(message_id=message_id))
+
+    with ExitStack() as stack:
+        for patcher in _store_patches(client):
+            stack.enter_context(patcher)
+        fetched = await do_fetch_and_archive(_config(), ["11", "12"], _AGENT_CLASS, _AGENT_ID)
+
+    assert all(f.parsed.raw == b"" for f in fetched)
+    assert all(f.parsed.attachments == [] for f in fetched)
+    assert all(f.attachments[0].filename == "report.pdf" for f in fetched)
+    assert all(f.parsed.subject for f in fetched)
+
+
+@async_test
+async def test_fetch_and_archive_archives_each_message_before_fetching_the_next():
+    """Interleaving is what keeps peak memory at one message instead of the whole batch."""
+    client = make_client()
+    order: list[str] = []
+    client.fetch_message = AsyncMock(
+        side_effect=lambda message_id, **_: (order.append(f"fetch {message_id}"), parsed_message(message_id))[1]
+    )
+    store_message = AsyncMock(
+        side_effect=lambda *_a, **kwargs: (order.append(f"store {kwargs['message_id']}"), None)[1]
+    )
+
+    with (
+        patch(FACTORY, side_effect=lambda config: fake_create(client, config)),
+        patch(STORE_ATTACHMENTS, new=AsyncMock(return_value=[])),
+        patch(STORE_MESSAGE, new=store_message),
+    ):
+        await do_fetch_and_archive(_config(), ["11", "12"], _AGENT_CLASS, _AGENT_ID)
+
+    assert order == ["fetch 11", "store 11", "fetch 12", "store 12"]
+
+
+@async_test
+async def test_a_vanished_message_is_skipped_rather_than_failing_the_batch():
+    """A human filing a message by hand mid-run is routine on a shared mailbox — it must cost that message only."""
+    client = make_client()
+    client.fetch_message = AsyncMock(
+        side_effect=[parsed_message("11"), MessageVanishedError("uid 12 was expunged"), parsed_message("13")]
+    )
+
+    with ExitStack() as stack:
+        for patcher in _store_patches(client):
+            stack.enter_context(patcher)
+        fetched = await do_fetch_and_archive(_config(), ["11", "12", "13"], _AGENT_CLASS, _AGENT_ID, skip_vanished=True)
+
+    assert [f.parsed.message_id for f in fetched] == ["11", "13"]
+
+
+@async_test
+async def test_a_vanished_message_fails_the_fetch_unless_skipping_was_asked_for():
+    """``ImapAgent`` fetches one message and needs the failure — it has no batch to salvage."""
+    client = make_client()
+    client.fetch_message = AsyncMock(side_effect=MessageVanishedError("uid 11 was expunged"))
+
+    with ExitStack() as stack:
+        for patcher in _store_patches(client):
+            stack.enter_context(patcher)
+        with pytest.raises(MessageVanishedError):
+            await do_fetch_and_archive(_config(), ["11"], _AGENT_CLASS, _AGENT_ID)
+
+
+@async_test
+async def test_an_oversized_message_still_fails_even_when_vanished_ones_are_skipped():
+    """The skip must stay narrow: a message refused by max_message_bytes is a real failure, not a race.
+
+    Both are raised as ValueError, so catching that broadly would leave an oversized message unread and unreported
+    on every run instead of once, loudly.
+    """
+    client = make_client()
+    client.fetch_message = AsyncMock(side_effect=ValueError("message 11 is 99 bytes, exceeding the 10-byte ceiling"))
+
+    with ExitStack() as stack:
+        for patcher in _store_patches(client):
+            stack.enter_context(patcher)
+        with pytest.raises(ValueError, match="exceeding"):
+            await do_fetch_and_archive(_config(), ["11"], _AGENT_CLASS, _AGENT_ID, skip_vanished=True)
 
 
 @async_test

@@ -14,6 +14,7 @@ from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.agent.imap.fetched_mail import FetchedMail
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
 from swiss_ai_hub.agent.imap.mail_store import MailStore
+from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
 
 logger = logging.getLogger(__name__)
 
@@ -37,45 +38,73 @@ async def do_fetch_and_archive(
     message_ids: list[str],
     agent_class: str,
     agent_id: str,
+    skip_vanished: bool = False,
 ) -> list[FetchedMail]:
     """Fetch each message with its attachments and archive both the attachments and the original to S3.
-
-    One short-lived connection covers the whole batch: the socket is closed before the caller does anything slow
-    with the results, because many servers drop an idle connection mid-batch.
 
     Archiving lives here rather than in a caller so #1575 holds for every blueprint that reads a mailbox — the raw
     bytes are retained only under ``with_raw=True``, which is why the fetch and the archive cannot be separated
     without handing the raw bytes to someone who does not need them.
+
+    Each message is archived and stripped before the next is fetched, so peak memory is one message rather than the
+    whole batch: ``max_message_bytes`` bounds a single message, not a run of ``max_messages`` of them. The returned
+    ``parsed`` therefore carries no ``raw`` and no attachment bytes — everything downstream reads the S3 references
+    instead, and a batch caller holds the list alive across slow LLM round-trips.
+
+    That interleaving keeps the connection open across the S3 writes. Those are in-cluster ``put_object`` calls,
+    orders of magnitude below the idle timeout RFC 3501 requires servers to allow; it is the *caller's* LLM work
+    that must never span this connection, and it still does not.
+
+    ``skip_vanished`` opts into dropping a UID that disappeared between the listing and the fetch, mirroring
+    ``_fetch_summaries``: on a shared mailbox a human filing a message by hand mid-run is routine, and it must cost
+    that one message rather than the whole batch. It stays opt-in because a caller fetching a single message has no
+    batch to salvage and needs the failure. Only the vanished case is skipped — an oversized message still fails the
+    run, because silently skipping it would leave it unread and unreported forever.
     """
     if not message_ids:
         return []
 
-    async with ImapClientFactory.create(imap_config) as client:
-        parsed_messages = [await client.fetch_message(message_id, with_raw=True) for message_id in message_ids]
-
     fetched: list[FetchedMail] = []
-    for parsed in parsed_messages:
-        logger.info(
-            "[imap] do_fetch_and_archive: fetched uid=%s from=%s subject=%r date=%s attachments=%d body_len=%d",
-            parsed.message_id,
-            parsed.sender,
-            parsed.subject,
-            parsed.date,
-            len(parsed.attachments),
-            len(parsed.body_text or ""),
-        )
-        attachments = await MailStore.store_attachments(
-            parsed.attachments,
-            agent_class=agent_class,
-            agent_id=agent_id,
-        )
-        original_message = await MailStore.store_message(
-            parsed.raw,
-            message_id=parsed.message_id,
-            agent_class=agent_class,
-            agent_id=agent_id,
-        )
-        fetched.append(FetchedMail(parsed=parsed, attachments=attachments, original_message=original_message))
+    async with ImapClientFactory.create(imap_config) as client:
+        for message_id in message_ids:
+            try:
+                parsed = await client.fetch_message(message_id, with_raw=True)
+            except MessageVanishedError:
+                if not skip_vanished:
+                    raise
+                logger.info(
+                    "[imap] do_fetch_and_archive: uid=%s vanished before the fetch — skipping it, not the batch",
+                    message_id,
+                )
+                continue
+
+            logger.info(
+                "[imap] do_fetch_and_archive: fetched uid=%s from=%s subject=%r date=%s attachments=%d body_len=%d",
+                parsed.message_id,
+                parsed.sender,
+                parsed.subject,
+                parsed.date,
+                len(parsed.attachments),
+                len(parsed.body_text or ""),
+            )
+            attachments = await MailStore.store_attachments(
+                parsed.attachments,
+                agent_class=agent_class,
+                agent_id=agent_id,
+            )
+            original_message = await MailStore.store_message(
+                parsed.raw,
+                message_id=parsed.message_id,
+                agent_class=agent_class,
+                agent_id=agent_id,
+            )
+            fetched.append(
+                FetchedMail(
+                    parsed=parsed.model_copy(update={"raw": b"", "attachments": []}),
+                    attachments=attachments,
+                    original_message=original_message,
+                )
+            )
     return fetched
 
 

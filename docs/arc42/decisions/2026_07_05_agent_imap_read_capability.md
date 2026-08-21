@@ -429,8 +429,38 @@ the whole batch and routes per category.
 
 - **Archiving was pulled in ahead of its own ticket.** #1637 lists it out of scope, deferring to #1575 — but #1575 is
   merged and lives in the read chain that classification displaces. Leaving it out would have silently un-shipped a
-  closed story for the agent that actually reads production mail. It costs nothing here: `do_fetch_and_archive` already
-  retains the raw bytes under `with_raw=True`.
+  closed story for the agent that actually reads production mail. `do_fetch_and_archive` already retains the raw bytes
+  under `with_raw=True`, so the archiving itself was free — the retention it implies was not; see below.
+
+- **Fetch, archive and strip run per message, not per batch.** The first implementation fetched every message into a
+  list before archiving any of them, and left `raw` and the decoded attachment bytes on the `ParsedMessage` that
+  `FetchedMail` carries. That reproduced, in the classification chain, precisely the exposure the `with_raw` gate was
+  introduced to prevent in the drafting chain: the whole batch's raw bytes held alive across every per-message LLM
+  round-trip. `max_message_bytes` bounds one message, so the effective ceiling became `max_messages` ×
+  `max_message_bytes` — 2.5 GB at the defaults — for fields nothing downstream reads once the S3 references exist. Each
+  message is now archived and stripped before the next is fetched, putting peak memory back at one message.
+
+  This keeps the connection open across the S3 writes, which the two-connection split above otherwise avoids. That split
+  exists to keep the socket off the *caller's* LLM round-trips, which it still does; in-cluster `put_object` calls are
+  orders of magnitude below the idle timeout RFC 3501 obliges servers to allow. The accepted cost is that a fetch
+  failure part-way through a batch now leaves the already-archived messages in S3 with no event referencing them, which
+  the unresolved retention question above already has to cover.
+
+- **The expunge-race skip extends to the batch fetch.** The listing skips a vanished UID; the batch fetch did not, so
+  one message expunged between the two failed the entire run. The shipped *Shared Mailbox Triage* template makes that
+  routine rather than exotic — a human filing mail by hand in the mailbox being triaged is the normal case. Skipping is
+  opt-in (`do_fetch_and_archive(skip_vanished=True)`) because `ImapAgent` fetches exactly one message and must still
+  fail: it has no batch to salvage, and its step has to return a `MailFetchedEvent`.
+
+  The skip is narrow by construction. `fetch_message` raised one `ValueError` for both a vanished UID and a message over
+  `max_message_bytes`; catching that broadly would have made an oversized message a silent no-op, unread and unreported
+  on every subsequent run. `MessageVanishedError` (a `ValueError` subclass, so existing handling is unaffected)
+  separates the race from the refusal.
+
+  Filing deliberately does **not** skip. `_file_all` builds one `MailClassificationRef` per message regardless of
+  whether the move succeeded, so skipping a vanished UID there would emit an audit record asserting a message was filed
+  when it was not. Failing keeps the record honest, and sequential filing already means the messages moved so far stay
+  moved.
 
 - **A single batch event, not one per message.** `MailBatchClassifiedEvent` carries `count`, `per_category`,
   `fallback_count` and the per-message `MailClassificationRef`s, matching the `MailBatchDraftedEvent` precedent. Each

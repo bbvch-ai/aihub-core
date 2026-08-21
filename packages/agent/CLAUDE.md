@@ -453,7 +453,9 @@ config seeder needed.
 - Self-awareness step functions: `packages/agent/swiss_ai_hub/agent/self_awareness/self_awareness_step_functions.py`
 - Shared mailbox step functions: `packages/agent/swiss_ai_hub/agent/imap/step_functions.py` (`do_list_unread`,
   `do_fetch_and_archive`, `do_file_message` for one message, `do_file_messages` for a whole batch on one connection —
-  used by both mailbox blueprints)
+  used by both mailbox blueprints). `do_fetch_and_archive` archives and strips each message before fetching the next, so
+  the returned `parsed` carries no raw or attachment bytes for a batch caller to hold across its LLM calls; pass
+  `skip_vanished=True` to drop a UID another client expunged mid-run instead of failing the whole batch
 - Self-awareness gate: `packages/agent/swiss_ai_hub/agent/self_awareness/meta_question_gate.py`
 
 **Playground patterns**: `playground/minimal_workflow/`
