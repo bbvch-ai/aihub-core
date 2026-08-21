@@ -247,6 +247,26 @@ class AgentClassEntity(Document):
 
     @classmethod
     @trace_fn
+    def get_all_schedulable(cls) -> list["AgentClassEntity"]:
+        """Every schedulable class, online or not, for a caller that needs both halves.
+
+        The scheduler needs online and offline classes on the same tick — one set to fire, the other to
+        report what it dropped. Fetching them together and splitting in Python costs one round-trip
+        instead of two, on a query that runs inside the API process every tick.
+        """
+        return list(cls.objects(is_schedulable=True))
+
+    @classmethod
+    def is_online_at(cls, entity: "AgentClassEntity", now: datetime) -> bool:
+        """Whether `entity` counts as online, using the same threshold as the online/offline queries.
+
+        `now` is naive because `last_discovered` is written naive; passing an aware value here would
+        compare across timezones and silently classify every class as offline.
+        """
+        return entity.last_discovered >= now - cls.ONLINE_THRESHOLD
+
+    @classmethod
+    @trace_fn
     def get_offline_schedulable(cls) -> list["AgentClassEntity"]:
         """Schedulable classes with no runner online — the exact complement of `get_online_schedulable`.
 

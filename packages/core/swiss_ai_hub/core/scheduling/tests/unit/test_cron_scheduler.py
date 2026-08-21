@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
@@ -7,12 +8,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from swiss_ai_hub.core.events.agent.control.start.cron_start_event import CronStartEvent
-from swiss_ai_hub.core.scheduling.cron_scheduler import CronScheduler
+from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
+from swiss_ai_hub.core.scheduling.cron_scheduler import CronScheduler, _SchedulableSnapshot, _TickReport
+from swiss_ai_hub.core.scheduling.scheduler_settings import SchedulerSettings
 
 _MODULE = "swiss_ai_hub.core.scheduling.cron_scheduler"
 _NOW = datetime(2026, 8, 11, 12, 0, 30, tzinfo=UTC)
 _HOURLY = {"minute": "0", "hour": "*", "day_of_month": "*", "month": "*", "day_of_week": "*", "timezone": "UTC"}
 _EVERY_FIVE_MINUTES = {**_HOURLY, "minute": "*/5"}
+# AgentClassEntity.last_discovered is stored naive, and the online/offline split compares against it.
+_NAIVE_NOW = _NOW.replace(tzinfo=None)
 
 
 def _config(agent_class: str = "CronDemoAgent", agent_id: str = "demo", schedule: dict | None = _HOURLY):
@@ -23,11 +28,27 @@ def _config(agent_class: str = "CronDemoAgent", agent_id: str = "demo", schedule
     )
 
 
-def _agent_class(
-    agent_class: str = "CronDemoAgent",
-    last_discovered: datetime = _NOW - timedelta(hours=2),
-):
-    return SimpleNamespace(agent_class=agent_class, last_discovered=last_discovered)
+def _agent_class(agent_class: str = "CronDemoAgent", last_discovered: datetime | None = None):
+    """A discovered class, online by default. Pass an older `last_discovered` to make it offline."""
+    return SimpleNamespace(
+        agent_class=agent_class,
+        last_discovered=_NAIVE_NOW if last_discovered is None else last_discovered,
+    )
+
+
+def _snapshot_hops(to_thread: MagicMock) -> int:
+    """How many of the offloaded calls were the snapshot read. Mocked callables carry no `__name__`."""
+    return sum(
+        getattr(call.args[0], "__name__", "") == "_load_schedulable_snapshot" for call in to_thread.call_args_list
+    )
+
+
+def _snapshot(online: list | None = None) -> _SchedulableSnapshot:
+    return _SchedulableSnapshot(online=online or [])
+
+
+def _offline_agent_class(agent_class: str = "CronDemoAgent"):
+    return _agent_class(agent_class, last_discovered=_NAIVE_NOW - timedelta(hours=2))
 
 
 @pytest.fixture
@@ -56,24 +77,26 @@ async def _run_tick(
     configs: list | None = None,
     schedulable: bool = True,
     agent_classes: list | None = None,
-    offline_classes: list | None = None,
+    claim_retention: bool = False,
 ) -> MagicMock:
     """Runs one tick with everything it reaches out to patched, returning the thread-resolution mock.
 
-    Only the scheduling logic is left real — leadership, persistence, and the distributor are all fakes.
+    Only the persistence reads, leadership, and the distributor are faked; the online/offline split and
+    the schedule parsing inside the snapshot stay real, since that is where the tick's decisions are made.
     """
     service._store.leadership = lambda: _leadership(is_leader)
     service._store.get_watermark = AsyncMock(return_value=watermark)
     service._store.set_watermark = AsyncMock()
     service._store.claim_occurrence = AsyncMock(return_value=claimed)
+    service._store.claim_retention_window = AsyncMock(return_value=claim_retention)
 
-    online_classes = (agent_classes if agent_classes is not None else [_agent_class()]) if schedulable else []
+    classes = (agent_classes if agent_classes is not None else [_agent_class()]) if schedulable else []
     with (
         patch(f"{_MODULE}.datetime", **{"now.return_value": _NOW}),
-        patch(f"{_MODULE}.AgentClassEntity.get_online_schedulable", return_value=online_classes),
-        patch(f"{_MODULE}.AgentClassEntity.get_offline_schedulable", return_value=offline_classes or []),
+        patch(f"{_MODULE}.AgentClassEntity.get_all_schedulable", return_value=classes),
         patch(f"{_MODULE}.AgentConfigEntityDocument.find_for_classes", return_value=configs or [_config()]),
         patch(f"{_MODULE}.ThreadEntity.get_or_create_scheduled_thread") as scheduled_thread,
+        patch(f"{_MODULE}.ThreadEntity.scheduled_thread_id", return_value="thread-1"),
     ):
         scheduled_thread.return_value = SimpleNamespace(id="thread-1")
         await service._tick()
@@ -337,12 +360,11 @@ class TestOccurrencesDroppedWhileOffline:
 
     @pytest.mark.asyncio
     async def test_warns_about_what_was_dropped(self, service: CronScheduler, caplog: pytest.LogCaptureFixture) -> None:
-        offline_since = _NOW - timedelta(hours=2)
+        offline_since = _NAIVE_NOW - timedelta(hours=2)
         with caplog.at_level(logging.WARNING):
             await _run_tick(
                 service,
-                schedulable=False,
-                offline_classes=[_agent_class(last_discovered=offline_since)],
+                agent_classes=[_agent_class(last_discovered=offline_since)],
             )
 
         assert "Skipped 1 occurrence(s) for CronDemoAgent/demo" in caplog.text
@@ -353,7 +375,7 @@ class TestOccurrencesDroppedWhileOffline:
         self, service: CronScheduler, distributor: MagicMock
     ) -> None:
         """The warning reports the drop; it must not become a late run."""
-        await _run_tick(service, schedulable=False, offline_classes=[_agent_class()])
+        await _run_tick(service, agent_classes=[_offline_agent_class()])
 
         distributor.distribute_event.assert_not_awaited()
 
@@ -365,8 +387,7 @@ class TestOccurrencesDroppedWhileOffline:
         with caplog.at_level(logging.WARNING):
             await _run_tick(
                 service,
-                schedulable=False,
-                offline_classes=[_agent_class()],
+                agent_classes=[_offline_agent_class()],
                 watermark=_NOW - timedelta(seconds=5),
             )
 
@@ -379,8 +400,7 @@ class TestOccurrencesDroppedWhileOffline:
         with caplog.at_level(logging.WARNING):
             await _run_tick(
                 service,
-                schedulable=False,
-                offline_classes=[_agent_class()],
+                agent_classes=[_offline_agent_class()],
                 configs=[_config(schedule=None)],
                 watermark=_NOW - timedelta(minutes=5),
             )
@@ -410,9 +430,98 @@ class TestCatchUp:
     def test_clamps_the_window_start_to_the_catch_up_horizon(self, service: CronScheduler) -> None:
         stale = _NOW - timedelta(days=3)
 
-        assert service._clamp_window_start(stale, _NOW) == _NOW - timedelta(minutes=15)
+        assert service._clamp_window_start(stale, _NOW, _snapshot(), _TickReport()) == _NOW - timedelta(minutes=15)
 
     def test_keeps_a_recent_watermark(self, service: CronScheduler) -> None:
         recent = _NOW - timedelta(minutes=1)
 
-        assert service._clamp_window_start(recent, _NOW) == recent
+        assert service._clamp_window_start(recent, _NOW, _snapshot(), _TickReport()) == recent
+
+    def test_counts_the_occurrences_the_clamp_discarded(self, service: CronScheduler) -> None:
+        """The lag alone does not say whether any business work was actually lost."""
+        report = _TickReport()
+        schedule = CronSchedule.model_validate(_HOURLY)
+
+        service._clamp_window_start(_NOW - timedelta(days=1), _NOW, _snapshot([(schedule, _config())]), report)
+
+        assert report.dropped_by_clamp == 23
+
+
+class TestTheTickStaysOffTheEventLoop:
+    """The scheduler runs inside the API process, so a synchronous Mongo read in the tick stalls every
+    HTTP and WebSocket request for its duration — and the stall grows with the profile count."""
+
+    @pytest.mark.asyncio
+    async def test_the_snapshot_read_is_offloaded_to_a_thread(self, service: CronScheduler) -> None:
+        with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
+            await _run_tick(service)
+
+        assert _snapshot_hops(to_thread) == 1
+
+    @pytest.mark.asyncio
+    async def test_resolving_the_thread_is_offloaded_too(self, service: CronScheduler) -> None:
+        """A query plus conditional insert, and it runs once per fired occurrence rather than per tick."""
+        with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
+            scheduled_thread = await _run_tick(service)
+
+        assert any(call.args[0] is scheduled_thread for call in to_thread.call_args_list)
+
+    @pytest.mark.asyncio
+    async def test_the_whole_snapshot_is_one_hop_regardless_of_profile_count(self, service: CronScheduler) -> None:
+        """Reading classes and profiles separately would cost a hop each, every tick."""
+        with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
+            await _run_tick(service, configs=[_config(agent_id="a"), _config(agent_id="b")])
+
+        assert _snapshot_hops(to_thread) == 1
+
+
+class TestRetention:
+    """Every scheduled run of a profile shares one thread, so nothing bounds that thread's history."""
+
+    @pytest.mark.asyncio
+    async def test_pruning_is_disabled_by_default(self, service: CronScheduler) -> None:
+        """Merging this code must not start deleting anyone's history — an operator has to ask for it."""
+        with patch(f"{_MODULE}.PersistedAgentEventEntity.delete_events_older_than") as prune:
+            await _run_tick(service)
+
+        prune.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_prunes_events_older_than_the_retention_window(self, distributor: MagicMock) -> None:
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(EVENT_RETENTION_DAYS=7),
+        )
+        with patch(f"{_MODULE}.PersistedAgentEventEntity.delete_events_older_than", return_value=3) as prune:
+            service._store.claim_retention_window = AsyncMock(return_value=True)
+            await _run_tick(service, claim_retention=True)
+
+        assert prune.call_args.args[0] == ["thread-1"]
+        assert prune.call_args.args[1] == _NOW - timedelta(days=7)
+
+    @pytest.mark.asyncio
+    async def test_another_replica_holding_the_window_skips_the_prune(self, distributor: MagicMock) -> None:
+        """The claim is what keeps a bulk delete off the per-tick path."""
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(EVENT_RETENTION_DAYS=7),
+        )
+        with patch(f"{_MODULE}.PersistedAgentEventEntity.delete_events_older_than") as prune:
+            await _run_tick(service)
+
+        prune.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_slow_prune_does_not_fail_the_tick(self, distributor: MagicMock) -> None:
+        """Retention is housekeeping; the runs are what matter. The next interval retries."""
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(EVENT_RETENTION_DAYS=7),
+        )
+        with patch(f"{_MODULE}.asyncio.wait_for", side_effect=[_SchedulableSnapshot(), TimeoutError()]):
+            await _run_tick(service, claim_retention=True)
+
+        service._store.set_watermark.assert_awaited_once()
