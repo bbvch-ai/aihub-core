@@ -12,7 +12,7 @@ from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
     AgentConfigSpecs,
-    ScheduledStartEvent,
+    CronStartEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.form.template_data import TemplateData
@@ -64,7 +64,11 @@ class AgentRunner(HealthCheckProvider):
             raise ValueError("agent_type must be a subclass of Agent.")
 
         self.agent_type = agent_type
-        self.agent_config = agent_config
+        # Schedulability is derived, never declared — handling CronStartEvent is the whole opt-in, exactly
+        # as handling UserMessageEvent is what makes an agent conversational. This is the only place that
+        # knows both halves needed to offer a schedule: the config, and the agent's start events.
+        self.is_schedulable = any(issubclass(event, CronStartEvent) for event in agent_type.get_start_events())
+        self.agent_config = agent_config.for_discovery(is_schedulable=self.is_schedulable)
         self.templates = templates or []
         self.agent_config_type = agent_config.__class__
 
@@ -72,7 +76,7 @@ class AgentRunner(HealthCheckProvider):
         self.description = agent_type.description
         self.icon = agent_type.icon
 
-        self.form = agent_config.to_formkit_form()
+        self.form = self.agent_config.to_formkit_form()
 
         self.running = False
         self._stop_signal = asyncio.Event()
@@ -157,7 +161,7 @@ class AgentRunner(HealthCheckProvider):
             form=self.form,
             agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
-            is_schedulable=any(issubclass(event, ScheduledStartEvent) for event in start_events),
+            is_schedulable=self.is_schedulable,
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             hitl_request_events=hitl_request_event_specs,

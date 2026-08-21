@@ -7,34 +7,35 @@ from bson import ObjectId
 from pydantic import ValidationError
 from redis.asyncio import Redis
 
+from swiss_ai_hub.core.agents.agent_config import CRON_CONFIG_KEY
 from swiss_ai_hub.core.distributor.events.external_agent_event import ExternalAgentEvent
 from swiss_ai_hub.core.distributor.external_agent_event_distributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.events.agent.control.start.scheduled_start_event import ScheduledStartEvent
+from swiss_ai_hub.core.events.agent.control.start.cron_start_event import CronStartEvent
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity
-from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
 from swiss_ai_hub.core.scheduling.cron_schedule_calculator import CronScheduleCalculator
 from swiss_ai_hub.core.scheduling.schedule_state_store import ScheduleStateStore
 
 logger = logging.getLogger(__name__)
 
-SCHEDULE_CONFIG_KEY = "schedule"
-_CRON_FORMKIT_TYPE = "cronInput"
 _SCHEDULED_THREAD_NAME = "Scheduled runs"
 
 
-class ScheduledAgentService:
+class CronScheduler:
     """Fires cron-scheduled agent runs, as a singleton across however many replicas host it.
 
     Runs are system runs: the thread has no members and the start event carries no user, so nothing
     downstream can mistake a scheduled run for one a person initiated. Everything the agent needs to
     know about its tenant already lives on its own profile.
 
-    The service holds no scheduling state of its own — leadership, watermark, and occurrence claims all
-    live in Redis via `ScheduleStateStore`, so it can be lifted out of the API into `aihub-daemon`
-    unchanged. The only in-memory state is which blueprints have already been warned about, which
-    suppresses repeat log lines and never decides whether something fires.
+    The service holds no state of its own — leadership, watermark, and occurrence claims all live in
+    Redis via `ScheduleStateStore`, so it can be lifted out of the API into `aihub-daemon` unchanged.
+
+    The schedule is read from `config_data[CRON_CONFIG_KEY]`, a platform-owned field on `AgentConfig`
+    that `AgentRunner` populates for schedulable classes. A blueprint therefore cannot mis-name it, so
+    there is no reconciling to do between "advertised as schedulable" and "has a readable schedule".
     """
 
     def __init__(
@@ -57,7 +58,6 @@ class ScheduledAgentService:
             lease_ttl=lease_ttl,
             claim_ttl=int(max_catchup.total_seconds()) * 4,
         )
-        self._classes_warned_about_unreachable_schedule: set[str] = set()
         self.running: bool = False
         self.task: asyncio.Task | None = None
 
@@ -157,58 +157,6 @@ class ScheduledAgentService:
             self._lease_ttl,
         )
 
-    def _warn_if_schedule_field_is_unreachable(self, agent_class_entity: AgentClassEntity) -> None:
-        """Surfaces a schedulable blueprint whose schedule this service has no way to read.
-
-        `is_schedulable` follows from handling `ScheduledStartEvent`, but the schedule is read by name
-        from `config_data[SCHEDULE_CONFIG_KEY]`. A blueprint that names its `CronInput` field anything
-        else is still advertised as schedulable and still stores whatever an admin enters — it simply
-        never fires, and nothing anywhere says why. The two facts cannot be reconciled automatically:
-        the field name is the blueprint's, and only its author can correct it.
-
-        A blueprint cannot dodge this by baking the schedule in as a non-configurable value either —
-        those are merged in at dispatch time and never reach `config_data`, so a schedule the scheduler
-        can read has to be a configurable field, which is exactly what this looks for.
-
-        Warned once per class, because the misconfiguration persists and the tick runs every 30s. The
-        class is re-armed once corrected, so a regression is reported again.
-        """
-        agent_class = agent_class_entity.agent_class
-        cron_field_paths = self._cron_field_paths(agent_class_entity.form)
-        if SCHEDULE_CONFIG_KEY in cron_field_paths:
-            self._classes_warned_about_unreachable_schedule.discard(agent_class)
-            return
-
-        if agent_class in self._classes_warned_about_unreachable_schedule:
-            return
-
-        self._classes_warned_about_unreachable_schedule.add(agent_class)
-        logger.warning(
-            "%s handles ScheduledStartEvent but exposes no top-level %r field, so the scheduler cannot "
-            "read a schedule for it and no profile of it will ever fire — schedules configured for it "
-            "are saved and then ignored. Cron fields on this blueprint: %s. Rename the blueprint's "
-            "CronInput field to %r.",
-            agent_class,
-            SCHEDULE_CONFIG_KEY,
-            ", ".join(sorted(cron_field_paths)) or "none",
-            SCHEDULE_CONFIG_KEY,
-        )
-
-    @classmethod
-    def _cron_field_paths(cls, form_elements: list[dict], prefix: str = "") -> set[str]:
-        """Dotted paths of every cron field in a stored form, including those nested inside groups.
-
-        Nested paths are reported so the warning can name a schedule that was declared inside a group —
-        readable to a person, still not readable by the scheduler, which only looks at the top level.
-        """
-        paths: set[str] = set()
-        for element in form_elements:
-            path = f"{prefix}{element.get('name') or element.get('ref')}"
-            if element.get("formkit") == _CRON_FORMKIT_TYPE:
-                paths.add(path)
-            paths |= cls._cron_field_paths(element.get("children") or [], f"{path}.")
-        return paths
-
     def _clamp_window_start(self, watermark: datetime, now: datetime) -> datetime:
         """Bounds how far back a tick replays, so downtime does not produce a burst of stale runs."""
         earliest = now - self._max_catchup
@@ -222,32 +170,29 @@ class ScheduledAgentService:
         )
         return earliest
 
-    def _due_instances(self) -> list[tuple[AgentSchedule, AgentConfigEntityDocument]]:
+    def _due_instances(self) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
         """Profiles of online schedulable classes that carry a schedule, paired with that schedule."""
         schedulable_entities = AgentClassEntity.get_online_schedulable()
         if not schedulable_entities:
             return []
 
-        for entity in schedulable_entities:
-            self._warn_if_schedule_field_is_unreachable(entity)
-
         return self._scheduled_profiles([entity.agent_class for entity in schedulable_entities])
 
     @staticmethod
-    def _scheduled_profiles(agent_classes: list[str]) -> list[tuple[AgentSchedule, AgentConfigEntityDocument]]:
+    def _scheduled_profiles(agent_classes: list[str]) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
         """Profiles of the given classes that carry a parseable schedule, paired with that schedule."""
-        instances: list[tuple[AgentSchedule, AgentConfigEntityDocument]] = []
+        instances: list[tuple[CronSchedule, AgentConfigEntityDocument]] = []
         for config in AgentConfigEntityDocument.find_for_classes(agent_classes):
-            raw_schedule = (config.config_data or {}).get(SCHEDULE_CONFIG_KEY)
+            raw_schedule = (config.config_data or {}).get(CRON_CONFIG_KEY)
             if not raw_schedule:
                 continue
             # Deliberately not fail-fast. The profile store is shared, and the config save path
-            # validates against a generated JSON-schema model that cannot carry AgentSchedule's cron
+            # validates against a generated JSON-schema model that cannot carry CronSchedule's cron
             # and timezone validators — so a malformed schedule can reach storage. Letting it raise
             # here would abort the tick before the watermark advanced, and every subsequent tick would
             # rediscover the same row: one bad profile would permanently starve every other schedule.
             try:
-                schedule = AgentSchedule.model_validate(raw_schedule)
+                schedule = CronSchedule.model_validate(raw_schedule)
             except ValidationError:
                 logger.exception(
                     "Skipping %s/%s: stored schedule is not valid",
@@ -289,7 +234,7 @@ class ScheduledAgentService:
 
     async def _fire_occurrences(
         self,
-        schedule: AgentSchedule,
+        schedule: CronSchedule,
         config: AgentConfigEntityDocument,
         window_start: datetime,
         now: datetime,
@@ -313,7 +258,7 @@ class ScheduledAgentService:
         external_event = ExternalAgentEvent(
             thread_id=str(thread.id),
             display_id=str(ObjectId()),
-            event=ScheduledStartEvent(scheduled_for=occurrence),
+            event=CronStartEvent(scheduled_for=occurrence),
         )
         await self._distributor.distribute_event(external_event, user=None, target_agent=agent)
 

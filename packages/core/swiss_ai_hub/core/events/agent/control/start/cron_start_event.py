@@ -9,7 +9,7 @@ from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
-class ScheduledStartEvent(StartEvent):
+class CronStartEvent(StartEvent):
     """Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
 
     Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
@@ -21,9 +21,9 @@ class ScheduledStartEvent(StartEvent):
     configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
     """
 
-    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.scheduled_start_event.name")
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.cron_start_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.scheduled_start_event.description"
+        "lib.events.cron_start_event.description"
     )
 
     locale: Annotated[

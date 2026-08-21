@@ -21,7 +21,7 @@ from swiss_ai_hub.core.infrastructure import (
     S3StorageSettings,
 )
 from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook
-from swiss_ai_hub.core.scheduling import ScheduledAgentService
+from swiss_ai_hub.core.scheduling import CronScheduler
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
@@ -246,12 +246,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
-        scheduled_agent_service = ScheduledAgentService(
+        cron_scheduler = CronScheduler(
             redis=redis,
             external_agent_event_distributor=external_agent_event_distributor,
         )
-        await scheduled_agent_service.start()
-        app.state.scheduled_agent_service = scheduled_agent_service
+        await cron_scheduler.start()
+        app.state.cron_scheduler = cron_scheduler
 
         await initialize_startup_tenant()
         await finalize_role_setup()
@@ -285,8 +285,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         if hasattr(app.state, "process_config_responder"):
             await app.state.process_config_responder.stop()
 
-        if hasattr(app.state, "scheduled_agent_service"):
-            await app.state.scheduled_agent_service.stop()
+        if hasattr(app.state, "cron_scheduler"):
+            await app.state.cron_scheduler.stop()
 
         # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):

@@ -19,6 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
     ConversationTitleEvent,
+    CronStartEvent,
     DisplayEvent,
     EmbeddingEvent,
     ExceptionEvent,
@@ -52,7 +53,6 @@ from swiss_ai_hub.core.events.agent import (
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     RouterEvent,
-    ScheduledStartEvent,
     SemanticEvent,
     SensitiveInfoAcceptEvent,
     SensitiveInfoRejectEvent,
@@ -108,7 +108,7 @@ DisplayEvents = (
     | Annotated[ToolEvent, Tag("ToolEvent")]
     | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
     | Annotated[RAGStartEvent, Tag("RAGStartEvent")]
-    | Annotated[ScheduledStartEvent, Tag("ScheduledStartEvent")]
+    | Annotated[CronStartEvent, Tag("CronStartEvent")]
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
     | Annotated[RAGSuccessStopEvent, Tag("RAGSuccessStopEvent")]
     | Annotated[RAGFailureStopEvent, Tag("RAGFailureStopEvent")]

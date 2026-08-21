@@ -28,8 +28,8 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
     from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
+    from swiss_ai_hub.core.events.agent.control.start.cron_start_event import CronStartEvent
     from swiss_ai_hub.core.events.agent.control.start.rag_start_event import RAGStartEvent
-    from swiss_ai_hub.core.events.agent.control.start.scheduled_start_event import ScheduledStartEvent
     from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
     from swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason import RAGFailureReason
     from swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event import RAGFailureStopEvent
@@ -165,6 +165,7 @@ __all__ = [
     "ControlEvent",
     "ConversationTitleEvent",
     "CostEvent",
+    "CronStartEvent",
     "DisplayEvent",
     "Embedding",
     "EmbeddingEvent",
@@ -214,7 +215,6 @@ __all__ = [
     "RetrieverEvent",
     "RouteOptions",
     "RouterEvent",
-    "ScheduledStartEvent",
     "SemanticEvent",
     "SensitiveInfoAcceptEvent",
     "SensitiveInfoRejectEvent",
@@ -265,6 +265,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ControlAndDisplayEvent": "swiss_ai_hub.core.events.agent.control_and_display_event",
     "ControlEvent": "swiss_ai_hub.core.events.agent.control.control_event",
     "CostEvent": "swiss_ai_hub.core.events.agent.cost.cost_event",
+    "CronStartEvent": "swiss_ai_hub.core.events.agent.control.start.cron_start_event",
     "DisplayEvent": "swiss_ai_hub.core.events.agent.display.display_event",
     "Embedding": "swiss_ai_hub.core.events.agent.semantic.embedding.embedding",
     "EmbeddingEvent": "swiss_ai_hub.core.events.agent.semantic.embedding.embedding_event",
@@ -314,7 +315,6 @@ _LAZY_IMPORTS: dict[str, str] = {
     "RetrieverEvent": "swiss_ai_hub.core.events.agent.semantic.retriever.retriever_event",
     "RouteOptions": "swiss_ai_hub.core.events.agent.router.route_options",
     "RouterEvent": "swiss_ai_hub.core.events.agent.router.router_event",
-    "ScheduledStartEvent": "swiss_ai_hub.core.events.agent.control.start.scheduled_start_event",
     "SemanticEvent": "swiss_ai_hub.core.events.agent.semantic.semantic_event",
     "SensitiveInfoAcceptEvent": "swiss_ai_hub.core.events.agent.guard.sensitive_info_accept_event",
     "SensitiveInfoRejectEvent": "swiss_ai_hub.core.events.agent.guard.sensitive_info_reject_event",

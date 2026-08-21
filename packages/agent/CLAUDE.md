@@ -51,7 +51,7 @@ app/                               # Entry points (one per agent, each with main
 
 playground/                        # Examples and testing
 ├── agent/                         # Production-like agents (bot_in_the_loop_agent, hitl_demo_agent,
-│                                  #   scheduled_demo_agent)
+│                                  #   cron_demo_agent)
 ├── minimal_workflow/              # 20 self-contained pattern showcases (START HERE)
 ├── performance/                   # Load testing with performance_testing_agent
 └── testing/                       # SDK integration tests
@@ -210,6 +210,11 @@ class MyAgentConfig(AgentConfig):
 - **Configurable fields**: Set to a FormkitElement in `as_form()` — user edits in Admin UI.
 - **Non-configurable fields**: Set to a primitive in `as_form()` — deployment-specific, baked in.
 
+A base field that `AgentConfig.as_form()` deliberately leaves unset is the runner's business, not yours — `cron` is the
+only one today. That is why the override above stays correct without listing it: the runner injects the element for
+schedulable classes via `for_discovery()`, and a field whose value is not a form element is absent from both the
+rendered form and the submission schema.
+
 ### FormKit Elements
 
 From `swiss_ai_hub.core.form.elements`:
@@ -318,14 +323,15 @@ constructing NATS subjects at each specificity level. See `packages/core/swiss_a
 
 - `ControlEvent` — workflow state transitions (dispatched via JetStream, consumed by steps)
 - `StartEvent` — triggers a new run (subclass of `ControlEvent`)
-- `ScheduledStartEvent` — a cron-fired run. Handling it is what makes a blueprint **schedulable**: `AgentRunner` derives
+- `CronStartEvent` — a cron-fired run. Handling it is what makes a blueprint **schedulable**: `AgentRunner` derives
   `is_schedulable` from the declared start events, exactly as `UserMessageEvent` derives `is_conversational`. Scheduled
   runs are system runs — `user` is `None` and the thread has no members, so a step must not depend on an initiating
-  identity; take tenant context from the agent's own profile instead. Two things the derivation cannot enforce for you:
-  the config field holding the schedule must be named exactly `schedule` (`ScheduledAgentService` reads it by name and
-  logs a warning naming your blueprint if it is missing), and **every scheduled run of one profile shares one thread**,
-  so `ThreadContext` persists across runs while `RunContext` does not — deliberate, but a step that assumed a fresh
-  thread per run will now see the previous run's state
+  identity; take tenant context from the agent's own profile instead. You declare no schedule field of your own — `cron`
+  lives on the `AgentConfig` base and `AgentRunner` injects the form element for schedulable classes only, so a
+  non-schedulable blueprint offers no schedule and a schedulable one cannot mis-name it. The one thing the derivation
+  cannot tell you: **every scheduled run of one profile shares one thread**, so `ThreadContext` persists across runs
+  while `RunContext` does not — deliberate, but a step that assumed a fresh thread per run will see the previous run's
+  state
 - `StopEvent` — terminates a run (subclass of `ControlEvent`)
 - `DisplayEvent` — observability (dispatched via NATS Core, consumed by API/frontend)
 - `HumanInTheLoopRequestEvent` / `ResponseEvent` — HITL pause/resume
@@ -373,7 +379,7 @@ config seeder needed.
 
 ## Playground
 
-- `playground/agent/` — Production-like agents (bot_in_the_loop_agent, hitl_demo_agent, scheduled_demo_agent)
+- `playground/agent/` — Production-like agents (bot_in_the_loop_agent, hitl_demo_agent, cron_demo_agent)
 - `playground/minimal_workflow/` — **START HERE**. Self-contained pattern examples: `simple_workflow`,
   `conditional_workflow`, `human_in_the_loop_workflow`, `agent_in_the_loop_workflow`, `fan_out_workflow`,
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,

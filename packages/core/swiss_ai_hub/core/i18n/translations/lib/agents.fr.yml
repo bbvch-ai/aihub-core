@@ -15,3 +15,8 @@ config:
   icon:
     label: Icône
     help: Sélectionnez une icône prédéfinie ou entrez un nom d'icône Iconify
+  cron:
+    label: Planification
+    help: Quand ce profil s'exécute automatiquement. Laisser vide pour désactiver les
+      exécutions planifiées.
+    timezone_placeholder: Sélectionner le fuseau horaire...

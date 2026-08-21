@@ -114,7 +114,7 @@ packages/core/swiss_ai_hub/core/
 │   └── health/                      # HealthController, HealthServer, health checks
 ├── rpc/                             # AgentConfigClient, ProcessConfigClient (request-reply)
 ├── runners/                         # Execution runners
-├── scheduling/                      # Cron-scheduled agent runs (AgentSchedule, calculator, Redis state, service)
+├── scheduling/                      # Cron-scheduled agent runs (CronSchedule, calculator, Redis state, service)
 ├── settings/                        # App-level configuration (EnvironmentSettings)
 ├── streams/                         # StreamManager (JetStream stream lifecycle)
 ├── subscribers/                     # JSSubscriber + NCSubscriber + agent/process specializations

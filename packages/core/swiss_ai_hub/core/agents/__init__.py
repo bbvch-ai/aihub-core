@@ -1,13 +1,14 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.agents.agent_config import AgentConfig, StepConfig
+    from swiss_ai_hub.core.agents.agent_config import CRON_CONFIG_KEY, AgentConfig, StepConfig
     from swiss_ai_hub.core.agents.agent_ref import AgentRef
     from swiss_ai_hub.core.agents.visualizers.types.edge_data import EdgeData
     from swiss_ai_hub.core.agents.visualizers.types.node_data import NodeData
     from swiss_ai_hub.core.agents.visualizers.types.workflow_graph import WorkflowGraph
 
 __all__ = [
+    "CRON_CONFIG_KEY",
     "AgentConfig",
     "AgentRef",
     "EdgeData",
@@ -17,6 +18,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
+    "CRON_CONFIG_KEY": "swiss_ai_hub.core.agents.agent_config",
     "AgentConfig": "swiss_ai_hub.core.agents.agent_config",
     "AgentRef": "swiss_ai_hub.core.agents.agent_ref",
     "EdgeData": "swiss_ai_hub.core.agents.visualizers.types.edge_data",
