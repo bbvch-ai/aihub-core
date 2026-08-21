@@ -3858,7 +3858,7 @@ export type ContextualizedAgentEvent = {
     | ToolEvent
     | UserMessageEvent
     | RagStartEvent
-    | ScheduledStartEvent
+    | CronStartEvent
     | ExceptionEvent
     | RagSuccessStopEvent
     | RagFailureStopEvent
@@ -4156,7 +4156,7 @@ export type CreateTokenResponse = {
  * A FormKit element for editing the cron schedule of a schedulable agent profile.
  *
  * The element renders the five cron positions plus a timezone selector, and the submitted value
- * matches the fields of `AgentSchedule`:
+ * matches the fields of `CronSchedule`:
  * {
  * "minute": str,
  * "hour": str,
@@ -4172,19 +4172,19 @@ export type CreateTokenResponse = {
  * ### Form Duality
  * ```python
  * from swiss_ai_hub.core.form.elements.cron_input import CronInput
- * from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+ * from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
  *
  * class MyAgentConfig(AgentConfig):
  * schedule: Annotated[
- * AgentSchedule | CronInput | None,
+ * CronSchedule | CronInput | None,
  * Field(description="When this profile runs automatically"),
  * ] = None
  *
  * # Form mode - for rendering:
  * config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
  *
- * # Data mode - from submission (Pydantic validates into AgentSchedule):
- * config = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))
+ * # Data mode - from submission (Pydantic validates into CronSchedule):
+ * config = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))
  * ```
  */
 export type CronInput = {
@@ -4285,6 +4285,70 @@ export type CronInput = {
    * Validation
    */
   readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
+ * CronStartEvent
+ *
+ * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
+ *
+ * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
+ * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
+ * that consumes this event, with no separate registration.
+ *
+ * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
+ * initiating identity. Whatever tenant context the agent needs comes from its own profile
+ * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
+ */
+export type CronStartEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * The locale the scheduled run reports its display output in.
+   */
+  locale?: string;
+  /**
+   * Always None — scheduled runs are system-initiated and carry no execution identity.
+   */
+  user?: UserIdentity | null;
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -13318,70 +13382,6 @@ export type RunStatistics = {
 };
 
 /**
- * ScheduledStartEvent
- *
- * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
- *
- * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
- * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
- * that consumes this event, with no separate registration.
- *
- * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
- * initiating identity. Whatever tenant context the agent needs comes from its own profile
- * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
- */
-export type ScheduledStartEvent = {
-  /**
-   * Event Id
-   */
-  event_id?: string;
-  /**
-   * Created At
-   *
-   * The time (in ns since epoch) the event was stored in the event store
-   */
-  created_at?: number;
-  /**
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-  /**
-   * Locale
-   *
-   * The locale the scheduled run reports its display output in.
-   */
-  locale?: string;
-  /**
-   * Always None — scheduled runs are system-initiated and carry no execution identity.
-   */
-  user?: UserIdentity | null;
-  /**
-   * Scheduled For
-   *
-   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
-   */
-  scheduled_for: Date;
-  /**
-   * Event Name
-   *
-   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-   * Used during deserialization to decide which subclass to instantiate.
-   */
-  readonly _event_name: string;
-  /**
-   * Parent Event Names
-   *
-   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-   */
-  readonly _parent_event_names: Array<string>;
-  [key: string]: unknown;
-};
-
-/**
  * SearchContextCostPerQueryDTO
  *
  * LiteLLM reports search context cost per query broken down by context size, not as a single value.
@@ -18545,7 +18545,7 @@ export type ContextualizedAgentEventWritable = {
     | ToolEventWritable
     | UserMessageEventWritable
     | RagStartEventWritable
-    | ScheduledStartEventWritable
+    | CronStartEventWritable
     | ExceptionEventWritable
     | RagSuccessStopEventWritable
     | RagFailureStopEventWritable
@@ -18645,7 +18645,7 @@ export type ConversationTitleEventWritable = {
  * A FormKit element for editing the cron schedule of a schedulable agent profile.
  *
  * The element renders the five cron positions plus a timezone selector, and the submitted value
- * matches the fields of `AgentSchedule`:
+ * matches the fields of `CronSchedule`:
  * {
  * "minute": str,
  * "hour": str,
@@ -18661,19 +18661,19 @@ export type ConversationTitleEventWritable = {
  * ### Form Duality
  * ```python
  * from swiss_ai_hub.core.form.elements.cron_input import CronInput
- * from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+ * from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
  *
  * class MyAgentConfig(AgentConfig):
  * schedule: Annotated[
- * AgentSchedule | CronInput | None,
+ * CronSchedule | CronInput | None,
  * Field(description="When this profile runs automatically"),
  * ] = None
  *
  * # Form mode - for rendering:
  * config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
  *
- * # Data mode - from submission (Pydantic validates into AgentSchedule):
- * config = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))
+ * # Data mode - from submission (Pydantic validates into CronSchedule):
+ * config = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))
  * ```
  */
 export type CronInputWritable = {
@@ -18770,6 +18770,57 @@ export type CronInputWritable = {
    * Whether to enable filtering/search on the timezone select
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * CronStartEvent
+ *
+ * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
+ *
+ * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
+ * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
+ * that consumes this event, with no separate registration.
+ *
+ * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
+ * initiating identity. Whatever tenant context the agent needs comes from its own profile
+ * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
+ */
+export type CronStartEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * The locale the scheduled run reports its display output in.
+   */
+  locale?: string;
+  /**
+   * Always None — scheduled runs are system-initiated and carry no execution identity.
+   */
+  user?: UserIdentity | null;
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
   [key: string]: unknown;
 };
 
@@ -23782,57 +23833,6 @@ export type RunStatisticsWritable = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDtoWritable;
-};
-
-/**
- * ScheduledStartEvent
- *
- * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
- *
- * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
- * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
- * that consumes this event, with no separate registration.
- *
- * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
- * initiating identity. Whatever tenant context the agent needs comes from its own profile
- * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
- */
-export type ScheduledStartEventWritable = {
-  /**
-   * Event Id
-   */
-  event_id?: string;
-  /**
-   * Created At
-   *
-   * The time (in ns since epoch) the event was stored in the event store
-   */
-  created_at?: number;
-  /**
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-  /**
-   * Locale
-   *
-   * The locale the scheduled run reports its display output in.
-   */
-  locale?: string;
-  /**
-   * Always None — scheduled runs are system-initiated and carry no execution identity.
-   */
-  user?: UserIdentity | null;
-  /**
-   * Scheduled For
-   *
-   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
-   */
-  scheduled_for: Date;
-  [key: string]: unknown;
 };
 
 /**
