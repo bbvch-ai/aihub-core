@@ -211,19 +211,14 @@ alternative is hand-rolling field parsing, ranges, steps, and DST handling.
 - **Occurrences due while a blueprint is offline are dropped, not queued.** Deliberate — the scheduler does not queue
   work for an agent that cannot consume it, and the watermark advances regardless — but it means a runner that crashes
   overnight loses that night's runs. Each drop is logged with the class, the profile, and how long it has been offline.
-
 - **A run that fails to start is not retried.** The claim is taken *before* the run is published, so a publish that
-  raises leaves the occurrence claimed and the next tick passes over it. This makes the failure at-most-once rather than
+  raises leaves the occurrence claimed and the next tick passes over it. That makes the failure at-most-once rather than
   at-least-once, which is the right way round given the acceptance criterion is "no duplicate runs" — but it does mean a
-  transient publish failure drops that occurrence. It is logged per occurrence, naming the class, the profile, and the
-  occurrence.
-
-  The claim is what stops the drop from repeating every tick. The failure is caught at the occurrence rather than
-  allowed to propagate: an uncaught publish error would abort the whole window before the watermark advanced, so every
-  *other* profile would lose its due occurrences too, and the next tick would rediscover the same broken row — one
-  failing profile starving all the rest. That is the same reasoning as the malformed-schedule skip above, and the same
-  deliberate exception to the codebase's fail-fast rule.
-
+  transient publish failure drops that occurrence. The claim, not the tick aborting, is what stops the drop repeating:
+  the failure is caught at the occurrence, so one unreachable broker cannot cost every *other* profile its due
+  occurrences. Each lost run is logged by class, profile, and occurrence; under a systemic outage the stacks are
+  identical, so the first failure of a tick carries the traceback and the rest carry the identity, with a per-tick
+  summary giving the total.
 - Discovery auto-registers a REST endpoint per start event, so schedulable agents also gain a `POST .../CronStartEvent`
   route — an unplanned but useful manual trigger, which does carry a real user because it arrives over HTTP.
 - **The tick reads Mongo off the event loop.** The scheduler shares a process with every HTTP and WebSocket request, so
@@ -231,19 +226,6 @@ alternative is hand-rolling field parsing, ranges, steps, and DST handling.
   count. All of them now go through one `asyncio.to_thread` hop per tick — a single snapshot read replacing what had
   become five round-trips — bounded at half the lease so a slow database costs a skipped tick rather than a pinned
   lease. Cancellation cannot kill the worker thread; what it buys is releasing the lease.
-- **Terminology superseded.** What shipped as `ScheduledStartEvent`, `AgentSchedule`, `ScheduledAgentService` and a
-  blueprint-declared `schedule` field is now `CronStartEvent`, `CronSchedule`, `CronScheduler` and a platform-owned
-  `cron` field on the `AgentConfig` base. The decisions above still hold as written; only the names changed, plus the
-  one substantive revision recorded in the next bullet. Sections written before the rename keep their original wording.
-- **The schedule field is owned by the platform, not declared by the blueprint.** Decision 2 above accepted that a
-  schedulable blueprint could name its cron field anything, be advertised as schedulable, save whatever an admin
-  entered, and never fire — mitigated only by a warning naming the class. That mitigation is gone along with the failure
-  mode: `cron` lives on `AgentConfig`, and `AgentRunner` — the only place that knows both the config and the agent's
-  start events — sets the form element for schedulable classes and clears it otherwise. Because a field is configurable
-  only while its value *is* a form element, that single assignment settles both the rendered form and the generated
-  submission schema, which makes "non-schedulable agents expose no schedule configuration" structural rather than
-  conventional. `CronSchedule` became a plain `BaseModel` in the process: as a `Form` it never rendered as a nested
-  group, but it did make every agent's form carry an empty placeholder schedule group.
 - **A malformed schedule is rejected at save time.** Decision 2 accepted that it could not be, because the profile save
   path validates against a jambo-generated model carrying none of `CronSchedule`'s validators. `InstanceConfigHelper`
   now re-validates the raw submission and returns 400, following the precedent already set there for locale fields. The

@@ -361,15 +361,43 @@ class CronScheduler:
                 await self._start_run(config, occurrence)
             except Exception:
                 report.publish_failures += 1
-                logger.exception(
-                    "Failed to start scheduled run for %s/%s (occurrence %s); the occurrence stays "
-                    "claimed and will not be retried",
-                    config.agent_class,
-                    config.agent_id,
-                    occurrence.isoformat(),
-                )
+                self._report_publish_failure(config, occurrence, report)
             else:
                 report.occurrences_fired += 1
+
+    @staticmethod
+    def _report_publish_failure(
+        config: AgentConfigEntityDocument,
+        occurrence: datetime,
+        report: _TickReport,
+    ) -> None:
+        """Reports one lost run, with the stack attached only to the first failure of the tick.
+
+        Every failure gets a line, because each one is a distinct business run that did not happen — the
+        watermark advances either way, so nothing will retry it. But when the cause is systemic (a broker
+        outage takes down every profile at once) the stacks are identical, and repeating one per
+        occurrence buries the profile names that are the useful part. So the first failure carries the
+        traceback and the rest carry the identity, with `publish_failures` in the tick summary giving the
+        total.
+
+        Volume is bounded by schedule density rather than by tick rate: an occurrence is attempted once
+        and logged once, because the watermark advances past it whether the publish succeeded or not.
+        """
+        detail = (
+            "Failed to start scheduled run for %s/%s (occurrence %s); the occurrence stays claimed and "
+            "will not be retried"
+        )
+        if report.publish_failures == 1:
+            logger.exception(detail, config.agent_class, config.agent_id, occurrence.isoformat())
+            return
+
+        logger.error(
+            f"{detail} (failure %d this tick; see the first for the traceback)",
+            config.agent_class,
+            config.agent_id,
+            occurrence.isoformat(),
+            report.publish_failures,
+        )
 
     async def _start_run(self, config: AgentConfigEntityDocument, occurrence: datetime) -> None:
         """Publishes a scheduled start event on the normal agent control path."""

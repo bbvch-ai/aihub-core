@@ -525,3 +525,56 @@ class TestRetention:
             await _run_tick(service, claim_retention=True)
 
         service._store.set_watermark.assert_awaited_once()
+
+
+class TestPublishFailureReporting:
+    """Under a systemic outage every scheduled profile fails at once with the same stack."""
+
+    @pytest.mark.asyncio
+    async def test_a_failure_does_not_stop_later_occurrences_of_the_same_profile(
+        self, service: CronScheduler, distributor: MagicMock
+    ) -> None:
+        """The guard sits inside the per-occurrence loop, not around it. Profile isolation comes from the
+        caller's loop and would survive hoisting the guard, so only a multi-occurrence profile pins it."""
+        distributor.distribute_event.side_effect = [RuntimeError("NATS unavailable"), None, None]
+
+        await _run_tick(service, configs=[_config(schedule=_EVERY_FIVE_MINUTES)])
+
+        assert distributor.distribute_event.await_count == 3
+
+    @pytest.mark.asyncio
+    async def test_every_lost_run_is_named(
+        self, service: CronScheduler, distributor: MagicMock, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Collapsing these would hide which profiles lost work, which is the useful part."""
+        distributor.distribute_event.side_effect = RuntimeError("NATS unavailable")
+
+        with caplog.at_level(logging.ERROR):
+            await _run_tick(service, configs=[_config(agent_id="a"), _config(agent_id="b")])
+
+        assert "CronDemoAgent/a" in caplog.text
+        assert "CronDemoAgent/b" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_only_the_first_failure_of_a_tick_carries_a_traceback(
+        self, service: CronScheduler, distributor: MagicMock, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A broker outage makes every stack identical, so repeating them buries the identities."""
+        distributor.distribute_event.side_effect = RuntimeError("NATS unavailable")
+
+        with caplog.at_level(logging.ERROR):
+            await _run_tick(service, configs=[_config(agent_id="a"), _config(agent_id="b"), _config(agent_id="c")])
+
+        assert len([record for record in caplog.records if record.exc_info]) == 1
+        assert caplog.text.count("Failed to start scheduled run") == 3
+
+    @pytest.mark.asyncio
+    async def test_the_tick_summary_carries_the_total(
+        self, service: CronScheduler, distributor: MagicMock, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        distributor.distribute_event.side_effect = RuntimeError("NATS unavailable")
+
+        with caplog.at_level(logging.INFO):
+            await _run_tick(service, configs=[_config(agent_id="a"), _config(agent_id="b")])
+
+        assert "publish_failures=2" in caplog.text
