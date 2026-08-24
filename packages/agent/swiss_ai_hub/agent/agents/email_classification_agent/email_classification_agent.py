@@ -2,6 +2,7 @@ import logging
 from collections import Counter
 from typing import ClassVar
 
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     MailBatchClassifiedEvent,
@@ -73,6 +74,9 @@ class EmailClassificationAgent(Agent):
         classification: EmailClassificationSettings,
         topic: AgentInstanceTopic,
         displayer: EventDisplayer,
+        # Optional, unlike the conversational agents: this agent is triggered programmatically and its
+        # start events default user to None, so a scheduler-driven run has no identity to attribute.
+        user: UserIdentity | None = None,
     ) -> MailBatchClassifiedEvent:
         """Classify the whole unread batch and file each message into the folder for its category.
 
@@ -100,7 +104,7 @@ class EmailClassificationAgent(Agent):
             agent_id=topic.agent_id,
             skip_vanished=True,
         )
-        verdicts = await self._classify_all(fetched, agent_config, classification, displayer)
+        verdicts = await self._classify_all(fetched, agent_config, classification, displayer, user)
         classified = await self._file_all(fetched, verdicts, imap_config, classification, displayer)
 
         per_category = Counter(ref.category for ref in classified if ref.category)
@@ -161,6 +165,7 @@ class EmailClassificationAgent(Agent):
         agent_config: EmailClassificationAgentConfig,
         classification: EmailClassificationSettings,
         displayer: EventDisplayer,
+        user: UserIdentity | None,
     ) -> list[CategoryVerdict]:
         """Classify every message with no IMAP connection held.
 
@@ -169,7 +174,7 @@ class EmailClassificationAgent(Agent):
         """
         llm_config = agent_config.classifier_llm
         verdicts: list[CategoryVerdict] = []
-        async with llm_config.cost_reporting_llm(displayer) as llm:
+        async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
             for mail in fetched:
                 verdict = await MailClassifier.classify(mail.parsed, classification, llm)
                 logger.info(
