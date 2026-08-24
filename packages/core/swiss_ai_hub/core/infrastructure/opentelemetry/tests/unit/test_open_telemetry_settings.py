@@ -114,7 +114,7 @@ def test_http_protocol_uses_the_http_exporter_without_insecure() -> None:
     http_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT, timeout=OTLP_TIMEOUT)
 
 
-def test_the_export_retry_window_outlives_a_collector_restart() -> None:
+def test_the_export_timeout_default_covers_a_container_recreate() -> None:
     """
     Regression guard for the nightly.951 log loss. The SDK's 10s default is the entire retry
     budget, so any collector gap longer than ~7s drops the batch — and a container recreate is
@@ -124,16 +124,29 @@ def test_the_export_retry_window_outlives_a_collector_restart() -> None:
     assert OpenTelemetrySettings.model_fields["EXPORTER_OTLP_TIMEOUT"].default == OTLP_TIMEOUT
 
 
-def test_the_sdk_queue_warning_never_re_enters_the_export_path() -> None:
+def test_the_retry_ladder_fits_inside_the_configured_timeout() -> None:
     """
-    "Queue full, dropping logs." is emitted from inside BatchLogRecordProcessor.emit() on the
-    calling thread, so routing it back through the root handler recurses until the logging call
-    fails. Exporter self-reports run on the export worker thread and must keep flowing — they are
-    the only evidence in the backend that telemetry was lost.
+    The timeout is a budget the backoff ladder spends, not a per-attempt limit: the exporter
+    abandons the batch once the next backoff would overrun `deadline = start + timeout`. A budget
+    that cuts the ladder short wastes the remaining attempts, so pin the relationship rather than
+    just the number — the last of the six attempts starts at 1+2+4+8+16 = 31s.
     """
-    is_exported = OpenTelemetrySettings._is_not_queue_management_record
+    ladder_end_seconds = sum(2**attempt for attempt in range(5))
+
+    assert ladder_end_seconds < OpenTelemetrySettings.model_fields["EXPORTER_OTLP_TIMEOUT"].default
+
+
+def test_the_otlp_handler_ignores_sdk_internal_records() -> None:
+    """
+    "Queue full, dropping logs." is emitted from inside BatchLogRecordProcessor on the calling
+    thread, so routing it back through the root handler re-enters the export path. Exporter
+    self-reports run on the export worker thread and must keep flowing — they are the only
+    evidence in the backend that telemetry was lost.
+    """
+    is_exported = OpenTelemetrySettings._is_not_sdk_internal_record
 
     assert not is_exported(_log_record("opentelemetry.sdk._shared_internal"))
+    assert not is_exported(_log_record("opentelemetry.sdk.trace"))
     assert is_exported(_log_record("opentelemetry.exporter.otlp.proto.grpc.exporter"))
     assert is_exported(_log_record("swiss_ai_hub.core.routes.health"))
 
