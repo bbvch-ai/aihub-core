@@ -1,0 +1,6 @@
+---
+config:
+  schedule:
+    label: Planification
+    help: Quand ce profil s'exécute automatiquement. Laisser vide pour désactiver
+      les exécutions planifiées.

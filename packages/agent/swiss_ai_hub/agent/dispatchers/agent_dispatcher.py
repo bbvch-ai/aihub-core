@@ -548,6 +548,9 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation == ThreadContext:
             return thread_context
 
+        if param.annotation == Redis:
+            return self.redis
+
         if param.annotation == EventDisplayer:
             return EventDisplayer(
                 self.js_publisher,

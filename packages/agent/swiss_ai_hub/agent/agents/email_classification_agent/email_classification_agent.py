@@ -2,10 +2,12 @@ import logging
 from collections import Counter
 from typing import ClassVar
 
+from redis.asyncio import Redis
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     MailBatchClassifiedEvent,
     MailClassificationRef,
+    ScheduledStartEvent,
     StopEvent,
     UnreadMailListedEvent,
 )
@@ -22,6 +24,7 @@ from swiss_ai_hub.agent.agents.email_classification_agent.events.classify_mail_s
 from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import CategoryVerdict, MailClassifier
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.fetched_mail import FetchedMail
+from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
 from swiss_ai_hub.agent.imap.step_functions import do_fetch_and_archive, do_file_messages, do_list_unread
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -35,8 +38,15 @@ class EmailClassificationAgent(Agent):
     chat UI. Categories are configuration — a name, a target folder, and a description of what belongs in it — so a
     customer adds or renames one without a deployment.
 
+    Schedulable: accepting `ScheduledStartEvent` alongside its own start event is the entire opt-in, and the
+    `schedule` field on the config is what `ScheduledAgentService` reads to decide when a profile fires. Scheduled runs
+    carry no user, which costs this agent nothing — it reads its mailbox and its tenant from its own profile.
+
     Mail the model is not confident about is never forced into a bucket; it goes to the configured fallback folder.
     Filing is also what makes a re-run safe: every message leaves the inbox, so the next unread listing cannot see it.
+    Filing is only the dedup *between* runs, though: a message is unread right up until it moves, so two runs
+    overlapping on a slow mailbox would both classify and file the same batch. `MailboxRunLease` is what stops that,
+    and unattended scheduling is exactly what makes the overlap reachable.
 
     The agent reads and files. It never sends — there is no SMTP path anywhere in the platform.
     """
@@ -55,10 +65,28 @@ class EmailClassificationAgent(Agent):
     )
     async def list_unread_step(
         self,
-        _event: ClassifyMailStartEvent,
+        _event: ClassifyMailStartEvent | ScheduledStartEvent,
         imap_config: ImapClientConfig,
-    ) -> UnreadMailListedEvent:
-        """List every unread message in the inbox, oldest sent first, capped by max_messages."""
+        topic: AgentInstanceTopic,
+        redis: Redis,
+        displayer: EventDisplayer,
+    ) -> UnreadMailListedEvent | StopEvent:
+        """Claim the mailbox, then list every unread message in it, oldest sent first, capped by max_messages.
+
+        Accepting `ScheduledStartEvent` here is what makes the blueprint schedulable — `AgentRunner` derives
+        `is_schedulable` from the declared start events, so there is nothing else to register.
+
+        Claiming before listing is the point: everything after this is slow (a fetch, one LLM call per message, then
+        the filing), and the messages stay unread throughout, so a second run entering here would redo all of it. A run
+        that cannot claim stops rather than queueing — the holder is already filing the mail this run would have found.
+        """
+        if not await MailboxRunLease(redis).acquire(topic.agent_class, topic.agent_id, topic.run_id):
+            await displayer.display_thought(
+                "A previous run is still filing this mailbox — skipping this one rather than classifying its "
+                "mail twice."
+            )
+            return StopEvent()
+
         return UnreadMailListedEvent(messages=await do_list_unread(imap_config))
 
     @step(
@@ -73,6 +101,7 @@ class EmailClassificationAgent(Agent):
         classification: EmailClassificationSettings,
         topic: AgentInstanceTopic,
         displayer: EventDisplayer,
+        redis: Redis,
     ) -> MailBatchClassifiedEvent:
         """Classify the whole unread batch and file each message into the folder for its category.
 
@@ -87,6 +116,7 @@ class EmailClassificationAgent(Agent):
         message by hand between the two, and one that vanished is skipped rather than failing the run.
         """
         self._validate(classification, imap_config.inbox_folder)
+        lease = MailboxRunLease(redis)
 
         if not event.messages:
             logger.info("[classify] inbox has no unread mail — nothing to classify")
@@ -100,7 +130,7 @@ class EmailClassificationAgent(Agent):
             agent_id=topic.agent_id,
             skip_vanished=True,
         )
-        verdicts = await self._classify_all(fetched, agent_config, classification, displayer)
+        verdicts = await self._classify_all(fetched, agent_config, classification, displayer, lease, topic)
         classified = await self._file_all(fetched, verdicts, imap_config, classification, displayer)
 
         per_category = Counter(ref.category for ref in classified if ref.category)
@@ -120,8 +150,23 @@ class EmailClassificationAgent(Agent):
         name=AgentLocaleString.from_i18n_path("agent.email_classification_agent.steps.finish.name"),
         icon="mage:check",
     )
-    async def finish_classification_step(self, event: MailBatchClassifiedEvent) -> StopEvent:
-        """Terminate the run once the batch has been filed."""
+    async def finish_classification_step(
+        self,
+        event: MailBatchClassifiedEvent,
+        topic: AgentInstanceTopic,
+        redis: Redis,
+    ) -> StopEvent:
+        """Release the mailbox and terminate the run once the batch has been filed.
+
+        The release belongs in whichever step returns the terminal `StopEvent`, not in this method by name — a later
+        story that appends work after filing has to move it with the terminal step, or the mailbox stays claimed until
+        the lease expires and the next occurrence is skipped for no reason.
+        `test_every_terminal_step_accounts_for_the_lease` is what enforces that.
+
+        A run that raises never reaches here: the dispatcher tears down on `ExceptionEvent` before any step could run,
+        so the lease TTL is the sole recovery path for a failed run.
+        """
+        await MailboxRunLease(redis).release(topic.agent_class, topic.agent_id, topic.run_id)
         logger.info("[classify] run complete — %d message(s) filed", event.count)
         return StopEvent()
 
@@ -161,16 +206,24 @@ class EmailClassificationAgent(Agent):
         agent_config: EmailClassificationAgentConfig,
         classification: EmailClassificationSettings,
         displayer: EventDisplayer,
+        lease: MailboxRunLease,
+        topic: AgentInstanceTopic,
     ) -> list[CategoryVerdict]:
         """Classify every message with no IMAP connection held.
 
         Inbound mail is untrusted and enters the prompt; the platform's Presidio guard anonymizes PII at the LLM
         gateway, so this step adds no sanitisation of its own.
+
+        The lease is renewed per message, which is what keeps its TTL a crash bound rather than a guess at how long a
+        batch takes. Sizing it for `max_messages` model calls would need re-sizing every time the run grows, and
+        guessing short is the dangerous direction — the lease would lapse mid-run and let in the very overlap it
+        exists to prevent.
         """
         llm_config = agent_config.classifier_llm
         verdicts: list[CategoryVerdict] = []
         async with llm_config.cost_reporting_llm(displayer) as llm:
             for mail in fetched:
+                await lease.renew(topic.agent_class, topic.agent_id, topic.run_id)
                 verdict = await MailClassifier.classify(mail.parsed, classification, llm)
                 logger.info(
                     "[classify] uid=%s subject=%r -> %s",

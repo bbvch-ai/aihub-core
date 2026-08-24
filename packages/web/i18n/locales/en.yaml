@@ -782,6 +782,23 @@ form:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  cron:
+    expression: 'Resulting cron expression:'
+    minute:
+      label: Minute
+    hour:
+      label: Hour
+    day_of_month:
+      label: Day of month
+    month:
+      label: Month
+    day_of_week:
+      label: Day of week
+    timezone:
+      label: Timezone
+      placeholder: Select a timezone
+      help: The cron positions are interpreted in this timezone, so a daily schedule
+        keeps the same wall-clock time across daylight-saving changes.
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
