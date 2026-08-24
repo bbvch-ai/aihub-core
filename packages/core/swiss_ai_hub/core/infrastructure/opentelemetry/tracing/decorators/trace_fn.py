@@ -103,11 +103,14 @@ def trace_fn[**P, T](func: Callable[P, T]) -> Callable[P, T]:
         return result
 
     def _handle_exception(span, exception):
-        """Common exception handling logic"""
+        """Adds the queryable attributes only. The exception event and the ERROR span status
+        already come from the SDK, which both wrappers below trigger by re-raising out of the
+        span context manager (record_exception and set_status_on_exception default to True) —
+        recording it here too emitted the same exception event twice, doubling every exception
+        count in the observability backend."""
         span.set_attribute("operation.success", False)
         span.set_attribute("error.type", type(exception).__name__)
         _safe_set_attribute(span, "error.message", str(exception))
-        span.record_exception(exception)
 
     @functools.wraps(func)
     async def async_wrapper(*args, **kwargs) -> Any:

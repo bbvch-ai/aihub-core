@@ -28,6 +28,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── parser/tag_parser.py          # Parses <think>...</think> tags from LLM output
 │   └── buffer/stream_buffer.py       # Auto-flush on sentence boundaries or size thresholds
 ├── distributor/                     # External event distributors (agent + process)
+├── exceptions/                      # HTTP-boundary exception handlers (ModelGatewayErrorHandler)
 ├── events/                          # Event type hierarchy (~100 event types)
 │   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization
 │   ├── utils.py                     # Event utility functions
