@@ -42,6 +42,7 @@
       </label>
       <Select
         v-model="timezone"
+        :aria-label="t('lib.cron.timezone.label')"
         input-id="cron-timezone"
         :options="timezoneOptions"
         :placeholder="timezonePlaceholder ?? t('lib.cron.timezone.placeholder')"
