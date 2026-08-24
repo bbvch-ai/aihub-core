@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any
 
-from llama_index.core.utils import Tokenizer
+from llama_index.core.utils import get_tokenizer
 from pydantic import Field
 
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -21,8 +21,7 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=1)
 def _fetch_all_model_info_cached() -> dict[str, Any]:
-    client = LiteLLMProxySettings().httpx_client
-    return client.get("/v1/model/info").json()
+    return LiteLLMProxySettings().httpx_client.get("/v1/model/info").json()
 
 
 class LiteLLMBase[OpenAILike](Form, abc.ABC):
@@ -37,25 +36,7 @@ class LiteLLMBase[OpenAILike](Form, abc.ABC):
 
     @property
     def token_counter(self) -> Callable[[str], list[int]]:
-        client = LiteLLMProxySettings().httpx_client
-
-        def token_counter(content: str) -> list[int]:
-            token_response = client.post(
-                "/utils/token_counter", json={"model": self.model_name, "prompt": content}
-            ).json()
-            return [0] * token_response["total_tokens"]
-
-        return token_counter
-
-    @property
-    def tokenizer(self) -> type[Tokenizer]:
-        token_counter = self.token_counter
-
-        class Tokenizer:
-            def encode(self, text: str, *args: Any, **kwargs: Any) -> list[Any]:
-                return token_counter(text)
-
-        return Tokenizer
+        return get_tokenizer()
 
     @abc.abstractmethod
     def to_llama_index(

@@ -701,8 +701,12 @@ class ExpertRAGAgent(Agent):
         context_content = t("agent.prompt.expert_context", expert_conversation=expert_conversation_text)
         await displayer.display_thought(f"Expert context: {context_content}")
 
+        # USER, not SYSTEM: limit_chat_history_with_context places context messages *after* the conversation
+        # turns, and strict providers (e.g. Qwen3.5 on Infomaniak) reject a 400 "System message must be at
+        # the beginning" for any system message past index 0. This matches the retrieval context message,
+        # which lib.prompt.rag.context_prompt already renders with role="user".
         context_message = ChatMessage(
-            role=MessageRole.SYSTEM,
+            role=MessageRole.USER,
             content=context_content,
         )
         return ExpertAnswerContextEvent(context_message=context_message)

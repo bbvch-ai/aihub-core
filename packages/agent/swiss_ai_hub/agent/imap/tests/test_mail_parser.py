@@ -11,7 +11,7 @@ _MAX_ATTACHMENT_BYTES = 10_000_000
 def _parse(
     message: EmailMessage, max_body_bytes: int = _MAX_BODY_BYTES, max_attachment_bytes: int = _MAX_ATTACHMENT_BYTES
 ):
-    return MailParser.parse_message("42", message, max_body_bytes, max_attachment_bytes)
+    return MailParser.parse_message("42", message, max_body_bytes, max_attachment_bytes, b"")
 
 
 def _from_bytes(message: EmailMessage) -> EmailMessage:
@@ -95,3 +95,26 @@ def test_parse_date_handles_missing_date():
     summary = MailParser.parse_summary("1", _from_bytes(message), [])
 
     assert summary.date is None
+
+
+def test_parse_message_defaults_raw_to_empty_when_not_supplied():
+    """Callers that parse an in-memory message (tests, fixtures) pass no raw bytes; the archive step
+    treats the empty default as "nothing to store" rather than writing an empty object."""
+    message = EmailMessage()
+    message["From"] = "a@example.com"
+    message["Subject"] = "no raw"
+    message.set_content("body")
+
+    assert _parse(_from_bytes(message)).raw == b""
+
+
+def test_parse_message_carries_raw_bytes_untouched():
+    message = EmailMessage()
+    message["From"] = "a@example.com"
+    message["Subject"] = "with raw"
+    message.set_content("body")
+    raw = message.as_bytes()
+
+    parsed = MailParser.parse_message("42", _from_bytes(message), _MAX_BODY_BYTES, _MAX_ATTACHMENT_BYTES, raw)
+
+    assert parsed.raw == raw

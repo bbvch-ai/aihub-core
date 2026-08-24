@@ -10,7 +10,7 @@ from swiss_ai_hub.core.events.agent import (
     NotAMetaQuestionEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import limit_chat_history
+from swiss_ai_hub.core.generative_ai import limit_chat_history, merge_consecutive_messages
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -141,11 +141,17 @@ class LLMWrappingAgent(Agent):
         system_messages = [msg for msg in event.messages if msg.role == MessageRole.SYSTEM]
         system_prompt = ChatMessage(role=MessageRole.SYSTEM, content=agent_config.system_prompt.in_locale(locale))
         regular_messages = [msg for msg in event.messages if msg.role != MessageRole.SYSTEM]
-        chat_history = [
-            *system_messages,
-            system_prompt,
-            *regular_messages,
-        ]
+        # Only one leading system message may survive: strict providers (e.g. Qwen3.5 on Infomaniak) reject a
+        # 400 "System message must be at the beginning" for any system message past index 0, and the chat
+        # client's own system prompt (OpenWebUI model prompt, bot PathEntity.system_message) would push ours
+        # to index 1. Merge before limiting so the token budget reflects what is actually sent.
+        chat_history = merge_consecutive_messages(
+            [
+                *system_messages,
+                system_prompt,
+                *regular_messages,
+            ]
+        )
         limited_chat_history = limit_chat_history(
             chat_history=chat_history,
             number_of_input_tokens=agent_config.number_of_input_tokens,

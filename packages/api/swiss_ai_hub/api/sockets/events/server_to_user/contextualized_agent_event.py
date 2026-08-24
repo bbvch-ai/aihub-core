@@ -40,6 +40,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
+    MailBatchClassifiedEvent,
     MailBatchDraftedEvent,
     MailFetchedEvent,
     MailMovedEvent,
@@ -52,6 +53,7 @@ from swiss_ai_hub.core.events.agent import (
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     RouterEvent,
+    ScheduledStartEvent,
     SemanticEvent,
     SensitiveInfoAcceptEvent,
     SensitiveInfoRejectEvent,
@@ -107,6 +109,7 @@ DisplayEvents = (
     | Annotated[ToolEvent, Tag("ToolEvent")]
     | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
     | Annotated[RAGStartEvent, Tag("RAGStartEvent")]
+    | Annotated[ScheduledStartEvent, Tag("ScheduledStartEvent")]
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
     | Annotated[RAGSuccessStopEvent, Tag("RAGSuccessStopEvent")]
     | Annotated[RAGFailureStopEvent, Tag("RAGFailureStopEvent")]
@@ -131,6 +134,7 @@ DisplayEvents = (
     | Annotated[MailFetchedEvent, Tag("MailFetchedEvent")]
     | Annotated[MailMovedEvent, Tag("MailMovedEvent")]
     | Annotated[MailBatchDraftedEvent, Tag("MailBatchDraftedEvent")]
+    | Annotated[MailBatchClassifiedEvent, Tag("MailBatchClassifiedEvent")]
 )
 
 

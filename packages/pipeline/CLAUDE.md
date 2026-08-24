@@ -213,7 +213,8 @@ assets.
 - `DocumentParserResource` — Selects parser by filetype. `LoaderType.MINERU` (default) or `DOCUMENT_INTELLIGENCE`.
   Fallbacks: `EpubReader`, `IPYNBReader`, `RawLoader`, `RTFReader`, `ImageLoader`.
 - `MarkdownStructuralNodeParserResource` — LlamaIndex MD structural parser for chunking.
-- `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG.
+- `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG. Takes `llm_config` and caps
+  each prompt to the LLM's input limit, map-reducing over oversized rollups instead of sending them whole.
 - `TableRefinementResource` — LLM-powered table detection and structure splitting.
 
 **LLM/Embedding**: `EmbeddingModelResource` (wraps `EmbeddingModelConfig`), `LanguageModelResource` (wraps `LLMConfig`).
@@ -297,6 +298,29 @@ failure alerts without per-asset wiring.
 - `playground/quick_start/my_document_pipeline.py` — Complete pipeline with all factories, resources, sensors
 
 Start: `make playground` or `uv run dagster dev -m playground` Access: http://localhost:3000 (Dagster UI)
+
+## Local Dagster Instance
+
+`make playground`, `make quickstart`, and `make rag-pipelines` each depend on the `dagster-home` target, which installs
+`dagster.local.yaml` into `$(DAGSTER_HOME)` as `dagster.yaml` (copy-if-absent), and source the repo-root `.env` for the
+dev-stack connection settings. Two failure modes this prevents: an unset `DAGSTER_HOME` makes `dagster dev` create a
+throwaway `.tmp_dagster_home_*` instance per start, and a missing instance config leaves `DefaultRunCoordinator` in
+place, which fans out runs with no cap and storms MinerU. `dagster.local.yaml` uses the same `QueuedRunCoordinator` as
+`infra/configs/dagster/dagster-config.<stage>.yml`, but with `max_concurrent_runs` as a literal instead of
+`env: DAGSTER_MAX_CONCURRENT_RUNS`. Keep it literal: the file is installed into `$DAGSTER_HOME`, so an unresolvable env
+var would raise `PostProcessingError` in every Dagster process on the machine, including ones started without the repo
+`.env` loaded.
+
+`DAGSTER_HOME ?= $(HOME)/.dagster_home` is defined in the Makefile and exported over whatever `.env` says — same
+directory, but already absolute, so the recipes can `mkdir`/`cp` with it. `.env` keeps the tilde form for the manual
+`set -a && source .env && set +a` flow, where Dagster's own `expanduser` resolves it.
+
+Do NOT use the `-include ../../.env` + `export` pattern from `packages/api/Makefile` here. Make keeps the quotes from
+`.env`, so every value arrives wrapped in literal apostrophes — `DAGSTER_HOME='~/.dagster_home'` reaches Dagster with
+the quotes attached and is rejected as a non-absolute path. Source the file in the recipe instead.
+
+`dagster.local.yaml` is local-only: Dagster reads no filename but `dagster.yaml`, so the copy in this directory is inert
+where it sits, including inside the pipeline images that `COPY packages/pipeline`.
 
 ## Templates
 

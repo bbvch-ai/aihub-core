@@ -22,6 +22,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from swiss_ai_hub.core.generative_ai.document.tables.html_table_converter import HtmlTableConverter
 from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import wrap_markdown_tables
 from swiss_ai_hub.core.generative_ai.utils.image_processor import embed_images_as_base64, extract_and_upload_images
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
@@ -441,7 +442,10 @@ class MineruLoader(BaseReader):
                     source_file=file,
                 )
 
+        # Order matters: wrap_markdown_tables looks for bare pipe tables, and the converter emits exactly that.
+        # Converting first would leave every table wrapped twice as <table><table>...</table></table>.
         md_content = wrap_markdown_tables(md_content)
+        md_content = HtmlTableConverter.convert(md_content)
 
         metadata = {
             NUMBER_OF_PAGES: result.num_pages,

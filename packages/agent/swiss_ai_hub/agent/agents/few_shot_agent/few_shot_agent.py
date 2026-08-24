@@ -18,6 +18,7 @@ from swiss_ai_hub.core.generative_ai import (
     condense_standalone_question,
     create_few_shot_messages,
     limit_chat_history,
+    merge_consecutive_messages,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 
@@ -253,12 +254,18 @@ class FewShotAgent(Agent):
         system_prompt = ChatMessage(
             role=MessageRole.SYSTEM, content=agent_config.few_shot.system_prompt.in_locale(locale)
         )
-        context = [
-            *system_messages,
-            system_prompt,
-            *few_shot_messages,
-            event.condensed_chat_message,
-        ]
+        # Only one leading system message may survive: strict providers (e.g. Qwen3.5 on Infomaniak) reject a
+        # 400 "System message must be at the beginning" for any system message past index 0, and the chat
+        # client's own system prompt (OpenWebUI model prompt, bot PathEntity.system_message) would push ours
+        # to index 1.
+        context = merge_consecutive_messages(
+            [
+                *system_messages,
+                system_prompt,
+                *few_shot_messages,
+                event.condensed_chat_message,
+            ]
+        )
         return FewShotEvent(
             few_shot_examples=few_shot_messages,
             system_prompt=system_prompt,

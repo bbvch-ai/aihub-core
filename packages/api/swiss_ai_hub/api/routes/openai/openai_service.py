@@ -157,6 +157,40 @@ class OpenaiService:
             )
 
     @staticmethod
+    def _apply_model_identity(
+        chat_completion_request: ChatCompletionRequest, model_name: str, t: LocaleHandler
+    ) -> None:
+        """Names the model to itself, because OpenWebUI keeps one history across a model switch and a model
+        asked who it is otherwise answers from the transcript — adopting whichever model spoke earlier, and
+        looping on the conflict until it exhausts its output budget. Applies to every plain-model request:
+        OpenWebUI reaches this endpoint through its own OpenAI connection, whose payload is indistinguishable
+        from an external SDK client's, so there is nothing to gate on. Leads the list because Qwen3.5 rejects
+        a system message that follows any user or assistant turn — which is also why a caller's own system
+        message is merged into this one instead of being left as a second one. See ADR 2026_08_14."""
+        identity = t("lib.prompt.model.identity_system_message").format(model_name=model_name.rpartition("/")[2])
+        messages = list(chat_completion_request.messages or [])
+        leading_message = next(iter(messages), None)
+
+        if leading_message is not None and leading_message.get("role") == "system":
+            merged_system_message = OpenaiService._prefixed_system_message(leading_message, identity)
+            chat_completion_request.messages = [merged_system_message, *messages[1:]]
+        else:
+            chat_completion_request.messages = [{"role": "system", "content": identity}, *messages]
+
+    @staticmethod
+    def _prefixed_system_message(system_message: dict[str, Any], identity: str) -> dict[str, Any]:
+        """Puts the identity ahead of the caller's own system prompt inside a single system message, so the
+        caller still wins on task behaviour without the payload carrying a second system message. Qwen3.5 on
+        Infomaniak rejects the latter with `400 - System message must be at the beginning`, which reaches the
+        user as an empty response — see ADR 2026_06_29."""
+        content = system_message.get("content")
+        if isinstance(content, str):
+            merged: Any = f"{identity}\n\n{content}" if content else identity
+        else:
+            merged = [{"type": "text", "text": identity}, *(content or [])]
+        return {**system_message, "content": merged}
+
+    @staticmethod
     @trace_fn
     async def get_embeddings(
         *,
@@ -206,27 +240,46 @@ class OpenaiService:
         """
         await OpenaiService.get_model(model_name)  # Ensures model exists
         OpenaiService._assert_model_access(user, model_name)
+        # Must stay after get_model: its 404 is what routes an assistant to chat_completion_with_assistants'
+        # agent branch, and agents own their identity (ADR 2026_06_04). Injecting before it would hand every
+        # agent a contradicting persona.
+        OpenaiService._apply_model_identity(chat_completion_request, model_name, t)
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
 
         if chat_completion_request.stream:
+            kwargs = OpenaiService._filter_kwargs(
+                client.chat.completions.create,
+                chat_completion_request,
+                user=user,
+                locale=t.locale,
+                thread_id=thread_id,
+                display_id=display_id,
+            )
+            # Opened here rather than inside the generator so that an upstream rejection (unknown
+            # model, exhausted quota) is still raised in the endpoint's scope, where
+            # ModelGatewayErrorHandler can turn it into a response that names the cause. Once
+            # StreamingResponse has begun, the caller can only observe a truncated stream.
+            response = await client.chat.completions.create(**kwargs)
 
             async def stream_chat_completion() -> AsyncGenerator[str]:
-                """Handles streaming responses from OpenAI's API."""
-                kwargs = OpenaiService._filter_kwargs(
-                    client.chat.completions.create,
-                    chat_completion_request,
-                    user=user,
-                    locale=t.locale,
-                    thread_id=thread_id,
-                    display_id=display_id,
-                )
-                response = await client.chat.completions.create(**kwargs)
+                """``async with`` so the upstream stream is closed when the consumer stops early.
 
-                async for chunk in response:
-                    yield f"data: {chunk.model_dump_json()}\n\n"
-                    await asyncio.sleep(0)
+                A browser tab closed mid-answer makes Starlette call ``aclose()`` on this generator,
+                which raises ``GeneratorExit`` at the ``yield`` — without the context manager nothing
+                releases the httpx connection, and ``with_options()`` hands every user a copy over
+                one shared pool, so the leaks accumulate against everyone.
+
+                It does not cover a generator that is never started at all: ``aclose()`` on one runs
+                no code, so no ``__aexit__`` fires. A ``BackgroundTask`` would not close that gap
+                either — Starlette 1.1.0 raises ``ClientDisconnect`` out of ``stream_response`` on
+                ASGI spec >= 2.4 and never reaches its ``background`` call.
+                """
+                async with response:
+                    async for chunk in response:
+                        yield f"data: {chunk.model_dump_json()}\n\n"
+                        await asyncio.sleep(0)
 
             return StreamingResponse(
                 stream_chat_completion(),
@@ -657,8 +710,7 @@ class OpenaiService:
         model_type: Literal["chat", "embedding", "image_generation", "audio_transcription", "audio_speech"],
         model_name: str | None = None,
     ) -> list[str]:
-        litellm_client = LiteLLMProxySettings().httpx_aclient
-        models = await litellm_client.get("/v1/model/info")
+        models = await LiteLLMProxySettings().httpx_aclient.get("/v1/model/info")
         candidates = [
             model["model_name"] for model in models.json()["data"] if model["model_info"]["mode"] == model_type
         ]

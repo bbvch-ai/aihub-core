@@ -48,7 +48,6 @@ jobs:
             exit 1
           fi
           echo "version=$SRC" >> "$GITHUB_OUTPUT"
-
   move-pointer:
     name: Move staging pointer to the nightly commit
     needs: resolve
@@ -81,7 +80,6 @@ jobs:
           git tag -f -a staging "$TARGET" -m "Release $VERSION"
           git push origin refs/tags/staging --force
           echo "Moved 'staging' to $TARGET ($VERSION)."
-
   discover-images:
     name: Discover app images
     needs: resolve
@@ -105,7 +103,6 @@ jobs:
                 | .key]')
           echo "Discovered images: $images"
           echo "matrix={\"image\":$images}" >> "$GITHUB_OUTPUT"
-
   retag-docker:
     name: Retag nightly images to :staging
     needs: [resolve, discover-images]
@@ -134,7 +131,6 @@ jobs:
           docker tag "${IMAGE}:${VERSION}" "${IMAGE}:staging"
           docker push "${IMAGE}:staging"
           echo "Pushed ${IMAGE}:staging (from ${VERSION})"
-
   publish-bundle:
     name: Refresh rolling staging prerelease (no notes)
     needs: [resolve, move-pointer]

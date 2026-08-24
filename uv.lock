@@ -920,6 +920,18 @@ wheels = [
 ]
 
 [[package]]
+name = "croniter"
+version = "6.2.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/37/57/2e2a65aee2a70483cb28e2b7e15a072d00a523207593b44400d4717bb100/croniter-6.2.4.tar.gz", hash = "sha256:fc124f751b1b04805c2a04b061898b436b45ab2320b045e1e052ea895de65189", size = 166267, upload-time = "2026-07-10T09:52:59.955Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cd/ba/d678e5bd329646ca51d3c92addbc77804e86d21f4b6b6a027218e6abb010/croniter-6.2.4-py3-none-any.whl", hash = "sha256:8ef3d544107a5c05a150a2d78f8bf5a8eb9c5c4d93405a736b824109574e3f4d", size = 46677, upload-time = "2026-07-10T09:52:58.425Z" },
+]
+
+[[package]]
 name = "cryptography"
 version = "48.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -5417,7 +5429,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/meta" }
 dependencies = [
     { name = "swiss-ai-hub-agent" },
@@ -5440,7 +5452,7 @@ requires-dist = [
 
 [[package]]
 name = "swiss-ai-hub-agent"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/agent" }
 dependencies = [
     { name = "fastmcp" },
@@ -5475,7 +5487,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-api"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/api" }
 dependencies = [
     { name = "audioop-lts" },
@@ -5530,7 +5542,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-backup"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/backup" }
 dependencies = [
     { name = "boto3" },
@@ -5587,7 +5599,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-bot"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/bot" }
 dependencies = [
     { name = "azure-identity" },
@@ -5632,7 +5644,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-core"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "adlfs" },
@@ -5644,6 +5656,7 @@ dependencies = [
     { name = "boto3-stubs", extra = ["s3"] },
     { name = "cachetools" },
     { name = "colorlog" },
+    { name = "croniter" },
     { name = "fastapi" },
     { name = "fsspec" },
     { name = "html5lib" },
@@ -5718,6 +5731,7 @@ requires-dist = [
     { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.42.30" },
     { name = "cachetools", specifier = ">=5.5.2" },
     { name = "colorlog", specifier = ">=6.9.0" },
+    { name = "croniter", specifier = ">=6.2.4" },
     { name = "fastapi", specifier = ">=0.128.0" },
     { name = "fsspec", specifier = ">=2024.10.0" },
     { name = "html5lib", specifier = ">=1.1" },
@@ -5797,7 +5811,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub-pipeline"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/pipeline" }
 dependencies = [
     { name = "apprise" },
@@ -5807,6 +5821,7 @@ dependencies = [
     { name = "dagster-postgres" },
     { name = "dagster-webserver" },
     { name = "matplotlib" },
+    { name = "openai" },
     { name = "swiss-ai-hub-core" },
 ]
 
@@ -5819,6 +5834,7 @@ requires-dist = [
     { name = "dagster-postgres", specifier = ">=0.27.2" },
     { name = "dagster-webserver", specifier = ">=1.11.2" },
     { name = "matplotlib", specifier = ">=3.9.2" },
+    { name = "openai", specifier = ">=1.76.2" },
     { name = "swiss-ai-hub-core", editable = "packages/core" },
 ]
 
@@ -5827,7 +5843,7 @@ dev = []
 
 [[package]]
 name = "swiss-ai-hub-process"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/process" }
 dependencies = [
     { name = "httpx" },
@@ -5856,7 +5872,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-sysadmin-api"
-version = "0.319.0"
+version = "0.320.0"
 source = { editable = "packages/sysadmin-api" }
 dependencies = [
     { name = "gunicorn" },
@@ -5883,7 +5899,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-workspace"
-version = "0.319.0"
+version = "0.320.0"
 source = { virtual = "." }
 dependencies = [
     { name = "jinja2" },
@@ -5907,6 +5923,7 @@ dev = [
     { name = "pytest-bdd" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "ruff" },
     { name = "toml-sort" },
     { name = "tomlkit" },
@@ -5937,6 +5954,7 @@ dev = [
     { name = "pytest-bdd", specifier = ">=8.1.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "ruff", specifier = ">=0.15.12" },
     { name = "toml-sort", specifier = ">=0.24.4" },
     { name = "tomlkit", specifier = ">=0.13.3" },

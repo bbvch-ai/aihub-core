@@ -2,14 +2,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
-    from swiss_ai_hub.core.i18n.locale_string import LocaleString
+    from swiss_ai_hub.core.i18n.locale_string import LOCALES, LocaleString
 
 __all__ = [
+    "LOCALES",
     "LocaleHandler",
     "LocaleString",
 ]
 
 _LAZY_IMPORTS = {
+    "LOCALES": "swiss_ai_hub.core.i18n.locale_string",
     "LocaleHandler": "swiss_ai_hub.core.i18n.locale_handler",
     "LocaleString": "swiss_ai_hub.core.i18n.locale_string",
 }

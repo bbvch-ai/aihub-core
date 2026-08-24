@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime
 from typing import Self
 
@@ -48,6 +49,36 @@ class ThreadEntity(Document):
         thread = cls(id=thread_id or ObjectId(), name=name, users=users, agents=agents, created_at=datetime.now())
         thread.save()
         return thread
+
+    @classmethod
+    @trace_fn
+    def get_or_create_scheduled_thread(cls, name: str, agent: AgentInstanceRef) -> Self:
+        """The one thread every scheduled run of a given profile fires into.
+
+        One thread per occurrence would leave a profile running every five minutes with ~105k
+        single-run threads a year and nothing to clean them up — invisible today only because the
+        threads have no members, and a wall of identical entries in the user's list the moment
+        thread membership lands. Many runs in one thread is the ordinary Thread → Display → Run
+        model; a chat conversation is exactly that.
+
+        The id is derived from the profile rather than looked up by field, so two replicas racing a
+        handover converge on the same document instead of creating a second thread.
+        """
+        thread_id = cls.scheduled_thread_id(agent)
+        existing = cls.objects(id=thread_id).first()
+        if existing:
+            return existing
+        return cls.create_thread(name, users=[], agents=[agent], thread_id=thread_id)
+
+    @staticmethod
+    def scheduled_thread_id(agent: AgentInstanceRef) -> ObjectId:
+        """The deterministic thread id of a profile's scheduled runs.
+
+        An ObjectId normally encodes its creation time in the leading bytes; this one does not, so read
+        a scheduled thread's age from `created_at` and never from its id.
+        """
+        digest = hashlib.sha256(f"{agent.agent_class}/{agent.agent_id}".encode()).digest()
+        return ObjectId(digest[:12])
 
     @classmethod
     @trace_fn
