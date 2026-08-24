@@ -6,9 +6,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
     from swiss_ai_hub.core.scheduling.cron_schedule_calculator import CronScheduleCalculator
     from swiss_ai_hub.core.scheduling.schedule_state_store import ScheduleStateStore
-    from swiss_ai_hub.core.scheduling.scheduled_agent_service import ScheduledAgentService
+    from swiss_ai_hub.core.scheduling.scheduled_agent_service import SCHEDULE_CONFIG_KEY, ScheduledAgentService
 
 __all__ = [
+    "SCHEDULE_CONFIG_KEY",
     "AgentSchedule",
     "CronScheduleCalculator",
     "ScheduleStateStore",
@@ -16,6 +17,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "SCHEDULE_CONFIG_KEY": "swiss_ai_hub.core.scheduling.scheduled_agent_service",
     "AgentSchedule": "swiss_ai_hub.core.scheduling.agent_schedule",
     "CronScheduleCalculator": "swiss_ai_hub.core.scheduling.cron_schedule_calculator",
     "ScheduleStateStore": "swiss_ai_hub.core.scheduling.schedule_state_store",

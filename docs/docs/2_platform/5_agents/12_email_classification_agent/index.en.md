@@ -137,6 +137,9 @@ it disabled and the agent only runs when something triggers it.
 The timezone is what makes "every day at 08:00" mean the same thing all year: occurrences are worked out in that zone,
 so a daily schedule keeps its wall-clock time across daylight-saving changes.
 
+Every position has to be filled in. A blank or malformed one is rejected when you save, rather than being stored and
+quietly breaking the profile.
+
 ::: tip Start hourly, then tighten
 `0 * * * *` — on the hour — is a good first schedule. It gives you a run an hour to inspect before you decide whether
 the mailbox needs draining more often.
@@ -150,8 +153,14 @@ is skipped rather than queued, and the next one runs normally.
 This matters because a message is still unread right up until it moves. Without the guard, two overlapping runs would
 both read the same mail, both pay to classify it, and both try to file it.
 
-If a run fails outright, its claim on the mailbox lapses on its own within ten minutes and the next scheduled run
-proceeds — so a crash costs you at most one occurrence.
+A run keeps renewing its claim for as long as it is working, so how long a batch takes never causes it to lose the
+mailbox — the ten-minute expiry only starts counting down once the run has actually stopped. If a run fails outright,
+the claim lapses on its own within ten minutes and the next scheduled run proceeds, so a crash costs you at most one
+occurrence.
+
+In the rare case where a run does lose its claim mid-flight — a mailbox or a model stalled for longer than ten minutes
+in a single step — it stops before filing anything rather than filing mail another run may already be moving. That shows
+up as a failed run in tracing, and it is worth investigating: it means something took far longer than it should.
 :::
 
 ::: warning Three things to know about scheduled runs

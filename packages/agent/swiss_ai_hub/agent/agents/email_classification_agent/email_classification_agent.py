@@ -24,6 +24,7 @@ from swiss_ai_hub.agent.agents.email_classification_agent.events.classify_mail_s
 from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import CategoryVerdict, MailClassifier
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.fetched_mail import FetchedMail
+from swiss_ai_hub.agent.imap.mailbox_lease_lost_error import MailboxLeaseLostError
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
 from swiss_ai_hub.agent.imap.step_functions import do_fetch_and_archive, do_file_messages, do_list_unread
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -114,6 +115,10 @@ class EmailClassificationAgent(Agent):
 
         The batch can come back shorter than the listing: this is a shared mailbox, so a human may file or delete a
         message by hand between the two, and one that vanished is skipped rather than failing the run.
+
+        All three phases run under one heartbeat rather than renewing the lease at points along the way: the fetch and
+        the filing pass are as capable of outliving the TTL as the model calls are, and neither offers a per-item hook
+        to renew from.
         """
         self._validate(classification, imap_config.inbox_folder)
         lease = MailboxRunLease(redis)
@@ -123,15 +128,26 @@ class EmailClassificationAgent(Agent):
             await displayer.display_thought("No unread messages in the inbox.")
             return MailBatchClassifiedEvent(source_folder=imap_config.inbox_folder, count=0)
 
-        fetched = await do_fetch_and_archive(
-            imap_config,
-            [message.message_id for message in event.messages],
-            agent_class=topic.agent_class,
-            agent_id=topic.agent_id,
-            skip_vanished=True,
-        )
-        verdicts = await self._classify_all(fetched, agent_config, classification, displayer, lease, topic)
-        classified = await self._file_all(fetched, verdicts, imap_config, classification, displayer)
+        async with lease.heartbeat(topic.agent_class, topic.agent_id, topic.run_id):
+            fetched = await do_fetch_and_archive(
+                imap_config,
+                [message.message_id for message in event.messages],
+                agent_class=topic.agent_class,
+                agent_id=topic.agent_id,
+                skip_vanished=True,
+            )
+            verdicts = await self._classify_all(fetched, agent_config, classification, displayer)
+
+            # Checked here and not earlier because filing is the only phase that mutates the mailbox: a fetch or a
+            # classification this run no longer owns has wasted time and money, but only filing can put two runs on
+            # the same messages.
+            if lease.lost:
+                raise MailboxLeaseLostError(
+                    f"run {topic.run_id} lost the mailbox lease on {topic.agent_class}/{topic.agent_id} before "
+                    f"filing {len(fetched)} message(s) — another run holds it, so this run files nothing"
+                )
+
+            classified = await self._file_all(fetched, verdicts, imap_config, classification, displayer)
 
         per_category = Counter(ref.category for ref in classified if ref.category)
         fallback_count = sum(1 for ref in classified if ref.category is None)
@@ -206,24 +222,20 @@ class EmailClassificationAgent(Agent):
         agent_config: EmailClassificationAgentConfig,
         classification: EmailClassificationSettings,
         displayer: EventDisplayer,
-        lease: MailboxRunLease,
-        topic: AgentInstanceTopic,
     ) -> list[CategoryVerdict]:
         """Classify every message with no IMAP connection held.
 
         Inbound mail is untrusted and enters the prompt; the platform's Presidio guard anonymizes PII at the LLM
         gateway, so this step adds no sanitisation of its own.
 
-        The lease is renewed per message, which is what keeps its TTL a crash bound rather than a guess at how long a
-        batch takes. Sizing it for `max_messages` model calls would need re-sizing every time the run grows, and
-        guessing short is the dangerous direction — the lease would lapse mid-run and let in the very overlap it
-        exists to prevent.
+        Holding the mailbox is the caller's heartbeat, not this loop's business: renewing per message here would
+        leave the fetch and the filing either side of it unrenewed, which is how a lease sized for classification
+        alone lapses on a slow mailbox.
         """
         llm_config = agent_config.classifier_llm
         verdicts: list[CategoryVerdict] = []
         async with llm_config.cost_reporting_llm(displayer) as llm:
             for mail in fetched:
-                await lease.renew(topic.agent_class, topic.agent_id, topic.run_id)
                 verdict = await MailClassifier.classify(mail.parsed, classification, llm)
                 logger.info(
                     "[classify] uid=%s subject=%r -> %s",

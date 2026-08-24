@@ -8,12 +8,13 @@ import inspect
 
 from swiss_ai_hub.core.events.agent import ScheduledStartEvent, StopEvent
 from swiss_ai_hub.core.form import CronInput
-from swiss_ai_hub.core.scheduling.scheduled_agent_service import SCHEDULE_CONFIG_KEY, ScheduledAgentService
+from swiss_ai_hub.core.scheduling import SCHEDULE_CONFIG_KEY, ScheduledAgentService
 
 from swiss_ai_hub.agent.agents.email_classification_agent.configs.email_classification_agent_config import (
     EmailClassificationAgentConfig,
 )
 from swiss_ai_hub.agent.agents.email_classification_agent.email_classification_agent import EmailClassificationAgent
+from swiss_ai_hub.agent.imap.mailbox_lease_lost_error import MailboxLeaseLostError
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
 
 
@@ -35,7 +36,7 @@ def test_the_scheduler_can_read_the_schedule_off_the_rendered_form():
     cron field is still advertised as schedulable and still saves whatever an admin enters — it just never fires."""
     stored_form = [element.model_dump() for element in EmailClassificationAgentConfig.as_form().to_formkit_form()]
 
-    assert SCHEDULE_CONFIG_KEY in ScheduledAgentService._cron_field_paths(stored_form)
+    assert SCHEDULE_CONFIG_KEY in ScheduledAgentService.cron_field_paths(stored_form)
 
 
 def test_the_schedule_field_is_configurable():
@@ -76,3 +77,21 @@ def test_the_step_that_does_the_work_releases_the_lease():
 
     assert "release" in inspect.getsource(finish)
     assert "acquire" in inspect.getsource(EmailClassificationAgent.list_unread_step)
+
+
+def test_the_work_is_done_under_a_heartbeat_that_is_checked_before_filing():
+    """The three phases of a run are individually slow and only one of them is safe to do twice.
+
+    Renewing per classified message left the batch fetch and the filing pass either side of the loop unrenewed, so a
+    slow mailbox could outlive the TTL in a phase where nothing was renewing — and losing the lease only logged,
+    leaving the run to file mail another run already held. The heartbeat covers every phase, and the check before
+    `_file_all` is what turns a lost lease into a stopped run rather than a double-filed one.
+    """
+    source = inspect.getsource(EmailClassificationAgent.classify_and_file_step)
+
+    assert "lease.heartbeat(" in source, "the slow phases must run under a heartbeat, not per-message renewals"
+
+    lease_check = source.index("lease.lost")
+    assert lease_check < source.index("_file_all"), "a lost lease has to be caught before anything is filed"
+    assert lease_check > source.index("_classify_all"), "checking before the work makes the heartbeat pointless"
+    assert MailboxLeaseLostError.__name__ in source, "a lost lease must stop the run, not only warn"

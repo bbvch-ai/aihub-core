@@ -796,6 +796,11 @@ form:
       sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
   cron:
+    errors:
+      required: Jede Position ist erforderlich — eine leere ergibt keinen gültigen
+        Zeitplan.
+      invalid: Hier sind nur Ziffern und die Zeichen * , - / ? erlaubt.
+      range: Werte müssen zwischen {min} und {max} liegen.
     expression: 'Resultierender Cron-Ausdruck:'
     minute:
       label: Minute

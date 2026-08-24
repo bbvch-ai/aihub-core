@@ -796,6 +796,11 @@ form:
       temporairement jusqu'à la publication d'un correctif.
 lib:
   cron:
+    errors:
+      required: Chaque position est requise — une position vide ne constitue pas une
+        planification valide.
+      invalid: Seuls les chiffres et les caractères * , - / ? sont autorisés ici.
+      range: Les valeurs doivent être comprises entre {min} et {max}.
     expression: 'Expression cron résultante :'
     minute:
       label: Minute
