@@ -40,7 +40,11 @@ therefore recorded on the platform's own `LLMCostEvent`, which persists to the e
 emitted as Langfuse trace metadata. Per-tenant spend is queryable from the platform, not from the gateway.
 
 Background pipelines are out of scope: they have no identity concept to attribute and emit no cost events at all.
-Declaring a tenant for background work belongs to #786.
+
+Scheduled agent runs are a second unattributed path, and a noisier one: they execute real agent steps, so they do emit
+cost events, but as system runs they carry no user and their events land with both `user_id` and `tenant_id` null. A
+tenant is in fact knowable there — the agent's own profile has one — but reading it would mean sourcing tenant from
+somewhere other than the invoking identity. Declaring a tenant for background and scheduled work belongs to #786.
 
 ## Consequences
 

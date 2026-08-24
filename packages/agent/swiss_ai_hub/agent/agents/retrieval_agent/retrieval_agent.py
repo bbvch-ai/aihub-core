@@ -1,9 +1,11 @@
 from typing import ClassVar
 
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import RetrieverEvent
 from swiss_ai_hub.core.generative_ai import combine_nodes_in_order, retrieve_nodes, retrieve_prev_next_nodes
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.infrastructure import LiteLLMService
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
@@ -39,13 +41,17 @@ class RetrievalAgent(Agent):
         agent_config: RetrievalAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        # Populated when the run is started through the API, which passes the authenticated caller.
+        # Optional because the other two entry paths — process delegation and scheduling — supply no identity.
+        user: UserIdentity | None = None,
     ) -> RetrieverEvent:
         """
         Retrieves relevant nodes from the knowledge base.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
         retriever = agent_config.retriever
-        embedding, _ = retriever.embed_model.to_llama_index()
+        api_key = await LiteLLMService.api_key_for_user(user) if user else None
+        embedding, _ = retriever.embed_model.to_llama_index(api_key=api_key)
 
         vector_store = retriever.vector_store.to_llama_index()
 
