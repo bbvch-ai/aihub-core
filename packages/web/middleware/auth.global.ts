@@ -6,20 +6,33 @@ let lastSyncedTenant: string | null = null
 
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 
+const normalize = (path: string) => (path.endsWith('/') ? path.slice(0, -1) : path)
+
+/**
+ * The whole login subtree is anonymous, not just the login page itself:
+ * per-tenant login links live at `/auth/login/<idp-alias>`. No
+ * authenticated-only page may ever be nested below that path.
+ */
+const isAnonymousPath = (path: string, locale: string): boolean => {
+  const loginPath = `/${locale}/auth/login`
+  const normalizedPath = normalize(path)
+  const exactPaths = [loginPath, `/${locale}/auth/callback`, `/${locale}/auth/renew`]
+
+  return exactPaths.some(anonymousPath => normalize(anonymousPath) === normalizedPath)
+    || normalizedPath.startsWith(`${loginPath}/`)
+}
+
+const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
+  if (import.meta.client && fullPath !== '/' && !isAuthPath) {
+    sessionStorage.setItem(REDIRECT_KEY, fullPath)
+  }
+}
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const { $auth, $i18n } = useNuxtApp()
   const locale = $i18n.locale.value
 
-  const noAuthPaths = [
-    `/${locale}/auth/login`,
-    `/${locale}/auth/callback`,
-    `/${locale}/auth/renew`,
-  ]
-
-  // No auth check for public paths (normalize trailing slashes on both sides)
-  const normalize = (p: string) => (p.endsWith('/') ? p.slice(0, -1) : p)
-  const normalizedPath = normalize(to.path)
-  if (noAuthPaths.some(p => normalize(p) === normalizedPath)) {
+  if (isAnonymousPath(to.path, locale)) {
     return
   }
 
@@ -29,9 +42,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const isAuthPath = to.path.includes('/auth/')
 
     if (!user) {
-      if (import.meta.client && to.fullPath !== '/' && !isAuthPath) {
-        sessionStorage.setItem(REDIRECT_KEY, to.fullPath)
-      }
+      rememberRedirect(to.fullPath, isAuthPath)
       return navigateTo(`/${locale}/auth/login`)
     }
 
@@ -41,9 +52,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
       }
       catch {
         await $auth.removeUser()
-        if (import.meta.client && to.fullPath !== '/' && !isAuthPath) {
-          sessionStorage.setItem(REDIRECT_KEY, to.fullPath)
-        }
+        rememberRedirect(to.fullPath, isAuthPath)
         return navigateTo(`/${locale}/auth/login`)
       }
     }

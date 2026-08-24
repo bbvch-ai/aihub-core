@@ -554,7 +554,9 @@ auth:
     description: Effettua il login per accedere all'applicazione
     tagline: Sperimenta il futuro dell'intelligenza artificiale
     welcome: Benvenuti nell'AI Hub di {companyName}
+    welcomeTenant: Benvenuti nell'AI Hub di {tenantName}
     pleaseLogin: Effettua il login
+    pleaseLoginWith: Effettua il login con {provider}
     loginWith: Accedi con {provider}
     customSolutions: Soluzioni AI personalizzate per la tua azienda
     logoAlt: Logo dell'azienda

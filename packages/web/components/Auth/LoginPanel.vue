@@ -21,36 +21,14 @@
         </a>
         <div class="flex flex-col gap-2 text-center">
           <h2 class="text-xl text-white">
-            {{ t('auth.login.welcome', { companyName }) }}
+            <slot name="heading" />
           </h2>
           <p class="text-surface-400">
-            {{ t('auth.login.pleaseLogin') }}
+            <slot name="message" />
           </p>
         </div>
         <div class="flex flex-col gap-3">
-          <ProgressSpinner
-            v-if="isLoading"
-            class="!h-8 !w-8"
-          />
-          <template v-else>
-            <Button
-              v-for="idp in authProviders ?? []"
-              :key="idp.alias"
-              :label="t('auth.login.loginWith', { provider: idp.display_name })"
-              :icon="`pi ${idp.icon}`"
-              icon-pos="right"
-              class="!bg-white !text-black"
-              @click="login(idp.alias || undefined)"
-            />
-            <Button
-              v-if="(authProviders?.length ?? 0) === 0"
-              :label="t('auth.login.title')"
-              icon="pi pi-sign-in"
-              icon-pos="right"
-              class="!bg-white !text-black"
-              @click="login()"
-            />
-          </template>
+          <slot />
         </div>
       </div>
       <a
@@ -68,13 +46,5 @@
 <script setup lang="ts">
 import logo from '@core/assets/images/logo.png'
 
-definePageMeta({
-  layout: 'anonymous',
-})
-
 const { t } = useI18n()
-const { login } = useAuth()
-const { authProviders, isLoading } = useAuthProviders()
-
-const companyName = 'bbv Software Services AG'
 </script>
