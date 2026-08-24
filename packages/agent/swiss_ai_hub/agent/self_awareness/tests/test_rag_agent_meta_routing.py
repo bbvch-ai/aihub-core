@@ -113,10 +113,10 @@ async def test_meta_question_branch_generates_title_and_follow_ups(monkeypatch):
         answer = ChatMessage(role=MessageRole.ASSISTANT, content="I am the HR assistant.")
         return LLMStopEvent(chat_messages=[answer])
 
-    async def fake_generate_title(chat_messages, llm_config, displayer, t, thread_context):
+    async def fake_generate_title(chat_messages, llm_config, displayer, t, thread_context, user):
         await displayer.display_event(ConversationTitleEvent(title="Fake Title"))
 
-    async def fake_generate_follow_ups(chat_messages, llm_config, displayer, t):
+    async def fake_generate_follow_ups(chat_messages, llm_config, displayer, t, user):
         await displayer.display_event(FollowUpQuestionsEvent(questions=["Fake follow-up?"]))
 
     monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
