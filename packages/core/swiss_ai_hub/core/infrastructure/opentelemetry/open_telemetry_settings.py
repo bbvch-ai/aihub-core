@@ -38,6 +38,15 @@ class OpenTelemetrySettings(EnvironmentSettings):
     METRICS_ENABLED: Annotated[
         bool, Field(description="Enable/disable OpenTelemetry request metrics (separate from tracing)")
     ] = False
+    # The SDK's 10s default is the whole retry budget, not a per-attempt timeout: the gRPC exporter
+    # sets deadline = now + timeout once, then abandons the batch as soon as the next backoff
+    # (1s, 2s, 4s, 8s...) would overrun it — three attempts, ~7s, then "Failed to export ... error
+    # code: StatusCode.UNAVAILABLE" and the records are gone. A collector restart takes longer than
+    # that: on nightly.951 sysadmin-api came up 27.4s before the recreated collector and lost its
+    # startup log. 60s buys the ~31s the hardcoded _MAX_RETRYS=6 ladder can actually use, which
+    # covers a container recreate. Raising it further trades queue headroom for a backend that is
+    # slow rather than absent — the queue keeps filling while the export thread waits.
+    EXPORTER_OTLP_TIMEOUT: Annotated[int, Field(description="Seconds an OTLP export may spend retrying")] = 60
     BLRP_MAX_QUEUE_SIZE: Annotated[int, Field(description="Log records buffered before new ones are dropped")] = 16384
     BLRP_MAX_EXPORT_BATCH_SIZE: Annotated[int, Field(description="Log records per OTLP export")] = 2048
     RESOURCE_SERVICE_NAME: Annotated[str | None, Field(description="Resource service name")] = None
@@ -64,9 +73,13 @@ class OpenTelemetrySettings(EnvironmentSettings):
         tracer_provider = TracerProvider(resource=self._build_resource(), span_limits=span_limits)
 
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
-            otlp_exporter = GRPCSpanExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE)
+            otlp_exporter = GRPCSpanExporter(
+                endpoint=self.EXPORTER_OTLP_ENDPOINT,
+                insecure=self.EXPORTER_OTLP_INSECURE,
+                timeout=self.EXPORTER_OTLP_TIMEOUT,
+            )
         else:
-            otlp_exporter = HTTPSpanExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT)
+            otlp_exporter = HTTPSpanExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT, timeout=self.EXPORTER_OTLP_TIMEOUT)
 
         span_processor = BatchSpanProcessor(otlp_exporter)
         tracer_provider.add_span_processor(span_processor)
@@ -110,10 +123,12 @@ class OpenTelemetrySettings(EnvironmentSettings):
 
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
             otlp_exporter = GRPCMetricExporter(
-                endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE
+                endpoint=self.EXPORTER_OTLP_ENDPOINT,
+                insecure=self.EXPORTER_OTLP_INSECURE,
+                timeout=self.EXPORTER_OTLP_TIMEOUT,
             )
         else:
-            otlp_exporter = HTTPMetricExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT)
+            otlp_exporter = HTTPMetricExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT, timeout=self.EXPORTER_OTLP_TIMEOUT)
 
         metric_reader = PeriodicExportingMetricReader(otlp_exporter)
         return MeterProvider(resource=resource, metric_readers=[metric_reader])
@@ -151,10 +166,14 @@ class OpenTelemetrySettings(EnvironmentSettings):
 
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
             otlp_log_exporter = GRPCLogExporter(
-                endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE
+                endpoint=self.EXPORTER_OTLP_ENDPOINT,
+                insecure=self.EXPORTER_OTLP_INSECURE,
+                timeout=self.EXPORTER_OTLP_TIMEOUT,
             )
         else:
-            otlp_log_exporter = HTTPLogExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT)
+            otlp_log_exporter = HTTPLogExporter(
+                endpoint=self.EXPORTER_OTLP_ENDPOINT, timeout=self.EXPORTER_OTLP_TIMEOUT
+            )
 
         # The SDK defaults (2048 queued, 512 per export) silently discard records once the queue is
         # full, and nothing logs the discard — so a burst looks like a complete log in the backend
@@ -174,10 +193,23 @@ class OpenTelemetrySettings(EnvironmentSettings):
         set_logger_provider(logger_provider)
 
         otel_handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+        otel_handler.addFilter(OpenTelemetrySettings._is_not_queue_management_record)
         OpenTelemetrySettings._attach_handler(logging.getLogger(), otel_handler)
         OpenTelemetrySettings._attach_to_server_loggers(otel_handler)
 
         return logger_provider
+
+    @staticmethod
+    def _is_not_queue_management_record(record: logging.LogRecord) -> bool:
+        """
+        The SDK reports a full queue with `_logger.warning("Queue full, dropping logs.")` from
+        inside BatchLogRecordProcessor.emit(), on the calling thread. With the handler on the root
+        logger that warning re-enters emit(), finds the queue still full, warns again — unbounded
+        recursion until the logging call dies in handleError(). Exporter self-reports
+        ("Failed to export logs to ...") are deliberately NOT filtered: they are emitted on the
+        export worker thread, cannot recurse, and are the only signal that telemetry was lost.
+        """
+        return not record.name.startswith("opentelemetry.sdk.")
 
     @staticmethod
     def _attach_to_server_loggers(handler: LoggingHandler) -> None:
