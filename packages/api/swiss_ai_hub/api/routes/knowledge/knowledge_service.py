@@ -242,10 +242,10 @@ class KnowledgeService:
             pass
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
-            text=request.display_name, t=t, llm_config=llm_config
+            text=request.display_name, t=t, llm_config=llm_config, user=user
         )
         description_entity = await KnowledgeService._create_and_translate_locale_entity(
-            request.description, t, llm_config
+            request.description, t, llm_config, user
         )
 
         namespace_entity = NamespaceEntity.create_namespace(
@@ -282,10 +282,10 @@ class KnowledgeService:
             raise HTTPException(status_code=404, detail=f"Folder with ID '{namespace_id}' not found")
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
-            text=request.display_name, t=t, llm_config=llm_config
+            text=request.display_name, t=t, llm_config=llm_config, user=user
         )
         description_entity = await KnowledgeService._create_and_translate_locale_entity(
-            request.description, t, llm_config
+            request.description, t, llm_config, user
         )
 
         updated_entity = NamespaceEntity.update_namespace(
