@@ -206,4 +206,3 @@ onMounted(() => {
   if (!props.context.value) emitValue(HOURLY)
 })
 </script>
-
