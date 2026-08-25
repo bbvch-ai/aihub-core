@@ -549,6 +549,9 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation == ThreadContext:
             return thread_context
 
+        if param.annotation == Redis:
+            return self.redis
+
         # Matched through the union members too: the programmatically-started agents annotate this
         # `UserIdentity | None`, and an equality check against the bare class silently misses them —
         # the kwarg is then dropped and the parameter keeps its `= None` default, so the run bills the

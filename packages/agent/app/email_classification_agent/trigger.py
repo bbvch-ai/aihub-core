@@ -9,7 +9,13 @@ Real account (e.g. Gmail with an app password):
     IMAP_LLM_MODEL='text-generation/gemma-4-31B-it' \
         uv run --package swiss-ai-hub-agent python -m app.email_classification_agent.trigger
 
+Scheduled entry point (same run, fired the way the cron scheduler fires it):
+    SCHEDULED=1 uv run --package swiss-ai-hub-agent python -m app.email_classification_agent.trigger
+
 Point it at a mailbox whose category folders do NOT exist yet — the run should create and subscribe them.
+
+Running two of these at once against the same mailbox is the overlap check: exactly one should classify and file,
+the other should report that a previous run still holds the mailbox and stop.
 """
 
 import os
@@ -19,7 +25,9 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv(usecwd=True))
 
 import asyncio  # noqa: E402
+from datetime import UTC, datetime  # noqa: E402
 
+from swiss_ai_hub.core.events.agent import CronStartEvent  # noqa: E402
 from swiss_ai_hub.core.generative_ai import LLMConfig  # noqa: E402
 from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
 from swiss_ai_hub.core.imap import EmailClassificationSettings, ImapClientConfig, MailCategory  # noqa: E402
@@ -82,8 +90,15 @@ async def main():
         ),
     )
 
+    # Both entry points run the identical workflow; SCHEDULED=1 is what proves the union on the entry step is
+    # wired, without waiting on a cron occurrence.
+    start_event = (
+        CronStartEvent(scheduled_for=datetime.now(UTC))
+        if os.environ.get("SCHEDULED") == "1"
+        else ClassifyMailStartEvent()
+    )
     async with runner.test_run(delay_before_stop=60) as topic:
-        await runner.send_event_from_topic(topic=topic, start_event=ClassifyMailStartEvent())
+        await runner.send_event_from_topic(topic=topic, start_event=start_event)
 
 
 if __name__ == "__main__":

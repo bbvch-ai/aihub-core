@@ -82,6 +82,12 @@ class PersistedAgentEventEntity(Document):
             {"fields": ["event_data.created_at"]},
             {"fields": ["display_id"]},
             {"fields": ["thread_id", "event_type", "event_parents"]},
+            # Equality then range, so an age-bounded prune of one thread can be served by an index scan.
+            # Neither existing index does: the `thread_id, event_type` prefix cannot answer the range, and
+            # the standalone `event_data.created_at` index would sweep every thread and filter after.
+            # It also covers the `filter(thread_id=...).order_by("event_data__created_at")` reads, which
+            # is the unbounded scan behind `to_message_history`.
+            {"fields": ["thread_id", "event_data.created_at"]},
             # Spend queries (#1451). Both cover the actual `$match` — event_parents, the time window,
             # and optionally the tenant — in equality-then-range order. Indexing the attribution keys
             # instead would be dead weight: they are only referenced by `$group`, which cannot use an
@@ -104,6 +110,37 @@ class PersistedAgentEventEntity(Document):
     event_name = StringField(required=True)
     event_data = DictField(required=True)
     event_parents = ListField(StringField(), required=True)
+
+    @classmethod
+    @trace_fn
+    def delete_events_older_than(
+        cls,
+        thread_ids: list[str],
+        older_than: datetime,
+        *,
+        batch_size: int = 50,
+    ) -> int:
+        """Deletes events in the given threads that predate `older_than`, returning how many went.
+
+        A Mongo TTL index cannot do this job: `event_data.created_at` is nanoseconds from `time.time_ns()`,
+        and TTL requires a BSON date. So the cutoff is converted to the same integer scale and compared
+        numerically — which also means an event with a missing or non-numeric timestamp never matches and
+        is therefore kept, the safe way round for a delete.
+
+        Threads are deleted in batches so one oversized `$in` cannot exceed FerretDB's limits, and so a
+        long prune stays interruptible instead of running as one unbounded statement.
+        """
+        if older_than.tzinfo is None:
+            # ThreadEntity.created_at is written naive, so a naive cutoff here would quietly mean local
+            # time and delete a different amount of history depending on where the process runs.
+            raise ValueError("older_than must be timezone-aware")
+
+        cutoff_ns = int(older_than.timestamp() * 1_000_000_000)
+        deleted = 0
+        for index in range(0, len(thread_ids), batch_size):
+            batch = thread_ids[index : index + batch_size]
+            deleted += cls.objects(thread_id__in=batch, event_data__created_at__lt=cutoff_ns).delete()
+        return deleted
 
     @classmethod
     @trace_fn

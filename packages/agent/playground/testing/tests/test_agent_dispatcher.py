@@ -1,5 +1,5 @@
-from fnmatch import fnmatch
 import inspect
+from fnmatch import fnmatch
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 

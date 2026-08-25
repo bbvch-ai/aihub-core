@@ -47,3 +47,25 @@ Feature: Email Classification Agent
     When the user triggers classification
     Then an ExceptionEvent is present
     And no message was filed
+
+  Scenario: A scheduled run classifies and files exactly like a manual one
+    Given an EmailClassificationAgent runner with three unread messages the model classifies into categories
+    When the scheduler triggers classification
+    Then a MailBatchClassifiedEvent with 3 classified messages was emitted
+    And each message was filed into its category folder
+    And the summary counts 2 support_request and 1 invoice
+    And a StopEvent is present
+    And no ExceptionEvent is present
+
+  Scenario: A run starting while another still holds the mailbox files nothing
+    Given an EmailClassificationAgent runner whose mailbox is already held by a running classification
+    When the scheduler triggers classification
+    Then no message was listed, fetched or filed
+    And no MailBatchClassifiedEvent was emitted
+    And a StopEvent is present
+    And no ExceptionEvent is present
+
+  Scenario: A finished run hands the mailbox back
+    Given an EmailClassificationAgent runner with three unread messages the model classifies into categories
+    When the scheduler triggers classification
+    Then the mailbox is no longer held

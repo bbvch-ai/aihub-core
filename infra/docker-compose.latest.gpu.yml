@@ -1596,6 +1596,8 @@ services:
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       presidio-analyzer:
@@ -1858,8 +1860,13 @@ services:
       - OTEL_HOST_NAME=${OTEL_HOST_NAME:-unset-latest}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
-    volumes: [./configs/otel/otel-config.latest.gpu.yml:/etc/otel-config.yml]
-    depends_on: [langfuse-web]
+    volumes:
+      - ./configs/otel/otel-config.latest.gpu.yml:/etc/otel-config.yml
+    # Deliberately no depends_on: this must be the first thing listening on 4317. Every app SDK
+    # gives up after OTEL_EXPORTER_OTLP_TIMEOUT and DROPS the batch, so gating the collector behind
+    # langfuse-web (and through it postgres/clickhouse/seaweedfs health) costs the startup log of
+    # every service on a cold start. The otlphttp/langfuse exporter has retry_on_failure and needs
+    # no start-order guarantee — langfuse-web is up long before the first OpenInference trace.
     healthcheck:
       test: [NONE]
     labels:
@@ -1891,6 +1898,8 @@ services:
     restart: always
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       seaweedfs-s3:
@@ -2427,6 +2436,8 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/api:latest
     depends_on:
+      otel-collector:
+        condition: service_started
       nats:
         condition: service_started
       traefik:
@@ -2541,6 +2552,14 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
       REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Cron scheduler (hosted here until the aihub-daemon extraction,  # 1203)
+      SCHEDULER_TICK_INTERVAL_SECONDS: ${SCHEDULER_TICK_INTERVAL_SECONDS}
+      SCHEDULER_LEASE_TTL_SECONDS: ${SCHEDULER_LEASE_TTL_SECONDS}
+      SCHEDULER_MAX_CATCHUP_MINUTES: ${SCHEDULER_MAX_CATCHUP_MINUTES}
+      SCHEDULER_REDIS_KEY_PREFIX: ${SCHEDULER_REDIS_KEY_PREFIX}
+      SCHEDULER_EVENT_RETENTION_DAYS: ${SCHEDULER_EVENT_RETENTION_DAYS}
+      SCHEDULER_RETENTION_INTERVAL_SECONDS: ${SCHEDULER_RETENTION_INTERVAL_SECONDS}
 
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
@@ -2679,6 +2698,8 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/sysadmin-api:latest
     depends_on:
+      otel-collector:
+        condition: service_started
       traefik:
         condition: service_started
       ferretdb:
@@ -2852,6 +2873,9 @@ services:
     container_name: llm-wrapping-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2916,6 +2940,9 @@ services:
     container_name: rag-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/rag_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2988,6 +3015,9 @@ services:
     container_name: expert-rag-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3060,6 +3090,9 @@ services:
     container_name: expert-asking-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3127,6 +3160,9 @@ services:
     container_name: retrieval-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/retrieval_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3191,6 +3227,9 @@ services:
     container_name: few-shot-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/few_shot_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3242,6 +3281,9 @@ services:
     container_name: namespace-selection-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/namespace_selection_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3293,6 +3335,9 @@ services:
     container_name: memory-writer-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/memory_writer_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3352,6 +3397,9 @@ services:
     container_name: imap-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/imap_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3412,6 +3460,9 @@ services:
     container_name: email-classification-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/email_classification_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 

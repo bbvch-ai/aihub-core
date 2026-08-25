@@ -5648,7 +5648,7 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/RAGStartEvent",
         },
         {
-          $ref: "#/components/schemas/ScheduledStartEvent",
+          $ref: "#/components/schemas/CronStartEvent",
         },
         {
           $ref: "#/components/schemas/ExceptionEvent",
@@ -6250,7 +6250,93 @@ export const CronInputSchema = {
   required: ["label", "validation"],
   title: "CronInput",
   description:
-    'A FormKit element for editing the cron schedule of a schedulable agent profile.\n\nThe element renders the five cron positions plus a timezone selector, and the submitted value\nmatches the fields of `AgentSchedule`:\n{\n    "minute": str,\n    "hour": str,\n    "day_of_month": str,\n    "month": str,\n    "day_of_week": str,\n    "timezone": str,\n}\n\nPresets and the plain-language summary of the current schedule are delivered by the Admin UI\n(see the cron schedule configuration UI issue); this element only declares the contract.\n\n### Form Duality\n```python\nfrom swiss_ai_hub.core.form.elements.cron_input import CronInput\nfrom swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule\n\nclass MyAgentConfig(AgentConfig):\n    schedule: Annotated[\n        AgentSchedule | CronInput | None,\n        Field(description="When this profile runs automatically"),\n    ] = None\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))\n\n# Data mode - from submission (Pydantic validates into AgentSchedule):\nconfig = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))\n```',
+    'A FormKit element for editing the cron schedule of a schedulable agent profile.\n\nThe element renders the five cron positions plus a timezone selector, and the submitted value\nmatches the fields of `CronSchedule`:\n{\n    "minute": str,\n    "hour": str,\n    "day_of_month": str,\n    "month": str,\n    "day_of_week": str,\n    "timezone": str,\n}\n\nPresets and the plain-language summary of the current schedule are delivered by the Admin UI\n(see the cron schedule configuration UI issue); this element only declares the contract.\n\n### Form Duality\n```python\nfrom swiss_ai_hub.core.form.elements.cron_input import CronInput\nfrom swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule\n\nclass MyAgentConfig(AgentConfig):\n    schedule: Annotated[\n        CronSchedule | CronInput | None,\n        Field(description="When this profile runs automatically"),\n    ] = None\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))\n\n# Data mode - from submission (Pydantic validates into CronSchedule):\nconfig = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))\n```',
+} as const;
+
+export const CronStartEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    locale: {
+      type: "string",
+      title: "Locale",
+      description:
+        "The locale the scheduled run reports its display output in.",
+      default: "de",
+    },
+    user: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Always None — scheduled runs are system-initiated and carry no execution identity.",
+    },
+    scheduled_for: {
+      type: "string",
+      format: "date-time",
+      title: "Scheduled For",
+      description:
+        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["scheduled_for", "_event_name", "_parent_event_names"],
+  title: "CronStartEvent",
+  description:
+    "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
 } as const;
 
 export const Custom_OutputSchema = {
@@ -19936,92 +20022,6 @@ export const RunStatisticsSchema = {
   description: "Statistics for a single run, intended for API response.",
 } as const;
 
-export const ScheduledStartEventSchema = {
-  properties: {
-    event_id: {
-      type: "string",
-      title: "Event Id",
-    },
-    created_at: {
-      type: "integer",
-      title: "Created At",
-      description:
-        "The time (in ns since epoch) the event was stored in the event store",
-    },
-    display_name: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description: "Display name for the event",
-    },
-    display_description: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description: "Display description for the event",
-    },
-    locale: {
-      type: "string",
-      title: "Locale",
-      description:
-        "The locale the scheduled run reports its display output in.",
-      default: "de",
-    },
-    user: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/UserIdentity",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description:
-        "Always None — scheduled runs are system-initiated and carry no execution identity.",
-    },
-    scheduled_for: {
-      type: "string",
-      format: "date-time",
-      title: "Scheduled For",
-      description:
-        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
-    },
-    _event_name: {
-      type: "string",
-      title: "Event Name",
-      description:
-        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
-      readOnly: true,
-    },
-    _parent_event_names: {
-      items: {
-        type: "string",
-      },
-      type: "array",
-      title: "Parent Event Names",
-      description:
-        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
-      readOnly: true,
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["scheduled_for", "_event_name", "_parent_event_names"],
-  title: "ScheduledStartEvent",
-  description:
-    "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
-} as const;
-
 export const SearchContextCostPerQueryDTOSchema = {
   properties: {
     search_context_size_low: {
@@ -27520,7 +27520,7 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/RAGStartEventWritable",
         },
         {
-          $ref: "#/components/schemas/ScheduledStartEventWritable",
+          $ref: "#/components/schemas/CronStartEventWritable",
         },
         {
           $ref: "#/components/schemas/ExceptionEventWritable",
@@ -27867,7 +27867,76 @@ export const CronInputWritableSchema = {
   required: ["label"],
   title: "CronInput",
   description:
-    'A FormKit element for editing the cron schedule of a schedulable agent profile.\n\nThe element renders the five cron positions plus a timezone selector, and the submitted value\nmatches the fields of `AgentSchedule`:\n{\n    "minute": str,\n    "hour": str,\n    "day_of_month": str,\n    "month": str,\n    "day_of_week": str,\n    "timezone": str,\n}\n\nPresets and the plain-language summary of the current schedule are delivered by the Admin UI\n(see the cron schedule configuration UI issue); this element only declares the contract.\n\n### Form Duality\n```python\nfrom swiss_ai_hub.core.form.elements.cron_input import CronInput\nfrom swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule\n\nclass MyAgentConfig(AgentConfig):\n    schedule: Annotated[\n        AgentSchedule | CronInput | None,\n        Field(description="When this profile runs automatically"),\n    ] = None\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))\n\n# Data mode - from submission (Pydantic validates into AgentSchedule):\nconfig = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))\n```',
+    'A FormKit element for editing the cron schedule of a schedulable agent profile.\n\nThe element renders the five cron positions plus a timezone selector, and the submitted value\nmatches the fields of `CronSchedule`:\n{\n    "minute": str,\n    "hour": str,\n    "day_of_month": str,\n    "month": str,\n    "day_of_week": str,\n    "timezone": str,\n}\n\nPresets and the plain-language summary of the current schedule are delivered by the Admin UI\n(see the cron schedule configuration UI issue); this element only declares the contract.\n\n### Form Duality\n```python\nfrom swiss_ai_hub.core.form.elements.cron_input import CronInput\nfrom swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule\n\nclass MyAgentConfig(AgentConfig):\n    schedule: Annotated[\n        CronSchedule | CronInput | None,\n        Field(description="When this profile runs automatically"),\n    ] = None\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))\n\n# Data mode - from submission (Pydantic validates into CronSchedule):\nconfig = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))\n```',
+} as const;
+
+export const CronStartEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    locale: {
+      type: "string",
+      title: "Locale",
+      description:
+        "The locale the scheduled run reports its display output in.",
+      default: "de",
+    },
+    user: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Always None — scheduled runs are system-initiated and carry no execution identity.",
+    },
+    scheduled_for: {
+      type: "string",
+      format: "date-time",
+      title: "Scheduled For",
+      description:
+        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["scheduled_for"],
+  title: "CronStartEvent",
+  description:
+    "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
 } as const;
 
 export const DatePickerWritableSchema = {
@@ -35880,75 +35949,6 @@ export const RunStatisticsWritableSchema = {
   required: ["run_id", "agent"],
   title: "RunStatistics",
   description: "Statistics for a single run, intended for API response.",
-} as const;
-
-export const ScheduledStartEventWritableSchema = {
-  properties: {
-    event_id: {
-      type: "string",
-      title: "Event Id",
-    },
-    created_at: {
-      type: "integer",
-      title: "Created At",
-      description:
-        "The time (in ns since epoch) the event was stored in the event store",
-    },
-    display_name: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description: "Display name for the event",
-    },
-    display_description: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description: "Display description for the event",
-    },
-    locale: {
-      type: "string",
-      title: "Locale",
-      description:
-        "The locale the scheduled run reports its display output in.",
-      default: "de",
-    },
-    user: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/UserIdentity",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description:
-        "Always None — scheduled runs are system-initiated and carry no execution identity.",
-    },
-    scheduled_for: {
-      type: "string",
-      format: "date-time",
-      title: "Scheduled For",
-      description:
-        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["scheduled_for"],
-  title: "ScheduledStartEvent",
-  description:
-    "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
 } as const;
 
 export const SelectWritableSchema = {
