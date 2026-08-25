@@ -2,7 +2,7 @@
   <AuthLoginPanel>
     <template #heading>
       <template v-if="provider">
-        {{ t('auth.login.welcomeTenant', { tenantName: provider.display_name }) }}
+        {{ t('auth.login.welcomeProvider', { provider: provider.display_name }) }}
       </template>
     </template>
     <template #message>
