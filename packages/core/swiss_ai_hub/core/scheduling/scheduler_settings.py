@@ -6,6 +6,10 @@ from pydantic import Field
 from swiss_ai_hub.core.scheduling.schedule_state_store import DEFAULT_KEY_PREFIX
 from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
+# The most runs any cron expression can produce in the 30-day probe window: the minute is cron's finest
+# position, so every-minute is the ceiling of what a schedule can ask for.
+MINUTES_PER_MONTH = 30 * 24 * 60
+
 
 class SchedulerSettings(EnvironmentSettings):
     """Operational knobs for the cron scheduler.
@@ -66,10 +70,35 @@ class SchedulerSettings(EnvironmentSettings):
             description="Minimum seconds between prunes, enforced cluster-wide. Keeps bulk deletes off the tick.",
         ),
     ] = 3600
+    MAX_RUNS_PER_PROFILE_PER_MONTH: Annotated[
+        int,
+        Field(
+            ge=1,
+            description="Most runs a single schedule may produce in 30 days, rejected when the profile is "
+            "saved. Defaults to the tightest schedule cron can express (every minute), so out of the box "
+            "it rejects nothing expressible and exists for a deployment that wants to allow less.",
+        ),
+    ] = MINUTES_PER_MONTH
+    MAX_TOTAL_RUNS_PER_MONTH: Annotated[
+        int,
+        Field(
+            # Off by default for the same reason retention is: a bound that can reject an admin's save has
+            # to be something an operator chose, never something a deploy started doing.
+            ge=0,
+            description="Most runs all schedules together may produce in 30 days, checked when a profile "
+            "is saved. Zero disables the check, which is the default — the right ceiling depends on how "
+            "many agents a deployment runs and what they cost, and no platform-wide constant knows that.",
+        ),
+    ] = 0
 
     @property
     def max_catchup(self) -> timedelta:
         return timedelta(minutes=self.MAX_CATCHUP_MINUTES)
+
+    @property
+    def max_total_runs_per_month(self) -> int | None:
+        """The aggregate ceiling, or None when the check is disabled."""
+        return self.MAX_TOTAL_RUNS_PER_MONTH or None
 
     @property
     def event_retention(self) -> timedelta | None:

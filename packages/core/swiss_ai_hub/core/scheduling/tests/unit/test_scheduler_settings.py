@@ -9,7 +9,7 @@ Rejecting the value at construction turns that into a startup failure with a fie
 import pytest
 from pydantic import ValidationError
 
-from swiss_ai_hub.core.scheduling.scheduler_settings import SchedulerSettings
+from swiss_ai_hub.core.scheduling.scheduler_settings import MINUTES_PER_MONTH, SchedulerSettings
 
 
 class TestZeroIsRejectedWhereItWouldBreakTheScheduler:
@@ -66,3 +66,27 @@ class TestTheClaimTtlStaysValid:
         settings = SchedulerSettings(MAX_CATCHUP_MINUTES=1)
 
         assert int(settings.max_catchup.total_seconds()) * 4 > 0
+
+
+class TestTheRunCeilings:
+    def test_the_per_profile_default_is_the_tightest_expressible_schedule(self) -> None:
+        """Every-minute is 43,200 runs in 30 days and cron cannot ask for more, so the default admits
+        everything that can be written. The ceiling is a knob for a deployment that wants to allow less,
+        never a number the platform picked on a customer's behalf."""
+        assert SchedulerSettings().MAX_RUNS_PER_PROFILE_PER_MONTH == MINUTES_PER_MONTH
+
+    def test_the_aggregate_ceiling_is_off_by_default(self) -> None:
+        """Same principle as retention: a check that can reject an admin's save has to be switched on."""
+        assert SchedulerSettings().max_total_runs_per_month is None
+
+    def test_a_configured_aggregate_ceiling_is_a_number(self) -> None:
+        assert SchedulerSettings(MAX_TOTAL_RUNS_PER_MONTH=5000).max_total_runs_per_month == 5000
+
+    def test_a_negative_aggregate_ceiling_is_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            SchedulerSettings(MAX_TOTAL_RUNS_PER_MONTH=-1)
+
+    def test_a_per_profile_ceiling_of_zero_is_rejected(self) -> None:
+        """Zero would mean "no schedule may ever run", which is what removing the agents is for."""
+        with pytest.raises(ValidationError):
+            SchedulerSettings(MAX_RUNS_PER_PROFILE_PER_MONTH=0)

@@ -205,7 +205,10 @@ class CronScheduler:
 
         online: list[_ScheduledProfile] = []
         offline: list[tuple[_ScheduledProfile, datetime]] = []
-        for profile in self._scheduled_profiles([entity.agent_class for entity in entities]):
+        profiles = self._scheduled_profiles(
+            [entity.agent_class for entity in entities], self._settings.MAX_RUNS_PER_PROFILE_PER_MONTH
+        )
+        for profile in profiles:
             _, config = profile
             if config.agent_class in offline_last_seen:
                 offline.append((profile, offline_last_seen[config.agent_class]))
@@ -315,8 +318,14 @@ class CronScheduler:
         return dropped
 
     @staticmethod
-    def _scheduled_profiles(agent_classes: list[str]) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
-        """Profiles of the given classes that carry a parseable schedule, paired with that schedule."""
+    def _scheduled_profiles(
+        agent_classes: list[str],
+        max_runs_per_profile: int,
+    ) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
+        """Profiles of the given classes that carry a parseable, admissible schedule.
+
+        Paired with the schedule so the caller does not parse it twice.
+        """
         instances: list[tuple[CronSchedule, AgentConfigEntityDocument]] = []
         for config in AgentConfigEntityDocument.find_for_classes(agent_classes):
             raw_schedule = (config.config_data or {}).get(CRON_CONFIG_KEY)
@@ -339,6 +348,21 @@ class CronScheduler:
                     "Skipping %s/%s: stored schedule is not valid",
                     config.agent_class,
                     config.agent_id,
+                )
+                continue
+            # The save path rejects an over-budget schedule, but only for rows written since it existed
+            # and only while the setting held its current value. Lowering the ceiling must not leave the
+            # profiles that were admissible under the old one firing forever, so the scan re-checks it —
+            # the same write-time-validation-plus-scan-side-skip pairing a malformed schedule gets.
+            runs = CronScheduleCalculator.runs_per_month(schedule, max_runs_per_profile + 1)
+            if runs > max_runs_per_profile:
+                logger.warning(
+                    "Skipping %s/%s: its schedule runs more than %d times per 30 days, over this "
+                    "deployment's per-agent limit. Edit the schedule, or raise "
+                    "SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH.",
+                    config.agent_class,
+                    config.agent_id,
+                    max_runs_per_profile,
                 )
                 continue
             instances.append((schedule, config))

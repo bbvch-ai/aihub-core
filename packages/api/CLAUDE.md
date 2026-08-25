@@ -251,8 +251,14 @@ watermark, per-occurrence claims, retention window) is in Redis and nowhere else
 `SchedulerSettings` (`SCHEDULER_*`), including `SCHEDULER_EVENT_RETENTION_DAYS`, which is **0 (off)** by default —
 pruning a tenant's run history has to be switched on, never started by a deploy. Started *after*
 `initialize_startup_tenant()` so a first tick cannot outrun tenant and role setup. Its Mongo reads all go through one
-`asyncio.to_thread` hop per tick, because this process also serves every HTTP and WebSocket request. See ADR
-`2026_08_11_cron_scheduled_agent_runs`.
+`asyncio.to_thread` hop per tick, because this process also serves every HTTP and WebSocket request.
+
+A schedule's cost is checked when the profile is **saved**, not metered while it runs: `InstanceConfigHelper`
+`.validate_cron_field` calls `ScheduleAdmission`, which computes how many runs the expression declares and rejects it
+with a 400 if it passes `SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH` (default every-minute, so it refuses nothing
+expressible) or `SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH` across all profiles (default off). This bounds how *often* an agent
+starts, not what it spends — that is #1766/#1767/#1452/#441. See ADR `2026_08_11_cron_scheduled_agent_runs` §9 for why
+runtime metering was implemented and withdrawn.
 
 ## Testing
 
