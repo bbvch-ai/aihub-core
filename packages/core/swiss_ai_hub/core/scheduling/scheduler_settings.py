@@ -101,6 +101,17 @@ class SchedulerSettings(EnvironmentSettings):
         return self.MAX_TOTAL_RUNS_PER_MONTH or None
 
     @property
+    def enforced_profile_ceiling(self) -> int | None:
+        """The per-profile ceiling, or None when no expressible schedule could reach it.
+
+        At the default nothing can exceed it, because every-minute is cron's maximum — so the check has
+        no verdict to reach and counting is pure waste. It is not cheap waste either: confirming an
+        every-minute schedule is *within* a 43,200 ceiling means stepping croniter 43,200 times, about
+        half a second, which the scan-side check would otherwise pay per such profile on every tick.
+        """
+        return self.MAX_RUNS_PER_PROFILE_PER_MONTH if self.MAX_RUNS_PER_PROFILE_PER_MONTH < MINUTES_PER_MONTH else None
+
+    @property
     def event_retention(self) -> timedelta | None:
         """The retention window, or None when pruning is disabled."""
         return timedelta(days=self.EVENT_RETENTION_DAYS) if self.EVENT_RETENTION_DAYS > 0 else None

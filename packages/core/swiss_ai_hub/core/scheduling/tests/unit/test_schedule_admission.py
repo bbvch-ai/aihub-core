@@ -147,3 +147,30 @@ def test_runs_per_month_matches_the_schedule(raw: dict, expected: int) -> None:
     from swiss_ai_hub.core.scheduling.cron_schedule_calculator import CronScheduleCalculator
 
     assert CronScheduleCalculator.runs_per_month(_schedule(raw), 100_000) == expected
+
+
+class TestAnUnreachableCeilingCostsNothing:
+    """Confirming an every-minute schedule sits within the default 43,200 means 43,200 croniter steps —
+    half a second, spent to reach an answer that was never in doubt. On the scan side that is paid per
+    such profile on every tick; on the save side it is paid inside the request an admin is waiting on."""
+
+    def test_nothing_is_counted_when_no_ceiling_can_reject(self) -> None:
+        with patch(f"{_MODULE}.CronScheduleCalculator.runs_per_month") as counted:
+            assert _reject(_schedule(_EVERY_MINUTE), SchedulerSettings()) is None
+
+        counted.assert_not_called()
+
+    def test_counting_resumes_once_a_ceiling_is_enforced(self) -> None:
+        settings = SchedulerSettings(MAX_RUNS_PER_PROFILE_PER_MONTH=500)
+
+        with patch(f"{_MODULE}.CronScheduleCalculator.runs_per_month", return_value=501) as counted:
+            assert _reject(_schedule(_HOURLY), settings) is not None
+
+        counted.assert_called_once()
+
+    def test_the_aggregate_ceiling_alone_is_enough_to_count(self) -> None:
+        """The per-profile default is unreachable, but the total is not — so the schedule still has to be
+        measured to know what it contributes."""
+        settings = SchedulerSettings(MAX_TOTAL_RUNS_PER_MONTH=100)
+
+        assert _reject(_schedule(_HOURLY), settings) is not None

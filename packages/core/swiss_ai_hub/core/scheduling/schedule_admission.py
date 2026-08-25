@@ -45,17 +45,34 @@ class ScheduleAdmission:
         """
         settings = settings or SchedulerSettings()
 
-        per_profile = settings.MAX_RUNS_PER_PROFILE_PER_MONTH
-        # One more than the ceiling is all that has to be counted to know the ceiling was passed, and
-        # counting no further is what keeps an absurd expression from being expensive to reject.
-        runs = CronScheduleCalculator.runs_per_month(schedule, per_profile + 1)
-        if runs > per_profile:
+        # Bounded by whichever ceiling can actually reject something. One more than a ceiling is all that
+        # has to be counted to know it was passed, which keeps an absurd expression cheap to refuse — and
+        # when no ceiling is enforced there is nothing to count for, so an admin's save waits on nothing.
+        budget = ScheduleAdmission._counting_budget(settings)
+        if budget is None:
+            return None
+
+        runs = CronScheduleCalculator.runs_per_month(schedule, budget)
+
+        per_profile = settings.enforced_profile_ceiling
+        if per_profile is not None and runs > per_profile:
             return (
                 f"this schedule runs more than {per_profile} times per 30 days, which is more than this "
                 f"deployment allows for a single agent"
             )
 
         return ScheduleAdmission._aggregate_rejection_reason(runs, agent_class, agent_id, settings)
+
+    @staticmethod
+    def _counting_budget(settings: SchedulerSettings) -> int | None:
+        """How far the schedule being saved has to be counted, or None if neither ceiling can reject it.
+
+        Counting to a ceiling nothing can reach is not free: confirming an every-minute schedule sits
+        within the default 43,200 means stepping croniter 43,200 times, about half a second, spent inside
+        the request an admin is waiting on to reach an answer that was never in doubt.
+        """
+        ceilings = [c for c in (settings.enforced_profile_ceiling, settings.max_total_runs_per_month) if c is not None]
+        return max(ceilings) + 1 if ceilings else None
 
     @staticmethod
     def _aggregate_rejection_reason(

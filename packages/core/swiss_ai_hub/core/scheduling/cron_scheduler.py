@@ -206,7 +206,7 @@ class CronScheduler:
         online: list[_ScheduledProfile] = []
         offline: list[tuple[_ScheduledProfile, datetime]] = []
         profiles = self._scheduled_profiles(
-            [entity.agent_class for entity in entities], self._settings.MAX_RUNS_PER_PROFILE_PER_MONTH
+            [entity.agent_class for entity in entities], self._settings.enforced_profile_ceiling
         )
         for profile in profiles:
             _, config = profile
@@ -320,7 +320,7 @@ class CronScheduler:
     @staticmethod
     def _scheduled_profiles(
         agent_classes: list[str],
-        max_runs_per_profile: int,
+        max_runs_per_profile: int | None,
     ) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
         """Profiles of the given classes that carry a parseable, admissible schedule.
 
@@ -354,6 +354,11 @@ class CronScheduler:
             # and only while the setting held its current value. Lowering the ceiling must not leave the
             # profiles that were admissible under the old one firing forever, so the scan re-checks it —
             # the same write-time-validation-plus-scan-side-skip pairing a malformed schedule gets.
+            # None means the ceiling is unreachable, so there is no verdict to reach; counting anyway
+            # would cost half a second per every-minute profile per tick to confirm a foregone answer.
+            if max_runs_per_profile is None:
+                instances.append((schedule, config))
+                continue
             runs = CronScheduleCalculator.runs_per_month(schedule, max_runs_per_profile + 1)
             if runs > max_runs_per_profile:
                 logger.warning(
