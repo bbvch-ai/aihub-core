@@ -1,7 +1,7 @@
 from typing import Annotated, Self
 
 import pytest
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from swiss_ai_hub.core.agents.agent_config import CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.form.elements.cron_input import CronInput
@@ -130,6 +130,10 @@ class TestSubmittedSchedulesValidate:
         assert CronSchedule.model_validate(schedule.model_dump()) == schedule
 
     def test_the_form_element_is_not_mistaken_for_a_schedule(self) -> None:
-        """A form-mode CronInput dict reaching storage must be rejected, not read as "every hour"."""
-        with pytest.raises(ValueError):
+        """A form-mode CronInput dict reaching storage must be rejected, not read as "every hour".
+
+        Asserted on the missing positions specifically: `ValueError` alone would also pass if the element
+        were rejected for some unrelated reason, and it is the *required* positions that do the rejecting.
+        """
+        with pytest.raises(ValidationError, match="minute"):
             CronSchedule.model_validate(CronInput(label=LocaleString(en="Schedule")).model_dump())

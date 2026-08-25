@@ -250,7 +250,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             redis=redis,
             external_agent_event_distributor=external_agent_event_distributor,
         )
-        await cron_scheduler.start()
+        cron_scheduler.start()
         app.state.cron_scheduler = cron_scheduler
 
         await initialize_startup_tenant()

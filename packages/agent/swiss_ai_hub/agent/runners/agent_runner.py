@@ -15,6 +15,7 @@ from swiss_ai_hub.core.events.agent import (
     CronStartEvent,
     UserMessageEvent,
 )
+from swiss_ai_hub.core.form import FormkitElement
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MilvusSettings, MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.publishers import NCPublisher
@@ -110,7 +111,7 @@ class AgentRunner(HealthCheckProvider):
             port_env_var="AGENT_HEALTH_PORT",
         )
 
-    def _published_form(self) -> list:
+    def _published_form(self) -> list[FormkitElement]:
         """The published form, with the platform's schedule control after the blueprint's own settings.
 
         `cron` lives on `AgentConfig` and Pydantic orders base fields before subclass ones, so left where

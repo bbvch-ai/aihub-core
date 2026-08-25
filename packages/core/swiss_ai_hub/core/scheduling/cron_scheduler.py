@@ -61,26 +61,32 @@ class CronScheduler:
         self.running: bool = False
         self.task: asyncio.Task | None = None
 
-    async def start(self) -> bool:
+    def start(self) -> bool:
+        """Starts the scheduling loop, returning False if it was already running.
+
+        Synchronous, unlike `stop`, because scheduling a task is not itself an awaitable operation and
+        an `async def` with nothing to await only claims otherwise. It must still be called from a
+        running event loop — `asyncio.create_task` says so if it is not.
+        """
         if self.running:
-            logger.warning("Scheduled agent service is already running")
+            logger.warning("Cron scheduler is already running")
             return False
 
         self.running = True
         self.task = asyncio.create_task(self._scheduling_loop())
-        logger.info("Scheduled agent service started")
+        logger.info("Cron scheduler started")
         return True
 
     async def stop(self) -> bool:
         if not self.running:
-            logger.warning("Scheduled agent service is not running")
+            logger.warning("Cron scheduler is not running")
             return False
 
         self.running = False
         if self.task:
             self.task.cancel()
             await asyncio.gather(self.task, return_exceptions=True)
-        logger.info("Scheduled agent service stopped")
+        logger.info("Cron scheduler stopped")
         return True
 
     async def _scheduling_loop(self) -> None:
