@@ -9,7 +9,10 @@ from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence import LLMSpend
-from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import TimeRange
+from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import (
+    PersistedAgentEventEntity,
+    TimeRange,
+)
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import TenantScopedController
 
@@ -228,7 +231,13 @@ class EventController(TenantScopedController):
         @self.router.get(route, tags=self.tags)
         async def get_llm_spend_by_user(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.?>"))],
-            since: Annotated[datetime | None, Query(description="Only count calls at or after this time.")] = None,
+            since: Annotated[
+                datetime | None,
+                Query(
+                    description="Only count calls at or after this time. "
+                    f"Defaults to the last {PersistedAgentEventEntity.SPEND_WINDOW_DAYS} days."
+                ),
+            ] = None,
         ) -> list[LLMSpend]:
             """
             LLM spend per user, from the platform's own cost events.
@@ -253,7 +262,13 @@ class EventController(TenantScopedController):
         @self.router.get(route, tags=self.tags)
         async def get_llm_spend_by_tenant(
             user: Annotated[UserIdentity, Security(self.sys_admin_user())],
-            since: Annotated[datetime | None, Query(description="Only count calls at or after this time.")] = None,
+            since: Annotated[
+                datetime | None,
+                Query(
+                    description="Only count calls at or after this time. "
+                    f"Defaults to the last {PersistedAgentEventEntity.SPEND_WINDOW_DAYS} days."
+                ),
+            ] = None,
         ) -> list[LLMSpend]:
             """
             LLM spend per tenant across the whole platform.

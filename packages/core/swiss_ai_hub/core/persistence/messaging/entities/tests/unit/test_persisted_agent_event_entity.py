@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from mongoengine import connect, disconnect
 
@@ -130,9 +132,14 @@ def _persist_cost_event(
     prompt: float = 0.0,
     completion: float = 0.0,
     embedding: float | None = None,
-    created_at: int = 1_730_000_000_000_000_000,
+    created_at: int | None = None,
 ) -> None:
-    """Insert one LLMCostEvent. `embedding=None` omits the field entirely, as chat-only events do."""
+    """Insert one LLMCostEvent. `embedding=None` omits the field entirely, as chat-only events do.
+
+    Defaults to now rather than a fixed timestamp: the aggregation applies a default time window, so a
+    hard-coded date would silently age out of it and turn every unfiltered assertion into an empty result.
+    """
+    created_at = created_at if created_at is not None else int(datetime.now(UTC).timestamp() * 1e9)
     event_data = {
         "created_at": created_at,
         "user_id": user_id,
@@ -215,7 +222,6 @@ class TestLLMSpendAggregation:
         assert spend[0].tenant_id == "acme"
 
     def test_since_excludes_older_events(self):
-        from datetime import UTC, datetime
 
         cutoff = datetime(2025, 1, 1, tzinfo=UTC)
         older = int(datetime(2024, 6, 1, tzinfo=UTC).timestamp() * 1e9)
@@ -231,7 +237,6 @@ class TestLLMSpendAggregation:
     def test_naive_since_is_read_as_utc(self):
         """FastAPI hands us a naive datetime for `?since=...`; reading it as server-local time would
         shift the cutoff by the host's UTC offset and silently include or exclude hours of spend."""
-        from datetime import UTC, datetime
 
         just_after = int(datetime(2025, 1, 1, 1, 0, tzinfo=UTC).timestamp() * 1e9)
         _persist_cost_event("e1", user_id="u1", tenant_id="acme", prompt=1.0, created_at=just_after)
@@ -242,6 +247,53 @@ class TestLLMSpendAggregation:
         assert PersistedAgentEventEntity.get_llm_spend_by_user(since=naive_cutoff) == (
             PersistedAgentEventEntity.get_llm_spend_by_user(since=aware_cutoff)
         )
+
+    def test_unfiltered_rows_carry_the_tenant(self):
+        """The cross-tenant view is the one place per-tenant spend is readable — LiteLLM cannot carry
+        tenant at all — so a row without it leaves an operator unable to tell whose spend it is."""
+        _persist_cost_event("e1", user_id="u1", tenant_id="acme", prompt=1.0)
+        _persist_cost_event("e2", user_id="u2", tenant_id="globex", prompt=2.0)
+
+        spend = {row.user_id: row for row in PersistedAgentEventEntity.get_llm_spend_by_user()}
+
+        assert spend["u1"].tenant_id == "acme"
+        assert spend["u2"].tenant_id == "globex"
+
+    def test_a_user_acting_in_two_tenants_is_split_per_tenant(self):
+        """Spend belongs to the tenant it was incurred in; collapsing both into one row would bill a
+        tenant for usage that happened elsewhere."""
+        _persist_cost_event("e1", user_id="u1", tenant_id="acme", prompt=1.0)
+        _persist_cost_event("e2", user_id="u1", tenant_id="globex", prompt=2.0)
+
+        rows = sorted(PersistedAgentEventEntity.get_llm_spend_by_user(), key=lambda row: row.tenant_id)
+
+        assert [(row.user_id, row.tenant_id) for row in rows] == [("u1", "acme"), ("u1", "globex")]
+        assert rows[0].total_costs == pytest.approx(1.0)
+        assert rows[1].total_costs == pytest.approx(2.0)
+
+    def test_default_window_bounds_an_unfiltered_request(self):
+        """Without a cutoff the match narrows to `event_parents` alone and the dedup stage builds one
+        group per cost event ever persisted, which trips Mongo's 100MB `$group` limit in production."""
+        window = PersistedAgentEventEntity.SPEND_WINDOW_DAYS
+        outside = int((datetime.now(UTC) - timedelta(days=window + 1)).timestamp() * 1e9)
+        inside = int((datetime.now(UTC) - timedelta(days=1)).timestamp() * 1e9)
+        _persist_cost_event("old", user_id="u1", tenant_id="acme", prompt=8.0, created_at=outside)
+        _persist_cost_event("new", user_id="u1", tenant_id="acme", prompt=1.0, created_at=inside)
+
+        spend = PersistedAgentEventEntity.get_llm_spend_by_user()
+
+        assert spend[0].calls == 1
+        assert spend[0].total_costs == pytest.approx(1.0)
+
+    def test_explicit_since_overrides_the_default_window(self):
+        """An operator asking for a year of history must get it, not the default window."""
+        window = PersistedAgentEventEntity.SPEND_WINDOW_DAYS
+        outside = int((datetime.now(UTC) - timedelta(days=window + 1)).timestamp() * 1e9)
+        _persist_cost_event("old", user_id="u1", tenant_id="acme", prompt=8.0, created_at=outside)
+
+        spend = PersistedAgentEventEntity.get_llm_spend_by_user(since=datetime.now(UTC) - timedelta(days=window + 30))
+
+        assert spend[0].total_costs == pytest.approx(8.0)
 
     def test_non_cost_events_are_ignored(self):
         _persist_event("t_spend", ["StartEvent"], "s1")
