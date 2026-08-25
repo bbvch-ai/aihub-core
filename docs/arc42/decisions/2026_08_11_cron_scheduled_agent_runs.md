@@ -197,6 +197,7 @@ alternative is hand-rolling field parsing, ranges, steps, and DST handling.
   any, so letting one bad row raise would abort the tick before the watermark advanced — and every later tick would
   rediscover the same row. One malformed profile would permanently starve every other schedule. It is logged at error
   level and skipped instead, confining the blast radius to the profile that is actually broken.
+
 - **A profile's scheduled runs all share one thread.** Bounding thread growth to one per profile means that thread's run
   history only ever grows, so a long-lived `*/5` schedule eventually makes an expensive thread to open — a retention
   problem on one document rather than a proliferation problem across 105k. `SCHEDULER_EVENT_RETENTION_DAYS` now prunes
@@ -211,6 +212,7 @@ alternative is hand-rolling field parsing, ranges, steps, and DST handling.
 - **Occurrences due while a blueprint is offline are dropped, not queued.** Deliberate — the scheduler does not queue
   work for an agent that cannot consume it, and the watermark advances regardless — but it means a runner that crashes
   overnight loses that night's runs. Each drop is logged with the class, the profile, and how long it has been offline.
+
 - **A run that fails to start is not retried.** The claim is taken *before* the run is published, so a publish that
   raises leaves the occurrence claimed and the next tick passes over it. That makes the failure at-most-once rather than
   at-least-once, which is the right way round given the acceptance criterion is "no duplicate runs" — but it does mean a
@@ -219,13 +221,16 @@ alternative is hand-rolling field parsing, ranges, steps, and DST handling.
   occurrences. Each lost run is logged by class, profile, and occurrence; under a systemic outage the stacks are
   identical, so the first failure of a tick carries the traceback and the rest carry the identity, with a per-tick
   summary giving the total.
+
 - Discovery auto-registers a REST endpoint per start event, so schedulable agents also gain a `POST .../CronStartEvent`
   route — an unplanned but useful manual trigger, which does carry a real user because it arrives over HTTP.
+
 - **The tick reads Mongo off the event loop.** The scheduler shares a process with every HTTP and WebSocket request, so
   its synchronous mongoengine reads stalled all of them for the tick's duration, and the stall grew with the profile
   count. All of them now go through one `asyncio.to_thread` hop per tick — a single snapshot read replacing what had
   become five round-trips — bounded at half the lease so a slow database costs a skipped tick rather than a pinned
   lease. Cancellation cannot kill the worker thread; what it buys is releasing the lease.
+
 - **A malformed schedule is rejected at save time.** Decision 2 accepted that it could not be, because the profile save
   path validates against a jambo-generated model carrying none of `CronSchedule`'s validators. `InstanceConfigHelper`
   now re-validates the raw submission and returns 400, following the precedent already set there for locale fields. The
