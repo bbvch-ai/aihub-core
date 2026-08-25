@@ -28,6 +28,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── parser/tag_parser.py          # Parses <think>...</think> tags from LLM output
 │   └── buffer/stream_buffer.py       # Auto-flush on sentence boundaries or size thresholds
 ├── distributor/                     # External event distributors (agent + process)
+├── exceptions/                      # HTTP-boundary exception handlers (ModelGatewayErrorHandler)
 ├── events/                          # Event type hierarchy (~100 event types)
 │   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization
 │   ├── utils.py                     # Event utility functions
@@ -54,10 +55,10 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 28 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 29 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 28 concrete form elements
+│   └── elements/                    # 29 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension
 │   ├── document/                    # Loaders (MinerU, DocumentIntelligence), parsers, refinement
@@ -114,6 +115,7 @@ packages/core/swiss_ai_hub/core/
 │   └── health/                      # HealthController, HealthServer, health checks
 ├── rpc/                             # AgentConfigClient, ProcessConfigClient (request-reply)
 ├── runners/                         # Execution runners
+├── scheduling/                      # Cron-scheduled agent runs (AgentSchedule, calculator, Redis state, service)
 ├── settings/                        # App-level configuration (EnvironmentSettings)
 ├── streams/                         # StreamManager (JetStream stream lifecycle)
 ├── subscribers/                     # JSSubscriber + NCSubscriber + agent/process specializations
@@ -262,12 +264,12 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 28 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 29 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector.
+VectorStoreInput, IconSelector, CronInput.
 
 ### Nested Forms
 
@@ -309,6 +311,11 @@ has `execution_context_id` (run_id for agents, walkthrough_id for processes).
 Both publishers extend `AbstractPublisher[TEvent]`. Both subscribers extend `AbstractSubscriber[TEvent]` with generic
 event type. OTEL trace context propagated via `NATSMessageHeaders`.
 
+`JSSubscriber` acks before processing and sets explicit redelivery config (30s AckWait, max 5 deliveries) instead of
+inheriting server defaults; on start it updates already-deployed durable consumers in place, since nats-py silently
+ignores the config passed to `subscribe` when the durable consumer exists. Delivery is therefore at-least-once —
+handlers (dispatchers) must tolerate duplicate events.
+
 ### Topic Managers
 
 Subject string builders that construct NATS subjects. Each manager provides methods like
@@ -341,6 +348,12 @@ Abstract orchestrator that drives workflow execution. Handles:
 - Step execution: builds kwargs from event mapping, executes step method, publishes returned events
 - State management: all state in JetStream (events) + Redis (steps via `StepStore`). No instance state on the dispatcher
   — enables horizontal scaling and load balancing via JetStream consumer groups.
+
+`StepStore` splits its keyspace deliberately: per-run step data lives under `steps:{execution_context_id}:*` and is
+cleared by `delete_all` at teardown, while the terminal `completed`/`crashed` markers live under
+`step_markers:{execution_context_id}:*` so they survive it. Those markers are what make a redelivered terminal event a
+no-op, so they must outlive the teardown that writes them — keeping them in a separate namespace makes that independent
+of the order in which a dispatcher deletes and marks. Do not collapse the two prefixes.
 
 ### DispatchableWorkflow
 
@@ -454,6 +467,14 @@ role assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` /
 storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserDashboardEntity` (dashboard config),
 `NotificationEntity`, `LocaleStringEntity`.
 
+**Vector store — children are not persisted**: `PartitionAwareMilvusVectorStore.add` strips `NodeRelationship.CHILD`
+before serializing. LlamaIndex packs every relationship into `_node_content` inside Milvus' dynamic field, which is
+capped at 65536 bytes, and a hierarchical summary node carries one entry per descendant — so a wide summary tree fails
+the insert outright. The edge is recoverable because each child persists its own `PARENT`, which is that edge's exact
+inverse; read it that way rather than expecting `child_nodes`, which comes back `None`. `add` also verifies the dynamic
+field fits before writing any node, so a new metadata key that reintroduces the overflow fails with the offending
+document and node named instead of Milvus' `code=1100`.
+
 ## Infrastructure Settings
 
 ~20 Pydantic `BaseSettings` classes for external service connections. Environment variables are NOT auto-loaded — they
@@ -563,7 +584,7 @@ Real-time event emission for streaming LLM output to the UI:
 
 - `core/form/form.py` — form duality system
 - `core/form/base/prime_vue_element.py` — form element base
-- `core/form/elements/` — 28 form elements
+- `core/form/elements/` — 29 form elements
 
 **Workflow engine**:
 

@@ -224,6 +224,11 @@ rag_start_event:
     recuperando il contesto rilevante dalle fonti di conoscenza selezionate — utilizzando
     i namespace scelti e gli eventuali filtri di metadati — prima di generare una
     risposta.
+scheduled_start_event:
+  name: Esecuzione Pianificata Avviata
+  description: Un'esecuzione pianificata è stata avviata automaticamente dallo scheduler
+    cron all'orario configurato. Nessun utente l'ha avviata — l'esecuzione avviene
+    come esecuzione di sistema senza identità di esecuzione.
 rag_success_stop_event:
   name: Successo RAG
   description: L'esecuzione aumentata dal recupero ha prodotto una risposta per l'utente.
@@ -242,6 +247,11 @@ mail_moved_event:
   name: E-mail Spostata
   description: L'agente ha spostato un messaggio dalla cartella di origine a una cartella
     di destinazione.
+mail_batch_classified_event:
+  name: Lotto classificato
+  description: L'agente ha classificato un lotto di messaggi non letti e ha archiviato
+    ciascuno nella cartella della sua categoria, o nella cartella di riserva quando
+    non era sicuro.
 mail_batch_drafted_event:
   name: Lotto Redatto
   description: L'agente ha redatto risposte per un lotto di messaggi e le ha aggiunte

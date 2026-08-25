@@ -3,7 +3,9 @@ from typing import Any, NamedTuple, TypeVar
 from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
 from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
+from swiss_ai_hub.core.i18n import LOCALES, LocaleString
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.scheduling import SCHEDULE_CONFIG_KEY, AgentSchedule
 
 
 class ConfigMetadata(NamedTuple):
@@ -28,6 +30,8 @@ T = TypeVar("T")
 class InstanceConfigHelper:
     """Pure helper for configuration normalization, validation, and metadata extraction."""
 
+    IDENTITY_LOCALE_FIELDS = ("name", "description")
+
     @staticmethod
     def normalize_form_configuration(config: dict[str, Any]) -> dict[str, Any]:
         """Strip FormKit internal fields (prefixed with '_') and normalize empty values."""
@@ -40,7 +44,7 @@ class InstanceConfigHelper:
     def validate_config_for_create(config: dict[str, Any], config_model: type[BaseModel]) -> BaseModel:
         """Validate configuration for instance creation with detailed field-path error messages."""
         try:
-            return config_model.model_validate(config)
+            instance = config_model.model_validate(config)
         except ValidationError as e:
             error_messages = []
             for error in e.errors():
@@ -48,13 +52,102 @@ class InstanceConfigHelper:
                 error_messages.append(f"{field_path}: {error['msg']}")
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(error_messages)}")
 
+        InstanceConfigHelper.validate_identity_locale_fields(instance)
+        InstanceConfigHelper.validate_schedule_field(config)
+        return instance
+
     @staticmethod
     def validate_config_for_update(config: dict[str, Any], config_model: type[BaseModel]) -> BaseModel:
         """Validate configuration for instance update with simple error passthrough."""
         try:
-            return config_model.model_validate(config)
+            instance = config_model.model_validate(config)
         except ValidationError as e:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
+
+        InstanceConfigHelper.validate_identity_locale_fields(instance)
+        InstanceConfigHelper.validate_schedule_field(config)
+        return instance
+
+    @staticmethod
+    def validate_schedule_field(config: dict[str, Any]) -> None:
+        """Reject a config whose cron schedule is malformed, before it is stored.
+
+        Same jambo gap as `validate_identity_locale_fields`, with a far wider blast radius. `AgentSchedule` rejects a
+        bad expression and an unknown timezone in a `model_validator`, which the generated model does not carry: every
+        position is a bare string in the JSON schema, so a cleared field arrives as `""` and validates. Stored, it
+        then breaks the whole profile rather than only its schedule — `AgentDispatcher` re-validates the real config
+        on every control event, so manually triggered runs die too, and they die before any step runs, which means no
+        `ExceptionEvent` and nothing in the UI to say why.
+
+        Keyed on the field name because `SCHEDULE_CONFIG_KEY` is reserved platform-wide: the scheduler reads a
+        profile's schedule from exactly this top-level key, so a blueprint cannot use the name for anything else.
+        """
+        schedule = config.get(SCHEDULE_CONFIG_KEY)
+        if not isinstance(schedule, dict) or not schedule:
+            return
+
+        try:
+            AgentSchedule.model_validate(schedule)
+        except ValidationError as e:
+            details = "; ".join(InstanceConfigHelper._schedule_error_message(error) for error in e.errors())
+            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {details}")
+
+    @staticmethod
+    def _schedule_error_message(error: Any) -> str:
+        """One schedule error, named by the position that caused it.
+
+        A `model_validator` failure carries no field in `loc` — the cron expression is only invalid as a whole — so
+        those are reported against the schedule itself rather than as a blank field path.
+        """
+        field_path = ".".join(str(loc) for loc in error["loc"] if isinstance(loc, str))
+        return (
+            f"{SCHEDULE_CONFIG_KEY}.{field_path}: {error['msg']}"
+            if field_path
+            else f"{SCHEDULE_CONFIG_KEY}: {error['msg']}"
+        )
+
+    @staticmethod
+    def validate_identity_locale_fields(config_instance: BaseModel) -> None:
+        """Reject a config whose name or description carries no text in any language.
+
+        `AgentConfig`/`ProcessConfig` already assert this, but neither validator runs here:
+        submissions are checked against a model jambo builds from the class's JSON schema,
+        which reproduces the schema's shape and none of its Python validators. Since every
+        locale field is individually optional, an all-blank name satisfies the generated
+        model and gets stored, leaving a record that renders as nothing wherever it is read.
+        """
+        empty_fields = [
+            field
+            for field in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
+            if hasattr(config_instance, field)
+            and not InstanceConfigHelper._locale_value_has_content(getattr(config_instance, field))
+        ]
+        if not empty_fields:
+            return
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Configuration validation failed: {', '.join(empty_fields)} "
+                "must have content in at least one language."
+            ),
+        )
+
+    @staticmethod
+    def _locale_value_has_content(value: Any) -> bool:
+        """Whether a locale value holds text in at least one language.
+
+        Duck-typed rather than going straight to `LocaleString.has_content()`: on this path
+        the value is an instance of the LocaleString class jambo generated from the JSON
+        schema, which is a distinct class from the core one.
+        """
+        if value is None:
+            return False
+        if isinstance(value, LocaleString):
+            return value.has_content()
+        if isinstance(value, dict):
+            return any((value.get(locale) or "").strip() for locale in LOCALES)
+        return any((getattr(value, locale, None) or "").strip() for locale in LOCALES)
 
     @staticmethod
     def extract_config_metadata(config_instance: BaseModel, fallback_icon: str) -> ConfigMetadata:

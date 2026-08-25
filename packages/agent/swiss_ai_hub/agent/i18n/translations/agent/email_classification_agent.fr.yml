@@ -1,0 +1,13 @@
+---
+metadata:
+  name: Agent de classification des e-mails
+  description: Lit chaque message non lu d'une boîte aux lettres, décide à quelle
+    catégorie il appartient et le classe dans le dossier de cette catégorie. Le courrier
+    dont il n'est pas sûr va dans un dossier de repli. Il n'envoie jamais.
+steps:
+  list_unread:
+    name: Lister les e-mails non lus
+  classify_and_file:
+    name: Classer et ranger
+  finish:
+    name: Terminer

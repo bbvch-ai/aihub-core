@@ -1,5 +1,6 @@
 import AgentSelector from '@core/components/FormKit/AgentSelector.vue'
 import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
+import CronInput from '@core/components/FormKit/CronInput.vue'
 import IconSelector from '@core/components/FormKit/IconSelector.vue'
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
@@ -10,7 +11,26 @@ import { en, de, fr, it } from '@formkit/i18n'
 import { createInput } from '@formkit/vue'
 import { primeInputs } from '@sfxcode/formkit-primevue'
 
+import type { FormKitNode } from '@formkit/core'
 import type { DefaultConfigOptions, PluginConfigs } from '@formkit/vue'
+
+const LOCALES = ['de', 'en', 'fr', 'it'] as const
+
+// FormKit's built-in `required` rule only asks whether a value is present, and a localeInput's
+// value is always a `{de, en, fr, it}` object — non-empty, so `required` passes even when every
+// locale inside it is blank. Backend `LocaleInput` elements emit `localeRequired` instead
+// (see packages/core/swiss_ai_hub/core/form/elements/locale_input.py).
+function localeRequired(node: FormKitNode): boolean {
+  const value = node.value as Record<string, string | null> | null | undefined
+  if (!value) return false
+  return LOCALES.some(locale => !!value[locale]?.trim())
+}
+
+// FormKit skips a rule entirely when the node's value is empty, unless the rule opts out —
+// which is why the built-in `required` sets this too. Without it the rule would never run on a
+// never-touched field, whose value is still `null`, and a blank Name would pass on a fresh
+// create form: precisely the case this rule exists to catch.
+localeRequired.skipEmpty = false
 
 /**
  * Passes when the value is listed in the sibling field named by `address`, or when that list is
@@ -27,14 +47,30 @@ const memberOf: PluginConfigs['rules'][string] = (node, address: string) => {
   return allowed.includes(node.value)
 }
 
-const validationMessages: PluginConfigs['messages'] = {
-  en: { validation: { memberOf: 'This value is not in the allowed list.' } },
-  de: { validation: { memberOf: 'Dieser Wert steht nicht in der Liste der erlaubten Werte.' } },
-  fr: { validation: { memberOf: 'Cette valeur ne figure pas dans la liste des valeurs autorisées.' } },
-  it: { validation: { memberOf: 'Questo valore non è presente nell\'elenco dei valori consentiti.' } },
+const localeRequiredMessages = {
+  de: 'Mindestens eine Sprache muss ausgefüllt sein.',
+  en: 'At least one language must be filled in.',
+  fr: 'Au moins une langue doit être renseignée.',
+  it: 'Almeno una lingua deve essere compilata.',
+}
+
+const memberOfMessages = {
+  de: 'Dieser Wert steht nicht in der Liste der erlaubten Werte.',
+  en: 'This value is not in the allowed list.',
+  fr: 'Cette valeur ne figure pas dans la liste des valeurs autorisées.',
+  it: 'Questo valore non è presente nell\'elenco dei valori consentiti.',
 }
 
 const config: DefaultConfigOptions = {
+  rules: { localeRequired, memberOf },
+  messages: Object.fromEntries(
+    LOCALES.map(locale => [locale, {
+      validation: {
+        localeRequired: localeRequiredMessages[locale],
+        memberOf: memberOfMessages[locale],
+      },
+    }]),
+  ),
   inputs: {
     ...primeInputs,
     agentSelector: createInput(AgentSelector, {
@@ -42,6 +78,9 @@ const config: DefaultConfigOptions = {
     }),
     chipsInput: createInput(ChipsInput, {
       props: ['placeholder'],
+    }),
+    cronInput: createInput(CronInput, {
+      props: ['timezonePlaceholder', 'filter'],
     }),
     knowledgeDatabaseSelector: createInput(KnowledgeDatabaseSelector, {
       props: ['placeholder', 'filter'],
@@ -62,9 +101,7 @@ const config: DefaultConfigOptions = {
       props: ['databasePlaceholder', 'namespacePlaceholder', 'filter'],
     }),
   },
-  rules: { memberOf },
   locales: { en, de, fr, it },
-  messages: validationMessages,
   locale: 'en',
 }
 

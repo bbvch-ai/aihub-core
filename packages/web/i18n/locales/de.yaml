@@ -795,6 +795,28 @@ form:
       nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
       sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  cron:
+    errors:
+      required: Jede Position ist erforderlich — eine leere ergibt keinen gültigen
+        Zeitplan.
+      invalid: Hier sind nur Ziffern und die Zeichen * , - / ? erlaubt.
+      range: Werte müssen zwischen {min} und {max} liegen.
+    expression: 'Resultierender Cron-Ausdruck:'
+    minute:
+      label: Minute
+    hour:
+      label: Stunde
+    day_of_month:
+      label: Tag des Monats
+    month:
+      label: Monat
+    day_of_week:
+      label: Wochentag
+    timezone:
+      label: Zeitzone
+      placeholder: Zeitzone auswählen
+      help: Die Cron-Positionen werden in dieser Zeitzone interpretiert, damit ein
+        täglicher Zeitplan über Zeitumstellungen hinweg dieselbe Uhrzeit behält.
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen

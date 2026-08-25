@@ -147,8 +147,9 @@ The backend defines form schemas (`FormkitElement[]`), the frontend renders them
 **Flow**: Backend `AgentConfig.as_form()` → SDK `FormkitElement[]` → `useFormKitTransform().buildFormKitSchema()` →
 `<FormKitSchema :schema="schema" />` → rendered form.
 
-**Custom FormKit inputs** (registered in `formkit.config.ts`): `agentSelector`, `chipsInput`,
-`knowledgeDatabaseSelector`, `iconSelector`, `localeInput`, `modelSelect`, `tenantSelect`, `vectorStoreInput`.
+**Custom FormKit inputs** (registered in `formkit.config.ts`, which `nuxt.config.ts` points `formkit.configFile` at):
+`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`,
+`modelSelect`, `tenantSelect`, `vectorStoreInput`.
 
 **Custom validation rules** are registered in the same file under `rules`, with their messages under `messages` (one
 entry per locale). The backend attaches a rule to a field via `PrimeVueElement.additional_validation_rules`, which

@@ -274,6 +274,28 @@ the same level as ALTERNATIVE executions, or Keycloak ignores the alternatives a
 - Internal Docker hostnames are hardcoded in the Jinja2 template as variables (e.g.,
   `NATS_ENDPOINT = "nats://nats:4222"`) — never use env vars for Docker-to-Docker communication
 - Only external/override endpoints (for services running on the host outside Docker) use env vars
+- **`OTEL_DEPLOYMENT_ENVIRONMENT` / `OTEL_HOST_NAME` are the one sanctioned `${VAR:-default}`.** The
+  collector's `resource/deployment` processor stamps them onto every pipeline, and an *empty* value
+  makes that processor fail to build — which exits the collector. Every service that exports OTLP
+  now declares `depends_on: otel-collector`, so an unset var no longer merely drops telemetry: it
+  holds up the app plane. Values are written per-VM into the stage's environment file by
+  `aihub-playbook`'s `env.j2`; the stage-name fallback is what keeps a non-Ansible deploy starting
+  at all. Do not "fix" it by moving the default to `.env.prod`.
+
+### Which collector owns which signal
+
+Two collectors run on a deployed VM and it matters which one you change:
+
+| Collector                              | Owner           | Handles                                                                    |
+| -------------------------------------- | --------------- | -------------------------------------------------------------------------- |
+| `otel-collector` (this compose)        | aihub-core      | OTLP from the instrumented Python services → SigNoz + Langfuse             |
+| `otel-collector-docker`                | aihub-playbook  | `docker_stats`, health events, and **third-party container stdout/stderr** |
+
+App services export to `http://otel-collector:4317`, so the playbook's collector never sees their
+telemetry — that is why `resource/deployment` has to exist here too. Conversely, **do not add a
+`filelog` receiver for container logs here**: the playbook already tails them (via
+`/var/log/docker-logs/*` symlinks, so records carry the container *name* and the VM's real
+`host.name`), and a second tailer would ingest every line twice into a paid backend.
 
 ## Traefik Configuration
 

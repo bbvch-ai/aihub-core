@@ -352,8 +352,8 @@ await runner.run_forever()
 
 On startup the agent registers itself: it appears in the chat UI, gets a configuration form in the admin panel, and
 receives full distributed tracing through Langfuse. The runtime routes `ContextSufficientAcceptEvent` to `respond` and
-`ContextInsufficientRejectEvent` to `escalate`; steps never call each other. `BotInTheLoop` sends the question to a configured
-Teams or Slack expert channel and pauses the workflow; when the expert responds, the dispatcher resumes at
+`ContextInsufficientRejectEvent` to `escalate`; steps never call each other. `BotInTheLoop` sends the question to a
+configured Teams or Slack expert channel and pauses the workflow; when the expert responds, the dispatcher resumes at
 `relay_expert`.
 
 ### Data pipelines

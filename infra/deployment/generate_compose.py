@@ -152,6 +152,7 @@ OWN_IMAGE_LICENSES = {
     "sysadmin-api": "AGPL-3.0-or-later",
     "sysadmin-web": "AGPL-3.0-or-later",
     "imap_agent": "Apache-2.0",
+    "email_classification_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",

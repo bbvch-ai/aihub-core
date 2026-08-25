@@ -20,21 +20,64 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
+        # gRPC defaults to a 4 MiB receive limit, and an over-limit request is rejected whole —
+        # every record in that batch is lost, the collector logs nothing (the error goes to the
+        # client), and the SDK's own report of it has nowhere to go but the failing exporter.
+        # A batch of tracebacks reaches that size easily: measured with 1000 records of 6 KB and
+        # counting arrivals, 4 MiB delivered 0 of them and logged "larger than max"; 32 MiB
+        # delivered all 1000. 32 covers the app's own ceiling (max_export_batch_size 2048 x a
+        # ~16 KB record) with headroom.
+        max_recv_msg_size_mib: 32
       http:
         endpoint: 0.0.0.0:4318
 
 processors:
+  # send_batch_size is only a trigger — without send_batch_max_size a batch has no upper bound, and
+  # the backend rejects an over-limit request as a PERMANENT error, so the exporter drops it without
+  # retrying. Reproduced against a second collector standing in for the backend, capped at gRPC's
+  # own 4 MiB default, with traceback-sized records: 2000/unbounded reached it with nothing and
+  # logged "Exporting failed. Dropping data ... not retryable error: Permanent error ...
+  # ResourceExhausted ... larger than max 4194304"; 500/500 delivered, with no such error.
+  #
+  # The cap has to be low enough that count x record size stays under that limit, which is why the
+  # per-stage scaling (1000 on nightly, 2000 on latest) is gone: a cap the batch never reaches is
+  # not a cap. The collector enforces send_batch_max_size >= send_batch_size, so raising throughput
+  # again means raising both, and re-measuring. Only the timeout still varies by stage.
   batch:
-{%- if stage in ['dev', 'local', 'build'] %}
     send_batch_size: 500
+    send_batch_max_size: 500
+{%- if stage in ['dev', 'local', 'build'] %}
     timeout: 5s
 {%- elif stage == "nightly" %}
-    send_batch_size: 1000
     timeout: 10s
 {%- elif stage == "latest" %}
-    send_batch_size: 2000
     timeout: 15s
 {%- endif %}
+
+  # Stamp environment + host on all app telemetry. SigNoz keys its Environment and Hostname
+  # quick-filters on resource[deployment.environment] and resource[host.name]; the SDK sets only
+  # service.name/version/namespace, so both columns arrived empty for every span and log.
+  #
+  # Values come from the deploying VM (aihub-playbook's env.j2 writes them into the stage's
+  # environment file). The compose fallback to the stage name is load-bearing, not cosmetic: an
+  # EMPTY value makes this processor fail to build, and the collector then exits:
+  #   failed to create "resource/deployment" processor: error with key "deployment.environment"
+  #   ... Either field "value", "from_attribute", "from_context", or "default_value" must be specified
+  #
+  # That used to cost only telemetry. It no longer does: every service that exports OTLP now
+  # declares depends_on this collector (service_started), so a config error here holds up the app
+  # plane instead of quietly dropping spans. These fallbacks are the only thing keeping an unset
+  # variable on the VM from turning into a failed deploy.
+  #
+  # `upsert` so the VM's own identity wins over anything an app SDK may inconsistently send.
+  resource/deployment:
+    attributes:
+      - key: deployment.environment
+        value: "${OTEL_DEPLOYMENT_ENVIRONMENT}"
+        action: upsert
+      - key: host.name
+        value: "${OTEL_HOST_NAME}"
+        action: upsert
 
   filter/noise:
     error_mode: ignore
@@ -116,37 +159,43 @@ service:
     # Send OpenInference traces to the stack-local Langfuse instance
     traces/langfuse:
       receivers: [ otlp ]
-      processors: [ filter/noise, filter/langfuse, batch ]
+      processors: [ filter/noise, filter/langfuse, resource/deployment, batch ]
       exporters: [ otlphttp/langfuse ]
 
     {%- if stage == 'dev' %}
     # Accept logs but use debug exporter (Langfuse doesn't support logs via OTEL)
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [resource/deployment, batch]
       exporters: [debug]
 
-    # Accept metrics but use debug exporter (Langfuse doesn't support metrics via OTEL)
+    # Accept metrics but use debug exporter (Langfuse doesn't support metrics via OTEL).
+    # Deliberately WITHOUT filter/metrics_cardinality: that guard exists because SigNoz bills
+    # per ingested series (issue 1496), and this exporter is stdout. Keeping it here dropped
+    # every metric the FastAPI/ASGI instrumentation emits — its name list is exhaustive of them
+    # — so OTEL_METRICS_ENABLED=true produced no observable output at all, and there was no way
+    # to tell a broken metrics setup from a filtered one. The non-dev pipelines below keep the
+    # filter, so the paid backend stays protected.
     metrics:
       receivers: [otlp]
-      processors: [filter/metrics_cardinality, batch]
+      processors: [resource/deployment, batch]
       exporters: [debug]
     {%- else %}
     # Send traces to cloud backend
     traces/cloud:
       receivers: [otlp]
-      processors: [filter/noise, batch]
+      processors: [filter/noise, resource/deployment, batch]
       exporters: [otlp/cloud]
 
     # Send metrics to cloud backend
     metrics:
       receivers: [otlp]
-      processors: [filter/metrics_cardinality, batch]
+      processors: [filter/metrics_cardinality, resource/deployment, batch]
       exporters: [otlp/cloud]
 
     # Send logs to cloud backend
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [resource/deployment, batch]
       exporters: [otlp/cloud]
     {%- endif %}

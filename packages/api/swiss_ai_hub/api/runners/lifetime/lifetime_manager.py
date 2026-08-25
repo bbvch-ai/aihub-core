@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 import boto3
@@ -12,6 +12,7 @@ from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, Externa
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
     LangfuseProvisioner,
+    LiteLLMProxySettings,
     MilvusSettings,
     MongoSettings,
     NatsSettings,
@@ -20,6 +21,7 @@ from swiss_ai_hub.core.infrastructure import (
     S3StorageSettings,
 )
 from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook
+from swiss_ai_hub.core.scheduling import ScheduledAgentService
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
@@ -41,6 +43,17 @@ from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
 
 logger = logging.getLogger(__name__)
 _background_tasks: set[asyncio.Task] = set()
+
+
+async def _provision_non_fatal(name: str, provision: Callable[[], Awaitable[None]]) -> None:
+    """Provisioning targets external services; their outage must not stop the API from serving.
+
+    The periodic discovery sync already reconciles OpenWebUI non-fatally, so a startup failure
+    here only degrades the model picker until the next cycle instead of crash-looping the pod."""
+    try:
+        await provision()
+    except Exception as exception:
+        logger.exception(f"{name} provisioning failed (non-fatal): {exception}")
 
 
 @asynccontextmanager
@@ -231,15 +244,24 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
+        # Singleton background work, kept correct across N API replicas by a Redis leader lease.
+        # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
+        scheduled_agent_service = ScheduledAgentService(
+            redis=redis,
+            external_agent_event_distributor=external_agent_event_distributor,
+        )
+        await scheduled_agent_service.start()
+        app.state.scheduled_agent_service = scheduled_agent_service
+
         await initialize_startup_tenant()
         await finalize_role_setup()
         await initialize_knowledge_buckets()
 
         # Provision Langfuse with AI-Hub LLM connections
-        await langfuse_provisioner.provision()
+        await _provision_non_fatal("Langfuse", langfuse_provisioner.provision)
 
         # Provision OpenWebUI with groups, workspace models, and access grants
-        await openwebui_provisioner.provision()
+        await _provision_non_fatal("OpenWebUI", openwebui_provisioner.provision)
 
         # Re-sync OpenWebUI when access entities change (active tenant switches notify explicitly)
         AccessChangeHook.connect(openwebui_provisioner)
@@ -263,6 +285,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         if hasattr(app.state, "process_config_responder"):
             await app.state.process_config_responder.stop()
 
+        if hasattr(app.state, "scheduled_agent_service"):
+            await app.state.scheduled_agent_service.stop()
+
         # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):
             await app.state.agent_discovery_service.stop()
@@ -281,6 +306,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Close S3 connections
         s3_client.close()
         s3_public_client.close()
+
+        # Close the pooled LiteLLM clients
+        await LiteLLMProxySettings.aclose_pooled_clients()
 
     finally:
         # Close NATS connection on exit

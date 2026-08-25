@@ -1,0 +1,74 @@
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
+
+from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+from swiss_ai_hub.core.scheduling.cron_schedule_calculator import CronScheduleCalculator
+
+_ZURICH = ZoneInfo("Europe/Zurich")
+_EVERY_DAY = {"day_of_month": "*", "month": "*", "day_of_week": "*"}
+_HOURLY = AgentSchedule(minute="0", hour="*", **_EVERY_DAY)
+_DAILY_NOON_ZURICH = AgentSchedule(minute="0", hour="12", timezone="Europe/Zurich", **_EVERY_DAY)
+
+
+def _utc(year: int, month: int, day: int, hour: int, minute: int = 0) -> datetime:
+    return datetime(year, month, day, hour, minute, tzinfo=UTC)
+
+
+class TestOccurrencesBetween:
+    def test_returns_every_occurrence_in_the_window(self):
+        occurrences = CronScheduleCalculator.occurrences_between(
+            _HOURLY, _utc(2026, 8, 11, 10, 30), _utc(2026, 8, 11, 13, 30)
+        )
+        assert occurrences == [_utc(2026, 8, 11, 11), _utc(2026, 8, 11, 12), _utc(2026, 8, 11, 13)]
+
+    def test_window_is_open_at_the_start(self):
+        """The previous tick's watermark is the new window start, so an occurrence exactly on it
+        already fired and must not fire again."""
+        occurrences = CronScheduleCalculator.occurrences_between(_HOURLY, _utc(2026, 8, 11, 12), _utc(2026, 8, 11, 13))
+        assert occurrences == [_utc(2026, 8, 11, 13)]
+
+    def test_window_is_closed_at_the_end(self):
+        occurrences = CronScheduleCalculator.occurrences_between(
+            _HOURLY, _utc(2026, 8, 11, 11, 30), _utc(2026, 8, 11, 12)
+        )
+        assert occurrences == [_utc(2026, 8, 11, 12)]
+
+    def test_returns_empty_when_nothing_is_due(self):
+        assert (
+            CronScheduleCalculator.occurrences_between(_HOURLY, _utc(2026, 8, 11, 12, 1), _utc(2026, 8, 11, 12, 59))
+            == []
+        )
+
+    def test_converts_local_schedule_to_utc(self):
+        """Noon in Zurich is 10:00 UTC in summer — the caller only ever deals in UTC."""
+        occurrences = CronScheduleCalculator.occurrences_between(
+            _DAILY_NOON_ZURICH, _utc(2026, 8, 11, 0), _utc(2026, 8, 12, 23)
+        )
+        assert occurrences == [_utc(2026, 8, 11, 10), _utc(2026, 8, 12, 10)]
+
+
+class TestDaylightSavingTime:
+    def test_daily_schedule_keeps_its_wall_clock_time_across_the_spring_shift(self):
+        """Zurich springs forward on 2026-03-29. "Every day at 12:00" must stay 12:00 local, which
+        means the UTC instant moves by an hour — the reason occurrences are computed in the local zone."""
+        occurrences = CronScheduleCalculator.occurrences_between(
+            _DAILY_NOON_ZURICH, _utc(2026, 3, 28, 0), _utc(2026, 3, 30, 23)
+        )
+
+        local_times = [occurrence.astimezone(_ZURICH) for occurrence in occurrences]
+        assert [local.hour for local in local_times] == [12, 12, 12]
+        assert [local.utcoffset().total_seconds() / 3600 for local in local_times] == [1, 2, 2]
+
+    def test_daily_schedule_keeps_its_wall_clock_time_across_the_autumn_shift(self):
+        occurrences = CronScheduleCalculator.occurrences_between(
+            _DAILY_NOON_ZURICH, _utc(2026, 10, 24, 0), _utc(2026, 10, 26, 23)
+        )
+
+        local_times = [occurrence.astimezone(_ZURICH) for occurrence in occurrences]
+        assert [local.hour for local in local_times] == [12, 12, 12]
+        assert [local.utcoffset().total_seconds() / 3600 for local in local_times] == [2, 1, 1]
+
+
+class TestNextOccurrence:
+    def test_returns_the_first_occurrence_strictly_after(self):
+        assert CronScheduleCalculator.next_occurrence(_HOURLY, _utc(2026, 8, 11, 12)) == _utc(2026, 8, 11, 13)
