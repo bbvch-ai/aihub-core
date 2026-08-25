@@ -795,6 +795,28 @@ form:
       dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
       temporairement jusqu'à la publication d'un correctif.
 lib:
+  cron:
+    errors:
+      required: Chaque position est requise — une position vide ne constitue pas une
+        planification valide.
+      invalid: Seuls les chiffres et les caractères * , - / ? sont autorisés ici.
+      range: Les valeurs doivent être comprises entre {min} et {max}.
+    expression: 'Expression cron résultante :'
+    minute:
+      label: Minute
+    hour:
+      label: Heure
+    day_of_month:
+      label: Jour du mois
+    month:
+      label: Mois
+    day_of_week:
+      label: Jour de la semaine
+    timezone:
+      label: Fuseau horaire
+      placeholder: Sélectionner un fuseau horaire
+      help: Les positions cron sont interprétées dans ce fuseau horaire, afin qu'une
+        planification quotidienne conserve la même heure lors des changements d'heure.
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher

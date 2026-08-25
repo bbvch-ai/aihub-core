@@ -120,6 +120,59 @@ The practical consequence: **your category descriptions are the safety net, not 
 wrong folder, sharpen the descriptions of the two categories being confused.
 :::
 
+### Schedule
+
+The agent can run itself. Enable **Schedule** on the profile and give it the five cron positions plus a timezone; leave
+it disabled and the agent only runs when something triggers it.
+
+| Field            | Example         | Description                                 |
+| ---------------- | --------------- | ------------------------------------------- |
+| **Minute**       | `0`             | `0-59`. `*/15` means every fifteen minutes. |
+| **Hour**         | `*`             | `0-23`.                                     |
+| **Day of month** | `*`             | `1-31`.                                     |
+| **Month**        | `*`             | `1-12`.                                     |
+| **Day of week**  | `*`             | `0-6`, Sunday is `0`.                       |
+| **Timezone**     | `Europe/Zurich` | The zone the positions are read in.         |
+
+The timezone is what makes "every day at 08:00" mean the same thing all year: occurrences are worked out in that zone,
+so a daily schedule keeps its wall-clock time across daylight-saving changes.
+
+Every position has to be filled in. A blank or malformed one is rejected when you save, rather than being stored and
+quietly breaking the profile.
+
+::: tip Start hourly, then tighten
+`0 * * * *` — on the hour — is a good first schedule. It gives you a run an hour to inspect before you decide whether
+the mailbox needs draining more often.
+:::
+
+::: details What happens when a run overlaps the next occurrence
+A large or slow mailbox can still be filing when the next scheduled time comes around. Only one run at a time may hold a
+mailbox: the second one reports that a previous run is still filing and stops without touching any mail. The occurrence
+is skipped rather than queued, and the next one runs normally.
+
+This matters because a message is still unread right up until it moves. Without the guard, two overlapping runs would
+both read the same mail, both pay to classify it, and both try to file it.
+
+A run keeps renewing its claim for as long as it is working, so how long a batch takes never causes it to lose the
+mailbox — the ten-minute expiry only starts counting down once the run has actually stopped. If a run fails outright,
+the claim lapses on its own within ten minutes and the next scheduled run proceeds, so a crash costs you at most one
+occurrence.
+
+In the rare case where a run does lose its claim mid-flight — a mailbox or a model stalled for longer than ten minutes
+in a single step — it stops before filing anything rather than filing mail another run may already be moving. That shows
+up as a failed run in tracing, and it is worth investigating: it means something took far longer than it should.
+:::
+
+::: warning Three things to know about scheduled runs
+- **They are invisible in the chat UI.** A scheduled run belongs to no user, so it does not appear in anyone's
+  conversation list. Watch them in tracing instead. Choosing who sees them is planned separately.
+- **They are not metered.** Usage limits are enforced on requests that arrive over HTTP, and a scheduled run does not
+  make one. A very frequent schedule against a busy mailbox can consume a lot of model budget unnoticed — the **Max
+  Messages** cap bounds a single run, and the schedule bounds how often that happens.
+- **The agent has to be running.** If the agent is offline when a scheduled time passes, that occurrence is skipped, not
+  queued. Nothing is lost: the mail is still unread and the next run that does fire picks it up.
+:::
+
 ## Getting started
 
 1. **Start with two or three categories**, not fifteen. Broad, clearly-distinct buckets classify far more reliably than
@@ -130,7 +183,7 @@ wrong folder, sharpen the descriptions of the two categories being confused.
    reason is the fastest way to find a description that needs rewording.
 4. **Fix misfiling in the descriptions.** They are the only lever there is, and they are the right one — nearly all
    misfiling traces back to two categories whose descriptions overlap.
-5. **Then trigger it regularly** from whatever already runs on a timer for you, and the inbox drains itself.
+5. **Then put it on a schedule** (above), and the inbox drains itself.
 
 ## What it does *not* do
 

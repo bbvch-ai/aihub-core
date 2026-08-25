@@ -47,7 +47,8 @@ packages/web/
 
 The `.app/` directory is the actual entry point — it extends the parent via `extends: ['..']` in its `nuxt.config.ts`.
 `pnpm dev` runs `nuxi dev .app`. The parent `packages/web/` provides components, composables, pages, and config. `.app/`
-adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
+adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars). Custom FormKit inputs are registered in the parent's
+`formkit.config.ts`, which `nuxt.config.ts` wires up via `formkit.configFile`.
 
 ## Page Composition Pattern
 
@@ -146,8 +147,9 @@ The backend defines form schemas (`FormkitElement[]`), the frontend renders them
 **Flow**: Backend `AgentConfig.as_form()` → SDK `FormkitElement[]` → `useFormKitTransform().buildFormKitSchema()` →
 `<FormKitSchema :schema="schema" />` → rendered form.
 
-**Custom FormKit inputs** (registered in `.app/formkit.config.ts`): `agentSelector`, `knowledgeDatabaseSelector`,
-`iconSelector`, `localeInput`, `modelSelect`, `vectorStoreInput`.
+**Custom FormKit inputs** (registered in `formkit.config.ts`, which `nuxt.config.ts` points `formkit.configFile` at):
+`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`,
+`modelSelect`, `tenantSelect`, `vectorStoreInput`.
 
 Custom input components receive props via `context` (not Vue props): read from `context.value`, write via
 `context.node.input(newValue)`.
@@ -265,7 +267,7 @@ The UI strictly separates blueprint from profile:
 
 - Nuxt config: `nuxt.config.ts`
 - Nuxt layer entry: `.app/nuxt.config.ts`
-- FormKit config: `.app/formkit.config.ts`
+- FormKit config: `formkit.config.ts`
 - ESLint config: `eslint.config.js`
 - Tailwind config: `tailwind.config.mjs`
 - PrimeVue theme: `themes/aihub-theme.ts`

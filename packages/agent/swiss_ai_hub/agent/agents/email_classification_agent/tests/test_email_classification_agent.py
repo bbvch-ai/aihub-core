@@ -1,13 +1,17 @@
+import asyncio
 from contextlib import ExitStack
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.agent import MailBatchClassifiedEvent
+from swiss_ai_hub.core.events.agent import MailBatchClassifiedEvent, ScheduledStartEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.imap import EmailClassificationSettings, ImapClientConfig, MailCategory
+from swiss_ai_hub.core.infrastructure import RedisSettings
 from swiss_ai_hub.core.testing import async_test
 
 from swiss_ai_hub.agent.agents.email_classification_agent.configs.email_classification_agent_config import (
@@ -18,6 +22,7 @@ from swiss_ai_hub.agent.agents.email_classification_agent.events.classify_mail_s
     ClassifyMailStartEvent,
 )
 from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import CategoryVerdict
+from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
 from swiss_ai_hub.agent.imap.tests.mail_doubles import infrastructure_patches, make_client, parsed_message, summary
 from swiss_ai_hub.agent.runners import AgentTestRunner
 
@@ -30,6 +35,9 @@ _SUPPORT = MailCategory(
 )
 _INVOICE = MailCategory(category="invoice", imap_folder="Triage/Invoices", description="A bill or payment reminder.")
 _FALLBACK_FOLDER = "Triage/Uncategorised"
+_AGENT_CLASS = EmailClassificationAgent.__name__
+_AGENT_ID = "email_classification_agent"
+_FOREIGN_RUN = "a-run-that-is-still-filing"
 
 
 def _config(categories: list[MailCategory] | None = None) -> EmailClassificationAgentConfig:
@@ -55,6 +63,19 @@ def _verdict(category: MailCategory | None) -> CategoryVerdict:
 def _selection(selected_index: int | None) -> SimpleNamespace:
     """What the LLM returns before MailClassifier resolves it — an index, not a folder."""
     return SimpleNamespace(selected_index=selected_index, reason="because the body says so")
+
+
+@pytest.fixture(autouse=True)
+def clear_mailbox_lease():
+    """Every scenario drives the same profile, and a scenario that ends in an ExceptionEvent deliberately leaves the
+    lease held until it expires — so without this, one failing run would make every later scenario skip its own."""
+
+    async def clear() -> None:
+        redis = RedisSettings.create_client()
+        await redis.delete(f"mailbox:run_lease:{_AGENT_CLASS}:{_AGENT_ID}")
+        await redis.aclose()
+
+    asyncio.run(clear())
 
 
 # --- fixtures ---
@@ -92,12 +113,41 @@ def _no_categories() -> dict:
     return {"unread": [summary("1")], "verdicts": [], "categories": []}
 
 
+@given(
+    "an EmailClassificationAgent runner whose mailbox is already held by a running classification",
+    target_fixture="scenario",
+)
+@async_test
+async def _mailbox_already_held() -> dict:
+    """Stands in for the previous cron occurrence still working through a slow mailbox.
+
+    The lease is taken against the real Valkey the runner itself uses, so this exercises the same `SET NX` the
+    overlapping run will lose against — not a patched-out stub of it.
+    """
+    redis = RedisSettings.create_client()
+    await MailboxRunLease(redis).acquire(_AGENT_CLASS, _AGENT_ID, _FOREIGN_RUN)
+    await redis.aclose()
+    return {"unread": [summary("1"), summary("2")], "verdicts": [], "release_foreign_lease": True}
+
+
 # --- driving ---
 
 
 @when("the user triggers classification", target_fixture="agent_runner")
 @async_test
 async def _(scenario: dict) -> AgentTestRunner:
+    return await _drive(scenario, ClassifyMailStartEvent())
+
+
+@when("the scheduler triggers classification", target_fixture="agent_runner")
+@async_test
+async def _(scenario: dict) -> AgentTestRunner:
+    """The unattended entry point. Everything downstream is shared with the manual one, which is the point —
+    a scheduled run must not be a second code path."""
+    return await _drive(scenario, ScheduledStartEvent(scheduled_for=datetime.now(UTC)))
+
+
+async def _drive(scenario: dict, start_event: BaseEvent) -> AgentTestRunner:
     agent_runner = AgentTestRunner(
         agent_type=EmailClassificationAgent, agent_config=_config(scenario.get("categories"))
     )
@@ -117,7 +167,12 @@ async def _(scenario: dict) -> AgentTestRunner:
         if llm is None:
             stack.enter_context(patch(_CLASSIFY, new=AsyncMock(side_effect=list(scenario["verdicts"]))))
         async with agent_runner.test_run() as topic:
-            await agent_runner.send_event_from_topic(start_event=ClassifyMailStartEvent(), topic=topic)
+            await agent_runner.send_event_from_topic(start_event=start_event, topic=topic)
+
+    if scenario.get("release_foreign_lease"):
+        redis = RedisSettings.create_client()
+        await MailboxRunLease(redis).release(_AGENT_CLASS, _AGENT_ID, _FOREIGN_RUN)
+        await redis.aclose()
     return agent_runner
 
 
@@ -217,3 +272,29 @@ def _(agent_runner: AgentTestRunner):
 @then("an ExceptionEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_exception_event
+
+
+@then("no message was listed, fetched or filed")
+def _(agent_runner: AgentTestRunner):
+    """The skip has to happen before the listing, not after: everything from here on is slow, and the mail is
+    still unread, so a second run reaching any of it would redo the whole batch."""
+    assert agent_runner.imap_client.list_unread.await_count == 0
+    assert agent_runner.imap_client.fetch_message.await_count == 0
+    assert agent_runner.imap_client.relocate_message.await_count == 0
+
+
+@then("no MailBatchClassifiedEvent was emitted")
+def _(agent_runner: AgentTestRunner):
+    assert _dedupe(agent_runner.get_events_of_class(MailBatchClassifiedEvent)) == []
+
+
+@then("the mailbox is no longer held")
+@async_test
+async def _(agent_runner: AgentTestRunner):
+    """A lease left behind would silently cost the next occurrence its run, until the TTL expired."""
+    redis = RedisSettings.create_client()
+    try:
+        assert await MailboxRunLease(redis).acquire(_AGENT_CLASS, _AGENT_ID, "a-later-run") is True
+        await MailboxRunLease(redis).release(_AGENT_CLASS, _AGENT_ID, "a-later-run")
+    finally:
+        await redis.aclose()

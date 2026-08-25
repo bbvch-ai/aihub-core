@@ -791,6 +791,28 @@ form:
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  cron:
+    errors:
+      required: Ogni posizione è obbligatoria — una vuota non è una pianificazione
+        valida.
+      invalid: Qui sono ammessi solo cifre e i caratteri * , - / ? .
+      range: I valori devono essere compresi tra {min} e {max}.
+    expression: 'Espressione cron risultante:'
+    minute:
+      label: Minuto
+    hour:
+      label: Ora
+    day_of_month:
+      label: Giorno del mese
+    month:
+      label: Mese
+    day_of_week:
+      label: Giorno della settimana
+    timezone:
+      label: Fuso orario
+      placeholder: Seleziona un fuso orario
+      help: Le posizioni cron sono interpretate in questo fuso orario, così una pianificazione
+        giornaliera mantiene la stessa ora durante i cambi di orario.
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare

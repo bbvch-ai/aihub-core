@@ -174,7 +174,7 @@ class ScheduledAgentService:
         class is re-armed once corrected, so a regression is reported again.
         """
         agent_class = agent_class_entity.agent_class
-        cron_field_paths = self._cron_field_paths(agent_class_entity.form)
+        cron_field_paths = self.cron_field_paths(agent_class_entity.form)
         if SCHEDULE_CONFIG_KEY in cron_field_paths:
             self._classes_warned_about_unreachable_schedule.discard(agent_class)
             return
@@ -195,18 +195,23 @@ class ScheduledAgentService:
         )
 
     @classmethod
-    def _cron_field_paths(cls, form_elements: list[dict], prefix: str = "") -> set[str]:
+    def cron_field_paths(cls, form_elements: list[dict], prefix: str = "") -> set[str]:
         """Dotted paths of every cron field in a stored form, including those nested inside groups.
 
         Nested paths are reported so the warning can name a schedule that was declared inside a group —
         readable to a person, still not readable by the scheduler, which only looks at the top level.
+
+        Public because whether a blueprint exposes a readable schedule is a question other packages have to
+        ask too: the API validates a submitted cron only for a blueprint that declares one, and agent tests
+        assert their blueprint stays reachable. Reading it off the stored form is the only way to answer that
+        without importing the blueprint.
         """
         paths: set[str] = set()
         for element in form_elements:
             path = f"{prefix}{element.get('name') or element.get('ref')}"
             if element.get("formkit") == _CRON_FORMKIT_TYPE:
                 paths.add(path)
-            paths |= cls._cron_field_paths(element.get("children") or [], f"{path}.")
+            paths |= cls.cron_field_paths(element.get("children") or [], f"{path}.")
         return paths
 
     def _clamp_window_start(self, watermark: datetime, now: datetime) -> datetime:
