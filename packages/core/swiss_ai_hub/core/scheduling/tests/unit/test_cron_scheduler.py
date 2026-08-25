@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
@@ -9,7 +10,12 @@ import pytest
 
 from swiss_ai_hub.core.events.agent.control.start.cron_start_event import CronStartEvent
 from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
-from swiss_ai_hub.core.scheduling.cron_scheduler import CronScheduler, _SchedulableSnapshot, _TickReport
+from swiss_ai_hub.core.scheduling.cron_scheduler import (
+    _MAX_CLAMPED_OCCURRENCES_COUNTED,
+    CronScheduler,
+    _SchedulableSnapshot,
+    _TickReport,
+)
 from swiss_ai_hub.core.scheduling.scheduler_settings import SchedulerSettings
 
 _MODULE = "swiss_ai_hub.core.scheduling.cron_scheduler"
@@ -262,6 +268,36 @@ class TestInstanceSelection:
         distributor.distribute_event.assert_not_awaited()
 
     @pytest.mark.asyncio
+    async def test_an_untouched_schedule_group_is_unscheduled_not_malformed(
+        self, service: CronScheduler, distributor: MagicMock, caplog
+    ) -> None:
+        """`normalize_empty_objects_to_none` only nullifies a literally empty dict, so a schedule group
+        nobody filled in is stored as blank strings — truthy, and rejected by every cron validator. Read
+        as malformed it would put a traceback in the log twice a minute, forever, for a profile that is
+        simply not scheduled, burying the rows this log exists to surface."""
+        blank = {key: "" for key in _HOURLY}
+
+        with caplog.at_level(logging.ERROR):
+            await _run_tick(service, configs=[_config(schedule=blank)])
+
+        distributor.distribute_event.assert_not_awaited()
+        assert "stored schedule is not valid" not in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_a_partly_filled_schedule_is_still_reported(
+        self, service: CronScheduler, distributor: MagicMock, caplog
+    ) -> None:
+        """Someone was mid-edit, which is a broken row rather than an absent one — the blank-means-
+        unscheduled reading must not swallow it."""
+        half_filled = {**{key: "" for key in _HOURLY}, "minute": "0"}
+
+        with caplog.at_level(logging.ERROR):
+            await _run_tick(service, configs=[_config(schedule=half_filled)])
+
+        distributor.distribute_event.assert_not_awaited()
+        assert "stored schedule is not valid" in caplog.text
+
+    @pytest.mark.asyncio
     async def test_fires_each_scheduled_instance(self, service: CronScheduler, distributor: MagicMock) -> None:
         await _run_tick(service, configs=[_config(agent_id="a"), _config(agent_id="b"), _config(schedule=None)])
 
@@ -451,13 +487,52 @@ class TestCatchUp:
         assert dropped == 23
 
     def test_counting_the_drop_happens_off_the_event_loop(self, service: CronScheduler) -> None:
-        """The discarded span is the whole outage and the watermark key has no TTL, so this is the one
-        unbounded enumeration in a tick — it must not run where it can stall HTTP traffic."""
+        """The discarded span is the whole outage and the watermark key has no TTL, so this is the
+        longest enumeration in a tick — it must not run where it can stall HTTP traffic."""
         import inspect
 
         assert not inspect.iscoroutinefunction(service._count_clamped_away)
         source = inspect.getsource(type(service)._load_schedulable_snapshot)
         assert "_count_clamped_away" in source
+
+    def test_the_drop_count_is_capped_however_stale_the_watermark(self, service: CronScheduler) -> None:
+        """Uncapped, a watermark years stale outruns the snapshot's timeout, so the tick aborts before
+        advancing it — and every later tick faces a staler one. The stall is self-sustaining, and it
+        would sit behind a number that only ever reaches a log line."""
+        watermark = _NOW - timedelta(days=3650)
+        every_minute = CronSchedule.model_validate({**_HOURLY, "minute": "*"})
+
+        started = time.monotonic()
+        dropped = service._count_clamped_away(
+            [(every_minute, _config())], watermark, service._clamp_window_start(watermark, _NOW)
+        )
+        elapsed = time.monotonic() - started
+
+        assert dropped == _MAX_CLAMPED_OCCURRENCES_COUNTED
+        assert elapsed < 5
+
+    def test_the_cap_bounds_the_total_rather_than_each_profile(self, service: CronScheduler) -> None:
+        """Per-profile caps would make the work grow with the profile count, which is the other way a
+        tick outruns its budget."""
+        watermark = _NOW - timedelta(days=3650)
+        every_minute = CronSchedule.model_validate({**_HOURLY, "minute": "*"})
+        profiles = [(every_minute, _config(agent_id=str(index))) for index in range(20)]
+
+        dropped = service._count_clamped_away(profiles, watermark, service._clamp_window_start(watermark, _NOW))
+
+        assert dropped == _MAX_CLAMPED_OCCURRENCES_COUNTED
+
+    def test_reports_a_capped_count_as_a_lower_bound(self, service: CronScheduler, caplog) -> None:
+        """`10000` read as exact would understate an outage by orders of magnitude."""
+        watermark = _NOW - timedelta(days=3650)
+        every_minute = CronSchedule.model_validate({**_HOURLY, "minute": "*"})
+
+        with caplog.at_level(logging.WARNING):
+            service._count_clamped_away(
+                [(every_minute, _config())], watermark, service._clamp_window_start(watermark, _NOW)
+            )
+
+        assert "at least 10000 occurrence(s)" in caplog.text
 
 
 class TestTheTickStaysOffTheEventLoop:

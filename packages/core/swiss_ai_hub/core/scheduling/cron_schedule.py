@@ -50,6 +50,26 @@ class CronSchedule(BaseModel):
     def zone_info(self) -> ZoneInfo:
         return ZoneInfo(self.timezone)
 
+    @classmethod
+    def is_unscheduled(cls, raw: object) -> bool:
+        """Whether a raw `cron` value means "no schedule" rather than a schedule that is malformed.
+
+        The save path and the scan path have to agree on this, and a plain falsy check is not enough for
+        either: `normalize_empty_objects_to_none` only nullifies a *literally* empty dict, so a group of
+        text inputs nobody touched arrives — and is stored — as `{"minute": "", ..., "timezone": ""}`,
+        which is truthy. Read as a schedule it fails validation, so the two sides restating the test
+        separately is how a profile that simply has no schedule ends up either rejected at save time or
+        logged as broken on every tick, forever.
+
+        Only blankness counts as unscheduled. A non-dict is a schedule of the wrong shape and must still
+        reach validation, or a bad payload would be silently ignored instead of reported.
+        """
+        if not raw:
+            return True
+        if not isinstance(raw, dict):
+            return False
+        return not any(str(value).strip() for value in raw.values())
+
     @model_validator(mode="after")
     def _validate_expression_and_timezone(self) -> Self:
         """Reject malformed crons and unknown timezones at configuration time rather than at fire time."""

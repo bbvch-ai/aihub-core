@@ -12,6 +12,7 @@ Marked `integration` by directory, so the default `make test` (-m unit) skips it
 """
 
 import asyncio
+import os
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -44,6 +45,11 @@ async def redis() -> Redis:
         await client.ping()
     except Exception as unreachable:
         await client.aclose()
+        # Skipping is right for a developer without the dev stack, and wrong in CI: these tests are the
+        # only evidence that N replicas fire an occurrence exactly once, and a slow or unhealthy valkey
+        # would turn that proof into a green skip nothing in the run output distinguishes from a pass.
+        if os.getenv("CI"):
+            pytest.fail(f"Redis must be reachable in CI; the exactly-once proof cannot be skipped ({unreachable})")
         pytest.skip(f"Redis is not reachable; start the dev stack ({unreachable})")
     yield client
     await client.aclose()

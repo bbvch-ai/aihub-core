@@ -240,19 +240,13 @@ class AgentClassEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_online_schedulable(cls) -> list["AgentClassEntity"]:
-        """Schedulable classes currently online — the scheduler only fires runs an agent can consume."""
-        threshold = datetime.now() - cls.ONLINE_THRESHOLD
-        return list(cls.objects(is_schedulable=True, last_discovered__gte=threshold))
-
-    @classmethod
-    @trace_fn
     def get_all_schedulable(cls) -> list["AgentClassEntity"]:
         """Every schedulable class, online or not, for a caller that needs both halves.
 
         The scheduler needs online and offline classes on the same tick — one set to fire, the other to
-        report what it dropped. Fetching them together and splitting in Python costs one round-trip
-        instead of two, on a query that runs inside the API process every tick.
+        report what it dropped. Fetching them together and splitting in Python with `is_online_at` costs
+        one round-trip instead of two, on a query that runs inside the API process every tick. That is
+        why there is no online-only or offline-only query to reach for here.
         """
         return list(cls.objects(is_schedulable=True))
 
@@ -276,17 +270,6 @@ class AgentClassEntity(Document):
 
         local_now = now.astimezone().replace(tzinfo=None) if now.tzinfo else now
         return entity.last_discovered >= local_now - cls.ONLINE_THRESHOLD
-
-    @classmethod
-    @trace_fn
-    def get_offline_schedulable(cls) -> list["AgentClassEntity"]:
-        """Schedulable classes with no runner online — the exact complement of `get_online_schedulable`.
-
-        The scheduler needs these to report the occurrences it drops rather than queues, which it cannot
-        do from the online set alone.
-        """
-        threshold = datetime.now() - cls.ONLINE_THRESHOLD
-        return list(cls.objects(is_schedulable=True, last_discovered__lt=threshold))
 
     @classmethod
     @trace_fn

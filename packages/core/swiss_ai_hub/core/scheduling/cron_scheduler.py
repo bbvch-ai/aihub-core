@@ -27,6 +27,11 @@ _SCHEDULED_THREAD_NAME = "Scheduled runs"
 
 _ScheduledProfile = tuple[CronSchedule, AgentConfigEntityDocument]
 
+# How many clamped-away occurrences a tick will count before reporting "at least N". Diagnostics must not
+# be able to outrun the tick that produces them, and past a few thousand the exact figure says nothing the
+# lag does not already say.
+_MAX_CLAMPED_OCCURRENCES_COUNTED = 10_000
+
 
 @dataclass(frozen=True)
 class _SchedulableSnapshot:
@@ -35,10 +40,10 @@ class _SchedulableSnapshot:
     online: list[_ScheduledProfile] = field(default_factory=list)
     offline: list[tuple[_ScheduledProfile, datetime]] = field(default_factory=list)
     scheduled_thread_ids: list[str] = field(default_factory=list)
-    # Both computed in the worker thread alongside the reads. The clamp's dropped-occurrence count is
-    # the only unbounded enumeration in a tick — the watermark key has no TTL, so after a long outage
-    # it spans the whole downtime — and counting it on the event loop would reintroduce exactly the
-    # stall the snapshot exists to remove.
+    # Both computed in the worker thread alongside the reads. The clamp's dropped-occurrence count spans
+    # the whole downtime rather than the catch-up window — the watermark key has no TTL — so it is capped
+    # to keep a tick's cost flat, and counting it on the event loop would reintroduce exactly the stall
+    # the snapshot exists to remove.
     window_start: datetime | None = None
     dropped_by_clamp: int = 0
 
@@ -275,20 +280,36 @@ class CronScheduler:
     ) -> int:
         """Occurrences the clamp discarded, counted so a drop is reported rather than merely implied.
 
-        The lag alone does not say whether any business work was actually lost. Called from the worker
-        thread: the discarded span is the whole outage, so a stale watermark and a minute-by-minute
-        schedule make this the heaviest thing a tick does.
+        The lag alone does not say whether any business work was actually lost.
+
+        Capped, because this is the one span in a tick nothing else bounds: the firing window is clamped
+        to `max_catchup`, but the *discarded* span is the whole outage, and the watermark key has no TTL.
+        Left unbounded, a long enough outage — or a Redis restore carrying an old watermark — makes the
+        count outrun the snapshot's timeout, and the tick then aborts before advancing the watermark, so
+        the next tick faces a staler one still and the scheduler never fires again without manual repair.
+        Liveness of the whole feature must not sit behind a number that only goes into a log line.
+
+        Deliberately capped rather than moved after `set_watermark`: advancing the watermark before the
+        occurrences in the window have been fired would trade this stall for lost runs.
         """
         if window_start <= watermark:
             return 0
 
-        dropped = sum(
-            len(CronScheduleCalculator.occurrences_between(schedule, watermark, window_start)) for schedule, _ in online
-        )
+        # Bounds the total rather than each profile, so the work is flat in profile count too. At roughly
+        # 90k croniter steps a second this is a tenth of a second, against a tick budget of half the lease.
+        budget = _MAX_CLAMPED_OCCURRENCES_COUNTED
+        dropped = 0
+        for schedule, _ in online:
+            counted = CronScheduleCalculator.count_between(schedule, watermark, window_start, budget)
+            dropped += counted
+            budget -= counted
+            if not budget:
+                break
+
         logger.warning(
-            "Scheduler was behind by %s; dropping %d occurrence(s) older than the %s catch-up window",
+            "Scheduler was behind by %s; dropping %s occurrence(s) older than the %s catch-up window",
             window_start - watermark,
-            dropped,
+            f"at least {dropped}" if dropped == _MAX_CLAMPED_OCCURRENCES_COUNTED else dropped,
             self._max_catchup,
         )
         return dropped
@@ -299,7 +320,12 @@ class CronScheduler:
         instances: list[tuple[CronSchedule, AgentConfigEntityDocument]] = []
         for config in AgentConfigEntityDocument.find_for_classes(agent_classes):
             raw_schedule = (config.config_data or {}).get(CRON_CONFIG_KEY)
-            if not raw_schedule:
+            # The same predicate the save path uses, rather than a falsy check restating it: an untouched
+            # schedule group is stored as blank strings, which are truthy but not a schedule. Reading one
+            # as malformed would put an ERROR with a traceback in the log on every tick, forever, for
+            # every profile of a schedulable class that simply is not scheduled — burying the genuinely
+            # broken rows this log exists to surface.
+            if CronSchedule.is_unscheduled(raw_schedule):
                 continue
             # Deliberately not fail-fast. The profile store is shared, and the config save path
             # validates against a generated JSON-schema model that cannot carry CronSchedule's cron

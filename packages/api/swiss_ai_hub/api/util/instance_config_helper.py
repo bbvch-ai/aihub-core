@@ -85,13 +85,14 @@ class InstanceConfigHelper:
         name for anything else.
         """
         cron = config.get(CRON_CONFIG_KEY)
-        if not isinstance(cron, dict) or not cron:
+        if not isinstance(cron, dict):
             return
-        if not any(str(value).strip() for value in raw_schedule.values()):
-            # An all-blank schedule means unscheduled, not invalid. `normalize_empty_objects_to_none`
-            # only nullifies a literally empty dict, but a group of text inputs nobody touched
-            # serialises as blank strings — so rejecting this would 400 every profile save on a
-            # schedulable agent whose owner did not want a schedule.
+        if CronSchedule.is_unscheduled(cron):
+            # An all-blank schedule means unscheduled, not invalid — rejecting it would 400 every profile
+            # save on a schedulable agent whose owner did not want a schedule. Owned by `CronSchedule`
+            # rather than spelled out here because the scheduler has to reach the same verdict on the
+            # stored row: this is what it saves, and a second opinion there is an ERROR every tick.
+            # It subsumes the empty-dict case too, so there is no separate falsy check above.
             return
 
         try:
