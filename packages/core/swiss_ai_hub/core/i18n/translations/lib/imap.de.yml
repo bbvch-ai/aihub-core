@@ -75,3 +75,27 @@ config:
   classification_prompt:
     label: Klassifizierungs-Prompt
     help: Anweisungen, wie das Modell eine Kategorie auswählt.
+  category_draft_reply:
+    label: Antwort entwerfen
+    help: Wenn aktiviert, wird für E-Mails dieser Kategorie ein Antwortentwurf im
+      Entwurfsordner abgelegt, den ein Mensch prüfen und senden kann. Es wird nie
+      gesendet.
+  draft_input_tokens:
+    label: Eingabe-Token für Entwürfe
+    help: Token-Budget für den Entwurfs-Prompt. Der Nachrichtentext wird gekürzt und
+      Anhangstext verworfen, um es einzuhalten.
+  include_attachments:
+    label: Anhänge lesen
+    help: Wenn aktiviert, erhält das Modell zusätzlich zum Nachrichtentext den aus
+      den Anhängen extrahierten Text. Jeder Anhang kostet einen Aufruf des Dokumentenparsers.
+  max_attachments_per_message:
+    label: Max. Anhänge pro Nachricht
+    help: Wie viele Anhänge einer Nachricht gelesen werden, grösste zuerst.
+  min_attachment_bytes:
+    label: Minimale Anhangsgrösse
+    help: Kleinere Anhänge werden übersprungen. Signaturlogos und Zählpixel kommen
+      als Anhänge an und liefern keinen nutzbaren Text.
+  attachment_char_limit:
+    label: Zeichenlimit pro Anhang
+    help: Anzahl der Zeichen, die aus dem extrahierten Text eines einzelnen Anhangs
+      übernommen werden.

@@ -5,7 +5,7 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import CronInput
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.imap import EmailClassificationSettings, ImapClientConfig
+from swiss_ai_hub.core.imap import DraftEmailSettings, EmailClassificationSettings, ImapClientConfig
 from swiss_ai_hub.core.scheduling import AgentSchedule
 
 
@@ -25,6 +25,14 @@ class EmailClassificationAgentConfig(AgentConfig):
         EmailClassificationSettings,
         Field(title="Email classification", description="Categories, fallback folder, and classifier behaviour."),
     ]
+    draft: Annotated[
+        DraftEmailSettings,
+        Field(
+            title="Draft email settings",
+            description="Reply drafting for the categories opted into it — model, prompt, drafts folder, and whether "
+            "attachments are read.",
+        ),
+    ]
     schedule: Annotated[
         AgentSchedule | CronInput | None,
         Field(description="Cron schedule controlling when this profile files the mailbox automatically."),
@@ -39,6 +47,15 @@ class EmailClassificationAgentConfig(AgentConfig):
         """
         return self.llm.as_task_llm(self.classification.model_name or self.llm.model_name)
 
+    @property
+    def drafting_llm(self) -> LLMConfig:
+        """The model that writes the reply body: the dedicated picker when set, otherwise the main model.
+
+        Resolved the same way as `classifier_llm` rather than through `DraftEmailSettings.llm`, which builds a bare
+        `LLMConfig` and so would silently drop the agent's configured generation parameters (temperature, timeout).
+        """
+        return self.llm.as_task_llm(self.draft.model_name or self.llm.model_name)
+
     @classmethod
     def as_form(cls) -> Self:
         base = AgentConfig.as_form()
@@ -50,6 +67,7 @@ class EmailClassificationAgentConfig(AgentConfig):
             imap=cls._imap_form(),
             llm=LLMConfig.as_form(),
             classification=EmailClassificationSettings.as_form(),
+            draft=cls._draft_form(),
             schedule=CronInput(
                 label=LocaleString.from_i18n_path("lib.scheduling.config.schedule.label"),
                 help=LocaleString.from_i18n_path("lib.scheduling.config.schedule.help"),
@@ -73,4 +91,23 @@ class EmailClassificationAgentConfig(AgentConfig):
         form = ImapClientConfig.as_form()
         form.enable_move = True
         form.processed_folder = ""
+        return form
+
+    @staticmethod
+    def _draft_form() -> DraftEmailSettings:
+        """The drafting form without the fields that only make sense for a standalone drafting run.
+
+        `source_folder` and `batch_size` belong to `ImapAgent`'s independent chain, which goes looking for candidates.
+        This blueprint has no search to do: the batch is whatever it just classified, and the folder is wherever each
+        message was filed. Overwriting the FormKit elements with plain values is what keeps the two fields out of the
+        rendered form, following `_imap_form` — a field that must not exist is not the same as one conditionally hidden.
+
+        As with `_imap_form`, the values assigned here are not the runtime values: `get_non_configurable_values()`
+        walks only top-level fields, so a leaf baked inside a nested group keeps its declared default at runtime.
+        Harmless because nothing on this blueprint reads either field — `do_draft_replies` is handed the batch and the
+        drafts folder explicitly. Do not add a reader without first making the value reach runtime.
+        """
+        form = DraftEmailSettings.as_form()
+        form.source_folder = ""
+        form.batch_size = 1
         return form

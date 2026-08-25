@@ -2,5 +2,4 @@
 config:
   schedule:
     label: Schedule
-    help: When this profile runs automatically. Leave empty to disable scheduled
-      runs.
+    help: When this profile runs automatically. Leave empty to disable scheduled runs.

@@ -77,3 +77,25 @@ config:
   classification_prompt:
     label: Prompt di classificazione
     help: Istruzioni che guidano il modo in cui il modello sceglie una categoria.
+  category_draft_reply:
+    label: Redigi una risposta
+    help: Se attivo, la posta smistata in questa categoria riceve una bozza di risposta
+      nella cartella Bozze, che una persona rilegge e invia. Nulla viene mai inviato.
+  draft_input_tokens:
+    label: Token di input della bozza
+    help: Budget di token per il prompt di redazione. Il corpo del messaggio viene
+      troncato e il testo degli allegati scartato per rispettarlo.
+  include_attachments:
+    label: Leggi gli allegati
+    help: Se attivo, il testo estratto dagli allegati viene fornito al modello oltre
+      al corpo. Ogni allegato costa una chiamata al parser di documenti.
+  max_attachments_per_message:
+    label: Allegati max per messaggio
+    help: Quanti allegati di un messaggio vengono letti, dal più grande.
+  min_attachment_bytes:
+    label: Dimensione minima allegato
+    help: Gli allegati più piccoli vengono ignorati. Loghi di firma e pixel di tracciamento
+      arrivano come allegati e non forniscono testo utile.
+  attachment_char_limit:
+    label: Limite di caratteri per allegato
+    help: Caratteri conservati dal testo estratto di un singolo allegato.

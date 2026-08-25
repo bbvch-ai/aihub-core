@@ -6,7 +6,22 @@ from pydantic import BaseModel, Field
 class DraftedReplyRef(BaseModel):
     """A single reply draft produced during a batch drafting run — one per source message."""
 
-    source_uid: Annotated[str, Field(description="IMAP UID of the source message within the source folder.")]
+    source_uid: Annotated[
+        str,
+        Field(
+            description="IMAP UID the source message had in the folder it was read from. A blueprint that files the "
+            "message before drafting (EmailClassificationAgent) reports the pre-move UID, which no longer resolves "
+            "on the server — it identifies the message within the run, not for a later fetch."
+        ),
+    ]
+    category: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Category the source message was classified under, when drafting followed a classification "
+            "run. Null when the drafting blueprint does not classify.",
+        ),
+    ]
     drafts_folder: Annotated[str, Field(description="Folder the draft was appended to.")]
     draft_uid: Annotated[
         str | None,

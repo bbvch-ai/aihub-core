@@ -85,3 +85,23 @@ class MailStore:
             ContentDisposition=_DOWNLOAD_DISPOSITION,
         )
         return ref
+
+    @staticmethod
+    async def load_message(ref: MailMessageRef, agent_class: str, agent_id: str) -> bytes:
+        """Read an archived message back as the raw RFC822 bytes that were stored.
+
+        This is how a step running *after* the message has been filed still gets at its content: the IMAP UID died
+        with the `MOVE`, but the archive is keyed by `file_id` and does not move. The bytes are the message verbatim,
+        so a re-parse recovers everything the summary event omits — recipients, the HTML body, the attachments.
+        """
+        return await MailStore._load(*ref.resolve_s3_location(agent_class, agent_id))
+
+    @staticmethod
+    async def load_attachment(ref: MailAttachmentRef, agent_class: str, agent_id: str) -> bytes:
+        """Read one archived attachment back as the bytes that were stored."""
+        return await MailStore._load(*ref.resolve_s3_location(agent_class, agent_id))
+
+    @staticmethod
+    async def _load(bucket: str, key: str) -> bytes:
+        response = await asyncio.to_thread(create_s3_client().get_object, Bucket=bucket, Key=key)
+        return await asyncio.to_thread(response["Body"].read)

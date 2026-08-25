@@ -85,12 +85,12 @@ It uses `str.format` brace interpolation, not Jinja, because `jinja2` is not a d
 substitution in this very file. Note that yamlfix strips blank lines inside the YAML block scalar, so the prompt reaches
 the model as consecutive lines; do not reintroduce them expecting them to survive.
 
-**2 — Injection happens in `OpenaiService._apply_model_identity`,** called from `chat_completion`. The identity
-**leads the message list**, satisfying Qwen3.5's constraint, and any caller-supplied system prompt is preserved after
-ours — so the caller still wins on task behaviour. When the caller already sent a leading system message, the identity
-is **merged into it** (prefixed, separated by a blank line, other message fields kept) rather than added as a second
-system message. The display name is `model_name.rpartition("/")[2]`, which strips the capability prefix
-(`text-generation/Kimi-K2.6` → `Kimi-K2.6`) and leaves an unprefixed name untouched.
+**2 — Injection happens in `OpenaiService._apply_model_identity`,** called from `chat_completion`. The identity **leads
+the message list**, satisfying Qwen3.5's constraint, and any caller-supplied system prompt is preserved after ours — so
+the caller still wins on task behaviour. When the caller already sent a leading system message, the identity is **merged
+into it** (prefixed, separated by a blank line, other message fields kept) rather than added as a second system message.
+The display name is `model_name.rpartition("/")[2]`, which strips the capability prefix (`text-generation/Kimi-K2.6` →
+`Kimi-K2.6`) and leaves an unprefixed name untouched.
 
 > **Amendment 2026-08-20 — the merge replaces the original prepend.** As shipped, this decision prepended a *second*
 > system message and justified it with "multiple leading system messages are already production behaviour on this stack"

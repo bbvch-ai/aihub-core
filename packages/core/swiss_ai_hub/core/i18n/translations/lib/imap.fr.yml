@@ -77,3 +77,26 @@ config:
   classification_prompt:
     label: Invite de classification
     help: Instructions guidant la façon dont le modèle choisit une catégorie.
+  category_draft_reply:
+    label: Rédiger une réponse
+    help: Si activé, les messages classés dans cette catégorie reçoivent un brouillon
+      de réponse déposé dans le dossier Brouillons, qu'un humain relit et envoie.
+      Rien n'est jamais envoyé.
+  draft_input_tokens:
+    label: Jetons d'entrée du brouillon
+    help: Budget de jetons pour l'invite de rédaction. Le corps du message est tronqué
+      et le texte des pièces jointes abandonné pour le respecter.
+  include_attachments:
+    label: Lire les pièces jointes
+    help: Si activé, le texte extrait des pièces jointes est fourni au modèle en plus
+      du corps. Chaque pièce jointe coûte un appel à l'analyseur de documents.
+  max_attachments_per_message:
+    label: Pièces jointes max. par message
+    help: Nombre de pièces jointes lues par message, les plus grandes d'abord.
+  min_attachment_bytes:
+    label: Taille minimale de pièce jointe
+    help: Les pièces jointes plus petites sont ignorées. Les logos de signature et
+      les pixels de suivi arrivent comme pièces jointes sans texte exploitable.
+  attachment_char_limit:
+    label: Limite de caractères par pièce jointe
+    help: Nombre de caractères conservés du texte extrait d'une seule pièce jointe.

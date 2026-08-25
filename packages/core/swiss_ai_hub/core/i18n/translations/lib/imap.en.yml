@@ -71,3 +71,25 @@ config:
   classification_prompt:
     label: Classification Prompt
     help: Instructions steering how the model chooses a category.
+  category_draft_reply:
+    label: Draft a Reply
+    help: When on, mail filed under this category gets a drafted reply left in the
+      drafts folder for a human to review and send. Mail is never sent.
+  draft_input_tokens:
+    label: Draft Input Tokens
+    help: Input-token budget for the drafting prompt. The message body is trimmed,
+      and attachment text dropped, to stay within it.
+  include_attachments:
+    label: Read Attachments
+    help: When on, text extracted from the message's attachments is given to the model
+      alongside the body. Each attachment costs a document-parser round trip.
+  max_attachments_per_message:
+    label: Max Attachments Per Message
+    help: How many of a message's attachments are read, largest first.
+  min_attachment_bytes:
+    label: Minimum Attachment Size
+    help: Attachments smaller than this are skipped. Signature logos and tracking
+      pixels arrive as attachments and yield no usable text.
+  attachment_char_limit:
+    label: Attachment Character Limit
+    help: Characters kept from a single attachment's extracted text.

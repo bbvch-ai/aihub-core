@@ -42,6 +42,66 @@ Feature: Email Classification Agent
     When the user triggers classification
     Then no draft was appended and nothing was sent
 
+  Scenario: Drafts a reply only for the categories that asked for one
+    Given an EmailClassificationAgent runner where support_request is set to get a drafted reply
+    When the user triggers classification
+    Then a MailBatchClassifiedEvent with 3 classified messages was emitted
+    And a MailBatchDraftedEvent with 2 drafts was emitted
+    And only the support_request mail was drafted
+    And each draft is threaded to the message it replies to
+    And every appended draft carries the Draft flag and no message was sent
+    And a StopEvent is present
+    And no ExceptionEvent is present
+
+  Scenario: Mail that fits no category is never drafted
+    Given an EmailClassificationAgent runner where drafting is on but the mail fits no category
+    When the user triggers classification
+    Then the message was filed into the fallback folder
+    And no draft was appended
+    And no MailBatchDraftedEvent was emitted
+    And a StopEvent is present
+    And no ExceptionEvent is present
+
+  Scenario: Drafting turned off stops the run right after filing
+    Given an EmailClassificationAgent runner with reply drafting turned off
+    When the user triggers classification
+    Then a MailBatchClassifiedEvent with 1 classified messages was emitted
+    And no draft was appended
+    And no MailBatchDraftedEvent was emitted
+    And a StopEvent is present
+    And the mailbox is no longer held
+    And no ExceptionEvent is present
+
+  Scenario: Attachment text grounds the drafted reply
+    Given an EmailClassificationAgent runner drafting with attachment reading on
+    When the user triggers classification
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the attachment text reached the drafting prompt
+    And no ExceptionEvent is present
+
+  Scenario: An attachment holding no text is named rather than dropped
+    Given an EmailClassificationAgent runner drafting a message whose attachment holds no text
+    When the user triggers classification
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the attachment is named as holding no text and no empty text block was sent
+    And no ExceptionEvent is present
+
+  Scenario: A signature logo is not worth a document-parser round trip
+    Given an EmailClassificationAgent runner drafting a message carrying only a signature logo
+    When the user triggers classification
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the signature logo was never fetched
+    And no ExceptionEvent is present
+
+  Scenario: A scheduled run drafts exactly like a manual one
+    Given an EmailClassificationAgent runner where support_request is set to get a drafted reply
+    When the scheduler triggers classification
+    Then a MailBatchDraftedEvent with 2 drafts was emitted
+    And only the support_request mail was drafted
+    And a StopEvent is present
+    And the mailbox is no longer held
+    And no ExceptionEvent is present
+
   Scenario: Fails the run when no categories are configured
     Given an EmailClassificationAgent runner with no categories configured
     When the user triggers classification

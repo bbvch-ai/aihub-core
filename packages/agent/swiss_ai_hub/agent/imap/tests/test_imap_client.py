@@ -824,3 +824,62 @@ async def test_relocate_message_refuses_a_uid_that_is_no_longer_in_the_inbox():
         await client.relocate_message("101", "Processed")
 
     connection.move.assert_not_called()
+
+
+@async_test
+async def test_append_draft_creates_the_configured_folder_when_the_server_has_no_drafts_folder_at_all():
+    """The GreenMail shape: only INBOX exists and no SPECIAL-USE is advertised.
+
+    Without this the very first drafting run against a fresh test server fails outright instead of making the folder
+    it was told to use.
+    """
+    # Three LIST calls happen here — the resolve, then ensure_folders either side of the create — so the folder must
+    # only appear on the third. `_folders_after_creating` reveals it on the second, which is the different case of a
+    # concurrent run having won the race.
+    inbox_only = [((b"\\HasNoChildren",), b".", "INBOX")]
+    listings = iter([inbox_only, inbox_only, [*inbox_only, ((b"\\HasNoChildren",), b".", "Drafts")]])
+    connection = _connection(folders=lambda *_args: next(listings))
+    connection.append = MagicMock(return_value=b"[APPENDUID 130 57] (Success)")
+    client = _client(connection)
+
+    resolved, uid = await client.append_draft("Drafts", b"raw")
+
+    assert resolved == "Drafts"
+    assert uid == "57"
+    connection.create_folder.assert_called_once_with("Drafts")
+
+
+@async_test
+async def test_append_draft_prefers_the_special_use_folder_over_creating_the_configured_name():
+    """Order matters more than the fallback itself.
+
+    Gmail's real drafts folder is `[Gmail]/Drafts`, listed in the account's own language. Creating a `Drafts` label
+    beside it would silently strand every draft where the user never looks.
+    """
+    connection = _connection(
+        folders=[
+            ((b"\\HasNoChildren",), b"/", "INBOX"),
+            ((b"\\HasNoChildren", b"\\Drafts"), b"/", "[Gmail]/Drafts"),
+        ]
+    )
+    connection.append = MagicMock(return_value=b"(Success)")
+    client = _client(connection)
+
+    resolved, _uid = await client.append_draft("Drafts", b"raw")
+
+    assert resolved == "[Gmail]/Drafts"
+    connection.create_folder.assert_not_called()
+
+
+@async_test
+async def test_append_draft_reports_a_folder_it_could_not_create():
+    """A server that refuses the folder must fail before the append, not append into nothing."""
+    connection = _connection(folders=[((b"\\HasNoChildren",), b".", "INBOX")])
+    connection.create_folder = MagicMock(side_effect=IMAPClientError("permission denied"))
+    connection.append = MagicMock(return_value=b"(Success)")
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="could not be created"):
+        await client.append_draft("Drafts", b"raw")
+
+    connection.append.assert_not_called()

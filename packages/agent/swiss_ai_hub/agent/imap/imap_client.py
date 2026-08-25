@@ -261,20 +261,28 @@ class ImapClient:
         """Append a reply as a ``\\Draft``-flagged message to the drafts folder; never sends (no SMTP path exists).
 
         The configured name is only trusted when the server's own ``LIST`` returns it verbatim; otherwise the folder
-        flagged ``\\Drafts`` (RFC 6154 SPECIAL-USE) is used. This is required because folder names are the server's
-        bytes — localized Gmail drafts (e.g. ``[Gmail]/Thư nháp``) and NFC/NFD Unicode differences make a hand-typed
-        name mismatch and fail with ``[TRYCREATE]``. Returns the resolved folder and the ``APPENDUID`` (UIDPLUS,
-        RFC 4315) when reported.
+        flagged ``\\Drafts`` (RFC 6154 SPECIAL-USE) is used, and failing that the configured name is created. This is
+        required because folder names are the server's bytes — localized Gmail drafts (e.g. ``[Gmail]/Thư nháp``) and
+        NFC/NFD Unicode differences make a hand-typed name mismatch and fail with ``[TRYCREATE]``. Returns the
+        resolved folder and the ``APPENDUID`` (UIDPLUS, RFC 4315) when reported.
         """
         target = await self._resolve_folder(drafts_folder, _DRAFTS_SPECIAL_USE)
         response = await asyncio.to_thread(self._connection.append, target, raw_message, flags=[_DRAFT_FLAG])
         return target, self._parse_appenduid(response)
 
     async def _resolve_folder(self, configured: str, special_use_flag: bytes) -> str:
-        """Return the server's exact folder name: the configured one if it exists verbatim, else the special-use match.
+        """Return the server's exact folder name: the configured one if it exists verbatim, else the special-use
+        match, else the configured name created on demand.
 
-        Never trust a retyped name — folder names are the server's bytes (mUTF-7), so a visually-identical config value
-        can differ (localization, NFC vs NFD) and select a non-existent folder.
+        The order is what makes this correct on both kinds of server, and it cannot be rearranged. Verbatim first,
+        because a name the server already lists is the name the admin meant. Special-use second, because folder names
+        are the server's bytes (mUTF-7) and a visually-identical config value can differ through localization or
+        NFC/NFD — Gmail's drafts folder is `[Gmail]/Drafts`, listed in the account's own language, and creating a
+        `Drafts` label beside it would silently strand every draft where the user does not look.
+
+        Creation last, for the server that has neither: GreenMail starts with only `INBOX` and advertises no
+        SPECIAL-USE, so without this the very first drafting run fails outright instead of making the folder it was
+        told to use.
         """
         folders = await asyncio.to_thread(self._connection.list_folders)
         names = {name for _flags, _delim, name in folders}
@@ -285,11 +293,15 @@ class ImapClient:
             if special_use_flag in flags:
                 return name
 
-        available = ", ".join(sorted(names))
-        raise ValueError(
-            f"folder {configured!r} does not exist on the server and no {special_use_flag!r} special-use folder was "
-            f"found. Available folders: {available}"
-        )
+        if not configured:
+            available = ", ".join(sorted(names))
+            raise ValueError(
+                f"no folder was configured and the server lists no {special_use_flag!r} special-use folder. "
+                f"Available folders: {available}"
+            )
+
+        await self.ensure_folders([configured])
+        return configured
 
     async def _resolve_or_create_folder(self, configured: str) -> tuple[str, bool]:
         """Return the target folder name and whether it had to be created — no special-use fallback applies here."""
