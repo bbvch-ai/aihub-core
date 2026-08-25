@@ -137,7 +137,7 @@ class ExternalAgentEventDistributor:
         logger.debug(f"Handling display event for thread {external_event.thread_id}")
         topic_manager = AgentTopicManager()
         subject = topic_manager.get_subject_for_specific_event_in_agent(
-            agent_class="UserAgent",
+            agent_class=AgentTopicManager.USER_AGENT_CLASS,
             agent_id=user.id,
             thread_id=external_event.thread_id,
             display_id=external_event.display_id,
