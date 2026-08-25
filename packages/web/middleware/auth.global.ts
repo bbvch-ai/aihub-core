@@ -8,18 +8,26 @@ const REDIRECT_KEY = 'aihub_redirect_after_login'
 
 const normalize = (path: string) => (path.endsWith('/') ? path.slice(0, -1) : path)
 
+const stripLocale = (path: string, localeCodes: string[]): string => {
+  const prefix = localeCodes.find(code => path === `/${code}` || path.startsWith(`/${code}/`))
+  return prefix ? path.slice(prefix.length + 1) : path
+}
+
 /**
  * The whole login subtree is anonymous, not just the login page itself:
  * per-tenant login links live at `/auth/login/<idp-alias>`. No
  * authenticated-only page may ever be nested below that path.
+ *
+ * The locale prefix is optional. This middleware runs before @nuxtjs/i18n's
+ * `locale-changing` middleware (Nuxt orders file-based global middleware ahead
+ * of plugin-registered ones), so bouncing a hand-distributed link that dropped
+ * `/en/` would strip the tenant before i18n ever restores the prefix.
  */
-const isAnonymousPath = (path: string, locale: string): boolean => {
-  const loginPath = `/${locale}/auth/login`
-  const normalizedPath = normalize(path)
-  const exactPaths = [loginPath, `/${locale}/auth/callback`, `/${locale}/auth/renew`]
+const isAnonymousPath = (path: string, localeCodes: string[]): boolean => {
+  const unprefixedPath = stripLocale(normalize(path), localeCodes)
 
-  return exactPaths.some(anonymousPath => normalize(anonymousPath) === normalizedPath)
-    || normalizedPath.startsWith(`${loginPath}/`)
+  return ['/auth/login', '/auth/callback', '/auth/renew'].includes(unprefixedPath)
+    || unprefixedPath.startsWith('/auth/login/')
 }
 
 const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
@@ -31,8 +39,9 @@ const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
 export default defineNuxtRouteMiddleware(async (to) => {
   const { $auth, $i18n } = useNuxtApp()
   const locale = $i18n.locale.value
+  const localeCodes = $i18n.locales.value.map(entry => entry.code)
 
-  if (isAnonymousPath(to.path, locale)) {
+  if (isAnonymousPath(to.path, localeCodes)) {
     return
   }
 
