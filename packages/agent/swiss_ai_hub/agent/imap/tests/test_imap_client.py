@@ -714,3 +714,113 @@ async def test_mark_drafted_adds_flag_writable_without_seen():
 
     connection.select_folder.assert_called_once_with("Processed", readonly=False)
     connection.add_flags.assert_called_once_with([11], ["$AiHubDrafted"])
+
+
+# --- ensure_folders: the batch path, where the whole run pays one folder check ---
+
+
+@async_test
+async def test_ensure_folders_lists_once_for_a_whole_batch():
+    """One LIST for the batch is the entire point — filing per message cost one LIST per message."""
+    connection = _connection()
+    client = _client(connection)
+
+    created = await client.ensure_folders(["INBOX", "Processed"])
+
+    assert created == set()
+    assert connection.list_folders.call_count == 1
+    connection.create_folder.assert_not_called()
+
+
+@async_test
+async def test_ensure_folders_creates_only_the_missing_ones():
+    connection = _connection(folders=_folders_after_creating("Invoices"))
+    client = _client(connection)
+
+    created = await client.ensure_folders(["Processed", "Invoices"])
+
+    assert created == {"Invoices"}
+    connection.create_folder.assert_called_once_with("Invoices")
+    connection.subscribe_folder.assert_called_once_with("Invoices")
+
+
+@async_test
+async def test_ensure_folders_creates_every_ancestor_of_each_missing_folder():
+    existing = _FOLDERS
+    delimiter = b"/"
+    listed: list[int] = []
+
+    def list_folders(*_args) -> list:
+        listed.append(1)
+        if len(listed) == 1:
+            return existing
+        return [
+            *existing,
+            ((b"\\HasNoChildren",), delimiter, "Triage/Support"),
+            ((b"\\HasNoChildren",), delimiter, "Triage/Invoices"),
+        ]
+
+    connection = _connection(folders=list_folders)
+    client = _client(connection)
+
+    created = await client.ensure_folders(["Triage/Support", "Triage/Invoices"])
+
+    assert created == {"Triage/Support", "Triage/Invoices"}
+    assert [call.args[0] for call in connection.create_folder.call_args_list] == [
+        "Triage",
+        "Triage/Support",
+        "Triage",
+        "Triage/Invoices",
+    ]
+    assert connection.list_folders.call_count == 2
+
+
+@async_test
+async def test_ensure_folders_names_every_folder_it_could_not_create():
+    connection = _connection()
+    connection.create_folder = MagicMock(side_effect=IMAPClientError("[CANNOT] Permission denied"))
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="'Invoices'.*'Archive'"):
+        await client.ensure_folders(["Invoices", "Archive"])
+
+
+@async_test
+async def test_ensure_folders_refuses_before_any_message_moves():
+    """Creating up front is what makes a refused folder abort the batch instead of stranding it half-filed."""
+    connection = _connection()
+    connection.create_folder = MagicMock(side_effect=IMAPClientError("[CANNOT] Permission denied"))
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="No message was moved out of INBOX"):
+        await client.ensure_folders(["Invoices"])
+
+    connection.select_folder.assert_not_called()
+    connection.move.assert_not_called()
+
+
+# --- relocate_message: the move with folder resolution already done ---
+
+
+@async_test
+async def test_relocate_message_moves_without_listing_folders():
+    connection = _connection(fetch={101: {b"FLAGS": ()}})
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    await client.relocate_message("101", "Processed")
+
+    connection.list_folders.assert_not_called()
+    connection.move.assert_called_once_with([101], "Processed")
+
+
+@async_test
+async def test_relocate_message_refuses_a_uid_that_is_no_longer_in_the_inbox():
+    connection = _connection(fetch={})
+    connection.has_capability = MagicMock(return_value=True)
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="not found in INBOX"):
+        await client.relocate_message("101", "Processed")
+
+    connection.move.assert_not_called()

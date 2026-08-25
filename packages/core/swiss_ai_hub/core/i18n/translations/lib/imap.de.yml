@@ -52,3 +52,26 @@ config:
   draft_prompt:
     label: Entwurfs-Prompt
     help: Anweisungen, wie das LLM den Antworttext entwirft.
+  category_name:
+    label: Kategorie
+    help: Name der Kategorie, z. B. support_request. Muss eindeutig sein.
+  category_folder:
+    label: Zielordner
+    help: Postfach-Ordner, in den E-Mails dieser Kategorie abgelegt werden. Wird automatisch
+      erstellt, falls er noch nicht existiert.
+  category_description:
+    label: Was gehört hierher
+    help: Beschreiben Sie, welche Art von E-Mails in diese Kategorie gehört. Danach
+      klassifiziert das Modell — beschreiben Sie also die Absicht konkret, statt Stichwörter
+      aufzuzählen.
+  fallback_folder:
+    label: Ausweichordner
+    help: Ordner für E-Mails, bei denen sich das Modell unsicher ist. Solche E-Mails
+      werden nie in eine Kategorie geraten und nie im Posteingang belassen.
+  classification_model:
+    label: Klassifizierungsmodell
+    help: Chat-Modell, das jede Nachricht klassifiziert. Leer lassen, um das Hauptmodell
+      des Agenten zu verwenden.
+  classification_prompt:
+    label: Klassifizierungs-Prompt
+    help: Anweisungen, wie das Modell eine Kategorie auswählt.

@@ -54,3 +54,26 @@ config:
   draft_prompt:
     label: Invite de rédaction
     help: Instructions guidant la manière dont le LLM rédige le corps de la réponse.
+  category_name:
+    label: Catégorie
+    help: Nom de la catégorie, par ex. support_request. Doit être unique.
+  category_folder:
+    label: Dossier cible
+    help: Dossier de la boîte aux lettres où sont classés les messages de cette catégorie.
+      Créé automatiquement s'il n'existe pas encore.
+  category_description:
+    label: Ce qui appartient ici
+    help: Décrivez le type de courrier qui appartient à cette catégorie. C'est là-dessus
+      que le modèle classe — soyez concret sur l'intention plutôt que d'énumérer des
+      mots-clés.
+  fallback_folder:
+    label: Dossier de repli
+    help: Dossier pour le courrier dont le modèle n'est pas sûr. Ce courrier n'est
+      jamais deviné dans une catégorie ni laissé dans la boîte de réception.
+  classification_model:
+    label: Modèle de classification
+    help: Modèle de chat utilisé pour classer chaque message. Laissez vide pour utiliser
+      le modèle principal de l'agent.
+  classification_prompt:
+    label: Invite de classification
+    help: Instructions guidant la façon dont le modèle choisit une catégorie.

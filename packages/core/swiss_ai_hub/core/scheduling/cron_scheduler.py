@@ -254,7 +254,21 @@ class CronScheduler:
                     config.agent_id,
                 )
                 continue
-            await self._start_run(config, occurrence)
+            # Deliberately not fail-fast, for the same reason a malformed schedule is skipped rather than
+            # raised: the loop over profiles is shared. Letting a publish failure propagate aborts the window
+            # before the watermark advances, so every *other* profile loses its due occurrences too and the
+            # next tick rediscovers the same broken row. The occurrence stays claimed, keeping the at-most-once
+            # posture the no-duplicate-runs guarantee is built on — it is dropped, not retried.
+            try:
+                await self._start_run(config, occurrence)
+            except Exception:
+                logger.exception(
+                    "Failed to start scheduled run for %s/%s (occurrence %s); the occurrence stays claimed "
+                    "and will not be retried",
+                    config.agent_class,
+                    config.agent_id,
+                    occurrence.isoformat(),
+                )
 
     async def _start_run(self, config: AgentConfigEntityDocument, occurrence: datetime) -> None:
         """Publishes a scheduled start event on the normal agent control path."""

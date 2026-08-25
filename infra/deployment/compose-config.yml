@@ -127,6 +127,11 @@ image_tags:
     local: imap_agent:latest
     nightly: imap_agent:nightly
     latest: imap_agent:latest
+  email_classification_agent:
+    build: localbuild
+    local: email_classification_agent:latest
+    nightly: email_classification_agent:nightly
+    latest: email_classification_agent:latest
   default_rag_pipeline:
     build: localbuild
     local: default_rag_pipeline:latest

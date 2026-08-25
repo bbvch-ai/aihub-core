@@ -246,6 +246,11 @@ mail_moved_event:
   name: E-mail Déplacé
   description: L'agent a déplacé un message de son dossier source vers un dossier
     cible.
+mail_batch_classified_event:
+  name: Lot classé
+  description: L'agent a classé un lot de messages non lus et a rangé chacun dans
+    le dossier de sa catégorie, ou dans le dossier de repli lorsqu'il n'était pas
+    sûr.
 mail_batch_drafted_event:
   name: Lot Rédigé
   description: L'agent a rédigé des réponses pour un lot de messages et les a ajoutées

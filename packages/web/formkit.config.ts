@@ -1,5 +1,6 @@
 import AgentSelector from '@core/components/FormKit/AgentSelector.vue'
 import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
+import CronInput from '@core/components/FormKit/CronInput.vue'
 import IconSelector from '@core/components/FormKit/IconSelector.vue'
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
@@ -50,6 +51,9 @@ const config: DefaultConfigOptions = {
     }),
     chipsInput: createInput(ChipsInput, {
       props: ['placeholder'],
+    }),
+    cronInput: createInput(CronInput, {
+      props: ['timezonePlaceholder', 'filter'],
     }),
     knowledgeDatabaseSelector: createInput(KnowledgeDatabaseSelector, {
       props: ['placeholder', 'filter'],
