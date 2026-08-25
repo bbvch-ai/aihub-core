@@ -1449,6 +1449,8 @@ services:
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       presidio-analyzer:
@@ -1682,8 +1684,16 @@ services:
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes: [./configs/otel/otel-config.build.yml:/etc/otel-config.yml]
-    ports: [4317:4317, 4318:4318, 13133:13133, 55679:55679]
-    depends_on: [langfuse-web]
+    ports:
+      - 4317:4317
+      - 4318:4318
+      - 13133:13133
+      - 55679:55679
+    # Deliberately no depends_on: this must be the first thing listening on 4317. Every app SDK
+    # gives up after OTEL_EXPORTER_OTLP_TIMEOUT and DROPS the batch, so gating the collector behind
+    # langfuse-web (and through it postgres/clickhouse/seaweedfs health) costs the startup log of
+    # every service on a cold start. The otlphttp/langfuse exporter has retry_on_failure and needs
+    # no start-order guarantee — langfuse-web is up long before the first OpenInference trace.
     healthcheck:
       test: [NONE]
     labels:
@@ -1715,6 +1725,8 @@ services:
     restart: always
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       seaweedfs-s3:
@@ -2264,6 +2276,8 @@ services:
       context: ..
       dockerfile: ./packages/api/Dockerfile
     depends_on:
+      otel-collector:
+        condition: service_started
       nats:
         condition: service_started
       traefik:
@@ -2520,6 +2534,8 @@ services:
       context: ..
       dockerfile: ./packages/sysadmin-api/Dockerfile
     depends_on:
+      otel-collector:
+        condition: service_started
       traefik:
         condition: service_started
       ferretdb:
@@ -2697,6 +2713,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/llm_wrapping_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2763,6 +2782,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/rag_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2837,6 +2859,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/expert_rag_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2911,6 +2936,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/expert_asking_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2980,6 +3008,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/retrieval_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3046,6 +3077,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/few_shot_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3099,6 +3133,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/namespace_selection_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3152,6 +3189,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/memory_writer_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3213,6 +3253,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/imap_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3275,6 +3318,9 @@ services:
     build:
       context: ..
       dockerfile: ./packages/agent/app/email_classification_agent/Dockerfile
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 

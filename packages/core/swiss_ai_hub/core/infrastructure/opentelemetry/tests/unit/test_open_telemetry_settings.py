@@ -1,3 +1,4 @@
+import logging
 import threading
 from typing import Any
 from unittest.mock import patch
@@ -12,6 +13,7 @@ from swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings impo
 pytestmark = pytest.mark.unit
 
 OTLP_ENDPOINT = "http://localhost:4317"
+OTLP_TIMEOUT = 60
 
 
 def _enabled_settings(**overrides: Any) -> OpenTelemetrySettings:
@@ -38,6 +40,10 @@ def _enabled_provider(**overrides: Any) -> MeterProvider:
 
     assert provider is not None
     return provider
+
+
+def _log_record(logger_name: str) -> logging.LogRecord:
+    return logging.LogRecord(logger_name, logging.WARNING, __file__, 1, "msg", None, None)
 
 
 def test_metrics_are_off_by_default() -> None:
@@ -97,7 +103,7 @@ def test_grpc_protocol_passes_the_insecure_flag() -> None:
     with patch.object(settings_module, "GRPCMetricExporter") as grpc_exporter:
         _enabled_provider(EXPORTER_OTLP_PROTOCOL="grpc", EXPORTER_OTLP_INSECURE=True).shutdown()
 
-    grpc_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT, insecure=True)
+    grpc_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT, insecure=True, timeout=OTLP_TIMEOUT)
 
 
 def test_http_protocol_uses_the_http_exporter_without_insecure() -> None:
@@ -105,7 +111,44 @@ def test_http_protocol_uses_the_http_exporter_without_insecure() -> None:
     with patch.object(settings_module, "HTTPMetricExporter") as http_exporter:
         _enabled_provider(EXPORTER_OTLP_PROTOCOL="http").shutdown()
 
-    http_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT)
+    http_exporter.assert_called_once_with(endpoint=OTLP_ENDPOINT, timeout=OTLP_TIMEOUT)
+
+
+def test_the_export_timeout_default_covers_a_container_recreate() -> None:
+    """
+    Regression guard for the nightly.951 log loss. The SDK's 10s default is the entire retry
+    budget, so any collector gap longer than ~7s drops the batch — and a container recreate is
+    measured in tens of seconds (27.4s on that deploy). Lowering this back towards the default
+    silently reintroduces the data loss, hence the pin.
+    """
+    assert OpenTelemetrySettings.model_fields["EXPORTER_OTLP_TIMEOUT"].default == OTLP_TIMEOUT
+
+
+def test_the_retry_ladder_fits_inside_the_configured_timeout() -> None:
+    """
+    The timeout is a budget the backoff ladder spends, not a per-attempt limit: the exporter
+    abandons the batch once the next backoff would overrun `deadline = start + timeout`. A budget
+    that cuts the ladder short wastes the remaining attempts, so pin the relationship rather than
+    just the number — the last of the six attempts starts at 1+2+4+8+16 = 31s.
+    """
+    ladder_end_seconds = sum(2**attempt for attempt in range(5))
+
+    assert ladder_end_seconds < OpenTelemetrySettings.model_fields["EXPORTER_OTLP_TIMEOUT"].default
+
+
+def test_the_otlp_handler_ignores_sdk_internal_records() -> None:
+    """
+    "Queue full, dropping logs." is emitted from inside BatchLogRecordProcessor on the calling
+    thread, so routing it back through the root handler re-enters the export path. Exporter
+    self-reports run on the export worker thread and must keep flowing — they are the only
+    evidence in the backend that telemetry was lost.
+    """
+    is_exported = OpenTelemetrySettings._is_not_sdk_internal_record
+
+    assert not is_exported(_log_record("opentelemetry.sdk._shared_internal"))
+    assert not is_exported(_log_record("opentelemetry.sdk.trace"))
+    assert is_exported(_log_record("opentelemetry.exporter.otlp.proto.grpc.exporter"))
+    assert is_exported(_log_record("swiss_ai_hub.core.routes.health"))
 
 
 @pytest.mark.parametrize(
