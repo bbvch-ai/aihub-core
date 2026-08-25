@@ -167,28 +167,42 @@ alternative is hand-rolling field parsing, ranges, steps, and DST handling.
   `user.acting_within_tenant` and is only wired as a FastAPI `Depends` on HTTP endpoints. A scheduled run has neither a
   user nor an HTTP request, so nothing meters it: a misconfigured cron can consume LLM budget unchecked. Accepted for v1
   and tracked separately.
+
 - **Scheduled runs are invisible in the UI.** A thread with no members appears in nobody's thread list. This is the
   documented v1 behaviour; configurable membership is [#1582](https://github.com/bbvch-ai/aihub-core/issues/1582).
+
 - **The leader lease becomes dead code** once the scheduler moves into the single-replica daemon.
+
 - **Occurrences missed beyond the catch-up window never run.** Deliberate, but it means extended downtime silently skips
   work beyond a warning in the logs.
+
 - **A malformed stored schedule is skipped, not fatal.** This is a deliberate exception to the codebase's fail-fast
   rule. The profile store is shared across every scheduled agent, and `_due_instances` reads all of them before firing
   any, so letting one bad row raise would abort the tick before the watermark advanced — and every later tick would
   rediscover the same row. One malformed profile would permanently starve every other schedule. It is logged at error
   level and skipped instead, confining the blast radius to the profile that is actually broken.
+
 - **A profile's scheduled runs all share one thread, forever.** Bounding thread growth to one per profile means that
   thread's run history only ever grows. Nothing prunes it, so a long-lived `*/5` schedule eventually makes an expensive
   thread to open. That is a retention problem on one document rather than a proliferation problem across 105k, and it is
   the same problem a long-running chat already has.
+
 - **Occurrences due while a blueprint is offline are dropped, not queued.** Deliberate — the scheduler does not queue
   work for an agent that cannot consume it, and the watermark advances regardless — but it means a runner that crashes
   overnight loses that night's runs. Each drop is logged with the class, the profile, and how long it has been offline.
-- **A run that fails to start is not retried.** The claim is taken *before* the run is published, so if publishing
-  raises, the tick aborts without advancing the watermark and the next tick finds the occurrence already claimed. This
-  makes the failure at-most-once rather than at-least-once, which is the right way round given the acceptance criterion
-  is "no duplicate runs" — but it does mean a transient publish failure silently drops that occurrence. It also stops
-  one failing profile from starving the others, which would otherwise repeat on every tick.
+
+- **A run that fails to start is not retried.** The claim is taken *before* the run is published, so a publish that
+  raises leaves the occurrence claimed and the next tick passes over it. This makes the failure at-most-once rather than
+  at-least-once, which is the right way round given the acceptance criterion is "no duplicate runs" — but it does mean a
+  transient publish failure drops that occurrence. It is logged per occurrence, naming the class, the profile, and the
+  occurrence.
+
+  The claim is what stops the drop from repeating every tick. The failure is caught at the occurrence rather than
+  allowed to propagate: an uncaught publish error would abort the whole window before the watermark advanced, so every
+  *other* profile would lose its due occurrences too, and the next tick would rediscover the same broken row — one
+  failing profile starving all the rest. That is the same reasoning as the malformed-schedule skip above, and the same
+  deliberate exception to the codebase's fail-fast rule.
+
 - Discovery auto-registers a REST endpoint per start event, so schedulable agents also gain a
   `POST .../ScheduledStartEvent` route — an unplanned but useful manual trigger, which does carry a real user because it
   arrives over HTTP.
