@@ -26526,7 +26526,7 @@ export type GetLlmSpendByUserData = {
     /**
      * Since
      *
-     * Only count calls at or after this time.
+     * Only count calls at or after this time. Defaults to the last 30 days.
      */
     since?: Date | null;
   };
@@ -26569,7 +26569,7 @@ export type GetLlmSpendByTenantData = {
     /**
      * Since
      *
-     * Only count calls at or after this time.
+     * Only count calls at or after this time. Defaults to the last 30 days.
      */
     since?: Date | null;
   };
