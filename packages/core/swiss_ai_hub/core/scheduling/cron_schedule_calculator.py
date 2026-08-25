@@ -36,6 +36,26 @@ class CronScheduleCalculator:
             occurrences.append(occurrence)
 
     @staticmethod
+    def count_between(schedule: CronSchedule, after: datetime, until: datetime, limit: int) -> int:
+        """How many occurrences fall in `(after, until]`, counted up to `limit` and no further.
+
+        For a caller that wants the number rather than the occurrences themselves over a span it does not
+        control. `occurrences_between` materialises the whole list, which is right when every element is
+        about to be fired — the firing window is clamped — but ruinous over an unclamped span: a year of
+        a minute-by-minute schedule is half a million datetimes built to produce one integer.
+
+        Returning `limit` means "at least this many", so a caller that cares must say so when it reports.
+        """
+        cron = croniter(schedule.expression, after.astimezone(schedule.zone_info))
+
+        counted = 0
+        while counted < limit:
+            if cron.get_next(datetime).astimezone(UTC) > until:
+                break
+            counted += 1
+        return counted
+
+    @staticmethod
     def next_occurrence(schedule: CronSchedule, after: datetime) -> datetime:
         """The first occurrence strictly after `after`, in UTC."""
         local_after = after.astimezone(schedule.zone_info)

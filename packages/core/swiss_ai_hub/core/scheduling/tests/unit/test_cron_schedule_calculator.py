@@ -72,3 +72,21 @@ class TestDaylightSavingTime:
 class TestNextOccurrence:
     def test_returns_the_first_occurrence_strictly_after(self):
         assert CronScheduleCalculator.next_occurrence(_HOURLY, _utc(2026, 8, 11, 12)) == _utc(2026, 8, 11, 13)
+
+
+class TestCountBetween:
+    """For a caller that wants the number over a span it does not control, so materialising the list is
+    not an option — the clamp counts what it discarded, and that span is a whole outage."""
+
+    def test_agrees_with_enumerating_the_window(self):
+        counted = CronScheduleCalculator.count_between(_HOURLY, _utc(2026, 8, 11, 0), _utc(2026, 8, 11, 12), 100)
+
+        assert counted == len(
+            CronScheduleCalculator.occurrences_between(_HOURLY, _utc(2026, 8, 11, 0), _utc(2026, 8, 11, 12))
+        )
+
+    def test_stops_at_the_limit_rather_than_at_the_end_of_the_window(self):
+        assert CronScheduleCalculator.count_between(_HOURLY, _utc(2026, 8, 11, 0), _utc(2027, 8, 11, 0), 5) == 5
+
+    def test_counts_nothing_in_an_empty_window(self):
+        assert CronScheduleCalculator.count_between(_HOURLY, _utc(2026, 8, 11, 12), _utc(2026, 8, 11, 12), 100) == 0

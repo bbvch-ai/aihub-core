@@ -7,12 +7,14 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.scheduling.cron_schedule_calculator import CronScheduleCalculator
     from swiss_ai_hub.core.scheduling.cron_scheduler import CronScheduler
     from swiss_ai_hub.core.scheduling.schedule_state_store import ScheduleStateStore
+    from swiss_ai_hub.core.scheduling.scheduler_settings import SchedulerSettings
 
 __all__ = [
     "CronSchedule",
     "CronScheduleCalculator",
     "CronScheduler",
     "ScheduleStateStore",
+    "SchedulerSettings",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
@@ -20,6 +22,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "CronScheduleCalculator": "swiss_ai_hub.core.scheduling.cron_schedule_calculator",
     "CronScheduler": "swiss_ai_hub.core.scheduling.cron_scheduler",
     "ScheduleStateStore": "swiss_ai_hub.core.scheduling.schedule_state_store",
+    "SchedulerSettings": "swiss_ai_hub.core.scheduling.scheduler_settings",
 }
 
 

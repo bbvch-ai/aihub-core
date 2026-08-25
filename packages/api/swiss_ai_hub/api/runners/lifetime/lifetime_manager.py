@@ -21,7 +21,7 @@ from swiss_ai_hub.core.infrastructure import (
     S3StorageSettings,
 )
 from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook
-from swiss_ai_hub.core.scheduling import CronScheduler
+from swiss_ai_hub.core.scheduling import CronScheduler, SchedulerSettings
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
@@ -244,18 +244,20 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
-        # Singleton background work, kept correct across N API replicas by a Redis leader lease.
-        # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
-        cron_scheduler = CronScheduler(
-            redis=redis,
-            external_agent_event_distributor=external_agent_event_distributor,
-        )
-        cron_scheduler.start()
-        app.state.cron_scheduler = cron_scheduler
-
         await initialize_startup_tenant()
         await finalize_role_setup()
         await initialize_knowledge_buckets()
+
+        # Singleton background work, kept correct across N API replicas by a Redis leader lease.
+        # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
+        # Started after tenant and role initialisation so a first tick cannot outrun them.
+        cron_scheduler = CronScheduler(
+            redis=redis,
+            external_agent_event_distributor=external_agent_event_distributor,
+            settings=SchedulerSettings(),
+        )
+        cron_scheduler.start()
+        app.state.cron_scheduler = cron_scheduler
 
         # Provision Langfuse with AI-Hub LLM connections
         await _provision_non_fatal("Langfuse", langfuse_provisioner.provision)

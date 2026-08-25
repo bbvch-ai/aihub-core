@@ -64,3 +64,30 @@ class TestValidation:
         )
 
         assert schedule.expression == "0 * * * *"
+
+
+class TestIsUnscheduled:
+    """One predicate for both the save path and the scan path. Disagreeing costs either a 400 on every
+    profile save of a schedulable agent, or an ERROR with a traceback on every tick, forever."""
+
+    def test_an_untouched_form_group_is_unscheduled(self):
+        """`normalize_empty_objects_to_none` only nullifies a literally empty dict, so a group of text
+        inputs nobody filled in reaches storage as blank strings — truthy, and not a schedule."""
+        blank = {"minute": "", "hour": "", "day_of_month": "", "month": "", "day_of_week": "", "timezone": ""}
+
+        assert CronSchedule.is_unscheduled(blank)
+
+    def test_whitespace_counts_as_blank(self):
+        assert CronSchedule.is_unscheduled({"minute": "  ", "hour": "\t"})
+
+    def test_an_absent_or_empty_value_is_unscheduled(self):
+        assert CronSchedule.is_unscheduled(None)
+        assert CronSchedule.is_unscheduled({})
+
+    def test_one_filled_position_is_a_schedule(self):
+        """Someone mid-edit is a broken row, not an absent one, and must still reach validation."""
+        assert not CronSchedule.is_unscheduled({"minute": "0", "hour": "", "day_of_month": ""})
+
+    def test_a_value_of_the_wrong_shape_is_not_unscheduled(self):
+        """A non-dict payload must be reported rather than silently ignored."""
+        assert not CronSchedule.is_unscheduled("0 12 * * *")
