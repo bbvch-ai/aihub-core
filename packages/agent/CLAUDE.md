@@ -176,6 +176,7 @@ The dispatcher resolves `@step()` parameters by type annotation. Declare what yo
 | `StepConfig` subclass                   | Step-specific config extracted from AgentConfig |
 | `RunContext`                            | Per-run ephemeral state (Redis)                 |
 | `ThreadContext`                         | Per-thread persistent state (Redis)             |
+| `UserIdentity` or `UserIdentity \| None` | The invoking user, for per-user LLM cost attribution. Read from the start event's own `user` field, so a start event that does not declare one always yields `None`. Annotate it `\| None` on programmatically-started blueprints, which may genuinely have no identity |
 | `EventDisplayer`                        | Emit display events for frontend visualization  |
 | `LocaleHandler` or `AgentLocaleHandler` | i18n handler in the run's locale                |
 | `AgentMemory`                           | User and organization memory access             |

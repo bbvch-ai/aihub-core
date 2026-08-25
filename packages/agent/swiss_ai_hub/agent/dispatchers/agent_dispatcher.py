@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, cast, override
+from typing import Annotated, Any, cast, get_args, override
 
 from bson import ObjectId
 from nats.aio.client import Client as NATS
@@ -549,7 +549,11 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation == ThreadContext:
             return thread_context
 
-        if param.annotation == UserIdentity:
+        # Matched through the union members too: the programmatically-started agents annotate this
+        # `UserIdentity | None`, and an equality check against the bare class silently misses them —
+        # the kwarg is then dropped and the parameter keeps its `= None` default, so the run bills the
+        # master key while looking correctly wired.
+        if UserIdentity in (param.annotation, *get_args(param.annotation)):
             # Written by handle_event from the StartEvent's own fields, so this is only populated for
             # start events that carry a user — programmatic starts leave it absent.
             user_data = await run_context.get("user")

@@ -1,4 +1,5 @@
 from fnmatch import fnmatch
+import inspect
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -8,6 +9,7 @@ from bson import ObjectId
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.dispatcher import StepStore
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import ControlEvent, ExceptionEvent, StartEvent, StopEvent
@@ -987,3 +989,55 @@ class TestAgentDispatcherAihubHeaders:
 
             run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
             assert await run_context.get(agent_dispatcher._AIHUB_HEADERS_KEY) is None
+
+
+class UserInjectionAgent(Agent):
+    """Declares the two annotation shapes a step can use for the invoking user."""
+
+    @step()
+    async def required_user_step(self, start_event: StartEvent, user: UserIdentity) -> list[BaseEvent]:
+        return []
+
+    @step()
+    async def optional_user_step(self, start_event: StartEvent, user: UserIdentity | None = None) -> list[BaseEvent]:
+        return []
+
+
+class TestUserIdentityInjection:
+    """The programmatically-started agents annotate the user `UserIdentity | None`.
+
+    An equality check against the bare class silently misses that union: the kwarg is dropped, the
+    parameter keeps its `= None` default, and the run authenticates with the master key while looking
+    correctly wired. Nothing else catches it — the type checker sees a valid optional parameter and
+    every conversational agent uses the bare annotation, so the chat path stays green.
+    """
+
+    @staticmethod
+    def _param(step_name: str) -> inspect.Parameter:
+        return inspect.signature(getattr(UserInjectionAgent, step_name)).parameters["user"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("step_name", ["required_user_step", "optional_user_step"])
+    async def test_injects_the_user_for_both_annotation_shapes(self, agent_dispatcher, agent_topic, step_name):
+        user = UserIdentity(id="u1", name="Tester", email="t@example.com", is_sys_admin=False, roles=[])
+        run_context = Mock()
+        run_context.get = AsyncMock(return_value=user.model_dump(mode="json"))
+
+        value = await agent_dispatcher._get_parameter_value(
+            self._param(step_name), {}, Mock(), run_context, Mock(), agent_topic
+        )
+
+        assert isinstance(value, UserIdentity), f"{step_name} did not receive a UserIdentity"
+        assert value.id == "u1"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("step_name", ["required_user_step", "optional_user_step"])
+    async def test_yields_none_when_the_run_carries_no_user(self, agent_dispatcher, agent_topic, step_name):
+        run_context = Mock()
+        run_context.get = AsyncMock(return_value=None)
+
+        value = await agent_dispatcher._get_parameter_value(
+            self._param(step_name), {}, Mock(), run_context, Mock(), agent_topic
+        )
+
+        assert value is None
