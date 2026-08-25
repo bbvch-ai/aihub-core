@@ -134,6 +134,12 @@ class TestSubmittedSchedulesValidate:
 
         Asserted on the missing positions specifically: `ValueError` alone would also pass if the element
         were rejected for some unrelated reason, and it is the *required* positions that do the rejecting.
+
+        The element is built outside the block because `CronInput` is a Pydantic model too, so a
+        `ValidationError` from constructing it would satisfy this assertion without `CronSchedule` ever
+        having been asked anything.
         """
+        form_element = CronInput(label=LocaleString(en="Schedule")).model_dump()
+
         with pytest.raises(ValidationError, match="minute"):
-            CronSchedule.model_validate(CronInput(label=LocaleString(en="Schedule")).model_dump())
+            CronSchedule.model_validate(form_element)
