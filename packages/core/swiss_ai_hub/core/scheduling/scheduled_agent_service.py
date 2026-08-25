@@ -174,7 +174,7 @@ class ScheduledAgentService:
         class is re-armed once corrected, so a regression is reported again.
         """
         agent_class = agent_class_entity.agent_class
-        cron_field_paths = self._cron_field_paths(agent_class_entity.form)
+        cron_field_paths = self.cron_field_paths(agent_class_entity.form)
         if SCHEDULE_CONFIG_KEY in cron_field_paths:
             self._classes_warned_about_unreachable_schedule.discard(agent_class)
             return
@@ -195,18 +195,23 @@ class ScheduledAgentService:
         )
 
     @classmethod
-    def _cron_field_paths(cls, form_elements: list[dict], prefix: str = "") -> set[str]:
+    def cron_field_paths(cls, form_elements: list[dict], prefix: str = "") -> set[str]:
         """Dotted paths of every cron field in a stored form, including those nested inside groups.
 
         Nested paths are reported so the warning can name a schedule that was declared inside a group —
         readable to a person, still not readable by the scheduler, which only looks at the top level.
+
+        Public because whether a blueprint exposes a readable schedule is a question other packages have to
+        ask too: the API validates a submitted cron only for a blueprint that declares one, and agent tests
+        assert their blueprint stays reachable. Reading it off the stored form is the only way to answer that
+        without importing the blueprint.
         """
         paths: set[str] = set()
         for element in form_elements:
             path = f"{prefix}{element.get('name') or element.get('ref')}"
             if element.get("formkit") == _CRON_FORMKIT_TYPE:
                 paths.add(path)
-            paths |= cls._cron_field_paths(element.get("children") or [], f"{path}.")
+            paths |= cls.cron_field_paths(element.get("children") or [], f"{path}.")
         return paths
 
     def _clamp_window_start(self, watermark: datetime, now: datetime) -> datetime:
@@ -303,7 +308,21 @@ class ScheduledAgentService:
                     config.agent_id,
                 )
                 continue
-            await self._start_run(config, occurrence)
+            # Deliberately not fail-fast, for the same reason a malformed schedule is skipped rather than
+            # raised: the loop over profiles is shared. Letting a publish failure propagate aborts the window
+            # before the watermark advances, so every *other* profile loses its due occurrences too and the
+            # next tick rediscovers the same broken row. The occurrence stays claimed, keeping the at-most-once
+            # posture the no-duplicate-runs guarantee is built on — it is dropped, not retried.
+            try:
+                await self._start_run(config, occurrence)
+            except Exception:
+                logger.exception(
+                    "Failed to start scheduled run for %s/%s (occurrence %s); the occurrence stays claimed "
+                    "and will not be retried",
+                    config.agent_class,
+                    config.agent_id,
+                    occurrence.isoformat(),
+                )
 
     async def _start_run(self, config: AgentConfigEntityDocument, occurrence: datetime) -> None:
         """Publishes a scheduled start event on the normal agent control path."""

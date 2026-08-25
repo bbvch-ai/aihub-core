@@ -67,3 +67,12 @@ def test_name_and_description_are_translated(template: EmailClassificationAgentC
 def test_agent_ids_are_unique():
     agent_ids = [template.agent_id for template in _TEMPLATES]
     assert len(set(agent_ids)) == len(agent_ids)
+
+
+def test_templates_ship_unscheduled(template: EmailClassificationAgentConfig):
+    """Creating a profile from a template must not start unattended runs on its own.
+
+    A shipped cron would begin firing against whatever mailbox the admin later fills in — including a half-configured
+    one — the moment the profile is saved. Scheduling is opt-in per profile.
+    """
+    assert template.schedule is None

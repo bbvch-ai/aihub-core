@@ -1596,6 +1596,8 @@ services:
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       presidio-analyzer:
@@ -1845,10 +1847,26 @@ services:
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+      # Read by otel-config's resource/deployment processor. Written per-VM into .env by
+      # aihub-playbook (env.j2). The `:-` default is a deliberate exception to the "defaults live
+      # in .env.dev/.env.prod" rule: an empty value makes the processor fail to build and the
+      # collector exit, and nothing depends_on it — so an unset var would silently take down all
+      # telemetry instead of just this attribute. The fallback keeps that impossible.
+      # The stage name is a truthful degradation for the environment — it *is* the stage. It is not
+      # one for the host: it would fill SigNoz's Hostname filter with a value that reads as a real
+      # machine and collapse every VM in the stage into one entry, which is worse than the empty
+      # column this fixes, because empty is visibly broken and "latest" is not.
+      - OTEL_DEPLOYMENT_ENVIRONMENT=${OTEL_DEPLOYMENT_ENVIRONMENT:-nightly}
+      - OTEL_HOST_NAME=${OTEL_HOST_NAME:-unset-nightly}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
-    volumes: [./configs/otel/otel-config.nightly.gpu.yml:/etc/otel-config.yml]
-    depends_on: [langfuse-web]
+    volumes:
+      - ./configs/otel/otel-config.nightly.gpu.yml:/etc/otel-config.yml
+    # Deliberately no depends_on: this must be the first thing listening on 4317. Every app SDK
+    # gives up after OTEL_EXPORTER_OTLP_TIMEOUT and DROPS the batch, so gating the collector behind
+    # langfuse-web (and through it postgres/clickhouse/seaweedfs health) costs the startup log of
+    # every service on a cold start. The otlphttp/langfuse exporter has retry_on_failure and needs
+    # no start-order guarantee — langfuse-web is up long before the first OpenInference trace.
     healthcheck:
       test: [NONE]
     labels:
@@ -1880,6 +1898,8 @@ services:
     restart: always
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       seaweedfs-s3:
@@ -2416,6 +2436,8 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/api:nightly
     depends_on:
+      otel-collector:
+        condition: service_started
       nats:
         condition: service_started
       traefik:
@@ -2668,6 +2690,8 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/sysadmin-api:nightly
     depends_on:
+      otel-collector:
+        condition: service_started
       traefik:
         condition: service_started
       ferretdb:
@@ -2841,6 +2865,9 @@ services:
     container_name: llm-wrapping-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2905,6 +2932,9 @@ services:
     container_name: rag-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2977,6 +3007,9 @@ services:
     container_name: expert-rag-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3049,6 +3082,9 @@ services:
     container_name: expert-asking-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3116,6 +3152,9 @@ services:
     container_name: retrieval-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/retrieval_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3180,6 +3219,9 @@ services:
     container_name: few-shot-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/few_shot_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3231,6 +3273,9 @@ services:
     container_name: namespace-selection-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/namespace_selection_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3282,6 +3327,9 @@ services:
     container_name: memory-writer-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/memory_writer_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3341,6 +3389,9 @@ services:
     container_name: imap-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/imap_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3401,6 +3452,9 @@ services:
     container_name: email-classification-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/email_classification_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 

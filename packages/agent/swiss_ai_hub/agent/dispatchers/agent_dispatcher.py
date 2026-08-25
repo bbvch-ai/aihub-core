@@ -20,6 +20,7 @@ from swiss_ai_hub.core.events.agent import (
     MemoryStorageRequestedEvent,
     StartEvent,
 )
+from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.generative_ai import AgentMemory
@@ -375,11 +376,18 @@ class AgentDispatcher(BaseDispatcher):
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
                 self.agent_run_tracer.trace_step_error(step_span, e)
+                # The SDK wraps a gateway failure as "Error code: N - {…}", which is what both the
+                # log line and the chat UI used to show. Unwrapping it here is what makes an agent
+                # error say "Invalid model name passed in model=…" instead.
+                cause = ModelGatewayErrorHandler.cause_of(e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
-                    event = ExceptionEvent(message=str(e))
+                    event = ExceptionEvent(message=cause)
                     await self.publish_event(event, topic)
-                logger.exception(e)
-                logger.exception(f"Error executing step '{step_method.__name__}': {e}")
+                # One record, not two: this used to log the exception twice — once bare, once with
+                # the step name — so every agent failure arrived in the backend as two identical
+                # tracebacks, doubling both the volume and any count taken from it. The run id is
+                # on the record because a traceback that cannot be tied to a run is not actionable.
+                logger.exception(f"Step '{step_method.__name__}' failed in run {topic.execution_context_id}: {cause}")
                 return
 
             # Always finalize the span so Langfuse receives trace metadata (name, session,
@@ -539,6 +547,9 @@ class AgentDispatcher(BaseDispatcher):
 
         if param.annotation == ThreadContext:
             return thread_context
+
+        if param.annotation == Redis:
+            return self.redis
 
         if param.annotation == EventDisplayer:
             return EventDisplayer(

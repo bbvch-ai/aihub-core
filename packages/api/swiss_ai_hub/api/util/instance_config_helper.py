@@ -5,6 +5,7 @@ from pydantic import BaseModel, ValidationError
 from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
 from swiss_ai_hub.core.i18n import LOCALES, LocaleString
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.scheduling import SCHEDULE_CONFIG_KEY, AgentSchedule
 
 
 class ConfigMetadata(NamedTuple):
@@ -52,6 +53,7 @@ class InstanceConfigHelper:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(error_messages)}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
+        InstanceConfigHelper.validate_schedule_field(config)
         return instance
 
     @staticmethod
@@ -63,7 +65,46 @@ class InstanceConfigHelper:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
+        InstanceConfigHelper.validate_schedule_field(config)
         return instance
+
+    @staticmethod
+    def validate_schedule_field(config: dict[str, Any]) -> None:
+        """Reject a config whose cron schedule is malformed, before it is stored.
+
+        Same jambo gap as `validate_identity_locale_fields`, with a far wider blast radius. `AgentSchedule` rejects a
+        bad expression and an unknown timezone in a `model_validator`, which the generated model does not carry: every
+        position is a bare string in the JSON schema, so a cleared field arrives as `""` and validates. Stored, it
+        then breaks the whole profile rather than only its schedule — `AgentDispatcher` re-validates the real config
+        on every control event, so manually triggered runs die too, and they die before any step runs, which means no
+        `ExceptionEvent` and nothing in the UI to say why.
+
+        Keyed on the field name because `SCHEDULE_CONFIG_KEY` is reserved platform-wide: the scheduler reads a
+        profile's schedule from exactly this top-level key, so a blueprint cannot use the name for anything else.
+        """
+        schedule = config.get(SCHEDULE_CONFIG_KEY)
+        if not isinstance(schedule, dict) or not schedule:
+            return
+
+        try:
+            AgentSchedule.model_validate(schedule)
+        except ValidationError as e:
+            details = "; ".join(InstanceConfigHelper._schedule_error_message(error) for error in e.errors())
+            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {details}")
+
+    @staticmethod
+    def _schedule_error_message(error: Any) -> str:
+        """One schedule error, named by the position that caused it.
+
+        A `model_validator` failure carries no field in `loc` — the cron expression is only invalid as a whole — so
+        those are reported against the schedule itself rather than as a blank field path.
+        """
+        field_path = ".".join(str(loc) for loc in error["loc"] if isinstance(loc, str))
+        return (
+            f"{SCHEDULE_CONFIG_KEY}.{field_path}: {error['msg']}"
+            if field_path
+            else f"{SCHEDULE_CONFIG_KEY}: {error['msg']}"
+        )
 
     @staticmethod
     def validate_identity_locale_fields(config_instance: BaseModel) -> None:

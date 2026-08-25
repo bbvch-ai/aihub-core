@@ -249,22 +249,37 @@ class OpenaiService:
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
 
         if chat_completion_request.stream:
+            kwargs = OpenaiService._filter_kwargs(
+                client.chat.completions.create,
+                chat_completion_request,
+                user=user,
+                locale=t.locale,
+                thread_id=thread_id,
+                display_id=display_id,
+            )
+            # Opened here rather than inside the generator so that an upstream rejection (unknown
+            # model, exhausted quota) is still raised in the endpoint's scope, where
+            # ModelGatewayErrorHandler can turn it into a response that names the cause. Once
+            # StreamingResponse has begun, the caller can only observe a truncated stream.
+            response = await client.chat.completions.create(**kwargs)
 
             async def stream_chat_completion() -> AsyncGenerator[str]:
-                """Handles streaming responses from OpenAI's API."""
-                kwargs = OpenaiService._filter_kwargs(
-                    client.chat.completions.create,
-                    chat_completion_request,
-                    user=user,
-                    locale=t.locale,
-                    thread_id=thread_id,
-                    display_id=display_id,
-                )
-                response = await client.chat.completions.create(**kwargs)
+                """``async with`` so the upstream stream is closed when the consumer stops early.
 
-                async for chunk in response:
-                    yield f"data: {chunk.model_dump_json()}\n\n"
-                    await asyncio.sleep(0)
+                A browser tab closed mid-answer makes Starlette call ``aclose()`` on this generator,
+                which raises ``GeneratorExit`` at the ``yield`` — without the context manager nothing
+                releases the httpx connection, and ``with_options()`` hands every user a copy over
+                one shared pool, so the leaks accumulate against everyone.
+
+                It does not cover a generator that is never started at all: ``aclose()`` on one runs
+                no code, so no ``__aexit__`` fires. A ``BackgroundTask`` would not close that gap
+                either — Starlette 1.1.0 raises ``ClientDisconnect`` out of ``stream_response`` on
+                ASGI spec >= 2.4 and never reaches its ``background`` call.
+                """
+                async with response:
+                    async for chunk in response:
+                        yield f"data: {chunk.model_dump_json()}\n\n"
+                        await asyncio.sleep(0)
 
             return StreamingResponse(
                 stream_chat_completion(),
