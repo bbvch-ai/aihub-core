@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from croniter import croniter
 
-from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
 
 
 class CronScheduleCalculator:
@@ -16,7 +16,7 @@ class CronScheduleCalculator:
 
     @staticmethod
     def occurrences_between(
-        schedule: AgentSchedule,
+        schedule: CronSchedule,
         after: datetime,
         until: datetime,
     ) -> list[datetime]:
@@ -36,7 +36,7 @@ class CronScheduleCalculator:
             occurrences.append(occurrence)
 
     @staticmethod
-    def next_occurrence(schedule: AgentSchedule, after: datetime) -> datetime:
+    def next_occurrence(schedule: CronSchedule, after: datetime) -> datetime:
         """The first occurrence strictly after `after`, in UTC."""
         local_after = after.astimezone(schedule.zone_info)
         return croniter(schedule.expression, local_after).get_next(datetime).astimezone(UTC)

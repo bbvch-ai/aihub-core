@@ -1,6 +1,0 @@
----
-config:
-  schedule:
-    label: Zeitplan
-    help: Wann dieses Profil automatisch ausgeführt wird. Leer lassen, um geplante
-      Läufe zu deaktivieren.

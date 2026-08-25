@@ -1,6 +1,0 @@
----
-config:
-  schedule:
-    label: Pianificazione
-    help: Quando questo profilo viene eseguito automaticamente. Lasciare vuoto per
-      disattivare le esecuzioni pianificate.

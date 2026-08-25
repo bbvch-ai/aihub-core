@@ -2,12 +2,10 @@ from typing import Annotated, Self
 from zoneinfo import ZoneInfo, available_timezones
 
 from croniter import croniter
-from pydantic import ConfigDict, Field, model_validator
-
-from swiss_ai_hub.core.form.form import Form
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-class AgentSchedule(Form):
+class CronSchedule(BaseModel):
     """The cron schedule of one agent profile: the five standard cron positions plus a timezone.
 
     The positions are kept as separate fields rather than a single "0 12 * * *" string so the Admin UI
@@ -16,17 +14,21 @@ class AgentSchedule(Form):
 
     The timezone is what makes "every day at 12:00" mean the same wall-clock time year-round: cron
     occurrences are computed in this zone and converted to UTC, so a daily schedule survives DST shifts.
+
+    Deliberately a plain `BaseModel`, not a `Form`, even though it is the data half of a duality pair
+    with `CronInput`. Being a `Form` bought nothing — it never renders as a nested group, because in form
+    mode the field holds the `CronInput` instead — and cost two things. It emitted a `_form_name`
+    computed field, so a schedule could not survive its own `model_dump()` while unknown keys were
+    forbidden; and `to_formkit_form()` treats a nullable `Form`-typed field as a sub-form to be wrapped
+    in a placeholder `Group`, which for a field on the `AgentConfig` base would mean *every* agent's form
+    carrying an empty schedule fieldset.
     """
 
-    # Every position is required, and unknown keys are rejected. Defaulting them would make an
-    # unrecognised payload — a form-mode CronInput dict that reached storage, say — validate silently
-    # into "every hour" and start unattended runs nobody configured.
-    # Extras are tolerated, unlike an earlier `extra="forbid"`. Form emits `_form_name` as a computed
-    # field, so forbidding extras made a schedule unable to survive its own `model_dump()` — anything
-    # that stored one from a model instance rather than raw request JSON became permanently unreadable,
-    # and the scheduler skipped that profile forever. Requiring every position below is what actually
-    # guards the case forbidding was added for: an unrecognised payload has none of them and is
-    # rejected on the missing fields, not on the surplus ones.
+    # Every position is required. Defaulting them would make an unrecognised payload — a form-mode
+    # CronInput dict that reached storage, say — validate silently into "every hour" and start
+    # unattended runs nobody configured. Surplus keys are tolerated: requiring every position is what
+    # actually rejects an unrecognised payload, and it does so on the missing fields rather than the
+    # surplus ones.
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     minute: Annotated[str, Field(description="Cron minute position (0-59).")]

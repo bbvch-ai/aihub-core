@@ -51,7 +51,7 @@ class ScheduleStateStore:
             except LockError:
                 logger.warning(
                     "Scheduler leader lease expired mid-tick; another replica may already hold it. "
-                    "Raise the lease_ttl passed to ScheduledAgentService if ticks routinely outrun %ss",
+                    "Raise the lease_ttl passed to CronScheduler if ticks routinely outrun %ss",
                     self._lease_ttl,
                 )
 
