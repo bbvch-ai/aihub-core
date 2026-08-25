@@ -48,9 +48,11 @@ and validation, and publishes an `ExceptionEvent` on failure. This covers any fu
 and RunContext failures during resolution. `ExceptionEvent` is already terminal for the OpenAI-compatible stream and
 present in the WebSocket `DisplayEvents` union, so the hang becomes a visible error message.
 
-Terminal-event teardown moves **above** config resolution. This is load-bearing, not cosmetic: teardown needs no config,
-and if the published `ExceptionEvent` had to pass the same validation on its way back in, it would hit the very error it
-reports and the run would never be retired.
+Terminal-event teardown sitting **above** config resolution is load-bearing for this, not cosmetic: teardown needs no
+config, and if the published `ExceptionEvent` had to pass the same validation on its way back in, it would hit the very
+error it reports and the run would never be retired. That ordering arrived independently with the redelivery fix
+(#1692), which needed it to make a redelivered terminal event idempotent; this decision depends on it and must not be
+reordered without reinstating it.
 
 **3. Admin-facing invariants are expressed as form rules.** A generic `memberOf` FormKit rule (registered in
 `packages/web/formkit.config.ts`) is attached to `default_tenant_namespace` via the existing
