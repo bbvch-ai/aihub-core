@@ -347,6 +347,25 @@ chat client. If an agent needs a richer, non-chat entry payload (e.g. from a cus
 agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly and accept `UserMessageEvent | YourStartEvent` on
 the relevant steps.
 
+## Structured LLM Output
+
+`llm.astructured_predict(MyModel, prompt, ...)` on a model that declares `supports_response_schema` takes LlamaIndex's
+strict `response_format` path, which puts **every** property of the Pydantic model into the schema's `required` list —
+including fields typed `X | None` with a `None` default. There is no such thing as an optional field here.
+
+That makes one mistake expensive: never write a field description that invites the model to leave a field out ("only set
+if …"). A model that skips a required key can never reach a closing brace, because the grammar masks `}` and EOS until
+every key is present — so it pads whitespace until `max_tokens` and the JSON arrives unterminated, burning a full
+generation per attempt. Instead ask for an explicit `null`, and put that instruction in the **prompt**, not only in the
+field description: descriptions alone do not steer weaker instruction-followers (measured on
+`text-generation/gemma-4-31B-it`, the default chat model for non-GPU deployments).
+
+Providers differ in which mechanism they get right — Gemma cannot terminate strict JSON it left a key out of, Kimi
+returns truncated tool arguments — so a structured call that must not fail can retry on the function-calling path by
+re-issuing it with `should_use_structured_outputs=False`. See
+`agents/namespace_selection_agent/llm/predict_namespace_decision.py` for the pattern, and note that a per-call
+`max_tokens` is ignored (`_get_model_kwargs` overwrites it) — cap it with `llm.model_copy(update=...)`.
+
 ## i18n
 
 - `AgentLocaleString.from_i18n_path()` for agent/step `name` and `description`
