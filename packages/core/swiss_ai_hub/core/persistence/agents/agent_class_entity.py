@@ -240,21 +240,36 @@ class AgentClassEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_online_schedulable(cls) -> list["AgentClassEntity"]:
-        """Schedulable classes currently online — the scheduler only fires runs an agent can consume."""
-        threshold = datetime.now() - cls.ONLINE_THRESHOLD
-        return list(cls.objects(is_schedulable=True, last_discovered__gte=threshold))
+    def get_all_schedulable(cls) -> list["AgentClassEntity"]:
+        """Every schedulable class, online or not, for a caller that needs both halves.
+
+        The scheduler needs online and offline classes on the same tick — one set to fire, the other to
+        report what it dropped. Fetching them together and splitting in Python with `is_online_at` costs
+        one round-trip instead of two, on a query that runs inside the API process every tick. That is
+        why there is no online-only or offline-only query to reach for here.
+        """
+        return list(cls.objects(is_schedulable=True))
 
     @classmethod
-    @trace_fn
-    def get_offline_schedulable(cls) -> list["AgentClassEntity"]:
-        """Schedulable classes with no runner online — the exact complement of `get_online_schedulable`.
+    def is_online_at(cls, entity: "AgentClassEntity", now: datetime) -> bool:
+        """Whether `entity` counts as online at `now`, matching the online/offline queries' threshold.
 
-        The scheduler needs these to report the occurrences it drops rather than queues, which it cannot
-        do from the online set alone.
+        `last_discovered` is stored as naive **local** time — the field defaults to `datetime.now()` — so
+        an aware `now` is converted to local wall clock rather than merely stripped of its tzinfo.
+        Stripping UTC would compare two different zones and misclassify every class by the host's offset:
+        on a host ahead of UTC every dead class reads online, so runs fire into NATS with no consumer and
+        vanish; on a host behind UTC nothing ever fires. The API runs locally in dev, so that offset is
+        routinely non-zero.
+
+        Mirrors the `is_online` property's None guard: `last_discovered` is nominally required, but the
+        collection is `strict: False`, and a row missing it would otherwise raise inside the caller's
+        snapshot and abort every tick from then on.
         """
-        threshold = datetime.now() - cls.ONLINE_THRESHOLD
-        return list(cls.objects(is_schedulable=True, last_discovered__lt=threshold))
+        if entity.last_discovered is None:
+            return False
+
+        local_now = now.astimezone().replace(tzinfo=None) if now.tzinfo else now
+        return entity.last_discovered >= local_now - cls.ONLINE_THRESHOLD
 
     @classmethod
     @trace_fn

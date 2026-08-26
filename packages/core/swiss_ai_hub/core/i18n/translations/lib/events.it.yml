@@ -224,7 +224,7 @@ rag_start_event:
     recuperando il contesto rilevante dalle fonti di conoscenza selezionate — utilizzando
     i namespace scelti e gli eventuali filtri di metadati — prima di generare una
     risposta.
-scheduled_start_event:
+cron_start_event:
   name: Esecuzione Pianificata Avviata
   description: Un'esecuzione pianificata è stata avviata automaticamente dallo scheduler
     cron all'orario configurato. Nessun utente l'ha avviata — l'esecuzione avviene

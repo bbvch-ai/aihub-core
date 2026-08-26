@@ -1,17 +1,17 @@
 from typing import ClassVar
 
 from swiss_ai_hub.core.displayers import EventDisplayer
-from swiss_ai_hub.core.events.agent import ScheduledStartEvent, StopEvent
+from swiss_ai_hub.core.events.agent import CronStartEvent, StopEvent
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
-class ScheduledDemoAgent(Agent):
+class CronDemoAgent(Agent):
     """Demo agent that runs on a cron schedule.
 
-    Accepting `ScheduledStartEvent` — and nothing else — is the whole opt-in: discovery reports this
+    Accepting `CronStartEvent` — and nothing else — is the whole opt-in: discovery reports this
     class as schedulable, and because no step consumes a `UserMessageEvent` it stays out of the chat UI.
     """
 
@@ -30,9 +30,9 @@ class ScheduledDemoAgent(Agent):
     icon: ClassVar[str] = "mage:clock"
 
     @step()
-    async def report_scheduled_run(self, event: ScheduledStartEvent, displayer: EventDisplayer) -> StopEvent:
+    async def report_scheduled_run(self, event: CronStartEvent, displayer: EventDisplayer) -> StopEvent:
         """Report the occurrence the run fired for, proving the schedule resolved to the expected time."""
         message = f"Scheduled run fired for occurrence {event.scheduled_for.isoformat()}"
-        print(f"[ScheduledDemoAgent.report_scheduled_run] {message}")
-        await displayer.display_chunk(message, model_name="ScheduledDemoAgent")
+        print(f"[CronDemoAgent.report_scheduled_run] {message}")
+        await displayer.display_chunk(message, model_name="CronDemoAgent")
         return StopEvent()

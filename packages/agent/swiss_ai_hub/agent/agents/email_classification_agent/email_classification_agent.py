@@ -5,9 +5,9 @@ from typing import ClassVar
 from redis.asyncio import Redis
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
+    CronStartEvent,
     MailBatchClassifiedEvent,
     MailClassificationRef,
-    ScheduledStartEvent,
     StopEvent,
     UnreadMailListedEvent,
 )
@@ -39,8 +39,8 @@ class EmailClassificationAgent(Agent):
     chat UI. Categories are configuration — a name, a target folder, and a description of what belongs in it — so a
     customer adds or renames one without a deployment.
 
-    Schedulable: accepting `ScheduledStartEvent` alongside its own start event is the entire opt-in, and the
-    `schedule` field on the config is what `ScheduledAgentService` reads to decide when a profile fires. Scheduled runs
+    Schedulable: accepting `CronStartEvent` alongside its own start event is the entire opt-in, and the platform-owned
+    `cron` field on the `AgentConfig` base is what `CronScheduler` reads to decide when a profile fires. Scheduled runs
     carry no user, which costs this agent nothing — it reads its mailbox and its tenant from its own profile.
 
     Mail the model is not confident about is never forced into a bucket; it goes to the configured fallback folder.
@@ -66,7 +66,7 @@ class EmailClassificationAgent(Agent):
     )
     async def list_unread_step(
         self,
-        _event: ClassifyMailStartEvent | ScheduledStartEvent,
+        _event: ClassifyMailStartEvent | CronStartEvent,
         imap_config: ImapClientConfig,
         topic: AgentInstanceTopic,
         redis: Redis,
@@ -74,7 +74,7 @@ class EmailClassificationAgent(Agent):
     ) -> UnreadMailListedEvent | StopEvent:
         """Claim the mailbox, then list every unread message in it, oldest sent first, capped by max_messages.
 
-        Accepting `ScheduledStartEvent` here is what makes the blueprint schedulable — `AgentRunner` derives
+        Accepting `CronStartEvent` here is what makes the blueprint schedulable — `AgentRunner` derives
         `is_schedulable` from the declared start events, so there is nothing else to register.
 
         Claiming before listing is the point: everything after this is slow (a fetch, one LLM call per message, then

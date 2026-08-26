@@ -216,10 +216,10 @@ The realm config lives in standalone JSON templates under `templates/configs/key
 `2026_06_12_declarative_keycloak_realm_reconciliation`):
 
 - **`bootstrap/`** — applied via `--import-realm` on **first start only**, never reconciled: realm-level settings
-  (themes, brute force, session lifespans, SMTP), the user-profile component, the startup tenant group seed, the
-  superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the admin
-  console survive restarts — and updating identity-provider config on an already-initialized deployment requires the
-  admin console (or a fresh realm DB), since they do not reconcile automatically.
+  (themes, brute force, token and session lifespans, SMTP), the user-profile component, the startup tenant group seed,
+  the superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the
+  admin console survive restarts — and updating identity-provider config on an already-initialized deployment requires
+  the admin console (or a fresh realm DB), since they do not reconcile automatically.
 - **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
   (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
   service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config

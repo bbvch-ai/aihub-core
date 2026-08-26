@@ -1,13 +1,13 @@
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
-from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
 from swiss_ai_hub.core.scheduling.cron_schedule_calculator import CronScheduleCalculator
 
 _ZURICH = ZoneInfo("Europe/Zurich")
 _EVERY_DAY = {"day_of_month": "*", "month": "*", "day_of_week": "*"}
-_HOURLY = AgentSchedule(minute="0", hour="*", **_EVERY_DAY)
-_DAILY_NOON_ZURICH = AgentSchedule(minute="0", hour="12", timezone="Europe/Zurich", **_EVERY_DAY)
+_HOURLY = CronSchedule(minute="0", hour="*", **_EVERY_DAY)
+_DAILY_NOON_ZURICH = CronSchedule(minute="0", hour="12", timezone="Europe/Zurich", **_EVERY_DAY)
 
 
 def _utc(year: int, month: int, day: int, hour: int, minute: int = 0) -> datetime:
@@ -72,3 +72,21 @@ class TestDaylightSavingTime:
 class TestNextOccurrence:
     def test_returns_the_first_occurrence_strictly_after(self):
         assert CronScheduleCalculator.next_occurrence(_HOURLY, _utc(2026, 8, 11, 12)) == _utc(2026, 8, 11, 13)
+
+
+class TestCountBetween:
+    """For a caller that wants the number over a span it does not control, so materialising the list is
+    not an option — the clamp counts what it discarded, and that span is a whole outage."""
+
+    def test_agrees_with_enumerating_the_window(self):
+        counted = CronScheduleCalculator.count_between(_HOURLY, _utc(2026, 8, 11, 0), _utc(2026, 8, 11, 12), 100)
+
+        assert counted == len(
+            CronScheduleCalculator.occurrences_between(_HOURLY, _utc(2026, 8, 11, 0), _utc(2026, 8, 11, 12))
+        )
+
+    def test_stops_at_the_limit_rather_than_at_the_end_of_the_window(self):
+        assert CronScheduleCalculator.count_between(_HOURLY, _utc(2026, 8, 11, 0), _utc(2027, 8, 11, 0), 5) == 5
+
+    def test_counts_nothing_in_an_empty_window(self):
+        assert CronScheduleCalculator.count_between(_HOURLY, _utc(2026, 8, 11, 12), _utc(2026, 8, 11, 12), 100) == 0

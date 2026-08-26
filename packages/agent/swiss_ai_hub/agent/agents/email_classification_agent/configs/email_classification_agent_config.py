@@ -2,11 +2,8 @@ from typing import Annotated, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.form import CronInput
 from swiss_ai_hub.core.generative_ai import LLMConfig
-from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.imap import EmailClassificationSettings, ImapClientConfig
-from swiss_ai_hub.core.scheduling import AgentSchedule
 
 
 class EmailClassificationAgentConfig(AgentConfig):
@@ -25,10 +22,6 @@ class EmailClassificationAgentConfig(AgentConfig):
         EmailClassificationSettings,
         Field(title="Email classification", description="Categories, fallback folder, and classifier behaviour."),
     ]
-    schedule: Annotated[
-        AgentSchedule | CronInput | None,
-        Field(description="Cron schedule controlling when this profile files the mailbox automatically."),
-    ] = None
 
     @property
     def classifier_llm(self) -> LLMConfig:
@@ -50,10 +43,6 @@ class EmailClassificationAgentConfig(AgentConfig):
             imap=cls._imap_form(),
             llm=LLMConfig.as_form(),
             classification=EmailClassificationSettings.as_form(),
-            schedule=CronInput(
-                label=LocaleString.from_i18n_path("lib.scheduling.config.schedule.label"),
-                help=LocaleString.from_i18n_path("lib.scheduling.config.schedule.help"),
-            ),
         )
 
     @staticmethod
