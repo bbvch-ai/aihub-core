@@ -6,9 +6,9 @@ released by whichever step happens to be terminal. Both keep working right up un
 
 import inspect
 
-from swiss_ai_hub.core.events.agent import ScheduledStartEvent, StopEvent
+from swiss_ai_hub.core.agents import CRON_CONFIG_KEY
+from swiss_ai_hub.core.events.agent import CronStartEvent, StopEvent
 from swiss_ai_hub.core.form import CronInput
-from swiss_ai_hub.core.scheduling import SCHEDULE_CONFIG_KEY, ScheduledAgentService
 
 from swiss_ai_hub.agent.agents.email_classification_agent.configs.email_classification_agent_config import (
     EmailClassificationAgentConfig,
@@ -16,14 +16,15 @@ from swiss_ai_hub.agent.agents.email_classification_agent.configs.email_classifi
 from swiss_ai_hub.agent.agents.email_classification_agent.email_classification_agent import EmailClassificationAgent
 from swiss_ai_hub.agent.imap.mailbox_lease_lost_error import MailboxLeaseLostError
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
+from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
 
 
 def test_the_blueprint_is_discovered_as_schedulable():
-    """`AgentRunner.discovery_handler` derives is_schedulable exactly this way. Dropping ScheduledStartEvent from the
+    """`AgentRunner.discovery_handler` derives is_schedulable exactly this way. Dropping CronStartEvent from the
     entry step would silently un-schedule every profile of this blueprint."""
     start_events = EmailClassificationAgent.get_start_events()
 
-    assert any(issubclass(event, ScheduledStartEvent) for event in start_events)
+    assert any(issubclass(event, CronStartEvent) for event in start_events)
 
 
 def test_the_blueprint_stays_out_of_the_chat_ui():
@@ -31,21 +32,22 @@ def test_the_blueprint_stays_out_of_the_chat_ui():
     assert not any(event.__name__ == "UserMessageEvent" for event in EmailClassificationAgent.get_start_events())
 
 
-def test_the_scheduler_can_read_the_schedule_off_the_rendered_form():
-    """`ScheduledAgentService` reads `config_data["schedule"]` by name, at the top level only. A renamed or nested
-    cron field is still advertised as schedulable and still saves whatever an admin enters — it just never fires."""
-    stored_form = [element.model_dump() for element in EmailClassificationAgentConfig.as_form().to_formkit_form()]
-
-    assert SCHEDULE_CONFIG_KEY in ScheduledAgentService.cron_field_paths(stored_form)
-
-
-def test_the_schedule_field_is_configurable():
-    """Non-configurable values are merged in at dispatch time and never reach `config_data`, so a baked-in schedule
-    would be unreadable to the scheduler no matter what it was named."""
+def test_the_blueprint_declares_no_schedule_of_its_own():
+    """`cron` is platform-owned: the runner injects it for schedulable classes. A blueprint that declares its own
+    would shadow the base field and take the schedule back out of the scheduler's reach."""
     form = EmailClassificationAgentConfig.as_form()
 
-    assert isinstance(form.schedule, CronInput)
-    assert SCHEDULE_CONFIG_KEY in form.get_configurable_fields()
+    assert form.cron is None
+    assert CRON_CONFIG_KEY not in form.get_configurable_fields()
+
+
+def test_the_scheduler_can_read_the_schedule_off_the_published_form():
+    """`CronScheduler` reads `config_data["cron"]` by name, at the top level only. Deriving schedulability and
+    injecting the element are separate steps in the runner, and only their combination makes a profile fire."""
+    runner = AgentRunner(agent_type=EmailClassificationAgent, agent_config=EmailClassificationAgentConfig.as_form())
+
+    assert isinstance(runner.published_config.cron, CronInput)
+    assert CRON_CONFIG_KEY in [element.name for element in runner.form]
 
 
 def test_every_terminal_step_accounts_for_the_lease():

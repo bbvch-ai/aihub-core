@@ -95,4 +95,4 @@ def test_templates_ship_unscheduled(template: EmailClassificationAgentConfig):
     A shipped cron would begin firing against whatever mailbox the admin later fills in — including a half-configured
     one — the moment the profile is saved. Scheduling is opt-in per profile.
     """
-    assert template.schedule is None
+    assert template.cron is None

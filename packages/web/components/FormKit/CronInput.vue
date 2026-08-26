@@ -60,11 +60,11 @@
 
 <script setup lang="ts">
 /**
- * Editor for a backend `AgentSchedule`: the five cron positions plus an IANA timezone.
+ * Editor for a backend `CronSchedule`: the five cron positions plus an IANA timezone.
  *
  * The emitted value is the schedule object in the backend's own field names, so it round-trips through
  * `config_data` untouched — the scheduler reads those keys directly. Positions are kept separate rather than
- * joined into one "0 12 * * *" string because that is how `AgentSchedule` stores them, and flattening here would
+ * joined into one "0 12 * * *" string because that is how `CronSchedule` stores them, and flattening here would
  * make every consumer parse it back apart.
  *
  * Deliberately has no presets and no plain-language summary — that is #1581, which extends this component rather
@@ -118,7 +118,7 @@ const ALLOWED_CHARACTERS = /^[0-9A-Za-z*,\-/?#]+$/
 // silently broke every run of the profile — not only its scheduled ones.
 const ERROR_MESSAGE_KEY = 'cronPositions'
 
-// Shown in the inputs the moment the field is enabled, never applied behind the user's back. `AgentSchedule`
+// Shown in the inputs the moment the field is enabled, never applied behind the user's back. `CronSchedule`
 // requires all five positions and has no defaults, so leaving them blank would save a schedule the scheduler then
 // skips with only a log line to say why. Hourly is the least surprising visible starting point — `* * * * *` would
 // commit an admin to a run every minute for merely ticking the enable box.
@@ -185,7 +185,7 @@ function updatePosition(position: CronPosition, value: string) {
 }
 
 // Always emits every key: a partial schedule passes the generated submission schema (which cannot carry
-// AgentSchedule's croniter and timezone validators) and is then rejected by the save endpoint.
+// CronSchedule's croniter and timezone validators) and is then rejected by the save endpoint.
 function emitValue(value: CronSchedule) {
   props.context.node.input({ ...value })
 }

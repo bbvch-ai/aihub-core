@@ -34,7 +34,7 @@ load_dotenv(find_dotenv(usecwd=True))
 import asyncio  # noqa: E402
 from datetime import UTC, datetime  # noqa: E402
 
-from swiss_ai_hub.core.events.agent import ScheduledStartEvent  # noqa: E402
+from swiss_ai_hub.core.events.agent import CronStartEvent  # noqa: E402
 from swiss_ai_hub.core.generative_ai import LLMConfig  # noqa: E402
 from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
 from swiss_ai_hub.core.imap import (  # noqa: E402
@@ -115,7 +115,7 @@ async def main():
     # Both entry points run the identical workflow; SCHEDULED=1 is what proves the union on the entry step is
     # wired, without waiting on a cron occurrence.
     start_event = (
-        ScheduledStartEvent(scheduled_for=datetime.now(UTC))
+        CronStartEvent(scheduled_for=datetime.now(UTC))
         if os.environ.get("SCHEDULED") == "1"
         else ClassifyMailStartEvent()
     )

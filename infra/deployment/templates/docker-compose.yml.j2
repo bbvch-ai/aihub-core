@@ -1840,6 +1840,8 @@ services:
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       presidio-analyzer:
@@ -2139,8 +2141,11 @@ services:
       - "13133:13133"
       - "55679:55679"
     {%- endif %}
-    depends_on:
-      - langfuse-web
+    # Deliberately no depends_on: this must be the first thing listening on 4317. Every app SDK
+    # gives up after OTEL_EXPORTER_OTLP_TIMEOUT and DROPS the batch, so gating the collector behind
+    # langfuse-web (and through it postgres/clickhouse/seaweedfs health) costs the startup log of
+    # every service on a cold start. The otlphttp/langfuse exporter has retry_on_failure and needs
+    # no start-order guarantee — langfuse-web is up long before the first OpenInference trace.
     healthcheck:
       test: [ "NONE" ]
     labels:
@@ -2176,6 +2181,8 @@ services:
     volumes:
       - {{ global.volume_root }}/open-webui:/app/backend/data
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       seaweedfs-s3:
@@ -2798,6 +2805,8 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.api[stage] }}
     {%- endif %}
     depends_on:
+      otel-collector:
+        condition: service_started
       nats:
         condition: service_started
       traefik:
@@ -2915,6 +2924,14 @@ services:
       # REDIS
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Cron scheduler (hosted here until the aihub-daemon extraction, #1203)
+      SCHEDULER_TICK_INTERVAL_SECONDS: ${SCHEDULER_TICK_INTERVAL_SECONDS}
+      SCHEDULER_LEASE_TTL_SECONDS: ${SCHEDULER_LEASE_TTL_SECONDS}
+      SCHEDULER_MAX_CATCHUP_MINUTES: ${SCHEDULER_MAX_CATCHUP_MINUTES}
+      SCHEDULER_REDIS_KEY_PREFIX: ${SCHEDULER_REDIS_KEY_PREFIX}
+      SCHEDULER_EVENT_RETENTION_DAYS: ${SCHEDULER_EVENT_RETENTION_DAYS}
+      SCHEDULER_RETENTION_INTERVAL_SECONDS: ${SCHEDULER_RETENTION_INTERVAL_SECONDS}
 
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
@@ -3080,6 +3097,8 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags['sysadmin-api'][stage] }}
     {%- endif %}
     depends_on:
+      otel-collector:
+        condition: service_started
       traefik:
         condition: service_started
       ferretdb:
@@ -3279,6 +3298,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.llm_wrapping_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3352,6 +3374,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.rag_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3433,6 +3458,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.expert_rag_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3514,6 +3542,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.expert_asking_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3590,6 +3621,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.retrieval_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3663,6 +3697,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.few_shot_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3723,6 +3760,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.namespace_selection_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3783,6 +3823,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.memory_writer_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3851,6 +3894,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.imap_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3920,6 +3966,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.email_classification_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
