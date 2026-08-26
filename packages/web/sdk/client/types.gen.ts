@@ -2792,10 +2792,7 @@ export type ChatCompletionRequest = {
    * Function Call
    */
   function_call?:
-    | "none"
-    | "auto"
-    | ChatCompletionFunctionCallOptionParam
-    | null;
+    "none" | "auto" | ChatCompletionFunctionCallOptionParam | null;
   /**
    * Functions
    */
@@ -2840,13 +2837,7 @@ export type ChatCompletionRequest = {
    * Reasoning Effort
    */
   reasoning_effort?:
-    | "none"
-    | "minimal"
-    | "low"
-    | "medium"
-    | "high"
-    | "xhigh"
-    | null;
+    "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | null;
   /**
    * Response Format
    */
@@ -3311,11 +3302,7 @@ export type Choice = {
    * Finish Reason
    */
   finish_reason:
-    | "stop"
-    | "length"
-    | "tool_calls"
-    | "content_filter"
-    | "function_call";
+    "stop" | "length" | "tool_calls" | "content_filter" | "function_call";
   /**
    * Index
    */
