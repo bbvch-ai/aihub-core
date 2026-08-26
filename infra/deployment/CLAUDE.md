@@ -216,10 +216,10 @@ The realm config lives in standalone JSON templates under `templates/configs/key
 `2026_06_12_declarative_keycloak_realm_reconciliation`):
 
 - **`bootstrap/`** — applied via `--import-realm` on **first start only**, never reconciled: realm-level settings
-  (themes, brute force, session lifespans, SMTP), the user-profile component, the startup tenant group seed, the
-  superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the admin
-  console survive restarts — and updating identity-provider config on an already-initialized deployment requires the
-  admin console (or a fresh realm DB), since they do not reconcile automatically.
+  (themes, brute force, token and session lifespans, SMTP), the user-profile component, the startup tenant group seed,
+  the superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the
+  admin console survive restarts — and updating identity-provider config on an already-initialized deployment requires
+  the admin console (or a fresh realm DB), since they do not reconcile automatically.
 - **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
   (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
   service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config
@@ -276,10 +276,11 @@ the same level as ALTERNATIVE executions, or Keycloak ignores the alternatives a
 - Only external/override endpoints (for services running on the host outside Docker) use env vars
 - **`OTEL_DEPLOYMENT_ENVIRONMENT` / `OTEL_HOST_NAME` are the one sanctioned `${VAR:-default}`.** The
   collector's `resource/deployment` processor stamps them onto every pipeline, and an *empty* value
-  makes that processor fail to build — which exits the collector. Nothing `depends_on` the collector,
-  so an unset var would silently drop all telemetry rather than just one attribute. Values are
-  written per-VM into `.env` by `aihub-playbook`'s `env.j2`; the stage-name fallback exists so a
-  non-Ansible deploy still starts. Do not "fix" it by moving the default to `.env.prod`.
+  makes that processor fail to build — which exits the collector. Every service that exports OTLP
+  now declares `depends_on: otel-collector`, so an unset var no longer merely drops telemetry: it
+  holds up the app plane. Values are written per-VM into the stage's environment file by
+  `aihub-playbook`'s `env.j2`; the stage-name fallback is what keeps a non-Ansible deploy starting
+  at all. Do not "fix" it by moving the default to `.env.prod`.
 
 ### Which collector owns which signal
 

@@ -1,7 +1,7 @@
 """Regression tests for a malformed cron schedule reaching storage.
 
 Same seam and same root cause as the blank-name tests next door: submissions are validated against a model jambo
-builds from the JSON schema, and `AgentSchedule`'s croniter and timezone checks are `model_validator`s that the
+builds from the JSON schema, and `CronSchedule`'s croniter and timezone checks are `model_validator`s that the
 schema cannot express. Every cron position is a bare string there, so a cleared field arrives as `""` and validates.
 
 The blast radius is what makes this worth its own file. A stored bad schedule does not merely fail to fire —
@@ -12,14 +12,12 @@ Runs the real pipeline (`as_form()` -> configurable submission schema -> jambo m
 rather than mocking it, because the defect exists precisely in what that pipeline drops.
 """
 
-from typing import Annotated, Self
+from typing import Self
 
 import pytest
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from swiss_ai_hub.core.agents.agent_config import AgentConfig
-from swiss_ai_hub.core.form.elements.cron_input import CronInput
-from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
 from swiss_ai_hub.jambo import SchemaConverter
 
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
@@ -50,9 +48,11 @@ MALFORMED_SCHEDULES = [
 
 
 class ScheduledConfig(AgentConfig):
-    """Stands in for any schedulable blueprint — the field name is what the scheduler reads, not the class."""
+    """Stands in for any schedulable blueprint.
 
-    schedule: Annotated[AgentSchedule | CronInput | None, Field(description="When this profile runs.")] = None
+    `cron` is declared on the base and left unset by `AgentConfig.as_form()`, so populating it here is what
+    `AgentRunner` does for a schedulable class — the blueprint itself declares no schedule field.
+    """
 
     @classmethod
     def as_form(cls) -> Self:
@@ -62,7 +62,7 @@ class ScheduledConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            schedule=CronInput(label="Schedule"),
+            cron=cls.cron_form_field(),
         )
 
 
@@ -82,10 +82,10 @@ def _validate(validator, config: dict) -> BaseModel:
 @pytest.mark.parametrize("schedule", MALFORMED_SCHEDULES)
 def test_a_malformed_schedule_is_rejected(validator, schedule):
     with pytest.raises(HTTPException) as exc_info:
-        _validate(validator, _config(schedule=schedule))
+        _validate(validator, _config(cron=schedule))
 
     assert exc_info.value.status_code == 400
-    assert "schedule" in exc_info.value.detail
+    assert "cron" in exc_info.value.detail
 
 
 def test_the_generated_model_alone_would_have_stored_it():
@@ -94,21 +94,21 @@ def test_the_generated_model_alone_would_have_stored_it():
     If jambo ever starts carrying `model_validator`s across, this fails and the guard becomes removable — which is
     worth being told about, because it is duplicated validation the moment that happens.
     """
-    cleared = _config(schedule={**VALID_SCHEDULE, "minute": ""})
+    cleared = _config(cron={**VALID_SCHEDULE, "minute": ""})
 
     assert _model().model_validate(InstanceConfigHelper.normalize_form_configuration(cleared)) is not None
 
 
 @pytest.mark.parametrize("validator", VALIDATORS)
 def test_a_valid_schedule_is_accepted(validator):
-    assert _validate(validator, _config(schedule=VALID_SCHEDULE)) is not None
+    assert _validate(validator, _config(cron=VALID_SCHEDULE)) is not None
 
 
 @pytest.mark.parametrize("validator", VALIDATORS)
 @pytest.mark.parametrize("absent", [pytest.param(None, id="explicit-null"), pytest.param({}, id="empty-object")])
 def test_an_unscheduled_profile_is_left_alone(validator, absent):
     """Clearing the enable toggle is how scheduling is switched off, and it must not read as a malformed cron."""
-    assert _validate(validator, _config(schedule=absent)) is not None
+    assert _validate(validator, _config(cron=absent)) is not None
 
 
 @pytest.mark.parametrize("validator", VALIDATORS)

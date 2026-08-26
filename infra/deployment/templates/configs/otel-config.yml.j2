@@ -58,12 +58,16 @@ processors:
   # quick-filters on resource[deployment.environment] and resource[host.name]; the SDK sets only
   # service.name/version/namespace, so both columns arrived empty for every span and log.
   #
-  # Values come from the deploying VM (aihub-playbook's env.j2 writes them into .env). The compose
-  # fallback to the stage name is load-bearing, not cosmetic: an EMPTY value makes this processor
-  # fail to build, and since nothing depends_on the collector that would silently drop all
-  # telemetry rather than just this attribute:
+  # Values come from the deploying VM (aihub-playbook's env.j2 writes them into the stage's
+  # environment file). The compose fallback to the stage name is load-bearing, not cosmetic: an
+  # EMPTY value makes this processor fail to build, and the collector then exits:
   #   failed to create "resource/deployment" processor: error with key "deployment.environment"
   #   ... Either field "value", "from_attribute", "from_context", or "default_value" must be specified
+  #
+  # That used to cost only telemetry. It no longer does: every service that exports OTLP now
+  # declares depends_on this collector (service_started), so a config error here holds up the app
+  # plane instead of quietly dropping spans. These fallbacks are the only thing keeping an unset
+  # variable on the VM from turning into a failed deploy.
   #
   # `upsert` so the VM's own identity wins over anything an app SDK may inconsistently send.
   resource/deployment:

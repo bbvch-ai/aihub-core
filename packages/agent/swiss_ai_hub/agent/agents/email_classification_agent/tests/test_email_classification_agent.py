@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.agent import MailBatchClassifiedEvent, ScheduledStartEvent
+from swiss_ai_hub.core.events.agent import CronStartEvent, MailBatchClassifiedEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.imap import EmailClassificationSettings, ImapClientConfig, MailCategory
@@ -144,7 +144,7 @@ async def _(scenario: dict) -> AgentTestRunner:
 async def _(scenario: dict) -> AgentTestRunner:
     """The unattended entry point. Everything downstream is shared with the manual one, which is the point —
     a scheduled run must not be a second code path."""
-    return await _drive(scenario, ScheduledStartEvent(scheduled_for=datetime.now(UTC)))
+    return await _drive(scenario, CronStartEvent(scheduled_for=datetime.now(UTC)))
 
 
 async def _drive(scenario: dict, start_event: BaseEvent) -> AgentTestRunner:

@@ -38,11 +38,13 @@ on:
   workflow_dispatch:
     inputs:
       source_tag:
-        description: (rc mode) QC-approved rc tag to promote, e.g. v0.317.0-rc.2. Leave empty for a hotfix.
+        description: (rc mode) QC-approved rc tag to promote, e.g. v0.317.0-rc.2.
+          Leave empty for a hotfix.
         required: false
         default: ''
       hotfix_branch:
-        description: (hotfix mode) Release branch carrying the patch fix, e.g. release/0.317. Leave empty for an rc promote.
+        description: (hotfix mode) Release branch carrying the patch fix, e.g. release/0.317.
+          Leave empty for an rc promote.
         required: false
         default: ''
 permissions:
@@ -51,7 +53,8 @@ permissions:
   id-token: write
   actions: write
 concurrency:
-  group: promote-${{ github.event.inputs.source_tag }}${{ github.event.inputs.hotfix_branch }}
+  group: promote-${{ github.event.inputs.source_tag }}${{ github.event.inputs.hotfix_branch
+    }}
   cancel-in-progress: false
 jobs:
   resolve:
@@ -99,7 +102,6 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           read_core() {
             awk '
               /^\[/ { in_project = ($0 == "[project]") }
@@ -107,7 +109,6 @@ jobs:
                 sub(/^version[[:space:]]*=[[:space:]]*"/, ""); sub(/".*/, ""); print; exit
               }' pyproject.toml
           }
-
           if [ -n "$HFB" ]; then
             MODE=hotfix
             core="$(read_core)"
@@ -116,7 +117,6 @@ jobs:
             line="${core%.*}"
             [ "$HFB" = "release/${line}" ] \
               || { echo "::error::branch '$HFB' does not match pyproject line (expected release/${line})."; exit 1; }
-
             HEAD_TAG="$(git tag --points-at HEAD | grep -E "^v${line}\.[0-9]+$" | sort -V | tail -n1 || true)"
             if [ -n "$HEAD_TAG" ]; then
               # Idempotent rerun: HEAD already released on this line.
@@ -172,7 +172,6 @@ jobs:
           NOTES_FROM="$(printf '%s\n%s\n' "$STABLES" "$CLEAN" | sort -V | grep -B1 -x "$CLEAN" | awk 'NR==1')"
           [ "$NOTES_FROM" = "$CLEAN" ] && NOTES_FROM=""
           if [ "$IS_BACKPORT" = "true" ]; then SECONDARY=""; else SECONDARY="latest"; fi
-
           {
             echo "clean=$CLEAN"
             echo "ref=$REF"
@@ -207,7 +206,6 @@ jobs:
                   and (.value.latest == .key + ":latest"))
                 | .key]')
           echo "matrix={\"image\":$images}" >> "$GITHUB_OUTPUT"
-
   retag-clean-docker:
     name: Retag rc images to clean version
     if: ${{ github.event.inputs.source_tag != '' }}
@@ -275,7 +273,6 @@ jobs:
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
     secrets: inherit
-
   publish-pypi:
     name: Publish PyPI
     needs: resolve
@@ -283,7 +280,6 @@ jobs:
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
     secrets: inherit
-
   build-release:
     name: Publish versioned Release (atomic gate)
     # Gated on BOTH registries green. In rc mode also waits for the image retag;
@@ -295,7 +291,8 @@ jobs:
       && needs.resolve.result == 'success'
       && needs.publish-npm.result == 'success'
       && needs.publish-pypi.result == 'success'
-      && (needs.retag-clean-docker.result == 'success' || needs.retag-clean-docker.result == 'skipped')
+      && (needs.retag-clean-docker.result == 'success' || needs.retag-clean-docker.result
+      == 'skipped')
     uses: ./.github/workflows/create-release.yml
     with:
       release_version: ${{ needs.resolve.outputs.clean }}
@@ -359,7 +356,6 @@ jobs:
           git tag -f latest "$CLEAN"
           git push origin refs/tags/latest --force
           echo "Moved 'latest' to $CLEAN. Remember to forward-port the fix to main."
-
   backport-note:
     name: Backport (latest not moved)
     runs-on: ubuntu-slim
