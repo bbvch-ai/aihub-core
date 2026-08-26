@@ -7,6 +7,7 @@ from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.llms import LLM
 from opentelemetry import trace
 
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.displayers.stream.stream_processor import StreamProcessor
 from swiss_ai_hub.core.events.agent.cost.llm_cost_event import LLMCostEvent
 from swiss_ai_hub.core.events.agent.display.chunk_event import ChunkEvent
@@ -117,6 +118,7 @@ class EventDisplayer:
         self,
         model_name: Annotated[str, "Model name for cost attribution"],
         cost_tracker: Annotated[LLMCostTracker, "Tracks token usage and associated costs"],
+        user: Annotated[UserIdentity | None, "Invoking user, tagged onto the event for per-user spend"] = None,
     ):
         """
         Publish LLM cost metrics as an LLMCostEvent.
@@ -125,6 +127,7 @@ class EventDisplayer:
         llm_cost_event = LLMCostEvent.from_llm_costs(
             llm_name=model_name,
             costs=cost_tracker.get_total_costs(),
+            user=user,
         )
         await self.display_event(llm_cost_event)
 

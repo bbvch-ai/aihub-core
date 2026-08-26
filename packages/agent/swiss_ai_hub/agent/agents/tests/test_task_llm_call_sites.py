@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.tests.test_task_llm_resolution import MAIN_MODEL, TASK_MODEL, _rag_config
@@ -39,7 +40,7 @@ async def test_detect_meta_question_uses_task_llm(request, config_fixture: str, 
 
     with patch(f"{RAG_MODULE}.do_detect_meta_question", new=AsyncMock()) as detect:
         await RAGAgent().detect_meta_question_step(
-            event=_event(user_query="hi"), agent_config=config, displayer=MagicMock(), t=MagicMock()
+            event=_event(user_query="hi"), agent_config=config, displayer=MagicMock(), t=MagicMock(), user=fake_user()
         )
 
     assert detect.await_args.kwargs["llm_config"].model_name == expected_model
@@ -63,6 +64,7 @@ async def test_answer_meta_question_uses_task_llm(request, config_fixture: str, 
             agent_config=config,
             displayer=MagicMock(),
             t=MagicMock(),
+            user=fake_user(),
         )
 
     assert answer.await_args.kwargs["llm_config"].model_name == expected_model
@@ -82,6 +84,7 @@ async def test_condense_standalone_question_uses_task_llm(request, config_fixtur
             start_event=_event(),
             agent_config=config,
             t=MagicMock(),
+            user=fake_user(),
             displayer=MagicMock(),
         )
 
@@ -97,7 +100,9 @@ async def test_few_shot_guard_uses_task_llm(request, config_fixture: str, expect
     config = request.getfixturevalue(config_fixture)
 
     with patch(f"{RAG_MODULE}.do_few_shot_guard", new=AsyncMock()) as guard:
-        await RAGAgent().few_shot_guard_step(event=_event(), agent_config=config, displayer=MagicMock(), t=MagicMock())
+        await RAGAgent().few_shot_guard_step(
+            event=_event(), agent_config=config, displayer=MagicMock(), t=MagicMock(), user=fake_user()
+        )
 
     assert guard.await_args.args[2].model_name == expected_model
 
@@ -116,6 +121,7 @@ async def test_context_sufficient_guard_uses_task_llm(request, config_fixture: s
             guard_config=MagicMock(),
             displayer=MagicMock(),
             t=MagicMock(),
+            user=fake_user(),
             event=_event(),
             user_query_event=_event(),
             chat_history_event=_event(limited_history=[]),
@@ -135,6 +141,7 @@ async def test_main_answer_and_trimming_stay_on_main_llm(config_with_task_llm) -
             guard_config=MagicMock(),
             displayer=MagicMock(),
             t=MagicMock(),
+            user=fake_user(),
         )
 
     assert respond.await_args.args[4].model_name == MAIN_MODEL

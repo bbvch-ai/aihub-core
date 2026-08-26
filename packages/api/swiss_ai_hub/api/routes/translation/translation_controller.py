@@ -34,7 +34,7 @@ class TranslationController(TenantScopedController):
         @self.router.post(route, tags=self.tags)
         async def translate_text(
             request: TranslationRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> TranslationResponse:
             """
@@ -43,6 +43,6 @@ class TranslationController(TenantScopedController):
             Takes a LocaleString with at least one locale populated and translates it
             to all other supported locales (de, en, fr, it) using an LLM.
             """
-            return await TranslationService.translate_from_request(request, t)
+            return await TranslationService.translate_from_request(request, t, user)
 
         return self

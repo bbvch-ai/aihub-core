@@ -169,20 +169,21 @@ event metadata and stores it as function attributes — it does not modify the f
 
 The dispatcher resolves `@step()` parameters by type annotation. Declare what you need, the dispatcher provides it:
 
-| Type Annotation                         | What Gets Injected                                                 |
-| --------------------------------------- | ------------------------------------------------------------------ |
-| Event subclass (e.g., `MyEvent`)        | Matched from event history by type                                 |
-| `AgentConfig` subclass                  | The merged runtime config for this run                             |
-| `StepConfig` subclass                   | Step-specific config extracted from AgentConfig                    |
-| `RunContext`                            | Per-run ephemeral state (Redis)                                    |
-| `ThreadContext`                         | Per-thread persistent state (Redis)                                |
-| `Redis`                                 | The raw Valkey client, for cross-run state that needs `SET NX`/TTL |
-| `EventDisplayer`                        | Emit display events for frontend visualization                     |
-| `LocaleHandler` or `AgentLocaleHandler` | i18n handler in the run's locale                                   |
-| `AgentMemory`                           | User and organization memory access                                |
-| `AgentInstanceTopic`                    | NATS topic info for this event                                     |
-| `AgentClassTopic`                       | NATS topic info (class level)                                      |
-| `PartialAgentTopic`                     | NATS topic info (partial/wildcard)                                 |
+| Type Annotation                          | What Gets Injected                                                                                                                                                                                                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Event subclass (e.g., `MyEvent`)         | Matched from event history by type                                                                                                                                                                                                                                      |
+| `AgentConfig` subclass                   | The merged runtime config for this run                                                                                                                                                                                                                                  |
+| `StepConfig` subclass                    | Step-specific config extracted from AgentConfig                                                                                                                                                                                                                         |
+| `RunContext`                             | Per-run ephemeral state (Redis)                                                                                                                                                                                                                                         |
+| `ThreadContext`                          | Per-thread persistent state (Redis)                                                                                                                                                                                                                                     |
+| `Redis`                                  | The raw Valkey client, for cross-run state that needs `SET NX`/TTL                                                                                                                                                                                                      |
+| `UserIdentity` or `UserIdentity \| None` | The invoking user, for per-user LLM cost attribution. Read from the start event's own `user` field, so a start event that does not declare one always yields `None`. Annotate it `\| None` on programmatically-started blueprints, which may genuinely have no identity |
+| `EventDisplayer`                         | Emit display events for frontend visualization                                                                                                                                                                                                                          |
+| `LocaleHandler` or `AgentLocaleHandler`  | i18n handler in the run's locale                                                                                                                                                                                                                                        |
+| `AgentMemory`                            | User and organization memory access                                                                                                                                                                                                                                     |
+| `AgentInstanceTopic`                     | NATS topic info for this event                                                                                                                                                                                                                                          |
+| `AgentClassTopic`                        | NATS topic info (class level)                                                                                                                                                                                                                                           |
+| `PartialAgentTopic`                      | NATS topic info (partial/wildcard)                                                                                                                                                                                                                                      |
 
 Source: `AgentDispatcher._get_parameter_value()` in `dispatchers/agent_dispatcher.py`.
 

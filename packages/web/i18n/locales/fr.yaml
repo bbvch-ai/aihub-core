@@ -556,7 +556,9 @@ auth:
     description: Veuillez vous connecter pour accéder à l'application
     tagline: Découvrez l'avenir de l'intelligence artificielle
     welcome: Bienvenue sur le AI Hub de {companyName}
+    welcomeProvider: Bienvenue sur le AI Hub — connexion avec {provider}
     pleaseLogin: Veuillez vous connecter
+    pleaseLoginWith: Veuillez vous connecter avec {provider}
     loginWith: Se connecter avec {provider}
     customSolutions: Solutions d'IA personnalisées pour votre entreprise
     logoAlt: Logo de l'entreprise

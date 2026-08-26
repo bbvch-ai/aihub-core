@@ -1,10 +1,12 @@
 import logging
+from datetime import datetime
 
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.persistence import LLMSpend
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import (
     PersistedAgentEventEntity,
     TimeRange,
@@ -110,3 +112,15 @@ class EventService:
             end_time=end_time,
             buckets=buckets,
         )
+
+    @staticmethod
+    @trace_fn
+    def get_llm_spend_by_user(tenant_id: str | None = None, since: datetime | None = None) -> list[LLMSpend]:
+        """LLM spend per user, narrowed to one tenant unless the caller may see the whole platform."""
+        return PersistedAgentEventEntity.get_llm_spend_by_user(tenant_id=tenant_id, since=since)
+
+    @staticmethod
+    @trace_fn
+    def get_llm_spend_by_tenant(since: datetime | None = None) -> list[LLMSpend]:
+        """LLM spend per tenant across the platform."""
+        return PersistedAgentEventEntity.get_llm_spend_by_tenant(since=since)
