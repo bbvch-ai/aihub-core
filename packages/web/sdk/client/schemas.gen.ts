@@ -7520,7 +7520,21 @@ export const DraftedReplyRefSchema = {
     source_uid: {
       type: "string",
       title: "Source Uid",
-      description: "IMAP UID of the source message within the source folder.",
+      description:
+        "IMAP UID the source message had in the folder it was read from. A blueprint that files the message before drafting (EmailClassificationAgent) reports the pre-move UID, which no longer resolves on the server — it identifies the message within the run, not for a later fetch.",
+    },
+    category: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Category",
+      description:
+        "Category the source message was classified under, when drafting followed a classification run. Null when the drafting blueprint does not classify.",
     },
     drafts_folder: {
       type: "string",
@@ -14309,6 +14323,22 @@ export const MailBatchDraftedEventSchema = {
       type: "integer",
       title: "Count",
       description: "Number of reply drafts created in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.",
+    },
+    skipped_count: {
+      type: "integer",
+      title: "Skipped Count",
+      description:
+        "Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.",
+      default: 0,
     },
     drafted: {
       items: {
@@ -32796,6 +32826,22 @@ export const MailBatchDraftedEventWritableSchema = {
       type: "integer",
       title: "Count",
       description: "Number of reply drafts created in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.",
+    },
+    skipped_count: {
+      type: "integer",
+      title: "Skipped Count",
+      description:
+        "Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.",
+      default: 0,
     },
     drafted: {
       items: {

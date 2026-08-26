@@ -5234,9 +5234,15 @@ export type DraftedReplyRef = {
   /**
    * Source Uid
    *
-   * IMAP UID of the source message within the source folder.
+   * IMAP UID the source message had in the folder it was read from. A blueprint that files the message before drafting (EmailClassificationAgent) reports the pre-move UID, which no longer resolves on the server — it identifies the message within the run, not for a later fetch.
    */
   source_uid: string;
+  /**
+   * Category
+   *
+   * Category the source message was classified under, when drafting followed a classification run. Null when the drafting blueprint does not classify.
+   */
+  category?: string | null;
   /**
    * Drafts Folder
    *
@@ -9631,6 +9637,20 @@ export type MailBatchDraftedEvent = {
    * Number of reply drafts created in this run.
    */
   count: number;
+  /**
+   * Per Category
+   *
+   * How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Skipped Count
+   *
+   * Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.
+   */
+  skipped_count?: number;
   /**
    * Drafted
    *
@@ -22084,6 +22104,20 @@ export type MailBatchDraftedEventWritable = {
    * Number of reply drafts created in this run.
    */
   count: number;
+  /**
+   * Per Category
+   *
+   * How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Skipped Count
+   *
+   * Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.
+   */
+  skipped_count?: number;
   /**
    * Drafted
    *
