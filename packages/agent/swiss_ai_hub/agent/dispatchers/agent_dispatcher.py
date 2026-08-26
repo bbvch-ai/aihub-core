@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, cast, override
+from typing import Annotated, Any, cast, get_args, override
 
 from bson import ObjectId
 from nats.aio.client import Client as NATS
@@ -10,6 +10,7 @@ from nats.js import JetStreamContext
 from opentelemetry import context as otel_context
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.dispatcher import BaseDispatcher, EventsAndKwargs, TraceStore
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events import BaseEvent
@@ -550,6 +551,16 @@ class AgentDispatcher(BaseDispatcher):
 
         if param.annotation == Redis:
             return self.redis
+
+        # Matched through the union members too: the programmatically-started agents annotate this
+        # `UserIdentity | None`, and an equality check against the bare class silently misses them —
+        # the kwarg is then dropped and the parameter keeps its `= None` default, so the run bills the
+        # master key while looking correctly wired.
+        if UserIdentity in (param.annotation, *get_args(param.annotation)):
+            # Written by handle_event from the StartEvent's own fields, so this is only populated for
+            # start events that carry a user — programmatic starts leave it absent.
+            user_data = await run_context.get("user")
+            return UserIdentity.model_validate(user_data) if user_data else None
 
         if param.annotation == EventDisplayer:
             return EventDisplayer(

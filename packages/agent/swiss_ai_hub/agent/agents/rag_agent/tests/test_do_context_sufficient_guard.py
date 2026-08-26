@@ -11,6 +11,7 @@ from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_metadata import MemoryMetadata
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.rag.step_functions import do_context_sufficient_guard
 
@@ -69,7 +70,7 @@ def llm_config(mock_llm):
     config = MagicMock()
 
     @asynccontextmanager
-    async def ctx(_displayer):
+    async def ctx(_displayer, user=None):  # noqa: ARG001
         yield mock_llm
 
     config.cost_reporting_llm = ctx
@@ -118,6 +119,7 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
         chat_history=chat_history_with_memory,
     )
 
@@ -145,6 +147,7 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
         chat_history=chat_history,
     )
 
@@ -166,6 +169,7 @@ async def test_guard_with_empty_chat_history_still_calls_the_model(
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
         chat_history=[],
     )
 
@@ -197,6 +201,7 @@ async def test_guard_forwards_context_message_with_image_blocks_intact(
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
         chat_history=[],
     )
 
@@ -216,6 +221,7 @@ async def test_guard_emits_reject_event_when_no_more_hops(mock_llm, llm_config, 
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
         chat_history=[],
     )
 
