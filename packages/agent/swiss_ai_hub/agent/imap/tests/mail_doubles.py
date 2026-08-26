@@ -28,10 +28,11 @@ COST_LLM = "swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base.L
 
 ATTACHMENT_FILE_ID = "0d5f7a1c-3b2e-4c8d-9a6f-1e2d3c4b5a6f"
 MESSAGE_FILE_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+SENDER = "alice@test"
 
 
 def summary(uid: str, subject: str | None = None) -> UnreadMailSummary:
-    return UnreadMailSummary(message_id=uid, sender="alice@test", subject=subject or f"Subject {uid}")
+    return UnreadMailSummary(message_id=uid, sender=SENDER, subject=subject or f"Subject {uid}")
 
 
 def parsed_message(
@@ -39,7 +40,7 @@ def parsed_message(
 ) -> ParsedMessage:
     return ParsedMessage(
         message_id=message_id,
-        sender="alice@test",
+        sender=SENDER,
         subject=subject,
         rfc_message_id=f"<orig-{message_id}@test>",
         body_text=body_text,
@@ -122,7 +123,7 @@ def stored_message_ref() -> MailMessageRef:
 def archived_eml(
     subject: str = "Quarterly report",
     body: str = "See attached.",
-    sender: str = "alice@test",
+    sender: str = SENDER,
     rfc_message_id: str = "<orig-1@test>",
     reply_to: str | None = None,
     references: str | None = None,
