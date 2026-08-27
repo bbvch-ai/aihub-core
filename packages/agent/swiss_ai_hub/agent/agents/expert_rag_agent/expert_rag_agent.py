@@ -32,7 +32,6 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
-    OrgMemoryNamespaceResolver,
     OrgMemoryReadConfig,
     RetrievalRuntimeConfig,
     extend_chat_history_with_organization_memory,
@@ -87,6 +86,8 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_rerank_nodes,
     do_respond_with_llm,
     do_retrieve,
+    do_retrieve_organization_memory,
+    do_retrieve_user_memory,
 )
 from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
@@ -329,16 +330,11 @@ class ExpertRAGAgent(Agent):
         _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context."""
-        query = event.user_query
-        memory_result = await memory.search_user_memory(
-            query=query,
-            user_id=event.user.id,
-            limit=10,
-            threshold=0.5,
+        return await do_retrieve_user_memory(
+            event=event,
+            memory=memory,
             rerank=agent_config.user_memory.rerank_user_memory,
         )
-
-        return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.name"),
@@ -355,24 +351,11 @@ class ExpertRAGAgent(Agent):
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         assert agent_config.org_memory is not None  # precondition enforces this
-        org_memory = agent_config.org_memory
-        query = event.user_query
-        requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
-        tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
-            requested=requested,
-            configured=org_memory.allowed_tenant_namespaces,
+        return await do_retrieve_organization_memory(
+            event=event,
+            org_memory=agent_config.org_memory,
+            memory=memory,
         )
-        memory_result = await memory.search_organization_memory(
-            query=query,
-            tenant_id=org_memory.tenant_id,
-            tenant_namespaces=tenant_namespaces,
-            user_id=None,
-            limit=10,
-            threshold=0.5,
-            rerank=org_memory.rerank_organization_memory,
-        )
-
-        return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.name"),
@@ -407,7 +390,6 @@ class ExpertRAGAgent(Agent):
             chat_history = extend_chat_history_with_organization_memory(
                 chat_history=chat_history,
                 memories=org_memory_event.memories,
-                relations=org_memory_event.relations,
                 t=t,
             )
 

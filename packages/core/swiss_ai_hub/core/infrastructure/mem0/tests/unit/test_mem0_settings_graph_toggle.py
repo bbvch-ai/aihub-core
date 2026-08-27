@@ -1,8 +1,9 @@
-"""Unit tests for the per-memory-type graph toggle (issue #1179).
+"""Unit tests for the per-memory-type graph toggle (issues #1179, #1713).
 
 `Mem0Settings.get_config(enable_graph=...)` controls whether the Neo4j graph store is included. mem0 keys
 `enable_graph` on `graph_store.config` being truthy, so disabling must yield an empty `GraphStoreConfig`
-(not None — the field is non-Optional). Default behavior (graph on) must be unchanged.
+(not None — the field is non-Optional). Both agent-facing memory scopes now opt out, but the default stays
+on for the admin CRUD paths, so it must remain unchanged.
 """
 
 import pytest
@@ -38,7 +39,9 @@ def test_enable_graph_false_yields_empty_graph_store(settings):
 
 
 def test_get_config_defaults_to_graph_on(settings):
-    """The low-level builder's `enable_graph` param still defaults to True (org memory relies on it)."""
+    """The low-level builder's `enable_graph` param still defaults to True. Both agent-facing scopes now opt
+    out (#1179, #1713), but the admin CRUD paths (`UserMemory`, `OrganizationMemory`) keep the default: their
+    `delete_all` is the GDPR purge, and mem0 only clears Neo4j when the service has the graph enabled."""
     assert settings.get_config().graph_store.config
 
 
