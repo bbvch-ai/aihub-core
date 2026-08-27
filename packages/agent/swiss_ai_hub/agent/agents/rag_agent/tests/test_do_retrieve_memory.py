@@ -142,5 +142,7 @@ async def test_namespace_outside_the_allow_list_stays_fatal():
     event.org_memory_namespaces = ["enginering"]
     org_memory = _org_config(default_tenant_namespace="engineering", allowed_tenant_namespaces=["engineering"])
 
+    memory = _empty_result_memory()
+
     with pytest.raises(ValueError, match="not in the configured allow-list"):
-        await do_retrieve_organization_memory(event=event, org_memory=org_memory, memory=_empty_result_memory())
+        await do_retrieve_organization_memory(event=event, org_memory=org_memory, memory=memory)
