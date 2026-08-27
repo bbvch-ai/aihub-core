@@ -172,12 +172,6 @@ memory:
     - {{ memory.memory }}
     {% endfor %}
     {% endif %}
-    {% if relations %}
-    **Relazioni del Grafo della Conoscenza:**
-    {% for relation in relations %}
-    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
-    {% endfor %}
-    {% endif %}
     </organizational_context>
   fact_extraction: |
     Sei un assistente specializzato nell'estrazione di memoria per l'agente %{agent_name}.
