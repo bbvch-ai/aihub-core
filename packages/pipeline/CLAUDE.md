@@ -106,10 +106,13 @@ Concrete Stage 1 flows (each uses `data_lake_file_factory` + a source-specific o
 processing chain regardless of origin:
 
 - `observable_data_lake_factory` → monitors S3 for new/changed files
-- `documents_factory` → parse (MinerU) → `RefDocDocument` → MongoDB
-- `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus
+- `documents_factory` → parse (MinerU) → `RefDocDocument` → MongoDB, flagged `is_ingested=False`
+- `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus, which flips `is_ingested=True`
 - `summary_nodes_factory` (optional) → hierarchical summaries → Milvus
 - `removed_documents_factory` → cleanup orphaned documents
+
+A document is only reported as ingested — to the API, the UI, and RAG agents — once its nodes are in Milvus. A parsed
+document has markdown but no embeddings, so it is not retrievable yet and must not be shown as complete.
 
 ## The `default_definitions()` Function
 
@@ -186,6 +189,10 @@ assets.
 - `AzureDataLakeIOManager` — Azure Data Lake Storage. URL-quoted metadata encoding.
 - `DocStoreIOManager` — MongoDB via LlamaIndex `KVDocumentStore`. URI → document ID via `uri_to_id()`.
 - `VectorStoreIOManager` — Milvus. Upsert mode. 30s retry logic for eventual consistency. Filters by `DOCUMENT_ID`.
+  After a successful write it also flips the source `RefDoc`'s `is_ingested` to `True` (via `RefDoc.mark_ingested`,
+  resolving each document from `node.ref_doc_id`). This deliberately lives in the IO manager, not in an op: the Milvus
+  write happens during output handling, so an op could only ever mark the documents *before* their nodes are actually
+  retrievable — which is the bug it guards against. It needs `document_store_name` (the Mongo db alias) at construction.
 
 **Read-Only** (source connectors — `handle_output()` raises `NotImplementedError`):
 

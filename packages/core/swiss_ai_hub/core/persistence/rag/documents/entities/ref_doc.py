@@ -397,14 +397,13 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
-    def mark_ingested(cls, db_alias: str, doc_id: str) -> "RefDoc | None":
-        """Mark a document as fully ingested."""
+    def mark_ingested(cls, db_alias: str, doc_id: str) -> bool:
+        """Mark a document as fully ingested, returning whether a document was updated.
+
+        Deliberately an atomic single-field `$set` rather than a full `save()`: the ingestion
+        pipeline may re-write the same RefDoc concurrently, and a full rewrite would revert it.
+        `updated_at` is left alone — it carries the *source file's* timestamp, which feeds asset
+        data versions and the default document sort.
+        """
         with switch_db(cls, db_alias) as SwitchedRefDoc:
-            try:
-                ref_doc = SwitchedRefDoc.objects.get(id=doc_id)
-                ref_doc.data.metadata.is_ingested = True
-                ref_doc.data.metadata.updated_at = int(time.time())
-                ref_doc.save()
-                return ref_doc
-            except SwitchedRefDoc.DoesNotExist:
-                return None
+            return bool(SwitchedRefDoc.objects(id=doc_id).update_one(set__data__metadata__is_ingested=True))
