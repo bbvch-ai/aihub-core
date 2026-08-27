@@ -77,10 +77,10 @@ class TestTheRunCeilings:
 
     def test_the_aggregate_ceiling_is_off_by_default(self) -> None:
         """Same principle as retention: a check that can reject an admin's save has to be switched on."""
-        assert SchedulerSettings().max_total_runs_per_month is None
+        assert SchedulerSettings().enforced_total_ceiling is None
 
     def test_a_configured_aggregate_ceiling_is_a_number(self) -> None:
-        assert SchedulerSettings(MAX_TOTAL_RUNS_PER_MONTH=5000).max_total_runs_per_month == 5000
+        assert SchedulerSettings(MAX_TOTAL_RUNS_PER_MONTH=5000).enforced_total_ceiling == 5000
 
     def test_a_negative_aggregate_ceiling_is_rejected(self) -> None:
         with pytest.raises(ValidationError):

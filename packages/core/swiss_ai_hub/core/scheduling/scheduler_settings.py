@@ -96,8 +96,13 @@ class SchedulerSettings(EnvironmentSettings):
         return timedelta(minutes=self.MAX_CATCHUP_MINUTES)
 
     @property
-    def max_total_runs_per_month(self) -> int | None:
-        """The aggregate ceiling, or None when the check is disabled."""
+    def enforced_total_ceiling(self) -> int | None:
+        """The aggregate ceiling, or None when `MAX_TOTAL_RUNS_PER_MONTH` is 0 and the check is disabled.
+
+        Named after what it answers rather than the setting it reads, like `enforced_profile_ceiling`,
+        because the sentinel differs: 0 disables the check on the setting, None disables it here — and a
+        name differing only in case would let a caller take the 0 for a ceiling, rejecting every schedule.
+        """
         return self.MAX_TOTAL_RUNS_PER_MONTH or None
 
     @property

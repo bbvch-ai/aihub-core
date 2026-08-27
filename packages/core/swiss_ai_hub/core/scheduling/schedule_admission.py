@@ -71,7 +71,7 @@ class ScheduleAdmission:
         within the default 43,200 means stepping croniter 43,200 times, about half a second, spent inside
         the request an admin is waiting on to reach an answer that was never in doubt.
         """
-        ceilings = [c for c in (settings.enforced_profile_ceiling, settings.max_total_runs_per_month) if c is not None]
+        ceilings = [c for c in (settings.enforced_profile_ceiling, settings.enforced_total_ceiling) if c is not None]
         return max(ceilings) + 1 if ceilings else None
 
     @staticmethod
@@ -81,7 +81,7 @@ class ScheduleAdmission:
         agent_id: str,
         settings: SchedulerSettings,
     ) -> str | None:
-        ceiling = settings.max_total_runs_per_month
+        ceiling = settings.enforced_total_ceiling
         if ceiling is None:
             return None
 
