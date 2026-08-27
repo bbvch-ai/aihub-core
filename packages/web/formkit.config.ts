@@ -39,10 +39,37 @@ const localeRequiredMessages = {
   it: 'Almeno una lingua deve essere compilata.',
 }
 
+// Same shape of problem for agentSelector: its value is always an `{agent_class, agent_id}` object,
+// so picking a class alone yields a non-empty object with a blank `agent_id` that `required` accepts.
+// A blank id then renders as a NATS wildcard at runtime and the delegation reaches no agent at all.
+// Backend `AgentSelector` elements emit `agentRefRequired` instead
+// (see packages/core/swiss_ai_hub/core/form/elements/agent_selector.py).
+function agentRefRequired(node: FormKitNode): boolean {
+  const value = node.value as { agent_class?: string | null, agent_id?: string | null } | null | undefined
+  if (!value) return false
+  return !!value.agent_class?.trim() && !!value.agent_id?.trim()
+}
+
+// As with localeRequired: without this the rule never runs on a never-touched field, whose value is
+// still `null`, so a fresh create form would submit with no agent selected at all.
+agentRefRequired.skipEmpty = false
+
+const agentRefRequiredMessages = {
+  de: 'Bitte wählen Sie einen Agententyp und ein Agentenprofil aus.',
+  en: 'Please select both an agent type and an agent profile.',
+  fr: 'Veuillez sélectionner un type d\'agent et un profil d\'agent.',
+  it: 'Seleziona sia un tipo di agente sia un profilo di agente.',
+}
+
 const config: DefaultConfigOptions = {
-  rules: { localeRequired },
+  rules: { localeRequired, agentRefRequired },
   messages: Object.fromEntries(
-    LOCALES.map(locale => [locale, { validation: { localeRequired: localeRequiredMessages[locale] } }]),
+    LOCALES.map(locale => [locale, {
+      validation: {
+        localeRequired: localeRequiredMessages[locale],
+        agentRefRequired: agentRefRequiredMessages[locale],
+      },
+    }]),
   ),
   inputs: {
     ...primeInputs,

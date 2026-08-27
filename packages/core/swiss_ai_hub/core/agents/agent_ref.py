@@ -47,5 +47,8 @@ class AgentRef(BaseModel):
     ```
     """
 
-    agent_class: Annotated[str, Field(description="The agent class name")]
-    agent_id: Annotated[str, Field(description="The agent instance ID")]
+    # Both halves must be non-empty: `PartialAgentTopic.to_subject` renders a blank segment as the NATS
+    # wildcard `*`, so an empty id publishes the delegation to a subject no instance is subscribed to and
+    # the caller waits for a reply that never arrives.
+    agent_class: Annotated[str, Field(description="The agent class name", min_length=1)]
+    agent_id: Annotated[str, Field(description="The agent instance ID", min_length=1)]

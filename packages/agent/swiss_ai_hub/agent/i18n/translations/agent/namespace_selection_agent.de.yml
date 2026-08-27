@@ -59,7 +59,7 @@ prompts:
     \ oben als Optionen auflisten.\n- Erfinden Sie KEINE Namen - verwenden Sie nur\
     \ die tatsächlichen Namen, die oben angezeigt werden.\n- Geben Sie IMMER alle\
     \ vier Felder an - has_enough_information, selected_namespaces, follow_up_question\
-    \ and reasoning - auch wenn ein Wert null ist. Lassen Sie niemals ein Feld weg.\n"
+    \ und reasoning - auch wenn ein Wert null ist. Lassen Sie niemals ein Feld weg.\n"
 steps:
   initialize_determination:
     name: Namespace-Bestimmung initialisieren

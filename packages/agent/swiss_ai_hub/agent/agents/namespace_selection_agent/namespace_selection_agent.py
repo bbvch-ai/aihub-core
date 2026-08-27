@@ -360,7 +360,10 @@ class NamespaceSelectionAgent(Agent):
     async def process_approval_approved_step(
         self,
         _: NamespaceApprovalResponseEvent,
-        start_event: UserMessageEvent | RAGStartEvent,
+        # A run only reaches an approval response through the chat entry point, so this is always the
+        # user's message. Naming RAGStartEvent here would advertise it as a start event of this agent,
+        # which puts this agent in its own RAG-delegation picker and lets a profile delegate to itself.
+        start_event: UserMessageEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         thread_context: ThreadContext,

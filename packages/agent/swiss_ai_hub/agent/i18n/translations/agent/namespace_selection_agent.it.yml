@@ -56,7 +56,7 @@ prompts:
     \ più, né meno.\n- La tua follow_up_question DEVE elencare i nomi esatti dei namespace\
     \ da <available_namespaces> sopra come opzioni.\n- NON inventare nomi - usa solo\
     \ i nomi reali mostrati sopra.\n- Includi SEMPRE tutti e quattro i campi - has_enough_information,\
-    \ selected_namespaces, follow_up_question and reasoning - anche quando un valore\
+    \ selected_namespaces, follow_up_question e reasoning - anche quando un valore\
     \ è null. Non omettere mai un campo.\n"
 steps:
   initialize_determination:

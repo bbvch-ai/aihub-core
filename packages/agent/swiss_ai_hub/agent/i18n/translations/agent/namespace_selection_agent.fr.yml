@@ -59,7 +59,7 @@ prompts:
     \ follow_up_question DOIT lister les noms exacts des namespaces de <available_namespaces>\
     \ ci-dessus comme options.\n- N'inventez PAS de noms - utilisez uniquement les\
     \ noms réels affichés ci-dessus.\n- Incluez TOUJOURS les quatre champs - has_enough_information,\
-    \ selected_namespaces, follow_up_question and reasoning - même lorsqu'une valeur\
+    \ selected_namespaces, follow_up_question et reasoning - même lorsqu'une valeur\
     \ est null. N'omettez jamais un champ.\n"
 steps:
   initialize_determination:

@@ -349,3 +349,20 @@ class TestDeterminationPromptContract:
             missing = [field for field in NamespaceDecision.model_fields if field not in prompt]
             assert not missing, f"{locale} determination prompt never names {missing}"
             assert translations["messages"]["determination_failed"], f"{locale} is missing determination_failed"
+
+
+class TestAdvertisedStartEvents:
+    """The RAG-delegation picker in the Admin UI lists agent classes by their advertised start events.
+
+    `NamespaceSelectionAgent` must not advertise `RAGStartEvent`: it cannot be started by one, and
+    advertising it put this agent in its own delegation picker, where selecting it made a profile
+    delegate to itself and the run hung forever with nothing logged.
+    """
+
+    def test_rag_start_event_is_not_advertised(self):
+        start_event_names = {event.__name__ for event in NamespaceSelectionAgent.get_start_events()}
+        assert "RAGStartEvent" not in start_event_names
+
+    def test_chat_message_is_still_the_entry_point(self):
+        start_event_names = {event.__name__ for event in NamespaceSelectionAgent.get_start_events()}
+        assert start_event_names == {"UserMessageEvent"}

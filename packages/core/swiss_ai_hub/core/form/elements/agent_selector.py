@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
@@ -87,6 +87,23 @@ class AgentSelector(PrimeVueElement):
 
     filter: Annotated[bool, Field(description="Whether to enable filtering/search")] = True
 
+    @computed_field
+    @property
+    def validation(self) -> str:
+        """Emits `agentRefRequired` where other elements emit FormKit's `required`.
+
+        FormKit's `required` rule only asks whether a value is present, and this element's value is
+        always an `{agent_class, agent_id}` object. Picking a class alone emits a non-empty object with
+        a blank `agent_id`, which passes `required` and then delegates to a NATS wildcard at runtime.
+        `agentRefRequired` (registered in the frontend FormKit config) looks at both halves.
+        """
+        rules: list[str] = []
+        if self.required:
+            rules.append("agentRefRequired")
+        if self.additional_validation_rules:
+            rules.append(self.additional_validation_rules)
+        return "|".join(rules)
+
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         if isinstance(self_copy.class_placeholder, LocaleString):
@@ -108,10 +125,13 @@ class AgentSelector(PrimeVueElement):
 
         agent_class = value.get("agent_class")
         agent_id = value.get("agent_id")
-        if not agent_class or not agent_id:
+        # An entirely unset reference is the untouched-field case, which `required` owns. A half-filled
+        # one cannot be evaluated, and answering "no violations" for input this never examined would let
+        # a blank id skip the access check altogether — so fail closed instead.
+        if not agent_class and not agent_id:
             return []
 
-        agent_ref = f"{agent_class}/{agent_id}"
+        agent_ref = f"{agent_class or ''}/{agent_id or ''}"
         if not access_checker.has_access_to_agent(agent_class, agent_id):
             return [
                 ConfigAuthorizationViolation(
