@@ -36,8 +36,6 @@
 </template>
 
 <script setup lang="ts">
-import { getLitellmModelsByMode } from '@core/sdk/client'
-
 import type { ModelDto } from '@core/sdk/client'
 
 interface ModelSelectProps {
@@ -64,10 +62,9 @@ const filter = computed(() => props.context.filter ?? true)
 const showClear = computed(() => props.context.showClear ?? false)
 
 const { t } = useI18n()
-const { tenantId } = useTenant()
 
-const models = ref<ModelDto[]>([])
-const isLoading = ref(false)
+const { models: fetchedModels, modelsAreLoading: isLoading } = useModelsByMode(mode)
+const models = computed<ModelDto[]>(() => fetchedModels.value ?? [])
 
 const selectedModel = computed({
   get: () => props.context.value ?? null,
@@ -80,32 +77,4 @@ function getModelIcon(modelName: string): string {
   const model = models.value.find(m => m.model_name === modelName)
   return model?.icon ?? 'meteor-icons:cpu'
 }
-
-async function fetchModels() {
-  isLoading.value = true
-  try {
-    const response = await getLitellmModelsByMode({
-      composable: '$fetch',
-      path: { tenant_id: tenantId.value!, mode: mode.value },
-    })
-    models.value = response
-  }
-  catch (error) {
-    console.error(`Failed to fetch models for mode "${mode.value}":`, error)
-    models.value = []
-  }
-  finally {
-    isLoading.value = false
-  }
-}
-
-// Fetch models on mount
-onMounted(() => {
-  fetchModels()
-})
-
-// Refetch if mode changes
-watch(mode, () => {
-  fetchModels()
-})
 </script>

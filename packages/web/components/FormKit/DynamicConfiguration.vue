@@ -13,9 +13,11 @@
       }"
       @submit="submitHandler"
     >
+      <!-- Pass `data` itself, not a spread copy: a fresh object on every parent render made
+           FormKitSchema re-render even when the schema was unchanged. -->
       <FormKitSchema
         :schema="schema"
-        :data="{ ...data }"
+        :data="data"
       />
 
       <!-- Render repeaters separately (not supported by FormKit standard) -->
@@ -74,6 +76,14 @@ function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
 
 const data = ref<Record<string, unknown>>(hydrate(props.initialData || {}))
 
+// Substitution source for `$field` label variables, deliberately decoupled from `data`.
+// `schema` reads this while building labels, so anything it reads becomes a schema dependency:
+// reading the live `data` model made every FormKit commit rebuild the whole schema, which
+// recompiles FormKitSchema and remounts every input — each remount refetching select options and
+// re-committing values, so the cycle fed itself until the tab died. This snapshot changes only
+// when the form is seeded, so labels resolve against the loaded values without the feedback edge.
+const labelValues = shallowRef<Record<string, unknown>>({ ...data.value })
+
 // Seed from `initialData` only once. A save refetches the query, so `initialData` becomes a new
 // object; re-hydrating then would reassign `data`, which FormKit's `v-model` re-commits in a
 // slightly different shape and reassigns again — an infinite render loop that froze the tab.
@@ -83,6 +93,7 @@ watch(() => props.initialData, (newData) => {
   if (formSeeded) return
   if (newData && Object.keys(newData).length > 0) {
     data.value = hydrate(newData)
+    labelValues.value = { ...data.value }
     formSeeded = true
   }
 })
@@ -92,7 +103,7 @@ const emit = defineEmits<{
 }>()
 
 function createLabelPattern(): RegExp {
-  const keys = Object.keys(data.value)
+  const keys = Object.keys(labelValues.value)
   if (keys.length === 0) return /(?!)/ // Never matches
   return new RegExp(keys.map(key => `\\$${key}`).join('|'), 'g')
 }
@@ -101,7 +112,7 @@ function replaceLabelVariables(label: string): string {
   const pattern = createLabelPattern()
   return label.replace(pattern, (match: string) => {
     const key = match.substring(1)
-    return (data.value[key] as string) || match
+    return (labelValues.value[key] as string) || match
   })
 }
 

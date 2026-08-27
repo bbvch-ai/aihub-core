@@ -25,7 +25,6 @@
 </template>
 
 <script setup lang="ts">
-import { getDatabases } from '@core/sdk/client'
 import { capitalCase } from 'change-case'
 
 import type { DatabaseDto } from '@core/sdk/client'
@@ -46,13 +45,14 @@ interface KnowledgeDatabaseSelectorProps {
 
 const props = defineProps<KnowledgeDatabaseSelectorProps>()
 const { t } = useI18n()
-const { tenantId } = useTenant()
 
 const placeholder = computed(() => props.context.placeholder)
 const filter = computed(() => props.context.filter ?? true)
 
-const databases = ref<DatabaseDto[]>([])
-const isLoading = ref(false)
+// Shared cached query rather than a per-mount fetch: a form renders several of these and
+// re-renders remount them, which previously issued one request per mount.
+const { databases: fetchedDatabases, databasesAreLoading: isLoading } = useDatabases()
+const databases = computed<DatabaseDto[]>(() => fetchedDatabases.value ?? [])
 
 const selectedDatabases = computed({
   get: () => props.context.value ?? [],
@@ -67,26 +67,4 @@ const databaseOptions = computed<DatabaseOption[]>(() =>
     displayName: db.display_name || capitalCase(db.name),
   })),
 )
-
-async function fetchDatabases() {
-  isLoading.value = true
-  try {
-    const response = await getDatabases({
-      composable: '$fetch',
-      path: { tenant_id: tenantId.value! },
-    })
-    databases.value = response
-  }
-  catch (error) {
-    console.error('Failed to fetch databases:', error)
-    databases.value = []
-  }
-  finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchDatabases()
-})
 </script>

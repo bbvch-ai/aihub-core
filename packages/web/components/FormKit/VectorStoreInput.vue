@@ -96,7 +96,6 @@
 
 <script setup lang="ts">
 import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
-import { getDatabases } from '@core/sdk/client'
 import { capitalCase } from 'change-case'
 
 import type { DatabaseDto } from '@core/sdk/client'
@@ -133,7 +132,6 @@ interface VectorStoreInputProps {
 
 const props = defineProps<VectorStoreInputProps>()
 const { t } = useI18n()
-const { tenantId } = useTenant()
 
 // Get custom props from context (FormKit passes them there, not as direct props)
 const databasePlaceholder = computed(() => props.context.databasePlaceholder)
@@ -141,9 +139,10 @@ const namespacePlaceholder = computed(() => props.context.namespacePlaceholder)
 const allowedFilterFieldsPlaceholder = computed(() => props.context.allowedFilterFieldsPlaceholder)
 const filter = computed(() => props.context.filter ?? true)
 
-// State
-const databases = ref<DatabaseDto[]>([])
-const isLoading = ref(false)
+// Shared cached query rather than a per-mount fetch: a form renders several of these and
+// re-renders remount them, which previously issued one request per mount.
+const { databases: fetchedDatabases, databasesAreLoading: isLoading } = useDatabases()
+const databases = computed<DatabaseDto[]>(() => fetchedDatabases.value ?? [])
 
 // Get current value from context
 const currentValue = computed(() => props.context.value ?? null)
@@ -222,27 +221,4 @@ function getDatabaseDisplayName(name: string): string {
   const option = databaseOptions.value.find(opt => opt.name === name)
   return option?.displayName ?? name
 }
-
-async function fetchDatabases() {
-  isLoading.value = true
-  try {
-    const response = await getDatabases({
-      composable: '$fetch',
-      path: { tenant_id: tenantId.value! },
-    })
-    databases.value = response
-  }
-  catch (error) {
-    console.error('Failed to fetch databases:', error)
-    databases.value = []
-  }
-  finally {
-    isLoading.value = false
-  }
-}
-
-// Fetch databases on mount
-onMounted(() => {
-  fetchDatabases()
-})
 </script>
