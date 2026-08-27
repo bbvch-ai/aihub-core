@@ -1181,6 +1181,13 @@ export type AgentSelector = {
   filter?: boolean;
   /**
    * Validation
+   *
+   * Emits `agentRefRequired` where other elements emit FormKit's `required`.
+   *
+   * FormKit's `required` rule only asks whether a value is present, and this element's value is
+   * always an `{agent_class, agent_id}` object. Picking a class alone emits a non-empty object with
+   * a blank `agent_id`, which passes `required` and then delegates to a NATS wildcard at runtime.
+   * `agentRefRequired` (registered in the frontend FormKit config) looks at both halves.
    */
   readonly validation: string;
   [key: string]: unknown;

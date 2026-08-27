@@ -1538,6 +1538,8 @@ export const AgentSelectorSchema = {
     validation: {
       type: "string",
       title: "Validation",
+      description:
+        "Emits `agentRefRequired` where other elements emit FormKit's `required`.\n\nFormKit's `required` rule only asks whether a value is present, and this element's value is\nalways an `{agent_class, agent_id}` object. Picking a class alone emits a non-empty object with\na blank `agent_id`, which passes `required` and then delegates to a NATS wildcard at runtime.\n`agentRefRequired` (registered in the frontend FormKit config) looks at both halves.",
       readOnly: true,
     },
   },
