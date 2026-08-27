@@ -9642,6 +9642,12 @@ export type MailBatchClassifiedEvent = {
    */
   fallback_count?: number;
   /**
+   * Failed Count
+   *
+   * How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.
+   */
+  failed_count?: number;
+  /**
    * Classified
    *
    * Per-message classification verdicts and filing destinations.
@@ -22133,6 +22139,12 @@ export type MailBatchClassifiedEventWritable = {
    * How many messages went to the fallback folder instead of a category.
    */
   fallback_count?: number;
+  /**
+   * Failed Count
+   *
+   * How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.
+   */
+  failed_count?: number;
   /**
    * Classified
    *

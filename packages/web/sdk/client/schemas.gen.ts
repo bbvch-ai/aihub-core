@@ -14334,6 +14334,13 @@ export const MailBatchClassifiedEventSchema = {
         "How many messages went to the fallback folder instead of a category.",
       default: 0,
     },
+    failed_count: {
+      type: "integer",
+      title: "Failed Count",
+      description:
+        "How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.",
+      default: 0,
+    },
     classified: {
       items: {
         $ref: "#/components/schemas/MailClassificationRef",
@@ -32878,6 +32885,13 @@ export const MailBatchClassifiedEventWritableSchema = {
       title: "Fallback Count",
       description:
         "How many messages went to the fallback folder instead of a category.",
+      default: 0,
+    },
+    failed_count: {
+      type: "integer",
+      title: "Failed Count",
+      description:
+        "How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.",
       default: 0,
     },
     classified: {
