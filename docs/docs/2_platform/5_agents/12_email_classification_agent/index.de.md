@@ -81,11 +81,12 @@ Klassifizierer entscheidet, wohin jede Nachricht geht.
 
 Eine wiederholbare Liste. Fügen Sie einen Eintrag pro Kategorie hinzu:
 
-| Feld                   | Beschreibung                                                                                    |
-| ---------------------- | ----------------------------------------------------------------------------------------------- |
-| **Kategorie**          | Ein kurzer Name, z. B. `support_request`. Muss eindeutig sein.                                  |
-| **Zielordner**         | Wohin E-Mails dieser Kategorie abgelegt werden. Wird bei Bedarf erstellt. Muss eindeutig sein.  |
-| **Was gehört hierher** | Eine Beschreibung der Art von E-Mails, die in diese Kategorie gehört. **Das liest das Modell.** |
+| Feld                   | Beschreibung                                                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Kategorie**          | Ein kurzer Name, z. B. `support_request`. Muss eindeutig sein.                                                       |
+| **Zielordner**         | Wohin E-Mails dieser Kategorie abgelegt werden. Wird bei Bedarf erstellt. Muss eindeutig sein.                       |
+| **Was gehört hierher** | Eine Beschreibung der Art von E-Mails, die in diese Kategorie gehört. **Das liest das Modell.**                      |
+| **Antwort entwerfen**  | Wenn aktiviert, erhält Post dieser Kategorie zusätzlich einen Antwortentwurf im Ordner Entwürfe. Standardmässig aus. |
 
 ::: tip Schreiben Sie die Beschreibung für eine neue Kollegin, nicht für eine Suchmaschine
 Dieses Feld leistet die eigentliche Arbeit. Ordnernamen allein können eine *Informationsanfrage* nicht von einer
@@ -122,6 +123,74 @@ ab, während die Schwelle kein einziges Mal griff; das eine Modell, das falsch a
 Die praktische Folge: **Ihre Kategoriebeschreibungen sind das Sicherheitsnetz, nicht ein Regler.** Landet Post im
 falschen Ordner, schärfen Sie die Beschreibungen der beiden verwechselten Kategorien.
 
+### Antwortentwürfe
+
+Aktivieren Sie **Antwort entwerfen**, damit der Agent für die Kategorien, die es verdienen, eine Antwort schreibt und
+sie im Ordner **Entwürfe** ablegt — damit ein Mensch sie liest, anpasst und sendet. Der Agent versendet nie; die
+Plattform hat überhaupt keine Möglichkeit, E-Mails zu senden.
+
+Entworfen wird **pro Kategorie**, über den Schalter **Antwort entwerfen** in der Kategorienliste. Genau darum geht es:
+Eine *Beschwerde* verdient meist eine Antwort, ein *Dankeschön* selten, und eine *Rechnung* will bezahlt und nicht
+beantwortet werden. Post, auf die keine Kategorie passte und die in den Ausweichordner ging, wird nie entworfen — wenn
+das Modell nicht sagen konnte, worum es geht, kann es die Nachricht auch nicht beantworten.
+
+| Feld                      | Beschreibung                                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Antwort entwerfen**     | Hauptschalter dieses Abschnitts. Standardmässig aus.                                                                                        |
+| **Entwurfsordner**        | Wohin Entwürfe abgelegt werden. Wird der Name nicht gefunden, wird der Entwurfsordner des Servers verwendet, andernfalls der Name angelegt. |
+| **LLM-Modell**            | Das Modell, das die Antwort schreibt. Leer lassen, um das Hauptmodell zu verwenden.                                                         |
+| **Entwurfs-Prompt**       | Anweisungen zu Ton und Stil. Der Standard ist knapp, höflich und verbietet erfundene Fakten.                                                |
+| **Eingabe-Token Entwurf** | Wie viel der Nachricht dem Modell gezeigt werden darf. Siehe *Lange E-Mails*.                                                               |
+
+Jeder Entwurf wird korrekt in den Verlauf eingehängt — `Re:`-Betreff, passende `In-Reply-To`- und
+`References`-Kopfzeilen — und erscheint im Mailprogramm daher innerhalb der ursprünglichen Konversation.
+
+::: warning Ein Entwurf ist ein erster Wurf, keine Antwort Lesen Sie jeden Entwurf, bevor Sie ihn senden. Das Modell
+schreibt aus der Nachricht und optional ihren Anhängen — es hat keinen Zugriff auf Ihre Systeme, Ihre Preise oder Ihre
+Fallhistorie und weiss nicht, was es nicht weiss. Entwürfe in Ihren eigenen Dokumenten zu verankern ist eine eigene,
+geplante Fähigkeit.
+:::
+
+#### Anhänge
+
+Aktivieren Sie **Anhänge lesen**, damit der Entwurf auch den *Inhalt* der angehängten Dateien nutzt und nicht nur den
+Textkörper. PDFs und Bilder liest der Dokumentenparser der Plattform (mit OCR); Word-, PowerPoint- und Excel-Dateien
+werden direkt konvertiert. Alles andere — Archive, Audio — wird übersprungen.
+
+Jeder gelesene Anhang kostet einen Parser-Aufruf, daher begrenzen drei Werte den Aufwand:
+
+| Feld                           | Beschreibung                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------- |
+| **Max. Anhänge pro Nachricht** | Wie viele Dateien pro Nachricht gelesen werden, grösste zuerst. Standard 3.       |
+| **Minimale Anhangsgrösse**     | Kleinere Dateien werden ganz übersprungen. Standard 8 KB.                         |
+| **Zeichenlimit pro Anhang**    | Wie viel Text aus einer einzelnen Datei übernommen wird. Standard 20 000 Zeichen. |
+
+Die Mindestgrösse deckt einen sehr häufigen Fall ab: Das Logo in einer E-Mail-Signatur kommt genauso als Anhang an wie
+ein echtes Dokument. Ohne diese Grenze würde jede gewöhnliche Geschäftsmail dafür bezahlen, ihr Signaturbild auszuwerten
+— für nichts.
+
+**Eine Datei, in der der Parser keinen Text findet, wird dem Modell dennoch genannt** — ein Foto oder ein Scan, den die
+OCR nicht lesen konnte. Dem Modell wird gesagt, dass die Datei ankam und dass kein Text gelesen werden konnte. So kann
+der Entwurf *„danke für das Foto"* schreiben, ohne zu erfinden, was darauf zu sehen war. Stillschweigend verworfen wird
+sie nie: Wer „siehe Anhang" schreibt, verdient eine Antwort, die den Anhang wenigstens bemerkt.
+
+::: tip Der Agent beschreibt keine Bilder
+Das Lesen von Anhängen extrahiert **Text**. Ein Foto ohne Schrift liefert nur Name und Typ — der Agent versteht keine
+Bilder und sagt Ihnen nicht, was darauf zu sehen ist.
+:::
+
+#### Lange E-Mails
+
+Ein langer weitergeleiteter Verlauf mit einem 200-seitigen PDF passt in keine Modell-Eingabe. Statt zu scheitern, kürzt
+der Agent — in fester Reihenfolge, damit vorhersehbar bleibt, was das Modell gesehen hat:
+
+1. Kopfzeilen und die Liste der Anhänge bleiben immer erhalten.
+2. Anhangstext wird zuerst verworfen, mit der kleinsten Datei beginnend.
+3. Erst danach wird der Textkörper an einer Satzgrenze gekürzt und als gekürzt markiert.
+
+Der Textkörper wird den Anhängen vorgezogen, weil dort die eigentliche Frage steht. Erhöhen Sie **Eingabe-Token
+Entwurf**, wenn Ihr Modell mehr verarbeitet und weniger gekürzt werden soll.
+
 ## Erste Schritte
 
 1. **Beginnen Sie mit zwei oder drei Kategorien**, nicht mit fünfzehn. Breite, klar unterscheidbare Töpfe werden weit
@@ -138,10 +207,12 @@ falschen Ordner, schärfen Sie die Beschreibungen der beiden verwechselten Kateg
 
 ## Was er *nicht* tut
 
-- **Er versendet nie und löscht nie.** Verschieben verlagert eine Nachricht; nichts verlässt das Postfach.
-- **Er entwirft keine Antworten.** Das ist eine eigene Fähigkeit — siehe [E-Mail-Agent](../11_email_agent/).
-- **Er liest zum Klassifizieren keine Anhänge.** Die Klassifizierung nutzt Kopfzeilen und den Textkörper. Anhänge werden
-  archiviert, beeinflussen die Kategorie aber nicht.
+- **Er versendet nie und löscht nie.** Verschieben verlagert eine Nachricht; Entwürfe landen in Ihrem Entwurfsordner.
+  Nichts verlässt das Postfach, und die Plattform kann überhaupt keine E-Mails senden.
+- **Er liest zum Klassifizieren keine Anhänge.** Die Klassifizierung nutzt nur Kopfzeilen und den Textkörper. Anhänge
+  können in einen *Antwortentwurf* einfliessen (siehe oben), nie aber in die Wahl der Kategorie.
+- **Er verankert Entwürfe nicht in Ihren Dokumenten.** Ein Entwurf entsteht allein aus der Nachricht und ihren Anhängen.
+  Antworten aus Ihrer Wissensdatenbank ist eine eigene, geplante Fähigkeit.
 - **Er hat keine Chat-Oberfläche** und keine Wissensdatenbank.
 - **Er überspringt keine Nachricht, die er nicht verarbeiten kann.** Ein Lauf ist ganz oder gar nicht: Scheitert die
   Klassifizierung einer Nachricht, wird nichts aus diesem Stapel abgelegt und der ganze Stapel im nächsten Lauf erneut

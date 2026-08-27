@@ -1,5 +1,6 @@
 import asyncio
 import email
+import logging
 import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
@@ -16,6 +17,8 @@ from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.agent.imap.mail_parser import MailParser
 from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
 from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
+
+logger = logging.getLogger(__name__)
 
 _FLAGS_KEY = b"FLAGS"
 _HEADER_KEY = b"BODY[HEADER]"
@@ -59,6 +62,7 @@ class ImapClient:
         self._max_body_bytes = max_body_bytes
         self._max_attachment_bytes = max_attachment_bytes
         self._max_message_bytes = max_message_bytes
+        self._resolved_source_folder: str | None = None
 
     async def list_unread(self) -> list[UnreadMailSummary]:
         """List the oldest unread messages as header summaries, identified by UID so ids stay valid across connections.
@@ -66,7 +70,7 @@ class ImapClient:
         Capped at ``max_messages``, oldest sent first — see ``_search_oldest_first`` for why ordering cannot be left to
         the server's ``SEARCH`` order.
         """
-        await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=True)
+        await self._select_source_folder(self._inbox_folder, readonly=True)
         uids = await self._search_oldest_first(["UNSEEN"], self._max_messages)
         return await self._fetch_summaries(uids)
 
@@ -224,7 +228,7 @@ class ImapClient:
         Split out of ``move_message`` so a batch caller pays for folder resolution once for the whole run rather
         than once per message.
         """
-        await asyncio.to_thread(self._connection.select_folder, self._inbox_folder, readonly=False)
+        await self._select_source_folder(self._inbox_folder, readonly=False)
         uid = int(message_id)
 
         present = await asyncio.to_thread(self._connection.fetch, [uid], ["FLAGS"])
@@ -261,20 +265,53 @@ class ImapClient:
         """Append a reply as a ``\\Draft``-flagged message to the drafts folder; never sends (no SMTP path exists).
 
         The configured name is only trusted when the server's own ``LIST`` returns it verbatim; otherwise the folder
-        flagged ``\\Drafts`` (RFC 6154 SPECIAL-USE) is used. This is required because folder names are the server's
-        bytes — localized Gmail drafts (e.g. ``[Gmail]/Thư nháp``) and NFC/NFD Unicode differences make a hand-typed
-        name mismatch and fail with ``[TRYCREATE]``. Returns the resolved folder and the ``APPENDUID`` (UIDPLUS,
-        RFC 4315) when reported.
+        flagged ``\\Drafts`` (RFC 6154 SPECIAL-USE) is used, and failing that the configured name is created. This is
+        required because folder names are the server's bytes — localized Gmail drafts (e.g. ``[Gmail]/Thư nháp``) and
+        NFC/NFD Unicode differences make a hand-typed name mismatch and fail with ``[TRYCREATE]``. Returns the
+        resolved folder and the ``APPENDUID`` (UIDPLUS, RFC 4315) when reported.
         """
         target = await self._resolve_folder(drafts_folder, _DRAFTS_SPECIAL_USE)
         response = await asyncio.to_thread(self._connection.append, target, raw_message, flags=[_DRAFT_FLAG])
         return target, self._parse_appenduid(response)
 
-    async def _resolve_folder(self, configured: str, special_use_flag: bytes) -> str:
-        """Return the server's exact folder name: the configured one if it exists verbatim, else the special-use match.
+    async def _select_source_folder(self, folder: str, readonly: bool) -> None:
+        """`SELECT` a folder the admin typed, resolving it to the server's exact bytes first.
 
-        Never trust a retyped name — folder names are the server's bytes (mUTF-7), so a visually-identical config value
-        can differ (localization, NFC vs NFD) and select a non-existent folder.
+        Resolved once per connection and cached: `relocate_message` selects the source folder for every message it
+        moves, and re-listing the mailbox each time is the per-message cost `do_file_messages` opens one connection
+        to avoid.
+
+        Gmail matches a label case-insensitively on `CREATE` but demands the exact bytes on `SELECT`, so a configured
+        `aihub-test-inbox` against a real `AIHub-Test-Inbox` fails with a bare `[NONEXISTENT] Unknown Mailbox` and the
+        run dies before it reads a single message. Unlike the drafts folder there is no special-use flag to fall back
+        to and nothing may be created — the source folder must already exist — so the resolution is a case-insensitive
+        match against `LIST`, and the error names the near-miss instead of leaving the admin to spot the capital.
+        """
+        if self._resolved_source_folder is None:
+            listed = await asyncio.to_thread(self._connection.list_folders)
+            names = [name for _flags, _delim, name in listed]
+            match = folder if folder in names else next((n for n in names if n.lower() == folder.lower()), None)
+            if match is None:
+                available = ", ".join(sorted(names))
+                raise ValueError(f"the mailbox has no folder {folder!r}. Available folders: {available}")
+            if match != folder:
+                logger.info("[imap] resolved configured folder %r to the server's name %r", folder, match)
+            self._resolved_source_folder = match
+        await asyncio.to_thread(self._connection.select_folder, self._resolved_source_folder, readonly=readonly)
+
+    async def _resolve_folder(self, configured: str, special_use_flag: bytes) -> str:
+        """Return the server's exact folder name: the configured one if it exists verbatim, else the special-use
+        match, else the configured name created on demand.
+
+        The order is what makes this correct on both kinds of server, and it cannot be rearranged. Verbatim first,
+        because a name the server already lists is the name the admin meant. Special-use second, because folder names
+        are the server's bytes (mUTF-7) and a visually-identical config value can differ through localization or
+        NFC/NFD — Gmail's drafts folder is `[Gmail]/Drafts`, listed in the account's own language, and creating a
+        `Drafts` label beside it would silently strand every draft where the user does not look.
+
+        Creation last, for the server that has neither: GreenMail starts with only `INBOX` and advertises no
+        SPECIAL-USE, so without this the very first drafting run fails outright instead of making the folder it was
+        told to use.
         """
         folders = await asyncio.to_thread(self._connection.list_folders)
         names = {name for _flags, _delim, name in folders}
@@ -285,11 +322,15 @@ class ImapClient:
             if special_use_flag in flags:
                 return name
 
-        available = ", ".join(sorted(names))
-        raise ValueError(
-            f"folder {configured!r} does not exist on the server and no {special_use_flag!r} special-use folder was "
-            f"found. Available folders: {available}"
-        )
+        if not configured:
+            available = ", ".join(sorted(names))
+            raise ValueError(
+                f"no folder was configured and the server lists no {special_use_flag!r} special-use folder. "
+                f"Available folders: {available}"
+            )
+
+        await self.ensure_folders([configured])
+        return configured
 
     async def _resolve_or_create_folder(self, configured: str) -> tuple[str, bool]:
         """Return the target folder name and whether it had to be created — no special-use fallback applies here."""

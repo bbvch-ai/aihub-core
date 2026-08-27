@@ -64,6 +64,15 @@ config:
     label: Fallback Folder
     help: Folder for mail the model is not confident about. Such mail is never guessed
       into a category and never left in the inbox.
+  failure_folder:
+    label: Failure Folder
+    help: Folder for mail the classifier could not process at all. Such mail still
+      leaves the inbox, so one bad message cannot block every run behind it, and moving
+      it back to the inbox retries it.
+  classification_input_tokens:
+    label: Classification Input Tokens
+    help: Token budget for the classification prompt. Long messages are trimmed to
+      fit, keeping the opening of the body.
   classification_model:
     label: Classification Model
     help: Chat model used to classify each message. Leave empty to use the agent's
@@ -71,3 +80,25 @@ config:
   classification_prompt:
     label: Classification Prompt
     help: Instructions steering how the model chooses a category.
+  category_draft_reply:
+    label: Draft a Reply
+    help: When on, mail filed under this category gets a drafted reply left in the
+      drafts folder for a human to review and send. Mail is never sent.
+  draft_input_tokens:
+    label: Draft Input Tokens
+    help: Input-token budget for the drafting prompt. The message body is trimmed,
+      and attachment text dropped, to stay within it.
+  include_attachments:
+    label: Read Attachments
+    help: When on, text extracted from the message's attachments is given to the model
+      alongside the body. Each attachment costs a document-parser round trip.
+  max_attachments_per_message:
+    label: Max Attachments Per Message
+    help: How many of a message's attachments are read, largest first.
+  min_attachment_bytes:
+    label: Minimum Attachment Size
+    help: Attachments smaller than this are skipped. Signature logos and tracking
+      pixels arrive as attachments and yield no usable text.
+  attachment_char_limit:
+    label: Attachment Character Limit
+    help: Characters kept from a single attachment's extracted text.

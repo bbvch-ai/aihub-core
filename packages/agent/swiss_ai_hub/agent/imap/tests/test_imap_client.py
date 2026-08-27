@@ -84,10 +84,15 @@ def _connection(
     return connection
 
 
-def _client(connection: MagicMock, max_messages: int = 50, max_message_bytes: int = 50_000_000) -> ImapClient:
+def _client(
+    connection: MagicMock,
+    max_messages: int = 50,
+    max_message_bytes: int = 50_000_000,
+    inbox_folder: str = "INBOX",
+) -> ImapClient:
     return ImapClient(
         connection,
-        inbox_folder="INBOX",
+        inbox_folder=inbox_folder,
         max_messages=max_messages,
         max_body_bytes=1_000_000,
         max_attachment_bytes=10_000_000,
@@ -803,15 +808,18 @@ async def test_ensure_folders_refuses_before_any_message_moves():
 
 
 @async_test
-async def test_relocate_message_moves_without_listing_folders():
-    connection = _connection(fetch={101: {b"FLAGS": ()}})
+async def test_relocate_message_moves_without_listing_folders_per_message():
+    """`do_file_messages` opens one connection and relocates the whole batch through it, so the source folder is
+    resolved once and cached — a `LIST` per message is the cost that connection exists to avoid."""
+    connection = _connection(fetch={101: {b"FLAGS": ()}, 102: {b"FLAGS": ()}})
     connection.has_capability = MagicMock(return_value=True)
     client = _client(connection)
 
     await client.relocate_message("101", "Processed")
+    await client.relocate_message("102", "Processed")
 
-    connection.list_folders.assert_not_called()
-    connection.move.assert_called_once_with([101], "Processed")
+    assert connection.list_folders.call_count == 1
+    assert connection.move.call_count == 2
 
 
 @async_test
@@ -824,3 +832,84 @@ async def test_relocate_message_refuses_a_uid_that_is_no_longer_in_the_inbox():
         await client.relocate_message("101", "Processed")
 
     connection.move.assert_not_called()
+
+
+@async_test
+async def test_append_draft_creates_the_configured_folder_when_the_server_has_no_drafts_folder_at_all():
+    """The GreenMail shape: only INBOX exists and no SPECIAL-USE is advertised.
+
+    Without this the very first drafting run against a fresh test server fails outright instead of making the folder
+    it was told to use.
+    """
+    # Three LIST calls happen here — the resolve, then ensure_folders either side of the create — so the folder must
+    # only appear on the third. `_folders_after_creating` reveals it on the second, which is the different case of a
+    # concurrent run having won the race.
+    inbox_only = [((b"\\HasNoChildren",), b".", "INBOX")]
+    listings = iter([inbox_only, inbox_only, [*inbox_only, ((b"\\HasNoChildren",), b".", "Drafts")]])
+    connection = _connection(folders=lambda *_args: next(listings))
+    connection.append = MagicMock(return_value=b"[APPENDUID 130 57] (Success)")
+    client = _client(connection)
+
+    resolved, uid = await client.append_draft("Drafts", b"raw")
+
+    assert resolved == "Drafts"
+    assert uid == "57"
+    connection.create_folder.assert_called_once_with("Drafts")
+
+
+@async_test
+async def test_append_draft_prefers_the_special_use_folder_over_creating_the_configured_name():
+    """Order matters more than the fallback itself.
+
+    Gmail's real drafts folder is `[Gmail]/Drafts`, listed in the account's own language. Creating a `Drafts` label
+    beside it would silently strand every draft where the user never looks.
+    """
+    connection = _connection(
+        folders=[
+            ((b"\\HasNoChildren",), b"/", "INBOX"),
+            ((b"\\HasNoChildren", b"\\Drafts"), b"/", "[Gmail]/Drafts"),
+        ]
+    )
+    connection.append = MagicMock(return_value=b"(Success)")
+    client = _client(connection)
+
+    resolved, _uid = await client.append_draft("Drafts", b"raw")
+
+    assert resolved == "[Gmail]/Drafts"
+    connection.create_folder.assert_not_called()
+
+
+@async_test
+async def test_append_draft_reports_a_folder_it_could_not_create():
+    """A server that refuses the folder must fail before the append, not append into nothing."""
+    connection = _connection(folders=[((b"\\HasNoChildren",), b".", "INBOX")])
+    connection.create_folder = MagicMock(side_effect=IMAPClientError("permission denied"))
+    connection.append = MagicMock(return_value=b"(Success)")
+    client = _client(connection)
+
+    with pytest.raises(ValueError, match="could not be created"):
+        await client.append_draft("Drafts", b"raw")
+
+    connection.append.assert_not_called()
+
+
+@async_test
+async def test_a_source_folder_differing_only_in_case_resolves_to_the_server_name():
+    """Gmail matches a label case-insensitively on CREATE but demands exact bytes on SELECT, so a configured
+    `aihub-test-inbox` against a real `AIHub-Test-Inbox` otherwise dies on `[NONEXISTENT]` before reading a message."""
+    connection = _connection(folders=[((), b"/", "AIHub-Test-Inbox")])
+    client = _client(connection, inbox_folder="aihub-test-inbox")
+
+    await client.list_unread()
+
+    connection.select_folder.assert_called_once_with("AIHub-Test-Inbox", readonly=True)
+
+
+@async_test
+async def test_a_source_folder_that_does_not_exist_names_what_does():
+    """The server's own error is a bare `[NONEXISTENT] Unknown Mailbox`, which leaves the admin to spot the typo."""
+    connection = _connection(folders=[((), b"/", "INBOX"), ((), b"/", "Archive")])
+    client = _client(connection, inbox_folder="Inbx")
+
+    with pytest.raises(ValueError, match="has no folder 'Inbx'"):
+        await client.list_unread()

@@ -148,8 +148,8 @@ The backend defines form schemas (`FormkitElement[]`), the frontend renders them
 `<FormKitSchema :schema="schema" />` → rendered form.
 
 **Custom FormKit inputs** (registered in `formkit.config.ts`, which `nuxt.config.ts` points `formkit.configFile` at):
-`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`,
-`modelSelect`, `tenantSelect`, `vectorStoreInput`.
+`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`, `modelSelect`,
+`tenantSelect`, `vectorStoreInput`.
 
 Custom input components receive props via `context` (not Vue props): read from `context.value`, write via
 `context.node.input(newValue)`.

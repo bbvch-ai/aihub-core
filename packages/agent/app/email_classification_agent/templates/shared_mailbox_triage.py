@@ -1,6 +1,6 @@
 from swiss_ai_hub.core.generative_ai import LLMConfig, LLMParameter
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.imap import EmailClassificationSettings, ImapClientConfig, MailCategory
+from swiss_ai_hub.core.imap import DraftEmailSettings, EmailClassificationSettings, ImapClientConfig, MailCategory
 
 from swiss_ai_hub.agent.agents.email_classification_agent import EmailClassificationAgentConfig
 
@@ -12,6 +12,7 @@ _CATEGORIES = [
             "The sender is asking for information we can simply provide — pricing, opening hours, documentation, "
             "where to find something. Answering needs no action beyond telling them."
         ),
+        draft_reply=True,
     ),
     MailCategory(
         category="support_request",
@@ -20,11 +21,15 @@ _CATEGORIES = [
             "Something is broken or blocked for the sender and resolving it requires an action from our team, not "
             "just an explanation."
         ),
+        draft_reply=True,
     ),
     MailCategory(
         category="invoice",
         imap_folder="Triage/Invoices",
         description=("A bill, invoice, receipt, payment reminder or dunning notice, whether in the body or attached."),
+        # No draft: a bill wants paying, not answering. Leaving one category off is what makes the template show
+        # the opt-in rather than merely mention it.
+        draft_reply=False,
     ),
 ]
 
@@ -63,5 +68,11 @@ def build() -> EmailClassificationAgentConfig:
         classification=EmailClassificationSettings(
             categories=_CATEGORIES,
             fallback_folder="Triage/Uncategorised",
+            # Kept under the same prefix as the rest, and distinct from the fallback: mail the model declined and
+            # mail it never managed to read are different problems, and only one of them is worth an operator's time.
+            failure_folder="Triage/Failed",
         ),
+        # Drafting off by default: a template that started writing replies to a customer's real mailbox the moment it
+        # was instantiated would be presumptuous. The categories carry the intent; the admin turns it on.
+        draft=DraftEmailSettings(enable_draft=False, drafts_folder="Drafts"),
     )
