@@ -515,5 +515,148 @@ the whole batch and routes per category.
   processed-folder is meaningless when the classifier picks the destination, and a field that must not exist is not the
   same as a field that is conditionally hidden.
 
-Drafting replies per category (#1639), grounding those drafts in per-category knowledge (#1720) and running the agent on
-a schedule (#1638) are separate stories, all blocked on this one.
+Grounding these drafts in per-category knowledge (#1720) is a separate story, blocked on this one. Running the agent on
+a schedule (#1638) is delivered.
+
+## Drafting replies per category (#1639)
+
+The second half of the customer use case: after classifying, draft an answer. The draft capability itself already
+existed from [#1509](https://github.com/bbvch-ai/aihub-core/issues/1509) — `append_draft`, `ReplyComposer`,
+`MailBatchDraftedEvent` — but only as `ImapAgent`'s independent chain, which finds its own candidates by IMAP flag. This
+story feeds the classification verdict into it and makes drafting opt-in per category: a `thanking` mail rarely warrants
+a reply, a `complaint` usually does.
+
+- **The opt-in lives on the category** (`MailCategory.draft_reply`), not on a separate list of category names. A name
+  duplicated in two places drifts the first time someone renames a category. It also settles the fallback folder for
+  free: mail no category fitted has no category to be opted in, so it is never drafted — which is the behaviour you want
+  anyway, since a model that could not place a message is in no position to answer it.
+
+- **The drafting step reads each message back from the S3 archive, not from IMAP and not from the event.** This is the
+  one genuinely forced decision in the story. `do_file_messages` issues `MOVE`, so by the time drafting runs the source
+  UID is dead — the message has a fresh UID in its category folder. Re-finding it by `SEARCH HEADER Message-ID` was
+  rejected: Gmail's IMAP search is backed by Gmail search and unreliable for header terms. Carrying the body on
+  `MailBatchClassifiedEvent` was rejected too — up to `max_body_bytes` (1 MB) per message across up to `max_messages` of
+  them, on an event persisted to FerretDB and streamed over WebSocket.
+
+  The archive from [#1575](https://github.com/bbvch-ai/aihub-core/issues/1575) is keyed by `file_id` and does not move,
+  which makes it the only durable handle on the content. It is also the *better* input: the stored `.eml` is the message
+  verbatim, so a re-parse recovers the recipients and the full body that the summary event deliberately omits.
+
+- **No message is flagged as drafted on this blueprint.** #1509 flags its sources (`$AiHubDrafted`, else `\Answered`)
+  because its chain leaves them unread in place and has nothing else to dedup on. Here filing already guarantees a
+  message cannot be seen twice, and the UID a flag would target no longer resolves. #1720's text assumes
+  "append-then-flag"; the invariant it actually needs — *every message in a drafting category ends up with a draft* —
+  holds without it.
+
+- **Drafting is at-least-once**, unchanged from #1509. A crash between the `APPEND` and the `MOVE` re-drafts on the next
+  run. Documented rather than solved: the alternative is a two-phase commit across IMAP and Redis for a duplicate a
+  human deletes in one click.
+
+- **A failed drafting pass costs that batch its drafts permanently**, and this is the one place where drafting's failure
+  mode is *worse* than filing's. A failure while filing is safe because everything still in the inbox is unread, so the
+  next run picks it up. Drafting runs after filing, so by then the whole batch has left the inbox and the next run will
+  never see it again — one S3 or model error partway through means no drafts for any of those messages, ever.
+
+  Accepted rather than fixed, on the grounds that the mail itself is safely filed and visible to a human in its category
+  folder: a draft is an accelerator, not the system of record, and a run that raises is loud in tracing. The alternative
+  — catching per message and drafting what it can — was rejected as the kind of defensive error-swallowing that hides a
+  systematic failure (wrong credentials, a full bucket) behind partial success. If drafting later becomes something
+  customers depend on rather than merely benefit from, this is the decision to revisit first.
+
+- **`append_draft` now creates the configured folder as a last resort**, after trying the verbatim name and the
+  `\Drafts` SPECIAL-USE folder. The order is load-bearing and cannot be rearranged. Verbatim first, because a name the
+  server lists is the name the admin meant. Special-use second, because Gmail's real drafts folder is `[Gmail]/Drafts`
+  listed in the account's own language, and creating a `Drafts` label beside it would silently strand every draft where
+  the user never looks. Creation last, for the server that has neither: GreenMail starts with only `INBOX` and
+  advertises no SPECIAL-USE, so without this the first drafting run against a fresh test server fails outright instead
+  of making the folder it was told to use.
+
+- **Two validation rules were added, both checked before the first fetch** rather than when drafting starts. A run that
+  classified and filed a whole batch at full model cost and only then discovered its drafts folder is unusable has
+  wasted all of it. Drafting enabled with no category opted in is rejected — paying for a pass that cannot produce a
+  single draft is a misconfiguration, not a quiet no-op. And a `drafts_folder` equal to the inbox is rejected: a draft
+  appended there arrives unread, so the next run classifies the agent's own draft and drafts a reply to it. Same class
+  of unterminating loop as an inbox-equal category folder, and reachable the same way — a typo in a free-text field.
+
+- **The lease travels with the terminal step.** `finish_classification_step` is gone; `draft_replies_step` ends the run
+  whenever there is nothing to draft and `finish_drafting_step` ends it when there was, so both release the mailbox.
+  Drafting runs under `lease.heartbeat(...)` for the same reason filing does — one model call per message can outlive
+  the TTL — and a lost lease raises before the first `APPEND`, since appending is the second phase that mutates the
+  mailbox. `test_every_terminal_step_accounts_for_the_lease` already anticipated this story and needed no change.
+
+### Attachments as draft input, and what an image with no text means
+
+The customer noted attachments "could contain information which should be considered to formulate an answer", which
+classification itself does not need. Drafting does.
+
+- **Attachment text is read through the document loaders already in `packages/core`**, behind `include_attachments` (off
+  by default). The extension → loader routing was inlined in the API's `ParsingService` and, configurably, in the
+  pipeline's `DocumentParserResource`; it is stated a third time in core as `DocumentLoaderSelector`, which the agent
+  uses. The two existing call sites were deliberately left alone — each carries behaviour the shared selector does not
+  model (`ParsingService` its passthrough extensions and its 400 response, `DocumentParserResource` its `loader_type`
+  switch) — so the extension lists live in three places until those are migrated separately. **MinerU is not the only
+  branch**: PDFs and images go to MinerU, but Word and the other Office formats go to MarkItDown, and plaintext to
+  `RawLoader`. Each list stays owned by its loader, so a loader gaining a format is not a second edit here. The selector
+  returns `None` for anything unreadable, which is what lets the API keep its 400 while the agent silently skips.
+
+- **Loaders are called with `include_images=False`.** All three raise when asked for images with no fsspec filesystem to
+  write them to, and a reply prompt has no use for extracted images — this keeps an S3 filesystem out of the agent
+  entirely.
+
+- **An attachment holding no text is named, not dropped.** MinerU answers an image with no words with empty `md_content`
+  — it logs a warning and returns a `Document` with empty text; it does not raise. So this needed a decision about
+  meaning, not error handling. Extraction has three outcomes (text / no text / unreadable), and all three put the
+  attachment in an inventory line in the prompt: `cat.jpg (image/jpeg, 82 KB) — no text could be extracted`. Never an
+  empty text block.
+
+  This is the right answer for a photo *and* for a scanned invoice whose OCR failed: the model learns the attachment
+  exists, can acknowledge it, and has nothing to hallucinate contents from. Omitting it would be worse — the sender
+  wrote "see attached" and the reply would ignore it.
+
+- **No image understanding is added.** `ImageLoader` exists in core but by its own docstring "does not perform any OCR
+  or image analysis"; the descriptions are generated downstream during RAG ingestion, which is not this run. And the
+  drafting model is picked with `ModelSelect(mode="chat")`, so it is not guaranteed multimodal. A VLM captioning path
+  for the drafter is a real capability with real cost and belongs in its own issue.
+
+- **A size floor stops the signature logo tax.** `MailParser` treats every MIME part carrying a filename as an
+  attachment, so the inline PNG in a corporate signature arrives as one. Without `min_attachment_bytes` (default 8 KB) a
+  routine business mail would spend a MinerU round trip on a logo and get nothing back. Above the floor, candidates are
+  taken largest-first up to `max_attachments_per_message`: the MIME disposition that would say which file is substantive
+  was discarded at parse time and the bytes are in S3, so size is the only signal left.
+
+  An image-only attachment above the floor still costs a round trip before we learn it is textless. That cannot be
+  pre-filtered by content type without losing the scanned invoice, which is an image with text and precisely the case
+  worth supporting.
+
+### Fitting the drafting prompt to the model's input limit
+
+`attachment_char_limit` bounds one attachment, but the prompt is system prompt + envelope + body + N extracts, and a
+200-page PDF or a long forwarded thread breaches the model's limit regardless.
+
+- **`number_of_input_tokens` on `DraftEmailSettings`** — the same field name and form element `RAGAgentConfig`,
+  `FewShotAgentConfig` and `McpReactAgentConfig` already expose, so no new concept.
+
+- **Trimming is ordered, not proportional.** `DraftPromptBuilder` protects the system prompt and the envelope (headers
+  plus the attachment inventory) absolutely, trims the body only after every attachment extract has been given up, and
+  drops extracts smallest-first. The body outranks the attachments because the body *is* the message: reply to a
+  truncated invoice and you still answer the sender's question; drop the question and you answer nothing. Trimming cuts
+  at sentence boundaries via `SentenceSplitter` — a body cut mid-word invites the model to complete the fragment rather
+  than answer it — and always leaves a `[… truncated]` marker, so the model knows it did not see everything. Without the
+  marker a draft answers confidently on material it never read, which is what the shipped prompt's "never invent facts"
+  is trying to prevent.
+
+- **A budget too small for the envelope alone raises**, mirroring `limit_chat_history_with_context`. That is a
+  misconfiguration, and emitting a degenerate prompt would spend a model call replying to nothing.
+
+- **Measuring is nearly free for normal mail.** The same short-circuit as `TextChunkSizeLimiter._within_budget` and
+  `recursive_summary_parser._fits`, with the same `SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER = 2` and the same
+  Latin-script-EU rationale: under `budget / 2` characters is accepted and past `budget * 4` rejected without a count.
+  The budget also carries the same `0.85` safety factor as the summariser, because `get_tokenizer()` is not the
+  tokenizer of whichever model LiteLLM routes to.
+
+- **Oversized attachments are truncated, not summarised.** `LLMSummarizer` (`recursive_summary_parser.py`) would fit and
+  was rejected: it costs an LLM call per chunk per message on a run already making one per message, and #1720 replaces
+  the draft body with RAG-grounded retrieval — which is the right place for "make sense of a large document", not a
+  truncation helper.
+
+Grounding these drafts in per-category knowledge (#1720) is the next story, and is blocked on this one.

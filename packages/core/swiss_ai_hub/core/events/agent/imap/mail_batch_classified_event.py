@@ -29,6 +29,14 @@ class MailBatchClassifiedEvent(ControlAndDisplayEvent):
     fallback_count: Annotated[
         int, Field(default=0, description="How many messages went to the fallback folder instead of a category.")
     ]
+    failed_count: Annotated[
+        int,
+        Field(
+            default=0,
+            description="How many messages the classifier could not reach a verdict on at all. They are filed into "
+            "the failure folder rather than left in the inbox, where they would be re-selected on every run forever.",
+        ),
+    ]
     classified: Annotated[
         list[MailClassificationRef],
         Field(default_factory=list, description="Per-message classification verdicts and filing destinations."),

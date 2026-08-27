@@ -8,9 +8,10 @@ emits one event per message, a classifying agent summarises a whole batch.
 
 import logging
 
-from swiss_ai_hub.core.events.agent import UnreadMailSummary
+from swiss_ai_hub.core.events.agent import DraftedReplyRef, MailClassificationRef, UnreadMailSummary
 from swiss_ai_hub.core.imap import ImapClientConfig
 
+from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.fetched_mail import FetchedMail
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
 from swiss_ai_hub.agent.imap.mail_store import MailStore
@@ -141,6 +142,53 @@ async def do_file_messages(
             await client.relocate_message(message_id, target_folder)
             logger.info("[imap] do_file_messages: moved uid=%s -> %s", message_id, target_folder)
     return created
+
+
+async def do_draft_replies(
+    imap_config: ImapClientConfig,
+    drafts_folder: str,
+    replies: list[tuple[MailClassificationRef, ComposedReply]],
+) -> list[DraftedReplyRef]:
+    """Append a batch of composed replies to the drafts folder on one connection, and never send any of them.
+
+    One connection for the batch, opened only once every model call is done: a socket left idle across a slow LLM
+    round-trip gets dropped, and reconnecting per message is what servers capping concurrent connections (Gmail
+    included) refuse outright.
+
+    No source message is flagged. The blueprint that calls this has already filed each message out of the inbox, so
+    filing is the dedup, and the UID the flag would target died with the ``MOVE``. That is also what makes a partial
+    batch safe: the appended drafts stay, and nothing about the filed mail changed.
+
+    A failure aborts the batch rather than the run's earlier work — the mail is filed either way, so the worst case
+    is a message whose draft appears on the next run.
+    """
+    if not replies:
+        return []
+
+    logger.info("[imap] do_draft_replies: appending %d draft(s) to %r", len(replies), drafts_folder)
+    drafted: list[DraftedReplyRef] = []
+    async with ImapClientFactory.create(imap_config) as client:
+        for classification, reply in replies:
+            resolved_folder, draft_uid = await client.append_draft(drafts_folder, reply.raw)
+            logger.info(
+                "[imap] do_draft_replies: drafted a reply to uid=%s (%s) -> %r draft_uid=%s",
+                classification.message_id,
+                classification.category,
+                resolved_folder,
+                draft_uid,
+            )
+            drafted.append(
+                DraftedReplyRef(
+                    source_uid=classification.message_id,
+                    category=classification.category,
+                    drafts_folder=resolved_folder,
+                    draft_uid=draft_uid,
+                    in_reply_to=reply.in_reply_to,
+                    subject=reply.subject,
+                    recipient=reply.recipient,
+                )
+            )
+    return drafted
 
 
 async def do_file_message(imap_config: ImapClientConfig, message_id: str, target_folder: str) -> bool:

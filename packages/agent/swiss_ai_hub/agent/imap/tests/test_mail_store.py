@@ -7,6 +7,7 @@ import pytest
 
 from swiss_ai_hub.agent.imap.mail_parser import MailParser
 from swiss_ai_hub.agent.imap.mail_store import MailStore
+from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment
 
 _STORE_MODULE = "swiss_ai_hub.agent.imap.mail_store"
 _AGENT_CLASS = "ImapAgent"
@@ -159,3 +160,72 @@ class TestAttachmentsAreStoredAlongsideTheOriginal:
         assert [ref.filename for ref in attachment_refs] == ["report.pdf"]
         assert message_ref is not None
         assert client.put_object.call_count == 2
+
+
+class TestLoadingBackFromTheArchive:
+    """Reading an archived message back is what lets a step run after the mail has been filed.
+
+    The IMAP UID dies with the MOVE that files a message, so a drafting pass cannot re-fetch it. The archive is keyed
+    by file_id and does not move, which makes it the only durable handle on the content.
+    """
+
+    @pytest.mark.asyncio
+    async def test_a_stored_message_comes_back_byte_identical(self):
+        raw = _raw_message()
+        client = Mock()
+
+        with patch(f"{_STORE_MODULE}.create_s3_client", return_value=client):
+            ref = await MailStore.store_message(raw, message_id="42", agent_class=_AGENT_CLASS, agent_id=_AGENT_ID)
+            client.get_object.return_value = {"Body": Mock(read=Mock(return_value=raw))}
+            loaded = await MailStore.load_message(ref, agent_class=_AGENT_CLASS, agent_id=_AGENT_ID)
+
+        assert loaded == raw
+
+    @pytest.mark.asyncio
+    async def test_a_message_is_read_from_the_location_its_reference_resolves_to(self):
+        raw = _raw_message()
+        client = Mock()
+
+        with patch(f"{_STORE_MODULE}.create_s3_client", return_value=client):
+            ref = await MailStore.store_message(raw, message_id="42", agent_class=_AGENT_CLASS, agent_id=_AGENT_ID)
+            client.get_object.return_value = {"Body": Mock(read=Mock(return_value=raw))}
+            await MailStore.load_message(ref, agent_class=_AGENT_CLASS, agent_id=_AGENT_ID)
+
+        written = client.put_object.call_args.kwargs
+        read = client.get_object.call_args.kwargs
+        assert (read["Bucket"], read["Key"]) == (written["Bucket"], written["Key"])
+
+    @pytest.mark.asyncio
+    async def test_the_reparsed_message_still_carries_the_threading_headers(self):
+        """The reply's In-Reply-To and References come out of these bytes, so the round trip has to preserve them."""
+        raw = _raw_message()
+        client = Mock()
+
+        with patch(f"{_STORE_MODULE}.create_s3_client", return_value=client):
+            ref = await MailStore.store_message(raw, message_id="42", agent_class=_AGENT_CLASS, agent_id=_AGENT_ID)
+            client.get_object.return_value = {"Body": Mock(read=Mock(return_value=raw))}
+            loaded = await MailStore.load_message(ref, agent_class=_AGENT_CLASS, agent_id=_AGENT_ID)
+
+        parsed = MailParser.parse_message(
+            "42", email.message_from_bytes(loaded, policy=default_policy), 1_000_000, 10_000_000, raw=b""
+        )
+        assert parsed.rfc_message_id == "<report-1@example.com>"
+        assert parsed.sender == "sender@example.com"
+        assert parsed.subject == "Quarterly report"
+        assert "report attached" in parsed.body_text
+
+    @pytest.mark.asyncio
+    async def test_a_stored_attachment_comes_back_byte_identical(self):
+        content = b"%PDF-1.4 fake"
+        client = Mock()
+
+        with patch(f"{_STORE_MODULE}.create_s3_client", return_value=client):
+            refs = await MailStore.store_attachments(
+                [ParsedAttachment(filename="report.pdf", content_type="application/pdf", content=content)],
+                agent_class=_AGENT_CLASS,
+                agent_id=_AGENT_ID,
+            )
+            client.get_object.return_value = {"Body": Mock(read=Mock(return_value=content))}
+            loaded = await MailStore.load_attachment(refs[0], agent_class=_AGENT_CLASS, agent_id=_AGENT_ID)
+
+        assert loaded == content
