@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
@@ -70,10 +70,11 @@ async def do_condense_standalone_question(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> StandaloneQuestionCondenserEvent:
     """Condense chat history and user query into standalone question."""
     await displayer.display_thought(t("agent.thought.condense_question"))
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         condensed = await condense_standalone_question(
             chat_history=limited_history, message=last_user_message, t=t, llm=llm
         )
@@ -88,6 +89,7 @@ async def do_respond_with_llm(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
     as_stop_step: bool = True,
 ) -> LLMStopEvent | LLMEvent:
     """Generate LLM response with proper message building and streaming."""
@@ -115,7 +117,7 @@ async def do_respond_with_llm(
     # Merge consecutive messages with the same role (required by LiteLLM)
     messages = merge_consecutive_messages(messages)
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=as_stop_step)
 
 
@@ -125,12 +127,13 @@ async def do_few_shot_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> FewShotRejectEvent | FewShotAcceptEvent:
     """Execute few-shot guard logic and return appropriate event."""
     if not examples:
         return FewShotAcceptEvent(reason=t("agent.thought.no_few_shot_examples"))
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         guard_result = await few_shot_guard(
             llm=llm,
             t=t,
@@ -148,13 +151,14 @@ async def do_retrieve(
     event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
     runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
     if isinstance(event, StandaloneQuestionCondenserEvent):
         query = event.condensed_chat_message.content or ""
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t)
+    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t, user)
     nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
     return RetrieverEvent.from_nodes(nodes_with_score)
 
@@ -165,6 +169,7 @@ async def do_rerank_nodes(
     reranking_config: RerankingConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> RerankerEvent:
     """Rerank nodes and build RerankerEvent."""
     await displayer.display_thought(t("agent.thought.reranking_results"))
@@ -172,6 +177,7 @@ async def do_rerank_nodes(
         nodes=nodes,
         query=query,
         reranking_model=reranking_config.reranking_model,
+        user=user,
     )
 
     return RerankerEvent(
@@ -239,6 +245,7 @@ async def do_context_sufficient_guard(
     displayer: EventDisplayer,
     t: LocaleHandler,
     chat_history: list[ChatMessage],
+    user: UserIdentity,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
@@ -247,7 +254,7 @@ async def do_context_sufficient_guard(
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         guard_result = await context_sufficient_guard(
             llm=llm,
             t=t,

@@ -2,6 +2,7 @@ import logging
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     DraftedReplyRef,
@@ -164,6 +165,9 @@ class ImapAgent(Agent):
         imap_config: ImapClientConfig,
         draft: DraftEmailSettings,
         displayer: EventDisplayer,
+        # Optional, unlike the conversational agents: this agent is triggered programmatically and its
+        # start events default user to None, so a scheduler-driven run has no identity to attribute.
+        user: UserIdentity | None = None,
     ) -> MailBatchDraftedEvent | StopEvent:
         """Draft LLM replies for a batch of the oldest not-yet-drafted messages from ``draft.source_folder``.
 
@@ -186,7 +190,8 @@ class ImapAgent(Agent):
         )
 
         replies = [
-            (parsed, await self._compose_reply(parsed, draft, imap_config, displayer)) for parsed in parsed_messages
+            (parsed, await self._compose_reply(parsed, draft, imap_config, displayer, user))
+            for parsed in parsed_messages
         ]
         drafted = await self._persist_drafts(imap_config, draft, drafted_flag, replies)
         return MailBatchDraftedEvent(source_folder=draft.source_folder, count=len(drafted), drafted=drafted)
@@ -209,6 +214,7 @@ class ImapAgent(Agent):
         draft: DraftEmailSettings,
         imap_config: ImapClientConfig,
         displayer: EventDisplayer,
+        user: UserIdentity | None,
     ) -> ComposedReply:
         """Draft the reply body with the LLM (no IMAP connection held) and wrap it in a threaded envelope.
 
@@ -224,7 +230,7 @@ class ImapAgent(Agent):
             ),
         ]
         llm_config = draft.llm
-        async with llm_config.cost_reporting_llm(displayer) as llm:
+        async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
             llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
         body = llm_event.chat_messages[-1].content or ""
         return ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body)

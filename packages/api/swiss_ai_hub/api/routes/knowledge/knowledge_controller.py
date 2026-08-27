@@ -228,7 +228,7 @@ class KnowledgeController(TenantScopedController):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: CreateNamespaceRequest,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -236,7 +236,9 @@ class KnowledgeController(TenantScopedController):
             """
             Creates a new namespace (folder) in the specified database.
             """
-            return await KnowledgeService.create_namespace(database, namespace, request, t, self.translation_llm_config)
+            return await KnowledgeService.create_namespace(
+                database, namespace, request, t, user, self.translation_llm_config
+            )
 
         return self
 
@@ -246,7 +248,7 @@ class KnowledgeController(TenantScopedController):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: UpdateNamespaceRequest,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -254,7 +256,7 @@ class KnowledgeController(TenantScopedController):
             """
             Updates display name and description for an existing namespace.
             """
-            return await KnowledgeService.update_namespace(namespace, request, t, self.translation_llm_config)
+            return await KnowledgeService.update_namespace(namespace, request, t, user, self.translation_llm_config)
 
         return self
 

@@ -548,7 +548,9 @@ auth:
     description: Please log in to access the application
     tagline: Experience the future of artificial intelligence
     welcome: Welcome to the AI Hub of {companyName}
+    welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
+    pleaseLoginWith: Please log in with {provider}
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
     logoAlt: Logo of company

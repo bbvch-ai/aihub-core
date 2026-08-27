@@ -129,17 +129,17 @@ no cause for the caller, and a span naming only the exception type, never the up
 
 `ModelGatewayErrorHandler` (`packages/core/swiss_ai_hub/core/exceptions/model_gateway_error_handler.py`, registered once
 in `Runner._get_api_app` so every service inherits it) translates them: it unwraps the upstream `error.message`, passes
-through only the statuses a caller can act on
-(400/413/422/429) while mapping this deployment's own faults (401/403/404, all 5xx) to 502 and upstream timeouts to
-504. The response body carries the message under **both** `detail` and `error.message` — platform clients read the
-former, the OpenAI-compatible clients this API emulates (OpenWebUI, OpenAI SDKs) read only the latter.
+through only the statuses a caller can act on (400/413/422/429) while mapping this deployment's own faults (401/403/404,
+all 5xx) to 502 and upstream timeouts to 504. The response body carries the message under **both** `detail` and
+`error.message` — platform clients read the former, the OpenAI-compatible clients this API emulates (OpenWebUI, OpenAI
+SDKs) read only the latter.
 
 Every one of these failures marks the current span `ERROR`. Handling the exception is what makes that necessary — it
 never propagates out to the instrumentation's exception branch — and it deliberately includes the 4xx that OTel's
 server-span convention would leave `UNSET`: passing an upstream status through means a 4xx here can just as well be a
-model name this deployment got wrong. Log level is the narrower signal — `ERROR` with the traceback for what an operator must fix,
-`WARNING` for the three statuses they cannot act on (413/422/429), which also keeps a rate-limit storm from flooding
-the log pipeline.
+model name this deployment got wrong. Log level is the narrower signal — `ERROR` with the traceback for what an operator
+must fix, `WARNING` for the three statuses they cannot act on (413/422/429), which also keeps a rate-limit storm from
+flooding the log pipeline.
 
 New upstream integrations that raise their own SDK exception types belong in the same place — do not wrap service calls
 in try/except to compensate.

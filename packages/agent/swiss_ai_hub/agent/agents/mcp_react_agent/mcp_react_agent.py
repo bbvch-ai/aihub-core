@@ -1,6 +1,7 @@
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LLMStopEvent,
@@ -124,12 +125,13 @@ class McpReactAgent(Agent):
         run_context: RunContext,
         thread_context: ThreadContext,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> list[ToolEvent] | StopEvent:
         """Ask the LLM what to do next — call a tool or respond to the user."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)
 
-        async with config.llm.cost_reporting_llm(displayer) as llm:
+        async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
             response = await llm.achat(chat_messages, tools=tool_schemas)
 
         assistant = Message.from_llama_index(response.message)
@@ -143,7 +145,7 @@ class McpReactAgent(Agent):
             )
             # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
             await generate_conversation_metadata(
-                stop_event.chat_messages, config.task_llm, displayer, t, thread_context
+                stop_event.chat_messages, config.task_llm, displayer, t, thread_context, user
             )
             return stop_event
 

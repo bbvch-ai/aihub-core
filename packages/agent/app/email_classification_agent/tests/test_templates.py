@@ -51,10 +51,19 @@ def test_every_category_is_fully_described(template: EmailClassificationAgentCon
 def test_the_taxonomy_passes_the_agents_own_validation(template: EmailClassificationAgentConfig):
     """A template must never produce a config that the agent rejects at runtime.
 
-    This now also covers the fallback-vs-category and target-vs-inbox rules, which `_validate` enforces for every
-    config rather than only for the shipped templates.
+    This now also covers the fallback-vs-category and target-vs-inbox rules, plus the drafting rules, which
+    `_validate` enforces for every config rather than only for the shipped templates.
+
+    Uses the template's own token counter rather than a stub, so the drafting budget it ships with is checked against
+    the tokenizer the runtime will actually use — a template whose budget cannot fit its own prompt would otherwise
+    only be discovered by whoever instantiated it.
     """
-    EmailClassificationAgent._validate(template.classification, template.imap.inbox_folder)
+    EmailClassificationAgent._validate(
+        template.classification,
+        template.draft,
+        template.imap.inbox_folder,
+        template.drafting_llm.token_counter,
+    )
 
 
 def test_name_and_description_are_translated(template: EmailClassificationAgentConfig):
@@ -67,6 +76,26 @@ def test_name_and_description_are_translated(template: EmailClassificationAgentC
 def test_agent_ids_are_unique():
     agent_ids = [template.agent_id for template in _TEMPLATES]
     assert len(set(agent_ids)) == len(agent_ids)
+
+
+def test_templates_ship_without_drafting_enabled(template: EmailClassificationAgentConfig):
+    """Creating a profile from a template must not start writing replies into someone's mailbox on its own.
+
+    Same reasoning as the unscheduled guard below: the categories may express which mail *would* warrant a reply, but
+    turning that into drafts against a real mailbox is the admin's decision, taken once they have seen it classify.
+    """
+    assert template.draft.enable_draft is False
+
+
+def test_a_template_that_names_no_drafting_category_is_still_usable_with_drafting_on(
+    template: EmailClassificationAgentConfig,
+):
+    """An admin flipping the master switch must not be met with a validation error.
+
+    `_validate` rejects drafting enabled with nothing opted in, so a template whose categories all leave
+    `draft_reply` off would fail the moment the switch is turned on — a shipped dead end.
+    """
+    assert any(category.draft_reply for category in template.classification.categories)
 
 
 def test_templates_ship_unscheduled(template: EmailClassificationAgentConfig):

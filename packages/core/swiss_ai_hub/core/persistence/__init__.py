@@ -27,6 +27,7 @@ if TYPE_CHECKING:
         User,
     )
     from swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket import EventBucket
+    from swiss_ai_hub.core.persistence.messaging.entities.types.llm_spend import LLMSpend
     from swiss_ai_hub.core.persistence.notification.notification_entity import NotificationEntity
     from swiss_ai_hub.core.persistence.process.process_class_entity import (
         AgentInSpecsEntity,
@@ -99,6 +100,7 @@ __all__ = [
     "DOCUMENT_STORE_NAME",
     "DOCUMENT_TITLE",
     "EventBucket",
+    "LLMSpend",
     "H1",
     "H2",
     "H3",
@@ -169,6 +171,7 @@ _LAZY_IMPORTS = {
     "DOCUMENT_STORE_NAME": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_TITLE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "EventBucket": "swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket",
+    "LLMSpend": "swiss_ai_hub.core.persistence.messaging.entities.types.llm_spend",
     "H1": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "H2": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "H3": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

@@ -1,5 +1,6 @@
 from typing import ClassVar
 
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AddMemoryToChatHistoryEvent,
@@ -212,12 +213,14 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
             llm_config=agent_config.task_llm,
             displayer=displayer,
+            user=user,
             t=t,
         )
 
@@ -233,6 +236,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> LLMStopEvent:
         """Answer a meta question from the agent's own identity and workflow, then stop the run."""
         stop_event = await do_answer_meta_question(
@@ -243,11 +247,12 @@ class RAGAgent(Agent):
             chat_history=user_message_event.messages,
             llm_config=agent_config.task_llm,
             displayer=displayer,
+            user=user,
             t=t,
         )
         # Follow-ups only — the title runs in parallel via generate_meta_question_title_step, since it
         # only needs the topic and doesn't need to wait for this answer to finish.
-        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t)
+        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t, user)
         return stop_event
 
     @step(
@@ -264,6 +269,7 @@ class RAGAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> None:
         """Generate the thread's title in parallel with the meta answer.
 
@@ -279,6 +285,7 @@ class RAGAgent(Agent):
             displayer=displayer,
             t=t,
             thread_context=thread_context,
+            user=user,
         )
 
     @step(
@@ -408,9 +415,10 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
+        user: UserIdentity,
     ) -> StandaloneQuestionCondenserEvent:
         return await do_condense_standalone_question(
-            event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t
+            event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
         )
 
     @step(
@@ -424,6 +432,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
             event.condensed_chat_message.content,
@@ -431,6 +440,7 @@ class RAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
+            user,
         )
 
     @step(
@@ -445,6 +455,7 @@ class RAGAgent(Agent):
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(start_event, RAGStartEvent):
@@ -455,7 +466,7 @@ class RAGAgent(Agent):
             )
         else:
             runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
-        return await do_retrieve(event, runtime_configs, t)
+        return await do_retrieve(event, runtime_configs, t, user)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),
@@ -470,9 +481,15 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> RerankerEvent:
         return await do_rerank_nodes(
-            event.nodes, condense_event.condensed_chat_message.content, agent_config.reranking_config, displayer, t
+            event.nodes,
+            condense_event.condensed_chat_message.content,
+            agent_config.reranking_config,
+            displayer,
+            t,
+            user,
         )
 
     @step(
@@ -509,6 +526,7 @@ class RAGAgent(Agent):
         user_query_event: StandaloneQuestionCondenserEvent,
         chat_history_event: LimitChatHistoryEvent,
         run_context: RunContext,
+        user: UserIdentity,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         return await do_context_sufficient_guard(
             user_query_event.condensed_chat_message.content,
@@ -520,6 +538,7 @@ class RAGAgent(Agent):
             displayer,
             t,
             chat_history=chat_history_event.limited_history,
+            user=user,
         )
 
     @step(
@@ -578,6 +597,7 @@ class RAGAgent(Agent):
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> LLMEvent:
         # Use as_stop_step=False to return LLMEvent (not LLMStopEvent)
         # This allows store_user_memory_step to run before the final stop_step
@@ -589,6 +609,7 @@ class RAGAgent(Agent):
             agent_config.llm,
             displayer,
             t,
+            user,
             as_stop_step=False,
         )
 
@@ -605,6 +626,7 @@ class RAGAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> None:
         """Generate a stable conversation title once per thread, concurrently with the answer pipeline.
 
@@ -618,6 +640,7 @@ class RAGAgent(Agent):
             chat_messages=chat_history_event.limited_history,
             llm_config=agent_config.task_llm,
             displayer=displayer,
+            user=user,
             t=t,
             thread_context=thread_context,
         )
@@ -676,6 +699,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping.
 
@@ -687,6 +711,7 @@ class RAGAgent(Agent):
             chat_messages=llm_event.chat_messages,
             llm_config=agent_config.task_llm,
             displayer=displayer,
+            user=user,
             t=t,
         )
         return do_finalize_rag_stop(

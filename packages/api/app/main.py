@@ -55,7 +55,9 @@ runner.mount(
     .ws()
     .get_agent_events_in_thread()
     .resolve_thread_for_display()
-    .get_agent_event_timeseries(),
+    .get_agent_event_timeseries()
+    .get_llm_spend_by_user()
+    .get_llm_spend_by_tenant(),
     ModelController(auth=auth).get_litellm_models().get_litellm_models_by_mode().get_litellm_model(),
     ThreadController(auth=auth)
     .get_user_threads()

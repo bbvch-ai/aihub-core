@@ -16,6 +16,13 @@ Point it at a mailbox whose category folders do NOT exist yet — the run should
 
 Running two of these at once against the same mailbox is the overlap check: exactly one should classify and file,
 the other should report that a previous run still holds the mailbox and stop.
+
+Drafting is on by default here (the shipped template has it off). Two of the three categories ask for a reply, so a
+run over mixed mail should leave drafts for the information and support mail and none for the invoice. Add
+`IMAP_INCLUDE_ATTACHMENTS=1` to also feed attachment text to the drafter — that needs MinerU reachable for PDFs and
+images; Word and other Office files go through MarkItDown in-process.
+
+Nothing is ever sent. Check the Sent folder afterwards: it must be untouched.
 """
 
 import os
@@ -30,7 +37,12 @@ from datetime import UTC, datetime  # noqa: E402
 from swiss_ai_hub.core.events.agent import CronStartEvent  # noqa: E402
 from swiss_ai_hub.core.generative_ai import LLMConfig  # noqa: E402
 from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
-from swiss_ai_hub.core.imap import EmailClassificationSettings, ImapClientConfig, MailCategory  # noqa: E402
+from swiss_ai_hub.core.imap import (  # noqa: E402
+    DraftEmailSettings,
+    EmailClassificationSettings,
+    ImapClientConfig,
+    MailCategory,
+)
 from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 
 from swiss_ai_hub.agent.agents.email_classification_agent import (  # noqa: E402
@@ -50,17 +62,21 @@ _CATEGORIES = [
         imap_folder="Triage/Information",
         description="The sender is asking for information we can simply provide — pricing, opening hours, "
         "documentation, where to find something. Answering needs no action beyond telling them.",
+        draft_reply=True,
     ),
     MailCategory(
         category="support_request",
         imap_folder="Triage/Support",
         description="Something is broken or blocked for the sender and resolving it requires an action from our "
         "team, not just an explanation.",
+        draft_reply=True,
     ),
     MailCategory(
         category="invoice",
         imap_folder="Triage/Invoices",
         description="A bill, invoice, receipt, payment reminder or dunning notice, whether in the body or attached.",
+        # Deliberately off, so one run shows both answers: two categories drafted, one not.
+        draft_reply=False,
     ),
 ]
 
@@ -87,6 +103,12 @@ async def main():
                 categories=_CATEGORIES,
                 fallback_folder=os.environ.get("IMAP_FALLBACK", "Triage/Uncategorised"),
             ),
+            draft=DraftEmailSettings(
+                enable_draft=os.environ.get("IMAP_ENABLE_DRAFT", "1") == "1",
+                drafts_folder=os.environ.get("IMAP_DRAFTS", "Drafts"),
+                model_name=os.environ.get("IMAP_LLM_MODEL", "text-generation/gemma-4-31B-it"),
+                include_attachments=os.environ.get("IMAP_INCLUDE_ATTACHMENTS", "0") == "1",
+            ),
         ),
     )
 
@@ -97,7 +119,11 @@ async def main():
         if os.environ.get("SCHEDULED") == "1"
         else ClassifyMailStartEvent()
     )
-    async with runner.test_run(delay_before_stop=60) as topic:
+    # A full batch is one model call per message to classify, then another per drafted message, plus a document-parser
+    # round trip per attachment when IMAP_INCLUDE_ATTACHMENTS is on. Sixty seconds was enough when the run only
+    # classified; it now cuts the run off mid-batch, which leaves the mailbox leased until the TTL expires. Raise
+    # IMAP_RUN_SECONDS further for a large mailbox or a slow model.
+    async with runner.test_run(delay_before_stop=int(os.environ.get("IMAP_RUN_SECONDS", "600"))) as topic:
         await runner.send_event_from_topic(topic=topic, start_event=start_event)
 
 

@@ -7520,7 +7520,21 @@ export const DraftedReplyRefSchema = {
     source_uid: {
       type: "string",
       title: "Source Uid",
-      description: "IMAP UID of the source message within the source folder.",
+      description:
+        "IMAP UID the source message had in the folder it was read from. A blueprint that files the message before drafting (EmailClassificationAgent) reports the pre-move UID, which no longer resolves on the server — it identifies the message within the run, not for a later fetch.",
+    },
+    category: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Category",
+      description:
+        "Category the source message was classified under, when drafting followed a classification run. Null when the drafting blueprint does not classify.",
     },
     drafts_folder: {
       type: "string",
@@ -13017,6 +13031,32 @@ export const LLMCostEventSchema = {
       description:
         "The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.",
     },
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description:
+        "Invoking user, so spend is queryable per user. None for runs with no user context.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description:
+        "Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -13281,6 +13321,69 @@ export const LLMEventSchema = {
   type: "object",
   required: ["_event_name", "_parent_event_names"],
   title: "LLMEvent",
+} as const;
+
+export const LLMSpendSchema = {
+  properties: {
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description: "Invoking user, None when grouping by tenant.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description: "Acting tenant, None for runs outside a tenant.",
+    },
+    calls: {
+      type: "integer",
+      title: "Calls",
+      description: "Number of LLM calls attributed to this key.",
+      default: 0,
+    },
+    prompt_tokens_costs: {
+      type: "number",
+      title: "Prompt Tokens Costs",
+      description: "Cost of prompt tokens.",
+      default: 0,
+    },
+    completion_tokens_costs: {
+      type: "number",
+      title: "Completion Tokens Costs",
+      description: "Cost of completion tokens.",
+      default: 0,
+    },
+    embedding_tokens_costs: {
+      type: "number",
+      title: "Embedding Tokens Costs",
+      description: "Cost of embedding tokens.",
+      default: 0,
+    },
+    total_costs: {
+      type: "number",
+      title: "Total Costs",
+      description: "Sum of prompt, completion and embedding costs.",
+      default: 0,
+    },
+  },
+  type: "object",
+  title: "LLMSpend",
+  description:
+    "LLM spend aggregated over one attribution key (a user or a tenant).\n\nCosts come from the platform's own `LLMCostEvent` records rather than from LiteLLM's spend log:\nthe gateway can only attribute the user, so the tenant dimension exists here alone (see #1451).",
 } as const;
 
 export const LLMStopEventSchema = {
@@ -14231,6 +14334,13 @@ export const MailBatchClassifiedEventSchema = {
         "How many messages went to the fallback folder instead of a category.",
       default: 0,
     },
+    failed_count: {
+      type: "integer",
+      title: "Failed Count",
+      description:
+        "How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.",
+      default: 0,
+    },
     classified: {
       items: {
         $ref: "#/components/schemas/MailClassificationRef",
@@ -14309,6 +14419,22 @@ export const MailBatchDraftedEventSchema = {
       type: "integer",
       title: "Count",
       description: "Number of reply drafts created in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.",
+    },
+    skipped_count: {
+      type: "integer",
+      title: "Skipped Count",
+      description:
+        "Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.",
+      default: 0,
     },
     drafted: {
       items: {
@@ -31764,6 +31890,32 @@ export const LLMCostEventWritableSchema = {
       description:
         "The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.",
     },
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description:
+        "Invoking user, so spend is queryable per user. None for runs with no user context.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description:
+        "Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -32735,6 +32887,13 @@ export const MailBatchClassifiedEventWritableSchema = {
         "How many messages went to the fallback folder instead of a category.",
       default: 0,
     },
+    failed_count: {
+      type: "integer",
+      title: "Failed Count",
+      description:
+        "How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.",
+      default: 0,
+    },
     classified: {
       items: {
         $ref: "#/components/schemas/MailClassificationRef",
@@ -32796,6 +32955,22 @@ export const MailBatchDraftedEventWritableSchema = {
       type: "integer",
       title: "Count",
       description: "Number of reply drafts created in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.",
+    },
+    skipped_count: {
+      type: "integer",
+      title: "Skipped Count",
+      description:
+        "Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.",
+      default: 0,
     },
     drafted: {
       items: {

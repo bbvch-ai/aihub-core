@@ -87,7 +87,7 @@ async def _(agent_runner: AgentTestRunner):
     mock_llm.achat = AsyncMock(side_effect=[_make_tool_call_response(), _make_text_response()])
 
     @asynccontextmanager
-    async def fake_cost_reporting_llm(self, displayer) -> AsyncIterator[AsyncMock]:  # noqa: ARG001
+    async def fake_cost_reporting_llm(self, displayer, user=None) -> AsyncIterator[AsyncMock]:  # noqa: ARG001
         yield mock_llm
 
     with (

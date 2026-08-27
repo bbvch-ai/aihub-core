@@ -42,6 +42,10 @@ flowchart TD
     G -- No --> I[File into the<br/>fallback folder]
     H --> J[Report how many<br/>were filed, per category]
     I --> J
+    J --> K{Does the category<br/>ask for a reply?}
+    K -- No --> L[Done]
+    K -- Yes --> M[Draft a reply and leave it<br/>in the Drafts folder]
+    M --> L
 ```
 
 1. **List.** Every unread message in the inbox, oldest sent first, up to **Max Unread Messages**.
@@ -83,6 +87,7 @@ A repeating list. Add one entry per category:
 | **Category**          | A short name, e.g. `support_request`. Must be unique.                                              |
 | **Target Folder**     | Where mail in this category is filed. Created automatically if it does not exist. Must be unique.  |
 | **What Belongs Here** | A description of the kind of mail that belongs in this category. **This is what the model reads.** |
+| **Draft a Reply**     | When on, mail filed here also gets a drafted reply left in your Drafts folder. Off by default.     |
 
 ::: tip Write the description for a new colleague, not for a search engine
 This field does the real work. Folder names alone cannot separate an *information request* from a *support request* —
@@ -173,6 +178,74 @@ up as a failed run in tracing, and it is worth investigating: it means something
   queued. Nothing is lost: the mail is still unread and the next run that does fire picks it up.
 :::
 
+### Reply drafting
+
+Turn on **Draft Reply** to have the agent write a reply for the categories that warrant one, and leave it in your
+**Drafts** folder for a person to read, edit and send. Nothing is ever sent by the agent — there is no mechanism in the
+platform for it to send mail at all.
+
+Drafting is chosen **per category**, on the **Draft a Reply** switch in the category list. That is the point of the
+feature: a *complaint* usually deserves a reply, a *thank-you* rarely does, and an *invoice* wants paying rather than
+answering. Mail that fitted no category and went to the fallback folder is never drafted — if the model could not say
+what a message was about, it is in no position to answer it.
+
+| Field                  | Description                                                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Draft Reply**        | The master switch for this section. Off by default.                                                                                 |
+| **Drafts Folder**      | Where drafts are appended. If the name is not found, your server's own Drafts folder is used, and failing that the name is created. |
+| **LLM Model**          | The model that writes the reply. Leave empty to use the agent's main model.                                                         |
+| **Draft Prompt**       | Instructions for tone and style. The shipped default is concise, polite, and forbids inventing facts.                               |
+| **Draft Input Tokens** | How much of the message the model may be shown. See *Long mail* below.                                                              |
+
+Each draft is threaded to the message it answers — `Re:` subject, correct `In-Reply-To` and `References` headers — so it
+appears inside the original conversation in your mail client rather than as a stray new message.
+
+::: warning A draft is a first pass, not an answer
+Read every draft before sending it. The model writes from the message and, optionally, its attachments — it has no
+access to your systems, your prices or your case history, and it will not know what it does not know. Grounding drafts
+in your own documents is a separate, planned capability.
+:::
+
+#### Attachments
+
+Turn on **Read Attachments** to let the drafter use what is *inside* the attached files, not just the message body. PDFs
+and images are read by the platform's document parser (with OCR); Word, PowerPoint and Excel files are converted
+directly. Anything else — archives, audio — is skipped.
+
+Reading an attachment costs a parsing round trip, so three limits keep it bounded:
+
+| Field                           | Description                                                            |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| **Max Attachments Per Message** | How many files are read per message, largest first. Default 3.         |
+| **Minimum Attachment Size**     | Files smaller than this are skipped entirely. Default 8 KB.            |
+| **Attachment Character Limit**  | How much text is kept from any single file. Default 20 000 characters. |
+
+The size floor is there for a specific and very common case: the logo in an email signature arrives as an attachment
+just like a real document does. Without the floor, every ordinary business mail would pay to have its signature image
+parsed for nothing.
+
+**A file the parser finds no text in is still mentioned to the model** — a photo, or a scan the OCR could not read. The
+model is told the file arrived and that no text could be read from it, so the draft can acknowledge *"thank you for the
+photo"* without inventing what the photo showed. It is never silently dropped: a sender who wrote "see attached"
+deserves a reply that at least notices the attachment.
+
+::: tip The agent does not describe images
+Attachment reading extracts **text**. A photo with no writing in it contributes its name and type, nothing more — the
+agent has no image understanding and will not tell you what is in a picture.
+:::
+
+#### Long mail
+
+A long forwarded thread with a 200-page PDF attached will not fit any model's input limit. Rather than fail, the agent
+trims — in a fixed order, so you can predict what the model saw:
+
+1. The headers and the list of attachments are always kept.
+2. Attachment text is dropped first, smallest file first.
+3. Only then is the message body shortened, at a sentence boundary, and marked as truncated.
+
+The body is protected over the attachments because the body is where the sender's actual question is. Raise **Draft
+Input Tokens** if your model accepts more and you want less trimming.
+
 ## Getting started
 
 1. **Start with two or three categories**, not fifteen. Broad, clearly-distinct buckets classify far more reliably than
@@ -184,13 +257,17 @@ up as a failed run in tracing, and it is worth investigating: it means something
 4. **Fix misfiling in the descriptions.** They are the only lever there is, and they are the right one — nearly all
    misfiling traces back to two categories whose descriptions overlap.
 5. **Then put it on a schedule** (above), and the inbox drains itself.
+6. **Turn on drafting last**, and only for the categories that need it. Read the first few drafts before you trust the
+   rest.
 
 ## What it does *not* do
 
-- **It never sends, and never deletes.** Moving relocates a message; nothing leaves the mailbox.
-- **It does not draft replies.** That is a separate capability — see the [Email Agent](../11_email_agent/).
-- **It does not read attachments to classify.** Classification uses the headers and the plain-text body. Attachments are
-  archived, but their contents do not influence the category.
+- **It never sends, and never deletes.** Moving relocates a message; drafting writes into your Drafts folder. Nothing
+  leaves the mailbox, and the platform has no way to send mail at all.
+- **It does not read attachments to classify.** Classification uses the headers and the plain-text body only.
+  Attachments can feed a *drafted reply* (above), but never the choice of category.
+- **It does not ground drafts in your documents.** A draft is written from the message and its attachments alone.
+  Answering from your knowledge base is a separate, planned capability.
 - **It has no chat interface** and no knowledge base.
 - **It does not skip a message it cannot handle.** A run is all-or-nothing: if one message fails to classify, nothing in
   that batch is filed and the whole batch is retried next run. That keeps a transient outage from scattering mail into

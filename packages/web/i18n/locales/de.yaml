@@ -557,7 +557,9 @@ auth:
     description: Bitte melden Sie sich an, um auf die Anwendung zuzugreifen
     tagline: Erleben Sie die Zukunft der künstlichen Intelligenz
     welcome: Willkommen im AI Hub von {companyName}
+    welcomeProvider: Willkommen im AI Hub — Anmeldung mit {provider}
     pleaseLogin: Bitte melden Sie sich an
+    pleaseLoginWith: Bitte melden Sie sich mit {provider} an
     loginWith: Anmelden mit {provider}
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
     logoAlt: Logo des Unternehmens

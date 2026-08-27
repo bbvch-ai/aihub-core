@@ -25,20 +25,19 @@ Three separate gaps turned that into an hour of blind searching:
    `HTTPException`. Unhandled, they left the app as Starlette's plain-text 500 — no JSON, no message. OpenWebUI parses
    `error.message` out of the body, found none, and fell back to printing the transport error.
 2. **The trace named no cause.** The span itself *was* marked: `opentelemetry-instrumentation-fastapi` wraps the
-   middleware stack in its own `ExceptionHandlerMiddleware`, and `trace.use_span` defaults to
-   `record_exception=True` / `set_status_on_exception=True`, so an exception escaping the app already ended the server
-   span `ERROR`. What the span carried was the exception *type* — `BadRequestError` on `POST
-   /openai/audio/transcriptions` — and never `Invalid model name passed in model=whisper-large-v3`, because the SDK's
-   message is the wrapper `Error code: 400 - {…}`. An error-filtered trace view showed the request and still did not say
-   what to fix.
+   middleware stack in its own `ExceptionHandlerMiddleware`, and `trace.use_span` defaults to `record_exception=True` /
+   `set_status_on_exception=True`, so an exception escaping the app already ended the server span `ERROR`. What the span
+   carried was the exception *type* — `BadRequestError` on `POST /openai/audio/transcriptions` — and never
+   `Invalid model name passed in model=whisper-large-v3`, because the SDK's message is the wrapper
+   `Error code: 400 - {…}`. An error-filtered trace view showed the request and still did not say what to fix.
 3. **The traceback was not exported.** The OTLP `LoggingHandler` is attached to the root logger, but gunicorn's
    `UvicornWorker` re-parents `uvicorn.error` with its own handlers and `propagate = False`. The one record carrying the
    traceback — `Exception in ASGI application` — therefore stopped at the container's stdout and never reached the
    observability backend.
 
-Together these are self-reinforcing: a failure whose only symptom is invisible generates no ticket. `git log -S
-"add_exception_handler" --all` returns zero commits, so this was never a regression — the boundary has been unhandled
-since the first commit (2024-11-29), and no ADR covers error surfacing.
+Together these are self-reinforcing: a failure whose only symptom is invisible generates no ticket.
+`git log -S "add_exception_handler" --all` returns zero commits, so this was never a regression — the boundary has been
+unhandled since the first commit (2024-11-29), and no ADR covers error surfacing.
 
 The trigger is recent. PR #1658 (2026-07-29) replaced the hardcoded `model: openai/whisper-large-v3` in the LiteLLM
 config with `os.environ/SWISS_LLM_CLOUD_WHISPER_MODEL`, which is required because Azure and OpenAI-compatible upstreams
@@ -81,22 +80,22 @@ class. See the trade-off below.
 
 **1 — The status is reclassified by whose fault it is, not copied.**
 
-| Upstream                          | Returned | Why                                                     |
-| --------------------------------- | -------- | ------------------------------------------------------- |
-| 400, 413, 422, 429                | as-is    | The request itself was rejected; the caller can act     |
-| 401, 403, 404, all 5xx            | 502      | A provider key or model name this deployment got wrong  |
-| 408, 504, timeout, connection err | 504/502  | The gateway, not the request                            |
+| Upstream                          | Returned | Why                                                    |
+| --------------------------------- | -------- | ------------------------------------------------------ |
+| 400, 413, 422, 429                | as-is    | The request itself was rejected; the caller can act    |
+| 401, 403, 404, all 5xx            | 502      | A provider key or model name this deployment got wrong |
+| 408, 504, timeout, connection err | 504/502  | The gateway, not the request                           |
 
 **2 — The body carries the message under both `detail` and `error.message`.** Platform clients read FastAPI's `detail`;
 the OpenAI-compatible clients this API emulates read only `error.message`. Dropping either hides the cause from one of
 them. The message is the unwrapped upstream `error.message`, not the SDK's `Error code: N - {…}` wrapper.
 
 **3 — Every such failure marks the current span `ERROR`.** Handling the exception is what makes this necessary: it no
-longer propagates out of the middleware stack, so the instrumentation's exception branch never sees it and the span would
-otherwise end with the status of a normal response. Marking it also deliberately departs from the OTel HTTP convention,
-which leaves 4xx unset on server spans on the assumption that a 4xx is the client's fault. For a gateway that passes
-upstream statuses through, that assumption is false: the incident above arrived as a 400. The SDK ignores a `set_status`
-back to `UNSET`, so the instrumentation's own status setter running afterwards cannot undo this.
+longer propagates out of the middleware stack, so the instrumentation's exception branch never sees it and the span
+would otherwise end with the status of a normal response. Marking it also deliberately departs from the OTel HTTP
+convention, which leaves 4xx unset on server spans on the assumption that a 4xx is the client's fault. For a gateway
+that passes upstream statuses through, that assumption is false: the incident above arrived as a 400. The SDK ignores a
+`set_status` back to `UNSET`, so the instrumentation's own status setter running afterwards cannot undo this.
 
 **4 — Log level tracks who must act, not whether the request failed.** `logger.exception` (ERROR + traceback) for
 everything an operator has to fix — including 400, because that bucket carries this deployment's own faults.

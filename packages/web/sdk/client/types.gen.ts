@@ -5234,9 +5234,15 @@ export type DraftedReplyRef = {
   /**
    * Source Uid
    *
-   * IMAP UID of the source message within the source folder.
+   * IMAP UID the source message had in the folder it was read from. A blueprint that files the message before drafting (EmailClassificationAgent) reports the pre-move UID, which no longer resolves on the server — it identifies the message within the run, not for a later fetch.
    */
   source_uid: string;
+  /**
+   * Category
+   *
+   * Category the source message was classified under, when drafting followed a classification run. Null when the drafting blueprint does not classify.
+   */
+  category?: string | null;
   /**
    * Drafts Folder
    *
@@ -8774,6 +8780,18 @@ export type LlmCostEvent = {
    */
   llm_name: string;
   /**
+   * User Id
+   *
+   * Invoking user, so spend is queryable per user. None for runs with no user context.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.
+   */
+  tenant_id?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8909,6 +8927,59 @@ export type LlmEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * LLMSpend
+ *
+ * LLM spend aggregated over one attribution key (a user or a tenant).
+ *
+ * Costs come from the platform's own `LLMCostEvent` records rather than from LiteLLM's spend log:
+ * the gateway can only attribute the user, so the tenant dimension exists here alone (see #1451).
+ */
+export type LlmSpend = {
+  /**
+   * User Id
+   *
+   * Invoking user, None when grouping by tenant.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, None for runs outside a tenant.
+   */
+  tenant_id?: string | null;
+  /**
+   * Calls
+   *
+   * Number of LLM calls attributed to this key.
+   */
+  calls?: number;
+  /**
+   * Prompt Tokens Costs
+   *
+   * Cost of prompt tokens.
+   */
+  prompt_tokens_costs?: number;
+  /**
+   * Completion Tokens Costs
+   *
+   * Cost of completion tokens.
+   */
+  completion_tokens_costs?: number;
+  /**
+   * Embedding Tokens Costs
+   *
+   * Cost of embedding tokens.
+   */
+  embedding_tokens_costs?: number;
+  /**
+   * Total Costs
+   *
+   * Sum of prompt, completion and embedding costs.
+   */
+  total_costs?: number;
 };
 
 /**
@@ -9571,6 +9642,12 @@ export type MailBatchClassifiedEvent = {
    */
   fallback_count?: number;
   /**
+   * Failed Count
+   *
+   * How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.
+   */
+  failed_count?: number;
+  /**
    * Classified
    *
    * Per-message classification verdicts and filing destinations.
@@ -9631,6 +9708,20 @@ export type MailBatchDraftedEvent = {
    * Number of reply drafts created in this run.
    */
   count: number;
+  /**
+   * Per Category
+   *
+   * How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Skipped Count
+   *
+   * Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.
+   */
+  skipped_count?: number;
   /**
    * Drafted
    *
@@ -21448,6 +21539,18 @@ export type LlmCostEventWritable = {
    * The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.
    */
   llm_name: string;
+  /**
+   * User Id
+   *
+   * Invoking user, so spend is queryable per user. None for runs with no user context.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.
+   */
+  tenant_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -22037,6 +22140,12 @@ export type MailBatchClassifiedEventWritable = {
    */
   fallback_count?: number;
   /**
+   * Failed Count
+   *
+   * How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.
+   */
+  failed_count?: number;
+  /**
    * Classified
    *
    * Per-message classification verdicts and filing destinations.
@@ -22084,6 +22193,20 @@ export type MailBatchDraftedEventWritable = {
    * Number of reply drafts created in this run.
    */
   count: number;
+  /**
+   * Per Category
+   *
+   * How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Skipped Count
+   *
+   * Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.
+   */
+  skipped_count?: number;
   /**
    * Drafted
    *
@@ -26434,6 +26557,92 @@ export type GetAgentEventTimeseriesResponses = {
 
 export type GetAgentEventTimeseriesResponse =
   GetAgentEventTimeseriesResponses[keyof GetAgentEventTimeseriesResponses];
+
+export type GetLlmSpendByUserData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Since
+     *
+     * Only count calls at or after this time. Defaults to the last 30 days.
+     */
+    since?: Date | null;
+  };
+  url: "/{tenant_id}/events/spend/users";
+};
+
+export type GetLlmSpendByUserErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetLlmSpendByUserError =
+  GetLlmSpendByUserErrors[keyof GetLlmSpendByUserErrors];
+
+export type GetLlmSpendByUserResponses = {
+  /**
+   * Response Get Llm Spend By User  Tenant Id  Events Spend Users Get
+   *
+   * Successful Response
+   */
+  200: Array<LlmSpend>;
+};
+
+export type GetLlmSpendByUserResponse =
+  GetLlmSpendByUserResponses[keyof GetLlmSpendByUserResponses];
+
+export type GetLlmSpendByTenantData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Since
+     *
+     * Only count calls at or after this time. Defaults to the last 30 days.
+     */
+    since?: Date | null;
+  };
+  url: "/{tenant_id}/events/spend/tenants";
+};
+
+export type GetLlmSpendByTenantErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetLlmSpendByTenantError =
+  GetLlmSpendByTenantErrors[keyof GetLlmSpendByTenantErrors];
+
+export type GetLlmSpendByTenantResponses = {
+  /**
+   * Response Get Llm Spend By Tenant  Tenant Id  Events Spend Tenants Get
+   *
+   * Successful Response
+   */
+  200: Array<LlmSpend>;
+};
+
+export type GetLlmSpendByTenantResponse =
+  GetLlmSpendByTenantResponses[keyof GetLlmSpendByTenantResponses];
 
 export type GetLitellmModelsData = {
   body?: never;
