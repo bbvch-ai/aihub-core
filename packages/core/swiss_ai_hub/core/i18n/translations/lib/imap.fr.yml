@@ -70,6 +70,16 @@ config:
     label: Dossier de repli
     help: Dossier pour le courrier dont le modèle n'est pas sûr. Ce courrier n'est
       jamais deviné dans une catégorie ni laissé dans la boîte de réception.
+  failure_folder:
+    label: Dossier d'échec
+    help: Dossier pour les e-mails que le classificateur n'a pas pu traiter du tout.
+      Ces e-mails quittent tout de même la boîte de réception, afin qu'un message
+      défectueux ne bloque pas toutes les exécutions suivantes ; les remettre dans
+      la boîte de réception relance le traitement.
+  classification_input_tokens:
+    label: Jetons d'entrée pour la classification
+    help: Budget de jetons pour l'invite de classification. Les messages longs sont
+      tronqués, en conservant le début du corps.
   classification_model:
     label: Modèle de classification
     help: Modèle de chat utilisé pour classer chaque message. Laissez vide pour utiliser

@@ -21,7 +21,10 @@ from swiss_ai_hub.agent.agents.email_classification_agent.email_classification_a
 from swiss_ai_hub.agent.agents.email_classification_agent.events.classify_mail_start_event import (
     ClassifyMailStartEvent,
 )
-from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import CategoryVerdict
+from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import (
+    CategoryVerdict,
+    ClassificationOutcome,
+)
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
 from swiss_ai_hub.agent.imap.tests.mail_doubles import (
     LOADER_FOR_FILE,
@@ -94,7 +97,8 @@ def _loader_yielding(text: str) -> SimpleNamespace:
 
 
 def _verdict(category: MailCategory | None) -> CategoryVerdict:
-    return CategoryVerdict(category=category, reason="because the body says so")
+    outcome = ClassificationOutcome.CATEGORISED if category else ClassificationOutcome.DECLINED
+    return CategoryVerdict(category=category, outcome=outcome, reason="because the body says so")
 
 
 def _selection(selected_index: int | None) -> SimpleNamespace:
@@ -445,9 +449,14 @@ def _(agent_runner: AgentTestRunner):
     assert agent_runner.imap_client.append_draft.await_count == 0
 
 
-@then("no MailBatchDraftedEvent was emitted")
-def _(agent_runner: AgentTestRunner):
-    assert _dedupe(agent_runner.get_events_of_class(MailBatchDraftedEvent)) == []
+@then(parsers.parse("a MailBatchDraftedEvent reporting {count:d} drafts and {skipped:d} skipped was emitted"))
+def _drafted_summary_counts(agent_runner: AgentTestRunner, count: int, skipped: int):
+    """A zero-count event rather than silence: `skipped_count` is the only record of mail the agent declined to draft
+    for, so emitting nothing would make exactly the all-skipped batches invisible to anything counting it."""
+    events = _dedupe(agent_runner.get_events_of_class(MailBatchDraftedEvent))
+    assert len(events) == 1, f"expected exactly one MailBatchDraftedEvent, got {len(events)}"
+    assert events[0].count == count
+    assert events[0].skipped_count == skipped
 
 
 @then("the attachment text reached the drafting prompt")

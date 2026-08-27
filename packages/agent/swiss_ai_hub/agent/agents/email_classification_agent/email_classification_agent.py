@@ -1,10 +1,12 @@
 import email
 import logging
 from collections import Counter
+from collections.abc import Callable
 from email.policy import default as default_policy
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms import LLM
 from redis.asyncio import Redis
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
@@ -16,6 +18,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UnreadMailListedEvent,
 )
+from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.imap import DraftEmailSettings, EmailClassificationSettings, ImapClientConfig
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -26,7 +29,11 @@ from swiss_ai_hub.agent.agents.email_classification_agent.configs.email_classifi
 from swiss_ai_hub.agent.agents.email_classification_agent.events.classify_mail_start_event import (
     ClassifyMailStartEvent,
 )
-from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import CategoryVerdict, MailClassifier
+from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import (
+    CategoryVerdict,
+    ClassificationOutcome,
+    MailClassifier,
+)
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.attachment_text_extractor import AttachmentTextExtractor
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
@@ -143,7 +150,7 @@ class EmailClassificationAgent(Agent):
         the filing pass are as capable of outliving the TTL as the model calls are, and neither offers a per-item hook
         to renew from.
         """
-        self._validate(classification, draft, imap_config.inbox_folder)
+        self._validate(classification, draft, imap_config.inbox_folder, agent_config.drafting_llm.token_counter)
         lease = MailboxRunLease(redis)
 
         if not event.messages:
@@ -173,15 +180,23 @@ class EmailClassificationAgent(Agent):
             classified = await self._file_all(fetched, verdicts, imap_config, classification, displayer)
 
         per_category = Counter(ref.category for ref in classified if ref.category)
-        fallback_count = sum(1 for ref in classified if ref.category is None)
+        # Counted off the verdicts, not off `classified`: a decline and a failure both leave `category` empty, so
+        # counting refs would fold every failure into fallback_count and report an outage as ordinary uncertainty.
+        fallback_count = sum(1 for verdict in verdicts if verdict.outcome is ClassificationOutcome.DECLINED)
+        failed_count = sum(1 for verdict in verdicts if verdict.outcome is ClassificationOutcome.FAILED)
         logger.info(
-            "[classify] filed %d message(s): %s, fallback=%d", len(classified), dict(per_category), fallback_count
+            "[classify] filed %d message(s): %s, fallback=%d, failed=%d",
+            len(classified),
+            dict(per_category),
+            fallback_count,
+            failed_count,
         )
         return MailBatchClassifiedEvent(
             source_folder=imap_config.inbox_folder,
             count=len(classified),
             per_category=dict(per_category),
             fallback_count=fallback_count,
+            failed_count=failed_count,
             classified=classified,
         )
 
@@ -199,11 +214,11 @@ class EmailClassificationAgent(Agent):
         topic: AgentInstanceTopic,
         displayer: EventDisplayer,
         redis: Redis,
-    ) -> MailBatchDraftedEvent | StopEvent:
+    ) -> MailBatchDraftedEvent:
         """Draft a reply for each filed message whose category was opted into drafting, and leave it in Drafts.
 
-        This is the terminal step whenever there is nothing to draft, which is why it releases the lease itself — the
-        release travels with whichever step ends the run, not with a method named `finish`.
+        Always emits `MailBatchDraftedEvent`, including when nothing was opted in — so `finish_drafting_step` is the
+        terminal step on every path and the lease release has exactly one home.
 
         Drafting reads each message back from the S3 archive rather than from IMAP or from the event. The UID died
         with the `MOVE` that filed it, and a body of up to `max_body_bytes` per message has no business on an event
@@ -219,8 +234,15 @@ class EmailClassificationAgent(Agent):
         to_draft = self._drafting_batch(event, classification, draft)
         if not to_draft:
             await self._report_nothing_to_draft(event, classification, draft, displayer)
-            await lease.release(topic.agent_class, topic.agent_id, topic.run_id)
-            return StopEvent()
+            # A zero-count event rather than a bare StopEvent: `skipped_count` is the only record of mail this agent
+            # declined to draft for, and a consumer counting it would otherwise see nothing at all for exactly the
+            # batches where every message was skipped. The lease is not released here — emitting the event makes
+            # `finish_drafting_step` the terminal step on every path, and the release travels with that.
+            return MailBatchDraftedEvent(
+                source_folder=imap_config.inbox_folder,
+                count=0,
+                skipped_count=event.count,
+            )
 
         async with lease.heartbeat(topic.agent_class, topic.agent_id, topic.run_id):
             replies = await self._compose_all(to_draft, agent_config, draft, imap_config, topic, displayer)
@@ -248,7 +270,7 @@ class EmailClassificationAgent(Agent):
             source_folder=imap_config.inbox_folder,
             count=len(drafted),
             per_category=dict(per_category),
-            skipped_count=event.count - len(to_draft),
+            skipped_count=event.count - len(drafted),
             drafted=drafted,
         )
 
@@ -349,22 +371,51 @@ class EmailClassificationAgent(Agent):
 
         async with llm_config.cost_reporting_llm(displayer) as llm:
             for classification_ref in to_draft:
-                parsed = await self._reparse_archived(classification_ref, imap_config, topic)
-                attachments = await self._extracted_attachments(classification_ref, draft, topic, displayer)
-                await displayer.display_thought(f"Drafting a reply to: {parsed.subject}")
-                messages = [
-                    ChatMessage(role=MessageRole.SYSTEM, content=draft.draft_prompt),
-                    ChatMessage(role=MessageRole.USER, content=builder.build(parsed, attachments)),
-                ]
-                llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
-                body = llm_event.chat_messages[-1].content or ""
-                replies.append(
-                    (
-                        classification_ref,
-                        ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body),
-                    )
+                reply = await self._compose_one(
+                    classification_ref, builder, draft, imap_config, topic, displayer, llm, llm_config
                 )
+                if reply is not None:
+                    replies.append((classification_ref, reply))
         return replies
+
+    @staticmethod
+    async def _compose_one(
+        ref: MailClassificationRef,
+        builder: DraftPromptBuilder,
+        draft: DraftEmailSettings,
+        imap_config: ImapClientConfig,
+        topic: AgentInstanceTopic,
+        displayer: EventDisplayer,
+        llm: LLM,
+        llm_config: LLMConfig,
+    ) -> ComposedReply | None:
+        """Draft one reply, or report that this message gets none. Never raises.
+
+        The same trade as `_is_archived`, for a stronger reason: by the time drafting runs the whole batch is already
+        filed, and `do_draft_replies` appends only after this loop finishes — so a raise here costs every *other*
+        message its draft while changing nothing about the one that failed. Unlike a classification failure there is
+        nothing to route: the message is already where it belongs, it simply has no draft, and the next run will not
+        see it again.
+        """
+        try:
+            parsed = await EmailClassificationAgent._reparse_archived(ref, imap_config, topic)
+            attachments = await EmailClassificationAgent._extracted_attachments(ref, draft, topic, displayer)
+            await displayer.display_thought(f"Drafting a reply to: {parsed.subject}")
+            messages = [
+                ChatMessage(role=MessageRole.SYSTEM, content=draft.draft_prompt),
+                ChatMessage(role=MessageRole.USER, content=builder.build(parsed, attachments)),
+            ]
+            llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
+            body = llm_event.chat_messages[-1].content or ""
+            return ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body)
+        except Exception:
+            logger.warning(
+                "[draft] could not draft a reply to uid=%s — skipping it, not the batch", ref.message_id, exc_info=True
+            )
+            await displayer.display_thought(
+                f"Could not draft a reply to {ref.subject} — it is filed correctly and the other drafts are unaffected."
+            )
+            return None
 
     @staticmethod
     async def _reparse_archived(
@@ -410,6 +461,7 @@ class EmailClassificationAgent(Agent):
         classification: EmailClassificationSettings,
         draft: DraftEmailSettings,
         inbox_folder: str,
+        token_counter: Callable[[str], list[int]],
     ) -> None:
         """Fail the run rather than silently filing everything into the fallback folder, or drafting into the inbox.
 
@@ -417,10 +469,18 @@ class EmailClassificationAgent(Agent):
         classified and filed a whole batch at full model cost and only then discovered its drafts folder is
         unusable has wasted all of it.
         """
+        EmailClassificationAgent._validate_taxonomy(classification, inbox_folder)
+        EmailClassificationAgent._validate_drafting(classification, draft, inbox_folder, token_counter)
+
+    @staticmethod
+    def _validate_taxonomy(classification: EmailClassificationSettings, inbox_folder: str) -> None:
+        """The folders mail is filed into must be distinct from each other and from the inbox."""
         if not classification.categories:
             raise ValueError("no categories are configured — the agent has nothing to classify into")
         if not classification.fallback_folder:
             raise ValueError("fallback_folder is empty — mail the model is unsure about would have nowhere to go")
+        if not classification.failure_folder:
+            raise ValueError("failure_folder is empty — mail the classifier failed on would have nowhere to go")
 
         names = [category.category for category in classification.categories]
         folders = [category.imap_folder for category in classification.categories]
@@ -433,19 +493,45 @@ class EmailClassificationAgent(Agent):
                 f"fallback_folder {classification.fallback_folder!r} is also a category folder — the run summary "
                 "could not tell a categorised message from an uncategorised one"
             )
+        if classification.failure_folder in folders:
+            raise ValueError(
+                f"failure_folder {classification.failure_folder!r} is also a category folder — a message the "
+                "classifier never reached a verdict on would be indistinguishable from one it placed there"
+            )
+        if classification.failure_folder == classification.fallback_folder:
+            raise ValueError(
+                f"failure_folder {classification.failure_folder!r} equals the fallback folder — an operator could "
+                "not tell mail the model deliberately declined from mail it never read, which is the whole reason "
+                "the two are kept apart"
+            )
 
         # Filing out of the inbox is the only dedup this agent has, and a target equal to the inbox defeats it.
         # On the COPY + UID EXPUNGE path the original is replaced by a fresh unread copy in the same folder, so the
         # next run classifies the copy, archives it again, and repeats without termination. Folder names are
         # admin-entered free text, so this is reachable by a typo rather than only by misuse.
-        if inbox_folder in {*folders, classification.fallback_folder}:
+        if inbox_folder in {*folders, classification.fallback_folder, classification.failure_folder}:
             raise ValueError(
                 f"a target folder equals the inbox folder {inbox_folder!r} — filed mail would stay unread in the "
                 "inbox and be reprocessed on every run"
             )
 
+    @staticmethod
+    def _validate_drafting(
+        classification: EmailClassificationSettings,
+        draft: DraftEmailSettings,
+        inbox_folder: str,
+        token_counter: Callable[[str], list[int]],
+    ) -> None:
+        """Reject a drafting setup that cannot produce a draft, before the run spends anything on classification."""
         if not draft.enable_draft:
             return
+
+        folders = [category.imap_folder for category in classification.categories]
+
+        # Constructing the builder is the check: it is the thing that knows whether the configured budget survives
+        # the system prompt, and a budget that cannot is only discovered at drafting time otherwise — after the whole
+        # batch has been classified and filed, with the drafts unrecoverable.
+        DraftPromptBuilder(draft.number_of_input_tokens, token_counter, draft.draft_prompt)
 
         if not any(category.draft_reply for category in classification.categories):
             raise ValueError(
@@ -461,7 +547,7 @@ class EmailClassificationAgent(Agent):
                 f"drafts_folder equals the inbox folder {inbox_folder!r} — every draft would be classified and "
                 "replied to on the following run"
             )
-        if draft.drafts_folder in {*folders, classification.fallback_folder}:
+        if draft.drafts_folder in {*folders, classification.fallback_folder, classification.failure_folder}:
             raise ValueError(
                 f"drafts_folder {draft.drafts_folder!r} is also a category or fallback folder — drafts and filed "
                 "mail would be indistinguishable in it"
@@ -488,19 +574,36 @@ class EmailClassificationAgent(Agent):
         verdicts: list[CategoryVerdict] = []
         async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
             for mail in fetched:
-                verdict = await MailClassifier.classify(mail.parsed, classification, llm)
+                verdict = await MailClassifier.classify(mail.parsed, classification, llm, llm_config.token_counter)
                 logger.info(
-                    "[classify] uid=%s subject=%r -> %s",
+                    "[classify] uid=%s subject=%r -> %s (%s)",
                     mail.parsed.message_id,
                     mail.parsed.subject,
-                    verdict.category_name or "<fallback>",
+                    verdict.target_folder(classification),
+                    verdict.outcome,
                 )
-                await displayer.display_thought(
-                    f"{mail.parsed.subject} → {verdict.category_name or classification.fallback_folder}: "
-                    f"{verdict.reason}"
-                )
+                await self._report_verdict(mail.parsed.subject, verdict, classification, displayer)
                 verdicts.append(verdict)
         return verdicts
+
+    @staticmethod
+    async def _report_verdict(
+        subject: str,
+        verdict: CategoryVerdict,
+        classification: EmailClassificationSettings,
+        displayer: EventDisplayer,
+    ) -> None:
+        """Name every failure to whoever is watching the run — a message that quietly moved to a folder nobody looks
+        at is the same outage as one that never moved at all."""
+        if verdict.outcome is ClassificationOutcome.FAILED:
+            await displayer.display_thought(
+                f"Could not classify {subject} — filing it in {classification.failure_folder} so it leaves the "
+                f"inbox and can be retried by hand."
+            )
+            return
+        await displayer.display_thought(
+            f"{subject} → {verdict.category_name or classification.fallback_folder}: {verdict.reason}"
+        )
 
     async def _file_all(
         self,
@@ -518,10 +621,13 @@ class EmailClassificationAgent(Agent):
         A failure here aborts the run: messages already filed stay filed, and everything still in the inbox is
         unread, so the next run picks it up. Filing is the only dedup mechanism, so a partial batch is safe. A
         folder the server refuses fails before anything has moved at all.
+
+        A message the classifier could not reach a verdict on is filed too, into `failure_folder`. Leaving it in the
+        inbox would have `list_unread` re-select it oldest-first on every run forever; the dedicated folder is what
+        makes moving it safe — it keeps its unread flag through the `MOVE`, so an operator dragging it back is the
+        retry, and it is never mixed in with mail the model deliberately declined.
         """
-        targets = [
-            verdict.category.imap_folder if verdict.category else classification.fallback_folder for verdict in verdicts
-        ]
+        targets = [verdict.target_folder(classification) for verdict in verdicts]
         assignments = [(mail.parsed.message_id, folder) for mail, folder in zip(fetched, targets, strict=True)]
         created = await do_file_messages(imap_config, assignments)
 

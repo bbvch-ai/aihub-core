@@ -68,6 +68,9 @@ def build() -> EmailClassificationAgentConfig:
         classification=EmailClassificationSettings(
             categories=_CATEGORIES,
             fallback_folder="Triage/Uncategorised",
+            # Kept under the same prefix as the rest, and distinct from the fallback: mail the model declined and
+            # mail it never managed to read are different problems, and only one of them is worth an operator's time.
+            failure_folder="Triage/Failed",
         ),
         # Drafting off by default: a template that started writing replies to a customer's real mailbox the moment it
         # was instantiated would be presumptuous. The categories carry the intent; the admin turns it on.

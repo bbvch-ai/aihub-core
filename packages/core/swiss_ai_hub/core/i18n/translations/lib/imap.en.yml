@@ -64,6 +64,15 @@ config:
     label: Fallback Folder
     help: Folder for mail the model is not confident about. Such mail is never guessed
       into a category and never left in the inbox.
+  failure_folder:
+    label: Failure Folder
+    help: Folder for mail the classifier could not process at all. Such mail still
+      leaves the inbox, so one bad message cannot block every run behind it, and moving
+      it back to the inbox retries it.
+  classification_input_tokens:
+    label: Classification Input Tokens
+    help: Token budget for the classification prompt. Long messages are trimmed to
+      fit, keeping the opening of the body.
   classification_model:
     label: Classification Model
     help: Chat model used to classify each message. Leave empty to use the agent's

@@ -53,8 +53,17 @@ def test_the_taxonomy_passes_the_agents_own_validation(template: EmailClassifica
 
     This now also covers the fallback-vs-category and target-vs-inbox rules, plus the drafting rules, which
     `_validate` enforces for every config rather than only for the shipped templates.
+
+    Uses the template's own token counter rather than a stub, so the drafting budget it ships with is checked against
+    the tokenizer the runtime will actually use — a template whose budget cannot fit its own prompt would otherwise
+    only be discovered by whoever instantiated it.
     """
-    EmailClassificationAgent._validate(template.classification, template.draft, template.imap.inbox_folder)
+    EmailClassificationAgent._validate(
+        template.classification,
+        template.draft,
+        template.imap.inbox_folder,
+        template.drafting_llm.token_counter,
+    )
 
 
 def test_name_and_description_are_translated(template: EmailClassificationAgentConfig):

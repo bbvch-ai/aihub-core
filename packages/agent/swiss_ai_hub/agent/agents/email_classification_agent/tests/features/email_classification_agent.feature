@@ -58,7 +58,7 @@ Feature: Email Classification Agent
     When the user triggers classification
     Then the message was filed into the fallback folder
     And no draft was appended
-    And no MailBatchDraftedEvent was emitted
+    And a MailBatchDraftedEvent reporting 0 drafts and 1 skipped was emitted
     And a StopEvent is present
     And no ExceptionEvent is present
 
@@ -67,7 +67,7 @@ Feature: Email Classification Agent
     When the user triggers classification
     Then a MailBatchClassifiedEvent with 1 classified messages was emitted
     And no draft was appended
-    And no MailBatchDraftedEvent was emitted
+    And a MailBatchDraftedEvent reporting 0 drafts and 1 skipped was emitted
     And a StopEvent is present
     And the mailbox is no longer held
     And no ExceptionEvent is present

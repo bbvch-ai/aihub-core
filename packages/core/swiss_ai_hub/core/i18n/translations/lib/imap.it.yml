@@ -70,6 +70,16 @@ config:
     label: Cartella di riserva
     help: Cartella per la posta su cui il modello non è sicuro. Tale posta non viene
       mai indovinata in una categoria né lasciata nella posta in arrivo.
+  failure_folder:
+    label: Cartella degli errori
+    help: Cartella per la posta che il classificatore non è riuscito a elaborare.
+      Tali messaggi lasciano comunque la posta in arrivo, così un messaggio difettoso
+      non blocca tutte le esecuzioni successive; riportarlo nella posta in arrivo
+      lo rimette in coda.
+  classification_input_tokens:
+    label: Token di input per la classificazione
+    help: Budget di token per il prompt di classificazione. I messaggi lunghi vengono
+      troncati, mantenendo l'inizio del corpo.
   classification_model:
     label: Modello di classificazione
     help: Modello di chat usato per classificare ogni messaggio. Lascia vuoto per

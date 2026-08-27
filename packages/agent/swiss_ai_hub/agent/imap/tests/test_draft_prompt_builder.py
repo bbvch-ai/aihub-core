@@ -3,9 +3,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from swiss_ai_hub.agent.imap.draft_prompt_builder import TRUNCATION_MARKER, DraftPromptBuilder
+from swiss_ai_hub.agent.imap.draft_prompt_builder import DraftPromptBuilder
 from swiss_ai_hub.agent.imap.extracted_attachment import AttachmentOutcome, ExtractedAttachment
 from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
+from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS, TRUNCATION_MARKER
 
 
 def _counter(text: str) -> list[int]:
@@ -105,8 +106,23 @@ def test_the_envelope_is_never_trimmed_even_when_the_body_goes():
 def test_a_budget_too_small_for_the_envelope_alone_raises():
     """A misconfiguration, not a runtime condition — emitting a degenerate prompt would spend a model call to reply
     to nothing."""
+    builder = DraftPromptBuilder(4, _counter)
+    message = _message()
+
     with pytest.raises(ValueError, match="envelope alone exceeds"):
-        DraftPromptBuilder(4, _counter).build(_message(), [])
+        builder.build(message, [])
+
+
+def test_an_enormous_subject_costs_only_its_own_tail():
+    """The envelope is the one part `build` never trims, and the subject is attacker-controlled. Without the cap a
+    single crafted message would make the envelope unfittable and cost the whole batch its drafts."""
+    message = _message()
+    message.subject = "A" * 200_000
+
+    prompt = DraftPromptBuilder(32768, _counter).build(message, [])
+
+    assert "A" * MAX_SUBJECT_CHARACTERS in prompt
+    assert len(prompt) < 2_000, "the subject was capped, not carried into the prompt whole"
 
 
 def test_a_short_message_never_pays_for_a_token_count():
@@ -117,21 +133,3 @@ def test_a_short_message_never_pays_for_a_token_count():
     DraftPromptBuilder(32768, counter).build(_message(), [])
 
     assert counter.call_count == 0
-
-
-def test_the_short_circuit_settles_both_extremes_without_a_token_count():
-    """Only the band where the estimate cannot decide pays the tokenizer.
-
-    Asserted on `_fits` directly because that is where the saving lives: once a prompt has to be *trimmed*, the
-    sentence splitter tokenizes each candidate chunk, and no short-circuit can avoid that.
-    """
-    counter = MagicMock(side_effect=_counter)
-    builder = DraftPromptBuilder(1000, counter)
-    budget = builder._budget
-
-    assert builder._fits("x" * (budget // 2)) is True
-    assert builder._fits("x" * (budget * 4 + 1)) is False
-    assert counter.call_count == 0
-
-    assert builder._fits("x" * (budget * 2)) is True
-    assert counter.call_count == 1, "the undecidable middle band is exactly what the tokenizer is for"

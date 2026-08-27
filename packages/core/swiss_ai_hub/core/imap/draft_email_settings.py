@@ -169,7 +169,7 @@ class DraftEmailSettings(StepConfig):
             number_of_input_tokens=InputNumber(
                 label=LocaleString.from_i18n_path("lib.imap.config.draft_input_tokens.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.draft_input_tokens.help"),
-                min=1,
+                min=1024,
                 step=1024,
                 condition_if=_VISIBLE_WHEN_ENABLED,
             ),

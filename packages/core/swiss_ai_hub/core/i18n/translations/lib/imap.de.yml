@@ -68,6 +68,16 @@ config:
     label: Ausweichordner
     help: Ordner für E-Mails, bei denen sich das Modell unsicher ist. Solche E-Mails
       werden nie in eine Kategorie geraten und nie im Posteingang belassen.
+  failure_folder:
+    label: Fehlerordner
+    help: Ordner für E-Mails, die der Klassifizierer überhaupt nicht verarbeiten konnte.
+      Solche E-Mails verlassen den Posteingang trotzdem, damit eine fehlerhafte Nachricht
+      nicht alle folgenden Läufe blockiert; zurück in den Posteingang verschieben
+      wiederholt den Versuch.
+  classification_input_tokens:
+    label: Eingabe-Token für die Klassifizierung
+    help: Token-Budget für den Klassifizierungs-Prompt. Lange Nachrichten werden gekürzt,
+      wobei der Anfang des Textes erhalten bleibt.
   classification_model:
     label: Klassifizierungsmodell
     help: Chat-Modell, das jede Nachricht klassifiziert. Leer lassen, um das Hauptmodell
