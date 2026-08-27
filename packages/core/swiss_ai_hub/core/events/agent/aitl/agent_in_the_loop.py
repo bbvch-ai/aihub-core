@@ -60,7 +60,7 @@ class AgentInTheLoop:
         # `PartialAgentTopic.to_subject` renders a blank segment as the NATS wildcard `*`, so a
         # half-configured delegation would publish to a subject no instance is subscribed to and the
         # caller would wait forever with nothing logged. Fail loudly instead.
-        if not agent_class or not agent_id:
+        if not (agent_class or "").strip() or not (agent_id or "").strip():
             raise ValueError(
                 f"Cannot delegate to an incomplete agent reference: "
                 f"agent_class={agent_class!r}, agent_id={agent_id!r}. Both are required."

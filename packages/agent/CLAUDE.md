@@ -372,8 +372,10 @@ unterminated JSON. `ResilientOpenAILike` then retries the identical request, whi
   four-field decision measures ~133 tokens against an 8192-token ceiling. Set it on the LLM instance or a `model_copy`;
   a per-call `max_tokens` is silently discarded because `OpenAI._get_model_kwargs` lets `self.max_tokens` win over the
   passed kwargs.
-- **Degrade, don't crash.** Catch `ValidationError`/`ValueError` around the call and surface a localized sentence, as
-  `determine_namespaces_step` and `rag_exception_step` do. Let infrastructure errors keep propagating.
+- **Degrade, don't crash.** Catch `ValueError` around the call and surface a localized sentence, as
+  `determine_namespaces_step` and `rag_exception_step` do. One clause is enough for both shapes of malformed output:
+  Pydantic's `ValidationError` subclasses `ValueError`, and `ResilientOpenAILike` raises it bare when the response
+  carries no usable content. Let infrastructure errors keep propagating.
 
 ## i18n
 

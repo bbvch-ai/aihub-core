@@ -47,8 +47,9 @@ class AgentRef(BaseModel):
     ```
     """
 
-    # Both halves must be non-empty: `PartialAgentTopic.to_subject` renders a blank segment as the NATS
+    # Both halves must be non-blank: `PartialAgentTopic.to_subject` renders a blank segment as the NATS
     # wildcard `*`, so an empty id publishes the delegation to a subject no instance is subscribed to and
-    # the caller waits for a reply that never arrives.
-    agent_class: Annotated[str, Field(description="The agent class name", min_length=1)]
-    agent_id: Annotated[str, Field(description="The agent instance ID", min_length=1)]
+    # the caller waits for a reply that never arrives. `pattern` rather than `strip_whitespace` because
+    # only `pattern` reaches the JSON Schema that jambo rebuilds the save-path model from.
+    agent_class: Annotated[str, Field(description="The agent class name", min_length=1, pattern=r"\S")]
+    agent_id: Annotated[str, Field(description="The agent instance ID", min_length=1, pattern=r"\S")]

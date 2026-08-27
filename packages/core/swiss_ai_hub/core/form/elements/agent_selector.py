@@ -132,7 +132,7 @@ class AgentSelector(PrimeVueElement):
             return []
 
         agent_ref = f"{agent_class or ''}/{agent_id or ''}"
-        if not access_checker.has_access_to_agent(agent_class, agent_id):
+        if not access_checker.has_access_to_agent(agent_class or "", agent_id or ""):
             return [
                 ConfigAuthorizationViolation(
                     field=field_path,

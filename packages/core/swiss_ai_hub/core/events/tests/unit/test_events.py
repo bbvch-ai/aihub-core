@@ -439,7 +439,13 @@ class TestAgentInTheLoopInvokeGuards:
 
     @pytest.mark.parametrize(
         ("agent_class", "agent_id"),
-        [("RAGAgent", ""), ("", "shared-knowledge-rag"), ("", "")],
+        [
+            ("RAGAgent", ""),
+            ("", "shared-knowledge-rag"),
+            ("", ""),
+            ("RAGAgent", "   "),
+            ("   ", "shared-knowledge-rag"),
+        ],
     )
     def test_incomplete_reference_is_refused(self, test_start_event, agent_class, agent_id):
         with pytest.raises(ValueError, match="incomplete agent reference"):

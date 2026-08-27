@@ -6,6 +6,7 @@ Note: Full integration tests require Redis, NATS, and MongoDB infrastructure.
 
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import get_args
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -63,23 +64,28 @@ class TestNamespaceDecision:
         """Strict structured output marks every property required, so a field that may be null must
         instruct the model to emit null rather than omit the key - a model that omits it cannot
         terminate the guided-decoding grammar and burns its whole token budget on whitespace."""
-        from openai.resources.chat.completions.completions import _type_to_response_format
+        for field_name, field_info in NamespaceDecision.model_fields.items():
+            if type(None) not in get_args(field_info.annotation):
+                continue
+            description = field_info.description or ""
+            assert "null" in description.lower(), (
+                f"'{field_name}' accepts null and is therefore required by the strict schema, but its "
+                f"description does not tell the model to provide null: {description!r}"
+            )
+
+    def test_strict_response_format_still_requires_every_property(self):
+        """The canary for the assumption above: if OpenAI stopped forcing every property into
+        `required`, the prompt contract this agent maintains would no longer be necessary. Asserts
+        someone else's behaviour, so a moved private symbol must skip rather than fail the build."""
+        try:
+            from openai.resources.chat.completions.completions import _type_to_response_format
+        except ImportError:
+            pytest.skip("openai._type_to_response_format moved; strict-mode canary cannot run")
 
         json_schema = _type_to_response_format(NamespaceDecision)["json_schema"]
-        schema = json_schema["schema"]
 
         assert json_schema["strict"] is True
-        assert set(schema["required"]) == set(schema["properties"])
-
-        for field_name in schema["required"]:
-            field_schema = schema["properties"][field_name]
-            accepts_null = "null" in str(field_schema.get("anyOf", field_schema.get("type", "")))
-            if not accepts_null:
-                continue
-            assert "null" in field_schema["description"].lower(), (
-                f"'{field_name}' accepts null and is required by the strict schema, but its "
-                f"description does not tell the model to provide null: {field_schema['description']!r}"
-            )
+        assert set(json_schema["schema"]["required"]) == set(json_schema["schema"]["properties"])
 
 
 class TestFormatting:

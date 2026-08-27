@@ -40,3 +40,12 @@ class TestAgentRefConstraints:
     def test_blank_half_is_rejected(self, agent_class: str, agent_id: str):
         with pytest.raises(ValidationError):
             AgentRef(agent_class=agent_class, agent_id=agent_id)
+
+    @pytest.mark.parametrize(
+        ("agent_class", "agent_id"),
+        [("RAGAgent", "   "), ("   ", "shared-knowledge-rag"), ("\t", "\n")],
+    )
+    def test_whitespace_only_half_is_rejected(self, agent_class: str, agent_id: str):
+        """A whitespace segment reaches NATS just as blank as an empty one, and `min_length` alone lets it through."""
+        with pytest.raises(ValidationError):
+            AgentRef(agent_class=agent_class, agent_id=agent_id)

@@ -4,7 +4,6 @@ from typing import ClassVar
 
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
-from pydantic import ValidationError
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
@@ -276,10 +275,12 @@ class NamespaceSelectionAgent(Agent):
                     available_namespaces=namespaces_str,
                     conversation_history=conversation_str,
                 )
-            except (ValidationError, ValueError) as unparseable_decision:
+            except ValueError as unparseable_decision:
                 # A model that drops a required property deadlocks guided decoding, so the response arrives
                 # truncated however often it is retried. Routing is the only thing this step decides, so the
                 # run ends with a request to rephrase rather than a Pydantic dump reaching the chat window.
+                # `ValueError` covers both shapes of malformed output: Pydantic's `ValidationError` subclasses
+                # it, and `ResilientOpenAILike` raises it bare when the response carries no usable content.
                 logger.warning("Namespace determination returned unparseable output: %s", unparseable_decision)
                 await displayer.display_chunk(
                     t("agent.namespace_selection_agent.messages.determination_failed"),
