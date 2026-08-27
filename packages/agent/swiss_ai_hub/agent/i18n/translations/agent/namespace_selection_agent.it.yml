@@ -31,6 +31,9 @@ thoughts:
   forwarding_to_rag: Ricerca di informazioni pertinenti
   rag_error: 'Si è verificato un errore durante la ricerca: %{error_message}'
 messages:
+  determination_failed: Non sono riuscito a determinare quali fonti di conoscenza
+    consultare per questa richiesta. Puoi riformularla o indicarmi l'argomento che
+    ti interessa?
   default_follow_up: Potresti fornire maggiori dettagli sulla tua richiesta in modo
     che io possa determinare le fonti di conoscenza più rilevanti?
   user_rejected_selection: Ho rifiutato la selezione dei namespace proposta. Per favore
@@ -52,7 +55,9 @@ prompts:
     \ CRITICI:\n- Ogni bucket DEVE avere esattamente UN namespace selezionato - né\
     \ più, né meno.\n- La tua follow_up_question DEVE elencare i nomi esatti dei namespace\
     \ da <available_namespaces> sopra come opzioni.\n- NON inventare nomi - usa solo\
-    \ i nomi reali mostrati sopra.\n"
+    \ i nomi reali mostrati sopra.\n- Includi SEMPRE tutti e quattro i campi - has_enough_information,\
+    \ selected_namespaces, follow_up_question and reasoning - anche quando un valore\
+    \ è null. Non omettere mai un campo.\n"
 steps:
   initialize_determination:
     name: Inizializza determinazione namespace

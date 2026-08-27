@@ -4,6 +4,7 @@ from typing import ClassVar
 
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
+from pydantic import ValidationError
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
@@ -66,6 +67,11 @@ PROPOSED_NAMESPACES_KEY = "proposed_namespaces"
 
 # ThreadContext keys
 NAMESPACE_SELECTION_KEY = "namespace_selection"
+
+# Strict structured output marks every property required, so a model that omits one cannot emit the closing
+# brace and pads whitespace until it exhausts its output budget. Capping the budget for this one call bounds
+# that failure to seconds instead of the model's full ceiling (8192 tokens on the default chat model).
+DETERMINATION_MAX_OUTPUT_TOKENS = 1024
 
 
 @precondition()
@@ -246,7 +252,7 @@ class NamespaceSelectionAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity,
-    ) -> FollowUpQuestionRequestEvent | NamespaceApprovalRequestEvent | DetermineNamespacesEvent:
+    ) -> FollowUpQuestionRequestEvent | NamespaceApprovalRequestEvent | DetermineNamespacesEvent | StopEvent:
         """Use LLM to determine if enough info exists to select namespaces."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.analyzing_request"))
 
@@ -261,13 +267,25 @@ class NamespaceSelectionAgent(Agent):
         logger.debug("Conversation history:\n%s", conversation_str)
 
         async with agent_config.task_llm.cost_reporting_llm(displayer, user=user) as llm:
+            llm.max_tokens = min(llm.max_tokens or DETERMINATION_MAX_OUTPUT_TOKENS, DETERMINATION_MAX_OUTPUT_TOKENS)
             prompt = RichPromptTemplate(t("agent.namespace_selection_agent.prompts.determination"))
-            decision: NamespaceDecision = await llm.astructured_predict(
-                NamespaceDecision,
-                prompt,
-                available_namespaces=namespaces_str,
-                conversation_history=conversation_str,
-            )
+            try:
+                decision: NamespaceDecision = await llm.astructured_predict(
+                    NamespaceDecision,
+                    prompt,
+                    available_namespaces=namespaces_str,
+                    conversation_history=conversation_str,
+                )
+            except (ValidationError, ValueError) as unparseable_decision:
+                # A model that drops a required property deadlocks guided decoding, so the response arrives
+                # truncated however often it is retried. Routing is the only thing this step decides, so the
+                # run ends with a request to rephrase rather than a Pydantic dump reaching the chat window.
+                logger.warning("Namespace determination returned unparseable output: %s", unparseable_decision)
+                await displayer.display_chunk(
+                    t("agent.namespace_selection_agent.messages.determination_failed"),
+                    model_name=NamespaceSelectionAgent.__name__,
+                )
+                return StopEvent()
 
         await displayer.display_thought(
             t("agent.namespace_selection_agent.thoughts.llm_decision", reasoning=decision.reasoning)
