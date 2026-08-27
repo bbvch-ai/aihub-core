@@ -52,26 +52,15 @@ class AgentMemory:
         self._custom_fact_extraction_prompt = custom_fact_extraction_prompt
         self._custom_update_memory_prompt = custom_update_memory_prompt
 
-    def _build_service(self, enable_graph: bool) -> Mem0Service:
+    @cached_property
+    def _memory_service(self) -> Mem0Service:
+        """Both scopes run graph-free (issues #1179, #1713), so they share one lazily-built service."""
         config = self._settings.get_config(
             custom_fact_extraction_prompt=self._custom_fact_extraction_prompt,
             custom_update_memory_prompt=self._custom_update_memory_prompt,
-            enable_graph=enable_graph,
+            enable_graph=False,
         )
         return Mem0Service(config, t=self._t)
-
-    @cached_property
-    def _user_memory_service(self) -> Mem0Service:
-        """User memory runs WITHOUT the graph store: its ~3 graph LLM calls dominate the save latency and add
-        no value for flat per-turn preferences (issue #1179). Built lazily so user-memory-only agents never
-        open a Neo4j connection."""
-        return self._build_service(enable_graph=False)
-
-    @cached_property
-    def _organization_memory_service(self) -> Mem0Service:
-        """Organization memory always keeps the graph: writes are rare, explicit, and entity-rich, so the
-        graph's cost is amortized and its relational value applies."""
-        return self._build_service(enable_graph=True)
 
     @property
     def agent_id(self):
@@ -116,7 +105,7 @@ class AgentMemory:
         The thread/display/run IDs are preserved in metadata for traceability (knowing which conversation
         generated which memory) and potential future filtering.
         """
-        return await self._user_memory_service.add_memory(
+        return await self._memory_service.add_memory(
             messages=self.messages_to_dict(messages, user_id),
             owner_id=user_id,
             memory_type=MemoryType.USER_MEMORY,
@@ -148,7 +137,7 @@ class AgentMemory:
         memory, it is NOT inferred from the chat history.
         """
         messages = [{"role": MessageRole.USER, "content": memory, "name": user_id}]
-        return await self._organization_memory_service.add_memory(
+        return await self._memory_service.add_memory(
             messages=messages,
             owner_id=tenant_id,
             memory_type=MemoryType.ORGANIZATION_MEMORY,
@@ -186,7 +175,7 @@ class AgentMemory:
         regardless of which agent wrote them, mirroring `search_organization_memory`. The writer's `_agent_id`
         stays on the stored record as trace metadata; it just does not partition reads.
         """
-        return await self._user_memory_service.search(
+        return await self._memory_service.search(
             query=query,
             owner_id=user_id,
             thread_id=thread_id,
@@ -229,7 +218,7 @@ class AgentMemory:
         tenant-wide retrieval; pass a concrete `user_id` only if the caller wants to restrict
         results to memories written on behalf of that user.
         """
-        return await self._organization_memory_service.search(
+        return await self._memory_service.search(
             query=query,
             owner_id=tenant_id,
             thread_id=thread_id,
