@@ -154,6 +154,12 @@ The backend defines form schemas (`FormkitElement[]`), the frontend renders them
 Custom input components receive props via `context` (not Vue props): read from `context.value`, write via
 `context.node.input(newValue)`.
 
+**Custom validation rules** also live in `formkit.config.ts` (`localeRequired`, `agentRefRequired`). FormKit's built-in
+`required` only asks whether a value is present, so it passes on any non-empty object — a `localeInput` with every
+locale blank, or an `agentSelector` with a class chosen and no instance. Elements whose value is an object therefore
+override the `validation` computed property on the Python side to emit their own rule name instead of `required`, and
+the rule must set `skipEmpty = false` or it never runs on a never-touched field. Add a message for all four locales.
+
 **Repeater elements** must be extracted separately and rendered via `<FormKitRepeater>` — the standard `repeater` type
 is not supported inside `<FormKitSchema>`.
 

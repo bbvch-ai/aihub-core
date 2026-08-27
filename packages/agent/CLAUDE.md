@@ -348,6 +348,33 @@ chat client. If an agent needs a richer, non-chat entry payload (e.g. from a cus
 agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly and accept `UserMessageEvent | YourStartEvent` on
 the relevant steps.
 
+**Only accept a start event on a step it can actually trigger.** `get_start_events()` aggregates every event type in
+every step parameter, so naming an event anywhere advertises it as an entry point of the whole agent — which is what
+`AgentSelector(start_event=...)` filters its picker on. `NamespaceSelectionAgent` named `RAGStartEvent` on a parameter
+it only ever *reads*, on a step that requires an approval response and so can only be reached from a chat message. The
+event was unreachable, but the agent appeared in its own RAG-delegation picker, and selecting it made a profile delegate
+to itself and hang forever (aihub-core-private#142). If a step merely needs to read whichever start event began the run,
+annotate it with the events that can genuinely start the agent and nothing more.
+
+## Structured LLM Output
+
+`llm.astructured_predict(Model, prompt, ...)` takes the strict `response_format` path whenever the model declares
+`supports_response_schema`. Strict mode puts **every** property into `required`, discarding the `= None` defaults the
+schema declares — so a model that omits any field cannot emit `}` or EOS, pads whitespace to `max_tokens`, and returns
+unterminated JSON. `ResilientOpenAILike` then retries the identical request, which cannot succeed. See ADR
+`2026_07_13_response_format_as_default_structured_output`.
+
+- **Name every field in the prompt.** This is the binding instruction. Rewording `description=` strings changes nothing
+  — models do not act on them. A generic "include every field" is not enough either: name them individually, because the
+  field a model drops is the one the prompt never mentions.
+- **Never write "only set if …" in a field description.** It tells the model to do exactly what strict mode forbids.
+- **Cap `max_tokens` for small structured calls.** The model's full output budget is the cost of any deadlock — a
+  four-field decision measures ~133 tokens against an 8192-token ceiling. Set it on the LLM instance or a `model_copy`;
+  a per-call `max_tokens` is silently discarded because `OpenAI._get_model_kwargs` lets `self.max_tokens` win over the
+  passed kwargs.
+- **Degrade, don't crash.** Catch `ValidationError`/`ValueError` around the call and surface a localized sentence, as
+  `determine_namespaces_step` and `rag_exception_step` do. Let infrastructure errors keep propagating.
+
 ## i18n
 
 - `AgentLocaleString.from_i18n_path()` for agent/step `name` and `description`
