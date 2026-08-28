@@ -106,15 +106,23 @@ processors:
 {%- if stage != 'dev' %}
   # A rejected OTLP request is a PERMANENT error, so the exporter drops the whole batch
   # without retrying — every span in it is lost, including the small ones that rode along.
-  # The size comes from OpenInference LLM spans carrying full prompts and completions, and
-  # embedding vectors. Langfuse is the consumer that needs those verbatim and it has its own
-  # pipeline, so drop the payload keys on the cloud path and truncate whatever is left as a
-  # backstop against the next unbounded attribute. This also keeps prompts and completions
-  # from leaving the deployment for a third-party backend at all.
+  # The size comes from OpenInference spans carrying payload verbatim: LLM prompts and
+  # completions, embedding vectors, and the retrieved chunk text on retriever and reranker
+  # spans — a reranker span flattens every input AND output document, each with its full
+  # content. Langfuse is the consumer that needs those verbatim and it has its own pipeline,
+  # so drop the payload keys on the cloud path and truncate whatever is left as a backstop
+  # against the next unbounded attribute.
+  #
+  # truncate_all bounds each attribute, not the span, so deleting the document keys is what
+  # actually caps a retriever: retrieve_k goes to 100 in the agent form, and 100 documents
+  # left at 2048 each rebuild a span far past the ~100 KB average that broke the batch.
+  #
+  # This also keeps prompts, completions and internal document text from leaving the
+  # deployment for a third-party backend at all.
   transform/cloud_span_size:
     error_mode: ignore
     trace_statements:
-      - 'delete_matching_keys(span.attributes, "^(llm[.](input|output)_messages|llm[.]prompt_template|input[.]value|output[.]value|embedding[.]embeddings)")'
+      - 'delete_matching_keys(span.attributes, "^(llm[.](input|output)_messages|llm[.]prompt_template|input[.]value|output[.]value|embedding[.]embeddings|retrieval[.]documents|reranker[.](input|output)_documents|reranker[.]query)")'
       - truncate_all(span.attributes, 2048)
       - truncate_all(resource.attributes, 2048)
 {%- endif %}
