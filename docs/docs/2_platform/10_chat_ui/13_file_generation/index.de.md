@@ -1,6 +1,6 @@
 ---
 title: Dateigenerierung
-source_sha: 04685dcb4afe8126fff35b4f1dbfd763a3664235062a1b6c0e3f936f79bac0f4
+source_sha: b8235feb8239dc872463b9fc7a3f7c8c5de4fa9fe26f01c95d769ef3917ff617
 ---
 
 # Dateigenerierung
@@ -27,10 +27,11 @@ Wählen Sie **Kimi-K2.6** im Modell-Picker (unter **Workspace**), wenn das Model
 
 Die Dateigenerierung ist eine mehrstufige Tool-Calling-Schleife: Das Modell muss korrektes Python schreiben, es mit
 `run_command` ausführen, das Ergebnis zurücklesen und die Datei dann mit `display_file` übergeben. Die Zuverlässigkeit
-dieser Schleife variiert zwischen den Modellen deutlich stärker als die Liste der unterstützten Formate. Alle AI-Hub
-Text-Generation-Modelle deklarieren Function-Calling-Unterstützung, aber nicht alle vollziehen den Handshake in der
-Praxis — bei aktiviertem Open Terminal liefert `Qwen3.5-122B-A10B-FP8` eine leere Antwort. Siehe
-[ADR: Model Identity as a Platform-Injected System Prompt for Plain LLM Chats](/arc42/decisions/2026_08_14_model_identity_system_prompt_for_plain_llm_chats.md).
+dieser Schleife variiert zwischen den Modellen deutlich stärker als die Liste der unterstützten Formate — alle AI-Hub
+Text-Generation-Modelle deklarieren Function-Calling-Unterstützung, aber diese Deklaration ist nicht dasselbe wie das
+Durchhalten eines mehrstufigen Aufbaus bis zur fertigen Datei. Kimi-K2.6 ist das Modell, gegen das die untenstehende
+Formatmatrix verifiziert wurde. Wenn ein anderes Modell antwortet, ohne eine Datei zu erzeugen, probieren Sie zuerst
+Kimi-K2.6, bevor Sie das Format als nicht unterstützt einstufen.
 
 **Native Function Calling** muss für das gewählte Modell dennoch aktiviert werden — es ist nicht standardmäßig aktiv.
 :::

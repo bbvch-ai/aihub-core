@@ -158,7 +158,7 @@ pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binar
 - A new Python library dependency must be baked into the image
 
 The baked-in inventory decides which file formats the sandbox can produce for end users, so re-verify the format matrix
-in `docs/docs/2_platform/10_chat_ui/6_coding/index.en.md` whenever the base tag moves.
+in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the base tag moves.
 
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.

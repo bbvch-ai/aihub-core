@@ -13,9 +13,10 @@ You do not need to write or read any code to use this. Describe the document you
 ::: warning Requirements
 File generation runs on the same code-execution path as [Coding / Software Development](../6_coding/), so it inherits
 that path's constraints: it works only with **plain LLM models that support function (tool) calling**, **Native Function
-Calling must be enabled** for the model (Admin → Settings → Models → the model's advanced params), and **AI-Hub agents
-are not supported yet**. See that page for the sandbox mechanics, the per-user isolation model, and the fact that
-generated files are kept indefinitely.
+Calling must be enabled** for the model (Admin → Settings → Models → the model's advanced params), **a terminal has to
+be selected in the chat** — the sandbox tools are resolved only then — and **AI-Hub agents are not supported yet**. See
+that page for the sandbox mechanics, the per-user isolation model, and the fact that generated files are kept
+indefinitely.
 :::
 
 ::: tip Recommended model — Workspace → Kimi-K2.6
@@ -23,10 +24,10 @@ Select **Kimi-K2.6** in the model picker (under **Workspace**) when you want the
 
 File generation is a multi-step tool-calling loop: the model has to write correct Python, run it with `run_command`,
 read the result back, and then hand the file over with `display_file`. Reliability on that loop varies far more between
-models than the list of supported formats does. All AI-Hub text-generation models declare function-calling support, but
-not all of them complete the handshake in practice — with Open Terminal enabled, `Qwen3.5-122B-A10B-FP8` returns an
-empty response. See
-[ADR: Model Identity as a Platform-Injected System Prompt for Plain LLM Chats](/arc42/decisions/2026_08_14_model_identity_system_prompt_for_plain_llm_chats.md).
+models than the list of supported formats does — every AI-Hub text-generation model declares function-calling support,
+but declaring it is not the same as carrying a multi-step build through to a finished file. Kimi-K2.6 is the model the
+format matrix below was verified against. If another model answers without producing a file, try Kimi-K2.6 before
+concluding that the format is unsupported.
 
 **Native Function Calling** still has to be switched on for the chosen model — it is not enabled by default.
 :::
