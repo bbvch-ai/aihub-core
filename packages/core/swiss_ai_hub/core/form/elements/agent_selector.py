@@ -112,6 +112,16 @@ class AgentSelector(PrimeVueElement):
             self_copy.id_placeholder = t.extract(self_copy.id_placeholder)
         return self_copy
 
+    @staticmethod
+    def _reference_half(raw: Any) -> str:
+        """Normalizes one half of the reference to the segment `has_access_to_agent` can actually be asked about.
+
+        Anything that is not a non-blank string collapses to `""`, which the caller denies without
+        consulting the checker: `validate_permission_template` raises on a blank or malformed segment
+        rather than returning False, so asking would turn an intended 403 into a 500.
+        """
+        return raw.strip() if isinstance(raw, str) else ""
+
     def validate_authorization(
         self,
         field_path: str,
@@ -123,16 +133,17 @@ class AgentSelector(PrimeVueElement):
         if not isinstance(value, dict):
             return []
 
-        agent_class = value.get("agent_class")
-        agent_id = value.get("agent_id")
-        # An entirely unset reference is the untouched-field case, which `required` owns. A half-filled
-        # one cannot be evaluated, and answering "no violations" for input this never examined would let
-        # a blank id skip the access check altogether — so fail closed instead.
+        agent_class = AgentSelector._reference_half(value.get("agent_class"))
+        agent_id = AgentSelector._reference_half(value.get("agent_id"))
+
+        # An entirely unset reference is the untouched-field case, which `required` owns.
         if not agent_class and not agent_id:
             return []
 
-        agent_ref = f"{agent_class or ''}/{agent_id or ''}"
-        if not access_checker.has_access_to_agent(agent_class or "", agent_id or ""):
+        # A half-filled reference is denied without consulting the checker: asking it about a blank
+        # segment raises instead of answering, which would turn this 403 into a 500.
+        agent_ref = f"{agent_class}/{agent_id}"
+        if not agent_class or not agent_id or not access_checker.has_access_to_agent(agent_class, agent_id):
             return [
                 ConfigAuthorizationViolation(
                     field=field_path,

@@ -286,8 +286,10 @@ class TestDeterminationUnparseableOutput:
     @pytest.mark.asyncio
     async def test_infrastructure_errors_still_propagate(self):
         """A gateway failure is not a malformed answer - masking it as "please rephrase" would hide outages."""
+        llm = _FakeLLM(error=TimeoutError("gateway timed out"))
+
         with pytest.raises(TimeoutError):
-            await _run_determination(_FakeLLM(error=TimeoutError("gateway timed out")))
+            await _run_determination(llm)
 
     @pytest.mark.asyncio
     async def test_costs_are_still_reported_when_output_is_unparseable(self):

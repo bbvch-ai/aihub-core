@@ -1,13 +1,31 @@
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
 from swiss_ai_hub.core.agents.agent_ref import AgentRef
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
 from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
 def _label() -> LocaleString:
     return LocaleString(de="Agent", en="Agent", fr="Agent", it="Agent")
+
+
+def _checker(*allowed: str) -> AccessChecker:
+    """A real checker, not a mock: the blank-segment behaviour under test lives in `AccessChecker` itself."""
+    return AccessChecker(
+        user_access_rules=[AccessChecker.agent_instance_user_rule(*reference.split("/")) for reference in allowed],
+        tenant_access_rules=["aihub.admin.>"],
+    )
+
+
+def _violations(value: Any, checker: AccessChecker) -> list[ConfigAuthorizationViolation]:
+    element = AgentSelector(label=_label(), name="target_agent")
+    return element.validate_authorization("target_agent", value, checker, set(), LocaleHandler(locale="en"))
 
 
 def test_required_agent_selector_emits_agent_ref_required_rule():
@@ -49,3 +67,56 @@ class TestAgentRefConstraints:
         """A whitespace segment reaches NATS just as blank as an empty one, and `min_length` alone lets it through."""
         with pytest.raises(ValidationError):
             AgentRef(agent_class=agent_class, agent_id=agent_id)
+
+
+class TestPartialReferenceAuthorization:
+    """Exercised against a real `AccessChecker`, because a mock cannot show the failure this guards.
+
+    `has_access_to_agent` builds the permission template `aihub.user.agent.{class}.{id}`, and
+    `validate_permission_template` raises `ValueError` on a blank segment instead of returning False.
+    Asking it about a half-filled reference therefore turns an intended 403 into an unhandled 500 —
+    so the element must deny such a reference on its own, without consulting the checker.
+    """
+
+    @pytest.mark.parametrize(
+        ("value", "expected_resource"),
+        [
+            ({"agent_class": "MyAgent"}, "MyAgent/"),
+            ({"agent_class": "MyAgent", "agent_id": ""}, "MyAgent/"),
+            ({"agent_class": "MyAgent", "agent_id": "   "}, "MyAgent/"),
+            ({"agent_id": "inst_1"}, "/inst_1"),
+            ({"agent_class": "  ", "agent_id": "inst_1"}, "/inst_1"),
+        ],
+    )
+    def test_half_filled_reference_is_denied_without_raising(self, value: dict, expected_resource: str):
+        violations = _violations(value, _checker("MyAgent/inst_1"))
+
+        assert len(violations) == 1
+        assert violations[0].resource_type == "agent"
+        assert violations[0].resource == expected_resource
+
+    @pytest.mark.parametrize("value", [{}, {"agent_class": "", "agent_id": ""}, {"agent_class": " ", "agent_id": "\t"}])
+    def test_fully_unset_reference_is_skipped(self, value: dict):
+        """An untouched field is the `required` rule's job, not the authorization checker's."""
+        assert _violations(value, _checker("MyAgent/inst_1")) == []
+
+    def test_complete_reference_the_user_may_access_is_allowed(self):
+        assert _violations({"agent_class": "MyAgent", "agent_id": "inst_1"}, _checker("MyAgent/inst_1")) == []
+
+    def test_complete_reference_the_user_may_not_access_is_denied(self):
+        violations = _violations({"agent_class": "SecretAgent", "agent_id": "inst_1"}, _checker("MyAgent/inst_1"))
+
+        assert len(violations) == 1
+        assert violations[0].resource == "SecretAgent/inst_1"
+
+    def test_non_dict_value_is_skipped(self):
+        assert _violations("not-a-reference", _checker("MyAgent/inst_1")) == []
+
+    @pytest.mark.parametrize("half", [123, {"a": 1}, ["MyAgent"]])
+    def test_non_string_half_is_denied_without_raising(self, half: Any):
+        """`validate_config_for_*` normally rejects these first, but it runs off a persisted schema that
+        can be stale, so this must not be the layer that turns odd input into a 500."""
+        violations = _violations({"agent_class": half, "agent_id": "inst_1"}, _checker("MyAgent/inst_1"))
+
+        assert len(violations) == 1
+        assert violations[0].resource == "/inst_1"
