@@ -22,6 +22,7 @@ from starlette.responses import StreamingResponse
 from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
+from swiss_ai_hub.core.displayers import ToolCallStreamScrubber
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
 from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
@@ -276,10 +277,14 @@ class OpenaiService:
                 either — Starlette 1.1.0 raises ``ClientDisconnect`` out of ``stream_response`` on
                 ASGI spec >= 2.4 and never reaches its ``background`` call.
                 """
+                scrubber = ToolCallStreamScrubber()
                 async with response:
                     async for chunk in response:
+                        OpenaiService._scrub_tool_call_markup(chunk, scrubber)
                         yield f"data: {chunk.model_dump_json()}\n\n"
                         await asyncio.sleep(0)
+                    if trailing := scrubber.flush():
+                        yield OpenaiService._build_chunk_sse(content=trailing, model=model_name)
 
             return StreamingResponse(
                 stream_chat_completion(),
@@ -512,6 +517,17 @@ class OpenaiService:
         if full_answer and full_answer.startswith(streamed):
             return full_answer[len(streamed) :]
         return "" if streamed else full_answer
+
+    @staticmethod
+    def _scrub_tool_call_markup(chunk: ChatCompletionChunk, scrubber: ToolCallStreamScrubber) -> None:
+        """Keep a tool call the model rendered into ``content`` out of the answer text.
+
+        Only ``content`` is touched — a real tool call arrives in ``delta.tool_calls`` and is
+        forwarded untouched, so native function calling in the client is unaffected.
+        """
+        for choice in chunk.choices:
+            if choice.delta.content is not None:
+                choice.delta.content = scrubber.feed(choice.delta.content)
 
     @staticmethod
     def _build_chunk_sse(*, content: str, model: str, finish_reason: str | None = None) -> str:
