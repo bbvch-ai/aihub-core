@@ -99,9 +99,7 @@ def milvus_vector_store_resource(
         index_type=index_type,
         token=milvus_settings.get_token(),
     )
-    vector_store_io_manager = VectorStoreIOManager(
-        vector_store=vector_store, document_store_name=document_store_name
-    )
+    vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store, document_store_name=document_store_name)
     return {
         "vector_store": vector_store,
         "vector_store_io_manager": vector_store_io_manager,
