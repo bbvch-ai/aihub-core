@@ -27,6 +27,15 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 
 (the base already ships pandas, openpyxl, python-docx, weasyprint, matplotlib, xlsxwriter)
 
+> **Amendment 2026-08-28 — the baked-in inventory is larger than this decision recorded.** Verified against the running
+> `open-terminal-office:0.11.34` container, the base image also ships **`python-pptx`, `pypdf`, `Pillow`, `numpy`,
+> `scipy`, `lxml` and `PyYAML`, plus the `ffmpeg` and `pandoc` binaries**. This is not a change of decision — nothing
+> was added to the image — but the omission understated the capability: PPTX, video and audio generation were all
+> possible and undocumented. The user-facing format matrix in `docs/docs/2_platform/10_chat_ui/6_coding/index.en.md` now
+> records the verified set, and the sandbox has **no** diagram renderer (`cairosvg`, `mmdc`, `plantuml`, Graphviz,
+> Inkscape are all absent) and no Visio library, so `.vsdx` cannot be produced at all. Re-verify both when the base tag
+> is bumped.
+
 - **Isolation** — `OPEN_TERMINAL_MULTI_USER=true` for per-user home directories; attached to a **dedicated
   `code-sandbox` network only**, whose sole residents are the sandbox and its callers (`open-webui`; AI-Hub agents as a
   follow-up). Because Docker networks are bidirectional, keeping the sandbox off `backend` is what severs lateral reach

@@ -2,8 +2,13 @@
 #
 # OpenWebUI routes its code-execution path to this sandbox (the native execute_code
 # tool, via TERMINAL_SERVER_CONNECTIONS on the open-webui service). The base image
-# already ships Python with pandas, openpyxl, python-docx, weasyprint, matplotlib
-# and xlsxwriter — only reportlab and fpdf2 are missing, so we add just those.
+# already ships Python 3.12 with pandas, openpyxl, xlsxwriter, python-docx,
+# python-pptx, weasyprint, pypdf, matplotlib, Pillow, numpy, scipy, lxml and PyYAML,
+# plus the ffmpeg and pandoc binaries — only reportlab and fpdf2 are missing, so we
+# add just those. That inventory is what the user-facing format matrix in
+# docs/docs/2_platform/10_chat_ui/6_coding is verified against: re-verify it there
+# when bumping the base tag below, because it decides which file formats the
+# sandbox can actually produce.
 # Everything installs from binary wheels at build time, so the running container
 # needs NO outbound internet (it stays network-isolated on `code-sandbox`).
 #
