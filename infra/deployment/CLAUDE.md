@@ -290,10 +290,11 @@ Two collectors run on a deployed VM and it matters which one you change:
 | `otel-collector` (this compose) | aihub-core     | OTLP from the instrumented Python services → SigNoz + Langfuse             |
 | `otel-collector-docker`         | aihub-playbook | `docker_stats`, health events, and **third-party container stdout/stderr** |
 
-App services export to `http://otel-collector:4317`, so the playbook's collector never sees their telemetry — that is
-why `resource/deployment` has to exist here too. Conversely, **do not add a `filelog` receiver for container logs
-here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container *name*
-and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
+App services export to `http://otel-collector-backend:4317` (a `backend`-only alias on this collector; the bare
+container name also resolves on `egress`, where ICC is disabled), so the playbook's collector never sees their telemetry
+— that is why `resource/deployment` has to exist here too. Conversely, **do not add a `filelog` receiver for container
+logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container
+*name* and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
 
 ## Traefik Configuration
 
