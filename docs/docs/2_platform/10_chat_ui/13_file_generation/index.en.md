@@ -5,8 +5,8 @@ title: File generation
 # File generation
 
 Ask a model to produce a file — a report, a spreadsheet, a chart, a slide deck — and it writes that file inside the
-**Open Terminal** sandbox using Python. The finished file appears in OpenWebUI's Files panel, where it can be
-downloaded; after creating it the model confirms the filename.
+**Open Terminal** sandbox using Python. It then opens the finished file in your file viewer and confirms the filename;
+the file also stays reachable through the terminal panel's file browser.
 
 You do not need to write or read any code to use this. Describe the document you want and let the model produce it.
 
@@ -21,10 +21,11 @@ generated files are kept indefinitely.
 ::: tip Recommended model — Workspace → Kimi-K2.6
 Select **Kimi-K2.6** in the model picker (under **Workspace**) when you want the model to produce a file.
 
-File generation is a multi-step tool-calling loop: the model has to decide to call `execute_code`, write correct Python,
-read the result back and report the filename. Reliability on that loop varies far more between models than the list of
-supported formats does. All AI-Hub text-generation models declare function-calling support, but not all of them complete
-the handshake in practice — with Open Terminal enabled, `Qwen3.5-122B-A10B-FP8` returns an empty response. See
+File generation is a multi-step tool-calling loop: the model has to write correct Python, run it with `run_command`,
+read the result back, and then hand the file over with `display_file`. Reliability on that loop varies far more between
+models than the list of supported formats does. All AI-Hub text-generation models declare function-calling support, but
+not all of them complete the handshake in practice — with Open Terminal enabled, `Qwen3.5-122B-A10B-FP8` returns an
+empty response. See
 [ADR: Model Identity as a Platform-Injected System Prompt for Plain LLM Chats](/arc42/decisions/2026_08_14_model_identity_system_prompt_for_plain_llm_chats.md).
 
 **Native Function Calling** still has to be switched on for the chosen model — it is not enabled by default.
@@ -32,23 +33,24 @@ the handshake in practice — with Open Terminal enabled, `Qwen3.5-122B-A10B-FP8
 
 ## Supported output formats
 
-Verified against the `open-terminal-office:0.11.34` sandbox image. "Can be generated" means the sandbox can write the
-file and hand it to the Files panel; it says nothing about whether the same format can be read back in as an upload.
+What you can ask for. Verified against the `open-terminal-office:0.11.34` sandbox image — "Yes" means you get a real,
+working file; "Source only" means you get the diagram's text source rather than a picture; "No" means it cannot be done.
+This says nothing about whether the same format can be read back in as an upload.
 
-| Category           | File formats                                            | Can be generated | How                                         |
-| ------------------ | ------------------------------------------------------- | ---------------- | ------------------------------------------- |
-| Text documents     | DOCX, RTF, TXT, Markdown (`.md`), HTML                  | Yes              | `python-docx`, `pandoc`, plain text         |
-| Portable documents | PDF                                                     | Yes              | `reportlab`, `fpdf2`, `weasyprint`, `pypdf` |
-| Spreadsheets       | XLSX, XLS, CSV                                          | Yes              | `openpyxl`, `xlsxwriter`, `pandas`          |
-| Presentations      | PPTX, PDF                                               | Yes              | `python-pptx`, `pandoc`                     |
-| Images (raster)    | PNG, JPG/JPEG, TIFF, WebP, BMP                          | Yes              | `Pillow`, `matplotlib`                      |
-| Video              | MP4, WebM, MOV, GIF                                     | Yes              | `ffmpeg` (H.264, VP9, GIF)                  |
-| Audio              | MP3, WAV, OGG, FLAC                                     | Yes              | `ffmpeg` (LAME, PCM, Vorbis, FLAC)          |
-| Source code        | py, cs, java, ts, js, go, rs, cpp, sql, yaml, json, xml | Yes              | Plain text                                  |
-| Data exchange      | JSON, XML, YAML, CSV                                    | Yes              | `json`, `lxml`, `PyYAML`, `pandas`          |
-| Knowledge bases    | Markdown, HTML, Confluence storage format, MediaWiki    | Yes              | `pandoc`, plain text/XML                    |
-| Diagrams (source)  | SVG, Draw.io (`.drawio`), Mermaid, PlantUML             | Source only      | Written as text — see below                 |
-| Diagrams (Visio)   | Visio (`.vsdx`)                                         | No               | No library available — see below            |
+| Category           | File formats                                            | Can be generated |
+| ------------------ | ------------------------------------------------------- | ---------------- |
+| Text documents     | DOCX, RTF, TXT, Markdown (`.md`), HTML                  | Yes              |
+| Portable documents | PDF                                                     | Yes              |
+| Spreadsheets       | XLSX, XLS, CSV                                          | Yes              |
+| Presentations      | PPTX, PDF                                               | Yes              |
+| Images (raster)    | PNG, JPG/JPEG, TIFF, WebP, BMP                          | Yes              |
+| Video              | MP4, WebM, MOV, GIF                                     | Yes              |
+| Audio              | MP3, WAV, OGG, FLAC                                     | Yes              |
+| Source code        | py, cs, java, ts, js, go, rs, cpp, sql, yaml, json, xml | Yes              |
+| Data exchange      | JSON, XML, YAML, CSV                                    | Yes              |
+| Knowledge bases    | Markdown, HTML, Confluence storage format, MediaWiki    | Yes              |
+| Diagrams (source)  | SVG, Draw.io (`.drawio`), Mermaid, PlantUML             | Source only      |
+| Diagrams (Visio)   | Visio (`.vsdx`)                                         | No               |
 
 ## Known limitations
 

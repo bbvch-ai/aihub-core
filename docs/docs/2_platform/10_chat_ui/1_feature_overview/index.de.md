@@ -1,6 +1,6 @@
 ---
 title: Funktionsübersicht
-source_sha: 03a5e3828888ed3da08f3082dbed452b3f351f06d54e11faa81f062468170305
+source_sha: b5796d38068692ac98735b4e07a4551d0b26b65f8bb986d40f88588c4a022ac2
 ---
 
 # Funktionsübersicht
@@ -122,9 +122,9 @@ Für unterstützte Modelle und Konfigurationen kann die Oberfläche Code-Snippet
 Programmierhilfe, rechnerische Problemlösung und Algorithmus-Prototyping innerhalb von Konversationskontexten
 ermöglicht.
 
-Derselbe Ausführungspfad erlaubt es Modellen, Dateien zu erzeugen — Reports, Spreadsheets, Präsentationen, Diagramme,
-Audio und Video —, die zum Download im Files-Panel erscheinen. Dies erfordert keinen Code seitens des Benutzers; siehe
-[Dateigenerierung](../13_file_generation/) für die unterstützten Formate und das empfohlene Modell.
+Dieselbe Sandbox erlaubt es Modellen, Dateien zu erzeugen — Reports, Spreadsheets, Präsentationen, Diagramme, Audio und
+Video —, die das Modell anschließend im File-Viewer des Benutzers öffnet. Dies erfordert keinen Code seitens des
+Benutzers; siehe [Dateigenerierung](../13_file_generation/) für die unterstützten Formate und das empfohlene Modell.
 
 Die Unterstützung für Mermaid-Diagramme ermöglicht KI-generierte Visualisierungen – Flussdiagramme, Sequenzdiagramme,
 Zustandsautomaten – die direkt in Konversationen gerendert werden. Dies unterstützt Systemdesign, Prozessdokumentation
