@@ -41,6 +41,11 @@ processors:
   # per-stage scaling (1000 on nightly, 2000 on latest) is gone: a cap the batch never reaches is
   # not a cap. The collector enforces send_batch_max_size >= send_batch_size, so raising throughput
   # again means raising both, and re-measuring. Only the timeout still varies by stage.
+  #
+  # Measured again on staging (2026-08): the real backend limit is 16 MiB, not 4, and 500 is
+  # still not low enough — requests of 500, 159 and 143 spans were all rejected with
+  # ResourceExhausted "larger than max 16777216", which puts the average span above 100 KB.
+  # Batch size is the wrong lever for a span that large; the cloud path bounds span size instead.
   batch:
     send_batch_size: 500
     send_batch_max_size: 500
