@@ -351,27 +351,23 @@ class RefDoc(Document):
     ) -> tuple["RefDoc", bool]:
         """Get existing RefDoc by source or create a placeholder.
 
-        If the document exists and is already ingested, it atomically resets the status
-        to pending (for re-upload/re-processing scenarios).
+        An existing document is atomically reset to pending, whatever its current state. The reset is
+        deliberately unconditional: document IDs are derived from the source URI, so re-uploading a file
+        reuses the ID of the one it replaces, and a re-upload of an *already* pending document would
+        otherwise leave the row byte-identical. Bumping ``updated_at`` on every re-upload is what lets
+        the UI tell a re-upload apart from a document still awaiting deletion.
 
         Returns (ref_doc, created) where created is True if new placeholder was created.
         """
         doc_id = source_to_doc_id(source)
 
         with switch_db(cls, db_alias) as SwitchedRefDoc:
-            # Atomic update: only reset to pending if currently ingested
-            updated = SwitchedRefDoc.objects(id=doc_id, data__metadata__is_ingested=True).update_one(
+            updated = SwitchedRefDoc.objects(id=doc_id).update_one(
                 set__data__metadata__is_ingested=False,
                 set__data__metadata__updated_at=int(time.time()),
             )
             if updated:
                 return SwitchedRefDoc.objects.get(id=doc_id), False
-
-            try:
-                existing = SwitchedRefDoc.objects.get(id=doc_id)
-                return existing, False
-            except SwitchedRefDoc.DoesNotExist:
-                pass
 
         try:
             new_doc = cls.create_placeholder(db_alias, source, namespace, document_title)
