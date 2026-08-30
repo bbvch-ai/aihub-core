@@ -295,6 +295,17 @@ Four triggering mechanisms work together:
   compares the whole corpus, so one already in flight covers the observation that just succeeded, and the request is
   keyed on the observing run id so retries deduplicate.
 
+**Run priority**: `observe_source_job` and `materialize_asset_job` tag their runs
+`dagster/priority: "10"` (`ORCHESTRATION_RUN_PRIORITY` in `jobs/factory.py`). `QueuedRunCoordinator` sorts the whole
+queue by that tag before trimming to the dequeue batch, but every run defaults to `0` — which collapses the sort into
+plain FIFO and lets a bulk upload strand an observation behind the hundreds of per-document ingestion runs it just
+authorized. Observation and removal are cheap and gate everything downstream, so they jump the backlog. This is
+ordering only, not reserved capacity: no slot is ever held idle, and ingestion still uses every slot when nothing
+else is waiting. Dagster cannot preempt a *running* run, so the wait is bounded by one ingestion run rather than by
+zero. Only the sensor daemon and the scheduler apply a job's `run_tags`, so runs launched through
+`DagsterGraphQLClient` (or any caller that passes its own tags) land at priority 0 — the sensor, chaining sensor and
+daily schedule paths, which is every automated launch, all carry it.
+
 **Partition-set convergence**: `replace_partition_keys` caps additions and deletions at `max_partitions` (default 1000).
 When it truncates, it logs a warning and tags its own run with `PARTITIONS_TRUNCATED_TAG` — a run cannot write its
 sensor's cursor, so the fact that the partition set has not converged travels back as a run tag. The NATS sensor re-arms
