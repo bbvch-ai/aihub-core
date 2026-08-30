@@ -5,7 +5,7 @@ import s3fs
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from swiss_ai_hub.core.generative_ai.utils.path_utils import decode_partition_key
 
-from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
+from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3_PROTOCOL_PREFIX, S3DataLakeClient
 from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
 
 
@@ -105,7 +105,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
                 context.log.error(f"No content found for file {data_lake_file.uri}. Cannot write to S3.")
                 raise ValueError(f"No content to write for file {data_lake_file.uri}.")
 
-            path = data_lake_file.uri.removeprefix("s3://").lstrip("/")
+            path = data_lake_file.uri.removeprefix(S3_PROTOCOL_PREFIX).lstrip("/")
 
             # Split into bucket and key
             parts = path.split("/", 1)
@@ -116,7 +116,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
             bucket_name = parts[0]
             object_key = parts[1]
 
-            context.log.info(f"Writing file to S3: s3://{bucket_name}/{object_key}")
+            context.log.info(f"Writing file to S3: {S3_PROTOCOL_PREFIX}{bucket_name}/{object_key}")
 
             encoded_metadata = self._encode_metadata(data_lake_file.metadata)
 
@@ -133,7 +133,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
             # Write the content to S3 with metadata using put_object
             self.data_lake_client.raw_client.put_object(**put_params)
 
-            context.log.info(f"Successfully wrote file s3://{bucket_name}/{object_key} to S3.")
+            context.log.info(f"Successfully wrote file {S3_PROTOCOL_PREFIX}{bucket_name}/{object_key} to S3.")
 
     def load_input(self, context: InputContext) -> DataLakeFile | list[DataLakeFile]:
         if context.has_partition_key:
@@ -171,13 +171,13 @@ class S3DataLakeIOManager(ConfigurableIOManager):
         return data_lake_files
 
     def _to_full_uri(self, uri: str) -> str:
-        return uri if uri.startswith("s3://") else self.data_lake_client.build_uri(uri)
+        return uri if uri.startswith(S3_PROTOCOL_PREFIX) else self.data_lake_client.build_uri(uri)
 
     def _load_data_lake_file_from_uri(self, context: InputContext, uri: str) -> DataLakeFile:
         """Load a DataLakeFile directly using the partition key as an S3 URI."""
         context.log.info(f"Loading DataLakeFile from URI: {uri}")
 
-        if not uri.startswith("s3://"):
+        if not uri.startswith(S3_PROTOCOL_PREFIX):
             uri = self.data_lake_client.build_uri(uri)
             context.log.info(f"Constructed full S3 URI: {uri}")
 

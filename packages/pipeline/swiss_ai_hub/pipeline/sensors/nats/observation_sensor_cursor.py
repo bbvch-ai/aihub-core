@@ -2,6 +2,8 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, Field, ValidationError
 
+from swiss_ai_hub.pipeline.sensors.nats.consumed_event_batch import ConsumedEventBatch
+
 
 class ObservationSensorCursor(BaseModel):
     """State the observation sensor carries between ticks, serialized into Dagster's sensor cursor.
@@ -37,3 +39,44 @@ class ObservationSensorCursor(BaseModel):
             return cls.model_validate_json(cursor)
         except ValidationError:
             return cls()
+
+    def absorb(
+        self,
+        batch: Annotated[ConsumedEventBatch, "Events drained from JetStream this tick"],
+        now: Annotated[float, "Current wall clock, injected so tests stay deterministic"],
+    ) -> None:
+        """Folds a drained batch into the debounce state, starting the clock on the first event."""
+        if not batch.count:
+            return
+        self.pending_events += batch.count
+        if self.first_pending_at is None:
+            self.first_pending_at = now
+        self.max_sequence = max(self.max_sequence, batch.max_sequence)
+
+    def arm_followup(self, batch: Annotated[ConsumedEventBatch, "Events drained this tick"]) -> None:
+        """A run already in flight may have listed the bucket before these files landed, so it
+        cannot be trusted to cover them; owe exactly one follow-up instead."""
+        self.followup_armed = self.followup_armed or bool(batch.count)
+
+    def next_run_key(self, pipeline_id: Annotated[str, "Source-to-target identifier of the pipeline"]) -> str:
+        """Guards on the key itself, not on an empty batch: a batch whose sequences were all seen
+        before leaves ``max_sequence`` unchanged too, which happens when the stream is recreated or
+        restored and its sequence numbering restarts. Reusing the key last requested would let
+        Dagster's idempotence check drop the very run being re-armed."""
+        run_key = f"{pipeline_id}_seq_{self.max_sequence}_r{self.rearm_count}"
+        if run_key != self.requested_run_key:
+            return run_key
+        self.rearm_count += 1
+        return f"{pipeline_id}_seq_{self.max_sequence}_r{self.rearm_count}"
+
+    def mark_requested(
+        self,
+        run_key: Annotated[str, "Run key just handed to Dagster"],
+        truncation_run_id: Annotated[str | None, "Truncating run this request answers, if any"],
+    ) -> None:
+        """Clears the debounce state so the next tick starts from a clean slate."""
+        self.pending_events = 0
+        self.first_pending_at = None
+        self.followup_armed = False
+        self.handled_truncation = truncation_run_id or self.handled_truncation
+        self.requested_run_key = run_key

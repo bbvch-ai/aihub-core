@@ -33,6 +33,17 @@ class ObservationRunHistory:
         )
 
     @staticmethod
+    def requested_run_missing(
+        instance: Annotated[DagsterInstance, "Instance whose run records are queried"],
+        job_name: Annotated[str, "Job the run key belongs to"],
+        run_key: Annotated[str | None, "Run key the previous tick requested, if it requested one"],
+    ) -> bool:
+        """Whether a run key was requested but never became a run, so the tick should ask again."""
+        if not run_key:
+            return False
+        return not ObservationRunHistory.run_exists_for_run_key(instance, job_name, run_key)
+
+    @staticmethod
     def latest_truncating_run_id(
         instance: Annotated[DagsterInstance, "Instance whose run records are queried"],
         job_name: Annotated[str, "Observation job to inspect"],

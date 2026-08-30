@@ -67,3 +67,21 @@ class TestRunExistsForRunKey:
         _finished_run(instance, tags={"dagster/run_key": "bucket_to_db_seq_7_r0"})
 
         assert ObservationRunHistory.run_exists_for_run_key(instance, observation_job.name, "bucket_to_db_seq_7_r0")
+
+
+class TestRequestedRunMissing:
+    def test_no_run_key_was_ever_requested(self, instance: DagsterInstance) -> None:
+        """A cursor that has never requested anything has nothing to re-request; without this the
+        first tick after a reset would fire on a run key it never asked for."""
+        assert ObservationRunHistory.requested_run_missing(instance, observation_job.name, None) is False
+
+    def test_requested_run_key_that_never_launched(self, instance: DagsterInstance) -> None:
+        assert ObservationRunHistory.requested_run_missing(instance, observation_job.name, "never_launched") is True
+
+    def test_requested_run_key_that_did_launch(self, instance: DagsterInstance) -> None:
+        _finished_run(instance, tags={"dagster/run_key": "bucket_to_db_seq_7_r0"})
+
+        assert (
+            ObservationRunHistory.requested_run_missing(instance, observation_job.name, "bucket_to_db_seq_7_r0")
+            is False
+        )

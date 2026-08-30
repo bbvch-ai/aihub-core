@@ -43,50 +43,29 @@ def nats_document_uploaded_sensor(
         def decide(cursor: ObservationSensorCursor, batch: ConsumedEventBatch) -> RunRequest | SkipReason:
             """Fold the drained batch into the cursor and decide what this tick should do."""
             now = time.time()
-
-            if batch.count:
-                cursor.pending_events += batch.count
-                if cursor.first_pending_at is None:
-                    cursor.first_pending_at = now
-                cursor.max_sequence = max(cursor.max_sequence, batch.max_sequence)
+            cursor.absorb(batch, now)
 
             in_flight = SingleFlightRunGuard.in_flight_run(context.instance, job.name)
             if in_flight:
-                # A running observation cannot be trusted to have seen files that landed after it
-                # took its own snapshot of the bucket, so owe exactly one follow-up instead.
-                cursor.followup_armed = cursor.followup_armed or bool(batch.count)
+                cursor.arm_followup(batch)
                 return SkipReason(
                     f"Observation run {in_flight.run_id} is already in flight ({in_flight.status.value})."
                 )
 
             truncation_run_id = ObservationRunHistory.latest_truncating_run_id(context.instance, job.name)
-            requested_run_missing = bool(cursor.requested_run_key) and not ObservationRunHistory.run_exists_for_run_key(
-                context.instance, job.name, cursor.requested_run_key
-            )
             reason = ObservationRunDecider.reason_to_request(
                 cursor=cursor,
                 now=now,
                 truncation_run_id=truncation_run_id,
-                requested_run_missing=requested_run_missing,
+                requested_run_missing=ObservationRunHistory.requested_run_missing(
+                    context.instance, job.name, cursor.requested_run_key
+                ),
             )
             if not reason:
                 return SkipReason(f"Debouncing {cursor.pending_events} pending event(s).")
 
-            # Guard on the key itself, not on an empty batch: a batch whose sequences were all seen
-            # before leaves max_sequence unchanged too, which happens when the stream is recreated
-            # or restored and its sequence numbering restarts. Reusing the key we last requested
-            # would let Dagster's idempotence check drop the very run being re-armed.
-            pipeline_id = f"{topic_manager.source_id}_to_{topic_manager.target_id}"
-            run_key = f"{pipeline_id}_seq_{cursor.max_sequence}_r{cursor.rearm_count}"
-            if run_key == cursor.requested_run_key:
-                cursor.rearm_count += 1
-                run_key = f"{pipeline_id}_seq_{cursor.max_sequence}_r{cursor.rearm_count}"
-
-            cursor.pending_events = 0
-            cursor.first_pending_at = None
-            cursor.followup_armed = False
-            cursor.handled_truncation = truncation_run_id or cursor.handled_truncation
-            cursor.requested_run_key = run_key
+            run_key = cursor.next_run_key(f"{topic_manager.source_id}_to_{topic_manager.target_id}")
+            cursor.mark_requested(run_key, truncation_run_id)
 
             logger.info(f"Requesting observation run {run_key}: {reason}")
             return RunRequest(run_key=run_key)
