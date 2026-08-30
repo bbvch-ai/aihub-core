@@ -11,12 +11,10 @@ _FETCH_SIZE = 100
 _FETCH_TIMEOUT_SECONDS = 1.0
 
 # Messages are held unacknowledged until the tick decides, so the drain must finish well inside the
-# consumer's ack deadline (30 s by JetStream default, which JSPoller does not override). The server
-# already bounds this: max_ack_pending defaults to 1000, so a fetch returns empty once that many are
-# outstanding and the loop ends after ~1 s. This cap only removes the dependency on that default —
-# raising max_ack_pending would otherwise let a drain run long enough for its earliest messages to
-# redeliver into the same loop. A leftover backlog is harmless: single-flight bounds runs anyway and
-# the next tick collects it.
+# consumer's ack deadline (30 s by JetStream default, which JSPoller does not override) and inside
+# the 60 s deadline the Dagster daemon puts on a sensor evaluation. Stopping on a short fetch is
+# what bounds the loop; max_ack_pending (1000 by default) caps how much one drain can hold, so this
+# is only a backstop for a deployment that raises it.
 _MAX_DRAIN_MESSAGES = 5_000
 
 
@@ -33,28 +31,33 @@ class ConsumedEventBatch(BaseModel):
 
     @classmethod
     async def drain(cls, poller: Annotated[JSPoller, "Poller for this pipeline's event stream"]) -> Self:
-        """Fetches until a fetch comes back empty, rather than taking a single batch.
+        """Fetches until a fetch comes back short of the batch size, rather than taking a single one.
 
         One fetch per tick caps intake at the batch size per minute, which is what stretches a bulk
-        upload into one sensor tick per ten files.
+        upload into one sensor tick per ten files. A short fetch means the stream had nothing more
+        immediately available, so it is the signal that this tick has caught up. Waiting for a fetch
+        to come back completely empty is not: while an upload is still running the stream is never
+        empty, and the loop would follow the producer until the tick blew its deadline. Leftovers are
+        harmless — single-flight bounds the run count, and an observation scans the whole bucket
+        regardless of which events triggered it.
         """
         messages: list[PolledMessage] = []
 
         while True:
-            fetch_had_messages = False
+            fetched = 0
             async for polled_message in poller.poll(batch_size=_FETCH_SIZE, timeout=_FETCH_TIMEOUT_SECONDS):
-                fetch_had_messages = True
+                fetched += 1
                 if isinstance(polled_message.event, SourceUpdatedEvent):
                     messages.append(polled_message)
                     continue
                 logger.warning(f"Unexpected event type: {type(polled_message.event)}")
                 await polled_message.nak()
 
-            if len(messages) >= _MAX_DRAIN_MESSAGES:
-                logger.info(f"Stopping drain at {len(messages)} events; the rest is collected next tick.")
+            if fetched < _FETCH_SIZE:
                 return cls(messages=messages)
 
-            if not fetch_had_messages:
+            if len(messages) >= _MAX_DRAIN_MESSAGES:
+                logger.info(f"Stopping drain at {len(messages)} events; the rest is collected next tick.")
                 return cls(messages=messages)
 
     @property

@@ -1,4 +1,6 @@
+import asyncio
 from collections.abc import AsyncIterator
+from itertools import count
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -28,6 +30,19 @@ def _poller_yielding(fetches: list[list[MagicMock]]) -> MagicMock:
         current = remaining.pop(0) if remaining else []
         for message in current:
             yield message
+
+    poller.poll = _poll
+    return poller
+
+
+def _poller_never_running_dry(per_fetch: int) -> MagicMock:
+    """Mock poller whose fetches never come back empty, standing in for an upload still in flight."""
+    poller = MagicMock()
+    sequences = count(1)
+
+    async def _poll(*_args, **_kwargs) -> AsyncIterator[MagicMock]:
+        for _ in range(per_fetch):
+            yield _message(next(sequences))
 
     poller.poll = _poll
     return poller
@@ -71,6 +86,22 @@ class TestDrain:
         oversized = [[_message(seq) for seq in range(start, start + 1000)] for start in range(1, 20_000, 1000)]
 
         batch = await ConsumedEventBatch.drain(_poller_yielding(oversized))
+
+        assert batch.count == _MAX_DRAIN_MESSAGES
+
+    @pytest.mark.asyncio
+    async def test_short_fetch_ends_the_drain_while_a_producer_is_still_publishing(self) -> None:
+        """A bulk upload in progress keeps the stream non-empty, so stopping only on an empty fetch
+        would follow the producer until the tick blew the 60 s deadline Dagster puts on a sensor
+        evaluation — dropping the batch and its cursor with it."""
+        batch = await asyncio.wait_for(ConsumedEventBatch.drain(_poller_never_running_dry(5)), timeout=5.0)
+
+        assert batch.count == 5
+
+    @pytest.mark.asyncio
+    async def test_full_fetches_keep_draining_up_to_the_cap(self) -> None:
+        """A full fetch means more was waiting, so a real backlog still drains in one tick."""
+        batch = await asyncio.wait_for(ConsumedEventBatch.drain(_poller_never_running_dry(100)), timeout=30.0)
 
         assert batch.count == _MAX_DRAIN_MESSAGES
 
