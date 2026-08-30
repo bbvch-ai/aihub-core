@@ -43,7 +43,13 @@ packages/pipeline/                        # SDK framework
 │   ├── sensors/
 │   │   ├── factory.py                     # default_automation_sensor (auto-materialization)
 │   │   ├── run_after_success_sensor.py    # Chain a job after another job's successful run
-│   │   └── nats/nats_document_uploaded_sensor.py  # NATS event-driven triggers
+│   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
+│   │   └── nats/
+│   │       ├── nats_document_uploaded_sensor.py  # NATS event-driven triggers
+│   │       ├── consumed_event_batch.py           # Drains the JetStream backlog, defers acks
+│   │       ├── observation_sensor_cursor.py      # Sensor state carried between ticks
+│   │       ├── observation_run_decider.py        # Pure request-or-wait decision
+│   │       └── observation_run_history.py        # Run-tag lookups the cursor cannot hold
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
 │   ├── executors/factory.py               # default_process_executor (in-process)
@@ -198,6 +204,14 @@ assets.
 **Data lake hierarchy** (cloud-agnostic abstraction):
 
 - `AbstractDataLakeClient` → `S3DataLakeClient`, `AzureDataLakeClient` (list, get, delete file operations)
+  - **Observation cost is per directory, not per object.** `get_all_files()` answers only "which files exist and has any
+    changed", which `list_objects_v2` already covers — so it issues no per-object `head_object`, and resolves
+    `get_or_create_namespace_for_directory` once per directory rather than per file. The lookup also *registers* the
+    `NamespaceEntity` the knowledge UI and namespace-selection agent read, so the first file of each directory still
+    reaches it. The download path (`create_data_lake_file_from_uri`, `create_data_lake_files_from_uris`) keeps the head
+    because it needs the object's user metadata and content type — it just no longer fetches it twice. `list_objects_v2`
+    and `head_object` return the same ETag and modification time, so the `DataVersion` is identical either way; that
+    equivalence is pinned by tests, because a divergence would re-parse and re-embed the whole corpus.
 - `AbstractDataLakeClientResource` → typed `ConfigurableResource` wrappers for Dagster DI
 - `AbstractDataLakeFileSystemResource` → `s3fs`/`adlfs` wrappers for streaming reads
 
@@ -265,12 +279,27 @@ Four triggering mechanisms work together:
   changes. Enabled by `default_automation_sensor(assets, minimum_interval_seconds=60)`.
 - **NATS sensor**: `nats_document_uploaded_sensor` — polls JetStream for `SourceUpdatedEvent` via
   `PipelineInstanceTopicManager`. Triggers observe job when documents are uploaded externally (e.g., via API).
+  **Single-flight**: an observation scans the whole bucket, so the sensor never requests a second one while one is
+  queued or running (`SingleFlightRunGuard`, scoped per job name — a manually launched run suppresses it too). It does
+  not cancel or queue runs; the second request is simply never made. Events seen during a run arm exactly one follow-up
+  via the sensor cursor (`ObservationSensorCursor`), because a running observation may already have listed the bucket
+  before those files landed. A 30 s debounce (`DEBOUNCE_SECONDS`) collects a burst into one request, and the whole
+  JetStream backlog drains per tick rather than one fetch of ten. Run keys are derived from the highest stream sequence
+  plus a re-arm counter, so Dagster's own run-key deduplication acts as a second line of defence.
 - **Daily schedules**: `daily_schedule_at(job, hour, minute)` — cron-based observation for sources that don't push
   events.
 - **Run-status chaining**: `run_after_success_sensor(monitored_job=..., triggered_job=...)` — fires `triggered_job`
   after `monitored_job` succeeds. Used to order observe → remove jobs, since Dagster forbids mixing observable source
   assets with regular assets in a single `define_asset_job` selection. All `default_*_definitions()` builders wire this
-  automatically; the remove job no longer has its own schedule.
+  automatically; the remove job no longer has its own schedule. Single-flight applies here too: the removal also
+  compares the whole corpus, so one already in flight covers the observation that just succeeded, and the request is
+  keyed on the observing run id so retries deduplicate.
+
+**Partition-set convergence**: `replace_partition_keys` caps additions and deletions at `max_partitions` (default 1000).
+When it truncates, it logs a warning and tags its own run with `PARTITIONS_TRUNCATED_TAG` — a run cannot write its
+sensor's cursor, so the fact that the partition set has not converged travels back as a run tag. The NATS sensor re-arms
+on an unhandled truncation tag and records the run id it answered, chaining observations until one truncates nothing.
+Without this, single-flight would trade the run storm for partially observed batches above 1000 files.
 
 ## Run-Failure Notifications
 

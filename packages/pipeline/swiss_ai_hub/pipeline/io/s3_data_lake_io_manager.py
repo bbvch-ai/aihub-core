@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from urllib.parse import quote, unquote
 
 import s3fs
@@ -144,15 +145,33 @@ class S3DataLakeIOManager(ConfigurableIOManager):
             partitions_def = upstream_output.asset_partitions_def
             if partitions_def is not None:
                 all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
-                data_lake_files = []
-                for partition_key in all_partition_keys:
-                    uri = decode_partition_key(partition_key) if self.encode_partition_keys else partition_key
-                    data_lake_file = self._load_data_lake_file_from_uri(context, uri)
-                    data_lake_files.append(data_lake_file)
-                return data_lake_files
+                return self._load_data_lake_files_from_partition_keys(context, all_partition_keys)
             else:
                 context.log.error("No partition definition found for the upstream asset.")
                 raise ValueError("Cannot load data without partition information.")
+
+    def _load_data_lake_files_from_partition_keys(
+        self, context: InputContext, partition_keys: Sequence[str]
+    ) -> list[DataLakeFile]:
+        """Loads every partition in one go so namespaces resolve once per directory.
+
+        This is the whole-corpus load the removal job performs after every observation, where a
+        per-file namespace lookup costs as much as it did in the observation itself.
+        """
+        uris = [
+            self._to_full_uri(decode_partition_key(partition_key) if self.encode_partition_keys else partition_key)
+            for partition_key in partition_keys
+        ]
+        context.log.info(f"Loading {len(uris)} DataLakeFile(s) from partition keys")
+
+        data_lake_files = self.data_lake_client.create_data_lake_files_from_uris(uris)
+        for data_lake_file in data_lake_files:
+            data_lake_file.metadata = self._decode_metadata(data_lake_file.metadata)
+
+        return data_lake_files
+
+    def _to_full_uri(self, uri: str) -> str:
+        return uri if uri.startswith("s3://") else self.data_lake_client.build_uri(uri)
 
     def _load_data_lake_file_from_uri(self, context: InputContext, uri: str) -> DataLakeFile:
         """Load a DataLakeFile directly using the partition key as an S3 URI."""
