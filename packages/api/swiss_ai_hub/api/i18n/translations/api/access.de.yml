@@ -23,6 +23,9 @@ presets:
   user_all_models:
     name: Alle Modelle nutzen
     description: Jedes verfügbare Modell nutzen.
+  admin_knowledge_create:
+    name: Wissensdatenbanken erstellen
+    description: Neue Wissensdatenbanken erstellen. Mit „Wissensdatenbanken verwalten“ kombinieren, um sie auch zu verwalten.
   admin_knowledge:
     name: Wissensdatenbanken verwalten
     description: Volle Kontrolle über Wissensdatenbanken und ihre Dokumente.
@@ -75,6 +78,9 @@ capabilities:
         label: Konfigurieren & löschen
         description: Die Konfiguration dieses Workflows bearbeiten oder ihn löschen.
     knowledge:
+      create:
+        label: Wissensdatenbanken erstellen
+        description: Neue Wissensdatenbanken und deren Ordner erstellen.
       see:
         label: Wissensdatenbanken sehen
         description: Die Liste der Wissensdatenbanken ansehen.

@@ -1,6 +1,8 @@
 import logging
+import re
 import uuid
-from typing import Annotated
+from collections.abc import Callable
+from typing import Annotated, Any
 
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
@@ -8,6 +10,7 @@ from mongoengine import DoesNotExist, NotUniqueError
 from nats.aio.client import Client as NATS
 from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
@@ -17,6 +20,9 @@ from swiss_ai_hub.core.generative_ai.document.types.ingested_node import Ingeste
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoConnectionRegistry, trace_fn
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import (
     BucketEntity,
@@ -241,6 +247,96 @@ class KnowledgeService:
         return LocaleStringEntity.from_locale_string(translated_locale_string)
 
     @staticmethod
+    def _knowledge_admin_role_name(database: str, namespace: str | None = None) -> str:
+        """Per-resource admin role name, e.g. ``KnowledgeResearchDocsReportsAdmin``.
+
+        The ``Knowledge`` prefix keeps these from colliding with the per-agent-instance roles, which are
+        named from the agent id alone.
+        """
+        segments = [database, namespace] if namespace else [database]
+        pascal_case = "".join(
+            word[:1].upper() + word[1:] for segment in segments for word in re.split(r"[^0-9A-Za-z]+", segment) if word
+        )
+        return f"Knowledge{pascal_case}Admin"
+
+    @staticmethod
+    def _grant_knowledge_access(
+        admin_rule: Annotated[str, "Concrete admin permission for the resource just created"],
+        role_name: Annotated[str, "Per-resource admin role to bind the creator to"],
+        role_description: Annotated[str, "Human-readable description stored on the role"],
+        user: UserIdentity,
+        rollback: Annotated[Callable[[], Any], "Undoes the resource creation if the grant fails"],
+        resource_label: Annotated[str, "Resource named in the error message"],
+    ) -> None:
+        """Grants the creating tenant and creator admin on the new resource, rolling back on failure.
+
+        Without this, creating a knowledge database left it usable only by a holder of the global
+        ``aihub.admin.knowledge.>`` wildcard — the creator could not see what they had just made.
+        """
+        tenant = user.acting_within_tenant
+        granted_tenant_rule = False
+        created_role = False
+        try:
+            if not AccessChecker.rules_grant_admin(tenant.access_rules, admin_rule):
+                TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
+                granted_tenant_rule = True
+            created_role = KnowledgeService._ensure_admin_role(role_name, admin_rule, tenant.id, role_description)
+            UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
+        except Exception as error:
+            if created_role:
+                KnowledgeService._best_effort(
+                    lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
+                )
+            if granted_tenant_rule:
+                KnowledgeService._best_effort(
+                    lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants([admin_rule]),
+                    f"revoke {admin_rule}",
+                )
+            KnowledgeService._best_effort(rollback, f"roll back {resource_label}")
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"{resource_label} was created but access could not be granted; the creation was rolled back."
+                ),
+            ) from error
+
+    @staticmethod
+    def _ensure_admin_role(role_name: str, admin_rule: str, tenant_id: str, description: str) -> bool:
+        """Creates the per-resource admin role if absent. Returns whether it was created."""
+        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+            return False
+        RoleEntity.create_tenant_role(
+            name=role_name, description=description, access_rules=[admin_rule], tenant_id=tenant_id
+        )
+        return True
+
+    @staticmethod
+    def _revoke_knowledge_access(
+        rules: Annotated[list[str], "User and admin rules to revoke from every tenant"],
+        role_names: Annotated[list[str], "Per-resource admin roles to delete"],
+    ) -> None:
+        """Removes the grants a create made, so a deleted resource leaves no inert rules behind.
+
+        Best-effort throughout: teardown is already under way by the time this runs, and a stale rule
+        must not block it.
+        """
+        KnowledgeService._best_effort(
+            lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(rules), f"revoke {rules}"
+        )
+        for role_name in role_names:
+            KnowledgeService._best_effort(
+                lambda name=role_name: RoleEntity.delete_role_from_all_tenants(name), f"delete role {role_name}"
+            )
+
+    @staticmethod
+    def _best_effort(action: Callable[[], Any], description: str) -> None:
+        """Runs a compensating action, swallowing and logging any failure so it cannot mask the outcome."""
+        try:
+            action()
+        except Exception:
+            logger.exception("Best-effort step failed: %s", description)
+
+    @staticmethod
     @trace_fn
     def get_ingestors(t: LocaleHandler) -> list[IngestorDTO]:
         """Returns the ingestion pipelines a user may pick when creating a knowledge database.
@@ -314,12 +410,25 @@ class KnowledgeService:
         except NotUniqueError:
             raise HTTPException(status_code=409, detail=f"Database '{database}' already exists.") from None
 
+        def undo_provisioning() -> None:
+            s3_service.delete_container(database)
+            BucketEntity.delete_bucket(str(bucket.id))
+
         try:
             s3_service.ensure_bucket_with_cors(database)
         except Exception:
-            s3_service.delete_container(database)
-            BucketEntity.delete_bucket(str(bucket.id))
+            undo_provisioning()
             raise
+
+        if user.acting_within_tenant is not None:
+            KnowledgeService._grant_knowledge_access(
+                admin_rule=AccessChecker.knowledge_database_admin_rule(database),
+                role_name=KnowledgeService._knowledge_admin_role_name(database),
+                role_description=f"Admin access to knowledge database {database}",
+                user=user,
+                rollback=undo_provisioning,
+                resource_label=f"Knowledge database '{database}'",
+            )
 
         return DatabaseResponse(
             name=bucket.db_name,
@@ -366,6 +475,16 @@ class KnowledgeService:
             display_name=display_name_entity,
             description=description_entity,
         )
+
+        if user.acting_within_tenant is not None:
+            KnowledgeService._grant_knowledge_access(
+                admin_rule=AccessChecker.knowledge_namespace_admin_rule(database, namespace),
+                role_name=KnowledgeService._knowledge_admin_role_name(database, namespace),
+                role_description=f"Admin access to knowledge folder {database}/{namespace}",
+                user=user,
+                rollback=lambda: NamespaceEntity.delete_namespace(str(namespace_entity.id)),
+                resource_label=f"Knowledge folder '{database}/{namespace}'",
+            )
 
         return NamespaceResponse(
             id=str(namespace_entity.id),
@@ -727,6 +846,31 @@ class KnowledgeService:
 
         KnowledgeService._reject_undeletable_database(bucket)
 
+        # Revoke first, while the namespace rows are still enumerable: once the flags are set the
+        # teardown job may hard-delete them, and their rules would then have nothing left to name.
+        namespaces = NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
+        KnowledgeService._revoke_knowledge_access(
+            rules=[
+                AccessChecker.knowledge_database_user_rule(database),
+                AccessChecker.knowledge_database_admin_rule(database),
+                *[
+                    rule
+                    for entity in namespaces
+                    for rule in (
+                        AccessChecker.knowledge_namespace_user_rule(database, entity.namespace_name),
+                        AccessChecker.knowledge_namespace_admin_rule(database, entity.namespace_name),
+                    )
+                ],
+            ],
+            role_names=[
+                KnowledgeService._knowledge_admin_role_name(database),
+                *[
+                    KnowledgeService._knowledge_admin_role_name(database, entity.namespace_name)
+                    for entity in namespaces
+                ],
+            ],
+        )
+
         BucketEntity.mark_deleting(str(bucket.id))
         NamespaceEntity.mark_all_deleting_for_bucket(str(bucket.id))
 
@@ -752,5 +896,15 @@ class KnowledgeService:
             raise HTTPException(
                 status_code=404, detail=f"Folder '{namespace}' not found in database '{database}'"
             ) from None
+
+        KnowledgeService._revoke_knowledge_access(
+            rules=[
+                AccessChecker.knowledge_namespace_user_rule(database, namespace_entity.namespace_name),
+                AccessChecker.knowledge_namespace_admin_rule(database, namespace_entity.namespace_name),
+            ],
+            role_names=[
+                KnowledgeService._knowledge_admin_role_name(database, namespace_entity.namespace_name),
+            ],
+        )
 
         NamespaceEntity.mark_deleting(str(namespace_entity.id))

@@ -53,7 +53,9 @@ class KnowledgeController(TenantScopedController):
     # A knowledge database's name doubles as its Mongo document store (db_name) and Milvus collection,
     # so any name that collides with a reserved store must be blocked: reads guard against them and
     # creation rejects them up front. These are MongoDB's system databases; the application's own main
-    # database is configurable, so it is added to the reserved set per instance in __init__.
+    # database and the two frozen legacy buckets are configurable, so they are added per instance in
+    # __init__. The legacy names stay reserved after their pipelines are gone: those corpora are frozen
+    # with no migration path, and a new database bound to one would be ingested on top of it.
     _SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
 
     def __init__(
@@ -69,7 +71,12 @@ class KnowledgeController(TenantScopedController):
             host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore", uuidRepresentation="standard"
         )
 
-        self._reserved_database_names = self._SYSTEM_DATABASE_NAMES | {AIHubSettings().MONGO_MAIN_DB_NAME}
+        aihub_settings = AIHubSettings()
+        self._reserved_database_names = self._SYSTEM_DATABASE_NAMES | {
+            aihub_settings.MONGO_MAIN_DB_NAME,
+            aihub_settings.DEFAULT_BUCKET_NAME,
+            aihub_settings.SHARED_BUCKET_NAME,
+        }
         self.translation_llm_config = translation_llm_config
 
     @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.see")
@@ -235,7 +242,7 @@ class KnowledgeController(TenantScopedController):
     def get_ingestors(self, route: str = "/ingestors") -> Self:
         @self.router.get(route, tags=self.tags, summary="Get selectable ingestion pipelines")
         async def get_ingestors(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.?>"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[IngestorDTO]:
             """
@@ -245,12 +252,13 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.create")
     def create_database(self, route: str = "/databases/{database}") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_database(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z][a-zA-Z0-9]*$")],
             request: CreateDatabaseRequest,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> DatabaseResponse:
@@ -274,9 +282,7 @@ class KnowledgeController(TenantScopedController):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: CreateNamespaceRequest,
-            user: Annotated[
-                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
-            ],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> NamespaceResponse:
             """
@@ -294,9 +300,7 @@ class KnowledgeController(TenantScopedController):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: UpdateNamespaceRequest,
-            user: Annotated[
-                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
-            ],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> NamespaceResponse:
             """

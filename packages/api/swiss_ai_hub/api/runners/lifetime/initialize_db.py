@@ -67,7 +67,10 @@ _DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
     _DefaultRoleDefinition(
         name="AIHubKnowledgeAdmin",
         description="Grants admin access to knowledge and agents",
-        access_rules=["aihub.admin.agent.>", "aihub.admin.knowledge.>"],
+        # Both forms are needed: ``knowledge.>`` covers every existing database, while the bare
+        # ``knowledge`` root is what creating a new one is guarded on — a database that does not exist
+        # yet cannot be named by a rule.
+        access_rules=["aihub.admin.agent.>", "aihub.admin.knowledge", "aihub.admin.knowledge.>"],
     ),
     _DefaultRoleDefinition(
         name="AIHubProcessUser",

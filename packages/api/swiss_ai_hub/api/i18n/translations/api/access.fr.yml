@@ -23,6 +23,9 @@ presets:
   user_all_models:
     name: Utiliser tous les modèles
     description: Utiliser chaque modèle disponible.
+  admin_knowledge_create:
+    name: Créer des bases de connaissances
+    description: Créer de nouvelles bases de connaissances. À combiner avec « Gérer les bases de connaissances » pour aussi les administrer.
   admin_knowledge:
     name: Gérer les bases de connaissances
     description: Contrôle total sur les bases de connaissances et leurs documents.
@@ -75,6 +78,9 @@ capabilities:
         label: Configurer & supprimer
         description: Modifier la configuration de ce processus ou le supprimer.
     knowledge:
+      create:
+        label: Créer des bases de connaissances
+        description: Créer de nouvelles bases de connaissances et leurs dossiers.
       see:
         label: Voir les bases de connaissances
         description: Voir la liste des bases de connaissances.

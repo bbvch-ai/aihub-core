@@ -175,6 +175,26 @@ class AccessChecker:
         return f"{_USER_PREFIX}agent.{agent_class}.{agent_id}"
 
     @staticmethod
+    def knowledge_database_admin_rule(database: str) -> str:
+        """Canonical admin permission for one knowledge database."""
+        return f"{_ADMIN_PREFIX}knowledge.{database}"
+
+    @staticmethod
+    def knowledge_database_user_rule(database: str) -> str:
+        """Canonical user permission for one knowledge database."""
+        return f"{_USER_PREFIX}knowledge.{database}"
+
+    @staticmethod
+    def knowledge_namespace_admin_rule(database: str, namespace: str) -> str:
+        """Canonical admin permission for one namespace inside a knowledge database."""
+        return f"{_ADMIN_PREFIX}knowledge.{database}.{namespace}"
+
+    @staticmethod
+    def knowledge_namespace_user_rule(database: str, namespace: str) -> str:
+        """Canonical user permission for one namespace inside a knowledge database."""
+        return f"{_USER_PREFIX}knowledge.{database}.{namespace}"
+
+    @staticmethod
     def model_user_rule(model_capability: str, model_name: str) -> str:
         """Canonical user permission for a specific llm (not the llm capability e.x. reranking, text etc.)."""
         normalized_capability = AccessChecker._normalize_model_segment(model_capability)
@@ -220,14 +240,23 @@ class AccessChecker:
         Used to decide whether a per-instance grant is redundant (e.g. a tenant already
         holding ``aihub.admin.>``), without the two-tier tenant/user evaluation.
         """
+        return cls.rules_grant_admin(rules, cls.agent_instance_admin_rule(agent_class, agent_id))
+
+    @classmethod
+    def rules_grant_admin(cls, rules: list[str], admin_permission: str) -> bool:
+        """Whether a flat rule list already grants admin to a concrete permission.
+
+        Used to decide whether a per-resource grant is redundant (e.g. a tenant already holding
+        ``aihub.admin.>``), without the two-tier tenant/user evaluation.
+        """
         checker = cls(user_access_rules=rules, tenant_access_rules=[])
-        admin_permission = cls.agent_instance_admin_rule(agent_class, agent_id)
         return any(
             checker._access_rule_matches_concrete_permission(access_rule, admin_permission)
             for access_rule in checker.user_admin_access_rules
         )
 
     def access_level(self, permission_template: str) -> AccessLevel:
+
         """
         Checks for the highest level of permission (Admin, User, or Denied).
 
