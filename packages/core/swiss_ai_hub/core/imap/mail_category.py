@@ -21,6 +21,11 @@ class MailCategory(Form):
     `draft_reply` is per category because the value of a drafted reply is: a `complaint` usually warrants one, a
     `thanking` mail rarely does. Mail no category fitted goes to the fallback folder and is therefore never drafted —
     the opt-in lives on the category, and uncategorised mail has none.
+
+    `knowledge_namespace` is what makes a drafted reply worth sending. A reply written from the message alone can
+    only acknowledge it; one written from the collection that answers this category can actually answer it. It is per
+    category rather than per agent because that is what keeps retrieval precise — a `support_request` retrieves
+    support material and nothing else, and the category verdict is what selects it.
     """
 
     category: Annotated[
@@ -46,6 +51,15 @@ class MailCategory(Form):
             "human to review and send. Mail is never sent.",
         ),
     ]
+    knowledge_namespace: Annotated[
+        str | InputText,
+        Field(
+            default="",
+            description="Knowledge collection this category's replies are grounded in. Set it and the reply is "
+            "answered from the documents in that collection and no other; leave it empty and the reply is written "
+            "from the message alone, with no retrieval.",
+        ),
+    ]
 
     @classmethod
     def as_form(cls) -> Self:
@@ -67,5 +81,9 @@ class MailCategory(Form):
             draft_reply=ToggleSwitch(
                 label=LocaleString.from_i18n_path("lib.imap.config.category_draft_reply.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.category_draft_reply.help"),
+            ),
+            knowledge_namespace=InputText(
+                label=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespace.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespace.help"),
             ),
         )

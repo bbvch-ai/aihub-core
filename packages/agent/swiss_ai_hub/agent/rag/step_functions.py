@@ -233,7 +233,10 @@ async def do_retrieve_organization_memory(
             "tenant_id=%s namespaces=%s user_id=%s",
             org_memory.tenant_id,
             tenant_namespaces,
-            event.user.id,
+            # Organization memory is tenant-scoped and runs without an identity, so this log line is the one
+            # place a delegated, identity-less run would still dereference the absent user — turning a
+            # recoverable memory hiccup into the AttributeError that ends the run.
+            event.user.id if event.user else None,
             exc_info=True,
         )
         return RetrieveOrganizationMemoryEvent(memories=[], relations=[])

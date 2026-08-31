@@ -76,12 +76,12 @@ def test_every_terminal_step_accounts_for_the_lease():
 def test_the_step_that_does_the_work_releases_the_lease():
     """The acquire/release pair specifically, so a refactor cannot satisfy the test above by merely naming the class.
 
-    Both terminal steps have to release: `draft_replies_step` ends the run whenever there is nothing to draft, and
-    `finish_drafting_step` ends it when there was. Checking only one would let the other leak the mailbox for a TTL.
+    `finish_drafting_step` is the only step that returns `StopEvent` on the working path — every drafting outcome
+    now converges on one `MailBatchDraftedEvent`, so there is one terminal step to release from. `list_unread_step`
+    is the other `StopEvent` producer and is the run that never acquired.
     """
     assert "acquire" in inspect.getsource(EmailClassificationAgent.list_unread_step)
     assert "release" in inspect.getsource(EmailClassificationAgent.finish_drafting_step)
-    assert "release" in inspect.getsource(EmailClassificationAgent.draft_replies_step)
 
 
 def test_drafting_runs_under_a_heartbeat_and_checks_the_lease_before_appending():
@@ -91,7 +91,7 @@ def test_drafting_runs_under_a_heartbeat_and_checks_the_lease_before_appending()
     heartbeat; and an append is a mutation, so a lease lost during the model calls has to stop the run before the
     first draft lands rather than after.
     """
-    source = inspect.getsource(EmailClassificationAgent.draft_replies_step)
+    source = inspect.getsource(EmailClassificationAgent._append_all_drafts)
 
     assert "lease.heartbeat(" in source, "one model call per message can outlive the TTL — renew across the pass"
 
@@ -99,6 +99,22 @@ def test_drafting_runs_under_a_heartbeat_and_checks_the_lease_before_appending()
     assert lease_check < source.index("do_draft_replies"), "a lost lease has to be caught before anything is appended"
     assert lease_check > source.index("_compose_all"), "checking before the work makes the heartbeat pointless"
     assert MailboxLeaseLostError.__name__ in source, "a lost lease must stop the run, not only warn"
+
+
+def test_drafting_takes_the_lease_back_before_appending():
+    """The delegation window has no step body to heartbeat from, so the lease is expected to lapse across it.
+
+    A run waits on N RAG agents between requesting and collecting, and nothing renews in between — so treating a
+    lapsed lease as fatal here would throw away a whole batch's drafts every time the delegates were slow, and the
+    mail is already filed so those drafts would never be retried. Reacquiring is only safe because filing closed the
+    window the lease protects; a lease another run actually holds still refuses.
+    """
+    source = inspect.getsource(EmailClassificationAgent._append_all_drafts)
+
+    reacquire = source.index("reacquire")
+    assert reacquire < source.index("lease.heartbeat("), "the lease has to be ours again before the heartbeat renews it"
+    assert reacquire < source.index("do_draft_replies"), "nothing may be appended without holding the mailbox"
+    assert MailboxLeaseLostError.__name__ in source, "a mailbox held by another run must stop the run, not warn"
 
 
 def test_the_work_is_done_under_a_heartbeat_that_is_checked_before_filing():

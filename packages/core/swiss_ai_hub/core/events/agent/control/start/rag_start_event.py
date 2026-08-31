@@ -27,7 +27,15 @@ class RAGStartEvent(StartEvent):
         str,
         Field(description="The user's locale, guiding language or regional adaptations."),
     ] = LocaleHandler.DEFAULT_LOCALE
-    user: Annotated[UserIdentity, Field(description="User on whose behalf the RAG run is executed.")]
+    user: Annotated[
+        UserIdentity | None,
+        Field(
+            description="User on whose behalf the RAG run is executed, when there is one. Optional because a "
+            "delegating agent forwards whatever identity its own start event carries, and a scheduled run carries "
+            "none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, "
+            "and they are skipped without it rather than attributing one caller's memories to a shared identity.",
+        ),
+    ] = None
     messages: Annotated[
         list[ChatMessage],
         Field(description="Chat history providing the context and the user query for retrieval."),

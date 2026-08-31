@@ -5,6 +5,10 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.imap import DraftEmailSettings, EmailClassificationSettings, ImapClientConfig
 
+from swiss_ai_hub.agent.agents.email_classification_agent.configs.knowledge_delegation_config import (
+    KnowledgeDelegationConfig,
+)
+
 
 class EmailClassificationAgentConfig(AgentConfig):
     """Configuration for the email classification agent — the mailbox to read, the model to reason with, and the
@@ -30,6 +34,15 @@ class EmailClassificationAgentConfig(AgentConfig):
             "attachments are read.",
         ),
     ]
+    knowledge_delegation: Annotated[
+        KnowledgeDelegationConfig | None,
+        Field(
+            default=None,
+            title="Knowledge delegation",
+            description="The RAG agent that grounds drafted replies in a category's collection. Required as soon as "
+            "any category names one; leave it off to keep drafting from the message alone.",
+        ),
+    ] = None
 
     @property
     def classifier_llm(self) -> LLMConfig:
@@ -61,6 +74,7 @@ class EmailClassificationAgentConfig(AgentConfig):
             llm=LLMConfig.as_form(),
             classification=EmailClassificationSettings.as_form(),
             draft=cls._draft_form(),
+            knowledge_delegation=KnowledgeDelegationConfig.as_form(),
         )
 
     @staticmethod

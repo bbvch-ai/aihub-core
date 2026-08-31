@@ -14,3 +14,14 @@ steps:
     name: Draft replies
   finish:
     name: Finish
+  request_grounded_drafts:
+    name: Ask the knowledge agent
+  collect_and_draft:
+    name: Draft replies
+config:
+  rag_agent:
+    label: Knowledge Agent
+    help: RAG agent that answers a message from its category's collection. Required
+      as soon as any category names a collection.
+    class_placeholder: Select an agent type
+    id_placeholder: Select an agent

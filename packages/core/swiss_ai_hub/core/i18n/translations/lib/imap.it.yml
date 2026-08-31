@@ -109,3 +109,27 @@ config:
   attachment_char_limit:
     label: Limite di caratteri per allegato
     help: Caratteri conservati dal testo estratto di un singolo allegato.
+  category_knowledge_namespace:
+    label: Raccolta di conoscenze
+    help: Raccolta su cui si basano le risposte di questa categoria. Se impostata,
+      la risposta proviene solo dai documenti di quella raccolta. Se vuota, la risposta
+      è scritta unicamente dal messaggio, senza ricerca.
+  knowledge_databases:
+    label: Basi di conoscenza
+    help: Basi in cui vengono cercate le raccolte delle categorie. Necessarie solo
+      quando una categoria indica una raccolta.
+  no_information_draft:
+    label: Bozza quando non è stato trovato nulla
+    help: Testo della bozza quando la ricerca non ha trovato nulla che risponda al
+      messaggio. Usato testualmente, così la risposta non inventa mai ciò per cui
+      non esistono documenti.
+  grounding_failed_draft:
+    label: Bozza quando la ricerca è fallita
+    help: Testo della bozza quando la ricerca di conoscenze è fallita o non ha mai
+      risposto. Tenuto distinto dal testo di informazione mancante, per distinguere
+      una lacuna documentale da un'installazione guasta.
+  grounding_timeout_seconds:
+    label: Timeout della ricerca di conoscenze (secondi)
+    help: Quanto può durare una ricerca di conoscenze prima che il messaggio venga
+      redatto con il testo di errore. Senza un limite, un agente di conoscenza offline
+      lascia l'esecuzione in attesa all'infinito.
