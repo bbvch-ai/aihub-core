@@ -65,7 +65,7 @@ def document_ingestion_pipeline_definitions(
 ) -> Definitions:
     """Single deployed pipeline that ingests every self-service knowledge database (Stage 2: data lake → vectors).
 
-    Unlike ``default_definitions`` (one deployment per bucket), this pipeline is identity-free: its asset graph
+    Unlike the frozen legacy pipelines (one deployment per bucket), this pipeline is identity-free: its asset graph
     carries no bucket name, the target database is resolved per run (from the composite partition key on the
     partitioned write path, from the ``aihub/bucket`` run tag on the observe/remove path), and the per-bucket
     schedule + NATS sensor fan out over ``BucketEntity`` owned by ``ingestor`` at runtime. New databases need no

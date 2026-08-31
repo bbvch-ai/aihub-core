@@ -63,8 +63,8 @@ def default_sharepoint_to_datalake_definitions(
 
     Pipeline: SharePoint → S3
 
-    This is the first step - combine with default_definitions() to process files into
-    embeddings for RAG applications.
+    This is the first step - combine with document_ingestion_pipeline_definitions() to process
+    files into embeddings for semantic retrieval.
     """
     sharepoint_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_sharepoint_partitions")
 
@@ -163,8 +163,8 @@ def default_local_filesystem_to_datalake_definitions(
 
     Pipeline: Local File System → S3
 
-    This is the first step - combine with default_definitions() to process files into
-    embeddings for RAG applications.
+    This is the first step - combine with document_ingestion_pipeline_definitions() to process
+    files into embeddings for semantic retrieval.
     """
     encode = resolve_encode_partition_keys(encode_partition_keys)
 
@@ -282,8 +282,8 @@ def default_rclone_to_datalake_definitions(
 
     Pipeline: Rclone Remote (OneDrive/SharePoint/S3/Azure/GDrive/etc.) → S3
 
-    This is the first step - combine with default_definitions() to process files into
-    embeddings for RAG applications.
+    This is the first step - combine with document_ingestion_pipeline_definitions() to process
+    files into embeddings for semantic retrieval.
 
     Example:
         # OneDrive to S3
