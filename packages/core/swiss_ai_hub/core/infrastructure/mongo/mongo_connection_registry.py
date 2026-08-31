@@ -2,7 +2,7 @@ from typing import Annotated
 
 import mongoengine
 from mongoengine import register_connection
-from pymongo.errors import ConnectionFailure
+from mongoengine.connection import ConnectionFailure
 
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 
@@ -23,7 +23,8 @@ class MongoConnectionRegistry:
         try:
             mongoengine.connection.get_connection(alias=resolved_alias)
         except ConnectionFailure:
-            # Only an unregistered alias raises ConnectionFailure here; a reachability error must propagate.
+            # mongoengine's own ConnectionFailure, not pymongo's: the two are unrelated classes, and only
+            # mongoengine's signals an unregistered alias. A reachability error must propagate.
             register_connection(
                 alias=resolved_alias,
                 name=db_name,

@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-from pymongo.errors import ConnectionFailure
+from mongoengine.connection import ConnectionFailure
 
 from swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry import MongoConnectionRegistry
 
@@ -41,6 +41,20 @@ class TestEnsureAlias:
 
         assert register.call_args.kwargs["alias"] == "default"
         assert register.call_args.kwargs["name"] == "aihub"
+
+    def test_a_pymongo_connection_failure_is_not_mistaken_for_a_missing_alias(self):
+        """mongoengine and pymongo each define a ConnectionFailure and they are unrelated classes. Only
+        mongoengine's means "no such alias"; pymongo's means the server is unreachable and must propagate."""
+        import pymongo.errors
+
+        with (
+            patch(f"{_MODULE}.mongoengine.connection.get_connection", side_effect=pymongo.errors.ConnectionFailure("down")),
+            patch(f"{_MODULE}.register_connection") as register,
+        ):
+            with pytest.raises(pymongo.errors.ConnectionFailure):
+                MongoConnectionRegistry.ensure_alias("researchdocs")
+
+        register.assert_not_called()
 
     def test_an_unreachable_mongo_propagates_instead_of_being_mistaken_for_a_missing_alias(self):
         """The pipeline's old copy caught bare Exception here, so an outage failed later and more confusingly."""
