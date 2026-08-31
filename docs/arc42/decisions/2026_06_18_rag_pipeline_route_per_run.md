@@ -54,7 +54,7 @@ knowledge databases are *ingested from the data lake*, not about how documents g
 Add a new, **additive** `document_ingestion_pipeline` that ingests all knowledge databases tagged for it, and leave the legacy
 pipelines untouched.
 
-1. **`ingestor` field on `BucketEntity`** (`unassigned` / `default_rag` / `shared_rag` / `rag`) records which deployed
+1. **`ingestor` field on `BucketEntity`** (`unassigned` / `default_rag` / `shared_rag` / `document_ingestion`) records which deployed
    pipeline owns a database. It is the routing guard that lets the new pipeline coexist with the legacy ones. The
    startup seeder labels the two managed buckets `default_rag`/`shared_rag`.
 
@@ -80,7 +80,7 @@ pipelines untouched.
    client-side enum: the set of pipelines a database may be assigned to is a platform fact, so the API owns it and the
    UI renders whatever it is given. `create_database` rejects a non-selectable ingestor with a 400.
 
-   Only `rag` is selectable out of the box. `default_rag`/`shared_rag` are deliberately **excluded**: each is bound to a
+   Only `document_ingestion` is selectable out of the box. `default_rag`/`shared_rag` are deliberately **excluded**: each is bound to a
    single bucket by an env var at deploy time, so a database assigned to one of them would be silently never ingested.
    They exist as `ingestor` values only to mark the legacy buckets for the routing guard.
 
@@ -182,6 +182,23 @@ pipelines untouched.
    schedule. This is why a durable pull consumer suffices here, unlike agent control events, which are state
    transitions needing exactly-once delivery.
 
+### Naming
+
+The pipeline is the **Generic Document Ingestion Pipeline**. It parses, chunks, embeds and indexes documents into a
+vector store; it performs no retrieval and no generation, so naming it after RAG would describe the wrong stage. The
+RAG *agent* is what does retrieval-augmented generation and is named accordingly.
+
+"Generic" is a display-only adjective. Identifiers use `document_ingestion_pipeline`
+(`document_ingestion_pipeline_definitions`, `DocumentIngestionPipelineSettings`, `DOCUMENT_INGESTION_*`,
+`app.document_ingestion_pipeline`) and the ingestor routing id is `document_ingestion`, because
+`generic_document_ingestion_pipeline` buys nothing and lengthens every NATS subject and asset key that embeds it.
+
+The frozen `default_rag` / `shared_rag` ingestor ids and the `default_rag_pipeline` / `shared_rag_pipeline` image names
+are deliberately excluded from this naming: they identify images that will never be rebuilt and that existing
+deployments still pull by those exact tags. This ADR's own filename likewise keeps its original slug — ADR filenames
+are dated records, and renaming them breaks inbound links for no gain.
+
+
 ## Consequences
 
 ### Positive
@@ -228,32 +245,3 @@ pipelines untouched.
 
 - IO managers resolve the store per run (a cheap idempotent Mongo lookup, cached per run), trading a little runtime work
   for deploy-time flexibility.
-
-## Amendment (2026-08-31): renamed to the Generic Document Ingestion Pipeline
-
-The pipeline was originally called the "RAG pipeline". That name describes the wrong thing: this stage parses,
-chunks, embeds and indexes documents into a vector store. It performs no retrieval and no generation, so nothing
-about it is retrieval-augmented generation — the RAG *agent* is what does that, and it remains named accordingly.
-
-Renamed before the first release, so no deployment carries the old names and no migration path is needed:
-
-| Concern             | Before                     | After                                        |
-| ------------------- | -------------------------- | -------------------------------------------- |
-| Display name        | RAG Pipeline               | Generic Document Ingestion Pipeline           |
-| Code identifiers    | `rag_pipeline_definitions` | `document_ingestion_pipeline_definitions`     |
-| Settings class      | `RagPipelineSettings`      | `DocumentIngestionPipelineSettings`           |
-| Env prefix          | `RAG_PIPELINE_`            | `DOCUMENT_INGESTION_`                         |
-| Module / image      | `app.rag_pipeline`         | `app.document_ingestion_pipeline`             |
-| Ingestor routing id | `rag`                      | `document_ingestion`                          |
-| JetStream stream    | `pipeline_rag_stream`      | `pipeline_document_ingestion_stream`          |
-
-"Generic" is a display-only adjective: identifiers use `document_ingestion_pipeline`, because
-`generic_document_ingestion_pipeline` buys nothing and makes every NATS subject and asset key longer.
-
-The frozen `default_rag` / `shared_rag` ingestor ids and their `default_rag_pipeline` /
-`shared_rag_pipeline` image names are deliberately **not** renamed: they name images that will never be
-rebuilt, and existing deployments keep pulling them by those exact tags. See
-`2026_08_31_legacy_rag_pipelines_frozen_and_removed.md`.
-
-ADR filenames keep their original slugs — they are dated records of when a decision was made, and renaming
-them would break inbound links for no gain.

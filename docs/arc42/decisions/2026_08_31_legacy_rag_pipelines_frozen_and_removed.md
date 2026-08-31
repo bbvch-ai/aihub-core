@@ -8,7 +8,7 @@ Two such deployments exist: `default_rag_pipeline` (`AIHubSettings().DEFAULT_BUC
 builder for fixed-bucket pipelines.
 
 `document_ingestion_pipeline` supersedes them entirely: one deployment serves every knowledge database, resolving its target per run.
-Nothing new is ever assigned to a legacy pipeline — `IngestorType.selectable()` offers only `rag` — so the two remaining
+Nothing new is ever assigned to a legacy pipeline — `IngestorType.selectable()` offers only `document_ingestion` — so the two remaining
 deployments exist solely to keep ingesting into corpora that already exist.
 
 Keeping them alive is not free. Route-per-run forked the whole Stage-2 storage surface into ~12 `routed_*` modules, each
