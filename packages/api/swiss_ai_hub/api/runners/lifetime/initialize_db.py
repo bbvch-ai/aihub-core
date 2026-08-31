@@ -128,9 +128,7 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     return tenant
 
 
-def _reconcile_default_role_rules(
-    existing: RoleEntity, role_def: _DefaultRoleDefinition, tenant_id: str
-) -> None:
+def _reconcile_default_role_rules(existing: RoleEntity, role_def: _DefaultRoleDefinition, tenant_id: str) -> None:
     """Adds access rules a default role definition gained since the role row was seeded.
 
     Purely additive: rules an admin added by hand are kept, because the platform cannot tell a

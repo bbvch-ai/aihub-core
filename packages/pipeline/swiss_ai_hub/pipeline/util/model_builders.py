@@ -5,7 +5,7 @@ from typing import Annotated
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.infrastructure import RagPipelineSettings
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.core.persistence import BucketEntity
 
 from swiss_ai_hub.pipeline.resources.llm.litellm_headers import PIPELINE_REDACTION_HEADERS
@@ -13,7 +13,7 @@ from swiss_ai_hub.pipeline.util.bucket_utils import ensure_main_db_connection
 
 logger = logging.getLogger(__name__)
 
-"""Per-bucket model resolution for the configurable RAG pipeline.
+"""Per-bucket model resolution for the Generic Document Ingestion Pipeline.
 
 A pipeline serves many knowledge databases and each may be ingested with different models, so the model
 cannot be baked into a resource at ``Definitions``-build time any more than a store can. The bucket is
@@ -36,13 +36,13 @@ def _bucket_entity(bucket: Annotated[str, "Data lake bucket of the knowledge dat
 def llm_model_name_for_bucket(bucket: str) -> str:
     """Text-generation model this database's summaries, table refinement and figure descriptions use."""
     entity = _bucket_entity(bucket)
-    return (entity.llm_model if entity else None) or RagPipelineSettings().LLM_MODEL
+    return (entity.llm_model if entity else None) or DocumentIngestionPipelineSettings().LLM_MODEL
 
 
 def embedding_model_name_for_bucket(bucket: str) -> str:
     """Embedding model this database is indexed with. Immutable for the database's lifetime."""
     entity = _bucket_entity(bucket)
-    return (entity.embedding_model if entity else None) or RagPipelineSettings().EMBEDDING_MODEL
+    return (entity.embedding_model if entity else None) or DocumentIngestionPipelineSettings().EMBEDDING_MODEL
 
 
 def llm_config_for_bucket(bucket: str) -> LLMConfig:

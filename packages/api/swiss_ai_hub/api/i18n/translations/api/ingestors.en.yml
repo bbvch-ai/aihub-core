@@ -1,4 +1,4 @@
 ---
-rag:
-  display_name: RAG Pipeline
+document_ingestion:
+  display_name: Generic Document Ingestion Pipeline
   description: Parses, chunks and embeds uploaded documents for semantic retrieval.

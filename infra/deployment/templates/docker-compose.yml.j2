@@ -2015,7 +2015,7 @@ services:
   # Document Processing Stack
   # ===================================================================
   # This stack, powered by MinerU, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # uploaded documents for the document ingestion pipeline. VLM requests are routed
   # through LiteLLM for unified model routing.
   # ===================================================================
 
@@ -4215,17 +4215,17 @@ services:
       - storage
   {%- endif %}
 
-  {%- if image_tags.rag_pipeline[stage] %}
-  {{ service_license('rag_pipeline') }}
-  rag_pipeline:
-    container_name: rag-pipeline
+  {%- if image_tags.document_ingestion_pipeline[stage] %}
+  {{ service_license('document_ingestion_pipeline') }}
+  document_ingestion_pipeline:
+    container_name: document-ingestion-pipeline
     restart: always
-    {%- if image_tags.rag_pipeline[stage] == 'localbuild' %}
+    {%- if image_tags.document_ingestion_pipeline[stage] == 'localbuild' %}
     build:
       context: ..
-      dockerfile: ./packages/pipeline/app/rag_pipeline/Dockerfile
+      dockerfile: ./packages/pipeline/app/document_ingestion_pipeline/Dockerfile
     {%- else %}
-    image: {{ global.registry_prefix }}{{ image_tags.rag_pipeline[stage] }}
+    image: {{ global.registry_prefix }}{{ image_tags.document_ingestion_pipeline[stage] }}
     {%- endif %}
     environment:
       PYTHONUNBUFFERED: 1
@@ -4264,14 +4264,14 @@ services:
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
-      # RAG pipeline processing recipe
-      RAG_PIPELINE_EMBEDDING_MODEL: ${RAG_PIPELINE_EMBEDDING_MODEL}
-      RAG_PIPELINE_LLM_MODEL: ${RAG_PIPELINE_LLM_MODEL}
-      RAG_PIPELINE_WITH_SUMMARY_NODES: ${RAG_PIPELINE_WITH_SUMMARY_NODES}
-      RAG_PIPELINE_WITH_TABLE_REFINEMENT: ${RAG_PIPELINE_WITH_TABLE_REFINEMENT}
-      RAG_PIPELINE_WITH_FIGURE_DESCRIPTIONS: ${RAG_PIPELINE_WITH_FIGURE_DESCRIPTIONS}
-      RAG_PIPELINE_OBSERVE_JOB_HOUR: ${RAG_PIPELINE_OBSERVE_JOB_HOUR}
-      RAG_PIPELINE_OBSERVE_JOB_MINUTE: ${RAG_PIPELINE_OBSERVE_JOB_MINUTE}
+      # Generic Document Ingestion Pipeline processing recipe
+      DOCUMENT_INGESTION_EMBEDDING_MODEL: ${DOCUMENT_INGESTION_EMBEDDING_MODEL}
+      DOCUMENT_INGESTION_LLM_MODEL: ${DOCUMENT_INGESTION_LLM_MODEL}
+      DOCUMENT_INGESTION_WITH_SUMMARY_NODES: ${DOCUMENT_INGESTION_WITH_SUMMARY_NODES}
+      DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT: ${DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT}
+      DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS: ${DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS}
+      DOCUMENT_INGESTION_OBSERVE_JOB_HOUR: ${DOCUMENT_INGESTION_OBSERVE_JOB_HOUR}
+      DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE: ${DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home

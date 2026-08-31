@@ -2,12 +2,12 @@
 
 ## Context
 
-Before the configurable RAG pipeline, a knowledge database was served by a pipeline bound to one bucket at deploy time.
+Before the Generic Document Ingestion Pipeline, a knowledge database was served by a pipeline bound to one bucket at deploy time.
 Two such deployments exist: `default_rag_pipeline` (`AIHubSettings().DEFAULT_BUCKET_NAME`, `defaultknowledge`) and
 `shared_rag_pipeline` (`SHARED_BUCKET_NAME`, `sharedknowledge`). Both are built by `default_definitions`, the public SDK
 builder for fixed-bucket pipelines.
 
-`rag_pipeline` supersedes them entirely: one deployment serves every knowledge database, resolving its target per run.
+`document_ingestion_pipeline` supersedes them entirely: one deployment serves every knowledge database, resolving its target per run.
 Nothing new is ever assigned to a legacy pipeline — `IngestorType.selectable()` offers only `rag` — so the two remaining
 deployments exist solely to keep ingesting into corpora that already exist.
 
@@ -34,7 +34,7 @@ distinction that no longer distinguishes anything.
   prefix survives only on the six wrapper resources whose non-routed counterparts are still used by Stage 1.
 
 - **Removing `default_definitions` is a breaking SDK change**, accepted deliberately rather than deprecated: it built
-  fixed-bucket pipelines, which is the model being retired. `rag_pipeline_definitions` replaces it and is now the
+  fixed-bucket pipelines, which is the model being retired. `document_ingestion_pipeline_definitions` replaces it and is now the
   exported builder.
 
 - **The images are pinned to their last release** (`v0.319.0`) in `nightly` and `latest` only. They carry no `build` or
@@ -47,7 +47,7 @@ distinction that no longer distinguishes anything.
   but left in `workspace.yml.j2`, giving every deployed stage two permanently-errored code locations.
 
 - **There is no migration path.** A deployment that needs any change to a legacy corpus re-uploads it into a new
-  self-service knowledge database. Re-pointing the existing buckets at `rag_pipeline` is not offered: the two pipelines
+  self-service knowledge database. Re-pointing the existing buckets at `document_ingestion_pipeline` is not offered: the two pipelines
   would then both claim the same bucket, and the embedding model a corpus was ingested with is not recorded anywhere
   that a re-ingestion could honour.
 

@@ -1,4 +1,4 @@
-# RAG Pipeline: one deployment, all knowledge databases (collection-per-db, route-per-run)
+# Generic Document Ingestion Pipeline: one deployment, all knowledge databases (collection-per-db, route-per-run)
 
 ## Context
 
@@ -15,7 +15,7 @@ the API already enumerates all databases at runtime. The blocker was purely in t
 A "knowledge database" is a `BucketEntity`; "folder"/"namespace" is a `NamespaceEntity` row; a chunk carries `namespace`
 \+ `document_id` but no `db` field — database identity is simply *which Milvus collection it lives in*.
 
-**Scope: Stage 2 only.** "RAG pipeline" here means the data lake → vector store stage (parse, chunk, embed, index). The
+**Scope: Stage 2 only.** "document ingestion pipeline" here means the data lake → vector store stage (parse, chunk, embed, index). The
 Stage 1 source connectors (SharePoint, rclone, local filesystem → data lake) are unchanged and remain per-source, and a
 deployment is still free to build its own Stage 1 + Stage 2 pipeline for its own bucket. This decision is about how
 knowledge databases are *ingested from the data lake*, not about how documents get into it.
@@ -23,7 +23,7 @@ knowledge databases are *ingested from the data lake*, not about how documents g
 ## Decision Drivers
 
 - *Self-service*: users must create knowledge databases from the UI with no deployment.
-- *One pipeline, many databases*: exactly one deployed RAG pipeline of a given type should ingest all databases it owns,
+- *One pipeline, many databases*: exactly one deployed ingestion pipeline of a given type should ingest all databases it owns,
   reading their configs from MongoDB at runtime.
 - *Isolation preserved*: each database keeps its own vector collection and document store.
 - *No disruption / no reprocessing*: the existing `default`/`shared` databases must keep ingesting and serving
@@ -51,7 +51,7 @@ knowledge databases are *ingested from the data lake*, not about how documents g
 
 ## Decision
 
-Add a new, **additive** `rag_pipeline` that ingests all knowledge databases tagged for it, and leave the legacy
+Add a new, **additive** `document_ingestion_pipeline` that ingests all knowledge databases tagged for it, and leave the legacy
 pipelines untouched.
 
 1. **`ingestor` field on `BucketEntity`** (`unassigned` / `default_rag` / `shared_rag` / `rag`) records which deployed
@@ -60,7 +60,8 @@ pipelines untouched.
 
    **The field default is the inert `unassigned`, and this is load-bearing for upgrades.** Rows written by releases
    predating the field have no `ingestor` key, and MongoEngine applies the *field default* when the key is absent — so
-   defaulting to `rag` would make every knowledge database in an upgraded deployment read as owned by the RAG pipeline,
+   defaulting to `document_ingestion` would make every knowledge database in an upgraded deployment read as owned
+   by the document ingestion pipeline,
    which would then claim it and re-parse + re-embed its entire corpus alongside the deploy-bound pipeline that already
    owns it. The seeder cannot be relied on to repair this: it only touches the two buckets it seeds, it is skipped
    entirely when `CREATE_DEFAULT_BUCKETS` is off, and the pipeline's sensors do not wait for it. Deployments with
@@ -89,7 +90,7 @@ pipelines untouched.
 
    **Extending the selectable set — the pipeline registers itself.** A customer-specific deployment makes its own
    route-per-run pipeline selectable *without forking the platform*: it passes `display_name` and `description`
-   alongside its `ingestor` to `rag_pipeline_definitions`, and a sensor in that pipeline upserts an `IngestorEntity`
+   alongside its `ingestor` to `document_ingestion_pipeline_definitions`, and a sensor in that pipeline upserts an `IngestorEntity`
    row. `GET /knowledge/ingestors` and `create_database` read that collection, so the ingestor is offered as soon as
    the pipeline is deployed. No `IngestorType` change, no API contract change, no SDK regeneration.
 
@@ -158,7 +159,7 @@ pipelines untouched.
 
    This is also what keeps a customer's own bespoke pipeline out of the way: a deployment that builds its own Stage 1 +
    Stage 2 via `default_definitions(datalake_container_name="pocrag")` gets `["pocrag", "datalake_to_vectorstore", …]`
-   asset keys and a `pocrag_document_partitions` registry, which cannot collide with the RAG pipeline's.
+   asset keys and a `pocrag_document_partitions` registry, which cannot collide with the document ingestion pipeline's.
 
 7. **One ingestor-keyed JetStream stream, fanned out per bucket in the sensor.** Uploads are published on
    `pipeline.{ingestor}.{bucket}.to.knowledge.{db}.…` — the same nine-token grammar as before, with the *ingestor*
@@ -197,7 +198,7 @@ pipelines untouched.
   prefix are all namespaced by their own container name.
 - A second pipeline *type* can be deployed alongside the first, because every deployment-global name is ingestor-scoped.
 - A customer-specific pipeline becomes user-selectable without forking the platform: passing `display_name` and
-  `description` to `rag_pipeline_definitions` is enough — the pipeline registers itself in the database the API reads,
+  `description` to `document_ingestion_pipeline_definitions` is enough — the pipeline registers itself in the database the API reads,
   so no `IngestorType` change, no API-contract change, no SDK regeneration, and nothing to install into the API image.
 
 ### Trade-offs
@@ -221,9 +222,38 @@ pipelines untouched.
   retired. The alternative — omitting the field and inferring ownership from a bucket name allowlist — would bury the
   routing rule in the pipeline instead of the data model.
 
-- The RAG pipeline runs one asset graph shared across all its databases — one process, one resource pool, one crash
+- The document ingestion pipeline runs one asset graph shared across all its databases — one process, one resource pool, one crash
   domain — rather than the per-database isolation the legacy deployments have. Acceptable at expected scale; the
   per-tick enumeration of buckets is the scaling limit to watch.
 
 - IO managers resolve the store per run (a cheap idempotent Mongo lookup, cached per run), trading a little runtime work
   for deploy-time flexibility.
+
+## Amendment (2026-08-31): renamed to the Generic Document Ingestion Pipeline
+
+The pipeline was originally called the "RAG pipeline". That name describes the wrong thing: this stage parses,
+chunks, embeds and indexes documents into a vector store. It performs no retrieval and no generation, so nothing
+about it is retrieval-augmented generation — the RAG *agent* is what does that, and it remains named accordingly.
+
+Renamed before the first release, so no deployment carries the old names and no migration path is needed:
+
+| Concern             | Before                     | After                                        |
+| ------------------- | -------------------------- | -------------------------------------------- |
+| Display name        | RAG Pipeline               | Generic Document Ingestion Pipeline           |
+| Code identifiers    | `rag_pipeline_definitions` | `document_ingestion_pipeline_definitions`     |
+| Settings class      | `RagPipelineSettings`      | `DocumentIngestionPipelineSettings`           |
+| Env prefix          | `RAG_PIPELINE_`            | `DOCUMENT_INGESTION_`                         |
+| Module / image      | `app.rag_pipeline`         | `app.document_ingestion_pipeline`             |
+| Ingestor routing id | `rag`                      | `document_ingestion`                          |
+| JetStream stream    | `pipeline_rag_stream`      | `pipeline_document_ingestion_stream`          |
+
+"Generic" is a display-only adjective: identifiers use `document_ingestion_pipeline`, because
+`generic_document_ingestion_pipeline` buys nothing and makes every NATS subject and asset key longer.
+
+The frozen `default_rag` / `shared_rag` ingestor ids and their `default_rag_pipeline` /
+`shared_rag_pipeline` image names are deliberately **not** renamed: they name images that will never be
+rebuilt, and existing deployments keep pulling them by those exact tags. See
+`2026_08_31_legacy_rag_pipelines_frozen_and_removed.md`.
+
+ADR filenames keep their original slugs — they are dated records of when a decision was made, and renaming
+them would break inbound links for no gain.

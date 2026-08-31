@@ -5,14 +5,14 @@ from pydantic import Field
 from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
 
-class RagPipelineSettings(EnvironmentSettings):
-    """Deployment-level configuration of the configurable RAG pipeline's processing recipe.
+class DocumentIngestionPipelineSettings(EnvironmentSettings):
+    """Deployment-level configuration of the Generic Document Ingestion Pipeline's processing recipe.
 
     The models are named per deployment: a stack without these exact LiteLLM model names would fail
     every ingest run, and editing the app module is not a deployment knob.
     """
 
-    model_config = EnvironmentSettings.create_settings_config("RAG_PIPELINE_")
+    model_config = EnvironmentSettings.create_settings_config("DOCUMENT_INGESTION_")
 
     EMBEDDING_MODEL: Annotated[
         str, Field(default="embedding/bge-m3", description="LiteLLM model name used to embed chunks.")

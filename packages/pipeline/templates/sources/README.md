@@ -66,7 +66,7 @@ All other variables are passed directly to rclone as backend-specific options.
 
 ## Understanding Namespaces and Directory Structure
 
-**Important**: The `datalake_directory_name` parameter determines the **namespace** used in the downstream RAG pipeline
+**Important**: The `datalake_directory_name` parameter determines the **namespace** used in the downstream document ingestion pipeline
 (vector store). This affects how your data is organized and searchable.
 
 ### How it works
@@ -157,7 +157,7 @@ Use when: You need fine-grained control, different sync schedules, or want to re
 ### Important: Root-level files
 
 When `datalake_directory_name` is not set and your source has files at the root level (not in any folder), those files
-will **not be processed** by the RAG pipeline. Only files within directories get a namespace and are indexed.
+will **not be processed** by the document ingestion pipeline. Only files within directories get a namespace and are indexed.
 
 Ensure your source structure places all files within folders, or specify a `datalake_directory_name` to wrap everything
 in a single namespace.

@@ -59,7 +59,7 @@ graph TD
 Our SDK is built on a few key principles to ensure pipelines are efficient, scalable, and maintainable:
 
 - **Asset Factories**: Instead of writing boilerplate, you use simple factory functions to generate entire sets of
-  pre-configured assets and resources (e.g., `rag_pipeline_definitions`).
+  pre-configured assets and resources (e.g., `document_ingestion_pipeline_definitions`).
 - **Change-Driven Automation**: Pipelines run automatically in response to data changes, not on fixed schedules. This is
   achieved using **observable assets** that monitor source systems.
 - **Document-Level Isolation**: Each document is processed in its own **partition**, meaning a failure in one document
@@ -69,18 +69,18 @@ Our SDK is built on a few key principles to ensure pipelines are efficient, scal
 
 ## Quick Start: A Complete Pipeline in Under 10 Lines
 
-The SDK's factories make it incredibly simple to stand up a complete pipeline. The `rag_pipeline_definitions` function
+The SDK's factories make it incredibly simple to stand up a complete pipeline. The `document_ingestion_pipeline_definitions` function
 bundles all the necessary assets, resources, jobs, and schedules.
 
 Create a file named `my_pipeline.py`:
 
 ```python
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.pipeline.util import rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
 # This single function call creates a complete, production-ready pipeline that serves every
 # knowledge database assigned to this ingestor, resolving the target per run.
-defs = rag_pipeline_definitions(
+defs = document_ingestion_pipeline_definitions(
     ingestor="my_rag",
     display_name=LocaleString(en="My RAG"),
     description=LocaleString(en="Tuned for my documents"),

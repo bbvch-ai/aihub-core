@@ -44,10 +44,10 @@ from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import (
 from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import run_failure_notification_sensors_from_settings
 
-_DEFAULT_INGESTOR = IngestorType.RAG.value
+_DEFAULT_INGESTOR = IngestorType.DOCUMENT_INGESTION.value
 
 
-def rag_pipeline_definitions(
+def document_ingestion_pipeline_definitions(
     *,
     ingestor: Annotated[str, "Ingestor that owns the databases this pipeline serves"] = _DEFAULT_INGESTOR,
     display_name: Annotated[LocaleString | None, "Localized name of a custom ingestor, shown in the UI"] = None,

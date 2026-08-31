@@ -2,9 +2,9 @@ from dagster import InputContext, OpExecutionContext
 
 from swiss_ai_hub.pipeline.util.partition_utils import bucket_of_composite_partition_key
 
-"""Run-level bucket routing for the RAG pipeline.
+"""Run-level bucket routing for the document ingestion pipeline.
 
-A run of the RAG pipeline always targets exactly one knowledge database, but the way that bucket
+A run of the document ingestion pipeline always targets exactly one knowledge database, but the way that bucket
 travels into the run differs by trigger:
 
 - **Partitioned write path** (``documents``/``nodes``/``summary``, launched by the automation sensor):

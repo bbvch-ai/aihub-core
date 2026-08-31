@@ -30,14 +30,14 @@ RAG agents search. It implements a **two-stage, asset-based pipeline**:
 2. **Data lake → vector store** — parse each file (MinerU OCR + structure), chunk it, embed it via the LLM gateway, and
    upsert the vectors into Milvus, with full lineage from every embedding back to its source document.
 
-You compose a pipeline from one function, `rag_pipeline_definitions()`, which wires together all the assets, resources,
+You compose a pipeline from one function, `document_ingestion_pipeline_definitions()`, which wires together all the assets, resources,
 IO managers, sensors, jobs, and schedules. It builds on [`swiss-ai-hub-core`](https://pypi.org/project/swiss-ai-hub-core/)
 (installed automatically); RAG agents from [`swiss-ai-hub-agent`](https://pypi.org/project/swiss-ai-hub-agent/) query
 its output.
 
 ## Should you use this package?
 
-**Probably not directly — most deployments use the pre-built `rag_pipeline` image**, which ingests every knowledge
+**Probably not directly — most deployments use the pre-built `document_ingestion_pipeline` image**, which ingests every knowledge
 database users create from the UI, with no redeploy.
 
 **Use this PyPI package when you want a custom pipeline** — connect a new data source, or tune
@@ -59,14 +59,14 @@ ______________________________________________________________________
 ## Quick start
 
 A pipeline is a Dagster **code location** — a module that exposes a `Definitions` object.
-`rag_pipeline_definitions()` builds a complete one:
+`document_ingestion_pipeline_definitions()` builds a complete one:
 
 ```python
 # my_pipeline/__init__.py
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.pipeline.util import rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
-defs = rag_pipeline_definitions(
+defs = document_ingestion_pipeline_definitions(
     ingestor="my_rag",                                  # this pipeline owns every database assigned to it
     display_name=LocaleString(en="My RAG"),             # how users see it when creating a database
     description=LocaleString(en="Tuned for my documents"),
@@ -99,7 +99,7 @@ ______________________________________________________________________
 
 ## How it works
 
-`rag_pipeline_definitions()` assembles a graph of Dagster **assets** connected by **IO managers** to the platform's
+`document_ingestion_pipeline_definitions()` assembles a graph of Dagster **assets** connected by **IO managers** to the platform's
 stores:
 
 | Stage                    | Assets                                                                             | Backed by                        |
@@ -111,7 +111,7 @@ A document is reported as ingested only once `nodes` has written its embeddings 
 markdown but is not yet retrievable, so it stays pending until then.
 
 Materialization is driven by eager automation, daily schedules, and a NATS sensor that fires when documents are uploaded
-through the API — so ingestion keeps up with changes without manual runs. Key `rag_pipeline_definitions()` knobs:
+through the API — so ingestion keeps up with changes without manual runs. Key `document_ingestion_pipeline_definitions()` knobs:
 `with_summary_nodes`, `with_table_refinement`, `with_figure_descriptions`, `document_parser_loader_type` (MinerU or
 Document Intelligence), and `max_partitions`.
 
@@ -142,7 +142,7 @@ and in CI.
 
 ### Make targets
 
-`make playground`, `make quickstart`, and `make rag-pipelines` wrap the three steps above: they source the repo-root
+`make playground`, `make quickstart`, and `make document-ingestion-pipeline` wrap the three steps above: they source the repo-root
 `.env` and install `dagster.local.yaml` into `$DAGSTER_HOME` (`~/.dagster_home` unless you export something else) as
 `dagster.yaml` if no config is there yet.
 
@@ -237,9 +237,9 @@ know the pipeline exists. Both halves of that come from one call:
 ```python
 # acme_pipeline/__init__.py
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.pipeline.util import rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
-defs = rag_pipeline_definitions(
+defs = document_ingestion_pipeline_definitions(
     # The routing key: this pipeline's sensors and schedule claim every knowledge database whose
     # `ingestor` equals this string, and nothing else touches those databases.
     ingestor="acme_rag",
@@ -256,7 +256,7 @@ it — with **no** change to the platform's `IngestorType` enum, API contract, o
 into the API image.
 
 The ingestor id must not collide with a platform routing token (`rag`, `unassigned`, the frozen `default_rag` /
-`shared_rag`) or with the `datalake` subject token; `rag_pipeline_definitions` rejects those at definition time.
+`shared_rag`) or with the `datalake` subject token; `document_ingestion_pipeline_definitions` rejects those at definition time.
 
 See ADR `2026_06_18_rag_pipeline_route_per_run` for the rationale, including why registration goes through the database
 and why the `ingestor` field is a plain string at the API boundary.

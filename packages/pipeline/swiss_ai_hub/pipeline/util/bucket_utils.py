@@ -13,7 +13,7 @@ def _ensure_connection() -> None:
 def ensure_main_db_connection() -> None:
     """Register the main MongoDB connection (idempotent).
 
-    The RAG pipeline's schedule and NATS sensor enumerate ``BucketEntity`` from the Dagster
+    The document ingestion pipeline's schedule and NATS sensor enumerate ``BucketEntity`` from the Dagster
     process, which needs the ``default`` mongoengine alias registered first.
     """
     _ensure_connection()

@@ -65,7 +65,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
 │   │   └── figure_metadata.py             # Image/figure metadata
 │   ├── util/                              # Utilities
-│   │   ├── rag_definitions_util.py         # rag_pipeline_definitions() — Stage 2, route-per-run (CRITICAL)
+│   │   ├── document_ingestion_definitions_util.py         # document_ingestion_pipeline_definitions() — Stage 2, route-per-run (CRITICAL)
 │   │   ├── definitions_util.py            # Stage 1 source-specific builders
 │   │   ├── id_utils.py                    # uri_to_id() — URI to document ID (MD5 hash)
 │   │   ├── partition_utils.py             # replace_partition_keys() — dynamic partition management
@@ -74,15 +74,15 @@ packages/pipeline/                        # SDK framework
 │   │   └── meta_utils.py                  # data_lake_metadata_table() — Dagster UI formatting
 
 app/                                   # Deployable pipelines (Dagster gRPC code locations)
-├── rag_pipeline/                      # THE RAG pipeline — one deployment, all self-service knowledge DBs
-│   ├── __init__.py                    # defs = rag_pipeline_definitions()  (route-per-run, no bucket env var)
+├── document_ingestion_pipeline/        # THE document ingestion pipeline — one deployment, all self-service knowledge DBs
+│   ├── __init__.py                    # defs = document_ingestion_pipeline_definitions()  (route-per-run, no bucket env var)
 │   └── Dockerfile                     # dagster api grpc on port 4000
 
 playground/                            # Examples (START HERE)
-├── __init__.py                        # defs = rag_pipeline_definitions() + a playground BucketEntity
+├── __init__.py                        # defs = document_ingestion_pipeline_definitions() + a playground BucketEntity
 └── quick_start/                       # Tutorials
     ├── simple_pipeline.py             # Hello-world: 2 basic assets, no external deps
-    └── my_document_pipeline.py        # Full RAG pipeline with all factories
+    └── my_document_pipeline.py        # Full document ingestion pipeline with all factories
 
 templates/sources/                     # Pre-configured source templates (7 backends)
 ├── sharepoint/                        # SharePoint Online
@@ -120,9 +120,9 @@ processing chain regardless of origin:
 A document is only reported as ingested — to the API, the UI, and RAG agents — once its nodes are in Milvus. A parsed
 document has markdown but no embeddings, so it is not retrievable yet and must not be shown as complete.
 
-## The `rag_pipeline_definitions()` Function
+## The `document_ingestion_pipeline_definitions()` Function
 
-The primary entry point for creating a Stage-2 pipeline. Located in `util/rag_definitions_util.py`. Returns a complete
+The primary entry point for creating a Stage-2 pipeline. Located in `util/document_ingestion_definitions_util.py`. Returns a complete
 `Definitions` object with all assets, resources, sensors, jobs, and schedules wired together.
 
 **It carries no bucket name.** One deployment serves every knowledge database whose `BucketEntity.ingestor` matches,
@@ -131,8 +131,8 @@ resolving the target per run — from the composite partition key `{bucket}|{fil
 compose service, or env var.
 
 ```python
-defs = rag_pipeline_definitions(
-    ingestor="rag",                                    # routing key; namespaces every global Dagster name
+defs = document_ingestion_pipeline_definitions(
+    ingestor="document_ingestion",                                    # routing key; namespaces every global Dagster name
     display_name=LocaleString(en="My RAG"),            # required for a custom ingestor, omitted for "rag"
     description=LocaleString(en="What it does"),
     embedding_model_name="embedding/large",            # LiteLLM model for embeddings
@@ -153,9 +153,9 @@ A custom ingestor must pass `display_name`/`description`: a sensor upserts them 
 `GET /knowledge/ingestors` can offer the pipeline in the create-database dialog. Ids colliding with a platform routing
 token (`rag`, `unassigned`, the frozen `default_rag`/`shared_rag`) or with the `datalake` subject token are rejected.
 
-The deployed app reads its knobs from `RagPipelineSettings` (`RAG_PIPELINE_*`) rather than hardcoding them.
+The deployed app reads its knobs from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`) rather than hardcoding them.
 
-Source-specific definition builders for Stage 1 (combine with `rag_pipeline_definitions()` for end-to-end), in
+Source-specific definition builders for Stage 1 (combine with `document_ingestion_pipeline_definitions()` for end-to-end), in
 `util/definitions_util.py`:
 
 - `default_sharepoint_to_datalake_definitions(...)` — SharePoint → S3
@@ -371,14 +371,14 @@ failure alerts without per-asset wiring.
 - **Opt-in via env**: set `NOTIFICATION_URLS` (comma-separated Apprise URIs) to enable; leave empty to disable.
   `NotificationSettings` reads `NOTIFICATION_URLS`, `NOTIFICATION_DAGSTER_UI_BASE_URL`, `NOTIFICATION_TITLE_PREFIX`,
   `NOTIFICATION_MIN_INTERVAL_SECONDS`.
-- **Automatic wiring**: the Stage-1 builders and `rag_pipeline_definitions()` append the sensor
+- **Automatic wiring**: the Stage-1 builders and `document_ingestion_pipeline_definitions()` append the sensor
   automatically when the env is configured — consumer code in `app/*/__init__.py` needs no change.
 - **Manual composition**: consumers that build their own `Definitions` can import the factory directly and narrow
   `monitored_jobs=[...]` to specific jobs.
 
 ## Playground
 
-- `playground/__init__.py` — the real `rag_pipeline_definitions()` pipeline, plus a sensor that registers the
+- `playground/__init__.py` — the real `document_ingestion_pipeline_definitions()` pipeline, plus a sensor that registers the
   playground's own knowledge database
 - `playground/quick_start/simple_pipeline.py` — Hello-world: 2 basic assets, no external deps
 - `playground/quick_start/my_document_pipeline.py` — Complete pipeline with all factories, resources, sensors
@@ -387,7 +387,7 @@ Start: `make playground` or `uv run dagster dev -m playground` Access: http://lo
 
 ## Local Dagster Instance
 
-`make playground`, `make quickstart`, and `make rag-pipelines` each depend on the `dagster-home` target, which installs
+`make playground`, `make quickstart`, and `make document-ingestion-pipeline` each depend on the `dagster-home` target, which installs
 `dagster.local.yaml` into `$(DAGSTER_HOME)` as `dagster.yaml` (copy-if-absent), and source the repo-root `.env` for the
 dev-stack connection settings. Two failure modes this prevents: an unset `DAGSTER_HOME` makes `dagster dev` create a
 throwaway `.tmp_dagster_home_*` instance per start, and a missing instance config leaves `DefaultRunCoordinator` in
@@ -422,10 +422,10 @@ location, customize. See `templates/sources/README.md` for the full guide includ
 
 `app/` contains deployable Dagster gRPC code locations:
 
-- `rag_pipeline/` — **the** RAG pipeline. One deployment ingests *every* knowledge database whose
+- `document_ingestion_pipeline/` — **the** document ingestion pipeline. One deployment ingests *every* knowledge database whose
   `BucketEntity.ingestor` is `rag`, resolving the target bucket per run (composite partition key `{bucket}|{uri}` on the
-  write path, `aihub/bucket` run tag on the observe/remove path). Built by `rag_pipeline_definitions()` in
-  `util/rag_definitions_util.py`. Creating a knowledge database needs no new code location, compose service, or env var.
+  write path, `aihub/bucket` run tag on the observe/remove path). Built by `document_ingestion_pipeline_definitions()` in
+  `util/document_ingestion_definitions_util.py`. Creating a knowledge database needs no new code location, compose service, or env var.
   Every deployment-global name (asset keys, partition registry, jobs) is derived from the ingestor so a second pipeline
   *type* can be deployed alongside it. A custom pipeline built with a non-`rag` ingestor becomes **user-selectable** by
   passing `display_name`/`description`: a sensor upserts an `IngestorEntity`, which the API's
@@ -440,10 +440,10 @@ rebuilt and there is no migration path — see ADR `2026_08_31_legacy_rag_pipeli
 names (`defaultknowledge` / `sharedknowledge`) and routing tokens (`default_rag` / `shared_rag`) stay reserved so
 nothing can be created on top of them, and rows predating the `ingestor` field read the inert `unassigned` default.
 
-`rag_pipeline` has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
-`dagster api grpc -h 0.0.0.0 -p 4000 -m "app.rag_pipeline"`
+`document_ingestion_pipeline` has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
+`dagster api grpc -h 0.0.0.0 -p 4000 -m "app.document_ingestion_pipeline"`
 
-Run it locally: `make rag-pipelines`.
+Run it locally: `make document-ingestion-pipeline`.
 
 ## Testing
 
@@ -454,7 +454,7 @@ Run it locally: `make rag-pipelines`.
 
 ## New Pipeline Checklist
 
-1. Choose approach: `rag_pipeline_definitions()` for Stage 2 only, or add Stage 1 source definition builder
+1. Choose approach: `document_ingestion_pipeline_definitions()` for Stage 2 only, or add Stage 1 source definition builder
 2. For new source: create observable factory + source I/O manager + source resource in `resources/`
 3. For custom processing: create ops in `ops/`, compose into `@graph_asset` factory in `assets/factories/`
 4. Wire into `Definitions` with resources, sensors, jobs, schedules
@@ -466,7 +466,7 @@ Run it locally: `make rag-pipelines`.
 
 **Core Entry Points**:
 
-- Stage-2 builder: `packages/pipeline/swiss_ai_hub/pipeline/util/rag_definitions_util.py`
+- Stage-2 builder: `packages/pipeline/swiss_ai_hub/pipeline/util/document_ingestion_definitions_util.py`
 - Stage-1 builders: `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py`
 - Resource factories: `packages/pipeline/swiss_ai_hub/pipeline/resources/factory.py`
 
@@ -492,7 +492,7 @@ vector_store/, doc_store/, llm/, share_point/, rclone/, local_file_system/
 **Utilities**: `packages/pipeline/swiss_ai_hub/pipeline/util/` — definitions_util, id_utils, partition_utils,
 bucket_utils, key_utils
 
-**App**: `app/rag_pipeline/__init__.py`
+**App**: `app/document_ingestion_pipeline/__init__.py`
 
 **Playground**: `playground/__init__.py`, `playground/quick_start/`
 

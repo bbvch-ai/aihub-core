@@ -1,7 +1,7 @@
 # Build stage
 FROM python:3.13-slim AS builder
 
-ARG PIPELINE=rag_pipeline
+ARG PIPELINE=document_ingestion_pipeline
 ARG VERSION
 
 COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /bin/
@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Runtime stage
 FROM python:3.13-slim AS runtime
 
-ARG PIPELINE=rag_pipeline
+ARG PIPELINE=document_ingestion_pipeline
 ENV PIPELINE_NAME=${PIPELINE}
 ARG VERSION
 

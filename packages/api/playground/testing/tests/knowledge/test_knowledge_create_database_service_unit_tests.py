@@ -20,7 +20,9 @@ def _no_registered_custom_ingestors():
     """The entity is Mongo-backed; stub it so these unit tests need no database."""
     with patch(f"{_SERVICE_MODULE}.IngestorEntity") as ingestor_entity:
         ingestor_entity.custom.return_value = []
-        ingestor_entity.is_selectable.side_effect = lambda ingestor_id: ingestor_id == IngestorType.RAG.value
+        ingestor_entity.is_selectable.side_effect = lambda ingestor_id: (
+            ingestor_id == IngestorType.DOCUMENT_INGESTION.value
+        )
         yield ingestor_entity
 
 
@@ -60,7 +62,7 @@ class TestCreateDatabase:
         created_bucket = MagicMock(
             db_name=DATABASE,
             bucket_name=DATABASE,
-            ingestor=IngestorType.RAG.value,
+            ingestor=IngestorType.DOCUMENT_INGESTION.value,
             llm_model=None,
             embedding_model=None,
         )
@@ -84,10 +86,10 @@ class TestCreateDatabase:
 
         s3_service.ensure_bucket_with_cors.assert_called_once_with(DATABASE)
         bucket_cls.create_bucket.assert_called_once()
-        assert bucket_cls.create_bucket.call_args.kwargs["ingestor"] == IngestorType.RAG.value
+        assert bucket_cls.create_bucket.call_args.kwargs["ingestor"] == IngestorType.DOCUMENT_INGESTION.value
         assert bucket_cls.create_bucket.call_args.kwargs["bucket_name"] == DATABASE
         assert response.name == DATABASE
-        assert response.ingestor == IngestorType.RAG.value
+        assert response.ingestor == IngestorType.DOCUMENT_INGESTION.value
 
     @pytest.mark.asyncio
     async def test_rejects_ingestor_that_is_not_self_service_selectable(self, locale_handler, s3_service):
@@ -216,7 +218,7 @@ class TestCreateDatabase:
     @pytest.mark.asyncio
     async def test_rejects_name_taken_by_an_existing_storage_container(self, locale_handler, s3_service):
         """Platform buckets (``dagster``, ``milvus``, …) have no BucketEntity row, so the entity duplicate
-        check alone would bind a knowledge database — and the RAG pipeline — onto their contents."""
+        check alone would bind a knowledge database — and the document ingestion pipeline — onto their contents."""
         s3_service.container_exists.return_value = True
 
         with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
@@ -238,8 +240,8 @@ class TestGetIngestors:
 
         ingestors = KnowledgeService.get_ingestors(t)
 
-        assert [ingestor.name for ingestor in ingestors] == [IngestorType.RAG.value]
-        assert ingestors[0].display_name == "RAG Pipeline"
+        assert [ingestor.name for ingestor in ingestors] == [IngestorType.DOCUMENT_INGESTION.value]
+        assert ingestors[0].display_name == "Generic Document Ingestion Pipeline"
         assert ingestors[0].description
 
     def test_appends_registered_custom_ingestors_with_their_own_labels(self, _no_registered_custom_ingestors):
@@ -248,7 +250,7 @@ class TestGetIngestors:
 
         ingestors = KnowledgeService.get_ingestors(t)
 
-        assert [ingestor.name for ingestor in ingestors] == [IngestorType.RAG.value, "acme_rag"]
+        assert [ingestor.name for ingestor in ingestors] == [IngestorType.DOCUMENT_INGESTION.value, "acme_rag"]
         custom = ingestors[-1]
         assert custom.display_name == "Acme RAG"
         assert custom.description == "Acme's custom ingestion pipeline"
@@ -281,7 +283,7 @@ class TestCreateGrantsAccess:
                 db_name=DATABASE,
                 bucket_name=DATABASE,
                 id="abc123",
-                ingestor=IngestorType.RAG.value,
+                ingestor=IngestorType.DOCUMENT_INGESTION.value,
                 llm_model=None,
                 embedding_model=None,
             )
@@ -314,7 +316,7 @@ class TestCreateGrantsAccess:
                 db_name=DATABASE,
                 bucket_name=DATABASE,
                 id="abc123",
-                ingestor=IngestorType.RAG.value,
+                ingestor=IngestorType.DOCUMENT_INGESTION.value,
                 llm_model=None,
                 embedding_model=None,
             )
@@ -344,7 +346,7 @@ class TestCreateGrantsAccess:
                 db_name=DATABASE,
                 bucket_name=DATABASE,
                 id="abc123",
-                ingestor=IngestorType.RAG.value,
+                ingestor=IngestorType.DOCUMENT_INGESTION.value,
                 llm_model=None,
                 embedding_model=None,
             )
@@ -375,7 +377,7 @@ class TestCreateGrantsAccess:
                 db_name=DATABASE,
                 bucket_name=DATABASE,
                 id="abc123",
-                ingestor=IngestorType.RAG.value,
+                ingestor=IngestorType.DOCUMENT_INGESTION.value,
                 llm_model=None,
                 embedding_model=None,
             )
@@ -409,7 +411,7 @@ class TestModelSelection:
             bucket_cls.create_bucket.return_value = MagicMock(
                 db_name=DATABASE,
                 bucket_name=DATABASE,
-                ingestor=IngestorType.RAG.value,
+                ingestor=IngestorType.DOCUMENT_INGESTION.value,
                 llm_model="text-generation/pick",
                 embedding_model="embedding/pick",
             )
@@ -486,7 +488,7 @@ class TestModelSelection:
             bucket_cls.create_bucket.return_value = MagicMock(
                 db_name=DATABASE,
                 bucket_name=DATABASE,
-                ingestor=IngestorType.RAG.value,
+                ingestor=IngestorType.DOCUMENT_INGESTION.value,
                 llm_model=None,
                 embedding_model=None,
             )

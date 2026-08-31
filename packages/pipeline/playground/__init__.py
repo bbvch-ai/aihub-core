@@ -1,10 +1,10 @@
 from dagster import DefaultSensorStatus, Definitions, SensorEvaluationContext, SkipReason, sensor
 from mongoengine import DoesNotExist
-from swiss_ai_hub.core.infrastructure import RagPipelineSettings
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.core.persistence import BucketEntity, IngestorType
 
 from swiss_ai_hub.pipeline.util.bucket_utils import ensure_main_db_connection
-from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 
 PLAYGROUND_BUCKET = "playground"
 
@@ -27,15 +27,15 @@ def playground_bucket_sensor(context: SensorEvaluationContext):
         BucketEntity.get_bucket_by_bucket_name(PLAYGROUND_BUCKET)
     except DoesNotExist:
         BucketEntity.create_bucket(
-            bucket_name=PLAYGROUND_BUCKET, db_name=PLAYGROUND_BUCKET, ingestor=IngestorType.RAG.value
+            bucket_name=PLAYGROUND_BUCKET, db_name=PLAYGROUND_BUCKET, ingestor=IngestorType.DOCUMENT_INGESTION.value
         )
         return SkipReason(f"Created the '{PLAYGROUND_BUCKET}' knowledge database.")
     return SkipReason(f"The '{PLAYGROUND_BUCKET}' knowledge database exists.")
 
 
-settings = RagPipelineSettings()
+settings = DocumentIngestionPipelineSettings()
 
-_pipeline = rag_pipeline_definitions(
+_pipeline = document_ingestion_pipeline_definitions(
     embedding_model_name=settings.EMBEDDING_MODEL,
     llm_model_name=settings.LLM_MODEL,
     with_summary_nodes=settings.WITH_SUMMARY_NODES,

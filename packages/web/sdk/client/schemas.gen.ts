@@ -5911,7 +5911,7 @@ export const CreateDatabaseRequestSchema = {
       title: "Ingestor",
       description:
         "The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.",
-      default: "rag",
+      default: "document_ingestion",
     },
     llm_model: {
       anyOf: [

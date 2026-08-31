@@ -22,7 +22,7 @@ def data_version_by_partition_for_data_lake_no_op(
 ) -> DataVersionsByPartition:
     """Route-per-run variant of ``data_version_by_partition_for_data_lake_files_no_op``.
 
-    The RAG pipeline shares one partition registry across all knowledge databases, so partition keys
+    The document ingestion pipeline shares one partition registry across all knowledge databases, so partition keys
     are composite ``{bucket}|{file_uri}`` and reconciliation is scoped to the run's bucket via
     ``replace_partition_keys_for_bucket`` — one bucket's observe run can never delete another's partitions.
     """

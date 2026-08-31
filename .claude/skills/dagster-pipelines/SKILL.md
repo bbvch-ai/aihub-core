@@ -40,18 +40,18 @@ ______________________________________________________________________
 The `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py` provides factory functions that assemble complete
 `Definitions` objects with all assets, resources, sensors, jobs, and schedules wired together.
 
-### `rag_pipeline_definitions()` — Stage 2 (DataLake to Vector Store)
+### `document_ingestion_pipeline_definitions()` — Stage 2 (DataLake to Vector Store)
 
-Defined in `util/rag_definitions_util.py`. Carries no bucket name: one deployment serves every knowledge database whose
+Defined in `util/document_ingestion_definitions_util.py`. Carries no bucket name: one deployment serves every knowledge database whose
 `BucketEntity.ingestor` matches, resolving the target per run from the composite partition key `{bucket}|{uri}` or the
 `aihub/bucket` run tag.
 
 ```python
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 
-defs = rag_pipeline_definitions(
-    ingestor="rag",                               # routing key; also namespaces every global Dagster name
+defs = document_ingestion_pipeline_definitions(
+    ingestor="document_ingestion",                               # routing key; also namespaces every global Dagster name
     display_name=LocaleString(en="My RAG"),       # required for a custom ingestor, omitted for "rag"
     description=LocaleString(en="What it does"),
     embedding_model_name="embedding/large",       # LiteLLM model
@@ -66,7 +66,7 @@ defs = rag_pipeline_definitions(
 )
 ```
 
-The deployed pipeline reads these from `RagPipelineSettings` (`RAG_PIPELINE_*` env vars) rather than hardcoding them.
+The deployed pipeline reads these from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*` env vars) rather than hardcoding them.
 
 ### `default_sharepoint_to_datalake_definitions()` — Stage 1 (SharePoint to S3)
 

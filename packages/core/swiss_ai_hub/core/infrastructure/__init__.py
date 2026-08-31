@@ -8,6 +8,9 @@ if TYPE_CHECKING:
         AzureDocumentIntelligenceSettings,
     )
     from swiss_ai_hub.core.infrastructure.azure_data_lake.azure_data_lake_settings import AzureDataLakeSettings
+    from swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings import (
+        DocumentIngestionPipelineSettings,
+    )
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import LangfuseProvisioner
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
@@ -35,7 +38,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
     from swiss_ai_hub.core.infrastructure.parsing.parsing_settings import ParsingSettings
-    from swiss_ai_hub.core.infrastructure.rag_pipeline.rag_pipeline_settings import RagPipelineSettings
     from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import (
         azure_blob_source,
         google_drive_source,
@@ -90,7 +92,7 @@ __all__ = [
     "OpenWebuiTokenService",
     "ParsingSettings",
     "RedisSettings",
-    "RagPipelineSettings",
+    "DocumentIngestionPipelineSettings",
     "S3BucketProvisioner",
     "S3StorageSettings",
     "UserSignupSettings",
@@ -141,7 +143,7 @@ _LAZY_IMPORTS = {
     "OpenWebuiTokenService": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service",
     "ParsingSettings": "swiss_ai_hub.core.infrastructure.parsing.parsing_settings",
     "RedisSettings": "swiss_ai_hub.core.infrastructure.redis.redis_settings",
-    "RagPipelineSettings": "swiss_ai_hub.core.infrastructure.rag_pipeline.rag_pipeline_settings",
+    "DocumentIngestionPipelineSettings": "swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings",
     "S3BucketProvisioner": "swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner",
     "S3StorageSettings": "swiss_ai_hub.core.infrastructure.s3.s3_storage_settings",
     "UserSignupSettings": "swiss_ai_hub.core.infrastructure.api.user_signup_settings",

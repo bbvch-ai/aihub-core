@@ -10,7 +10,7 @@ from swiss_ai_hub.pipeline.util.store_builders import build_doc_store
 
 
 class RoutedDocStoreIOManager(ConfigurableIOManager):
-    """Mongo document store IO manager for the RAG pipeline, routed per run by bucket.
+    """Mongo document store IO manager for the document ingestion pipeline, routed per run by bucket.
 
     Partition keys are composite ``{bucket}|{file_uri}``: the store name is resolved from the ``bucket``
     component (via ``get_db_name_from_bucket_name``) and the document id from the decoded file URI. This lets

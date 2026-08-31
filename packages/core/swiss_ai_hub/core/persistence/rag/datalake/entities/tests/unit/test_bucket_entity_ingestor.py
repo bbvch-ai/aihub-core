@@ -41,11 +41,11 @@ def _insert_pre_upgrade_row(mongo_connection, bucket_name: str) -> None:
 
 
 class TestIngestorDefault:
-    def test_row_predating_the_field_is_not_claimed_by_the_rag_pipeline(self, mongo_connection):
+    def test_row_predating_the_field_is_not_claimed_by_the_document_ingestion_pipeline(self, mongo_connection):
         """Upgrade guard: a bucket written before the field existed must not be re-ingested.
 
         MongoEngine applies the field default when the key is absent, so an unsafe default would hand every
-        pre-existing knowledge database to the RAG pipeline on upgrade — double-ingesting corpora
+        pre-existing knowledge database to the document ingestion pipeline on upgrade — double-ingesting corpora
         that a deploy-bound pipeline already owns.
         """
         _insert_pre_upgrade_row(mongo_connection, "legacyknowledge")
@@ -53,15 +53,17 @@ class TestIngestorDefault:
         bucket = BucketEntity.get_bucket_by_bucket_name("legacyknowledge")
 
         assert bucket.ingestor == IngestorType.UNASSIGNED.value
-        assert bucket.ingestor != IngestorType.RAG.value
+        assert bucket.ingestor != IngestorType.DOCUMENT_INGESTION.value
 
-    def test_rag_pipeline_only_claims_buckets_explicitly_assigned_to_it(self, mongo_connection):
+    def test_document_ingestion_pipeline_only_claims_buckets_explicitly_assigned_to_it(self, mongo_connection):
         _insert_pre_upgrade_row(mongo_connection, "legacyknowledge")
         BucketEntity.create_bucket(bucket_name="defaultknowledge", ingestor=IngestorType.DEFAULT_RAG.value)
-        BucketEntity.create_bucket(bucket_name="selfservicedb", ingestor=IngestorType.RAG.value)
+        BucketEntity.create_bucket(bucket_name="selfservicedb", ingestor=IngestorType.DOCUMENT_INGESTION.value)
 
         owned = [
-            bucket.bucket_name for bucket in BucketEntity.get_all_buckets() if bucket.ingestor == IngestorType.RAG.value
+            bucket.bucket_name
+            for bucket in BucketEntity.get_all_buckets()
+            if bucket.ingestor == IngestorType.DOCUMENT_INGESTION.value
         ]
 
         assert owned == ["selfservicedb"]
@@ -73,7 +75,7 @@ class TestIngestorDefault:
 
     def test_unassigned_is_not_offered_as_a_user_choice(self):
         assert IngestorType.UNASSIGNED not in IngestorType.selectable()
-        assert IngestorType.selectable() == [IngestorType.RAG]
+        assert IngestorType.selectable() == [IngestorType.DOCUMENT_INGESTION]
 
 
 class TestUpdateBucket:
@@ -88,7 +90,7 @@ class TestUpdateBucket:
     def test_omitting_auto_sync_leaves_it_unchanged(self):
         bucket = BucketEntity.create_bucket(bucket_name="syncingdb", auto_sync=True)
 
-        updated = BucketEntity.update_bucket(str(bucket.id), ingestor=IngestorType.RAG.value)
+        updated = BucketEntity.update_bucket(str(bucket.id), ingestor=IngestorType.DOCUMENT_INGESTION.value)
 
         assert updated.auto_sync is True
 

@@ -263,7 +263,7 @@ class KnowledgeController(TenantScopedController):
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> DatabaseResponse:
             """
-            Creates a new self-service knowledge database (bucket) ingested by the RAG pipeline.
+            Creates a new self-service knowledge database (bucket) ingested by the document ingestion pipeline.
             """
             if database in self._reserved_database_names:
                 raise HTTPException(

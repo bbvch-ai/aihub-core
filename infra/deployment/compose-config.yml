@@ -135,7 +135,7 @@ image_tags:
   # Frozen: the legacy per-bucket pipelines' code is gone, so these images can never be rebuilt.
   # They are pinned to their last release so existing deployments keep ingesting into the corpora they
   # already have. There is no migration path — a deployment that needs a change must move those corpora
-  # to the configurable rag_pipeline by re-uploading into a new knowledge database. No build/local keys,
+  # to the configurable document_ingestion_pipeline by re-uploading into a new knowledge database. No build/local keys,
   # so the services render only in the stages that still run them.
   default_rag_pipeline:
     nightly: default_rag_pipeline:v0.319.0
@@ -143,11 +143,11 @@ image_tags:
   shared_rag_pipeline:
     nightly: shared_rag_pipeline:v0.319.0
     latest: shared_rag_pipeline:v0.319.0
-  rag_pipeline:
+  document_ingestion_pipeline:
     build: localbuild
-    local: rag_pipeline:latest
-    nightly: rag_pipeline:nightly
-    latest: rag_pipeline:latest
+    local: document_ingestion_pipeline:latest
+    nightly: document_ingestion_pipeline:nightly
+    latest: document_ingestion_pipeline:latest
   bot:
     build: localbuild
     local: bot:latest

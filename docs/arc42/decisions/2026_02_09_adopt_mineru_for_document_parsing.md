@@ -3,7 +3,7 @@
 ## Context
 
 Swiss AI Hub requires robust document parsing capabilities to extract structured content from PDFs, Word documents, and
-other file formats for the RAG pipeline. The platform must support both GPU-enabled deployments (with local model
+other file formats for the document ingestion pipeline. The platform must support both GPU-enabled deployments (with local model
 inference) and CPU-only environments (with remote model access).
 
 We initially adopted Docling, which offers two operational modes:

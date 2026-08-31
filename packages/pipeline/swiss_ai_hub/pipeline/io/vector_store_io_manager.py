@@ -19,7 +19,7 @@ _RETRY_INTERVAL_SECONDS = 1
 
 
 class VectorStoreIOManager(ConfigurableIOManager):
-    """Milvus vector store IO manager for the RAG pipeline, routed per run by bucket.
+    """Milvus vector store IO manager for the document ingestion pipeline, routed per run by bucket.
 
     Partition keys are composite ``{bucket}|{file_uri}``: the collection is resolved from the ``bucket``
     component and the document id from the decoded file URI. Keeps the upsert + eventual-consistency retry

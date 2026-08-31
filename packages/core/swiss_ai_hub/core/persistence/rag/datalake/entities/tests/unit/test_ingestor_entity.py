@@ -55,7 +55,7 @@ class TestUpsert:
 
 class TestIsSelectable:
     def test_the_platform_pipeline_is_selectable_without_a_row(self):
-        assert IngestorEntity.is_selectable(IngestorType.RAG.value)
+        assert IngestorEntity.is_selectable(IngestorType.DOCUMENT_INGESTION.value)
 
     @pytest.mark.parametrize(
         "not_selectable",

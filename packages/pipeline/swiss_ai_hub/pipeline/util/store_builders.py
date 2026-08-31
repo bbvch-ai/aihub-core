@@ -18,9 +18,9 @@ from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factor
 
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
 
-"""Per-bucket store builders for the RAG pipeline.
+"""Per-bucket store builders for the document ingestion pipeline.
 
-The RAG pipeline ingests every self-service knowledge database from a single deployed code
+The document ingestion pipeline ingests every self-service knowledge database from a single deployed code
 location, so it cannot bake a store/collection name into resources at ``Definitions``-build time. Instead
 it resolves the target store per run — from the composite partition key on the partitioned write path, or
 from the ``aihub/bucket`` run tag on the non-partitioned observe/remove path — and builds the store here.

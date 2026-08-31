@@ -454,8 +454,8 @@ document:
     deleting: Wird gelöscht
     button: Löschen
     button_selected: Ausgewählte löschen
-    confirmMessage: Möchten Sie "{title}" wirklich löschen? Es wird dauerhaft aus der
-      Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
+    confirmMessage: Möchten Sie "{title}" wirklich löschen? Es wird dauerhaft aus
+      der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
     confirmMessageBatch: Möchten Sie {count} Dokument(e) wirklich löschen? Sie werden
       dauerhaft aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig
       gemacht werden.
@@ -566,11 +566,13 @@ knowledge:
     llm_model:
       label: Textmodell
       placeholder: Standard der Installation verwenden
-      help: Erstellt Zusammenfassungen, verfeinert Tabellen und beschreibt Abbildungen dieser Datenbank.
+      help: Erstellt Zusammenfassungen, verfeinert Tabellen und beschreibt Abbildungen
+        dieser Datenbank.
     embedding_model:
       label: Embedding-Modell
       placeholder: Standard der Installation verwenden
-      help: Indexiert die Dokumente dieser Datenbank. Nach der Erstellung nicht mehr änderbar.
+      help: Indexiert die Dokumente dieser Datenbank. Nach der Erstellung nicht mehr
+        änderbar.
     folder_name:
       label: Sammlungsname
       placeholder: meine-sammlung

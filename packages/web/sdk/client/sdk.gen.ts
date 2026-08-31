@@ -2764,7 +2764,7 @@ export const deleteDatabase = <
 /**
  * Create Database
  *
- * Creates a new self-service knowledge database (bucket) ingested by the RAG pipeline.
+ * Creates a new self-service knowledge database (bucket) ingested by the document ingestion pipeline.
  */
 export const createDatabase = <
   TComposable extends Composable = "$fetch",

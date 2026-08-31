@@ -367,7 +367,7 @@ This pipeline connects to a legacy SFTP server, syncs documents into the data la
 indexes them for RAG — with hierarchical summaries and LLM-powered table refinement:
 
 ```python
-from swiss_ai_hub.pipeline.util import default_rclone_to_datalake_definitions, rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util import default_rclone_to_datalake_definitions, document_ingestion_pipeline_definitions
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.rclone import sftp_source
 
@@ -386,7 +386,7 @@ stage_1 = default_rclone_to_datalake_definitions(
 
 # Stage 2: Data Lake → Vector Store
 # Serves every knowledge database assigned to this ingestor, resolving the target per run
-stage_2 = rag_pipeline_definitions(
+stage_2 = document_ingestion_pipeline_definitions(
     ingestor="acme_rag",
     display_name=LocaleString(en="Acme RAG"),
     description=LocaleString(en="Contracts and legal documents"),

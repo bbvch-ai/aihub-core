@@ -1,12 +1,12 @@
-from swiss_ai_hub.core.infrastructure import RagPipelineSettings, enable_logging
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings, enable_logging
 
-from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 
 enable_logging()
 
-settings = RagPipelineSettings()
+settings = DocumentIngestionPipelineSettings()
 
-defs = rag_pipeline_definitions(
+defs = document_ingestion_pipeline_definitions(
     embedding_model_name=settings.EMBEDDING_MODEL,
     llm_model_name=settings.LLM_MODEL,
     with_summary_nodes=settings.WITH_SUMMARY_NODES,

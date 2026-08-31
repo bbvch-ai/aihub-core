@@ -28,4 +28,4 @@ class TestReservedIds:
 
     def test_upsert_rejects_a_reserved_id_before_touching_the_database(self):
         with pytest.raises(ValidationError, match="reserved"):
-            IngestorEntity.upsert(_ingestor(IngestorType.RAG.value))
+            IngestorEntity.upsert(_ingestor(IngestorType.DOCUMENT_INGESTION.value))

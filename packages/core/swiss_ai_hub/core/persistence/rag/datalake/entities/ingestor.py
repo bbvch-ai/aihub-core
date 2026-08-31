@@ -9,7 +9,7 @@ class Ingestor(BaseModel):
     """A user-selectable ingestion pipeline contributed by a deployment.
 
     ``id`` is stored on ``BucketEntity.ingestor`` and must equal the ``ingestor`` a custom pipeline passes
-    to ``rag_pipeline_definitions`` — that string is the routing guard by which the pipeline claims the
+    to ``document_ingestion_pipeline_definitions`` — that string is the routing guard by which the pipeline claims the
     databases it owns. ``display_name``/``description`` are carried on the object (not resolved from the
     platform's i18n files) because a custom ingestor's labels live in the deployment, not in core.
     """

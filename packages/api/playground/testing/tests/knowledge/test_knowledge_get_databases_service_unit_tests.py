@@ -11,7 +11,7 @@ def _bucket(
     bucket_id: str,
     db_name: str,
     deleting: bool = False,
-    ingestor: str = IngestorType.RAG.value,
+    ingestor: str = IngestorType.DOCUMENT_INGESTION.value,
     auto_sync: bool = False,
 ) -> MagicMock:
     return MagicMock(
@@ -72,7 +72,7 @@ class TestGetDatabasesExcludesDeletingRows:
             patch(f"{_SERVICE_MODULE}.NamespaceDTO"),
         ):
             bucket_cls.get_all_buckets.return_value = [
-                _bucket("b1", "selfservice", ingestor=IngestorType.RAG.value),
+                _bucket("b1", "selfservice", ingestor=IngestorType.DOCUMENT_INGESTION.value),
                 _bucket("b2", "defaultknowledge", ingestor=IngestorType.DEFAULT_RAG.value),
                 _bucket("b3", "sharedknowledge", ingestor=IngestorType.SHARED_RAG.value),
                 _bucket("b4", "synced", auto_sync=True),
@@ -103,7 +103,7 @@ class TestGetDatabasesHidesLegacyDatabases:
             patch(f"{_SERVICE_MODULE}.NamespaceDTO"),
         ):
             bucket_cls.get_all_buckets.return_value = [
-                _bucket("b1", "selfservice", ingestor=IngestorType.RAG.value),
+                _bucket("b1", "selfservice", ingestor=IngestorType.DOCUMENT_INGESTION.value),
                 _bucket("b2", "defaultknowledge", ingestor=IngestorType.DEFAULT_RAG.value),
                 _bucket("b3", "sharedknowledge", ingestor=IngestorType.SHARED_RAG.value),
             ]

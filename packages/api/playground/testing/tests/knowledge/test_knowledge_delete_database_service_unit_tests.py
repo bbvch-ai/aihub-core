@@ -21,7 +21,7 @@ def _bucket(**overrides) -> MagicMock:
         bucket_name=DATABASE,
         db_name=DATABASE,
         auto_sync=False,
-        ingestor=IngestorType.RAG.value,
+        ingestor=IngestorType.DOCUMENT_INGESTION.value,
     )
     defaults.update(overrides)
     return MagicMock(**defaults)

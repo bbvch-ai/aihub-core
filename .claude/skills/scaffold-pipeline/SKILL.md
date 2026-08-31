@@ -13,7 +13,7 @@ Generate boilerplate for a new data pipeline. The pipeline name/purpose should b
 Read these files to understand the patterns:
 
 - `packages/pipeline/CLAUDE.md` -- scope architecture and folder structure
-- `packages/pipeline/app/rag_pipeline/__init__.py` -- real app entry point (~18 lines)
+- `packages/pipeline/app/document_ingestion_pipeline/__init__.py` -- real app entry point (~18 lines)
 - `packages/pipeline/templates/sources/README.md` -- source template guide with namespace explanation
 - `packages/pipeline/playground/quick_start/my_document_pipeline.py` -- full manual wiring example
 
@@ -55,20 +55,20 @@ For SharePoint via native MS Graph API (not rclone), use `default_sharepoint_to_
 
 Create a new directory in `packages/pipeline/app/<pipeline_name>/` with an `__init__.py`.
 
-Follow the pattern from `packages/pipeline/app/rag_pipeline/__init__.py`:
+Follow the pattern from `packages/pipeline/app/document_ingestion_pipeline/__init__.py`:
 
 ```python
 # packages/pipeline/app/<pipeline_name>/__init__.py
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import RagPipelineSettings, enable_logging
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings, enable_logging
 
-from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 
 enable_logging()
 
-settings = RagPipelineSettings()
+settings = DocumentIngestionPipelineSettings()
 
-defs = rag_pipeline_definitions(
+defs = document_ingestion_pipeline_definitions(
     # Routing key: this pipeline serves every knowledge database whose BucketEntity names it, and
     # namespaces every deployment-global Dagster name. Labels are required for a custom ingestor —
     # a sensor publishes them so the create-database dialog can offer it.
@@ -115,7 +115,7 @@ The naming convention is `RCLONE_{SOURCE}_{OPTION}` (e.g., `RCLONE_SHAREPOINT_CL
 
 ### Step 4: Create the Dockerfile
 
-Copy and adapt `packages/pipeline/app/rag_pipeline/Dockerfile`. The only change needed is the `PIPELINE` build
+Copy and adapt `packages/pipeline/app/document_ingestion_pipeline/Dockerfile`. The only change needed is the `PIPELINE` build
 arg:
 
 ```dockerfile
@@ -126,7 +126,7 @@ The entrypoint uses this arg: `dagster api grpc -h 0.0.0.0 -p 4000 -m "app.${PIP
 
 ### Step 5: Register for Local Development
 
-Add the new module to the Makefile's run command. In `packages/pipeline/Makefile`, the `rag-pipelines` target shows the
+Add the new module to the Makefile's run command. In `packages/pipeline/Makefile`, the `document-ingestion-pipeline` target shows the
 pattern:
 
 ```makefile

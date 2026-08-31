@@ -203,7 +203,7 @@ RCLONE_RC_PASS=your-strong-password
 
 ## 2. The Data Lake to Vector Store Pipeline
 
-This is the core RAG pipeline. Use the `rag_pipeline_definitions` factory to process documents from your S3 data lake
+This is the core document ingestion pipeline. Use the `document_ingestion_pipeline_definitions` factory to process documents from your S3 data lake
 into a vector store.
 
 - **What it does**: Observes the S3 bucket of every knowledge database assigned to this ingestor, parses documents,
@@ -215,9 +215,9 @@ into a vector store.
 
 ```python
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.pipeline.util import rag_pipeline_definitions
+from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
-defs = rag_pipeline_definitions(
+defs = document_ingestion_pipeline_definitions(
     ingestor="my_rag",                                  # Databases assigned to this ingestor are served
     display_name=LocaleString(en="My RAG"),             # Shown in the create-database dialog
     description=LocaleString(en="Tuned for my documents"),

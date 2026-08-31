@@ -8,7 +8,7 @@ PARTITIONS_TRUNCATED_TAG = {"partitions-truncated": "true"}
 def make_composite_partition_key(bucket: str, file_uri: str, *, encode: bool = True) -> str:
     """Build a bucket-scoped composite partition key ``{bucket}|{encoded_file_uri}``.
 
-    The single RAG pipeline shares one dynamic-partition registry across all knowledge databases, so the
+    The single document ingestion pipeline shares one dynamic-partition registry across all knowledge databases, so the
     bucket must be part of every key. It is prefixed rather than parsed back out of the URI — which does
     contain it — so that the key's semantics are ``(bucket, file)`` and extracting the bucket needs no
     knowledge of the storage backend's URI grammar. Bucket names are alphanumeric and

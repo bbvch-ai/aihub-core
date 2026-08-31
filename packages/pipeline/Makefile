@@ -1,4 +1,4 @@
-.PHONY: lint format typecheck pr-ready test-cov test playground quickstart rag-pipelines \
+.PHONY: lint format typecheck pr-ready test-cov test playground quickstart document-ingestion-pipeline \
 	check-dotenv dagster-home
 
 DOTENV := ../../.env
@@ -65,6 +65,6 @@ quickstart: check-dotenv dagster-home
 	@echo "Running quickstart..."
 	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -f playground/quick_start/simple_pipeline.py -f playground/quick_start/my_document_pipeline.py
 
-rag-pipelines: check-dotenv dagster-home
-	@echo "Running RAG pipelines..."
-	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.rag_pipeline
+document-ingestion-pipeline: check-dotenv dagster-home
+	@echo "Running document ingestion pipeline..."
+	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.document_ingestion_pipeline

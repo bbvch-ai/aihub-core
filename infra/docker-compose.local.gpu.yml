@@ -1786,7 +1786,7 @@ services:
   # Document Processing Stack
   # ===================================================================
   # This stack, powered by MinerU, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # uploaded documents for the document ingestion pipeline. VLM requests are routed
   # through LiteLLM for unified model routing.
   # ===================================================================
 
@@ -3581,10 +3581,10 @@ services:
       - storage
       - egress  # Outbound access to external IMAP servers
   # License: Apache-2.0 — own image (see LICENSES.md)
-  rag_pipeline:
-    container_name: rag-pipeline
+  document_ingestion_pipeline:
+    container_name: document-ingestion-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/rag_pipeline:latest
+    image: ghcr.io/bbvch-ai/aihub-core/document_ingestion_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -3622,14 +3622,14 @@ services:
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
-      # RAG pipeline processing recipe
-      RAG_PIPELINE_EMBEDDING_MODEL: ${RAG_PIPELINE_EMBEDDING_MODEL}
-      RAG_PIPELINE_LLM_MODEL: ${RAG_PIPELINE_LLM_MODEL}
-      RAG_PIPELINE_WITH_SUMMARY_NODES: ${RAG_PIPELINE_WITH_SUMMARY_NODES}
-      RAG_PIPELINE_WITH_TABLE_REFINEMENT: ${RAG_PIPELINE_WITH_TABLE_REFINEMENT}
-      RAG_PIPELINE_WITH_FIGURE_DESCRIPTIONS: ${RAG_PIPELINE_WITH_FIGURE_DESCRIPTIONS}
-      RAG_PIPELINE_OBSERVE_JOB_HOUR: ${RAG_PIPELINE_OBSERVE_JOB_HOUR}
-      RAG_PIPELINE_OBSERVE_JOB_MINUTE: ${RAG_PIPELINE_OBSERVE_JOB_MINUTE}
+      # Generic Document Ingestion Pipeline processing recipe
+      DOCUMENT_INGESTION_EMBEDDING_MODEL: ${DOCUMENT_INGESTION_EMBEDDING_MODEL}
+      DOCUMENT_INGESTION_LLM_MODEL: ${DOCUMENT_INGESTION_LLM_MODEL}
+      DOCUMENT_INGESTION_WITH_SUMMARY_NODES: ${DOCUMENT_INGESTION_WITH_SUMMARY_NODES}
+      DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT: ${DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT}
+      DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS: ${DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS}
+      DOCUMENT_INGESTION_OBSERVE_JOB_HOUR: ${DOCUMENT_INGESTION_OBSERVE_JOB_HOUR}
+      DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE: ${DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home

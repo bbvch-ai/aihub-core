@@ -8,9 +8,9 @@ from swiss_ai_hub.pipeline.util.store_builders import build_s3_data_lake_client
 
 
 class RoutedS3DataLakeIOManager(ConfigurableIOManager):
-    """Read-only S3 data lake IO manager for the RAG pipeline, routed per run by bucket.
+    """Read-only S3 data lake IO manager for the document ingestion pipeline, routed per run by bucket.
 
-    The RAG pipeline shares one partition registry across every knowledge database, so partition
+    The document ingestion pipeline shares one partition registry across every knowledge database, so partition
     keys are composite ``{bucket}|{file_uri}``. On the partitioned read this manager recovers ``bucket`` from
     the key and builds a bucket-scoped client — auto-materialized runs carry no run tag, so the key is the
     only routing signal. On the non-partitioned ``removed_documents`` load there is no partition key, so the

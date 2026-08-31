@@ -5,7 +5,7 @@
 Self-service knowledge databases can be created from the Admin UI (a `BucketEntity`, its S3 bucket, and namespaces), but
 there was no way to remove one. Admins could add databases and namespaces they could never delete — an incomplete
 lifecycle. This decision adds deletion of a whole knowledge database and of a single namespace, on the same branch as
-the configurable RAG pipeline (no separate issue).
+the Generic Document Ingestion Pipeline (no separate issue).
 
 A knowledge database and its namespaces are not one store — they span six:
 

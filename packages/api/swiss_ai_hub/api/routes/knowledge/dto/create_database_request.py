@@ -21,7 +21,7 @@ class CreateDatabaseRequest(BaseModel):
                 "Valid values are served by GET /knowledge/ingestors."
             )
         ),
-    ] = IngestorType.RAG.value
+    ] = IngestorType.DOCUMENT_INGESTION.value
     llm_model: Annotated[
         str | None,
         Field(
