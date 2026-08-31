@@ -43,13 +43,16 @@ packages/pipeline/                        # SDK framework
 │   ├── sensors/
 │   │   ├── factory.py                     # default_automation_sensor (auto-materialization)
 │   │   ├── run_after_success_sensor.py    # Chain a job after another job's successful run
+│   │   ├── ingestor_registration_sensor.py # Advertise a custom pipeline as a selectable ingestor
+│   │   ├── knowledge_teardown_sensor.py   # Run teardown for databases/folders flagged `deleting`
 │   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
 │   │   └── nats/
 │   │       ├── nats_document_uploaded_sensor.py  # NATS event-driven triggers
 │   │       ├── consumed_event_batch.py           # Drains the JetStream backlog, defers acks
 │   │       ├── observation_sensor_cursor.py      # Sensor state carried between ticks
 │   │       ├── observation_run_decider.py        # Pure request-or-wait decision
-│   │       └── observation_run_history.py        # Run-tag lookups the cursor cannot hold
+│   │       ├── observation_run_history.py        # Run-tag lookups the cursor cannot hold
+│   │       └── per_bucket_observation_sensor_cursor.py  # One cursor slot, one state per database
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
 │   ├── executors/factory.py               # default_process_executor (in-process)
@@ -62,27 +65,21 @@ packages/pipeline/                        # SDK framework
 │   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
 │   │   └── figure_metadata.py             # Image/figure metadata
 │   ├── util/                              # Utilities
-│   │   ├── definitions_util.py            # default_definitions() + source-specific builders (CRITICAL)
+│   │   ├── rag_definitions_util.py         # rag_pipeline_definitions() — Stage 2, route-per-run (CRITICAL)
+│   │   ├── definitions_util.py            # Stage 1 source-specific builders
 │   │   ├── id_utils.py                    # uri_to_id() — URI to document ID (MD5 hash)
 │   │   ├── partition_utils.py             # replace_partition_keys() — dynamic partition management
 │   │   ├── bucket_utils.py                # get_db_name_from_bucket_name() — S3 bucket → MongoDB name
 │   │   ├── key_utils.py                   # group_name_from_asset_key() — asset group derivation
 │   │   └── meta_utils.py                  # data_lake_metadata_table() — Dagster UI formatting
-│   └── const/pipeline_names.py            # INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 
 app/                                   # Deployable pipelines (Dagster gRPC code locations)
 ├── rag_pipeline/                      # THE RAG pipeline — one deployment, all self-service knowledge DBs
 │   ├── __init__.py                    # defs = rag_pipeline_definitions()  (route-per-run, no bucket env var)
 │   └── Dockerfile                     # dagster api grpc on port 4000
-├── default_rag_pipeline/              # LEGACY: per-tenant bucket pipeline (bound to one bucket at deploy time)
-│   ├── __init__.py                    # defs = default_definitions(DEFAULT_BUCKET_NAME)
-│   └── Dockerfile
-└── shared_rag_pipeline/               # LEGACY: shared bucket pipeline
-    ├── __init__.py                    # defs = default_definitions(SHARED_BUCKET_NAME)
-    └── Dockerfile
 
 playground/                            # Examples (START HERE)
-├── __init__.py                        # defs = default_definitions("playground")
+├── __init__.py                        # defs = rag_pipeline_definitions() + a playground BucketEntity
 └── quick_start/                       # Tutorials
     ├── simple_pipeline.py             # Hello-world: 2 basic assets, no external deps
     └── my_document_pipeline.py        # Full RAG pipeline with all factories
@@ -123,25 +120,43 @@ processing chain regardless of origin:
 A document is only reported as ingested — to the API, the UI, and RAG agents — once its nodes are in Milvus. A parsed
 document has markdown but no embeddings, so it is not retrievable yet and must not be shown as complete.
 
-## The `default_definitions()` Function
+## The `rag_pipeline_definitions()` Function
 
-The primary entry point for creating pipelines. Located in `util/definitions_util.py`. Returns a complete `Definitions`
-object with all assets, resources, sensors, jobs, and schedules wired together.
+The primary entry point for creating a Stage-2 pipeline. Located in `util/rag_definitions_util.py`. Returns a complete
+`Definitions` object with all assets, resources, sensors, jobs, and schedules wired together.
+
+**It carries no bucket name.** One deployment serves every knowledge database whose `BucketEntity.ingestor` matches,
+resolving the target per run — from the composite partition key `{bucket}|{file_uri}` on the write path, from the
+`aihub/bucket` run tag on the observe/remove path. Creating a knowledge database therefore needs no new code location,
+compose service, or env var.
 
 ```python
-defs = default_definitions(
-    datalake_container_name="my-bucket",              # S3 bucket name (required)
+defs = rag_pipeline_definitions(
+    ingestor="rag",                                    # routing key; namespaces every global Dagster name
+    display_name=LocaleString(en="My RAG"),            # required for a custom ingestor, omitted for "rag"
+    description=LocaleString(en="What it does"),
     embedding_model_name="embedding/large",            # LiteLLM model for embeddings
     llm_model_name="text-generation/mini",             # LiteLLM model for text generation
     with_summary_nodes=True,                           # Hierarchical RAG summaries
     with_table_refinement=True,                        # LLM table detection/splitting
     with_figure_descriptions=True,                     # Vision LLM for image descriptions
-    document_parser_loader_type=LoaderType.MINERU,      # MinerU (default) or DocumentIntelligence
+    document_parser_loader_type=LoaderType.MINERU,     # MinerU (default) or DocumentIntelligence
     max_partitions=1000,                               # Max partitions added/deleted per tick
 )
 ```
 
-Source-specific definition builders for Stage 1 (combine with `default_definitions()` for end-to-end):
+Every deployment-global name — asset keys, the dynamic-partition registry, job names, the Dagster intermediates prefix —
+is derived from `ingestor`, because asset keys are unique per Dagster deployment and partition-registry names are global
+to the instance. That is what lets a second pipeline *type* be deployed alongside this one.
+
+A custom ingestor must pass `display_name`/`description`: a sensor upserts them as an `IngestorEntity` so the API's
+`GET /knowledge/ingestors` can offer the pipeline in the create-database dialog. Ids colliding with a platform routing
+token (`rag`, `unassigned`, the frozen `default_rag`/`shared_rag`) or with the `datalake` subject token are rejected.
+
+The deployed app reads its knobs from `RagPipelineSettings` (`RAG_PIPELINE_*`) rather than hardcoding them.
+
+Source-specific definition builders for Stage 1 (combine with `rag_pipeline_definitions()` for end-to-end), in
+`util/definitions_util.py`:
 
 - `default_sharepoint_to_datalake_definitions(...)` — SharePoint → S3
 - `default_local_filesystem_to_datalake_definitions(...)` — Local FS → S3
@@ -289,22 +304,33 @@ Four triggering mechanisms work together:
 - **Eager automation**: `AutomationCondition.eager()` on downstream assets — materialize immediately when upstream
   changes. Enabled by `default_automation_sensor(assets, minimum_interval_seconds=60)`.
 - **NATS sensor**: `nats_document_uploaded_sensor` — polls JetStream for `SourceUpdatedEvent` via
-  `PipelineInstanceTopicManager`. Triggers observe job when documents are uploaded externally (e.g., via API).
-  **Single-flight**: an observation scans the whole bucket, so the sensor never requests a second one while one is
-  queued or running (`SingleFlightRunGuard`, scoped per job name — a manually launched run suppresses it too). It does
-  not cancel or queue runs; the second request is simply never made. Events seen during a run arm exactly one follow-up
-  via the sensor cursor (`ObservationSensorCursor`), because a running observation may already have listed the bucket
-  before those files landed. A 30 s debounce (`DEBOUNCE_SECONDS`) collects a burst into one request, and the whole
-  JetStream backlog drains per tick rather than one fetch of ten. Run keys are derived from the highest stream sequence
-  plus a re-arm counter, so Dagster's own run-key deduplication acts as a second line of defence.
+  `PipelineTypeTopicManager`. Triggers the observe job when documents are uploaded externally (e.g., via API).
+  **One stream per pipeline, not per database**: the subject is keyed on the ingestor
+  (`pipeline.{ingestor}.{bucket}.to.knowledge.{db}.…`), so the sensor holds a single stream and a single durable
+  consumer however many databases it serves. Each tick drains that stream once, groups the batch by the bucket in the
+  subject, and then decides per database.
+  **Single-flight**: an observation scans the whole bucket, so the sensor never requests a second one for that bucket
+  while one is queued or running (`SingleFlightRunGuard`, filtered by the `aihub/bucket` tag — without that filter one
+  database's run would suppress every other's). It does not cancel or queue runs; the second request is simply never
+  made. Events seen during a run arm exactly one follow-up via that bucket's cursor
+  (`PerBucketObservationSensorCursor` wrapping `ObservationSensorCursor`), because a running observation may already
+  have listed the bucket before those files landed. A 30 s debounce (`DEBOUNCE_SECONDS`) collects a burst into one
+  request, and the whole JetStream backlog drains per tick rather than one fetch of ten. Run keys are derived from the
+  highest stream sequence plus a re-arm counter, so Dagster's own run-key deduplication acts as a second line of
+  defence.
+- **Teardown sensor**: `knowledge_teardown_sensor` — no NATS at all. It enumerates the `BucketEntity` /
+  `NamespaceEntity` rows flagged `deleting` and requests a teardown run per flagged row. The flag *is* the durable
+  request, so nothing can be acknowledged and then lost. The run key is numbered by how many runs the target has
+  already had, which keeps it stable while an attempt is pending and lets a failed teardown re-drive.
 - **Daily schedules**: `daily_schedule_at(job, hour, minute)` — cron-based observation for sources that don't push
   events.
 - **Run-status chaining**: `run_after_success_sensor(monitored_job=..., triggered_job=...)` — fires `triggered_job`
   after `monitored_job` succeeds. Used to order observe → remove jobs, since Dagster forbids mixing observable source
-  assets with regular assets in a single `define_asset_job` selection. All `default_*_definitions()` builders wire this
-  automatically; the remove job no longer has its own schedule. Single-flight applies here too: the removal also
-  compares the whole corpus, so one already in flight covers the observation that just succeeded, and the request is
-  keyed on the observing run id so retries deduplicate.
+  assets with regular assets in a single `define_asset_job` selection. All definition builders wire this automatically;
+  the remove job no longer has its own schedule. Single-flight applies here too: the removal also compares the whole
+  corpus, so one already in flight covers the observation that just succeeded, and the request is keyed on the
+  observing run id so retries deduplicate. With `require_bucket_tag=True` the triggered run inherits the observe run's
+  `aihub/bucket` tag and the coverage check is scoped to that bucket.
 
 **Run priority**: `observe_source_job` and `materialize_asset_job` tag their runs
 `dagster/priority: "10"` (`ORCHESTRATION_RUN_PRIORITY` in `jobs/factory.py`). `QueuedRunCoordinator` sorts the whole
@@ -337,14 +363,15 @@ failure alerts without per-asset wiring.
 - **Opt-in via env**: set `NOTIFICATION_URLS` (comma-separated Apprise URIs) to enable; leave empty to disable.
   `NotificationSettings` reads `NOTIFICATION_URLS`, `NOTIFICATION_DAGSTER_UI_BASE_URL`, `NOTIFICATION_TITLE_PREFIX`,
   `NOTIFICATION_MIN_INTERVAL_SECONDS`.
-- **Automatic wiring**: all four `default_*_definitions()` builders in `util/definitions_util.py` append the sensor
+- **Automatic wiring**: the Stage-1 builders and `rag_pipeline_definitions()` append the sensor
   automatically when the env is configured — consumer code in `app/*/__init__.py` needs no change.
 - **Manual composition**: consumers that build their own `Definitions` can import the factory directly and narrow
   `monitored_jobs=[...]` to specific jobs.
 
 ## Playground
 
-- `playground/__init__.py` — Full RAG pipeline using `default_definitions()` with playground bucket
+- `playground/__init__.py` — the real `rag_pipeline_definitions()` pipeline, plus a sensor that registers the
+  playground's own knowledge database
 - `playground/quick_start/simple_pipeline.py` — Hello-world: 2 basic assets, no external deps
 - `playground/quick_start/my_document_pipeline.py` — Complete pipeline with all factories, resources, sensors
 
@@ -393,22 +420,22 @@ location, customize. See `templates/sources/README.md` for the full guide includ
   `util/rag_definitions_util.py`. Creating a knowledge database needs no new code location, compose service, or env var.
   Every deployment-global name (asset keys, partition registry, jobs) is derived from the ingestor so a second pipeline
   *type* can be deployed alongside it. A custom pipeline built with a non-`rag` ingestor becomes **user-selectable** by
-  registering an `Ingestor` with the core `IngestorRegistry` (a `swiss_ai_hub.ingestors` entry point, or an explicit
-  `register()`); the API's `GET /knowledge/ingestors` and `create_database` read the registry. The `ingestor` field is a
-  plain `str` at the API boundary precisely so custom values are representable — see ADR
+  passing `display_name`/`description`: a sensor upserts an `IngestorEntity`, which the API's
+  `GET /knowledge/ingestors` and `create_database` read. Registration goes through the database because the API is a
+  separate container — an in-process registry there would only ever see what is installed in the *API* image. The
+  `ingestor` field is a plain `str` at the API boundary precisely so custom values are representable — see ADR
   `2026_06_18_rag_pipeline_route_per_run`.
-- `default_rag_pipeline/` — legacy, per-tenant bucket (`AIHubSettings().DEFAULT_BUCKET_NAME`)
-- `shared_rag_pipeline/` — legacy, shared bucket (`AIHubSettings().SHARED_BUCKET_NAME`)
 
-The two legacy pipelines are bound to one bucket at deploy time and are kept only so their existing corpora are not
-reprocessed; new databases always belong to `rag_pipeline`. Buckets they own are marked `default_rag` / `shared_rag`,
-and rows predating the field read the inert `unassigned` default — that is the routing guard which keeps `rag_pipeline`
-from double-ingesting them.
+The legacy `default_rag_pipeline` / `shared_rag_pipeline` are **gone**: their code is deleted and their last published
+images are pinned in the `nightly` and `latest` compose stages so existing corpora keep ingesting. They can never be
+rebuilt and there is no migration path — see ADR `2026_08_31_legacy_rag_pipelines_frozen_and_removed`. Their bucket
+names (`defaultknowledge` / `sharedknowledge`) and routing tokens (`default_rag` / `shared_rag`) stay reserved so
+nothing can be created on top of them, and rows predating the `ingestor` field read the inert `unassigned` default.
 
-Each has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
-`dagster api grpc -h 0.0.0.0 -p 4000 -m "app.{pipeline_name}"`
+`rag_pipeline` has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
+`dagster api grpc -h 0.0.0.0 -p 4000 -m "app.rag_pipeline"`
 
-Run all three locally: `make rag-pipelines`.
+Run it locally: `make rag-pipelines`.
 
 ## Testing
 
@@ -419,7 +446,7 @@ Run all three locally: `make rag-pipelines`.
 
 ## New Pipeline Checklist
 
-1. Choose approach: `default_definitions()` for Stage 2 only, or add Stage 1 source definition builder
+1. Choose approach: `rag_pipeline_definitions()` for Stage 2 only, or add Stage 1 source definition builder
 2. For new source: create observable factory + source I/O manager + source resource in `resources/`
 3. For custom processing: create ops in `ops/`, compose into `@graph_asset` factory in `assets/factories/`
 4. Wire into `Definitions` with resources, sensors, jobs, schedules
@@ -431,7 +458,8 @@ Run all three locally: `make rag-pipelines`.
 
 **Core Entry Points**:
 
-- Definition builders: `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py`
+- Stage-2 builder: `packages/pipeline/swiss_ai_hub/pipeline/util/rag_definitions_util.py`
+- Stage-1 builders: `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py`
 - Resource factories: `packages/pipeline/swiss_ai_hub/pipeline/resources/factory.py`
 
 **Asset Factories**:
@@ -456,7 +484,7 @@ vector_store/, doc_store/, llm/, share_point/, rclone/, local_file_system/
 **Utilities**: `packages/pipeline/swiss_ai_hub/pipeline/util/` — definitions_util, id_utils, partition_utils,
 bucket_utils, key_utils
 
-**App**: `app/rag_pipeline/__init__.py` (+ legacy `app/default_rag_pipeline/`, `app/shared_rag_pipeline/`)
+**App**: `app/rag_pipeline/__init__.py`
 
 **Playground**: `playground/__init__.py`, `playground/quick_start/`
 

@@ -59,7 +59,7 @@ graph TD
 Our SDK is built on a few key principles to ensure pipelines are efficient, scalable, and maintainable:
 
 - **Asset Factories**: Instead of writing boilerplate, you use simple factory functions to generate entire sets of
-  pre-configured assets and resources (e.g., `default_definitions`).
+  pre-configured assets and resources (e.g., `rag_pipeline_definitions`).
 - **Change-Driven Automation**: Pipelines run automatically in response to data changes, not on fixed schedules. This is
   achieved using **observable assets** that monitor source systems.
 - **Document-Level Isolation**: Each document is processed in its own **partition**, meaning a failure in one document
@@ -69,18 +69,21 @@ Our SDK is built on a few key principles to ensure pipelines are efficient, scal
 
 ## Quick Start: A Complete Pipeline in Under 10 Lines
 
-The SDK's factories make it incredibly simple to stand up a complete pipeline. The `default_definitions` function
+The SDK's factories make it incredibly simple to stand up a complete pipeline. The `rag_pipeline_definitions` function
 bundles all the necessary assets, resources, jobs, and schedules.
 
 Create a file named `my_pipeline.py`:
 
 ```python
-from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.pipeline.util import rag_pipeline_definitions
 
-# This single function call creates a complete, production-ready pipeline
-# that watches an S3 bucket and processes its contents into a local vector store.
-defs = default_definitions(
-    datalake_container_name="my-company-docs",
+# This single function call creates a complete, production-ready pipeline that serves every
+# knowledge database assigned to this ingestor, resolving the target per run.
+defs = rag_pipeline_definitions(
+    ingestor="my_rag",
+    display_name=LocaleString(en="My RAG"),
+    description=LocaleString(en="Tuned for my documents"),
     embedding_model_name="local/qwen-embedding",
     llm_model_name="local/gemma-3-multimodal-small",
     with_summary_nodes=True
@@ -91,10 +94,11 @@ To run it, simply point the Dagster UI to your file: `dagster dev -f my_pipeline
 
 This single function call provides:
 
-- An **observable data lake** that automatically detects new or changed documents.
+- An **observable data lake** per knowledge database, detecting new or changed documents.
 - A multi-stage processing workflow including **parsing**, **chunking**, and **embedding**.
 - Integration with MongoDB for a **document store** and Milvus for a **vector store**.
 - Pre-configured **jobs**, **schedules**, and **sensors** for production-ready automation.
+- Registration as a selectable ingestor, so users can create databases for it from the admin UI with no redeploy.
 
 ## Next Steps
 

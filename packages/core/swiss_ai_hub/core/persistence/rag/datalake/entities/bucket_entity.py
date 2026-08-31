@@ -30,14 +30,8 @@ class BucketEntity(Document):
     description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
-    # No static ``choices``: besides the platform IngestorType values, a custom deployment can register its
-    # own ingestor via IngestorRegistry, and that set is not known at class-definition time. The create path
-    # validates the value against IngestorRegistry; routing is exact-match, so an unknown value is simply
-    # owned by no pipeline. The default stays the inert ``unassigned`` (see IngestorType).
     ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
-    # Tap-shutoff for async teardown: once set, every enumeration path (get_databases, the per-bucket
-    # schedule, the NATS document-uploaded sensor) must exclude this row, so ingestion stops immediately
-    # while the row survives for the teardown job to read. Hard-deleted only as the job's final step.
+    # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
     deleting = BooleanField(default=False)
 
     @staticmethod

@@ -46,9 +46,8 @@ knowledge databases are *ingested from the data lake*, not about how documents g
 4. **A single wildcard NATS sensor** subscribing to `pipeline.datalake.*.to.knowledge.*.*.*.*` and filtering the
    received events by the bucket's `ingestor`. Rejected: a JetStream stream for that wildcard subject would *overlap*
    the legacy pipelines' per-instance streams, and JetStream forbids overlapping subjects between streams — creating it
-   would break `default`/`shared` ingestion. The sensor instead enumerates the buckets it owns and polls each one's own
-   per-instance stream. This also makes the ingestor guard intrinsic rather than a filter applied after the fact: a
-   bucket the pipeline does not own is never even polled.
+   would break `default`/`shared` ingestion. This constraint is what drove the subject grammar in decision 7: the
+   overlap comes from reusing the legacy `datalake` source token, not from wildcarding as such.
 
 ## Decision
 
@@ -70,11 +69,13 @@ pipelines untouched.
    migration script or operator action is required on upgrade**. The same default protects
    `bucket_utils._get_or_create_bucket`, the path by which any pipeline auto-registers a bucket row it does not find.
 
-2. **Self-service create-database** API (`POST /knowledge/databases/{database}`, gated by
-   `aihub.admin.knowledge.{database}`) and UI, mirroring the existing create-namespace flow. No deployment required.
+2. **Self-service create-database** API (`POST /knowledge/databases/{database}`, gated by `aihub.admin.knowledge` —
+   the knowledge root, since the database being created does not exist yet to be named by a rule) and UI, mirroring the
+   existing create-namespace flow. No deployment required. Creation grants the creator and their tenant admin on the
+   new database, and deletion revokes it; see ADR `2026_06_15_auto_grant_creator_access_to_agent_instances`.
 
 3. **The user selects the ingestor at creation time**, rather than it being assigned implicitly. The choice is offered
-   as a **server-provided, localized list** (`GET /knowledge/ingestors`, backed by the `IngestorRegistry`), not a
+   as a **server-provided, localized list** (`GET /knowledge/ingestors`), not a
    client-side enum: the set of pipelines a database may be assigned to is a platform fact, so the API owns it and the
    UI renders whatever it is given. `create_database` rejects a non-selectable ingestor with a 400.
 
@@ -86,24 +87,33 @@ pipelines untouched.
    strategy, an OCR-heavy variant, a tenant-specific pipeline), the database must record which one owns it — and that is
    a user's choice, not an implicit default.
 
-   **Extending the selectable set — `IngestorRegistry`.** A customer-specific deployment makes its own route-per-run
-   pipeline selectable *without forking the platform*. It registers an `Ingestor` (a routing `id` plus localized labels)
-   with the core `IngestorRegistry`, either by declaring it under the `swiss_ai_hub.ingestors` entry-point group —
-   auto-discovered by the stock API image the first time the registry is queried — or by calling
-   `IngestorRegistry.register()` in a deployment that builds its own API from the `packages/api` SDK. Both
-   `GET /knowledge/ingestors` and `create_database` consult the registry, so a registered ingestor is immediately
-   offered and accepted. The `id` must equal the `ingestor` string the deployment passes to `rag_pipeline_definitions` —
-   that shared string is what makes the pipeline claim the databases assigned to it. No `IngestorType` change, no API
-   contract change, no SDK regeneration.
+   **Extending the selectable set — the pipeline registers itself.** A customer-specific deployment makes its own
+   route-per-run pipeline selectable *without forking the platform*: it passes `display_name` and `description`
+   alongside its `ingestor` to `rag_pipeline_definitions`, and a sensor in that pipeline upserts an `IngestorEntity`
+   row. `GET /knowledge/ingestors` and `create_database` read that collection, so the ingestor is offered as soon as
+   the pipeline is deployed. No `IngestorType` change, no API contract change, no SDK regeneration.
+
+   The registration goes through the database rather than through the API's own process because the two are separate
+   containers. An in-memory registry, or one populated from Python entry points, is only ever visible to the process
+   that holds it — so a custom ingestor would appear only if the customer's package were also installed into the *API*
+   image, a coupling that is invisible and fails silently: deploy the pipeline, forget the API image, and the ingestor
+   simply never shows up. Mongo is infrastructure both sides already share, and it mirrors how ownership is resolved in
+   the other direction (which buckets an ingestor owns is a runtime `BucketEntity` query). Registering from a sensor
+   rather than at import means a momentary database outage cannot take a code location down, at the cost of the
+   ingestor appearing one sensor tick after deployment.
+
+   Two consequences worth stating: labels are **required** for a custom ingestor (an unlabelled one could only render
+   as a bare id in the selector), and re-registration is **last-writer-wins**, so a redeploy carrying changed labels
+   updates them rather than erroring.
 
    **Why the wire field is a plain `str`, not the `IngestorType` enum.** The `ingestor` value on the request/response
    DTOs — and therefore in the OpenAPI schema and generated SDK — is deliberately a free string. Typing it as the closed
    `IngestorType` enum would bake the platform's fixed set into the API contract and the SDK, making a custom,
    deployment-registered ingestor *unrepresentable on the wire*: a client validating against the enum would reject it,
-   defeating the whole registry. The selectable set stays authoritative and server-owned (the registry), but it is
-   discovered at runtime via `GET /knowledge/ingestors` instead of frozen into a type. `BucketEntity.ingestor` likewise
-   carries no static `choices` — `create_database` validates the submitted value against the registry, and because
-   routing is exact-match a value owned by no pipeline is simply never ingested. `IngestorType` remains an enum
+   defeating the whole mechanism. The selectable set stays authoritative and server-owned, but it is discovered at
+   runtime via `GET /knowledge/ingestors` instead of frozen into a type. `BucketEntity.ingestor` likewise carries no
+   static `choices` — `create_database` validates the submitted value against `IngestorEntity`, and because routing is
+   exact-match a value owned by no pipeline is simply never ingested. `IngestorType` remains an enum
    internally for the platform's own values (defaults, the routing guard, the seeder); only the boundary is a string.
 
 4. **One Milvus collection per database, routed per run.** The bucket/db becomes a run/partition dimension via a
@@ -142,10 +152,26 @@ pipelines untouched.
    Stage 2 via `default_definitions(datalake_container_name="pocrag")` gets `["pocrag", "datalake_to_vectorstore", …]`
    asset keys and a `pocrag_document_partitions` registry, which cannot collide with the RAG pipeline's.
 
-7. **Per-bucket fan-out for triggering.** The RAG pipeline's NATS sensor and schedule enumerate
-   `BucketEntity.get_all_buckets()` filtered by `ingestor == "rag"` and emit one run per owned bucket, carrying the
-   bucket in run config/tags. Each bucket keeps its own narrow JetStream stream (same shape as legacy), so there is no
-   JetStream subject overlap with the legacy per-bucket streams.
+7. **One ingestor-keyed JetStream stream, fanned out per bucket in the sensor.** Uploads are published on
+   `pipeline.{ingestor}.{bucket}.to.knowledge.{db}.…` — the same nine-token grammar as before, with the *ingestor*
+   rather than `datalake` in the source-type position. A pipeline therefore owns exactly one stream
+   (`pipeline.{ingestor}.>`) and one durable consumer, however many databases it serves, and cannot overlap the legacy
+   `pipeline.datalake.…` streams because the type token differs. The sensor drains that stream once per tick, groups
+   the batch by the bucket in the subject, and decides per database; the schedule still enumerates
+   `BucketEntity.get_all_buckets()` filtered by `ingestor`.
+
+   The alternative — one stream per bucket, keyed source→target like legacy — was implemented first and abandoned:
+   streams, consumers and per-tick NATS round-trips all grew linearly with the number of knowledge databases, for no
+   fundamental reason. Two pipeline *types* never react to the same upload, so type-keyed subjects never need to
+   overlap by construction. Existing deployments that ran the per-bucket shape keep orphaned
+   `pipeline_datalake_*_knowledge_*` streams; nothing consumes them and they can be removed with `nats stream rm`.
+
+   **Cluster safety.** Sensors evaluate only on the Dagster daemon, which is a singleton — running more than one is
+   unsupported — and every request carries a run key Dagster deduplicates, so a bucket cannot be observed twice
+   concurrently. Neither is load-bearing for correctness anyway: an observation is a full reconciliation of the bucket,
+   so a duplicate trigger converges to the same state and a lost one is picked up by the next upload or the daily
+   schedule. This is why a durable pull consumer suffices here, unlike agent control events, which are state
+   transitions needing exactly-once delivery.
 
 ## Consequences
 
@@ -162,9 +188,9 @@ pipelines untouched.
   their buckets are `unassigned`, and their asset keys, partition registries, job names, and Dagster intermediates
   prefix are all namespaced by their own container name.
 - A second pipeline *type* can be deployed alongside the first, because every deployment-global name is ingestor-scoped.
-- A customer-specific pipeline becomes user-selectable without forking the platform: registering an `Ingestor` with the
-  `IngestorRegistry` (via the `swiss_ai_hub.ingestors` entry point, or `register()` in a self-built API) is enough — no
-  `IngestorType` change, no API-contract change, no SDK regeneration.
+- A customer-specific pipeline becomes user-selectable without forking the platform: passing `display_name` and
+  `description` to `rag_pipeline_definitions` is enough — the pipeline registers itself in the database the API reads,
+  so no `IngestorType` change, no API-contract change, no SDK regeneration, and nothing to install into the API image.
 
 ### Trade-offs
 

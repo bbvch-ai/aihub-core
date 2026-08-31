@@ -203,20 +203,24 @@ RCLONE_RC_PASS=your-strong-password
 
 ## 2. The Data Lake to Vector Store Pipeline
 
-This is the core RAG pipeline. Use the `default_definitions` factory to process documents from your S3 data lake into a
-vector store.
+This is the core RAG pipeline. Use the `rag_pipeline_definitions` factory to process documents from your S3 data lake
+into a vector store.
 
-- **What it does**: Observes an S3 bucket, parses documents, chunks them into nodes, optionally creates summary nodes,
-  and stores the embeddings in Milvus. It also handles document deletions.
+- **What it does**: Observes the S3 bucket of every knowledge database assigned to this ingestor, parses documents,
+  chunks them into nodes, optionally creates summary nodes, and stores the embeddings in Milvus. It also handles
+  document deletions, and the teardown of a whole database or folder.
 - **Key Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
 
 ### Usage Example
 
 ```python
-from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.pipeline.util import rag_pipeline_definitions
 
-defs = default_definitions(
-    datalake_container_name="my-company-docs",
+defs = rag_pipeline_definitions(
+    ingestor="my_rag",                                  # Databases assigned to this ingestor are served
+    display_name=LocaleString(en="My RAG"),             # Shown in the create-database dialog
+    description=LocaleString(en="Tuned for my documents"),
     embedding_model_name="azure/text-embedding-3-large", # Configure the embedding model
     llm_model_name="azure/gpt-4o-mini",                 # Configure the LLM for summaries
     with_summary_nodes=True                             # Enable summary node generation

@@ -40,26 +40,33 @@ ______________________________________________________________________
 The `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py` provides factory functions that assemble complete
 `Definitions` objects with all assets, resources, sensors, jobs, and schedules wired together.
 
-### `default_definitions()` — Stage 2 (DataLake to Vector Store)
+### `rag_pipeline_definitions()` — Stage 2 (DataLake to Vector Store)
+
+Defined in `util/rag_definitions_util.py`. Carries no bucket name: one deployment serves every knowledge database whose
+`BucketEntity.ingestor` matches, resolving the target per run from the composite partition key `{bucket}|{uri}` or the
+`aihub/bucket` run tag.
 
 ```python
-from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
 
-defs = default_definitions(
-    datalake_container_name="my-bucket",          # S3 bucket name
+defs = rag_pipeline_definitions(
+    ingestor="rag",                               # routing key; also namespaces every global Dagster name
+    display_name=LocaleString(en="My RAG"),       # required for a custom ingestor, omitted for "rag"
+    description=LocaleString(en="What it does"),
     embedding_model_name="embedding/large",       # LiteLLM model
     llm_model_name="text-generation/mini",        # LiteLLM model
     with_summary_nodes=True,                      # Hierarchical RAG
     with_table_refinement=True,                   # LLM table structure detection
     with_figure_descriptions=True,                # Vision LLM figure descriptions
-    auto_sync=False,                              # True if auto-synced via local FS
     observe_job_hour=2,                           # Daily observation at 2 AM
     observe_job_minute=0,
-    vector_store_dimensions=None,                 # None = use MilvusSettings default
     max_partitions=1000,                          # Max partitions per operation
     document_parser_loader_type=LoaderType.MINERU,    # MinerU (default) or Azure Doc Intelligence
 )
 ```
+
+The deployed pipeline reads these from `RagPipelineSettings` (`RAG_PIPELINE_*` env vars) rather than hardcoding them.
 
 ### `default_sharepoint_to_datalake_definitions()` — Stage 1 (SharePoint to S3)
 

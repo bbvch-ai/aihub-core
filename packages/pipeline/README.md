@@ -30,19 +30,18 @@ RAG agents search. It implements a **two-stage, asset-based pipeline**:
 2. **Data lake → vector store** — parse each file (MinerU OCR + structure), chunk it, embed it via the LLM gateway, and
    upsert the vectors into Milvus, with full lineage from every embedding back to its source document.
 
-You compose a pipeline from one function, `default_definitions()`, which wires together all the assets, resources, IO
-managers, sensors, jobs, and schedules. It builds on [`swiss-ai-hub-core`](https://pypi.org/project/swiss-ai-hub-core/)
+You compose a pipeline from one function, `rag_pipeline_definitions()`, which wires together all the assets, resources,
+IO managers, sensors, jobs, and schedules. It builds on [`swiss-ai-hub-core`](https://pypi.org/project/swiss-ai-hub-core/)
 (installed automatically); RAG agents from [`swiss-ai-hub-agent`](https://pypi.org/project/swiss-ai-hub-agent/) query
 its output.
 
 ## Should you use this package?
 
-**Probably not directly — most deployments use the pre-built pipeline images.** `rag_pipeline` ingests every knowledge
-database users create from the UI, with no redeploy; the legacy `default_rag_pipeline` and `shared_rag_pipeline` still
-serve the platform's two built-in buckets.
+**Probably not directly — most deployments use the pre-built `rag_pipeline` image**, which ingests every knowledge
+database users create from the UI, with no redeploy.
 
-**Use this PyPI package when you want a custom pipeline** — connect a new data source, ingest into a different bucket,
-or tune parsing/chunking/embedding for your documents. It's an SDK for building your own ingestion as a Dagster
+**Use this PyPI package when you want a custom pipeline** — connect a new data source, or tune
+parsing/chunking/embedding for your documents. It's an SDK for building your own ingestion as a Dagster
 [code location](https://docs.dagster.io/concepts/code-locations).
 
 ## Installation
@@ -59,20 +58,26 @@ ______________________________________________________________________
 
 ## Quick start
 
-A pipeline is a Dagster **code location** — a module that exposes a `Definitions` object. `default_definitions()` builds
-a complete one:
+A pipeline is a Dagster **code location** — a module that exposes a `Definitions` object.
+`rag_pipeline_definitions()` builds a complete one:
 
 ```python
 # my_pipeline/__init__.py
-from swiss_ai_hub.pipeline import default_definitions
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.pipeline.util import rag_pipeline_definitions
 
-defs = default_definitions(
-    datalake_container_name="my_docs",                  # S3 bucket (Dagster name: letters, digits, underscores)
+defs = rag_pipeline_definitions(
+    ingestor="my_rag",                                  # this pipeline owns every database assigned to it
+    display_name=LocaleString(en="My RAG"),             # how users see it when creating a database
+    description=LocaleString(en="Tuned for my documents"),
     embedding_model_name="embedding/bge-m3",            # any embedding model on the LiteLLM gateway
     llm_model_name="text-generation/gemma-4-31B-it",    # for summaries / table & figure refinement
     with_summary_nodes=True,                            # hierarchical RAG summaries
 )
 ```
+
+The pipeline carries no bucket name: it serves every knowledge database whose `ingestor` matches, resolving the target
+per run. Create one from the admin UI, picking "My RAG" as the ingestor — no redeploy, no new code location.
 
 Run it with the Dagster UI and materialize the assets:
 
@@ -80,11 +85,11 @@ Run it with the Dagster UI and materialize the assets:
 dagster dev -m my_pipeline      # opens http://localhost:3000
 ```
 
-Drop a document into the `my_docs` bucket, click **Materialize** on the asset graph, and watch it flow:
-`observe → documents (parse) → nodes (chunk + embed) → Milvus`. A RAG agent pointed at that bucket can now answer
-questions over it.
+Upload a document to that database, and watch it flow:
+`observe → documents (parse) → nodes (chunk + embed) → Milvus`. A RAG agent pointed at it can now answer questions over
+it.
 
-To also pull from an external source, combine `default_definitions()` with a Stage-1 builder — e.g.
+To also pull from an external source, combine it with a Stage-1 builder — e.g.
 `default_rclone_to_datalake_definitions(...)` for OneDrive/Google Drive/Dropbox, or
 `default_sharepoint_to_datalake_definitions(...)`. The
 [source templates](https://github.com/bbvch-ai/aihub-core/tree/main/packages/pipeline/templates/sources) (SharePoint,
@@ -94,7 +99,8 @@ ______________________________________________________________________
 
 ## How it works
 
-`default_definitions()` assembles a graph of Dagster **assets** connected by **IO managers** to the platform's stores:
+`rag_pipeline_definitions()` assembles a graph of Dagster **assets** connected by **IO managers** to the platform's
+stores:
 
 | Stage                    | Assets                                                                             | Backed by                        |
 | ------------------------ | ---------------------------------------------------------------------------------- | -------------------------------- |
@@ -105,7 +111,7 @@ A document is reported as ingested only once `nodes` has written its embeddings 
 markdown but is not yet retrievable, so it stays pending until then.
 
 Materialization is driven by eager automation, daily schedules, and a NATS sensor that fires when documents are uploaded
-through the API — so ingestion keeps up with changes without manual runs. Key `default_definitions()` knobs:
+through the API — so ingestion keeps up with changes without manual runs. Key `rag_pipeline_definitions()` knobs:
 `with_summary_nodes`, `with_table_refinement`, `with_figure_descriptions`, `document_parser_loader_type` (MinerU or
 Document Intelligence), and `max_partitions`.
 
@@ -226,39 +232,34 @@ ______________________________________________________________________
 ## Making a custom pipeline selectable in the UI
 
 Deploying a pipeline is not enough for a user to create a knowledge database for it from the admin UI — the API must
-know the pipeline exists. Two pieces connect a custom pipeline to self-service database creation:
-
-**1. Own the databases you ingest.** Build your Stage 2 with `rag_pipeline_definitions(ingestor="acme_rag", …)` — the
-route-per-run RAG pipeline. Its sensors and schedule claim every knowledge database whose `ingestor` equals that string,
-so the id you pass here is the routing key.
-
-**2. Register it so users can pick it.** Contribute an `Ingestor` (the same `id`, plus localized labels) to the core
-`IngestorRegistry` via a `swiss_ai_hub.ingestors` entry point in your package:
+know the pipeline exists. Both halves of that come from one call:
 
 ```python
-# acme_pipeline/ingestors.py
+# acme_pipeline/__init__.py
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.persistence import Ingestor
+from swiss_ai_hub.pipeline.util import rag_pipeline_definitions
 
-acme_rag = Ingestor(
-    id="acme_rag",  # must equal the ingestor passed to rag_pipeline_definitions
+defs = rag_pipeline_definitions(
+    # The routing key: this pipeline's sensors and schedule claim every knowledge database whose
+    # `ingestor` equals this string, and nothing else touches those databases.
+    ingestor="acme_rag",
+    # How the ingestor is offered in the create-database dialog. Required for a custom ingestor —
+    # unlabelled, it could only ever render as a bare id.
     display_name=LocaleString(en="Acme RAG", de="Acme RAG", fr="Acme RAG", it="Acme RAG"),
     description=LocaleString(en="Acme's OCR-heavy ingestion pipeline"),
 )
 ```
 
-```toml
-# pyproject.toml
-[project.entry-points."swiss_ai_hub.ingestors"]
-acme_rag = "acme_pipeline.ingestors:acme_rag"
-```
+A sensor in the pipeline publishes those labels to the platform database; `GET /knowledge/ingestors` reads them, so
+"Acme RAG" appears in the create-database dialog within a tick of the pipeline coming up, and `create_database` accepts
+it — with **no** change to the platform's `IngestorType` enum, API contract, or generated SDK, and nothing to install
+into the API image.
 
-Install that package into the platform's API image. The API auto-discovers the entry point, `GET /knowledge/ingestors`
-then offers "Acme RAG" in the create-database dialog, and `create_database` accepts it — with **no** change to the
-platform's `IngestorType` enum, API contract, or generated SDK. (A deployment that builds its own API from the
-`swiss-ai-hub-api` SDK can instead call `IngestorRegistry.register(acme_rag)` at startup.) See ADR
-`2026_06_18_rag_pipeline_route_per_run` for the rationale, including why the `ingestor` field is a plain string at the
-API boundary.
+The ingestor id must not collide with a platform routing token (`rag`, `unassigned`, the frozen `default_rag` /
+`shared_rag`) or with the `datalake` subject token; `rag_pipeline_definitions` rejects those at definition time.
+
+See ADR `2026_06_18_rag_pipeline_route_per_run` for the rationale, including why registration goes through the database
+and why the `ingestor` field is a plain string at the API boundary.
 
 ______________________________________________________________________
 

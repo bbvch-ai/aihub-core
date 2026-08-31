@@ -8,9 +8,12 @@ PARTITIONS_TRUNCATED_TAG = {"partitions-truncated": "true"}
 def make_composite_partition_key(bucket: str, file_uri: str, *, encode: bool = True) -> str:
     """Build a bucket-scoped composite partition key ``{bucket}|{encoded_file_uri}``.
 
-    The single RAG pipeline shares one dynamic-partition registry across all knowledge databases,
-    so the bucket must be encoded into every key. Bucket names are alphanumeric and ``encode_partition_key``
-    percent-encodes any literal ``|`` in the URI, so the first ``|`` always separates bucket from file URI.
+    The single RAG pipeline shares one dynamic-partition registry across all knowledge databases, so the
+    bucket must be part of every key. It is prefixed rather than parsed back out of the URI — which does
+    contain it — so that the key's semantics are ``(bucket, file)`` and extracting the bucket needs no
+    knowledge of the storage backend's URI grammar. Bucket names are alphanumeric and
+    ``encode_partition_key`` percent-encodes any literal ``|`` in the URI, so the first ``|`` always
+    separates the two.
     """
     encoded = encode_partition_key(file_uri) if encode else file_uri
     return f"{bucket}{COMPOSITE_PARTITION_KEY_SEPARATOR}{encoded}"

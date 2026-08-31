@@ -8,9 +8,9 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 
 
 class IngestorDTO(BaseModel):
-    # Deliberately a plain str, not the IngestorType enum: custom ingestors registered by a deployment
-    # via IngestorRegistry are surfaced here too, so the value is not limited to the platform enum.
-    name: Annotated[str, Field(description="The ingestor identifier stored on the knowledge database.")]
+    name: Annotated[
+        str, Field(description="Ingestor identifier, as served by GET /knowledge/ingestors.")
+    ]
     display_name: Annotated[str | None, Field(description="Localized name of the ingestion pipeline.")]
     description: Annotated[str | None, Field(description="Localized description of what the pipeline does.")]
 

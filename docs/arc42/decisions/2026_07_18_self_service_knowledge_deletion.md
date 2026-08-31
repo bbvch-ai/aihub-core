@@ -49,25 +49,41 @@ Three constraints shaped the design:
 
 ## Decision
 
-**Deletion is an asynchronous "mark-then-sweep": a fast O(1) API call flips a soft-delete flag and publishes a durable
-teardown request; a Dagster teardown job does the heavy multi-store purge and hard-deletes the rows as its final step.**
+**Deletion is an asynchronous "mark-then-sweep": a fast O(1) API call flips a soft-delete flag, and a Dagster teardown
+job driven by that flag does the heavy multi-store purge and hard-deletes the rows as its final step.**
 
 - **`202 Accepted`, synchronously O(1).** `DELETE /databases/{database}` and
-  `DELETE /databases/{database}/namespaces/{namespace}` flip a new boolean `deleting` flag on the `BucketEntity` /
-  `NamespaceEntity`, publish a `KnowledgeTeardownRequestedEvent`, and return `202`. Milliseconds regardless of corpus
-  size.
+  `DELETE /databases/{database}/namespaces/{namespace}` revoke the resource's access rules and roles, flip a new
+  boolean `deleting` flag on the `BucketEntity` / `NamespaceEntity`, and return `202`. Milliseconds regardless of
+  corpus size. Revocation happens here rather than in the job so the teardown never touches the auth collections;
+  it is best-effort, because a stale rule must not be able to block a deletion.
 
 - **The `deleting` flag is the tap-shutoff.** Every enumeration path — `get_databases`, the per-bucket observe schedule,
   and the NATS document-uploaded sensor — excludes `deleting` rows, so ingestion stops immediately *and* the in-flight
   ingestion race is resolved (a bucket marked `deleting` is simply never routed). The row survives, flagged, long enough
   for the teardown job to read `db_name` / `bucket_name` / `folder_name`; it is hard-deleted only as the job's final
-  step. The teardown sensor is the one enumerator that deliberately does **not** exclude `deleting` rows — it must still
-  find the row to route the run.
+  step. The teardown sensor is the one enumerator that deliberately does **not** exclude `deleting` rows — they are
+  precisely its work queue.
 
-- **A dedicated JetStream stream for teardown.** The teardown event is published with `JSPublisher` (durable JetStream,
-  stream ensured before publish) to a stream keyed by a dedicated pipeline target type (`knowledge_teardown`), separate
-  from the `SourceUpdatedEvent` stream. This is required, not cosmetic: the upload sensor *naks* any non-
-  `SourceUpdatedEvent`, so a teardown event on a shared stream would be redelivered forever.
+- **The flag is the request; there is no teardown event.** The teardown sensor enumerates the rows flagged `deleting`
+  and derives the run entirely from them — every field the job needs (`db_name`, `bucket_name`, `folder_name`, the ids)
+  already lives on the entity, and the partition-registry name is ingestor-derived, so an event would carry nothing the
+  database does not already hold.
+
+  This replaces an earlier design in which the API published a `KnowledgeTeardownRequestedEvent` to its own JetStream
+  stream. That design had a durability hole precisely where the ADR claimed durability: the flag was set *before* the
+  publish with no rollback, so a publish failure stranded the row immediately; and the sensor acked each event before
+  Dagster had persisted the run request, so a daemon crash in that window lost it. Nothing re-drove either case —
+  ingestion self-heals through the nightly observation, but teardown had no timer at all — leaving a permanently
+  `deleting`, UI-hidden database whose stores were never purged. Reading the flag makes the sensor convergent instead:
+  whatever is still flagged is still owed, so no message can be lost, and the dedicated stream, its consumer and the
+  event type all disappear.
+
+  **Re-drive after failure.** Dagster deduplicates run keys forever, so keying on the entity id alone would make a
+  failed teardown unretryable. The sensor instead tags each request with its target id and numbers the run key by how
+  many runs that target has already had: the key stays stable while an attempt is pending (repeated ticks re-request it
+  and Dagster drops the duplicate) and moves on once that attempt has finished, which is exactly when a retry is
+  wanted. On success the row is hard-deleted, so the target stops being enumerated at all.
 
 - **The Dagster teardown job owns the heavy work**, in a fixed, idempotent order so a failed run is "retry until clean"
   with a visible failed run rather than a silent half-deletion:
@@ -124,10 +140,9 @@ teardown request; a Dagster teardown job does the heavy multi-store purge and ha
 - **A soft-delete state now exists on two entities.** Every current and future enumeration path must remember to exclude
   `deleting` rows; the teardown sensor is the deliberate exception. A missed exclusion would re-expose a database that
   is being torn down.
-- **A new deployment-global stream and sensor per pipeline.** Teardown adds its own JetStream stream (per database) and
-  a per-bucket teardown sensor, polled on every tick like the upload sensor.
-- **Orphaned permission rules persist until phase 2.** Deleting a database leaves its `aihub.*.knowledge.{db}.>` rules
-  on roles and tenant ceilings; they are inert (no matching resource) but not yet purged.
-- **The API↔pipeline teardown target-type string is duplicated** (`_KNOWLEDGE_TEARDOWN_TARGET_TYPE` in the API,
-  `INTERNAL_KNOWLEDGE_TEARDOWN` in the pipeline) and must be kept in sync — the same cross-scope-literal pattern the
-  existing `datalake`/`knowledge` types already use.
+- **One more sensor per pipeline.** Teardown adds a sensor that queries the flagged rows every 30 s. It costs one
+  indexed database read per tick and no NATS traffic at all — the earlier event-driven design added a JetStream stream
+  and consumer *per knowledge database* instead.
+- **Only the rules the platform granted are revoked.** Deletion removes the per-resource rules and roles that creation
+  granted, but a rule an operator wrote by hand — a broader wildcard, or one on a differently-named role — is left
+  alone, since the platform cannot tell an intentional grant from a leftover.
