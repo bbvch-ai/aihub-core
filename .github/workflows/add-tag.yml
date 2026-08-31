@@ -3,9 +3,10 @@
 # Nightly Tag & Build
 # =============================================================================
 # On every push to main (each merged PR), cut an immutable nightly tag and move
-# the rolling `nightly` pointer, dispatch the image builds and docs, and refresh
-# the single rolling `nightly` prerelease (the bundle the nightly VM fetches via
-# aihub-playbook roles/aihub_application/tasks/fetch.yml).
+# the rolling `nightly` pointer, build the images AT THAT TAG and wait for them,
+# dispatch the docs, and only then refresh the single rolling `nightly`
+# prerelease (the bundle the nightly VM fetches via aihub-playbook
+# roles/aihub_application/tasks/fetch.yml and immediately pulls the images of).
 # Lightweight trunk path: no version bump, no changelog, no versioned Release,
 # no npm/PyPI. create-release runs here in `nightly` (rolling) mode only.
 #
@@ -83,21 +84,51 @@ jobs:
           git tag -f -a nightly "$TARGET" -m "Release $VERSION"
           git push origin refs/tags/nightly --force
           echo "Tagged $TARGET as $VERSION and moved 'nightly'."
-  notify-release:
-    name: Dispatch build & bundle
+  build-images:
+    name: Build nightly images
     needs: nightly-tag
     # Skip when the tag already existed (e.g. a workflow re-run): the images for
-    # this nightly tag were already built and dispatched.
+    # this nightly tag were already built.
+    if: needs.nightly-tag.outputs.created == 'true'
+    runs-on: ubuntu-slim
+    # Waits for every dispatched build, so the timeout must cover the slowest
+    # image (build-agents allows 45 minutes per agent), not just the dispatch.
+    timeout-minutes: 75
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - name: Dispatch build workflows and wait for the images
+        uses: ./.github/actions/dispatch_builds
+        with:
+          workflows: |
+            build-agents.yml
+            build-pipelines.yml
+            build-api-and-bot.yml
+            build-dagster.yml
+            build-web.yml
+            build-backup.yml
+            build-sysadmin.yml
+          ref: ${{ needs.nightly-tag.outputs.version }}
+          release_version: ${{ needs.nightly-tag.outputs.version }}
+          secondary_tag: nightly
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+  notify-docs:
+    name: Dispatch docs deploy
+    needs: nightly-tag
     if: needs.nightly-tag.outputs.created == 'true'
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
-      # `release-ready` is still a live event: every build-*.yml
-      # (repository_dispatch: [release-ready]) builds the nightly images with
-      # secondary_tag=nightly, and deploy-docs.yml publishes the docs. Only
-      # create-release.yml stopped listening (it is now workflow_call only).
-      # The rolling nightly bundle is handled by the publish-nightly-bundle job.
-      - name: Dispatch release-ready (nightly image builds + docs)
+      # `release-ready` now reaches deploy-docs.yml only: the build-*.yml
+      # workflows are dispatched at the nightly tag by build-images, so the
+      # bundle can be gated on them (a repository_dispatch run carries no ref to
+      # identify it by, and runs on main rather than on the tagged commit).
+      # create-release.yml stopped listening earlier (it is workflow_call only);
+      # the rolling nightly bundle is the publish-nightly-bundle job.
+      - name: Dispatch release-ready (docs)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.nightly-tag.outputs.version }}
@@ -107,7 +138,10 @@ jobs:
             -F "client_payload[release_version]=$VERSION"
   publish-nightly-bundle:
     name: Refresh rolling nightly prerelease
-    needs: nightly-tag
+    # Gated on build-images: the nightly VMs fetch this rolling bundle and pull
+    # its pinned tags straight away, so publishing it while an image is still
+    # building fails their deploy with an unresolvable reference.
+    needs: [nightly-tag, build-images]
     # Skip when the tag already existed (re-run): the pointer/bundle are current.
     if: needs.nightly-tag.outputs.created == 'true'
     uses: ./.github/workflows/create-release.yml

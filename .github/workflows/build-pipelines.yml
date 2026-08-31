@@ -1,9 +1,7 @@
 ---
 name: Build and Release Pipelines
-run-name: Build Pipelines - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}
+run-name: Build Pipelines - ${{ github.event.inputs.release_version || 'manual' }}
 on:
-  repository_dispatch:
-    types: [release-ready]
   workflow_dispatch:
     inputs:
       release_version:
@@ -25,9 +23,6 @@ jobs:
   discover-pipelines:
     runs-on: ubuntu-slim
     timeout-minutes: 5
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'repository_dispatch'
     outputs:
       matrix: ${{ steps.parse.outputs.matrix }}
     steps:
@@ -62,19 +57,10 @@ jobs:
         id: get_tag
         env:
           RELEASE_VERSION: ${{ github.event.inputs.release_version }}
-          CLIENT_PAYLOAD_VERSION: ${{ github.event.client_payload.release_version }}
         run: |
-          # 1) Prefer workflow_dispatch input
           if [ -n "$RELEASE_VERSION" ] && [ "$RELEASE_VERSION" != "manual" ]; then
             TAG_NAME="$RELEASE_VERSION"
             echo "Using release version from workflow_dispatch input: $TAG_NAME"
-
-          # 2) Then repository_dispatch client_payload
-          elif [ -n "$CLIENT_PAYLOAD_VERSION" ]; then
-            TAG_NAME="$CLIENT_PAYLOAD_VERSION"
-            echo "Using release version from repository_dispatch payload: $TAG_NAME"
-
-          # 3) No Fallback
           else
             echo "❌ No release_version provided. Failing."
             exit 1
@@ -90,4 +76,4 @@ jobs:
           context: .
           file: ./packages/pipeline/app/${{ matrix.image }}/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}
+          secondary_tag: ${{ github.event.inputs.secondary_tag }}
