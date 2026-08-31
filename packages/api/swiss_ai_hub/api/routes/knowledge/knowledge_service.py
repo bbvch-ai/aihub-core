@@ -72,6 +72,7 @@ logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
 
+
 class KnowledgeService:
     @staticmethod
     def _ensure_db_exists(db: str):
@@ -295,9 +296,7 @@ class KnowledgeService:
             KnowledgeService._best_effort(rollback, f"roll back {resource_label}")
             raise HTTPException(
                 status_code=500,
-                detail=(
-                    f"{resource_label} was created but access could not be granted; the creation was rolled back."
-                ),
+                detail=(f"{resource_label} was created but access could not be granted; the creation was rolled back."),
             ) from error
 
     @staticmethod

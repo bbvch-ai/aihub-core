@@ -23,9 +23,7 @@ def mark_ref_docs_as_ingested(
     MongoConnectionRegistry.ensure_alias(document_store_name)
 
     document_ids = {
-        document_id
-        for node in nodes
-        if (document_id := node.ref_doc_id or node.metadata.get(document_id_key))
+        document_id for node in nodes if (document_id := node.ref_doc_id or node.metadata.get(document_id_key))
     }
     marked = {
         document_id

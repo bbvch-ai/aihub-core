@@ -49,7 +49,9 @@ def knowledge_teardown_sensor(
     def _sensor(context: SensorEvaluationContext):
         ensure_main_db_connection()
 
-        buckets_by_id = {str(bucket.id): bucket for bucket in BucketEntity.get_all_buckets() if bucket.ingestor == ingestor}
+        buckets_by_id = {
+            str(bucket.id): bucket for bucket in BucketEntity.get_all_buckets() if bucket.ingestor == ingestor
+        }
         deleting_bucket_ids = {
             str(bucket.id) for bucket in BucketEntity.get_deleting_buckets() if str(bucket.id) in buckets_by_id
         }

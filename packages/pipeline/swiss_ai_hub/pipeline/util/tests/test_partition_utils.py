@@ -64,6 +64,7 @@ def test_replace_partition_keys_for_bucket_respects_max_partitions():
     added = context.instance.add_dynamic_partitions.call_args.kwargs["partition_keys"]
     assert len(added) == 2
 
+
 _PARTITION_NAME = "bucket_document_partitions"
 
 

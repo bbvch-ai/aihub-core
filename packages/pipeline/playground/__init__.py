@@ -1,4 +1,4 @@
-from dagster import Definitions, DefaultSensorStatus, SensorEvaluationContext, SkipReason, sensor
+from dagster import DefaultSensorStatus, Definitions, SensorEvaluationContext, SkipReason, sensor
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.infrastructure import RagPipelineSettings
 from swiss_ai_hub.core.persistence import BucketEntity, IngestorType

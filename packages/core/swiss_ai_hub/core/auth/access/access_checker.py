@@ -256,7 +256,6 @@ class AccessChecker:
         )
 
     def access_level(self, permission_template: str) -> AccessLevel:
-
         """
         Checks for the highest level of permission (Admin, User, or Denied).
 

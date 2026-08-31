@@ -65,9 +65,7 @@ def nats_document_uploaded_sensor(
                     f"({in_flight.status.value})."
                 )
 
-            truncation_run_id = ObservationRunHistory.latest_truncating_run_id(
-                context.instance, job.name, bucket_tag
-            )
+            truncation_run_id = ObservationRunHistory.latest_truncating_run_id(context.instance, job.name, bucket_tag)
             reason = ObservationRunDecider.reason_to_request(
                 cursor=cursor,
                 now=now,

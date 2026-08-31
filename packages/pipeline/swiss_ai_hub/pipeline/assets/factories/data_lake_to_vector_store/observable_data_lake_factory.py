@@ -34,9 +34,9 @@ def observable_data_lake_factory(
         group_name=group_name_from_asset_key(key),
         partitions_def=partitions,
         io_manager_key="data_lake_io_manager",
-        description="Observes the data lake of each knowledge database this pipeline owns for changes (routed by run tag)",
+        description="Observes the data lake of the knowledge database this run targets (routed by run tag)",
     )
-    def observable_routed_data_lake(
+    def observable_data_lake(
         context: OpExecutionContext,
         data_lake_client: ResourceParam[S3DataLakeClient],
     ) -> DataVersionsByPartition:
@@ -52,4 +52,4 @@ def observable_data_lake_factory(
             encode_partition_keys=encode_partition_keys,
         )
 
-    return observable_routed_data_lake
+    return observable_data_lake

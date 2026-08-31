@@ -209,6 +209,8 @@ def test_drop_collection_is_idempotent_when_absent() -> None:
     store.drop_collection()
 
     client.drop_collection.assert_not_called()
+
+
 def test_stripping_children_keeps_summary_node_under_the_dynamic_field_limit() -> None:
     """
     Regression for #155: a summary node over a flat document accumulates one CHILD entry per section,

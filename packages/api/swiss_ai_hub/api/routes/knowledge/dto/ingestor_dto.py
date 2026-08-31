@@ -8,9 +8,7 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 
 
 class IngestorDTO(BaseModel):
-    name: Annotated[
-        str, Field(description="Ingestor identifier, as served by GET /knowledge/ingestors.")
-    ]
+    name: Annotated[str, Field(description="Ingestor identifier, as served by GET /knowledge/ingestors.")]
     display_name: Annotated[str | None, Field(description="Localized name of the ingestion pipeline.")]
     description: Annotated[str | None, Field(description="Localized description of what the pipeline does.")]
 

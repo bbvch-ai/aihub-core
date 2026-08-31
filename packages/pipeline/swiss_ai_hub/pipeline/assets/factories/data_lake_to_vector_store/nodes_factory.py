@@ -1,18 +1,16 @@
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 from llama_index.core.schema import TextNode
 
+from swiss_ai_hub.pipeline.ops.nodes.chunk_ref_doc_into_nodes import chunk_ref_doc_into_nodes
+from swiss_ai_hub.pipeline.ops.nodes.delete_nodes_for_ref_doc import delete_nodes_for_ref_doc
 from swiss_ai_hub.pipeline.ops.nodes.embed_nodes import embed_nodes
 from swiss_ai_hub.pipeline.ops.nodes.ensure_node_default_metadata import ensure_node_default_metadata
 from swiss_ai_hub.pipeline.ops.nodes.insert_nodes_into_vector_store import insert_nodes_into_vector_store
-from swiss_ai_hub.pipeline.ops.nodes.chunk_ref_doc_into_nodes import chunk_ref_doc_into_nodes
-from swiss_ai_hub.pipeline.ops.nodes.delete_nodes_for_ref_doc import delete_nodes_for_ref_doc
 from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 
-def nodes_factory(
-    key: AssetKey, document_key: str | AssetKey, partitions: DynamicPartitionsDefinition
-) -> graph_asset:
+def nodes_factory(key: AssetKey, document_key: str | AssetKey, partitions: DynamicPartitionsDefinition) -> graph_asset:
     """Route-per-run variant of ``nodes_factory``.
 
     Identical chunk → embed → insert chain, but the delete and chunk ops are the routed variants that resolve
@@ -31,9 +29,7 @@ def nodes_factory(
     )
     def nodes(document: RefDocDocument) -> Output[list[TextNode]]:
         return insert_nodes_into_vector_store(
-            embed_nodes(
-                ensure_node_default_metadata(chunk_ref_doc_into_nodes(delete_nodes_for_ref_doc(document)))
-            ),
+            embed_nodes(ensure_node_default_metadata(chunk_ref_doc_into_nodes(delete_nodes_for_ref_doc(document)))),
             document,
         )
 

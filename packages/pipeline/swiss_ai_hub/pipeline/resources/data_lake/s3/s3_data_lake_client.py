@@ -6,8 +6,8 @@ from datetime import datetime
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError, NoCredentialsError
-from swiss_ai_hub.core.infrastructure import S3BucketProvisioner
 from swiss_ai_hub.core.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
+from swiss_ai_hub.core.infrastructure import S3BucketProvisioner
 
 from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
 from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile

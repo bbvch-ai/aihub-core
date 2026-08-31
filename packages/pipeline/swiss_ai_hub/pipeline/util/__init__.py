@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.util.id_utils import uri_to_id
-    from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
     from swiss_ai_hub.pipeline.util.partition_utils import replace_partition_keys
+    from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
 
 __all__ = [
     "rag_pipeline_definitions",

@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
     from swiss_ai_hub.core.infrastructure.parsing.parsing_settings import ParsingSettings
+    from swiss_ai_hub.core.infrastructure.rag_pipeline.rag_pipeline_settings import RagPipelineSettings
     from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import (
         azure_blob_source,
         google_drive_source,
@@ -45,7 +46,6 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
     from swiss_ai_hub.core.infrastructure.redis.use_redis import use_redis
-    from swiss_ai_hub.core.infrastructure.rag_pipeline.rag_pipeline_settings import RagPipelineSettings
     from swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner import S3BucketProvisioner
     from swiss_ai_hub.core.infrastructure.s3.s3_storage_settings import S3StorageSettings
     from swiss_ai_hub.core.infrastructure.s3.use_s3 import (

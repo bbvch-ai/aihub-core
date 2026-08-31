@@ -81,6 +81,7 @@ def replace_partition_keys_for_bucket(
         for partition_key in partitions_to_delete:
             context.instance.delete_dynamic_partition(partitions_def_name=partition_name, partition_key=partition_key)
 
+
 def replace_partition_keys(
     context: OpExecutionContext,
     partition_name: str,
