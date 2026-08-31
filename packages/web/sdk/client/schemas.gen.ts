@@ -5878,6 +5878,46 @@ export const CreateAgentInstanceRequestSchema = {
     "Request body for creating a new agent instance.\nThe agent_class is provided in the URL path, not in the request body.",
 } as const;
 
+export const CreateDatabaseRequestSchema = {
+  properties: {
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description:
+        "The display name of the knowledge database in the user's locale.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description:
+        "A short description of the knowledge database in the user's locale.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description:
+        "The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.",
+      default: "rag",
+    },
+  },
+  type: "object",
+  title: "CreateDatabaseRequest",
+} as const;
+
 export const CreateNamespaceRequestSchema = {
   properties: {
     folder_name: {
@@ -6521,6 +6561,12 @@ export const DatabaseDTOSchema = {
       title: "Auto Sync",
       description: "Whether this database auto-syncs namespaces",
     },
+    deletable: {
+      type: "boolean",
+      title: "Deletable",
+      description:
+        "Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.",
+    },
     namespaces: {
       items: {
         $ref: "#/components/schemas/NamespaceDTO",
@@ -6531,8 +6577,56 @@ export const DatabaseDTOSchema = {
     },
   },
   type: "object",
-  required: ["name", "display_name", "auto_sync", "namespaces"],
+  required: ["name", "display_name", "auto_sync", "deletable", "namespaces"],
   title: "DatabaseDTO",
+} as const;
+
+export const DatabaseResponseSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "The database name (also the Milvus collection and Mongo store name).",
+    },
+    bucket_name: {
+      type: "string",
+      title: "Bucket Name",
+      description: "The S3 bucket / data lake container name.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description: "The deployed ingestion pipeline that owns this database.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "A user-friendly display name for the database.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "A brief description of the database's contents.",
+    },
+  },
+  type: "object",
+  required: ["name", "bucket_name", "ingestor"],
+  title: "DatabaseResponse",
 } as const;
 
 export const DatasetSchema = {
@@ -11393,6 +11487,44 @@ export const IngestedNodeSchema = {
   title: "IngestedNode",
   description:
     "A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.\nThe attributes defined here are the minimal number of attributes that a node must have to ensure the\nUI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.\nmust be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes\nthat are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,\nare strictly necessary.",
+} as const;
+
+export const IngestorDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Ingestor identifier, as served by GET /knowledge/ingestors.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the ingestion pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of what the pipeline does.",
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "IngestorDTO",
 } as const;
 
 export const InputAudioSchema = {

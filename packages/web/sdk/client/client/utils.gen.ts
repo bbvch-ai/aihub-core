@@ -195,7 +195,8 @@ export const setAuthParams = async ({
           options.query = {};
         }
         const queryValue = toValue(options.query) as
-          Record<string, unknown> | undefined;
+          | Record<string, unknown>
+          | undefined;
         if (queryValue) {
           queryValue[name] = token;
         }

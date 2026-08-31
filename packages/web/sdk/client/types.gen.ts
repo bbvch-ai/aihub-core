@@ -2792,7 +2792,10 @@ export type ChatCompletionRequest = {
    * Function Call
    */
   function_call?:
-    "none" | "auto" | ChatCompletionFunctionCallOptionParam | null;
+    | "none"
+    | "auto"
+    | ChatCompletionFunctionCallOptionParam
+    | null;
   /**
    * Functions
    */
@@ -2837,7 +2840,13 @@ export type ChatCompletionRequest = {
    * Reasoning Effort
    */
   reasoning_effort?:
-    "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | null;
+    | "none"
+    | "minimal"
+    | "low"
+    | "medium"
+    | "high"
+    | "xhigh"
+    | null;
   /**
    * Response Format
    */
@@ -3302,7 +3311,11 @@ export type Choice = {
    * Finish Reason
    */
   finish_reason:
-    "stop" | "length" | "tool_calls" | "content_filter" | "function_call";
+    | "stop"
+    | "length"
+    | "tool_calls"
+    | "content_filter"
+    | "function_call";
   /**
    * Index
    */
@@ -3990,6 +4003,30 @@ export type CreateAgentInstanceRequest = {
 };
 
 /**
+ * CreateDatabaseRequest
+ */
+export type CreateDatabaseRequest = {
+  /**
+   * Display Name
+   *
+   * The display name of the knowledge database in the user's locale.
+   */
+  display_name?: string | null;
+  /**
+   * Description
+   *
+   * A short description of the knowledge database in the user's locale.
+   */
+  description?: string | null;
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.
+   */
+  ingestor?: string;
+};
+
+/**
  * CreateNamespaceRequest
  */
 export type CreateNamespaceRequest = {
@@ -4470,11 +4507,53 @@ export type DatabaseDto = {
    */
   auto_sync: boolean;
   /**
+   * Deletable
+   *
+   * Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.
+   */
+  deletable: boolean;
+  /**
    * Namespaces
    *
    * List of namespaces
    */
   namespaces: Array<NamespaceDto>;
+};
+
+/**
+ * DatabaseResponse
+ */
+export type DatabaseResponse = {
+  /**
+   * Name
+   *
+   * The database name (also the Milvus collection and Mongo store name).
+   */
+  name: string;
+  /**
+   * Bucket Name
+   *
+   * The S3 bucket / data lake container name.
+   */
+  bucket_name: string;
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that owns this database.
+   */
+  ingestor: string;
+  /**
+   * Display Name
+   *
+   * A user-friendly display name for the database.
+   */
+  display_name?: string | null;
+  /**
+   * Description
+   *
+   * A brief description of the database's contents.
+   */
+  description?: string | null;
 };
 
 /**
@@ -7747,6 +7826,30 @@ export type IngestedNode = {
    * Score representing the relevance of the document.
    */
   score?: number | null;
+};
+
+/**
+ * IngestorDTO
+ */
+export type IngestorDto = {
+  /**
+   * Name
+   *
+   * Ingestor identifier, as served by GET /knowledge/ingestors.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the ingestion pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of what the pipeline does.
+   */
+  description: string | null;
 };
 
 /**
@@ -28854,6 +28957,144 @@ export type UpdateDatasetResponses = {
 
 export type UpdateDatasetResponse =
   UpdateDatasetResponses[keyof UpdateDatasetResponses];
+
+export type GetIngestorsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/ingestors";
+};
+
+export type GetIngestorsResponses = {
+  /**
+   * Response Get Ingestors  Tenant Id  Knowledge Ingestors Get
+   *
+   * Successful Response
+   */
+  200: Array<IngestorDto>;
+};
+
+export type GetIngestorsResponse =
+  GetIngestorsResponses[keyof GetIngestorsResponses];
+
+export type DeleteDatabaseData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type DeleteDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteDatabaseError =
+  DeleteDatabaseErrors[keyof DeleteDatabaseErrors];
+
+export type DeleteDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
+
+export type CreateDatabaseData = {
+  body: CreateDatabaseRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type CreateDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateDatabaseError =
+  CreateDatabaseErrors[keyof CreateDatabaseErrors];
+
+export type CreateDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type CreateDatabaseResponse =
+  CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type DeleteNamespaceData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}";
+};
+
+export type DeleteNamespaceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteNamespaceError =
+  DeleteNamespaceErrors[keyof DeleteNamespaceErrors];
+
+export type DeleteNamespaceResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
 
 export type CreateNamespaceData = {
   body: CreateNamespaceRequest;
