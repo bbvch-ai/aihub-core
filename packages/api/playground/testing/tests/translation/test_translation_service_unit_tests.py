@@ -46,9 +46,12 @@ class TestTranslateFallsBackWhenModelReturnsNoJson:
         llm_config = MagicMock()
         llm_config.to_llama_index.return_value = (llm, None)
 
-        with patch(f"{_SERVICE_MODULE}.PromptTemplate"):
+        with (
+            patch(f"{_SERVICE_MODULE}.PromptTemplate"),
+            patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+        ):
             result = await TranslationService.translate(
-                locale_string=source, llm_config=llm_config, t=t, source_locale="en"
+                locale_string=source, llm_config=llm_config, t=t, user=MagicMock(), source_locale="en"
             )
 
         assert result.model_dump(exclude_unset=True) == {"en": "My Namespace"}
