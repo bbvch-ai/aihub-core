@@ -90,3 +90,32 @@ class TestCountBetween:
 
     def test_counts_nothing_in_an_empty_window(self):
         assert CronScheduleCalculator.count_between(_HOURLY, _utc(2026, 8, 11, 12), _utc(2026, 8, 11, 12), 100) == 0
+
+
+class TestRunsPerMonth:
+    """What makes a schedule's cost knowable while an admin is still typing it."""
+
+    def test_counts_the_tightest_expressible_schedule(self):
+        every_minute = CronSchedule(minute="*", hour="*", **_EVERY_DAY)
+
+        assert CronScheduleCalculator.runs_per_month(every_minute, 100_000) == 30 * 24 * 60
+
+    def test_counts_an_hourly_schedule(self):
+        assert CronScheduleCalculator.runs_per_month(_HOURLY, 100_000) == 720
+
+    def test_the_answer_does_not_depend_on_when_it_is_asked(self):
+        """The number is compared against a configured ceiling, so a window anchored to "now" would
+        reject in February what it allowed in January."""
+        first = CronScheduleCalculator.runs_per_month(_HOURLY, 100_000)
+        second = CronScheduleCalculator.runs_per_month(_HOURLY, 100_000)
+
+        assert first == second == 720
+
+    def test_respects_the_limit(self):
+        assert CronScheduleCalculator.runs_per_month(_HOURLY, 10) == 10
+
+    def test_a_schedule_rarer_than_the_window_can_count_zero(self):
+        """The harmless direction for a maximum — a monthly schedule is never what a ceiling is for."""
+        monthly = CronSchedule(minute="0", hour="3", day_of_month="31", month="*", day_of_week="*")
+
+        assert CronScheduleCalculator.runs_per_month(monthly, 100_000) == 0
