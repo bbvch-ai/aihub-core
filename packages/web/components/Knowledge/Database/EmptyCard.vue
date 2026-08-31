@@ -1,6 +1,7 @@
 <template>
-  <div
-    class="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-surface-300 p-4 hover:border-primary-500 hover:bg-surface-50 dark:border-surface-600 dark:hover:bg-surface-800"
+  <button
+    type="button"
+    class="flex w-full cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-surface-300 p-4 text-left hover:border-primary-500 hover:bg-surface-50 dark:border-surface-600 dark:hover:bg-surface-800"
     @click="handleAdd"
   >
     <div class="flex items-center justify-center p-2">
@@ -17,7 +18,7 @@
         {{ t('knowledge.add_database.description') }}
       </p>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">

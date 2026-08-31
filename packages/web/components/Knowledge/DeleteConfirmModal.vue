@@ -22,10 +22,11 @@
         >
           {{ t('knowledge.delete.confirm_label', { name: expectedName }) }}
         </label>
+        <!-- Deliberately no placeholder: the label already names what to type, and putting it in the
+             field too turns a deliberate confirmation into copying the answer out of the box. -->
         <InputText
           id="delete-confirm-input"
           v-model="typedName"
-          :placeholder="expectedName"
           autocomplete="off"
           :disabled="isDeleting"
           @keyup.enter="confirmIfMatch"
