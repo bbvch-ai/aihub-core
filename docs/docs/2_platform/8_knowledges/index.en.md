@@ -26,6 +26,25 @@ Database names, namespace labels, and folder descriptions support German, Englis
 displays labels according to user language preference.
 :::
 
+## Creating a knowledge database
+
+You create knowledge databases yourself from the admin UI — no deployment, configuration change, or restart is involved,
+and a new database starts accepting documents immediately.
+
+When you create one you choose:
+
+- **The ingestion pipeline** that will process its documents. Most deployments offer one, the Generic Document Ingestion
+  Pipeline; a deployment that ships its own pipeline offers that here too.
+- **A text-generation model**, used for the enrichment steps — summaries, table refinement, figure descriptions.
+- **An embedding model**, which turns text into the vectors agents search.
+
+Leave the models unset to use the deployment's defaults. Because a database's vectors are only comparable to other
+vectors produced by the same embedding model, the models are fixed once the database exists — to change them, create a
+new database and re-upload.
+
+Whoever creates a database is granted administrative access to it automatically, so you can use what you just made
+without asking an administrator for a second step.
+
 ## Managing content
 
 ### Manual management
@@ -34,12 +53,13 @@ By default, databases allow manual control:
 
 1. Create collections through the web interface
 2. Upload documents to specific collections
-3. Wait for the next scheduled pipeline run
+3. Watch them process
 
 ![Empty knowledge database](../../../media/knowledge/empty_knowledge_base.png)
 
-You control what gets uploaded and where it lives. The pipeline runs on a schedule (commonly configured for nightly
-processing) to handle document processing and indexing.
+You control what gets uploaded and where it lives. Uploading a document notifies the pipeline directly, so processing
+normally begins within a minute or two rather than waiting for a scheduled run. A daily run still sweeps every database
+as a safety net, catching anything a missed notification would otherwise have left behind.
 
 ### Auto-sync from external sources
 

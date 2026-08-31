@@ -1,12 +1,40 @@
 ---
-title: RAG ingestion pipeline
+title: Document ingestion pipeline
 ---
 
-# RAG ingestion pipeline
+# Generic Document Ingestion Pipeline
 
-The RAG (Retrieval-Augmented Generation) pipeline is the default pipeline for document ingestion. It transforms
+The Generic Document Ingestion Pipeline is the platform's default pipeline for document ingestion. It transforms
 documents from file storage into searchable knowledge bases that agents can query. All documents you want agents to
-access must go through this pipeline.
+access must go through an ingestion pipeline.
+
+The name is literal: this pipeline parses, chunks, embeds and indexes documents. It performs no retrieval and no
+generation — that is the RAG agent's job, which queries what this pipeline produces.
+
+## One pipeline, every knowledge database
+
+A single deployment of this pipeline serves **every** knowledge database assigned to it, working out which database a
+run belongs to as it goes. Creating a knowledge database therefore needs no new deployment, no configuration change, and
+no restart — a database created in the admin UI is picked up automatically, and a document uploaded into it is normally
+observed within about half a minute.
+
+Each database keeps its own isolation: its own vector collection, its own document store, and its own file storage.
+Sharing a pipeline shares the processing recipe, never the data.
+
+A deployment can also run **its own** ingestion pipeline alongside this one — tuned differently, or built on entirely
+different processing steps — and have it offered in the create-database dialog next to the platform's. See
+[Building pipelines](../../../3_sdk/3_building_pipelines/) in the SDK documentation.
+
+## Choosing models per database
+
+Each knowledge database records the models it is ingested with, chosen when the database is created:
+
+- an **embedding model**, which turns text chunks into the vectors agents search
+- a **text-generation model**, used for the enrichment steps (summaries, table refinement, figure descriptions)
+
+Databases that name no models use the deployment's defaults. Because a database's vectors are only comparable to other
+vectors from the same embedding model, the choice is fixed for the database's lifetime — to change it, create a new
+database and re-upload. The vector width follows automatically from the embedding model, so the two can never disagree.
 
 ## Processing stages
 

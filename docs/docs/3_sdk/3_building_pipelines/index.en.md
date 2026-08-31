@@ -69,8 +69,8 @@ Our SDK is built on a few key principles to ensure pipelines are efficient, scal
 
 ## Quick Start: A Complete Pipeline in Under 10 Lines
 
-The SDK's factories make it incredibly simple to stand up a complete pipeline. The `document_ingestion_pipeline_definitions` function
-bundles all the necessary assets, resources, jobs, and schedules.
+The SDK's factories make it incredibly simple to stand up a complete pipeline. The
+`document_ingestion_pipeline_definitions` function bundles all the necessary assets, resources, jobs, and schedules.
 
 Create a file named `my_pipeline.py`:
 
@@ -99,6 +99,32 @@ This single function call provides:
 - Integration with MongoDB for a **document store** and Milvus for a **vector store**.
 - Pre-configured **jobs**, **schedules**, and **sensors** for production-ready automation.
 - Registration as a selectable ingestor, so users can create databases for it from the admin UI with no redeploy.
+
+## Making your pipeline selectable in the UI
+
+Passing `display_name` and `description` alongside your `ingestor` is what makes your pipeline appear in the
+create-database dialog. There is nothing else to install and nothing to change in the platform.
+
+Your pipeline advertises itself: a sensor it ships with publishes those labels to the platform database on a short
+interval, and the API reads them from there. Registration goes through the database rather than an in-process registry
+because the API and the pipelines run in **separate containers** — whether an ingestor exists is decided by what is
+deployed, not by what happens to be importable inside the API image. Using a sensor rather than a module-level write
+means a momentary database outage cannot stop your code location from loading; it simply registers on the next tick.
+
+Three rules are worth knowing before you choose an id:
+
+- **The labels are required.** A custom ingestor without `display_name` and `description` raises at definition time,
+  because unlabelled it could only ever render as a bare id in the selector.
+- **Some ids are reserved.** The platform's own routing tokens — including the frozen legacy ones, which stay reserved
+  so nothing can adopt a legacy corpus — and `datalake`, which would collide in the event-subject grammar.
+- **The id is permanent.** Asset keys, the partition registry, job names, the event stream and the storage prefix are
+  all derived from it, so changing it later strands every database already assigned to the old value. Choose it once.
+
+If your pipeline never appears in the dialog, check in order: the code location loaded, its registration sensor is
+running in the Dagster UI, the row exists in the platform database, and the API can reach that same database.
+
+Full details, including the exact call, are in the
+[package README](https://github.com/bbvch-ai/aihub-core/tree/main/packages/pipeline#making-a-custom-pipeline-selectable-in-the-ui).
 
 ## Next Steps
 
