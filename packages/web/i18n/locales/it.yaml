@@ -452,7 +452,7 @@ document:
     deleting: Eliminazione in corso
     button: Elimina
     button_selected: Elimina selezionati
-    confirmMessage: Vuoi davvero eliminare questo documento? Verrà rimosso definitivamente
+    confirmMessage: Vuoi davvero eliminare "{title}"? Verrà rimosso definitivamente
       dalla base di conoscenza. Questa azione non può essere annullata.
     confirmMessageBatch: Vuoi davvero eliminare {count} documento/i? Verranno rimossi
       definitivamente dalla base di conoscenza. Questa azione non può essere annullata.

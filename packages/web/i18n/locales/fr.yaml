@@ -453,7 +453,7 @@ document:
     deleting: Suppression en cours
     button: Supprimer
     button_selected: Supprimer la sélection
-    confirmMessage: Voulez-vous vraiment supprimer ce document ? Il sera définitivement
+    confirmMessage: Voulez-vous vraiment supprimer « {title} » ? Il sera définitivement
       retiré de la base de connaissances. Cette action est irréversible.
     confirmMessageBatch: Voulez-vous vraiment supprimer {count} document(s) ? Ils
       seront définitivement retirés de la base de connaissances. Cette action est

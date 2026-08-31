@@ -128,10 +128,33 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     return tenant
 
 
+def _reconcile_default_role_rules(
+    existing: RoleEntity, role_def: _DefaultRoleDefinition, tenant_id: str
+) -> None:
+    """Adds access rules a default role definition gained since the role row was seeded.
+
+    Purely additive: rules an admin added by hand are kept, because the platform cannot tell a
+    deliberate customization from stale state. Without this, a deployment that seeded its roles
+    before a guard was introduced keeps a role that no longer grants what its name promises —
+    ``AIHubKnowledgeAdmin`` without the ``aihub.admin.knowledge`` root, for instance, cannot
+    create a database.
+    """
+    missing = [rule for rule in role_def.access_rules if rule not in existing.access_rules]
+    if not missing:
+        logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
+        return
+    existing.access_rules = list(existing.access_rules) + missing
+    existing.save()
+    logger.info(f"Added missing access rules {missing} to existing role '{role_def.name}' for tenant '{tenant_id}'")
+
+
 @no_trace
 async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
     """
     Seed the default role set for a tenant. Idempotent.
+
+    Roles that already exist are reconciled additively, so a deployment seeded before a
+    definition gained a rule picks that rule up on the next startup.
 
     Gated by ``AIHubSettings().CREATE_DEFAULT_ROLES``: when disabled, tenants
     start empty and an admin is expected to create roles manually.
@@ -143,7 +166,7 @@ async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
     for role_def in _DEFAULT_ROLE_DEFINITIONS:
         existing = RoleEntity.objects(name=role_def.name, tenant_id=tenant_id).first()
         if existing:
-            logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
+            _reconcile_default_role_rules(existing, role_def, tenant_id)
             continue
         try:
             RoleEntity.create_tenant_role(

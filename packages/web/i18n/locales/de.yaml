@@ -454,9 +454,8 @@ document:
     deleting: Wird gelöscht
     button: Löschen
     button_selected: Ausgewählte löschen
-    confirmMessage: Möchten Sie dieses Dokument wirklich löschen? Es wird dauerhaft
-      aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht
-      werden.
+    confirmMessage: Möchten Sie "{title}" wirklich löschen? Es wird dauerhaft aus der
+      Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
     confirmMessageBatch: Möchten Sie {count} Dokument(e) wirklich löschen? Sie werden
       dauerhaft aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig
       gemacht werden.
