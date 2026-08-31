@@ -17,7 +17,7 @@ from swiss_ai_hub.core.events.agent import (
     StoreUserMemoryEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.generative_ai import LLMConfig, UserMemory
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.testing import async_test
@@ -88,9 +88,16 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
 
 
 @given("no pre-seeded memories")
-def _():
-    """No action needed - just a documentation step."""
-    pass
+@async_test
+async def _():
+    """Clear the test user's memories so the scenario really starts from nothing.
+
+    The memory store is shared across runs and every scenario uses the same `fake_user()`. Once a run
+    has persisted the facts a scenario talks about, mem0's reconciliation call answers NONE for the
+    same input and the run stores nothing — so any assertion about newly added memories would pass
+    once and fail on every run after that.
+    """
+    await UserMemory(user=fake_user(), t=LocaleHandler(locale="en")).delete_all()
 
 
 # ============================================================================

@@ -8,6 +8,7 @@ from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from opentelemetry import context as otel_context
+from pydantic import ValidationError
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
 from swiss_ai_hub.core.auth import UserIdentity
@@ -119,27 +120,33 @@ class AgentDispatcher(BaseDispatcher):
         thread_context = ThreadContext.for_topic(self.redis, topic)
 
         # Teardown must run before config resolution: it only needs the run id, and a redelivered
-        # terminal event would otherwise fail on the config its first delivery already deleted.
+        # terminal event would otherwise fail on the config its first delivery already deleted. It is
+        # also what lets the ExceptionEvent published for an unusable config retire its run at all —
+        # that event would otherwise hit the very failure it reports.
         if event.is_stop_event or event.is_exception_event:
             logger.debug(f"Handling final event: {event.event_name}")
             await self._teardown_run(event, run_context, topic)
             return
 
-        agent_config_dict = await self._resolve_agent_config_dict(event, run_context, topic)
-        if agent_config_dict is None:
+        try:
+            agent_config_dict = await self._resolve_agent_config_dict(event, run_context, topic)
+            if agent_config_dict is None:
+                return
+            # Transform FormKit-style arrays (dict with numeric keys) to Python lists
+            run_agent_config = self.agent_config_type.model_validate(transform_formkit_arrays(agent_config_dict))
+        except Exception as unusable_config_exception:
+            await self._report_unusable_config(topic, unusable_config_exception)
             return
 
         # Propagate X-AIHub-* request headers into RunContext so downstream steps can act on behalf
         # of the user. Written on every header-carrying event, not only StartEvent, so HITL/BITL
-        # responses refresh the stored token instead of reusing a stale one. Written after config
-        # resolution so duplicate deliveries return before re-creating deleted run-context keys.
-        # These are untrusted client input — a step must validate a header before treating it as
-        # an identity claim.
+        # responses refresh the stored token instead of reusing a stale one. Written after the config
+        # is resolved and validated, so a duplicate delivery or an unusable config returns before
+        # re-creating deleted run-context keys. These are untrusted client input — a step must
+        # validate a header before treating it as an identity claim.
         if event._aihub_headers:
             await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
 
-        # Transform FormKit-style arrays (dict with numeric keys) to Python lists
-        run_agent_config = self.agent_config_type.model_validate(transform_formkit_arrays(agent_config_dict))
         instance_topic = AgentInstanceTopic.from_agent_class_topic(
             agent_class_topic=topic,
             agent_id=run_agent_config.agent_id,
@@ -184,6 +191,43 @@ class AgentDispatcher(BaseDispatcher):
             return None
 
         raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+
+    async def _report_unusable_config(
+        self,
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event whose config could not be resolved."],
+        cause: Annotated[Exception, "Why the config could not be fetched, merged or validated."],
+    ) -> None:
+        """
+        Turns a config failure into an ExceptionEvent instead of letting it escape into the subscriber.
+
+        A config is validated on every dispatched event, before any step runs, so a profile saved with a
+        value the agent's own model rejects (the API validates submissions against a JSON Schema that
+        cannot carry cross-field rules) would otherwise abort each event silently — the subscriber only
+        logs, and the message is acked already — leaving the chat hanging forever with nothing to show.
+        """
+        logger.exception(
+            f"Cannot resolve the configuration of {self.agent.__name__}/{topic.agent_id}, aborting the run: {cause}"
+        )
+        await self.publish_event(
+            ExceptionEvent(message=f"The agent configuration is invalid: {self._describe_config_failure(cause)}"),
+            AgentInstanceTopic.from_agent_class_topic(agent_class_topic=topic, agent_id=topic.agent_id),
+        )
+
+    @staticmethod
+    def _describe_config_failure(cause: Exception) -> str:
+        """
+        Reduces a validation failure to field locations and reasons.
+
+        An agent config carries credentials — `ImapClientConfig.password` is a plain string — and
+        Pydantic renders the offending value into `str(error)`. This text reaches the user's chat, so
+        the values must not travel with it; the full error stays in the log line above.
+        """
+        if not isinstance(cause, ValidationError):
+            return str(cause)
+        return "; ".join(
+            f"{'.'.join(str(location) for location in error['loc'])}: {error['msg']}"
+            for error in cause.errors(include_url=False, include_input=False)
+        )
 
     async def _start_run(
         self,

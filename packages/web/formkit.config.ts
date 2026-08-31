@@ -12,7 +12,7 @@ import { createInput } from '@formkit/vue'
 import { primeInputs } from '@sfxcode/formkit-primevue'
 
 import type { FormKitNode } from '@formkit/core'
-import type { DefaultConfigOptions } from '@formkit/vue'
+import type { DefaultConfigOptions, PluginConfigs } from '@formkit/vue'
 
 const LOCALES = ['de', 'en', 'fr', 'it'] as const
 
@@ -32,6 +32,21 @@ function localeRequired(node: FormKitNode): boolean {
 // create form: precisely the case this rule exists to catch.
 localeRequired.skipEmpty = false
 
+/**
+ * Passes when the value is listed in the sibling field named by `address`, or when that list is
+ * empty — backend allow-lists treat empty as unrestricted. Reading the sibling through `node.at()`
+ * registers it as a validation dependency, so FormKit re-runs this rule when the list itself
+ * changes, not only when this field does.
+ *
+ * Advisory only: it exists so an admin sees the conflict in the form. The backend never depends on
+ * it — a value outside the allow-list is rejected where it is actually used.
+ */
+const memberOf: PluginConfigs['rules'][string] = (node, address: string) => {
+  const allowed = node.at(address)?.value
+  if (!Array.isArray(allowed) || allowed.length === 0) return true
+  return allowed.includes(node.value)
+}
+
 const localeRequiredMessages = {
   de: 'Mindestens eine Sprache muss ausgefüllt sein.',
   en: 'At least one language must be filled in.',
@@ -39,10 +54,22 @@ const localeRequiredMessages = {
   it: 'Almeno una lingua deve essere compilata.',
 }
 
+const memberOfMessages = {
+  de: 'Dieser Wert steht nicht in der Liste der erlaubten Werte.',
+  en: 'This value is not in the allowed list.',
+  fr: 'Cette valeur ne figure pas dans la liste des valeurs autorisées.',
+  it: 'Questo valore non è presente nell\'elenco dei valori consentiti.',
+}
+
 const config: DefaultConfigOptions = {
-  rules: { localeRequired },
+  rules: { localeRequired, memberOf },
   messages: Object.fromEntries(
-    LOCALES.map(locale => [locale, { validation: { localeRequired: localeRequiredMessages[locale] } }]),
+    LOCALES.map(locale => [locale, {
+      validation: {
+        localeRequired: localeRequiredMessages[locale],
+        memberOf: memberOfMessages[locale],
+      },
+    }]),
   ),
   inputs: {
     ...primeInputs,
