@@ -60,6 +60,8 @@ class BucketEntity(Document):
         auto_sync: bool = False,
         datalake_type: str = "s3",
         ingestor: str = IngestorType.UNASSIGNED.value,
+        llm_model: str | None = None,
+        embedding_model: str | None = None,
         db_alias: str = "default",
     ) -> Self:
         cls._validate_name(bucket_name, "bucket_name")
@@ -75,6 +77,8 @@ class BucketEntity(Document):
                 auto_sync=auto_sync,
                 datalake_type=datalake_type,
                 ingestor=ingestor,
+                llm_model=llm_model,
+                embedding_model=embedding_model,
             )
             bucket.save()
             return bucket

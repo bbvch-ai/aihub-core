@@ -48,7 +48,9 @@ class TestEnsureAlias:
         import pymongo.errors
 
         with (
-            patch(f"{_MODULE}.mongoengine.connection.get_connection", side_effect=pymongo.errors.ConnectionFailure("down")),
+            patch(
+                f"{_MODULE}.mongoengine.connection.get_connection", side_effect=pymongo.errors.ConnectionFailure("down")
+            ),
             patch(f"{_MODULE}.register_connection") as register,
         ):
             with pytest.raises(pymongo.errors.ConnectionFailure):

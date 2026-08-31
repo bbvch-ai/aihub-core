@@ -66,6 +66,7 @@ from swiss_ai_hub.api.routes.knowledge.dto.namespace_dto import NamespaceDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_response import NamespaceResponse
 from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDTO
 from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import UpdateNamespaceRequest
+from swiss_ai_hub.api.routes.model.model_service import ModelService
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
 
 logger = logging.getLogger(__name__)
@@ -336,6 +337,49 @@ class KnowledgeService:
             logger.exception("Best-effort step failed: %s", description)
 
     @staticmethod
+    async def _validated_model(
+        model_name: Annotated[str | None, "Model the caller asked for, or None to take the deployment default"],
+        expected_mode: Annotated[str, "LiteLLM mode the slot requires, e.g. 'chat' or 'embedding'"],
+        user: UserIdentity,
+    ) -> str | None:
+        """Rejects a model this deployment does not serve, the caller cannot use, or that cannot do the job.
+
+        Goes through ``ModelService`` rather than LiteLLM directly so the tenant's own model access rules
+        apply: a database must not be bound to a model its creator is not allowed to use.
+        """
+        if model_name is None:
+            return None
+
+        model = await ModelService.get_model_by_name(user, model_name)
+        if model.model_info.mode != expected_mode:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Model '{model_name}' is a '{model.model_info.mode}' model and cannot be used as the "
+                    f"'{expected_mode}' model of a knowledge database."
+                ),
+            )
+        return model_name
+
+    @staticmethod
+    async def _validated_embedding_model(model_name: str | None, user: UserIdentity) -> str | None:
+        """Additionally requires a declared output width, which the collection's dimension is derived from."""
+        validated = await KnowledgeService._validated_model(model_name, "embedding", user)
+        if validated is None:
+            return None
+
+        model = await ModelService.get_model_by_name(user, validated)
+        if model.model_info.output_vector_size is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Embedding model '{validated}' declares no output_vector_size, so the vector "
+                    f"collection's dimension cannot be derived from it. Add it to the LiteLLM model config."
+                ),
+            )
+        return validated
+
+    @staticmethod
     @trace_fn
     def get_ingestors(t: LocaleHandler) -> list[IngestorDTO]:
         """Returns the ingestion pipelines a user may pick when creating a knowledge database.
@@ -398,6 +442,9 @@ class KnowledgeService:
         # concurrent admin calls (the loser gets NotUniqueError, not a second bucket), so any failure
         # before this point leaves no orphan. If provisioning fails, roll back both the container and
         # the row so a retry starts clean.
+        llm_model = await KnowledgeService._validated_model(request.llm_model, "chat", user)
+        embedding_model = await KnowledgeService._validated_embedding_model(request.embedding_model, user)
+
         try:
             bucket = BucketEntity.create_bucket(
                 bucket_name=database,
@@ -405,6 +452,8 @@ class KnowledgeService:
                 name=display_name_entity,
                 description=description_entity,
                 ingestor=request.ingestor,
+                llm_model=llm_model,
+                embedding_model=embedding_model,
             )
         except NotUniqueError:
             raise HTTPException(status_code=409, detail=f"Database '{database}' already exists.") from None
@@ -433,6 +482,8 @@ class KnowledgeService:
             name=bucket.db_name,
             bucket_name=bucket.bucket_name,
             ingestor=bucket.ingestor,
+            llm_model=bucket.llm_model,
+            embedding_model=bucket.embedding_model,
             display_name=KnowledgeService._safe_extract_locale_string(bucket.name, t),
             description=KnowledgeService._safe_extract_locale_string(bucket.description, t),
         )

@@ -22,3 +22,25 @@ class CreateDatabaseRequest(BaseModel):
             )
         ),
     ] = IngestorType.RAG.value
+    llm_model: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Text-generation model used to summarize, refine tables and describe figures for this "
+                "database. Defaults to the deployment's configured model. Valid values are served by "
+                "GET /models with mode=chat."
+            )
+        ),
+    ] = None
+    # Immutable after creation: the collection's vector dimension is derived from this model, and an
+    # existing Milvus collection cannot be re-dimensioned.
+    embedding_model: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Embedding model this database's documents are indexed with. Cannot be changed after "
+                "creation. Defaults to the deployment's configured model. Valid values are served by "
+                "GET /models with mode=embedding."
+            )
+        ),
+    ] = None
