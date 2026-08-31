@@ -70,3 +70,29 @@ class TestRagPipelineNamesAreIngestorScoped:
         }
 
         assert _asset_keys(rag).isdisjoint(legacy_keys)
+
+
+class TestResourcesAreFullyWired:
+    """Every resource dependency the ops dereference at run time must be supplied at build time.
+
+    A `ConfigurableResource` with an unset `ResourceDependency` builds fine and only fails when an op
+    dereferences it, so a missing one survives every import-level check and surfaces as a failed
+    ingestion run instead.
+    """
+
+    def test_the_node_parser_knows_which_embedding_model_will_consume_its_nodes(self):
+        """Without this the chunker cannot size nodes and every document fails at chunk time."""
+        node_parser = rag_pipeline_definitions().resources["node_parser"]
+
+        assert node_parser.embedding_config is not None
+        assert node_parser.llm_config is not None
+
+    def test_the_summary_parser_knows_which_model_writes_its_summaries(self):
+        summary_parser = rag_pipeline_definitions().resources["summary_parser"]
+
+        assert summary_parser.llm_config is not None
+
+    def test_the_table_refiner_knows_which_model_refines_its_tables(self):
+        table_refinement = rag_pipeline_definitions(with_table_refinement=True).resources["table_refinement"]
+
+        assert table_refinement.llm_config is not None

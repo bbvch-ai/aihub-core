@@ -128,8 +128,8 @@ def rag_pipeline_definitions(
 
     resources: dict = {
         "document_parser": DocumentParserResource(loader_type=document_parser_loader_type),
-        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
-        "summary_parser": RecursiveSummaryParserResource(),
+        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config, embedding_config=embedding_config),
+        "summary_parser": RecursiveSummaryParserResource(llm_config=llm_config),
         "data_lake_io_manager": RoutedS3DataLakeIOManager(encode_partition_keys=encode_partition_keys),
         "doc_store_io_manager": RoutedDocStoreIOManager(encode_partition_keys=encode_partition_keys),
         "vector_store_io_manager": VectorStoreIOManager(encode_partition_keys=encode_partition_keys),
