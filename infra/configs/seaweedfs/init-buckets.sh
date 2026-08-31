@@ -24,10 +24,7 @@ else
   echo "Knowledge bucket creation disabled (AIHUB_CREATE_DEFAULT_BUCKETS=$CREATE_DEFAULT_BUCKETS)"
 fi
 
-# Create CORS configuration file.
-# Must match S3BucketProvisioner.CORS_RULES in packages/core: this script provisions the built-in
-# buckets, that class provisions self-service knowledge buckets, and put-bucket-cors replaces the whole
-# configuration — so whichever runs last must write the same rules.
+# Create CORS configuration file
 cat > /tmp/cors.json <<EOF
 {
   "CORSRules": [

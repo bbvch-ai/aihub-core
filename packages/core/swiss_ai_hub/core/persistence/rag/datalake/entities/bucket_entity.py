@@ -31,6 +31,12 @@ class BucketEntity(Document):
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
     ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
+    # Models this database is ingested with. Unset on rows created before they were configurable; the
+    # pipeline falls back to its deployment defaults for those, so they keep ingesting unchanged.
+    llm_model = StringField(required=False, default=None)
+    # Immutable once set: the collection's vector dimension is derived from this model, and an existing
+    # collection cannot be re-dimensioned. Changing the embedding model means a new database.
+    embedding_model = StringField(required=False, default=None)
     # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
     deleting = BooleanField(default=False)
 
