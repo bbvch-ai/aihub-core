@@ -5,23 +5,11 @@ from datetime import UTC, datetime
 from bson import ObjectId
 from cachetools import TTLCache, cached
 from fastapi import HTTPException
-from llama_index.core.base.llms.types import AudioBlock, ImageBlock, TextBlock
 from mongoengine import DoesNotExist
-from openai.types.chat import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionContentPartImageParam,
-    ChatCompletionContentPartInputAudioParam,
-    ChatCompletionContentPartTextParam,
-    ChatCompletionMessageParam,
-    ChatCompletionUserMessageParam,
-)
-from openai.types.chat.chat_completion_content_part_image_param import ImageURL
-from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
-from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
@@ -34,8 +22,8 @@ from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import S
 
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
-from swiss_ai_hub.api.routes.event.event_service import EventService
 from swiss_ai_hub.api.routes.openai.dto.history_response import HistoryResponse
+from swiss_ai_hub.api.routes.thread.conversation_history_projector import project_conversation_history
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
 from swiss_ai_hub.api.routes.thread.dto.statistics.calculated_thread_stats import CalculatedThreadStats
 from swiss_ai_hub.api.routes.thread.dto.statistics.display_statistics import DisplayStatistics
@@ -46,7 +34,6 @@ from swiss_ai_hub.api.routes.thread.dto.thread_agent_dto import ThreadAgentDTO
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
 from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
 from swiss_ai_hub.api.routes.user.user_service import UserService
-from swiss_ai_hub.api.sockets.events.server_to_user.contextualized_agent_event import ContextualizedAgentEvent
 
 logger = logging.getLogger(__name__)
 
@@ -188,75 +175,20 @@ class ThreadService:
 
     @staticmethod
     @trace_fn
-    async def thread_as_message_history(thread_id: str) -> HistoryResponse:
-        persisted_events = EventService.get_all_thread_display_events(thread_id)
-        contextualized_events = [ContextualizedAgentEvent.from_persisted_event(event) for event in persisted_events]
-
-        messages: list[ChatCompletionMessageParam] = []
-
-        def is_user_event(event: BaseEvent) -> bool:
-            return event.is_user_message_event or event.is_hitl_response_event
-
-        def is_agent_event(event: BaseEvent) -> bool:
-            return event.is_chunk_event or event.is_hitl_response_event
-
-        continue_chunk = False
-
-        for contextualized_event in contextualized_events:
-            event = contextualized_event.event
-
-            if is_user_event(event):
-                continue_chunk = False
-
-                if len(messages) == 0 or messages[-1]["role"] != "user":
-                    messages.append(ChatCompletionUserMessageParam(role="user", content=[]))
-
-                current_message = messages[-1]
-                if event.is_user_message_event and len(event.messages) > 0:
-                    for block in event.messages[-1].blocks:
-                        if isinstance(block, TextBlock):
-                            current_message["content"].append(
-                                ChatCompletionContentPartTextParam(text=block.text, type="text")
-                            )
-                        if isinstance(block, ImageBlock):
-                            current_message["content"].append(
-                                ChatCompletionContentPartImageParam(
-                                    image_url=ImageURL(url=str(block.url)), type="image_url"
-                                )
-                            )
-                        if isinstance(block, AudioBlock):
-                            current_message["content"].append(
-                                ChatCompletionContentPartInputAudioParam(
-                                    input_audio=InputAudio(data=block.audio, format=block.format), type="input_audio"
-                                )
-                            )
-
-                if event.is_hitl_response_event:
-                    current_message["content"].append(
-                        ChatCompletionContentPartTextParam(text=event.response, type="text")
-                    )
-
-            if is_agent_event(event):
-                if len(messages) == 0 or messages[-1]["role"] != "assistant":
-                    messages.append(ChatCompletionAssistantMessageParam(role="assistant", content=[]))
-
-                current_message = messages[-1]
-                if event.is_chunk_event:
-                    if continue_chunk:
-                        current_message["content"][-1]["text"] += event.content
-                    else:
-                        current_message["content"].append(
-                            ChatCompletionContentPartTextParam(text=event.content, type="text")
-                        )
-                        continue_chunk = True
-
-                if event.is_hitl_response_event:
-                    continue_chunk = False
-                    current_message["content"].append(
-                        ChatCompletionContentPartTextParam(text=event.response, type="text")
-                    )
-
-        return HistoryResponse(messages=messages)
+    async def thread_as_message_history(
+        thread_id: str,
+        *,
+        primary_agent_class: str | None = None,
+        primary_agent_id: str | None = None,
+    ) -> HistoryResponse:
+        persisted_events = PersistedAgentEventEntity.conversation_events_for_thread(thread_id)
+        return HistoryResponse(
+            messages=project_conversation_history(
+                persisted_events,
+                primary_agent_class=primary_agent_class,
+                primary_agent_id=primary_agent_id,
+            )
+        )
 
     @staticmethod
     @trace_fn

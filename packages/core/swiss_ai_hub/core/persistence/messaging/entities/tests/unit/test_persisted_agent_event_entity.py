@@ -33,11 +33,13 @@ def _persist_event(
     event_type: str = AgentTopicManager.CONTROL_EVENT,
     display_id: str = "disp",
     agent_id: str = "test",
+    agent_class: str = "TestAgent",
     run_id: str = "run",
+    created_at: int = 1_730_000_000_000_000_000,
 ) -> None:
-    """Insert a minimal event. Only thread_id / event_id / event_parents / event_type drive classification."""
+    """Insert a minimal persisted event for repository query tests."""
     PersistedAgentEventEntity(
-        agent_class="TestAgent",
+        agent_class=agent_class,
         agent_id=agent_id,
         thread_id=thread_id,
         display_id=display_id,
@@ -45,7 +47,7 @@ def _persist_event(
         event_id=event_id,
         event_type=event_type,
         event_name=event_parents[0],
-        event_data={"created_at": 1_730_000_000_000_000_000},
+        event_data={"created_at": created_at},
         event_parents=event_parents,
     ).save()
 
@@ -123,6 +125,133 @@ class TestThreadIdForDisplay:
         _persist_event("t_b", ["StartEvent"], "e2", display_id="d_b")
         assert PersistedAgentEventEntity.thread_id_for_display("d_a") == "t_a"
         assert PersistedAgentEventEntity.thread_id_for_display("d_b") == "t_b"
+
+
+class TestConversationEventsForThread:
+    def test_user_agent_markers_select_user_and_hitl_displays(self):
+        _persist_event(
+            "thread",
+            ["UserMessageEvent"],
+            "visible-user",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="user-display",
+            agent_class="UserAgent",
+        )
+        _persist_event(
+            "thread",
+            ["HumanInTheLoopResponseEvent"],
+            "visible-hitl",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hitl-display",
+            agent_class="UserAgent",
+        )
+        _persist_event(
+            "thread",
+            ["UserMessageEvent"],
+            "wrong-agent",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hidden-agent-display",
+        )
+        _persist_event(
+            "thread",
+            ["UserMessageEvent"],
+            "wrong-type",
+            event_type=AgentTopicManager.CONTROL_EVENT,
+            display_id="hidden-control-display",
+            agent_class="UserAgent",
+        )
+        _persist_event(
+            "thread",
+            ["NotUserMessageEvent"],
+            "substring-only-parent",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hidden-substring-display",
+            agent_class="UserAgent",
+        )
+
+        events = PersistedAgentEventEntity.conversation_events_for_thread("thread")
+
+        assert {event.event_id for event in events} == {"visible-user", "visible-hitl"}
+
+    def test_returns_only_projectable_events_on_visible_displays(self):
+        _persist_event(
+            "thread",
+            ["UserMessageEvent"],
+            "user",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            agent_class="UserAgent",
+            created_at=1,
+        )
+        _persist_event(
+            "thread",
+            ["ChunkEvent"],
+            "chunk",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            created_at=2,
+        )
+        _persist_event(
+            "thread",
+            ["HumanInTheLoopRequestEvent"],
+            "hitl-request",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            created_at=3,
+        )
+        _persist_event(
+            "thread",
+            ["StopEvent"],
+            "stop",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            created_at=4,
+        )
+        _persist_event(
+            "thread",
+            ["ThoughtEvent"],
+            "irrelevant-visible",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            created_at=5,
+        )
+        _persist_event(
+            "thread",
+            ["RetrievalAgentInTheLoopResponseEvent", "AgentInTheLoopResponseEvent"],
+            "malformed-hidden",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hidden",
+            created_at=6,
+        )
+        _persist_event(
+            "other-thread",
+            ["UserMessageEvent"],
+            "other-user",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            agent_class="UserAgent",
+            created_at=7,
+        )
+
+        events = PersistedAgentEventEntity.conversation_events_for_thread("thread")
+
+        assert [event.event_id for event in events] == ["user", "chunk", "hitl-request", "stop"]
+
+    def test_markerless_thread_returns_empty_and_warns(self, caplog):
+        _persist_event(
+            "thread",
+            ["ChunkEvent"],
+            "hidden-chunk",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hidden",
+        )
+
+        with caplog.at_level("WARNING"):
+            events = PersistedAgentEventEntity.conversation_events_for_thread("thread")
+
+        assert events == []
+        assert caplog.records[-1].message == "No client-visible display marker found for thread history"
+        assert caplog.records[-1].thread_id == "thread"
 
 
 def _persist_cost_event(

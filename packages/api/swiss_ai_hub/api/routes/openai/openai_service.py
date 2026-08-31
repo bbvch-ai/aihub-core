@@ -384,7 +384,10 @@ class OpenaiService:
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request, thread_id
+                chat_completion_request,
+                thread_id,
+                primary_agent_class=agent_class,
+                primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
@@ -450,7 +453,10 @@ class OpenaiService:
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request, thread_id
+                chat_completion_request,
+                thread_id,
+                primary_agent_class=agent_class,
+                primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
@@ -679,11 +685,24 @@ class OpenaiService:
 
     @staticmethod
     async def _reconstruct_history(
-        chat_completion_request: ChatCompletionRequest, thread_id: str
+        chat_completion_request: ChatCompletionRequest,
+        thread_id: str,
+        *,
+        primary_agent_class: str,
+        primary_agent_id: str,
     ) -> list[ChatCompletionMessageParam]:
-        history = await ThreadService.thread_as_message_history(thread_id)
-        user_message = chat_completion_request.messages[-1]
-        return history.messages + [user_message]
+        if not chat_completion_request.messages:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one message is required when reconstruct_history is enabled.",
+            )
+        normalized_thread_id = str(str_to_object_id(thread_id))
+        history = await ThreadService.thread_as_message_history(
+            normalized_thread_id,
+            primary_agent_class=primary_agent_class,
+            primary_agent_id=primary_agent_id,
+        )
+        return [*history.messages, chat_completion_request.messages[-1]]
 
     @staticmethod
     def _filter_kwargs(
