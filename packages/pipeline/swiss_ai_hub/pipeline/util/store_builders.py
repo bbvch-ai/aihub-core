@@ -58,20 +58,26 @@ def build_doc_store(store_name: str) -> MongoDocumentStore:
 
 
 @cache
-def build_vector_store(store_name: str) -> MilvusVectorStore:
+def build_vector_store(store_name: str, dimension: int | None = None) -> MilvusVectorStore:
     """Milvus vector store for a knowledge database's collection.
+
+    ``dimension`` is what the collection is created with, so it must come from the embedding model that
+    produces the vectors — Milvus does not reject a mismatched width, it silently truncates or pads.
+    Paths that only operate on a collection that already exists (teardown, deletes) may omit it and take
+    the deployment default: nothing is created there, so the value is never written into a schema.
 
     Mirrors ``MilvusVectorStoreResource``: pymilvus 2.6+ builds an ``AsyncMilvusClient`` during
     ``MilvusVectorStore`` init which calls ``asyncio.get_running_loop()``, so a running loop must exist.
     """
     milvus_settings = MilvusSettings()
+    vector_dimension = dimension if dimension is not None else milvus_settings.DIMENSION
     client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
 
     return _run_on_vector_store_loop(
         lambda: create_milvus_vector_store(
             client=client,
             collection_name=store_name,
-            embedding_vector_dimension=milvus_settings.DIMENSION,
+            embedding_vector_dimension=vector_dimension,
             index_type=MilvusIndexType.HNSW,
             uri=milvus_settings.URL,
             token=milvus_settings.get_token(),

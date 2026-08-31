@@ -82,11 +82,13 @@ class TestVectorStoreIOManager:
             patch(f"{_VEC_MODULE}.get_db_name_from_bucket_name", side_effect=lambda b: f"db_{b}") as db_name,
             patch(f"{_VEC_MODULE}.build_vector_store", return_value=store) as build,
             patch(f"{_VEC_MODULE}.mark_ref_docs_as_ingested") as mark_ingested,
+            patch(f"{_VEC_MODULE}.embedding_dimension_for_bucket", return_value=1024) as dimension,
         ):
             VectorStoreIOManager().handle_output(ctx, nodes)
 
         db_name.assert_called_once_with("gamma")
-        build.assert_called_once_with("db_gamma")
+        dimension.assert_called_once_with("gamma")
+        build.assert_called_once_with("db_gamma", 1024)
         store.add.assert_called_once_with(nodes)
         mark_ingested.assert_called_once()
         assert mark_ingested.call_args.args[:2] == (nodes, "db_gamma")
@@ -102,6 +104,7 @@ class TestVectorStoreIOManager:
             patch(f"{_VEC_MODULE}.get_db_name_from_bucket_name", side_effect=lambda b: f"db_{b}"),
             patch(f"{_VEC_MODULE}.build_vector_store", return_value=store),
             patch(f"{_VEC_MODULE}.mark_ref_docs_as_ingested") as mark_ingested,
+            patch(f"{_VEC_MODULE}.embedding_dimension_for_bucket", return_value=1024),
         ):
             calls.attach_mock(store.add, "add")
             calls.attach_mock(mark_ingested, "mark_ingested")

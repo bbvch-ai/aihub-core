@@ -9,6 +9,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from swiss_ai_hub.pipeline.io.ingestion_marking import mark_ref_docs_as_ingested
 from swiss_ai_hub.pipeline.util.bucket_utils import get_db_name_from_bucket_name
 from swiss_ai_hub.pipeline.util.id_utils import uri_to_id
+from swiss_ai_hub.pipeline.util.model_builders import embedding_dimension_for_bucket
 from swiss_ai_hub.pipeline.util.partition_utils import split_composite_partition_key
 from swiss_ai_hub.pipeline.util.run_routing import bucket_from_run_tag
 from swiss_ai_hub.pipeline.util.store_builders import build_vector_store
@@ -43,7 +44,7 @@ class VectorStoreIOManager(ConfigurableIOManager):
             return
         bucket, _ = split_composite_partition_key(context.partition_key, encode=self.encode_partition_keys)
         db_name = get_db_name_from_bucket_name(bucket)
-        build_vector_store(db_name).add(nodes)
+        build_vector_store(db_name, embedding_dimension_for_bucket(bucket)).add(nodes)
         context.log.info(f"Successfully added {len(nodes)} nodes to vector store '{bucket}'")
         mark_ref_docs_as_ingested(nodes, db_name, context.log, self.document_id_key)
 

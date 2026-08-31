@@ -28,8 +28,6 @@ from swiss_ai_hub.pipeline.jobs.factory import materialize_asset_job, observe_so
 from swiss_ai_hub.pipeline.jobs.knowledge_teardown_job import knowledge_teardown_job
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import S3DataLakeFileSystemResource
 from swiss_ai_hub.pipeline.resources.factory import default_io_manager_s3_datalake_resources
-from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
-from swiss_ai_hub.pipeline.resources.llm.language_model_resource import LanguageModelResource
 from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
 from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import (
     MarkdownStructuralNodeParserResource,
@@ -123,6 +121,8 @@ def rag_pipeline_definitions(
 
     registration_sensors = _registration_sensors(ingestor, display_name, description)
 
+    # Deployment defaults. A database that names its own models overrides these per run; these are what a
+    # database created before models were configurable keeps using.
     llm_config = LLMConfig(model_name=llm_model_name)
     embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
 
@@ -134,8 +134,6 @@ def rag_pipeline_definitions(
         "doc_store_io_manager": RoutedDocStoreIOManager(encode_partition_keys=encode_partition_keys),
         "vector_store_io_manager": VectorStoreIOManager(encode_partition_keys=encode_partition_keys),
         "data_lake_file_system": S3DataLakeFileSystemResource(),
-        "embedding_model": EmbeddingModelResource(embedding_config=embedding_config),
-        "language_model": LanguageModelResource(llm_config=llm_config),
         **default_io_manager_s3_datalake_resources(container_name=ingestor),
     }
     if with_table_refinement:
