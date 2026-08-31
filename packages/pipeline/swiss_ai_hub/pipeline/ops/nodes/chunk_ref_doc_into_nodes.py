@@ -10,7 +10,7 @@ from swiss_ai_hub.pipeline.util.run_routing import bucket_from_partition_key
 
 
 @op(code_version="v1")
-def routed_chunk_ref_doc_into_nodes(
+def chunk_ref_doc_into_nodes(
     context: OpExecutionContext,
     ref_doc: RefDocDocument,
     node_parser: MarkdownStructuralNodeParserResource,

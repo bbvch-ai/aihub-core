@@ -6,14 +6,16 @@
 # ===================================================================
 
 load_from:
+{%- for pipeline in ['default_rag_pipeline', 'shared_rag_pipeline'] %}
+{%- if image_tags[pipeline][stage] %}
+  # Frozen legacy pipeline. Guarded on the same image tag as its compose service so the two cannot
+  # drift: a code location for a container that is not deployed errors permanently in the Dagster UI.
   - grpc_server:
-      host: default_rag_pipeline
+      host: {{ pipeline }}
       port: 4000
-      location_name: default_rag_pipeline
-  - grpc_server:
-      host: shared_rag_pipeline
-      port: 4000
-      location_name: shared_rag_pipeline
+      location_name: {{ pipeline }}
+{%- endif %}
+{%- endfor %}
   - grpc_server:
       host: rag_pipeline
       port: 4000

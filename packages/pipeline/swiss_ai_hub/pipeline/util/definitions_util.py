@@ -7,27 +7,8 @@ from dagster import (
     Definitions,
     DynamicPartitionsDefinition,
 )
-from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
-from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.infrastructure import MilvusSettings
 from swiss_ai_hub.core.infrastructure.rclone import RcloneSourceConfig
-from swiss_ai_hub.core.topic_managers import (
-    PipelineInstanceTopicManager,
-    PipelineSourceType,
-    PipelineTargetType,
-)
 
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
-    observable_data_lake_factory,
-)
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.removed_documents_factory import (
-    removed_documents_factory,
-)
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import (
-    summary_nodes_factory,
-)
 from swiss_ai_hub.pipeline.assets.factories.local_files_system_to_data_lake.observable_local_file_system_factory import (  # noqa: E501
     observable_local_file_system_factory,
 )
@@ -47,153 +28,19 @@ from swiss_ai_hub.pipeline.io.rclone_io_manager import RcloneIOManager
 from swiss_ai_hub.pipeline.io.share_point_io_manager import SharePointIoManager
 from swiss_ai_hub.pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from swiss_ai_hub.pipeline.resources.factory import (
-    default_io_manager_s3_datalake_resources,
-    local_mongo_milvus_storage_context_resource,
     mongo_document_store_resource,
     s3_data_lake_resources,
 )
-from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
-from swiss_ai_hub.pipeline.resources.llm.language_model_resource import LanguageModelResource
 from swiss_ai_hub.pipeline.resources.local_file_system.local_file_system_resource import LocalFileSystemResource
-from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
-from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import (
-    MarkdownStructuralNodeParserResource,
-)
-from swiss_ai_hub.pipeline.resources.parser.recursive_summary_parser_resource import RecursiveSummaryParserResource
-from swiss_ai_hub.pipeline.resources.parser.table_refinement_resource import TableRefinementResource
 from swiss_ai_hub.pipeline.resources.rclone.rclone_resource import RcloneResource
 from swiss_ai_hub.pipeline.resources.share_point.share_point_resource import SharePointResource
 from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
-from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
 from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import (
     run_failure_notification_sensors_from_settings,
 )
 from swiss_ai_hub.pipeline.util.bucket_utils import get_db_name_from_bucket_name
-
-
-def default_definitions(
-    *,
-    datalake_container_name: Annotated[str, "S3 bucket/container name where raw documents are stored"],
-    embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/bge-m3",
-    llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/gemma-4-31B-it",
-    with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
-    with_table_refinement: Annotated[bool, "Refine tables with LLM to detect structure and split"] = True,
-    with_figure_descriptions: Annotated[bool, "Generate figure descriptions with vision LLM"] = True,
-    auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,
-    observe_job_hour: Annotated[int, "Hour to run daily data lake observation job"] = 2,
-    observe_job_minute: Annotated[int, "Minute to run daily data lake observation job"] = 0,
-    vector_store_dimensions: Annotated[int | None, "Embedding vector dimensions must match model"] = None,
-    max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
-    document_parser_loader_type: Annotated[LoaderType, "Document parser loader type"] = LoaderType.MINERU,
-    encode_partition_keys: Annotated[
-        bool | None,
-        "URL-encode special characters in partition keys. Will default to True in a future version.",
-    ] = None,
-) -> Definitions:
-    """
-    Creates a complete DataLake to vector store pipeline using local resources.
-
-    Use this when you have documents in S3 and want to prepare them for RAG applications.
-    The pipeline processes raw files into searchable embeddings stored in local Mongo and Milvus.
-
-    Pipeline: S3 → Document Processing → Mongo → Node Chunking → Summary Generation → Milvus
-    """
-    encode = resolve_encode_partition_keys(encode_partition_keys)
-
-    document_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_document_partitions")
-
-    data_lake_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "data_lake"])
-    document_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "documents"])
-    nodes_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "nodes"])
-    removed_documents_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "removed_documents"])
-
-    observable_asset = observable_data_lake_factory(
-        data_lake_key,
-        document_partitions,
-        max_partitions,
-        encode_partition_keys=encode,
-    )
-    assets = [
-        observable_asset,
-        removed_documents_factory(removed_documents_key, data_lake_key=data_lake_key),
-        documents_factory(
-            document_key,
-            data_lake_key=data_lake_key,
-            partitions=document_partitions,
-            enable_table_refinement=with_table_refinement,
-            enable_figure_descriptions=with_figure_descriptions,
-        ),
-        nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
-    ]
-    if with_summary_nodes:
-        summary_nodes_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "summary_nodes"])
-        assets.append(
-            summary_nodes_factory(
-                summary_nodes_key, document_key=document_key, nodes_key=nodes_key, partitions=document_partitions
-            )
-        )
-
-    job = observe_source_job(
-        observable_asset=observable_asset,
-        source_location_name=datalake_container_name,
-    )
-
-    remove_job = materialize_asset_job(
-        source_location_name=datalake_container_name,
-        job_name="remove_documents",
-        asset_selection=AssetSelection.keys(removed_documents_key),
-    )
-
-    store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=auto_sync)
-    llm_config = LLMConfig(model_name=llm_model_name)
-    embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
-    milvus_settings = MilvusSettings()
-    dimensions = vector_store_dimensions if vector_store_dimensions is not None else milvus_settings.DIMENSION
-
-    resources: dict = {
-        "document_parser": DocumentParserResource(loader_type=document_parser_loader_type),
-        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config, embedding_config=embedding_config),
-        "summary_parser": RecursiveSummaryParserResource(llm_config=llm_config),
-        **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
-        **local_mongo_milvus_storage_context_resource(
-            vector_store_uri=milvus_settings.URL, store_name=store_name, dimensions=dimensions
-        ),
-        **s3_data_lake_resources(
-            container_name=datalake_container_name,
-            encode_partition_keys=encode,
-        ),
-        "embedding_model": EmbeddingModelResource(
-            embedding_config=embedding_config,
-        ),
-        "language_model": LanguageModelResource(llm_config=llm_config),
-    }
-
-    if with_table_refinement:
-        resources["table_refinement"] = TableRefinementResource(llm_config=llm_config)
-
-    return Definitions(
-        assets=assets,
-        resources=resources,
-        sensors=[
-            default_automation_sensor(assets),
-            nats_document_uploaded_sensor(
-                job=job,
-                topic_manager=PipelineInstanceTopicManager(
-                    source_type=PipelineSourceType.DATALAKE,
-                    source_id=datalake_container_name,
-                    target_type=PipelineTargetType.KNOWLEDGE,
-                    target_id=store_name,
-                ),
-            ),
-            run_after_success_sensor(monitored_job=job, triggered_job=remove_job),
-            *run_failure_notification_sensors_from_settings(),
-        ],
-        executor=default_process_executor(),
-        jobs=[job, remove_job],
-        schedules=[daily_schedule_at(job, hour=observe_job_hour, minute=observe_job_minute)],
-    )
 
 
 def default_sharepoint_to_datalake_definitions(

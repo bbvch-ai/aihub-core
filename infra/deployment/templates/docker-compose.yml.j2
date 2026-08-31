@@ -4055,13 +4055,7 @@ services:
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
-    {%- if image_tags.default_rag_pipeline[stage] == 'localbuild' %}
-    build:
-      context: ..
-      dockerfile: ./packages/pipeline/app/default_rag_pipeline/Dockerfile
-    {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.default_rag_pipeline[stage] }}
-    {%- endif %}
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -4138,13 +4132,7 @@ services:
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
-    {%- if image_tags.shared_rag_pipeline[stage] == 'localbuild' %}
-    build:
-      context: ..
-      dockerfile: ./packages/pipeline/app/shared_rag_pipeline/Dockerfile
-    {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.shared_rag_pipeline[stage] }}
-    {%- endif %}
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -4275,6 +4263,15 @@ services:
       MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # RAG pipeline processing recipe
+      RAG_PIPELINE_EMBEDDING_MODEL: ${RAG_PIPELINE_EMBEDDING_MODEL}
+      RAG_PIPELINE_LLM_MODEL: ${RAG_PIPELINE_LLM_MODEL}
+      RAG_PIPELINE_WITH_SUMMARY_NODES: ${RAG_PIPELINE_WITH_SUMMARY_NODES}
+      RAG_PIPELINE_WITH_TABLE_REFINEMENT: ${RAG_PIPELINE_WITH_TABLE_REFINEMENT}
+      RAG_PIPELINE_WITH_FIGURE_DESCRIPTIONS: ${RAG_PIPELINE_WITH_FIGURE_DESCRIPTIONS}
+      RAG_PIPELINE_OBSERVE_JOB_HOUR: ${RAG_PIPELINE_OBSERVE_JOB_HOUR}
+      RAG_PIPELINE_OBSERVE_JOB_MINUTE: ${RAG_PIPELINE_OBSERVE_JOB_MINUTE}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home

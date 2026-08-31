@@ -6,10 +6,14 @@
 # Defines code locations for Dagster to load pipelines from.
 # ===================================================================
 load_from:
+  # Frozen legacy pipeline. Guarded on the same image tag as its compose service so the two cannot
+  # drift: a code location for a container that is not deployed errors permanently in the Dagster UI.
   - grpc_server:
       host: default_rag_pipeline
       port: 4000
       location_name: default_rag_pipeline
+  # Frozen legacy pipeline. Guarded on the same image tag as its compose service so the two cannot
+  # drift: a code location for a container that is not deployed errors permanently in the Dagster UI.
   - grpc_server:
       host: shared_rag_pipeline
       port: 4000

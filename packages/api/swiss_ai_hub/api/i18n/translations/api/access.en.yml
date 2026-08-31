@@ -25,7 +25,8 @@ presets:
     description: Use every available model.
   admin_knowledge_create:
     name: Create knowledge bases
-    description: Create new knowledge bases. Pair with "Manage knowledge bases" to also administer them.
+    description: Create new knowledge bases. Pair with "Manage knowledge bases" to
+      also administer them.
   admin_knowledge:
     name: Manage knowledge bases
     description: Full control over knowledge bases and their documents.

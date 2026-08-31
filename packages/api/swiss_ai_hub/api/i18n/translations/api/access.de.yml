@@ -25,7 +25,8 @@ presets:
     description: Jedes verfügbare Modell nutzen.
   admin_knowledge_create:
     name: Wissensdatenbanken erstellen
-    description: Neue Wissensdatenbanken erstellen. Mit „Wissensdatenbanken verwalten“ kombinieren, um sie auch zu verwalten.
+    description: Neue Wissensdatenbanken erstellen. Mit „Wissensdatenbanken verwalten“
+      kombinieren, um sie auch zu verwalten.
   admin_knowledge:
     name: Wissensdatenbanken verwalten
     description: Volle Kontrolle über Wissensdatenbanken und ihre Dokumente.

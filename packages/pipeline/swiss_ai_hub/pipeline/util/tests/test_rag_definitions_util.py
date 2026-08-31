@@ -1,4 +1,5 @@
 from dagster import AssetKey, Definitions
+from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
 
@@ -23,6 +24,15 @@ def _job_names(defs: Definitions) -> set[str]:
     return {job.name for job in defs.jobs or []}
 
 
+def _custom_pipeline() -> Definitions:
+    """A custom ingestor must carry the labels the create-database selector renders it with."""
+    return rag_pipeline_definitions(
+        ingestor="ocr_heavy_rag",
+        display_name=LocaleString(en="OCR-heavy RAG"),
+        description=LocaleString(en="RAG tuned for scanned documents"),
+    )
+
+
 class TestRagPipelineNamesAreIngestorScoped:
     """A second pipeline *type* must be deployable alongside the first.
 
@@ -33,20 +43,20 @@ class TestRagPipelineNamesAreIngestorScoped:
 
     def test_two_ingestors_produce_disjoint_asset_keys(self) -> None:
         rag = rag_pipeline_definitions(ingestor="rag")
-        ocr_heavy = rag_pipeline_definitions(ingestor="ocr_heavy_rag")
+        ocr_heavy = _custom_pipeline()
 
         assert _asset_keys(rag).isdisjoint(_asset_keys(ocr_heavy))
 
     def test_two_ingestors_produce_distinct_partition_registries(self) -> None:
         rag = rag_pipeline_definitions(ingestor="rag")
-        ocr_heavy = rag_pipeline_definitions(ingestor="ocr_heavy_rag")
+        ocr_heavy = _custom_pipeline()
 
         assert _partition_names(rag) == {"rag_document_partitions"}
         assert _partition_names(ocr_heavy) == {"ocr_heavy_rag_document_partitions"}
 
     def test_two_ingestors_produce_distinct_job_names(self) -> None:
         rag = rag_pipeline_definitions(ingestor="rag")
-        ocr_heavy = rag_pipeline_definitions(ingestor="ocr_heavy_rag")
+        ocr_heavy = _custom_pipeline()
 
         assert _job_names(rag).isdisjoint(_job_names(ocr_heavy))
 

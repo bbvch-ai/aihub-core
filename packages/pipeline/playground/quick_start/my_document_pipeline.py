@@ -1,118 +1,46 @@
-from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
-from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
-from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.topic_managers import (
-    PipelineInstanceTopicManager,
-    PipelineSourceType,
-    PipelineTargetType,
-)
+"""Full RAG pipeline: data lake → parsed documents → embedded nodes in Milvus.
 
-# Import AI-Hub pipeline factories
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
-    observable_data_lake_factory,
-)
-from swiss_ai_hub.pipeline.jobs.factory import observe_source_job
+Run with ``uv run dagster dev -m playground.quick_start.my_document_pipeline``.
 
-# Import AI-Hub resources and utilities
-from swiss_ai_hub.pipeline.resources.factory import (
-    default_io_manager_s3_datalake_resources,
-    local_mongo_milvus_storage_context_resource,
-    s3_data_lake_resources,
-)
-from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
-from swiss_ai_hub.pipeline.resources.llm.language_model_resource import LanguageModelResource
-from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
-from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import (
-    MarkdownStructuralNodeParserResource,
-)
-from swiss_ai_hub.pipeline.resources.parser.recursive_summary_parser_resource import RecursiveSummaryParserResource
-from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
-from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
-from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
-from swiss_ai_hub.pipeline.util.bucket_utils import get_db_name_from_bucket_name
+One deployment serves every knowledge database rather than one bucket. The graph carries no bucket
+name at all; each run resolves its target from the composite partition key ``{bucket}|{file_uri}``
+(ingestion) or the ``aihub/bucket`` run tag (observation and cleanup). Creating a knowledge database
+therefore needs no new code location, compose service or environment variable — only a
+``BucketEntity`` row naming this pipeline's ingestor, which ``playground/__init__.py`` creates for
+the playground bucket.
 
-# Pipeline configuration
-DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
-DOCUMENT_KEY = AssetKey(["playground", "documents"])
-NODES_KEY = AssetKey(["playground", "nodes"])
+``rag_pipeline_definitions`` assembles the whole thing:
 
-CONTAINER_NAME = AIHubSettings().DEFAULT_BUCKET_NAME
+* an **observable data lake asset** that lists the bucket and registers one partition per file,
+* **documents** — parse each file (MinerU), optionally refine tables and describe figures, and store
+  the result as a ``RefDoc`` in the doc store, flagged not-yet-ingested,
+* **nodes** — chunk each document, embed the chunks, write them to Milvus, and only then flip the
+  document to ingested, because a parsed document without embeddings is not yet retrievable,
+* **summary nodes** (optional) — recursive summaries for hierarchical retrieval,
+* **removed documents** — prune documents whose source file is gone,
 
-# LLM configuration for document parsing and node processing
-llm_config = LLMConfig(model_name="text-generation/gemma-4-31B-it")
+plus the jobs, the daily observation schedule, and the sensors that keep one observation per
+database in flight while uploads arrive.
+"""
 
-# The node parser needs this too, to cap nodes at the embedding model's input limit
-embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
+from swiss_ai_hub.core.infrastructure import RagPipelineSettings
 
-# Dynamic partitions for scalable document processing
-document_partitions = DynamicPartitionsDefinition(name="document_partitions")
+from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import LoaderType
+from swiss_ai_hub.pipeline.util.rag_definitions_util import rag_pipeline_definitions
 
-# Create the pipeline assets using AI-Hub factories
-observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions, max_partitions=1000)
+settings = RagPipelineSettings()
 
-assets = [
-    # Observable asset watches the data lake for new/changed documents
-    observable_asset,
-    # Document factory processes raw files into RefDocs with metadata
-    documents_factory(
-        DOCUMENT_KEY,
-        data_lake_key=DATA_LAKE_KEY,
-        partitions=document_partitions,
-        enable_table_refinement=True,
-        enable_figure_descriptions=True,
-    ),
-    # Nodes factory chunks documents into searchable nodes with embeddings
-    nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
-]
-# Define the job to observe the data lake and trigger processing
-observe_job = observe_source_job(
-    observable_asset=observable_asset,
-    source_location_name=CONTAINER_NAME,
-)
-
-# Define the complete pipeline
-defs = Definitions(
-    assets=assets,
-    resources={
-        # Data lake I/O managers for S3-compatible storage
-        **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME),
-        # Document processing resources
-        "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
-        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config, embedding_config=embedding_config),
-        "summary_parser": RecursiveSummaryParserResource(llm_config=llm_config),
-        # Vector store and document store (MongoDB + Milvus)
-        **local_mongo_milvus_storage_context_resource(
-            vector_store_uri="http://localhost:19530",
-            store_name=get_db_name_from_bucket_name(bucket_name=CONTAINER_NAME, auto_sync=False),
-        ),
-        # Data lake resources for file management
-        **s3_data_lake_resources(
-            container_name=CONTAINER_NAME,
-        ),
-        # AI models for embeddings and summaries
-        "embedding_model": EmbeddingModelResource(
-            embedding_config=embedding_config,
-        ),
-        "language_model": LanguageModelResource(llm_config=llm_config),
-    },
-    # Add jobs for pipeline operations
-    jobs=[observe_job],
-    # Add scheduling - observe daily at midnight
-    schedules=[daily_schedule_at(observe_job, hour=0, minute=0)],
-    # Add sensors for automation and nats observation
-    sensors=[
-        default_automation_sensor(assets),
-        nats_document_uploaded_sensor(
-            job=observe_job,
-            topic_manager=PipelineInstanceTopicManager(
-                source_type=PipelineSourceType.DATALAKE,
-                source_id=CONTAINER_NAME,
-                target_type=PipelineTargetType.KNOWLEDGE,
-                target_id=CONTAINER_NAME,
-            ),
-        ),
-    ],
+defs = rag_pipeline_definitions(
+    # Every deployment-global name — asset keys, the dynamic-partition registry, job names — is derived
+    # from the ingestor, which is what lets a second pipeline type run alongside this one. It is also the
+    # routing guard: this pipeline ingests exactly the databases whose BucketEntity names it.
+    ingestor="rag",
+    embedding_model_name=settings.EMBEDDING_MODEL,
+    llm_model_name=settings.LLM_MODEL,
+    with_summary_nodes=True,
+    with_table_refinement=True,
+    with_figure_descriptions=True,
+    document_parser_loader_type=LoaderType.MINERU,
+    observe_job_hour=0,
+    observe_job_minute=0,
 )

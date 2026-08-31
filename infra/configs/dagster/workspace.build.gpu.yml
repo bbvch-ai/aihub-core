@@ -7,14 +7,6 @@
 # ===================================================================
 load_from:
   - grpc_server:
-      host: default_rag_pipeline
-      port: 4000
-      location_name: default_rag_pipeline
-  - grpc_server:
-      host: shared_rag_pipeline
-      port: 4000
-      location_name: shared_rag_pipeline
-  - grpc_server:
       host: rag_pipeline
       port: 4000
       location_name: rag_pipeline

@@ -67,4 +67,4 @@ quickstart: check-dotenv dagster-home
 
 rag-pipelines: check-dotenv dagster-home
 	@echo "Running RAG pipelines..."
-	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.default_rag_pipeline -m app.shared_rag_pipeline -m app.rag_pipeline
+	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.rag_pipeline

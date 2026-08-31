@@ -1,13 +1,13 @@
 from unittest.mock import MagicMock, patch
 
 from swiss_ai_hub.pipeline.io.routed_doc_store_io_manager import RoutedDocStoreIOManager
-from swiss_ai_hub.pipeline.io.routed_vector_store_io_manager import RoutedVectorStoreIOManager
+from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
 from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.id_utils import uri_to_id
 from swiss_ai_hub.pipeline.util.partition_utils import make_composite_partition_key
 
 _DOC_MODULE = "swiss_ai_hub.pipeline.io.routed_doc_store_io_manager"
-_VEC_MODULE = "swiss_ai_hub.pipeline.io.routed_vector_store_io_manager"
+_VEC_MODULE = "swiss_ai_hub.pipeline.io.vector_store_io_manager"
 
 
 class TestRoutedDocStoreIOManager:
@@ -71,7 +71,7 @@ class TestRoutedDocStoreIOManager:
         store.get_document.assert_called_once_with(uri_to_id(alpha_uri))
 
 
-class TestRoutedVectorStoreIOManager:
+class TestVectorStoreIOManager:
     def test_handle_output_routes_nodes_to_collection_resolved_from_composite_key(self) -> None:
         store = MagicMock()
         ctx = MagicMock()
@@ -83,7 +83,7 @@ class TestRoutedVectorStoreIOManager:
             patch(f"{_VEC_MODULE}.build_vector_store", return_value=store) as build,
             patch(f"{_VEC_MODULE}.mark_ref_docs_as_ingested") as mark_ingested,
         ):
-            RoutedVectorStoreIOManager().handle_output(ctx, nodes)
+            VectorStoreIOManager().handle_output(ctx, nodes)
 
         db_name.assert_called_once_with("gamma")
         build.assert_called_once_with("db_gamma")
@@ -105,7 +105,7 @@ class TestRoutedVectorStoreIOManager:
         ):
             calls.attach_mock(store.add, "add")
             calls.attach_mock(mark_ingested, "mark_ingested")
-            RoutedVectorStoreIOManager().handle_output(ctx, [MagicMock()])
+            VectorStoreIOManager().handle_output(ctx, [MagicMock()])
 
         assert [call[0] for call in calls.mock_calls] == ["add", "mark_ingested"]
 
@@ -114,6 +114,6 @@ class TestRoutedVectorStoreIOManager:
         ctx.partition_key = make_composite_partition_key("gamma", "s3://gamma/docs/c.pdf")
 
         with patch(f"{_VEC_MODULE}.build_vector_store") as build:
-            RoutedVectorStoreIOManager().handle_output(ctx, [])
+            VectorStoreIOManager().handle_output(ctx, [])
 
         build.assert_not_called()

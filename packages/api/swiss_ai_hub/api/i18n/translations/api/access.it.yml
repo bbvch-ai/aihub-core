@@ -25,7 +25,8 @@ presets:
     description: Usa ogni modello disponibile.
   admin_knowledge_create:
     name: Crea basi di conoscenza
-    description: Crea nuove basi di conoscenza. Da combinare con «Gestisci basi di conoscenza» per amministrarle.
+    description: Crea nuove basi di conoscenza. Da combinare con «Gestisci basi di
+      conoscenza» per amministrarle.
   admin_knowledge:
     name: Gestisci le basi di conoscenza
     description: Controllo completo sulle basi di conoscenza e i loro documenti.

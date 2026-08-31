@@ -8,21 +8,22 @@ from dagster import (
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.persistence import IngestorType
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.persistence import IngestorEntity, IngestorType
 
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_routed_data_lake_factory import (
-    observable_routed_data_lake_factory,
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
+    observable_data_lake_factory,
 )
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.removed_documents_factory import (
     removed_documents_factory,
 )
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.routed_nodes_factory import routed_nodes_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import summary_nodes_factory
 from swiss_ai_hub.pipeline.executors.factory import default_process_executor
 from swiss_ai_hub.pipeline.io.routed_doc_store_io_manager import RoutedDocStoreIOManager
 from swiss_ai_hub.pipeline.io.routed_s3_data_lake_io_manager import RoutedS3DataLakeIOManager
-from swiss_ai_hub.pipeline.io.routed_vector_store_io_manager import RoutedVectorStoreIOManager
+from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
 from swiss_ai_hub.pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from swiss_ai_hub.pipeline.jobs.knowledge_teardown_job import knowledge_teardown_job
 from swiss_ai_hub.pipeline.resources.data_lake.s3.routed_s3_data_lake_client_resource import (
@@ -47,9 +48,10 @@ from swiss_ai_hub.pipeline.resources.vector_store.routed_milvus_vector_store_res
 )
 from swiss_ai_hub.pipeline.schedules.per_bucket_schedule import per_bucket_observe_schedule
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
+from swiss_ai_hub.pipeline.sensors.ingestor_registration_sensor import ingestor_registration_sensor
 from swiss_ai_hub.pipeline.sensors.knowledge_teardown_sensor import knowledge_teardown_sensor
-from swiss_ai_hub.pipeline.sensors.nats.per_bucket_nats_document_uploaded_sensor import (
-    per_bucket_nats_document_uploaded_sensor,
+from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import (
+    nats_document_uploaded_sensor,
 )
 from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import run_failure_notification_sensors_from_settings
@@ -60,6 +62,8 @@ _DEFAULT_INGESTOR = IngestorType.RAG.value
 def rag_pipeline_definitions(
     *,
     ingestor: Annotated[str, "Ingestor that owns the databases this pipeline serves"] = _DEFAULT_INGESTOR,
+    display_name: Annotated[LocaleString | None, "Localized name of a custom ingestor, shown in the UI"] = None,
+    description: Annotated[LocaleString | None, "Localized description of a custom ingestor"] = None,
     embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/bge-m3",
     llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/gemma-4-31B-it",
     with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
@@ -93,7 +97,7 @@ def rag_pipeline_definitions(
 
     document_partitions = DynamicPartitionsDefinition(name=f"{ingestor}_document_partitions")
 
-    observable_asset = observable_routed_data_lake_factory(
+    observable_asset = observable_data_lake_factory(
         data_lake_key,
         document_partitions,
         max_partitions,
@@ -109,7 +113,7 @@ def rag_pipeline_definitions(
             enable_table_refinement=with_table_refinement,
             enable_figure_descriptions=with_figure_descriptions,
         ),
-        routed_nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
+        nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
     ]
     if with_summary_nodes:
         summary_nodes_key = AssetKey([asset_group, "summary_nodes"])
@@ -127,6 +131,8 @@ def rag_pipeline_definitions(
     )
     teardown_job = knowledge_teardown_job(source_location_name=ingestor)
 
+    registration_sensors = _registration_sensors(ingestor, display_name, description)
+
     llm_config = LLMConfig(model_name=llm_model_name)
     embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
 
@@ -136,7 +142,7 @@ def rag_pipeline_definitions(
         "summary_parser": RecursiveSummaryParserResource(),
         "data_lake_io_manager": RoutedS3DataLakeIOManager(encode_partition_keys=encode_partition_keys),
         "doc_store_io_manager": RoutedDocStoreIOManager(encode_partition_keys=encode_partition_keys),
-        "vector_store_io_manager": RoutedVectorStoreIOManager(encode_partition_keys=encode_partition_keys),
+        "vector_store_io_manager": VectorStoreIOManager(encode_partition_keys=encode_partition_keys),
         "data_lake_client": RoutedS3DataLakeClientResource(),
         "data_lake_file_system": S3DataLakeFileSystemResource(),
         "doc_store": RoutedMongoDocumentStoreResource(),
@@ -154,9 +160,10 @@ def rag_pipeline_definitions(
         resources=resources,
         sensors=[
             default_automation_sensor(assets),
-            per_bucket_nats_document_uploaded_sensor(observe_job, ingestor=ingestor),
+            nats_document_uploaded_sensor(observe_job, ingestor=ingestor),
             knowledge_teardown_sensor(teardown_job, ingestor=ingestor),
             run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job, require_bucket_tag=True),
+            *registration_sensors,
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
@@ -167,3 +174,25 @@ def rag_pipeline_definitions(
             )
         ],
     )
+
+
+def _registration_sensors(
+    ingestor: str,
+    display_name: LocaleString | None,
+    description: LocaleString | None,
+) -> list:
+    """The self-registration sensor, for a custom ingestor only.
+
+    The platform's own ingestors are already in ``IngestorType`` and localized by the API, so they need
+    no row. A custom one is unknown to the API until this pipeline advertises it — and unlabelled it
+    could only ever render as a bare id in the selector, so its labels are required rather than optional.
+    """
+    if ingestor in {ingestor_type.value for ingestor_type in IngestorType}:
+        return []
+    if ingestor in IngestorEntity.reserved_ids():
+        msg = f"Ingestor '{ingestor}' is reserved by the platform and cannot be claimed by a pipeline."
+        raise ValueError(msg)
+    if display_name is None or description is None:
+        msg = f"Custom ingestor '{ingestor}' needs a display_name and a description to be selectable."
+        raise ValueError(msg)
+    return [ingestor_registration_sensor(ingestor, display_name, description)]

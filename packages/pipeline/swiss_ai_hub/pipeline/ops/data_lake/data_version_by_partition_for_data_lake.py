@@ -11,7 +11,7 @@ from swiss_ai_hub.pipeline.util.meta_utils import data_lake_metadata_table
 from swiss_ai_hub.pipeline.util.partition_utils import make_composite_partition_key, replace_partition_keys_for_bucket
 
 
-def data_version_by_partition_for_routed_data_lake_no_op(
+def data_version_by_partition_for_data_lake_no_op(
     context: OpExecutionContext,
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, ValidationError
 from swiss_ai_hub.pipeline.sensors.nats.observation_sensor_cursor import ObservationSensorCursor
 
 
-class RoutedObservationSensorCursor(BaseModel):
+class PerBucketObservationSensorCursor(BaseModel):
     """The observation state of every knowledge database one sensor serves, in Dagster's single cursor slot.
 
     A configurable pipeline has one sensor for many databases, but debounce, follow-up and truncation
