@@ -42,9 +42,9 @@ The `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py` provides 
 
 ### `document_ingestion_pipeline_definitions()` — Stage 2 (DataLake to Vector Store)
 
-Defined in `util/document_ingestion_definitions_util.py`. Carries no bucket name: one deployment serves every knowledge database whose
-`BucketEntity.ingestor` matches, resolving the target per run from the composite partition key `{bucket}|{uri}` or the
-`aihub/bucket` run tag.
+Defined in `util/document_ingestion_definitions_util.py`. Carries no bucket name: one deployment serves every knowledge
+database whose `BucketEntity.ingestor` matches, resolving the target per run from the composite partition key
+`{bucket}|{uri}` or the `aihub/bucket` run tag.
 
 ```python
 from swiss_ai_hub.core.i18n import LocaleString
@@ -52,7 +52,7 @@ from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import docum
 
 defs = document_ingestion_pipeline_definitions(
     ingestor="document_ingestion",                               # routing key; also namespaces every global Dagster name
-    display_name=LocaleString(en="My RAG"),       # required for a custom ingestor, omitted for "rag"
+    display_name=LocaleString(en="My Pipeline"),  # required for a custom ingestor, omitted for the platform one
     description=LocaleString(en="What it does"),
     embedding_model_name="embedding/large",       # LiteLLM model
     llm_model_name="text-generation/mini",        # LiteLLM model
@@ -66,7 +66,8 @@ defs = document_ingestion_pipeline_definitions(
 )
 ```
 
-The deployed pipeline reads these from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*` env vars) rather than hardcoding them.
+The deployed pipeline reads these from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*` env vars) rather than
+hardcoding them.
 
 ### `default_sharepoint_to_datalake_definitions()` — Stage 1 (SharePoint to S3)
 

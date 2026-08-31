@@ -30,15 +30,15 @@ RAG agents search. It implements a **two-stage, asset-based pipeline**:
 2. **Data lake → vector store** — parse each file (MinerU OCR + structure), chunk it, embed it via the LLM gateway, and
    upsert the vectors into Milvus, with full lineage from every embedding back to its source document.
 
-You compose a pipeline from one function, `document_ingestion_pipeline_definitions()`, which wires together all the assets, resources,
-IO managers, sensors, jobs, and schedules. It builds on [`swiss-ai-hub-core`](https://pypi.org/project/swiss-ai-hub-core/)
-(installed automatically); RAG agents from [`swiss-ai-hub-agent`](https://pypi.org/project/swiss-ai-hub-agent/) query
-its output.
+You compose a pipeline from one function, `document_ingestion_pipeline_definitions()`, which wires together all the
+assets, resources, IO managers, sensors, jobs, and schedules. It builds on
+[`swiss-ai-hub-core`](https://pypi.org/project/swiss-ai-hub-core/) (installed automatically); RAG agents from
+[`swiss-ai-hub-agent`](https://pypi.org/project/swiss-ai-hub-agent/) query its output.
 
 ## Should you use this package?
 
-**Probably not directly — most deployments use the pre-built `document_ingestion_pipeline` image**, which ingests every knowledge
-database users create from the UI, with no redeploy.
+**Probably not directly — most deployments use the pre-built `document_ingestion_pipeline` image**, which ingests every
+knowledge database users create from the UI, with no redeploy.
 
 **Use this PyPI package when you want a custom pipeline** — connect a new data source, or tune
 parsing/chunking/embedding for your documents. It's an SDK for building your own ingestion as a Dagster
@@ -85,9 +85,8 @@ Run it with the Dagster UI and materialize the assets:
 dagster dev -m my_pipeline      # opens http://localhost:3000
 ```
 
-Upload a document to that database, and watch it flow:
-`observe → documents (parse) → nodes (chunk + embed) → Milvus`. A RAG agent pointed at it can now answer questions over
-it.
+Upload a document to that database, and watch it flow: `observe → documents (parse) → nodes (chunk + embed) → Milvus`. A
+RAG agent pointed at it can now answer questions over it.
 
 To also pull from an external source, combine it with a Stage-1 builder — e.g.
 `default_rclone_to_datalake_definitions(...)` for OneDrive/Google Drive/Dropbox, or
@@ -99,8 +98,8 @@ ______________________________________________________________________
 
 ## How it works
 
-`document_ingestion_pipeline_definitions()` assembles a graph of Dagster **assets** connected by **IO managers** to the platform's
-stores:
+`document_ingestion_pipeline_definitions()` assembles a graph of Dagster **assets** connected by **IO managers** to the
+platform's stores:
 
 | Stage                    | Assets                                                                             | Backed by                        |
 | ------------------------ | ---------------------------------------------------------------------------------- | -------------------------------- |
@@ -111,9 +110,9 @@ A document is reported as ingested only once `nodes` has written its embeddings 
 markdown but is not yet retrievable, so it stays pending until then.
 
 Materialization is driven by eager automation, daily schedules, and a NATS sensor that fires when documents are uploaded
-through the API — so ingestion keeps up with changes without manual runs. Key `document_ingestion_pipeline_definitions()` knobs:
-`with_summary_nodes`, `with_table_refinement`, `with_figure_descriptions`, `document_parser_loader_type` (MinerU or
-Document Intelligence), and `max_partitions`.
+through the API — so ingestion keeps up with changes without manual runs. Key
+`document_ingestion_pipeline_definitions()` knobs: `with_summary_nodes`, `with_table_refinement`,
+`with_figure_descriptions`, `document_parser_loader_type` (MinerU or Document Intelligence), and `max_partitions`.
 
 ______________________________________________________________________
 
@@ -142,9 +141,9 @@ and in CI.
 
 ### Make targets
 
-`make playground`, `make quickstart`, and `make document-ingestion-pipeline` wrap the three steps above: they source the repo-root
-`.env` and install `dagster.local.yaml` into `$DAGSTER_HOME` (`~/.dagster_home` unless you export something else) as
-`dagster.yaml` if no config is there yet.
+`make playground`, `make quickstart`, and `make document-ingestion-pipeline` wrap the three steps above: they source the
+repo-root `.env` and install `dagster.local.yaml` into `$DAGSTER_HOME` (`~/.dagster_home` unless you export something
+else) as `dagster.yaml` if no config is there yet.
 
 Both parts matter. Without `DAGSTER_HOME`, `dagster dev` builds a throwaway instance in a `.tmp_dagster_home_*` folder
 under the working directory on every start — run history is lost between sessions. And without an instance config,
@@ -255,8 +254,9 @@ A sensor in the pipeline publishes those labels to the platform database; `GET /
 it — with **no** change to the platform's `IngestorType` enum, API contract, or generated SDK, and nothing to install
 into the API image.
 
-The ingestor id must not collide with a platform routing token (`rag`, `unassigned`, the frozen `default_rag` /
-`shared_rag`) or with the `datalake` subject token; `document_ingestion_pipeline_definitions` rejects those at definition time.
+The ingestor id must not collide with a platform routing token (`document_ingestion`, `unassigned`, the frozen
+`default_rag` / `shared_rag`) or with the `datalake` subject token; `document_ingestion_pipeline_definitions` rejects
+those at definition time.
 
 See ADR `2026_06_18_rag_pipeline_route_per_run` for the rationale, including why registration goes through the database
 and why the `ingestor` field is a plain string at the API boundary.

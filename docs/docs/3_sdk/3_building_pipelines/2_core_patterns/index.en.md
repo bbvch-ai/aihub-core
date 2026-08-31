@@ -115,12 +115,13 @@ resources, allowing you to define an entire pipeline in just a few lines of code
 - **Asset Factories (`*_factory.py`)**: Functions that create individual, configured assets (like `documents_factory`).
 - **Resource Factories (`resources/factory.py`)**: Functions that assemble a complete set of resources needed for a
   pipeline (like `s3_data_lake_resources`).
-- **Definitions Factories (`document_ingestion_definitions_util.py`)**: The top-level factory (`document_ingestion_pipeline_definitions`) that uses
-  all other factories to create a complete, runnable `Definitions` object.
+- **Definitions Factories (`document_ingestion_definitions_util.py`)**: The top-level factory
+  (`document_ingestion_pipeline_definitions`) that uses all other factories to create a complete, runnable `Definitions`
+  object.
 
 ```python
 # From document_ingestion_definitions_util.py
-def document_ingestion_pipeline_definitions(ingestor: str = "rag", ...) -> Definitions:
+def document_ingestion_pipeline_definitions(ingestor: str = "document_ingestion", ...) -> Definitions:
     """
     A factory that assembles an entire pipeline from other factories.
     """
