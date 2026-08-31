@@ -92,6 +92,54 @@
         </small>
       </div>
 
+      <div class="flex flex-col gap-2">
+        <label
+          for="database-llm-model-select"
+          class="text-sm font-medium"
+        >
+          {{ t('knowledge.form.llm_model.label') }}
+          <span class="ml-1 text-xs text-gray-400">(optional)</span>
+        </label>
+        <Select
+          id="database-llm-model-select"
+          v-model="llmModel"
+          :options="chatModels"
+          option-label="model_name"
+          option-value="model_name"
+          :placeholder="t('knowledge.form.llm_model.placeholder')"
+          :loading="chatModelsAreLoading"
+          :disabled="isCreating"
+          show-clear
+          filter
+          class="w-full"
+        />
+        <small class="text-gray-500">{{ t('knowledge.form.llm_model.help') }}</small>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label
+          for="database-embedding-model-select"
+          class="text-sm font-medium"
+        >
+          {{ t('knowledge.form.embedding_model.label') }}
+          <span class="ml-1 text-xs text-gray-400">(optional)</span>
+        </label>
+        <Select
+          id="database-embedding-model-select"
+          v-model="embeddingModel"
+          :options="embeddingModels"
+          option-label="model_name"
+          option-value="model_name"
+          :placeholder="t('knowledge.form.embedding_model.placeholder')"
+          :loading="embeddingModelsAreLoading"
+          :disabled="isCreating"
+          show-clear
+          filter
+          class="w-full"
+        />
+        <small class="text-gray-500">{{ t('knowledge.form.embedding_model.help') }}</small>
+      </div>
+
       <small
         v-if="error"
         class="text-red-500"
@@ -132,12 +180,18 @@ const emit = defineEmits<{
 
 const { mutateAsync: createDatabase } = useCreateDatabase()
 const { ingestors, ingestorsAreLoading } = useIngestors()
+const { models: chatModels, modelsAreLoading: chatModelsAreLoading } = useModelsByMode('chat')
+const { models: embeddingModels, modelsAreLoading: embeddingModelsAreLoading } = useModelsByMode('embedding')
 const { tenantId } = useTenant()
 
 const name = ref('')
 const displayName = ref('')
 const description = ref('')
 const ingestor = ref<string | undefined>()
+// Left unset the database follows the deployment's configured models, which is what every database
+// created before they were choosable does.
+const llmModel = ref<string | undefined>()
+const embeddingModel = ref<string | undefined>()
 const error = ref('')
 const isCreating = ref(false)
 
@@ -173,6 +227,8 @@ const resetForm = () => {
   displayName.value = ''
   description.value = ''
   ingestor.value = defaultIngestor.value
+  llmModel.value = undefined
+  embeddingModel.value = undefined
   error.value = ''
   isCreating.value = false
 }
@@ -188,6 +244,8 @@ const handleCreate = async () => {
     display_name: displayName.value.trim() || undefined,
     description: description.value.trim() || undefined,
     ingestor: ingestor.value,
+    llm_model: llmModel.value || undefined,
+    embedding_model: embeddingModel.value || undefined,
     tenantId: tenantId.value!,
   }
 

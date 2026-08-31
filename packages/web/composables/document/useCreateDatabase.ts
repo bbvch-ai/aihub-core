@@ -12,6 +12,8 @@ export const useCreateDatabase = defineMutation(() => {
           display_name: request.display_name,
           description: request.description,
           ingestor: request.ingestor,
+          llm_model: request.llm_model,
+          embedding_model: request.embedding_model,
         },
         path: {
           tenant_id: request.tenantId,

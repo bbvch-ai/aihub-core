@@ -4011,6 +4011,18 @@ export type CreateDatabaseRequest = {
    * The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.
    */
   ingestor?: string;
+  /**
+   * Llm Model
+   *
+   * Text-generation model used to summarize, refine tables and describe figures for this database. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=chat.
+   */
+  llm_model?: string | null;
+  /**
+   * Embedding Model
+   *
+   * Embedding model this database's documents are indexed with. Cannot be changed after creation. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=embedding.
+   */
+  embedding_model?: string | null;
 };
 
 /**
@@ -4529,6 +4541,18 @@ export type DatabaseResponse = {
    * The deployed ingestion pipeline that owns this database.
    */
   ingestor: string;
+  /**
+   * Llm Model
+   *
+   * Text-generation model, or None to follow the deployment default.
+   */
+  llm_model?: string | null;
+  /**
+   * Embedding Model
+   *
+   * Embedding model, or None to follow the deployment default.
+   */
+  embedding_model?: string | null;
   /**
    * Display Name
    *

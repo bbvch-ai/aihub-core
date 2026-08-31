@@ -5913,6 +5913,32 @@ export const CreateDatabaseRequestSchema = {
         "The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.",
       default: "rag",
     },
+    llm_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model",
+      description:
+        "Text-generation model used to summarize, refine tables and describe figures for this database. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=chat.",
+    },
+    embedding_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Embedding Model",
+      description:
+        "Embedding model this database's documents are indexed with. Cannot be changed after creation. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=embedding.",
+    },
   },
   type: "object",
   title: "CreateDatabaseRequest",
@@ -6598,6 +6624,31 @@ export const DatabaseResponseSchema = {
       type: "string",
       title: "Ingestor",
       description: "The deployed ingestion pipeline that owns this database.",
+    },
+    llm_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model",
+      description:
+        "Text-generation model, or None to follow the deployment default.",
+    },
+    embedding_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Embedding Model",
+      description: "Embedding model, or None to follow the deployment default.",
     },
     display_name: {
       anyOf: [

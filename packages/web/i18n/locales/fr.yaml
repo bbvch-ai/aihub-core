@@ -563,6 +563,14 @@ knowledge:
       label: Pipeline d'ingestion
       placeholder: Sélectionner un pipeline d'ingestion
       help: Le pipeline qui traite les documents téléversés dans cette base de données.
+    llm_model:
+      label: Modèle de texte
+      placeholder: Utiliser la valeur par défaut du déploiement
+      help: Génère les résumés, affine les tableaux et décrit les figures de cette base.
+    embedding_model:
+      label: Modèle d'embedding
+      placeholder: Utiliser la valeur par défaut du déploiement
+      help: Indexe les documents de cette base. Non modifiable après la création.
     folder_name:
       label: Nom de la collection
       placeholder: ma-collection

@@ -564,6 +564,14 @@ knowledge:
       label: Ingestion-Pipeline
       placeholder: Ingestion-Pipeline auswählen
       help: Die Pipeline, die in diese Datenbank hochgeladene Dokumente verarbeitet.
+    llm_model:
+      label: Textmodell
+      placeholder: Standard der Installation verwenden
+      help: Erstellt Zusammenfassungen, verfeinert Tabellen und beschreibt Abbildungen dieser Datenbank.
+    embedding_model:
+      label: Embedding-Modell
+      placeholder: Standard der Installation verwenden
+      help: Indexiert die Dokumente dieser Datenbank. Nach der Erstellung nicht mehr änderbar.
     folder_name:
       label: Sammlungsname
       placeholder: meine-sammlung

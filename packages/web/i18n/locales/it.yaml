@@ -562,6 +562,14 @@ knowledge:
       label: Pipeline di ingestione
       placeholder: Seleziona una pipeline di ingestione
       help: La pipeline che elabora i documenti caricati in questo database.
+    llm_model:
+      label: Modello di testo
+      placeholder: Usa il valore predefinito dell'installazione
+      help: Genera riassunti, affina le tabelle e descrive le figure di questo database.
+    embedding_model:
+      label: Modello di embedding
+      placeholder: Usa il valore predefinito dell'installazione
+      help: Indicizza i documenti di questo database. Non modificabile dopo la creazione.
     folder_name:
       label: Nome collezione
       placeholder: mia-collezione
