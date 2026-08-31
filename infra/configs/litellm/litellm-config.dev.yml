@@ -27,6 +27,7 @@ model_list:
       max_input_tokens: 65536
       max_output_tokens: 32768
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000007
       output_cost_per_token: 0.0000025
   - model_name: text-generation/gemma-4-31B-it
@@ -37,9 +38,13 @@ model_list:
       drop_params: true
     model_info:
       mode: chat
-      max_input_tokens: 131072
+      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model, not the model's own
+      # 256K architecture limit. Their OpenAI-compatible /v1/models carries no context field to verify this
+      # against, so it must be checked manually against their native API if this model's serving changes.
+      max_input_tokens: 100000
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000002
       output_cost_per_token: 0.0000008
   - model_name: text-generation/Kimi-K2.6
@@ -53,6 +58,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 65536
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.0000006
       output_cost_per_token: 0.000003
   - model_name: text-generation/Ministral-3-14B-Instruct-2512
@@ -63,9 +69,12 @@ model_list:
       drop_params: true
     model_info:
       mode: chat
-      max_input_tokens: 131072
+      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model; see the note on
+      # gemma-4-31B-it above.
+      max_input_tokens: 100000
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       input_cost_per_token: 0.00000001
       output_cost_per_token: 0.00000003
   - model_name: text-generation/Qwen3.5-122B-A10B-FP8
@@ -79,6 +88,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       supports_vision: false
       input_cost_per_token: 0.0000007
       output_cost_per_token: 0.000002
@@ -110,6 +120,9 @@ model_list:
       drop_params: true
     model_info:
       mode: embedding
+      # The chunker reads this to size nodes. Without it LiteLLM reports null and callers have to guess,
+      # which is how oversized chunks reached the model and failed the whole document.
+      max_input_tokens: 8192
       input_cost_per_token: 0.0000004309
 
   # ===================================================================
@@ -130,9 +143,10 @@ model_list:
   # ===================================================================
   - model_name: transcription/whisper-large-v3
     litellm_params:
-      model: openai/whisper-large-v3
+      model: os.environ/SWISS_LLM_CLOUD_WHISPER_MODEL
       api_base: os.environ/SWISS_LLM_CLOUD_WHISPER_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_WHISPER_API_KEY
+      api_version: '2024-06-01'
       drop_params: true
     model_info:
       mode: audio_transcription

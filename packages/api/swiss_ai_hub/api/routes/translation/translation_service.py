@@ -2,9 +2,10 @@ import logging
 
 from llama_index.core import PromptTemplate
 from pydantic import ValidationError
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, trace_fn
+from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
 
 from swiss_ai_hub.api.routes.translation.dto.translation_request import TranslationRequest
 from swiss_ai_hub.api.routes.translation.dto.translation_response import TranslationResponse
@@ -21,7 +22,9 @@ class TranslationService:
 
     @classmethod
     @trace_fn
-    async def translate_from_request(cls, request: TranslationRequest, t: LocaleHandler) -> TranslationResponse:
+    async def translate_from_request(
+        cls, request: TranslationRequest, t: LocaleHandler, user: UserIdentity
+    ) -> TranslationResponse:
         """
         Translates a LocaleString from the request to all supported locales.
         """
@@ -33,6 +36,7 @@ class TranslationService:
             llm_config=llm_config,
             t=t,
             source_locale=request.source_locale,
+            user=user,
         )
 
         return TranslationResponse(translated=translated)
@@ -51,7 +55,12 @@ class TranslationService:
     @classmethod
     @trace_fn
     async def translate(
-        cls, locale_string: LocaleString, llm_config: LLMConfig, t: LocaleHandler, source_locale: str = "en"
+        cls,
+        locale_string: LocaleString,
+        llm_config: LLMConfig,
+        t: LocaleHandler,
+        user: UserIdentity,
+        source_locale: str = "en",
     ) -> LocaleString:
         """
         Translates fields in a translatable object (LocaleString).
@@ -68,6 +77,7 @@ class TranslationService:
             target_language_codes=target_locales,
             llm_config=llm_config,
             t=t,
+            user=user,
         )
         if new_translations is None:
             return locale_string
@@ -84,6 +94,7 @@ class TranslationService:
         target_language_codes: list[str],
         llm_config: LLMConfig,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> LocaleString | None:
         """Returns the parsed translations, or ``None`` when the model produced no valid JSON.
 
@@ -92,7 +103,8 @@ class TranslationService:
         user-facing text with extra locales, a non-parseable response must degrade to "no
         translation" rather than fail the caller's core operation.
         """
-        llm, _ = llm_config.to_llama_index()
+        api_key = await LiteLLMService.api_key_for_user(user)
+        llm, _ = llm_config.to_llama_index(api_key=api_key)
         target_languages = ", ".join([t(f"api.common.translation.{lang}") for lang in target_language_codes])
         prompt = PromptTemplate(t("api.common.translation.prompt"))
         response = await llm.apredict(

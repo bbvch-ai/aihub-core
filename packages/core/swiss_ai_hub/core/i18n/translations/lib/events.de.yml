@@ -225,6 +225,11 @@ rag_start_event:
     relevanten Kontext aus den ausgewählten Wissensquellen ab – unter Verwendung der
     gewählten Namensräume und optionaler Metadatenfilter – bevor eine Antwort generiert
     wird.
+cron_start_event:
+  name: Geplanter Lauf Gestartet
+  description: Ein geplanter Lauf wurde vom Cron-Scheduler automatisch zur konfigurierten
+    Zeit gestartet. Kein Benutzer hat ihn ausgelöst — der Lauf wird als Systemlauf
+    ohne Ausführungsidentität ausgeführt.
 rag_success_stop_event:
   name: RAG Erfolg
   description: Der Retrieval-Augmented-Lauf hat eine Antwort für den Benutzer erzeugt.
@@ -243,3 +248,13 @@ mail_moved_event:
   name: E-Mail Verschoben
   description: Der Agent hat eine Nachricht aus ihrem Quellordner in einen Zielordner
     verschoben.
+mail_batch_classified_event:
+  name: Stapel klassifiziert
+  description: Der Agent hat einen Stapel ungelesener Nachrichten klassifiziert und
+    jede in den Ordner ihrer Kategorie abgelegt, oder in den Ausweichordner, wenn
+    er unsicher war.
+mail_batch_drafted_event:
+  name: Stapel Entworfen
+  description: Der Agent hat Antworten für einen Stapel von Nachrichten entworfen
+    und sie in den Entwürfe-Ordner angehängt, damit ein Mensch sie prüfen und senden
+    kann.

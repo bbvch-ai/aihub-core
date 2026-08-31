@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Annotated, NamedTuple
 from fastapi.routing import APIRoute
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, trace_fn
+from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, OpenWebuiSettings, trace_fn
 from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 
 from swiss_ai_hub.api.decorators.access_catalog import ACCESS_CATALOG_ENTRY_ATTRIBUTE, AccessCatalogEntryMeta
@@ -34,6 +34,11 @@ _SERVICE_ADMIN_DESCRIPTION = ApiLocaleString.from_i18n_path(
 # capability rows are synthesized rather than read off a route — the same way the service gates above are.
 _MODEL_SERVICE_NAME = "model"
 _MODEL_USE_DESCRIPTION = ApiLocaleString.from_i18n_path("api.access.capabilities.ops.model.use.description")
+# OpenWebUI generates conversation metadata (chat titles, follow-up questions) with this model under the end
+# user's identity, so withholding it silently disables both — worth saying at the point of the decision.
+_MODEL_CONVERSATION_METADATA_DESCRIPTION = ApiLocaleString.from_i18n_path(
+    "api.access.capabilities.ops.model.use.conversation_metadata_description"
+)
 
 
 class _Guard(NamedTuple):
@@ -200,10 +205,9 @@ class AccessCapabilityService:
         rows. Uses the master client so the whole catalog is built; per-subject and per-ceiling filtering
         happens downstream in ``_capability_for_guard``. Models without a capability prefix are skipped —
         they cannot form a ``aihub.user.model.<capability>.<name>`` rule."""
-        async with LiteLLMProxySettings().httpx_aclient as client:
-            response = await client.get("/v1/model/info")
-            response.raise_for_status()
-            data = response.json()["data"]
+        response = await LiteLLMProxySettings().httpx_aclient.get("/v1/model/info")
+        response.raise_for_status()
+        data = response.json()["data"]
         models_by_capability: dict[str, list[str]] = {}
         for entry in data:
             capability, _, name = entry["model_name"].partition("/")
@@ -353,13 +357,19 @@ class _CapabilityCatalogBuilder:
         service layer and have no per-model route guard for that machinery to expand, so their rows are built
         here directly rather than by substituting a route template."""
         models_by_capability = await AccessCapabilityService.available_models_by_capability()
+        conversation_metadata_model = OpenWebuiSettings().CONVERSATION_METADATA_MODEL
         groups: list[CapabilityGroup] = []
         for capability in sorted(models_by_capability):
             capabilities: list[Capability] = []
             for name in sorted(models_by_capability[capability]):
                 label = LocaleString(de=name, en=name, fr=name, it=name)
                 guard = _Guard(AccessChecker.model_user_rule(capability, name))
-                capability_row = self._capability_for_guard(label, _MODEL_USE_DESCRIPTION, guard)
+                description = (
+                    _MODEL_CONVERSATION_METADATA_DESCRIPTION
+                    if f"{capability}/{name}" == conversation_metadata_model
+                    else _MODEL_USE_DESCRIPTION
+                )
+                capability_row = self._capability_for_guard(label, description, guard)
                 if capability_row is not None:
                     capabilities.append(capability_row)
             if capabilities:

@@ -11,6 +11,7 @@ common:
   loading: Loading...
   selectModel: Select a model
   selectDatabase: Select a database
+  selectTenant: Select a tenant
 models:
   title: Models
   error: Error loading models
@@ -582,7 +583,9 @@ auth:
     description: Please log in to access the application
     tagline: Experience the future of artificial intelligence
     welcome: Welcome to the AI Hub of {companyName}
+    welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
+    pleaseLoginWith: Please log in with {provider}
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
     logoAlt: Logo of company
@@ -812,7 +815,31 @@ process:
 form:
   locale_input:
     translate_tooltip: Translate to all languages
+  warnings:
+    org_memory_performance: This feature may not work as expected in some cases. To
+      avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  cron:
+    errors:
+      required: Every position is required — a blank one is not a valid schedule.
+      invalid: Only digits and the characters * , - / ? are allowed here.
+      range: Values must be between {min} and {max}.
+    expression: 'Resulting cron expression:'
+    minute:
+      label: Minute
+    hour:
+      label: Hour
+    day_of_month:
+      label: Day of month
+    month:
+      label: Month
+    day_of_week:
+      label: Day of week
+    timezone:
+      label: Timezone
+      placeholder: Select a timezone
+      help: The cron positions are interpreted in this timezone, so a daily schedule
+        keeps the same wall-clock time across daylight-saving changes.
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search

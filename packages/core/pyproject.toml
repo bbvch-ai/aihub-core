@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-core"
-version = "0.313.0"
+version = "0.321.0"
 description = "Foundational shared library for the Swiss AI Hub platform: event-driven Swiss AI Agent Protocol, auth, and AI/ML utilities."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -86,6 +86,7 @@ dependencies = [
     "neo4j>=5.23.1",
     "rank-bm25>=0.2.2",
     "starlette>=1.0.1",
+    "croniter>=6.2.4",
 ]
 
 [dependency-groups]

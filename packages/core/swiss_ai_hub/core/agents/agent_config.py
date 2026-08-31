@@ -4,21 +4,22 @@ from typing import TYPE_CHECKING, Annotated, Self
 from pydantic import ConfigDict, Field, model_validator
 
 from swiss_ai_hub.core.form.constraints import Pattern
+from swiss_ai_hub.core.form.elements.cron_input import CronInput
 from swiss_ai_hub.core.form.elements.icon_selector import IconSelector
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.agents import AgentConfigEntity
 
 logger = logging.getLogger(__name__)
 
-
-def _locale_string_has_content(value: LocaleString) -> bool:
-    """Check if a LocaleString has at least one non-empty locale value."""
-    return any(getattr(value, locale, None) not in (None, "") for locale in ("de", "en", "fr", "it"))
+# The config key holding a profile's schedule. Platform-owned: `AgentRunner` writes the form element and
+# `CronScheduler` reads the stored value, so neither depends on a blueprint naming the field correctly.
+CRON_CONFIG_KEY = "cron"
 
 
 class StepConfig(Form):
@@ -85,15 +86,24 @@ class AgentConfig(Form):
         str | IconSelector,
         Field(description="The icon representing the process or agent."),
     ] = "mage:robot"
+    # Platform-owned, so the scheduler can read a schedule off any profile without the blueprint having
+    # to name the field correctly. Deliberately left None by `as_form()`: `AgentRunner` injects the
+    # element for schedulable classes only (see `cron_form_field`), which is what keeps a cron control
+    # off every other agent's form. The union carries CronSchedule rather than a bare cron string
+    # because a string has no timezone, and "every day at 09:00" would then shift twice a year.
+    cron: Annotated[
+        CronSchedule | CronInput | None,
+        Field(description="Cron schedule controlling when this profile runs automatically."),
+    ] = None
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     @model_validator(mode="after")
     def validate_locale_strings_have_content(self) -> Self:
         """Validate that name and description LocaleStrings have at least one non-empty value."""
         # Skip validation for form mode (when fields are LocaleInput elements)
-        if isinstance(self.name, LocaleString) and not _locale_string_has_content(self.name):
+        if isinstance(self.name, LocaleString) and not self.name.has_content():
             raise ValueError("name must have at least one language with content")
-        if isinstance(self.description, LocaleString) and not _locale_string_has_content(self.description):
+        if isinstance(self.description, LocaleString) and not self.description.has_content():
             raise ValueError("description must have at least one language with content")
         return self
 
@@ -104,6 +114,11 @@ class AgentConfig(Form):
 
         Subclasses should override this method and call super().as_form() to get
         the base identity fields, then extend with their own fields.
+
+        `cron` is deliberately not populated here. A form element is only configurable while its value is
+        one, so leaving it None keeps the schedule out of both the rendered form and the generated
+        submission schema for every agent — and `AgentRunner` injects `cron_form_field()` for the
+        schedulable ones. That is also why subclass overrides need no `cron=` line of their own.
         """
         return cls(
             agent_id=InputText(
@@ -128,6 +143,25 @@ class AgentConfig(Form):
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.icon"),
             ),
         )
+
+    @classmethod
+    def cron_form_field(cls) -> CronInput:
+        """The schedule element, offered to schedulable classes only."""
+        return CronInput(
+            label=LocaleString.from_i18n_path("lib.agents.config.cron.label"),
+            help=LocaleString.from_i18n_path("lib.agents.config.cron.help"),
+            timezone_placeholder=LocaleString.from_i18n_path("lib.agents.config.cron.timezone_placeholder"),
+        )
+
+    def for_discovery(self, *, is_schedulable: bool) -> Self:
+        """This config as discovery should publish it, with the schedule offered only where it applies.
+
+        Whether a field is configurable follows from its *value* being a form element, so setting or
+        clearing `cron` here settles both published surfaces at once: the rendered form and the
+        submission JSON schema. Clearing rather than leaving it alone is deliberate — a blueprint that
+        declared its own `cron` must not be able to offer a schedule it will never be fired on.
+        """
+        return self.model_copy(update={CRON_CONFIG_KEY: self.cron_form_field() if is_schedulable else None})
 
     @classmethod
     def from_entity(cls, entity: "AgentConfigEntity") -> Self:

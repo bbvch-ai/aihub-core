@@ -1,25 +1,86 @@
 import AgentSelector from '@core/components/FormKit/AgentSelector.vue'
 import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
+import CronInput from '@core/components/FormKit/CronInput.vue'
 import IconSelector from '@core/components/FormKit/IconSelector.vue'
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
 import ModelSelect from '@core/components/FormKit/ModelSelect.vue'
+import TenantSelect from '@core/components/FormKit/TenantSelect.vue'
 import VectorStoreInput from '@core/components/FormKit/VectorStoreInput.vue'
 import { en, de, fr, it } from '@formkit/i18n'
 import { createInput } from '@formkit/vue'
 import { primeInputs } from '@sfxcode/formkit-primevue'
 
-import type { DefaultConfigOptions } from '@formkit/vue'
+import type { FormKitNode } from '@formkit/core'
+import type { DefaultConfigOptions, PluginConfigs } from '@formkit/vue'
+
+const LOCALES = ['de', 'en', 'fr', 'it'] as const
+
+// FormKit's built-in `required` rule only asks whether a value is present, and a localeInput's
+// value is always a `{de, en, fr, it}` object — non-empty, so `required` passes even when every
+// locale inside it is blank. Backend `LocaleInput` elements emit `localeRequired` instead
+// (see packages/core/swiss_ai_hub/core/form/elements/locale_input.py).
+function localeRequired(node: FormKitNode): boolean {
+  const value = node.value as Record<string, string | null> | null | undefined
+  if (!value) return false
+  return LOCALES.some(locale => !!value[locale]?.trim())
+}
+
+// FormKit skips a rule entirely when the node's value is empty, unless the rule opts out —
+// which is why the built-in `required` sets this too. Without it the rule would never run on a
+// never-touched field, whose value is still `null`, and a blank Name would pass on a fresh
+// create form: precisely the case this rule exists to catch.
+localeRequired.skipEmpty = false
+
+/**
+ * Passes when the value is listed in the sibling field named by `address`, or when that list is
+ * empty — backend allow-lists treat empty as unrestricted. Reading the sibling through `node.at()`
+ * registers it as a validation dependency, so FormKit re-runs this rule when the list itself
+ * changes, not only when this field does.
+ *
+ * Advisory only: it exists so an admin sees the conflict in the form. The backend never depends on
+ * it — a value outside the allow-list is rejected where it is actually used.
+ */
+const memberOf: PluginConfigs['rules'][string] = (node, address: string) => {
+  const allowed = node.at(address)?.value
+  if (!Array.isArray(allowed) || allowed.length === 0) return true
+  return allowed.includes(node.value)
+}
+
+const localeRequiredMessages = {
+  de: 'Mindestens eine Sprache muss ausgefüllt sein.',
+  en: 'At least one language must be filled in.',
+  fr: 'Au moins une langue doit être renseignée.',
+  it: 'Almeno una lingua deve essere compilata.',
+}
+
+const memberOfMessages = {
+  de: 'Dieser Wert steht nicht in der Liste der erlaubten Werte.',
+  en: 'This value is not in the allowed list.',
+  fr: 'Cette valeur ne figure pas dans la liste des valeurs autorisées.',
+  it: 'Questo valore non è presente nell\'elenco dei valori consentiti.',
+}
 
 const config: DefaultConfigOptions = {
+  rules: { localeRequired, memberOf },
+  messages: Object.fromEntries(
+    LOCALES.map(locale => [locale, {
+      validation: {
+        localeRequired: localeRequiredMessages[locale],
+        memberOf: memberOfMessages[locale],
+      },
+    }]),
+  ),
   inputs: {
     ...primeInputs,
-    orgMemoryTenantInput: primeInputs.primeInputText,
     agentSelector: createInput(AgentSelector, {
       props: ['startEvent', 'classPlaceholder', 'idPlaceholder', 'filter'],
     }),
     chipsInput: createInput(ChipsInput, {
       props: ['placeholder'],
+    }),
+    cronInput: createInput(CronInput, {
+      props: ['timezonePlaceholder', 'filter'],
     }),
     knowledgeDatabaseSelector: createInput(KnowledgeDatabaseSelector, {
       props: ['placeholder', 'filter'],
@@ -32,6 +93,9 @@ const config: DefaultConfigOptions = {
     }),
     modelSelect: createInput(ModelSelect, {
       props: ['mode', 'placeholder', 'filter', 'showClear'],
+    }),
+    tenantSelect: createInput(TenantSelect, {
+      props: ['placeholder', 'filter'],
     }),
     vectorStoreInput: createInput(VectorStoreInput, {
       props: ['databasePlaceholder', 'namespacePlaceholder', 'filter'],

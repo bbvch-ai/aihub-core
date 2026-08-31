@@ -151,8 +151,8 @@ def default_definitions(
 
     resources: dict = {
         "document_parser": DocumentParserResource(loader_type=document_parser_loader_type),
-        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
-        "summary_parser": RecursiveSummaryParserResource(),
+        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config, embedding_config=embedding_config),
+        "summary_parser": RecursiveSummaryParserResource(llm_config=llm_config),
         **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri=milvus_settings.URL, store_name=store_name, dimensions=dimensions

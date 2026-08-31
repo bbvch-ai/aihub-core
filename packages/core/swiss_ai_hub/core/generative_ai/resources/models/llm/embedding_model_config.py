@@ -111,7 +111,9 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
             default_parameter=EmbeddingLLMParameter.as_form(),
         )
 
-    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILikeEmbedding, LLMCostTracker]:
+    def to_llama_index(
+        self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
+    ) -> tuple[OpenAILikeEmbedding, LLMCostTracker]:
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
 
@@ -129,7 +131,7 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
         open_ai_like_embedding = OpenAILikeEmbedding(
             model_name=self.model_name,
             api_base=config.BASE_URL,
-            api_key=config.API_KEY.get_secret_value(),
+            api_key=api_key or config.API_KEY.get_secret_value(),
             max_retries=self.default_parameter.max_retries,
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,

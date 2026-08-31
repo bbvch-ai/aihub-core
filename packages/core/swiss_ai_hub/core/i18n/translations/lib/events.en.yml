@@ -213,6 +213,11 @@ rag_start_event:
   description: Retrieval-augmented generation has started. The agent is fetching relevant
     context from the selected knowledge sources — using the chosen namespaces and
     any additional metadata filters — before generating an answer.
+cron_start_event:
+  name: Scheduled Run Started
+  description: A scheduled run was started automatically by the cron scheduler at
+    its configured time. No user initiated it — the run executes as a system run without
+    an execution identity.
 rag_success_stop_event:
   name: RAG Success
   description: The retrieval-augmented run produced an answer for the user.
@@ -229,3 +234,12 @@ mail_fetched_event:
 mail_moved_event:
   name: Mail Moved
   description: The agent moved a message from its source folder into a target folder.
+mail_batch_classified_event:
+  name: Batch Classified
+  description: The agent classified a batch of unread messages and filed each one
+    into the folder for its category, or into the fallback folder when it was not
+    confident.
+mail_batch_drafted_event:
+  name: Batch Drafted
+  description: The agent drafted replies for a batch of messages and appended them
+    to the drafts folder for a human to review and send.

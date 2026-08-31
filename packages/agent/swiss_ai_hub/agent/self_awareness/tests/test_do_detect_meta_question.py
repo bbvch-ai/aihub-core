@@ -3,7 +3,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from openai import APITimeoutError
 from swiss_ai_hub.core.events.agent import MetaQuestionDetectedEvent, NotAMetaQuestionEvent
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import do_detect_meta_question
@@ -35,7 +37,7 @@ def _llm_config(llm: MagicMock) -> MagicMock:
     config = MagicMock()
 
     @asynccontextmanager
-    async def ctx(_displayer):
+    async def ctx(_displayer, user=None):  # noqa: ARG001
         yield llm
 
     config.cost_reporting_llm = ctx
@@ -51,6 +53,7 @@ async def test_meta_question_routes_to_detected_event(displayer, locale_handler)
         llm_config=_llm_config(llm),
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     assert isinstance(result, MetaQuestionDetectedEvent)
@@ -68,6 +71,7 @@ async def test_normal_task_routes_to_gate_event(displayer, locale_handler):
         llm_config=_llm_config(llm),
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     assert isinstance(result, NotAMetaQuestionEvent)
@@ -83,6 +87,7 @@ async def test_lookalike_task_is_not_meta(displayer, locale_handler):
         llm_config=_llm_config(llm),
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     assert isinstance(result, NotAMetaQuestionEvent)
@@ -98,6 +103,70 @@ async def test_unrecognized_label_falls_back_to_gate(displayer, locale_handler):
         llm_config=_llm_config(llm),
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     assert isinstance(result, NotAMetaQuestionEvent)
+    assert "unrecognized classification" in result.reasoning
+
+
+@pytest.mark.asyncio
+async def test_transport_error_falls_back_to_gate(displayer, locale_handler):
+    """Detection gates every message: a transient gateway error must degrade to a normal task, not
+    escape as an ExceptionEvent that would kill an otherwise-healthy run."""
+    llm = _llm_returning("NORMAL")
+    llm.achat = AsyncMock(side_effect=APITimeoutError(request=MagicMock()))
+
+    result = await do_detect_meta_question(
+        user_query="What is the vacation policy?",
+        llm_config=_llm_config(llm),
+        displayer=displayer,
+        t=locale_handler,
+        user=fake_user(),
+    )
+
+    assert isinstance(result, NotAMetaQuestionEvent)
+    assert "detection call failed" in result.reasoning
+
+
+@pytest.mark.asyncio
+async def test_degraded_fallback_is_distinguishable_from_a_genuine_normal_verdict(displayer, locale_handler):
+    """A silently-failing classifier used to be indistinguishable from a working one in the event log."""
+    verdict = await do_detect_meta_question(
+        user_query="What is the vacation policy?",
+        llm_config=_llm_config(_llm_returning("NORMAL")),
+        displayer=displayer,
+        t=locale_handler,
+        user=fake_user(),
+    )
+    degraded = await do_detect_meta_question(
+        user_query="What is the vacation policy?",
+        llm_config=_llm_config(_llm_returning("no idea")),
+        displayer=displayer,
+        t=locale_handler,
+        user=fake_user(),
+    )
+
+    assert verdict.reasoning != degraded.reasoning
+
+
+@pytest.mark.parametrize(
+    ("label", "category"),
+    [
+        ("META_IDENTITY", "identity"),
+        ("META_CAPABILITIES", "capabilities"),
+        ("META_BEHAVIOR", "behavior"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_every_meta_label_maps_to_its_category(label, category, displayer, locale_handler):
+    result = await do_detect_meta_question(
+        user_query="who are you?",
+        llm_config=_llm_config(_llm_returning(label)),
+        displayer=displayer,
+        t=locale_handler,
+        user=fake_user(),
+    )
+
+    assert isinstance(result, MetaQuestionDetectedEvent)
+    assert result.category == category

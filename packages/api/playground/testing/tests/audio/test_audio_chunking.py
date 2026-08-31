@@ -4,6 +4,7 @@ import pytest
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.api.audio.audio_chunking_service import AudioChunkingService
@@ -134,9 +135,15 @@ async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
     ) as mock_litellm_client:
         mock_litellm_client.return_value = mock_client
 
+        transcription_only_checker = AccessChecker(
+            ["aihub.user.model.transcription.*"], tenant_access_rules=["aihub.admin.>"]
+        )
         with (
             patch.object(OpenaiService, "_model_names_by_type", side_effect=mock_model_names),
-            patch.object(OpenaiService, "_assert_model_access"),
+            patch(
+                "swiss_ai_hub.api.routes.openai.openai_service.AccessChecker.from_user",
+                return_value=transcription_only_checker,
+            ),
         ):
             result = await OpenaiService.stt(
                 file=large_file,

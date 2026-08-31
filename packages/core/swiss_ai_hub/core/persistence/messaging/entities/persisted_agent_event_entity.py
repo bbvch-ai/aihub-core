@@ -10,6 +10,7 @@ from mongoengine import DictField, Document, ListField, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket import EventBucket
+from swiss_ai_hub.core.persistence.messaging.entities.types.llm_spend import LLMSpend
 from swiss_ai_hub.core.topic_managers.agents.agent_topic_manager import AgentTopicManager
 
 if TYPE_CHECKING:
@@ -81,8 +82,24 @@ class PersistedAgentEventEntity(Document):
             {"fields": ["event_data.created_at"]},
             {"fields": ["display_id"]},
             {"fields": ["thread_id", "event_type", "event_parents"]},
+            # Equality then range, so an age-bounded prune of one thread can be served by an index scan.
+            # Neither existing index does: the `thread_id, event_type` prefix cannot answer the range, and
+            # the standalone `event_data.created_at` index would sweep every thread and filter after.
+            # It also covers the `filter(thread_id=...).order_by("event_data__created_at")` reads, which
+            # is the unbounded scan behind `to_message_history`.
+            {"fields": ["thread_id", "event_data.created_at"]},
+            # Spend queries (#1451). Both cover the actual `$match` — event_parents, the time window,
+            # and optionally the tenant — in equality-then-range order. Indexing the attribution keys
+            # instead would be dead weight: they are only referenced by `$group`, which cannot use an
+            # index, leaving such an entry no more selective than its `event_parents` prefix.
+            {"fields": ["event_parents", "event_data.created_at"]},
+            {"fields": ["event_parents", "event_data.tenant_id", "event_data.created_at"]},
         ],
     }
+
+    # Spend aggregations are always bounded by this when the caller names no start time, so the
+    # unfiltered request cannot degrade into a full scan of every cost event ever persisted.
+    SPEND_WINDOW_DAYS = 30
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
     thread_id = StringField(required=True)
@@ -93,6 +110,37 @@ class PersistedAgentEventEntity(Document):
     event_name = StringField(required=True)
     event_data = DictField(required=True)
     event_parents = ListField(StringField(), required=True)
+
+    @classmethod
+    @trace_fn
+    def delete_events_older_than(
+        cls,
+        thread_ids: list[str],
+        older_than: datetime,
+        *,
+        batch_size: int = 50,
+    ) -> int:
+        """Deletes events in the given threads that predate `older_than`, returning how many went.
+
+        A Mongo TTL index cannot do this job: `event_data.created_at` is nanoseconds from `time.time_ns()`,
+        and TTL requires a BSON date. So the cutoff is converted to the same integer scale and compared
+        numerically — which also means an event with a missing or non-numeric timestamp never matches and
+        is therefore kept, the safe way round for a delete.
+
+        Threads are deleted in batches so one oversized `$in` cannot exceed FerretDB's limits, and so a
+        long prune stays interruptible instead of running as one unbounded statement.
+        """
+        if older_than.tzinfo is None:
+            # ThreadEntity.created_at is written naive, so a naive cutoff here would quietly mean local
+            # time and delete a different amount of history depending on where the process runs.
+            raise ValueError("older_than must be timezone-aware")
+
+        cutoff_ns = int(older_than.timestamp() * 1_000_000_000)
+        deleted = 0
+        for index in range(0, len(thread_ids), batch_size):
+            batch = thread_ids[index : index + batch_size]
+            deleted += cls.objects(thread_id__in=batch, event_data__created_at__lt=cutoff_ns).delete()
+        return deleted
 
     @classmethod
     @trace_fn
@@ -429,6 +477,81 @@ class PersistedAgentEventEntity(Document):
         ]
 
         results = list(cls.objects.aggregate(pipeline))
+        return results
+
+    @classmethod
+    @trace_fn
+    def get_llm_spend_by_user(cls, tenant_id: str | None = None, since: datetime | None = None) -> list["LLMSpend"]:
+        """LLM spend grouped per invoking user, optionally narrowed to one tenant and a start time.
+
+        Grouped by tenant as well as user, so a cross-tenant caller can tell whose spend is whose and a
+        user who acted in two tenants is reported as one row per tenant.
+        """
+        return cls._aggregate_llm_spend(["user_id", "tenant_id"], tenant_id=tenant_id, since=since)
+
+    @classmethod
+    @trace_fn
+    def get_llm_spend_by_tenant(cls, since: datetime | None = None) -> list["LLMSpend"]:
+        """LLM spend grouped per acting tenant, optionally from a start time."""
+        return cls._aggregate_llm_spend(["tenant_id"], since=since)
+
+    @classmethod
+    def _aggregate_llm_spend(
+        cls,
+        group_fields: list[str],
+        tenant_id: str | None = None,
+        since: datetime | None = None,
+    ) -> list["LLMSpend"]:
+        """Sum LLMCostEvent costs over one or more attribution keys.
+
+        Events are de-duplicated by `event_id` first: a cost event redelivered by its consumer would
+        otherwise be counted twice and silently inflate spend. `$ifNull` guards every cost component
+        because `embedding_tokens_costs` is absent on chat-only events, and a missing operand makes
+        `$add` return null — poisoning the whole sum rather than the one field.
+
+        Always time-bounded. Without a cutoff the `$match` narrows to `event_parents` alone, so the
+        dedup stage builds one group per cost event ever persisted and trips the 100MB `$group` limit
+        on a long-running deployment. `allowDiskUse` keeps that from being a hard failure; the default
+        window is what keeps it from being reached.
+        """
+        cutoff = since if since is not None else datetime.now(UTC) - timedelta(days=cls.SPEND_WINDOW_DAYS)
+        # A naive datetime — which is what FastAPI produces for `?since=2025-01-01T00:00:00` — would
+        # otherwise be read as server-local time by `.timestamp()`, shifting the cutoff by the host's
+        # UTC offset and silently including or excluding hours of spend.
+        cutoff = cutoff if cutoff.tzinfo is not None else cutoff.replace(tzinfo=UTC)
+
+        match: dict[str, Any] = {
+            "event_parents": "LLMCostEvent",
+            "event_data.created_at": {"$gte": int(cutoff.timestamp() * 1e9)},
+        }
+        if tenant_id is not None:
+            match["event_data.tenant_id"] = tenant_id
+
+        cost_fields = ["prompt_tokens_costs", "completion_tokens_costs", "embedding_tokens_costs"]
+        pipeline = [
+            {"$match": match},
+            {"$group": {"_id": "$event_id", "event_data": {"$first": "$event_data"}}},
+            {
+                "$group": {
+                    "_id": {field: f"$event_data.{field}" for field in group_fields},
+                    "calls": {"$sum": 1},
+                    **{field: {"$sum": {"$ifNull": [f"$event_data.{field}", 0]}} for field in cost_fields},
+                }
+            },
+            {"$sort": {"_id": 1}},
+        ]
+
+        results = []
+        for row in cls.objects.aggregate(pipeline, allowDiskUse=True):
+            costs = {field: row.get(field, 0.0) for field in cost_fields}
+            results.append(
+                LLMSpend(
+                    **row["_id"],
+                    calls=row["calls"],
+                    total_costs=sum(costs.values()),
+                    **costs,
+                )
+            )
         return results
 
     @classmethod

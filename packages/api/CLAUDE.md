@@ -120,6 +120,30 @@ Custom dependencies injected via `Depends()` and `Security()` — use these in e
 
 All infrastructure clients are initialized in `runners/lifetime/lifetime_manager.py` and stored in `app.state`.
 
+## Error Responses
+
+Services keep failing fast — they raise `HTTPException` for their own rejections (403, 404) and let everything else
+propagate. What must not propagate out of the app is a model-gateway error: every LLM/STT/TTS/embedding call goes
+through the OpenAI SDK, whose exceptions are not `HTTPException`, so unhandled they became Starlette's plain-text 500 —
+no cause for the caller, and a span naming only the exception type, never the upstream message that says what to fix.
+
+`ModelGatewayErrorHandler` (`packages/core/swiss_ai_hub/core/exceptions/model_gateway_error_handler.py`, registered once
+in `Runner._get_api_app` so every service inherits it) translates them: it unwraps the upstream `error.message`, passes
+through only the statuses a caller can act on (400/413/422/429) while mapping this deployment's own faults (401/403/404,
+all 5xx) to 502 and upstream timeouts to 504. The response body carries the message under **both** `detail` and
+`error.message` — platform clients read the former, the OpenAI-compatible clients this API emulates (OpenWebUI, OpenAI
+SDKs) read only the latter.
+
+Every one of these failures marks the current span `ERROR`. Handling the exception is what makes that necessary — it
+never propagates out to the instrumentation's exception branch — and it deliberately includes the 4xx that OTel's
+server-span convention would leave `UNSET`: passing an upstream status through means a 4xx here can just as well be a
+model name this deployment got wrong. Log level is the narrower signal — `ERROR` with the traceback for what an operator
+must fix, `WARNING` for the three statuses they cannot act on (413/422/429), which also keeps a rate-limit storm from
+flooding the log pipeline.
+
+New upstream integrations that raise their own SDK exception types belong in the same place — do not wrap service calls
+in try/except to compensate.
+
 ## i18n System
 
 **Hierarchy**: `LocaleString`/`LocaleHandler` (packages/core) → `ApiLocaleString`/`ApiLocaleHandler` (packages/api
@@ -216,9 +240,25 @@ without needing it baked into event payloads.
 
 **Startup order**: MongoDB → Redis/Milvus/S3 → NATS + JetStream → event persistence subscribers → WebSocket
 infrastructure → event distributors → RPC responders → discovery services → DB initialization (default roles, knowledge
-buckets, Langfuse provisioning).
+buckets) → cron scheduler → Langfuse provisioning.
 
 All resources stored in `app.state`, accessible via the dependencies listed above.
+
+**`CronScheduler`**: Fires cron-scheduled agent runs. Lives in `swiss_ai_hub.core.scheduling` and is only *wired* here —
+it takes no FastAPI objects and registers no routes, so the move into `aihub-daemon` (#1203) is the dozen lines in
+`lifetime_manager.py`, not a port. Correct across N replicas via a Redis leader lease; all its state (leadership, tick
+watermark, per-occurrence claims, retention window) is in Redis and nowhere else. Tuned entirely through
+`SchedulerSettings` (`SCHEDULER_*`), including `SCHEDULER_EVENT_RETENTION_DAYS`, which is **0 (off)** by default —
+pruning a tenant's run history has to be switched on, never started by a deploy. Started *after*
+`initialize_startup_tenant()` so a first tick cannot outrun tenant and role setup. Its Mongo reads all go through one
+`asyncio.to_thread` hop per tick, because this process also serves every HTTP and WebSocket request.
+
+A schedule's cost is checked when the profile is **saved**, not metered while it runs: `InstanceConfigHelper`
+`.validate_cron_field` calls `ScheduleAdmission`, which computes how many runs the expression declares and rejects it
+with a 400 if it passes `SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH` (default every-minute, so it refuses nothing
+expressible) or `SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH` across all profiles (default off). This bounds how *often* an agent
+starts, not what it spends — that is #1766/#1767/#1452/#441. See ADR `2026_08_11_cron_scheduled_agent_runs` §9 for why
+runtime metering was implemented and withdrawn.
 
 ## Testing
 

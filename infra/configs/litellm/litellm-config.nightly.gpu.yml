@@ -27,6 +27,7 @@ model_list:
       max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
+      supports_response_schema: true
       supports_vision: true
       input_cost_per_token: 0
       output_cost_per_token: 0
@@ -58,6 +59,9 @@ model_list:
       drop_params: true
     model_info:
       mode: embedding
+      # The chunker reads this to size nodes. Without it LiteLLM reports null and callers have to guess,
+      # which is how oversized chunks reached the model and failed the whole document.
+      max_input_tokens: 8192
       input_cost_per_token: 0
 
   # ===================================================================
@@ -157,6 +161,12 @@ litellm_settings:
 # Router Settings
 # ===================================================================
 router_settings:
+  # default_fallbacks registers a "*" wildcard that applies to embedding and rerank calls too, so a rejected
+  # embedding gets retried against a chat model that cannot serve it and the real error is buried three levels
+  # deep. An explicit empty list wins over the wildcard on exact match, so these surface their own error.
+  fallbacks:
+    - embedding/bge-m3: []
+    - reranker/bge: []
   routing_strategy: usage-based-routing-v2
   retry_policy:
     TimeoutErrorRetries: 2

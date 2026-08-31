@@ -109,6 +109,10 @@ appearance to personal preferences and environmental lighting.
 For supported models and configurations, the interface can execute code snippets, enabling interactive programming
 assistance, computational problem solving, and algorithm prototyping within conversational contexts.
 
+The same sandbox lets models produce files — reports, spreadsheets, slide decks, charts, audio and video — which the
+model then opens in the user's file viewer. This needs no code from the user; see
+[File generation](../13_file_generation/) for the supported formats and the recommended model.
+
 Mermaid diagram support enables AI-generated visualizations - flowcharts, sequence diagrams, state machines - rendered
 directly within conversations. This supports systems design, process documentation, and visual explanation.
 

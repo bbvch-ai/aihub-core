@@ -1,8 +1,10 @@
+import asyncio
+import logging
 from collections.abc import Callable
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
@@ -16,15 +18,22 @@ from swiss_ai_hub.core.events.agent import (
     MemoryStorageRequestedEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
+    RAGStartEvent,
     RAGSuccessStopEvent,
     RerankerEvent,
+    RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
+    RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
     StoreUserMemoryRequestedEvent,
+    UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
+    AgentMemory,
     IngestedNode,
     LLMConfig,
+    OrgMemoryNamespaceResolver,
+    OrgMemoryReadConfig,
     RetrievalRuntimeConfig,
     combine_nodes_in_order,
     condense_standalone_question,
@@ -52,7 +61,12 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 
+logger = logging.getLogger(__name__)
+
 PREV_GROUNDING_NODES_KEY = "prev_grounding_nodes"
+
+# Bounds a hung backend, not normal latency: well above the ~0.25s graph-free median from issue #1713.
+MEMORY_RETRIEVAL_TIMEOUT_SECONDS = 15.0
 
 
 def do_limit_chat_history(
@@ -70,11 +84,14 @@ async def do_condense_standalone_question(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> StandaloneQuestionCondenserEvent:
     """Condense chat history and user query into standalone question."""
     await displayer.display_thought(t("agent.thought.condense_question"))
-    async with llm_config.cost_reporting_llm(displayer) as llm:
-        condensed = condense_standalone_question(chat_history=limited_history, message=last_user_message, t=t, llm=llm)
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
+        condensed = await condense_standalone_question(
+            chat_history=limited_history, message=last_user_message, t=t, llm=llm
+        )
         return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed)
 
 
@@ -86,6 +103,7 @@ async def do_respond_with_llm(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
     as_stop_step: bool = True,
 ) -> LLMStopEvent | LLMEvent:
     """Generate LLM response with proper message building and streaming."""
@@ -113,7 +131,7 @@ async def do_respond_with_llm(
     # Merge consecutive messages with the same role (required by LiteLLM)
     messages = merge_consecutive_messages(messages)
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=as_stop_step)
 
 
@@ -123,12 +141,13 @@ async def do_few_shot_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> FewShotRejectEvent | FewShotAcceptEvent:
     """Execute few-shot guard logic and return appropriate event."""
     if not examples:
         return FewShotAcceptEvent(reason=t("agent.thought.no_few_shot_examples"))
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         guard_result = await few_shot_guard(
             llm=llm,
             t=t,
@@ -142,17 +161,98 @@ async def do_few_shot_guard(
     return FewShotAcceptEvent(reason=guard_result.reasoning)
 
 
+async def do_retrieve_user_memory(
+    event: UserMessageEvent | RAGStartEvent,
+    memory: AgentMemory,
+    rerank: bool,
+) -> RetrieveUserMemoryEvent:
+    """Retrieve user memories for personalized context.
+
+    A failing memory subsystem degrades to an empty event instead of propagating (issue #1713): raising
+    would end the run, while `stop_on_error=False` would suppress the `ExceptionEvent` but emit nothing at
+    all — and `check_memory_ready_for_chat_history` blocks until this event exists, so the run would hang.
+    A hung backend degrades the same way, since a stall blocks the chat turn just as a raise ends it.
+    """
+    user_id = event.user.id
+    try:
+        memory_result = await asyncio.wait_for(
+            memory.search_user_memory(
+                query=event.user_query,
+                user_id=user_id,
+                limit=10,
+                threshold=0.5,
+                rerank=rerank,
+            ),
+            timeout=MEMORY_RETRIEVAL_TIMEOUT_SECONDS,
+        )
+    except Exception:
+        logger.warning(
+            "User memory retrieval failed; answering without user memory. user_id=%s",
+            user_id,
+            exc_info=True,
+        )
+        return RetrieveUserMemoryEvent(memories=[], relations=[])
+
+    return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
+
+
+async def do_retrieve_organization_memory(
+    event: UserMessageEvent | RAGStartEvent,
+    org_memory: OrgMemoryReadConfig,
+    memory: AgentMemory,
+) -> RetrieveOrganizationMemoryEvent:
+    """Retrieve organization memories for shared expert-knowledge context.
+
+    Degrades to an empty event on failure for the same reason as `do_retrieve_user_memory`.
+
+    Namespace resolution is deliberately left outside that safety net: a start event asking for a namespace
+    outside the configured allow-list is a caller error, and silently answering from the wrong scope (or
+    from none) would hide it. Only the memory-subsystem call degrades.
+    """
+    requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
+    tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
+        requested=requested,
+        configured=org_memory.allowed_tenant_namespaces,
+    )
+    try:
+        memory_result = await asyncio.wait_for(
+            memory.search_organization_memory(
+                query=event.user_query,
+                tenant_id=org_memory.tenant_id,
+                tenant_namespaces=tenant_namespaces,
+                user_id=None,
+                limit=10,
+                threshold=0.5,
+                rerank=org_memory.rerank_organization_memory,
+            ),
+            timeout=MEMORY_RETRIEVAL_TIMEOUT_SECONDS,
+        )
+    except Exception:
+        logger.warning(
+            "Organization memory retrieval failed; answering without organization memory. "
+            "tenant_id=%s namespaces=%s user_id=%s",
+            org_memory.tenant_id,
+            tenant_namespaces,
+            event.user.id,
+            exc_info=True,
+        )
+        return RetrieveOrganizationMemoryEvent(memories=[], relations=[])
+
+    return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
+
+
 async def do_retrieve(
     event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
     runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
     if isinstance(event, StandaloneQuestionCondenserEvent):
         query = event.condensed_chat_message.content or ""
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t)
+    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t, user)
     nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
     return RetrieverEvent.from_nodes(nodes_with_score)
 
@@ -163,6 +263,7 @@ async def do_rerank_nodes(
     reranking_config: RerankingConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> RerankerEvent:
     """Rerank nodes and build RerankerEvent."""
     await displayer.display_thought(t("agent.thought.reranking_results"))
@@ -170,6 +271,7 @@ async def do_rerank_nodes(
         nodes=nodes,
         query=query,
         reranking_model=reranking_config.reranking_model,
+        user=user,
     )
 
     return RerankerEvent(
@@ -237,6 +339,7 @@ async def do_context_sufficient_guard(
     displayer: EventDisplayer,
     t: LocaleHandler,
     chat_history: list[ChatMessage],
+    user: UserIdentity,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
@@ -245,7 +348,7 @@ async def do_context_sufficient_guard(
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         guard_result = await context_sufficient_guard(
             llm=llm,
             t=t,

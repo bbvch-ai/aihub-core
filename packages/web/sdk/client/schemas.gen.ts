@@ -410,6 +410,9 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -449,9 +452,6 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -471,6 +471,9 @@ export const AgentClassDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -542,6 +545,13 @@ export const AgentClassDTOSchema = {
       title: "Is Conversational",
       description:
         "Whether the agent class can participate in a chat-based conversation",
+    },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
     },
     is_online: {
       anyOf: [
@@ -631,6 +641,9 @@ export const AgentConfigDTOSchema = {
                 $ref: "#/components/schemas/ColorPicker",
               },
               {
+                $ref: "#/components/schemas/CronInput",
+              },
+              {
                 $ref: "#/components/schemas/DatePicker",
               },
               {
@@ -670,9 +683,6 @@ export const AgentConfigDTOSchema = {
                 $ref: "#/components/schemas/MultiSelect",
               },
               {
-                $ref: "#/components/schemas/OrgMemoryTenantInput",
-              },
-              {
                 $ref: "#/components/schemas/Password",
               },
               {
@@ -692,6 +702,9 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/Slider",
+              },
+              {
+                $ref: "#/components/schemas/TenantSelect",
               },
               {
                 $ref: "#/components/schemas/Textarea",
@@ -5635,6 +5648,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/RAGStartEvent",
         },
         {
+          $ref: "#/components/schemas/CronStartEvent",
+        },
+        {
           $ref: "#/components/schemas/ExceptionEvent",
         },
         {
@@ -5702,6 +5718,12 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/MailMovedEvent",
+        },
+        {
+          $ref: "#/components/schemas/MailBatchDraftedEvent",
+        },
+        {
+          $ref: "#/components/schemas/MailBatchClassifiedEvent",
         },
       ],
       title: "Event",
@@ -5854,46 +5876,6 @@ export const CreateAgentInstanceRequestSchema = {
   title: "CreateAgentInstanceRequest",
   description:
     "Request body for creating a new agent instance.\nThe agent_class is provided in the URL path, not in the request body.",
-} as const;
-
-export const CreateDatabaseRequestSchema = {
-  properties: {
-    display_name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Display Name",
-      description:
-        "The display name of the knowledge database in the user's locale.",
-    },
-    description: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Description",
-      description:
-        "A short description of the knowledge database in the user's locale.",
-    },
-    ingestor: {
-      type: "string",
-      title: "Ingestor",
-      description:
-        "The deployed ingestion pipeline that processes this database's documents.",
-      default: "rag",
-    },
-  },
-  type: "object",
-  title: "CreateDatabaseRequest",
 } as const;
 
 export const CreateNamespaceRequestSchema = {
@@ -6085,6 +6067,278 @@ export const CreateTokenResponseSchema = {
   title: "CreateTokenResponse",
 } as const;
 
+export const CronInputSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "cronInput",
+      title: "Formkit",
+      description: "Cron schedule input element.",
+      default: "cronInput",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    timezonePlaceholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timezoneplaceholder",
+      description: "Placeholder for the timezone select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search on the timezone select",
+      default: true,
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "CronInput",
+  description:
+    'A FormKit element for editing the cron schedule of a schedulable agent profile.\n\nThe element renders the five cron positions plus a timezone selector, and the submitted value\nmatches the fields of `CronSchedule`:\n{\n    "minute": str,\n    "hour": str,\n    "day_of_month": str,\n    "month": str,\n    "day_of_week": str,\n    "timezone": str,\n}\n\nPresets and the plain-language summary of the current schedule are delivered by the Admin UI\n(see the cron schedule configuration UI issue); this element only declares the contract.\n\n### Form Duality\n```python\nfrom swiss_ai_hub.core.form.elements.cron_input import CronInput\nfrom swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule\n\nclass MyAgentConfig(AgentConfig):\n    schedule: Annotated[\n        CronSchedule | CronInput | None,\n        Field(description="When this profile runs automatically"),\n    ] = None\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))\n\n# Data mode - from submission (Pydantic validates into CronSchedule):\nconfig = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))\n```',
+} as const;
+
+export const CronStartEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    locale: {
+      type: "string",
+      title: "Locale",
+      description:
+        "The locale the scheduled run reports its display output in.",
+      default: "de",
+    },
+    user: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Always None — scheduled runs are system-initiated and carry no execution identity.",
+    },
+    scheduled_for: {
+      type: "string",
+      format: "date-time",
+      title: "Scheduled For",
+      description:
+        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["scheduled_for", "_event_name", "_parent_event_names"],
+  title: "CronStartEvent",
+  description:
+    "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
+} as const;
+
 export const Custom_OutputSchema = {
   properties: {
     input: {
@@ -6267,12 +6521,6 @@ export const DatabaseDTOSchema = {
       title: "Auto Sync",
       description: "Whether this database auto-syncs namespaces",
     },
-    deletable: {
-      type: "boolean",
-      title: "Deletable",
-      description:
-        "Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.",
-    },
     namespaces: {
       items: {
         $ref: "#/components/schemas/NamespaceDTO",
@@ -6283,56 +6531,8 @@ export const DatabaseDTOSchema = {
     },
   },
   type: "object",
-  required: ["name", "display_name", "auto_sync", "deletable", "namespaces"],
+  required: ["name", "display_name", "auto_sync", "namespaces"],
   title: "DatabaseDTO",
-} as const;
-
-export const DatabaseResponseSchema = {
-  properties: {
-    name: {
-      type: "string",
-      title: "Name",
-      description:
-        "The database name (also the Milvus collection and Mongo store name).",
-    },
-    bucket_name: {
-      type: "string",
-      title: "Bucket Name",
-      description: "The S3 bucket / data lake container name.",
-    },
-    ingestor: {
-      type: "string",
-      title: "Ingestor",
-      description: "The deployed ingestion pipeline that owns this database.",
-    },
-    display_name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Display Name",
-      description: "A user-friendly display name for the database.",
-    },
-    description: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Description",
-      description: "A brief description of the database's contents.",
-    },
-  },
-  type: "object",
-  required: ["name", "bucket_name", "ingestor"],
-  title: "DatabaseResponse",
 } as const;
 
 export const DatasetSchema = {
@@ -7315,6 +7515,76 @@ export const DocumentUploadValidationResponseSchema = {
     "Response containing the validation result of a file upload.\n\nThis response indicates whether the uploaded file exists in the globally\nconfigured datalake and provides information about the validation process.",
 } as const;
 
+export const DraftedReplyRefSchema = {
+  properties: {
+    source_uid: {
+      type: "string",
+      title: "Source Uid",
+      description:
+        "IMAP UID the source message had in the folder it was read from. A blueprint that files the message before drafting (EmailClassificationAgent) reports the pre-move UID, which no longer resolves on the server — it identifies the message within the run, not for a later fetch.",
+    },
+    category: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Category",
+      description:
+        "Category the source message was classified under, when drafting followed a classification run. Null when the drafting blueprint does not classify.",
+    },
+    drafts_folder: {
+      type: "string",
+      title: "Drafts Folder",
+      description: "Folder the draft was appended to.",
+    },
+    draft_uid: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Draft Uid",
+      description:
+        "IMAP UID assigned to the appended draft when the server reports APPENDUID.",
+    },
+    in_reply_to: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "In Reply To",
+      description:
+        "RFC Message-ID of the original message this draft replies to.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject of the draft reply.",
+    },
+    recipient: {
+      type: "string",
+      title: "Recipient",
+      description: "Recipient the draft reply is addressed to.",
+    },
+  },
+  type: "object",
+  required: ["source_uid", "drafts_folder", "subject", "recipient"],
+  title: "DraftedReplyRef",
+  description:
+    "A single reply draft produced during a batch drafting run — one per source message.",
+} as const;
+
 export const EdgeDataSchema = {
   properties: {
     source: {
@@ -8092,6 +8362,13 @@ export const FullAgentInstanceDTOSchema = {
       description:
         "Whether the agent can participate in a chat-based conversation",
     },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -8254,6 +8531,9 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -8293,9 +8573,6 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -8315,6 +8592,9 @@ export const FullProcessInstanceDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -8511,6 +8791,22 @@ export const GroupSchema = {
       title: "Label",
       description: "Optional label displayed above the group",
     },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Optional explanatory text rendered on the group's enable toggle",
+    },
     children: {
       items: {
         oneOf: [
@@ -8531,6 +8827,9 @@ export const GroupSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
           },
           {
             $ref: "#/components/schemas/DatePicker",
@@ -8572,9 +8871,6 @@ export const GroupSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -8596,6 +8892,9 @@ export const GroupSchema = {
             $ref: "#/components/schemas/Slider",
           },
           {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
             $ref: "#/components/schemas/Textarea",
           },
           {
@@ -8612,6 +8911,26 @@ export const GroupSchema = {
       type: "array",
       title: "Children",
       description: "Child form elements contained within this group",
+    },
+    accessRule: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accessrule",
+      description:
+        "Access rule the user must satisfy to submit this section as enabled",
+    },
+    accessDeniedMessagePath: {
+      type: "string",
+      title: "Accessdeniedmessagepath",
+      description:
+        "i18n path for the message shown when access_rule is not satisfied",
+      default: "lib.common.authorization.no_access_section",
     },
   },
   additionalProperties: true,
@@ -9029,6 +9348,9 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -9068,9 +9390,6 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -9090,6 +9409,9 @@ export const HumanInDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -9175,6 +9497,9 @@ export const HumanInSpecsSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -9214,9 +9539,6 @@ export const HumanInSpecsSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -9236,6 +9558,9 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -11070,43 +11395,6 @@ export const IngestedNodeSchema = {
     "A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.\nThe attributes defined here are the minimal number of attributes that a node must have to ensure the\nUI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.\nmust be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes\nthat are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,\nare strictly necessary.",
 } as const;
 
-export const IngestorDTOSchema = {
-  properties: {
-    name: {
-      type: "string",
-      title: "Name",
-      description: "The ingestor identifier stored on the knowledge database.",
-    },
-    display_name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Display Name",
-      description: "Localized name of the ingestion pipeline.",
-    },
-    description: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Description",
-      description: "Localized description of what the pipeline does.",
-    },
-  },
-  type: "object",
-  required: ["name", "display_name", "description"],
-  title: "IngestorDTO",
-} as const;
-
 export const InputAudioSchema = {
   properties: {
     data: {
@@ -12743,6 +13031,32 @@ export const LLMCostEventSchema = {
       description:
         "The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.",
     },
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description:
+        "Invoking user, so spend is queryable per user. None for runs with no user context.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description:
+        "Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -13007,6 +13321,69 @@ export const LLMEventSchema = {
   type: "object",
   required: ["_event_name", "_parent_event_names"],
   title: "LLMEvent",
+} as const;
+
+export const LLMSpendSchema = {
+  properties: {
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description: "Invoking user, None when grouping by tenant.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description: "Acting tenant, None for runs outside a tenant.",
+    },
+    calls: {
+      type: "integer",
+      title: "Calls",
+      description: "Number of LLM calls attributed to this key.",
+      default: 0,
+    },
+    prompt_tokens_costs: {
+      type: "number",
+      title: "Prompt Tokens Costs",
+      description: "Cost of prompt tokens.",
+      default: 0,
+    },
+    completion_tokens_costs: {
+      type: "number",
+      title: "Completion Tokens Costs",
+      description: "Cost of completion tokens.",
+      default: 0,
+    },
+    embedding_tokens_costs: {
+      type: "number",
+      title: "Embedding Tokens Costs",
+      description: "Cost of embedding tokens.",
+      default: 0,
+    },
+    total_costs: {
+      type: "number",
+      title: "Total Costs",
+      description: "Sum of prompt, completion and embedding costs.",
+      default: 0,
+    },
+  },
+  type: "object",
+  title: "LLMSpend",
+  description:
+    "LLM spend aggregated over one attribution key (a user or a tenant).\n\nCosts come from the platform's own `LLMCostEvent` records rather than from LiteLLM's spend log:\nthe gateway can only attribute the user, so the tenant dimension exists here alone (see #1451).",
 } as const;
 
 export const LLMStopEventSchema = {
@@ -13725,6 +14102,8 @@ export const LocaleInputSchema = {
     validation: {
       type: "string",
       title: "Validation",
+      description:
+        "Emits `localeRequired` where other elements emit FormKit's `required`.\n\nFormKit's `required` rule only asks whether a value is present, and this element's\nvalue is always a `{de, en, fr, it}` object — non-empty, therefore passing, even when\nevery locale inside it is blank. `localeRequired` (registered in the frontend FormKit\nconfig) looks at the locale values themselves.",
       readOnly: true,
     },
   },
@@ -13895,6 +14274,277 @@ export const MailAttachmentRefSchema = {
     "Reference to a fetched mail attachment whose bytes are stored in S3, not carried in the event.\n\nMirrors ``UserUploadedFile``: attachments are referenced by ``file_id`` (the S3 object key within the\nagent's dedicated bucket) so large binaries never bloat the persisted/streamed event.",
 } as const;
 
+export const MailBatchClassifiedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the classified messages were read from.",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+      description: "Number of messages classified and filed in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many messages were filed under each configured category.",
+    },
+    fallback_count: {
+      type: "integer",
+      title: "Fallback Count",
+      description:
+        "How many messages went to the fallback folder instead of a category.",
+      default: 0,
+    },
+    failed_count: {
+      type: "integer",
+      title: "Failed Count",
+      description:
+        "How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.",
+      default: 0,
+    },
+    classified: {
+      items: {
+        $ref: "#/components/schemas/MailClassificationRef",
+      },
+      type: "array",
+      title: "Classified",
+      description:
+        "Per-message classification verdicts and filing destinations.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["source_folder", "count", "_event_name", "_parent_event_names"],
+  title: "MailBatchClassifiedEvent",
+  description:
+    "Summarises one classification run: how many messages were classified and where each was filed.\n\nOne event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in\n`classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread\nlisting cannot see it again.",
+} as const;
+
+export const MailBatchDraftedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the drafted messages were read from.",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+      description: "Number of reply drafts created in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.",
+    },
+    skipped_count: {
+      type: "integer",
+      title: "Skipped Count",
+      description:
+        "Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.",
+      default: 0,
+    },
+    drafted: {
+      items: {
+        $ref: "#/components/schemas/DraftedReplyRef",
+      },
+      type: "array",
+      title: "Drafted",
+      description: "Per-message references to the created reply drafts.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["source_folder", "count", "_event_name", "_parent_event_names"],
+  title: "MailBatchDraftedEvent",
+  description:
+    "Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.\n\nThe agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and\nmarked as drafted so it is not drafted again on the next run.",
+} as const;
+
+export const MailClassificationRefSchema = {
+  properties: {
+    message_id: {
+      type: "string",
+      title: "Message Id",
+      description: "IMAP UID of the message within the source folder.",
+    },
+    sender: {
+      type: "string",
+      title: "Sender",
+      description: "Raw From header of the message.",
+    },
+    subject: {
+      type: "string",
+      title: "Subject",
+      description: "Subject header of the message.",
+    },
+    category: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Category",
+      description:
+        "Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted.",
+    },
+    target_folder: {
+      type: "string",
+      title: "Target Folder",
+      description: "Folder the message was filed into.",
+    },
+    reason: {
+      type: "string",
+      title: "Reason",
+      description:
+        "Model's stated reason for the choice — the audit trail for a misfile.",
+    },
+    folder_created: {
+      type: "boolean",
+      title: "Folder Created",
+      description:
+        "Whether this message's target folder was created during the run. Folders are created once up front for the whole batch, so every message routed to a newly created folder carries this, not only the first one.",
+      default: false,
+    },
+    attachments: {
+      items: {
+        $ref: "#/components/schemas/MailAttachmentRef",
+      },
+      type: "array",
+      title: "Attachments",
+      description: "References to the message's attachments stored in S3.",
+    },
+    original_message: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/MailMessageRef",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Reference to the original RFC822 message stored in S3.",
+    },
+  },
+  type: "object",
+  required: ["message_id", "sender", "subject", "target_folder", "reason"],
+  title: "MailClassificationRef",
+  description:
+    "One classified message and where it was filed — the per-message detail behind a run summary.",
+} as const;
+
 export const MailFetchedEventSchema = {
   properties: {
     event_id: {
@@ -13969,6 +14619,43 @@ export const MailFetchedEventSchema = {
       title: "Body Text",
       description: "Plain-text body of the message, if present.",
     },
+    rfc_message_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Rfc Message Id",
+      description:
+        "RFC Message-ID header of the message — used to thread a reply draft.",
+    },
+    references: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "References",
+      description: "RFC References header of the message, if present.",
+    },
+    reply_to: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Reply To",
+      description: "Reply-To header of the message, if present.",
+    },
     attachments: {
       items: {
         $ref: "#/components/schemas/MailAttachmentRef",
@@ -13976,6 +14663,18 @@ export const MailFetchedEventSchema = {
       type: "array",
       title: "Attachments",
       description: "References to the message's attachments stored in S3.",
+    },
+    original_message: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/MailMessageRef",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Reference to the original RFC822 message stored in S3, or null when it was not stored.",
     },
     _event_name: {
       type: "string",
@@ -14007,6 +14706,43 @@ export const MailFetchedEventSchema = {
   title: "MailFetchedEvent",
   description:
     "Carries a single fetched message — headers, body, and references to its stored attachments.",
+} as const;
+
+export const MailMessageRefSchema = {
+  properties: {
+    filename: {
+      type: "string",
+      pattern: "^[^/\\\\]+$",
+      title: "Filename",
+      description:
+        "Filename the message is stored under, e.g. '1234.eml'. Must not contain path separators.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "MIME type of the stored message.",
+      default: "message/rfc822",
+    },
+    file_id: {
+      type: "string",
+      pattern:
+        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      title: "File Id",
+      description:
+        "UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.",
+    },
+    size_bytes: {
+      type: "integer",
+      minimum: 0,
+      title: "Size Bytes",
+      description: "Size of the stored message in bytes.",
+    },
+  },
+  type: "object",
+  required: ["filename", "file_id", "size_bytes"],
+  title: "MailMessageRef",
+  description:
+    "Reference to a fetched message's original RFC822 bytes, stored in S3 rather than carried in the event.\n\nMirrors ``MailAttachmentRef``: the message is referenced by ``file_id`` so the raw mail — which may be\norders of magnitude larger than the summary the event carries — never enters the audit trail or the\nWebSocket stream. The stored object is the message **verbatim**, so it also preserves what the event\ndeliberately omits: the recipients and the untrusted HTML body.",
 } as const;
 
 export const MailMovedEventSchema = {
@@ -14057,6 +14793,13 @@ export const MailMovedEventSchema = {
       type: "string",
       title: "Target Folder",
       description: "Folder the message was moved into.",
+    },
+    folder_created: {
+      type: "boolean",
+      title: "Folder Created",
+      description:
+        "Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.",
+      default: false,
     },
     _event_name: {
       type: "string",
@@ -14757,6 +15500,13 @@ export const MinimalAgentInstanceDTOSchema = {
       title: "Is Conversational",
       description:
         "Whether the agent can participate in a chat-based conversation",
+    },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent can be run automatically on a cron schedule",
+      default: false,
     },
   },
   type: "object",
@@ -16286,254 +17036,6 @@ export const OpenWebuiWebhookUserSchema = {
   title: "OpenWebuiWebhookUser",
 } as const;
 
-export const OrgMemoryTenantInputSchema = {
-  properties: {
-    is_formkit_element: {
-      type: "boolean",
-      const: true,
-      title: "Is Formkit Element",
-      description: "Indicates that this element is a FormKit element",
-      default: true,
-    },
-    if: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^\\$.+",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "If",
-      description: "Conditional expression to show this element",
-    },
-    id: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Id",
-      description: "Unique identifier for this element",
-    },
-    nullable: {
-      type: "boolean",
-      title: "Nullable",
-      description:
-        "Render with a sibling toggle that sets this field to null when off",
-      default: false,
-    },
-    defaultEnabled: {
-      anyOf: [
-        {
-          type: "boolean",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Defaultenabled",
-      description:
-        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
-    },
-    formkit: {
-      type: "string",
-      const: "orgMemoryTenantInput",
-      title: "Formkit",
-      description: "Organization-memory tenant_id input element.",
-      default: "orgMemoryTenantInput",
-    },
-    name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Name",
-      description: "Name of this field",
-    },
-    label: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-      ],
-      title: "Label",
-      description: "Label of this field",
-    },
-    help: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Help",
-      description: "Help text of this field",
-    },
-    value: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "integer",
-        },
-        {
-          type: "number",
-        },
-        {
-          type: "boolean",
-        },
-        {
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        {
-          additionalProperties: {
-            type: "string",
-          },
-          type: "object",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Value",
-      description: "Default value for this field",
-    },
-    required: {
-      type: "boolean",
-      title: "Required",
-      description: "Whether this field is required",
-      default: false,
-    },
-    additional_validation_rules: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Additional Validation Rules",
-      description: "Validation expression",
-    },
-    disabled: {
-      type: "boolean",
-      title: "Disabled",
-      description: "Whether the input is disabled",
-      default: false,
-    },
-    readonly: {
-      type: "boolean",
-      title: "Readonly",
-      description: "Whether the input is readonly",
-      default: false,
-    },
-    placeholder: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Placeholder",
-      description: "Placeholder text",
-    },
-    prefix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Prefix",
-      description: "Prefix text",
-    },
-    suffix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Suffix",
-      description: "Suffix text",
-    },
-    iconPrefix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconprefix",
-      description: "Icon prefix",
-    },
-    iconSuffix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconsuffix",
-      description: "Icon suffix",
-    },
-    validation: {
-      type: "string",
-      title: "Validation",
-      readOnly: true,
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["label", "validation"],
-  title: "OrgMemoryTenantInput",
-  description:
-    "Text input for the organization-memory `tenant_id` field that also enforces\nconfig-time access control.\n\nRenders identically to a plain `InputText` (same UI), but its presence in a\nsubmitted config means the section is enabled — so we require the configuring user\nto hold `aihub.user.memory.organization`. When the parent `org_memory` section is\nnull the walker never reaches this element, so no check fires.",
-} as const;
-
 export const PaginatedDocumentsResponseSchema = {
   properties: {
     total: {
@@ -17155,6 +17657,9 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -17194,9 +17699,6 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -17216,6 +17718,9 @@ export const ProcessClassDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -18706,6 +19211,9 @@ export const RepeaterSchema = {
             $ref: "#/components/schemas/ColorPicker",
           },
           {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
             $ref: "#/components/schemas/DatePicker",
           },
           {
@@ -18745,9 +19253,6 @@ export const RepeaterSchema = {
             $ref: "#/components/schemas/MultiSelect",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInput",
-          },
-          {
             $ref: "#/components/schemas/Password",
           },
           {
@@ -18767,6 +19272,9 @@ export const RepeaterSchema = {
           },
           {
             $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
           },
           {
             $ref: "#/components/schemas/Textarea",
@@ -21166,6 +21674,192 @@ export const TenantMembershipDTOSchema = {
   description: "A tenant the current user belongs to.",
 } as const;
 
+export const TenantSelectSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "tenantSelect",
+      title: "Formkit",
+      description: "Tenant select element.",
+      default: "tenantSelect",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "TenantSelect",
+  description:
+    'A FormKit element for selecting one of the tenants the user belongs to.\n\nRenders as a select dropdown listing tenant *names*, while the submitted value is the\ntenant *id*. The frontend populates the options from the user\'s memberships and\npre-selects their active tenant.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    tenant_id: Annotated[\n        str | TenantSelect,\n        Field(description="Tenant to scope against"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            tenant_id=TenantSelect(\n                label=LocaleString(en="Tenant"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(tenant_id="507f1f77bcf86cd799439011")\n```',
+} as const;
+
 export const TextBlockSchema = {
   properties: {
     block_type: {
@@ -21210,10 +21904,9 @@ export const TextToSpeechRequestSchema = {
   properties: {
     model: {
       type: "string",
-      enum: ["tts-1", "tts-1-hd"],
+      minLength: 1,
       title: "Model",
-      description:
-        "The TTS model to use. Available options: 'tts-1' or 'tts-1-hd'.",
+      description: "The TTS model to use, e.g. 'speech/<model-name>'.",
     },
     input: {
       type: "string",
@@ -24337,6 +25030,9 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -24376,9 +25072,6 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -24398,6 +25091,9 @@ export const AgentClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -24469,6 +25165,13 @@ export const AgentClassDTOWritableSchema = {
       title: "Is Conversational",
       description:
         "Whether the agent class can participate in a chat-based conversation",
+    },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
     },
     is_online: {
       anyOf: [
@@ -24558,6 +25261,9 @@ export const AgentConfigDTOWritableSchema = {
                 $ref: "#/components/schemas/ColorPickerWritable",
               },
               {
+                $ref: "#/components/schemas/CronInputWritable",
+              },
+              {
                 $ref: "#/components/schemas/DatePickerWritable",
               },
               {
@@ -24597,9 +25303,6 @@ export const AgentConfigDTOWritableSchema = {
                 $ref: "#/components/schemas/MultiSelectWritable",
               },
               {
-                $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-              },
-              {
                 $ref: "#/components/schemas/PasswordWritable",
               },
               {
@@ -24619,6 +25322,9 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/SliderWritable",
+              },
+              {
+                $ref: "#/components/schemas/TenantSelectWritable",
               },
               {
                 $ref: "#/components/schemas/TextareaWritable",
@@ -26851,6 +27557,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/RAGStartEventWritable",
         },
         {
+          $ref: "#/components/schemas/CronStartEventWritable",
+        },
+        {
           $ref: "#/components/schemas/ExceptionEventWritable",
         },
         {
@@ -26918,6 +27627,12 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/MailMovedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MailBatchDraftedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MailBatchClassifiedEventWritable",
         },
       ],
       title: "Event",
@@ -27009,6 +27724,256 @@ export const ConversationTitleEventWritableSchema = {
   title: "ConversationTitleEvent",
   description:
     "Carries a generated title for the whole conversation (thread), produced by the agent once a\ntopic becomes identifiable. The agent has the richest context about the conversation, so it\nowns this metadata instead of leaving it to the chat UI's task model.\n\nA thread receives a single, stable title: the agent emits this event only on the turn where a\ntitle is first determined and never again for that thread.",
+} as const;
+
+export const CronInputWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "cronInput",
+      title: "Formkit",
+      description: "Cron schedule input element.",
+      default: "cronInput",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    timezonePlaceholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timezoneplaceholder",
+      description: "Placeholder for the timezone select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search on the timezone select",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "CronInput",
+  description:
+    'A FormKit element for editing the cron schedule of a schedulable agent profile.\n\nThe element renders the five cron positions plus a timezone selector, and the submitted value\nmatches the fields of `CronSchedule`:\n{\n    "minute": str,\n    "hour": str,\n    "day_of_month": str,\n    "month": str,\n    "day_of_week": str,\n    "timezone": str,\n}\n\nPresets and the plain-language summary of the current schedule are delivered by the Admin UI\n(see the cron schedule configuration UI issue); this element only declares the contract.\n\n### Form Duality\n```python\nfrom swiss_ai_hub.core.form.elements.cron_input import CronInput\nfrom swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule\n\nclass MyAgentConfig(AgentConfig):\n    schedule: Annotated[\n        CronSchedule | CronInput | None,\n        Field(description="When this profile runs automatically"),\n    ] = None\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))\n\n# Data mode - from submission (Pydantic validates into CronSchedule):\nconfig = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))\n```',
+} as const;
+
+export const CronStartEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    locale: {
+      type: "string",
+      title: "Locale",
+      description:
+        "The locale the scheduled run reports its display output in.",
+      default: "de",
+    },
+    user: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Always None — scheduled runs are system-initiated and carry no execution identity.",
+    },
+    scheduled_for: {
+      type: "string",
+      format: "date-time",
+      title: "Scheduled For",
+      description:
+        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["scheduled_for"],
+  title: "CronStartEvent",
+  description:
+    "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
 } as const;
 
 export const DatePickerWritableSchema = {
@@ -27705,6 +28670,13 @@ export const FullAgentInstanceDTOWritableSchema = {
       description:
         "Whether the agent can participate in a chat-based conversation",
     },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -27867,6 +28839,9 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -27906,9 +28881,6 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -27928,6 +28900,9 @@ export const FullProcessInstanceDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -28054,6 +29029,22 @@ export const GroupWritableSchema = {
       title: "Label",
       description: "Optional label displayed above the group",
     },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Optional explanatory text rendered on the group's enable toggle",
+    },
     children: {
       items: {
         oneOf: [
@@ -28074,6 +29065,9 @@ export const GroupWritableSchema = {
           },
           {
             $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
           },
           {
             $ref: "#/components/schemas/DatePickerWritable",
@@ -28115,9 +29109,6 @@ export const GroupWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -28139,6 +29130,9 @@ export const GroupWritableSchema = {
             $ref: "#/components/schemas/SliderWritable",
           },
           {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
             $ref: "#/components/schemas/TextareaWritable",
           },
           {
@@ -28155,6 +29149,26 @@ export const GroupWritableSchema = {
       type: "array",
       title: "Children",
       description: "Child form elements contained within this group",
+    },
+    accessRule: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accessrule",
+      description:
+        "Access rule the user must satisfy to submit this section as enabled",
+    },
+    accessDeniedMessagePath: {
+      type: "string",
+      title: "Accessdeniedmessagepath",
+      description:
+        "i18n path for the message shown when access_rule is not satisfied",
+      default: "lib.common.authorization.no_access_section",
     },
   },
   additionalProperties: true,
@@ -28355,6 +29369,9 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -28394,9 +29411,6 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -28416,6 +29430,9 @@ export const HumanInDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -28501,6 +29518,9 @@ export const HumanInSpecsWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -28540,9 +29560,6 @@ export const HumanInSpecsWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -28562,6 +29579,9 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -30870,6 +31890,32 @@ export const LLMCostEventWritableSchema = {
       description:
         "The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.",
     },
+    user_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Id",
+      description:
+        "Invoking user, so spend is queryable per user. None for runs with no user context.",
+    },
+    tenant_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tenant Id",
+      description:
+        "Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -31781,6 +32827,168 @@ export const LocaleInputWritableSchema = {
     'A FormKit element for entering multi-language text (LocaleString values).\n\nThis element renders as a text input with language switching capability,\nallowing users to enter translations for all supported languages (de, en, fr, it)\nin a single compact UI component.\n\nThe frontend renders this as an input field with a language selector, where users\ncan switch between languages to enter the corresponding translation.\n\n### Form Duality\nWhen used in a Form, this element captures a LocaleString value with translations\nfor each language. The form submission returns a dict with language keys.\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    custom_greeting: Annotated[\n        LocaleString | LocaleInput,\n        Field(description="Custom greeting message"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    ...,\n    custom_greeting=LocaleInput(label=LocaleString(en="Greeting", de="Begrüßung")),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    ...,\n    custom_greeting=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"),\n)\n```',
 } as const;
 
+export const MailBatchClassifiedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the classified messages were read from.",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+      description: "Number of messages classified and filed in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many messages were filed under each configured category.",
+    },
+    fallback_count: {
+      type: "integer",
+      title: "Fallback Count",
+      description:
+        "How many messages went to the fallback folder instead of a category.",
+      default: 0,
+    },
+    failed_count: {
+      type: "integer",
+      title: "Failed Count",
+      description:
+        "How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.",
+      default: 0,
+    },
+    classified: {
+      items: {
+        $ref: "#/components/schemas/MailClassificationRef",
+      },
+      type: "array",
+      title: "Classified",
+      description:
+        "Per-message classification verdicts and filing destinations.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["source_folder", "count"],
+  title: "MailBatchClassifiedEvent",
+  description:
+    "Summarises one classification run: how many messages were classified and where each was filed.\n\nOne event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in\n`classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread\nlisting cannot see it again.",
+} as const;
+
+export const MailBatchDraftedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    source_folder: {
+      type: "string",
+      title: "Source Folder",
+      description: "Folder the drafted messages were read from.",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+      description: "Number of reply drafts created in this run.",
+    },
+    per_category: {
+      additionalProperties: {
+        type: "integer",
+      },
+      type: "object",
+      title: "Per Category",
+      description:
+        "How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.",
+    },
+    skipped_count: {
+      type: "integer",
+      title: "Skipped Count",
+      description:
+        "Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.",
+      default: 0,
+    },
+    drafted: {
+      items: {
+        $ref: "#/components/schemas/DraftedReplyRef",
+      },
+      type: "array",
+      title: "Drafted",
+      description: "Per-message references to the created reply drafts.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["source_folder", "count"],
+  title: "MailBatchDraftedEvent",
+  description:
+    "Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.\n\nThe agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and\nmarked as drafted so it is not drafted again on the next run.",
+} as const;
+
 export const MailFetchedEventWritableSchema = {
   properties: {
     event_id: {
@@ -31855,6 +33063,43 @@ export const MailFetchedEventWritableSchema = {
       title: "Body Text",
       description: "Plain-text body of the message, if present.",
     },
+    rfc_message_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Rfc Message Id",
+      description:
+        "RFC Message-ID header of the message — used to thread a reply draft.",
+    },
+    references: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "References",
+      description: "RFC References header of the message, if present.",
+    },
+    reply_to: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Reply To",
+      description: "Reply-To header of the message, if present.",
+    },
     attachments: {
       items: {
         $ref: "#/components/schemas/MailAttachmentRef",
@@ -31862,6 +33107,18 @@ export const MailFetchedEventWritableSchema = {
       type: "array",
       title: "Attachments",
       description: "References to the message's attachments stored in S3.",
+    },
+    original_message: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/MailMessageRef",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Reference to the original RFC822 message stored in S3, or null when it was not stored.",
     },
   },
   additionalProperties: true,
@@ -31920,6 +33177,13 @@ export const MailMovedEventWritableSchema = {
       type: "string",
       title: "Target Folder",
       description: "Folder the message was moved into.",
+    },
+    folder_created: {
+      type: "boolean",
+      title: "Folder Created",
+      description:
+        "Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.",
+      default: false,
     },
   },
   additionalProperties: true,
@@ -32117,6 +33381,13 @@ export const MinimalAgentInstanceDTOWritableSchema = {
       title: "Is Conversational",
       description:
         "Whether the agent can participate in a chat-based conversation",
+    },
+    is_schedulable: {
+      type: "boolean",
+      title: "Is Schedulable",
+      description:
+        "Whether the agent can be run automatically on a cron schedule",
+      default: false,
     },
   },
   type: "object",
@@ -32618,249 +33889,6 @@ export const OpenChatHitlResponseWritableSchema = {
     "Response indicating whether there's an open chat HITL request for a thread.",
 } as const;
 
-export const OrgMemoryTenantInputWritableSchema = {
-  properties: {
-    is_formkit_element: {
-      type: "boolean",
-      const: true,
-      title: "Is Formkit Element",
-      description: "Indicates that this element is a FormKit element",
-      default: true,
-    },
-    if: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^\\$.+",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "If",
-      description: "Conditional expression to show this element",
-    },
-    id: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Id",
-      description: "Unique identifier for this element",
-    },
-    nullable: {
-      type: "boolean",
-      title: "Nullable",
-      description:
-        "Render with a sibling toggle that sets this field to null when off",
-      default: false,
-    },
-    defaultEnabled: {
-      anyOf: [
-        {
-          type: "boolean",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Defaultenabled",
-      description:
-        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
-    },
-    formkit: {
-      type: "string",
-      const: "orgMemoryTenantInput",
-      title: "Formkit",
-      description: "Organization-memory tenant_id input element.",
-      default: "orgMemoryTenantInput",
-    },
-    name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Name",
-      description: "Name of this field",
-    },
-    label: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-      ],
-      title: "Label",
-      description: "Label of this field",
-    },
-    help: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Help",
-      description: "Help text of this field",
-    },
-    value: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "integer",
-        },
-        {
-          type: "number",
-        },
-        {
-          type: "boolean",
-        },
-        {
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        {
-          additionalProperties: {
-            type: "string",
-          },
-          type: "object",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Value",
-      description: "Default value for this field",
-    },
-    required: {
-      type: "boolean",
-      title: "Required",
-      description: "Whether this field is required",
-      default: false,
-    },
-    additional_validation_rules: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Additional Validation Rules",
-      description: "Validation expression",
-    },
-    disabled: {
-      type: "boolean",
-      title: "Disabled",
-      description: "Whether the input is disabled",
-      default: false,
-    },
-    readonly: {
-      type: "boolean",
-      title: "Readonly",
-      description: "Whether the input is readonly",
-      default: false,
-    },
-    placeholder: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Placeholder",
-      description: "Placeholder text",
-    },
-    prefix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Prefix",
-      description: "Prefix text",
-    },
-    suffix: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Suffix",
-      description: "Suffix text",
-    },
-    iconPrefix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconprefix",
-      description: "Icon prefix",
-    },
-    iconSuffix: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^pi pi-[a-z0-9-]+$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Iconsuffix",
-      description: "Icon suffix",
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["label"],
-  title: "OrgMemoryTenantInput",
-  description:
-    "Text input for the organization-memory `tenant_id` field that also enforces\nconfig-time access control.\n\nRenders identically to a plain `InputText` (same UI), but its presence in a\nsubmitted config means the section is enabled — so we require the configuring user\nto hold `aihub.user.memory.organization`. When the parent `org_memory` section is\nnull the walker never reaches this element, so no check fires.",
-} as const;
-
 export const PaginatedProcessWalkthroughsResponseWritableSchema = {
   properties: {
     total: {
@@ -33260,6 +34288,9 @@ export const ProcessClassDTOWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -33299,9 +34330,6 @@ export const ProcessClassDTOWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -33321,6 +34349,9 @@ export const ProcessClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -34365,6 +35396,9 @@ export const RepeaterWritableSchema = {
             $ref: "#/components/schemas/ColorPickerWritable",
           },
           {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
             $ref: "#/components/schemas/DatePickerWritable",
           },
           {
@@ -34404,9 +35438,6 @@ export const RepeaterWritableSchema = {
             $ref: "#/components/schemas/MultiSelectWritable",
           },
           {
-            $ref: "#/components/schemas/OrgMemoryTenantInputWritable",
-          },
-          {
             $ref: "#/components/schemas/PasswordWritable",
           },
           {
@@ -34426,6 +35457,9 @@ export const RepeaterWritableSchema = {
           },
           {
             $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
           },
           {
             $ref: "#/components/schemas/TextareaWritable",
@@ -36198,6 +37232,187 @@ export const StoreUserMemoryEventWritableSchema = {
   title: "StoreUserMemoryEvent",
   description:
     "Specialized BaseStoreMemoryEvent for user-specific memories.\n\nEmitted when an agent stores private user memories to long-term storage.\nThese memories are scoped to individual users and never shared across users.\nUser memories are typically inferred from conversation context.",
+} as const;
+
+export const TenantSelectWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "tenantSelect",
+      title: "Formkit",
+      description: "Tenant select element.",
+      default: "tenantSelect",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "TenantSelect",
+  description:
+    'A FormKit element for selecting one of the tenants the user belongs to.\n\nRenders as a select dropdown listing tenant *names*, while the submitted value is the\ntenant *id*. The frontend populates the options from the user\'s memberships and\npre-selects their active tenant.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    tenant_id: Annotated[\n        str | TenantSelect,\n        Field(description="Tenant to scope against"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            tenant_id=TenantSelect(\n                label=LocaleString(en="Tenant"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(tenant_id="507f1f77bcf86cd799439011")\n```',
 } as const;
 
 export const TextareaWritableSchema = {

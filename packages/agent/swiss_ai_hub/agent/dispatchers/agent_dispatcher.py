@@ -2,14 +2,16 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, cast, override
+from typing import Annotated, Any, cast, get_args, override
 
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from opentelemetry import context as otel_context
+from pydantic import ValidationError
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.dispatcher import BaseDispatcher, EventsAndKwargs, TraceStore
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events import BaseEvent
@@ -20,6 +22,7 @@ from swiss_ai_hub.core.events.agent import (
     MemoryStorageRequestedEvent,
     StartEvent,
 )
+from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.generative_ai import AgentMemory
@@ -115,17 +118,59 @@ class AgentDispatcher(BaseDispatcher):
         # Retrieve contexts (run and thread)
         run_context = RunContext.for_topic(self.redis, topic)
         thread_context = ThreadContext.for_topic(self.redis, topic)
-        agent_config_dict: dict[str, Any] | None = None
+
+        # Teardown must run before config resolution: it only needs the run id, and a redelivered
+        # terminal event would otherwise fail on the config its first delivery already deleted. It is
+        # also what lets the ExceptionEvent published for an unusable config retire its run at all —
+        # that event would otherwise hit the very failure it reports.
+        if event.is_stop_event or event.is_exception_event:
+            logger.debug(f"Handling final event: {event.event_name}")
+            await self._teardown_run(event, run_context, topic)
+            return
+
+        try:
+            agent_config_dict = await self._resolve_agent_config_dict(event, run_context, topic)
+            if agent_config_dict is None:
+                return
+            # Transform FormKit-style arrays (dict with numeric keys) to Python lists
+            run_agent_config = self.agent_config_type.model_validate(transform_formkit_arrays(agent_config_dict))
+        except Exception as unusable_config_exception:
+            await self._report_unusable_config(topic, unusable_config_exception)
+            return
 
         # Propagate X-AIHub-* request headers into RunContext so downstream steps can act on behalf
         # of the user. Written on every header-carrying event, not only StartEvent, so HITL/BITL
-        # responses refresh the stored token instead of reusing a stale one. These are untrusted
-        # client input — a step must validate a header before treating it as an identity claim.
+        # responses refresh the stored token instead of reusing a stale one. Written after the config
+        # is resolved and validated, so a duplicate delivery or an unusable config returns before
+        # re-creating deleted run-context keys. These are untrusted client input — a step must
+        # validate a header before treating it as an identity claim.
         if event._aihub_headers:
             await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
 
+        instance_topic = AgentInstanceTopic.from_agent_class_topic(
+            agent_class_topic=topic,
+            agent_id=run_agent_config.agent_id,
+        )
+
         if event.is_start_event:
-            event = cast(StartEvent, event)
+            await self._start_run(cast(StartEvent, event), run_context, instance_topic)
+
+        await self._trigger_ready_steps(event, run_context, thread_context, instance_topic, run_agent_config)
+
+    async def _resolve_agent_config_dict(
+        self,
+        event: Annotated[ControlEvent, "The incoming non-terminal control event."],
+        run_context: Annotated[RunContext, "Per-run context holding the resolved config."],
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event."],
+    ) -> Annotated[dict[str, Any] | None, "The runtime config, or None when the delivery must be skipped."]:
+        """
+        Resolves the run's config, fetching it via RPC on a StartEvent and reading it back otherwise.
+        Returns None for a redelivery that arrives after the run was already torn down.
+        """
+        if event.is_start_event:
+            if await self._is_run_torn_down(topic.execution_context_id):
+                self._log_skipped_duplicate(event, topic)
+                return None
 
             submitted_config = await self._config_client.fetch_config(
                 agent_class=self.agent.__name__,
@@ -134,63 +179,140 @@ class AgentDispatcher(BaseDispatcher):
 
             # Deep merge: non-configurable values (from form-mode config) + configurable values (from submission)
             agent_config_dict = Form.deep_merge(self._non_configurable_values, submitted_config)
-
             await run_context.set(self._AGENT_CONFIG_KEY, agent_config_dict)
+            return agent_config_dict
 
-        if agent_config_dict is None:
-            agent_config_dict = await run_context.get(self._AGENT_CONFIG_KEY)
-            if agent_config_dict is None:
-                raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+        agent_config_dict = await run_context.get(self._AGENT_CONFIG_KEY)
+        if agent_config_dict is not None:
+            return agent_config_dict
 
-        # Transform FormKit-style arrays (dict with numeric keys) to Python lists
-        agent_config_dict = transform_formkit_arrays(agent_config_dict)
-        run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
-        topic = AgentInstanceTopic.from_agent_class_topic(
-            agent_class_topic=topic,
-            agent_id=run_agent_config.agent_id,
+        if await self._is_run_torn_down(topic.execution_context_id):
+            self._log_skipped_duplicate(event, topic)
+            return None
+
+        raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+
+    async def _report_unusable_config(
+        self,
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event whose config could not be resolved."],
+        cause: Annotated[Exception, "Why the config could not be fetched, merged or validated."],
+    ) -> None:
+        """
+        Turns a config failure into an ExceptionEvent instead of letting it escape into the subscriber.
+
+        A config is validated on every dispatched event, before any step runs, so a profile saved with a
+        value the agent's own model rejects (the API validates submissions against a JSON Schema that
+        cannot carry cross-field rules) would otherwise abort each event silently — the subscriber only
+        logs, and the message is acked already — leaving the chat hanging forever with nothing to show.
+        """
+        logger.exception(
+            f"Cannot resolve the configuration of {self.agent.__name__}/{topic.agent_id}, aborting the run: {cause}"
+        )
+        await self.publish_event(
+            ExceptionEvent(message=f"The agent configuration is invalid: {self._describe_config_failure(cause)}"),
+            AgentInstanceTopic.from_agent_class_topic(agent_class_topic=topic, agent_id=topic.agent_id),
         )
 
-        if event.is_start_event:
-            event = cast(StartEvent, event)
-            logger.debug(f"Handling StartEvent: {event.event_name}")
+    @staticmethod
+    def _describe_config_failure(cause: Exception) -> str:
+        """
+        Reduces a validation failure to field locations and reasons.
 
-            await self.agent_run_tracer.trace_run_start(topic=topic, event=event)
+        An agent config carries credentials — `ImapClientConfig.password` is a plain string — and
+        Pydantic renders the offending value into `str(error)`. This text reaches the user's chat, so
+        the values must not travel with it; the full error stays in the log line above.
+        """
+        if not isinstance(cause, ValidationError):
+            return str(cause)
+        return "; ".join(
+            f"{'.'.join(str(location) for location in error['loc'])}: {error['msg']}"
+            for error in cause.errors(include_url=False, include_input=False)
+        )
 
-            # Store any initial data from the StartEvent into run_context
-            event_data = event.to_context_dict()
-            for key, value in event_data.items():
-                logger.debug(f"Setting key '{key}' in run_context")
-                await run_context.set(key, value)
+    async def _start_run(
+        self,
+        event: Annotated[StartEvent, "The event opening the run."],
+        run_context: Annotated[RunContext, "Per-run context to seed with the event payload."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+    ) -> None:
+        logger.debug(f"Handling StartEvent: {event.event_name}")
 
-        if event.is_stop_event or event.is_exception_event:
-            logger.debug(f"Handling final event: {event.event_name}")
+        await self.agent_run_tracer.trace_run_start(topic=topic, event=event)
 
-            await run_context.delete_all()
-            await self.event_store.delete_all(topic.execution_context_id)
-            await self.step_store.delete_all(topic.execution_context_id)
-            await self.trace_store.delete_all(topic.execution_context_id)
+        # Store any initial data from the StartEvent into run_context
+        for key, value in event.to_context_dict().items():
+            logger.debug(f"Setting key '{key}' in run_context")
+            await run_context.set(key, value)
 
-            if event.is_exception_event:
-                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
-            return
-
-        steps = self.agent.get_steps_waiting_for_event(type(event))
-        for step_method in steps:
+    async def _trigger_ready_steps(
+        self,
+        event: Annotated[ControlEvent, "The event that may unblock waiting steps."],
+        run_context: Annotated[RunContext, "Per-run context for state and configuration."],
+        thread_context: Annotated[ThreadContext, "Per-thread context for longer-lived state."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+        run_agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
+    ) -> None:
+        for step_method in self.agent.get_steps_waiting_for_event(type(event)):
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
             input_events = getattr(step_method, Agent.INPUT_EVENTS_ANNOTATION, set())
             input_event_class_names = [event_class.event_name_from_class() for event_class in input_events]
             events = await self.event_store.get_events_of_multiple_types(
                 topic.execution_context_id, input_event_class_names, until_event=event
             )
-            if await self.is_step_ready(
+            if not await self.is_step_ready(
                 event, step_method, events, run_context, thread_context, topic, run_agent_config
             ):
-                logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
-                task = asyncio.create_task(
-                    self.execute_step(event, step_method, events, run_context, thread_context, topic, run_agent_config)
-                )
-                self._background_tasks.add(task)
-                task.add_done_callback(self._background_tasks.discard)
+                continue
+
+            logger.debug(f"Triggering step '{step_method.__name__}' due to event '{event.event_name}'")
+            task = asyncio.create_task(
+                self.execute_step(event, step_method, events, run_context, thread_context, topic, run_agent_config)
+            )
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
+
+    @staticmethod
+    def _log_skipped_duplicate(
+        event: Annotated[ControlEvent, "The redelivered event."],
+        topic: Annotated[AgentClassTopic, "Topic carrying the execution context id."],
+    ) -> None:
+        logger.info(
+            f"Duplicate delivery of {event.event_name} after run {topic.execution_context_id} teardown, skipping"
+        )
+
+    async def _is_run_torn_down(self, execution_context_id: Annotated[str, "The run id to check."]) -> bool:
+        return await self.step_store.is_execution_context_completed(
+            execution_context_id
+        ) or await self.step_store.is_execution_context_crashed(execution_context_id)
+
+    async def _teardown_run(
+        self,
+        event: Annotated[ControlEvent, "The terminal (stop or exception) event."],
+        run_context: Annotated[RunContext, "Per-run context to delete."],
+        topic: Annotated[AgentClassTopic, "Topic carrying the execution context id."],
+    ) -> None:
+        """
+        Tears down all run state. Idempotent under JetStream at-least-once redelivery: the
+        completed/crashed marker recorded here outlives the deletes — ``StepStore`` keeps markers
+        outside the namespace ``delete_all`` clears — so a second delivery finds it and returns.
+        """
+        execution_context_id = topic.execution_context_id
+        if await self._is_run_torn_down(execution_context_id):
+            logger.info(
+                f"Duplicate delivery of terminal event {event.event_name} after run "
+                f"{execution_context_id} teardown, skipping"
+            )
+            return
+
+        await run_context.delete_all()
+        await self.event_store.delete_all(execution_context_id)
+        await self.step_store.delete_all(execution_context_id)
+        await self.trace_store.delete_all(execution_context_id)
+
+        if event.is_exception_event:
+            await self.step_store.mark_execution_context_as_crashed(execution_context_id)
+        else:
+            await self.step_store.mark_execution_context_as_completed(execution_context_id)
 
     @override
     async def is_step_ready(
@@ -299,11 +421,18 @@ class AgentDispatcher(BaseDispatcher):
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
                 self.agent_run_tracer.trace_step_error(step_span, e)
+                # The SDK wraps a gateway failure as "Error code: N - {…}", which is what both the
+                # log line and the chat UI used to show. Unwrapping it here is what makes an agent
+                # error say "Invalid model name passed in model=…" instead.
+                cause = ModelGatewayErrorHandler.cause_of(e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
-                    event = ExceptionEvent(message=str(e))
+                    event = ExceptionEvent(message=cause)
                     await self.publish_event(event, topic)
-                logger.exception(e)
-                logger.exception(f"Error executing step '{step_method.__name__}': {e}")
+                # One record, not two: this used to log the exception twice — once bare, once with
+                # the step name — so every agent failure arrived in the backend as two identical
+                # tracebacks, doubling both the volume and any count taken from it. The run id is
+                # on the record because a traceback that cannot be tied to a run is not actionable.
+                logger.exception(f"Step '{step_method.__name__}' failed in run {topic.execution_context_id}: {cause}")
                 return
 
             # Always finalize the span so Langfuse receives trace metadata (name, session,
@@ -463,6 +592,19 @@ class AgentDispatcher(BaseDispatcher):
 
         if param.annotation == ThreadContext:
             return thread_context
+
+        if param.annotation == Redis:
+            return self.redis
+
+        # Matched through the union members too: the programmatically-started agents annotate this
+        # `UserIdentity | None`, and an equality check against the bare class silently misses them —
+        # the kwarg is then dropped and the parameter keeps its `= None` default, so the run bills the
+        # master key while looking correctly wired.
+        if UserIdentity in (param.annotation, *get_args(param.annotation)):
+            # Written by handle_event from the StartEvent's own fields, so this is only populated for
+            # start events that carry a user — programmatic starts leave it absent.
+            user_data = await run_context.get("user")
+            return UserIdentity.model_validate(user_data) if user_data else None
 
         if param.annotation == EventDisplayer:
             return EventDisplayer(

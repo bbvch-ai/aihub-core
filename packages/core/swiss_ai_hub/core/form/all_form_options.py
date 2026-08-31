@@ -8,6 +8,7 @@ from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
 from swiss_ai_hub.core.form.elements.checkbox import Checkbox
 from swiss_ai_hub.core.form.elements.chips_input import ChipsInput
 from swiss_ai_hub.core.form.elements.color_picker import ColorPicker
+from swiss_ai_hub.core.form.elements.cron_input import CronInput
 from swiss_ai_hub.core.form.elements.date_picker import DatePicker
 from swiss_ai_hub.core.form.elements.group import Group
 from swiss_ai_hub.core.form.elements.icon_selector import IconSelector
@@ -21,7 +22,6 @@ from swiss_ai_hub.core.form.elements.listbox import Listbox
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
-from swiss_ai_hub.core.form.elements.org_memory_tenant_input import OrgMemoryTenantInput
 from swiss_ai_hub.core.form.elements.password import Password
 from swiss_ai_hub.core.form.elements.radio_button import RadioButton
 from swiss_ai_hub.core.form.elements.rating import Rating
@@ -29,6 +29,7 @@ from swiss_ai_hub.core.form.elements.repeater import Repeater
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.elements.select_button import SelectButton
 from swiss_ai_hub.core.form.elements.slider import Slider
+from swiss_ai_hub.core.form.elements.tenant_select import TenantSelect
 from swiss_ai_hub.core.form.elements.textarea import Textarea
 from swiss_ai_hub.core.form.elements.toggle_button import ToggleButton
 from swiss_ai_hub.core.form.elements.toggle_switch import ToggleSwitch
@@ -37,12 +38,12 @@ from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput
 _FORMKIT_TYPE_MAP: dict[str, str] = {
     "agentSelector": "AgentSelector",
     "chipsInput": "ChipsInput",
+    "cronInput": "CronInput",
     "group": "Group",
     "iconSelector": "IconSelector",
     "knowledgeDatabaseSelector": "KnowledgeDatabaseSelector",
     "localeInput": "LocaleInput",
     "modelSelect": "ModelSelect",
-    "orgMemoryTenantInput": "OrgMemoryTenantInput",
     "primeCascadeSelect": "CascadeSelect",
     "primeCheckbox": "Checkbox",
     "primeColorPicker": "ColorPicker",
@@ -64,6 +65,7 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "primeToggleButton": "ToggleButton",
     "primeToggleSwitch": "ToggleSwitch",
     "repeater": "Repeater",
+    "tenantSelect": "TenantSelect",
     "vectorStoreInput": "VectorStoreInput",
 }
 
@@ -89,6 +91,7 @@ _FormElementUnion = (
     | Annotated[Checkbox, Tag("Checkbox")]
     | Annotated[ChipsInput, Tag("ChipsInput")]
     | Annotated[ColorPicker, Tag("ColorPicker")]
+    | Annotated[CronInput, Tag("CronInput")]
     | Annotated[DatePicker, Tag("DatePicker")]
     | Annotated[Group, Tag("Group")]
     | Annotated[IconSelector, Tag("IconSelector")]
@@ -102,7 +105,6 @@ _FormElementUnion = (
     | Annotated[LocaleInput, Tag("LocaleInput")]
     | Annotated[ModelSelect, Tag("ModelSelect")]
     | Annotated[MultiSelect, Tag("MultiSelect")]
-    | Annotated[OrgMemoryTenantInput, Tag("OrgMemoryTenantInput")]
     | Annotated[Password, Tag("Password")]
     | Annotated[RadioButton, Tag("RadioButton")]
     | Annotated[Rating, Tag("Rating")]
@@ -110,6 +112,7 @@ _FormElementUnion = (
     | Annotated[Select, Tag("Select")]
     | Annotated[SelectButton, Tag("SelectButton")]
     | Annotated[Slider, Tag("Slider")]
+    | Annotated[TenantSelect, Tag("TenantSelect")]
     | Annotated[Textarea, Tag("Textarea")]
     | Annotated[ToggleButton, Tag("ToggleButton")]
     | Annotated[ToggleSwitch, Tag("ToggleSwitch")]

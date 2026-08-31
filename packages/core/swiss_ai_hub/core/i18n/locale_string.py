@@ -7,6 +7,10 @@ from pydantic import BaseModel, Field
 if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 
+# Duplicated rather than read from LocaleHandler.LOCALE_WHITE_LIST: locale_handler imports
+# locale_string, so a module-level import back would be circular.
+LOCALES = ("de", "en", "fr", "it")
+
 
 class LocaleString(BaseModel):
     """
@@ -54,12 +58,22 @@ class LocaleString(BaseModel):
     fr: Annotated[str | None, Field(description="French")] = None
     it: Annotated[str | None, Field(description="Italian")] = None
 
+    def has_content(self) -> bool:
+        """Whether at least one locale carries a non-blank string.
+
+        Every locale field is individually optional, so an all-empty LocaleString is
+        structurally valid but semantically unusable — it renders as nothing wherever it
+        is read. Callers that treat a LocaleString as mandatory gate on this. Whitespace
+        does not count, matching the frontend's `localeRequired` FormKit rule.
+        """
+        return any((getattr(self, locale, None) or "").strip() for locale in LOCALES)
+
     def in_locale(self, locale: str, fallback: bool = True) -> str | None:
         """Extract the string for a locale, falling back to other locales if it is unset.
 
         With `fallback` (the default), mirrors `LocaleHandler.extract_multi_locale`:
-        requested locale → default locale → first populated locale in the whitelist;
-        unlike that method it returns None instead of raising when every locale is empty.
+        requested locale → default locale → first populated locale in the whitelist,
+        returning None when every locale is empty.
 
         Pass `fallback=False` to read exactly the requested locale (no substitution) — for
         callers that need the requested language verbatim or want their own fallback order.

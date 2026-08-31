@@ -100,7 +100,9 @@ sidebars, and other structural elements.
 Chunk inspection displays how the system segmented content, what metadata it extracted, and how it represents chunks for
 retrieval. Useful when agents aren't finding expected content.
 
-Processing status indicates whether documents are uploading, processing, or ready.
+Processing status indicates whether documents are uploading, processing, or ready. A document counts as ready only once
+its embeddings have been written to the vector database — until then it is still processing and agents cannot retrieve
+it, even though its text has already been parsed.
 
 ## Access control
 

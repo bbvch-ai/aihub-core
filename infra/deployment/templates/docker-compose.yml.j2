@@ -29,6 +29,14 @@
 {%- set config_variant_suffix = config_file_suffix if config_file_suffix is defined else "." + stage_postfix %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
 {%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/gemma-4-31B-it' %}
+{#- OpenWebUI resolves TASK_MODEL against its own registry and denies non-admins any model without a
+    read grant. Only the provisioned workspace model carries grants — the raw LiteLLM name behind it is
+    deliberately left unregistered — so background tasks must name the workspace model, not the raw one.
+    Corollary: chat titles and follow-up questions only work for roles whose access rules grant this
+    model. A role that excludes it loses both features silently (admins are exempt from the check). #}
+{%- set task_model = 'aihub-model-' + default_model | replace('/', '-') %}
+{#- Must match the transcription model_name registered in configs/litellm-config.yml.j2 for the same hardware variant. #}
+{%- set stt_model = 'transcription/faster-whisper-large-v3' if gpu_enabled else 'transcription/whisper-large-v3' %}
 
 {#- ===================================================================
     Internal Service Endpoints (Identical Across All Stages)
@@ -61,7 +69,8 @@
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
 {%- set NOTIFICATION_DAGSTER_UI_BASE_URL = "http://localhost:3000" if stage == 'dev' else "https://dagster.${DOMAIN}" %}
 {%- set BACKUP_WEBSERVER_URL = "http://backup-webserver:3000" %}
-{%- set OTEL_EXPORTER_OTLP_ENDPOINT = "http://otel-collector:4317" %}
+{#- Backend-only alias, not the container name: see otel-collector.networks.backend.aliases. #}
+{%- set OTEL_EXPORTER_OTLP_ENDPOINT = "http://otel-collector-backend:4317" %}
 {%- set KEYCLOAK_INTERNAL_URL = "http://keycloak:8080" %}
 {%- set KEYCLOAK_REALM = "aihub" %}
 
@@ -1811,6 +1820,7 @@ services:
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
       SWISS_LLM_CLOUD_RERANKING_API_KEY: ${SWISS_LLM_CLOUD_RERANKING_API_KEY}
+      SWISS_LLM_CLOUD_WHISPER_MODEL: ${SWISS_LLM_CLOUD_WHISPER_MODEL}
       SWISS_LLM_CLOUD_WHISPER_API_BASE_URL: ${SWISS_LLM_CLOUD_WHISPER_API_BASE_URL}
       SWISS_LLM_CLOUD_WHISPER_API_KEY: ${SWISS_LLM_CLOUD_WHISPER_API_KEY}
       SWISS_LLM_CLOUD_OCR_API_BASE_URL: ${SWISS_LLM_CLOUD_OCR_API_BASE_URL}
@@ -1819,7 +1829,7 @@ services:
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: {{ PRESIDIO_ANALYZER_API_BASE }}
       PRESIDIO_ANONYMIZER_API_BASE: {{ PRESIDIO_ANONYMIZER_API_BASE }}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
       STORE_MODEL_IN_DB: True
@@ -1831,6 +1841,8 @@ services:
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       presidio-analyzer:
@@ -2026,7 +2038,8 @@ services:
       MINERU_VL_SERVER: {{ LITE_LLM_PROXY_BASE_URL }}/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
-      # Processing configuration
+      # Processing configuration. This cap is the only server-wide memory bound:
+      # baseline + cap x (MINERU_PAGE_BATCH_SIZE x ~30 MB) must fit the memory limit below.
       MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/openapi.json" ]
@@ -2107,6 +2120,17 @@ services:
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+      # Read by otel-config's resource/deployment processor. Written per-VM into .env by
+      # aihub-playbook (env.j2). The `:-` default is a deliberate exception to the "defaults live
+      # in .env.dev/.env.prod" rule: an empty value makes the processor fail to build and the
+      # collector exit, and nothing depends_on it — so an unset var would silently take down all
+      # telemetry instead of just this attribute. The fallback keeps that impossible.
+      # The stage name is a truthful degradation for the environment — it *is* the stage. It is not
+      # one for the host: it would fill SigNoz's Hostname filter with a value that reads as a real
+      # machine and collapse every VM in the stage into one entry, which is worse than the empty
+      # column this fixes, because empty is visibly broken and "latest" is not.
+      - OTEL_DEPLOYMENT_ENVIRONMENT=${OTEL_DEPLOYMENT_ENVIRONMENT:-{{ stage }}}
+      - OTEL_HOST_NAME=${OTEL_HOST_NAME:-unset-{{ stage }}}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes:
@@ -2118,8 +2142,11 @@ services:
       - "13133:13133"
       - "55679:55679"
     {%- endif %}
-    depends_on:
-      - langfuse-web
+    # Deliberately no depends_on: this must be the first thing listening on 4317. Every app SDK
+    # gives up after OTEL_EXPORTER_OTLP_TIMEOUT and DROPS the batch, so gating the collector behind
+    # langfuse-web (and through it postgres/clickhouse/seaweedfs health) costs the startup log of
+    # every service on a cold start. The otlphttp/langfuse exporter has retry_on_failure and needs
+    # no start-order guarantee — langfuse-web is up long before the first OpenInference trace.
     healthcheck:
       test: [ "NONE" ]
     labels:
@@ -2132,9 +2159,17 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    # This collector is dual-homed, so its container name is registered in Docker DNS on
+    # both networks — and the egress address is NOT reachable container-to-container,
+    # because egress sets enable_icc=false (an iptables DROP, so a client hangs on connect
+    # rather than getting a refusal). Two OTLP clients sit on egress as well (imap_agent,
+    # email_classification_agent), so for them the bare name is ambiguous by construction.
+    # The alias below is registered on backend only and can therefore resolve to nothing
+    # but the reachable address; every OTLP client targets it instead of the name.
     networks:
-      - backend
-      - egress
+      backend:
+        aliases: [ otel-collector-backend ]
+      egress: {}
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -2155,6 +2190,8 @@ services:
     volumes:
       - {{ global.volume_root }}/open-webui:/app/backend/data
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       seaweedfs-s3:
@@ -2193,9 +2230,13 @@ services:
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
+      # Traces always on. Metrics are opt-in: OpenWebUI emits very high-cardinality
+      # HTTP-server metrics that dominate SigNoz ingestion (see issue 1496), so they
+      # default off (ENABLE_OTEL_METRICS=false in .env.dev/.env.prod) and any deploy
+      # can turn them back on via its own env.
       ENABLE_OTEL: True
-      ENABLE_OTEL_METRICS: True
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://{{ 'localhost' if stage == 'dev' else 'otel-collector' }}:4317
+      ENABLE_OTEL_METRICS: ${ENABLE_OTEL_METRICS}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ 'http://localhost:4317' if stage == 'dev' else OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_INSECURE: True
       OTEL_SERVICE_NAME: open-webui
@@ -2248,10 +2289,16 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: {{ default_model }}
-      TASK_MODEL_EXTERNAL: {{ default_model }}
+      TASK_MODEL: {{ task_model }}
+      TASK_MODEL_EXTERNAL: {{ task_model }}
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
+      # Conversation metadata is owned by the agent pipeline (#1047): the agent emits the title and
+      # follow-up questions as protocol events and the pipeline relays them (plus deterministic tags),
+      # so OpenWebUI must NOT generate its own — otherwise it overwrites the agent-produced values.
+      ENABLE_TITLE_GENERATION: False
+      ENABLE_TAGS_GENERATION: False
+      ENABLE_FOLLOW_UP_GENERATION: False
 
       {%- if not gpu_enabled %}
       # --- Image Generation (cloud-only; GPU stages have no local image model yet) ---
@@ -2266,7 +2313,7 @@ services:
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
-      AUDIO_STT_MODEL: transcription
+      AUDIO_STT_MODEL: {{ stt_model }}
       AUDIO_STT_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -2572,6 +2619,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
       LOG_LEVEL: ${LOG_LEVEL}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
@@ -2613,6 +2661,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
       LOG_LEVEL: ${LOG_LEVEL}
     healthcheck:
       test: ["CMD", "dagster-daemon", "liveness-check"]
@@ -2765,6 +2814,8 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.api[stage] }}
     {%- endif %}
     depends_on:
+      otel-collector:
+        condition: service_started
       nats:
         condition: service_started
       traefik:
@@ -2871,6 +2922,9 @@ services:
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
       OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+      {#- Same model as open-webui's TASK_MODEL above, but in raw LiteLLM form: the access catalog matches
+          it against the `capability/name` pairs it enumerates, so the workspace-id translation stays there. #}
+      OPENWEBUI_CONVERSATION_METADATA_MODEL: {{ default_model }}
 
 
       # NATs
@@ -2881,6 +2935,16 @@ services:
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # Cron scheduler (hosted here until the aihub-daemon extraction, #1203)
+      SCHEDULER_TICK_INTERVAL_SECONDS: ${SCHEDULER_TICK_INTERVAL_SECONDS}
+      SCHEDULER_LEASE_TTL_SECONDS: ${SCHEDULER_LEASE_TTL_SECONDS}
+      SCHEDULER_MAX_CATCHUP_MINUTES: ${SCHEDULER_MAX_CATCHUP_MINUTES}
+      SCHEDULER_REDIS_KEY_PREFIX: ${SCHEDULER_REDIS_KEY_PREFIX}
+      SCHEDULER_EVENT_RETENTION_DAYS: ${SCHEDULER_EVENT_RETENTION_DAYS}
+      SCHEDULER_RETENTION_INTERVAL_SECONDS: ${SCHEDULER_RETENTION_INTERVAL_SECONDS}
+      SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH: ${SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH}
+      SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH: ${SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH}
+
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
       NEO4J_USERNAME: ${NEO4J_USERNAME}
@@ -2890,6 +2954,7 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: {{ JUPYTER_URL }}
@@ -2903,10 +2968,17 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # OpenTelemetry Configuration
+      # Traces always on. Request metrics are opt-in: the FastAPI auto-instrumentation's
+      # http.server.* histograms were the high-cardinality driver behind issue 1496, so they
+      # default off (OTEL_METRICS_ENABLED=false in .env.dev/.env.prod) and any deploy can turn
+      # them back on via its own env.
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('api') }}
@@ -3037,6 +3109,8 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags['sysadmin-api'][stage] }}
     {%- endif %}
     depends_on:
+      otel-collector:
+        condition: service_started
       traefik:
         condition: service_started
       ferretdb:
@@ -3108,7 +3182,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: sysadmin-api
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('sysadmin-api') }}
@@ -3236,6 +3310,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.llm_wrapping_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3272,10 +3349,11 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: llm-wrapping-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('llm_wrapping_agent') }}
@@ -3308,6 +3386,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.rag_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3356,10 +3437,11 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('rag_agent') }}
@@ -3388,6 +3470,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.expert_rag_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3436,10 +3521,11 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('expert_rag_agent') }}
@@ -3468,6 +3554,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.expert_asking_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3504,6 +3593,7 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
@@ -3515,7 +3605,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('expert_asking_agent') }}
@@ -3543,6 +3633,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.retrieval_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3582,9 +3675,12 @@ services:
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: retrieval-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('retrieval_agent') }}
@@ -3613,6 +3709,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.few_shot_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3640,9 +3739,12 @@ services:
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: few-shot-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('few_shot_agent') }}
@@ -3670,6 +3772,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.namespace_selection_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3697,9 +3802,12 @@ services:
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: namespace-selection-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('namespace_selection_agent') }}
@@ -3727,6 +3835,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.memory_writer_agent[stage] }}
     {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3763,10 +3874,11 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: memory-writer-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('memory_writer_agent') }}
@@ -3780,6 +3892,162 @@ services:
     networks:
       - backend
       - data
+  {%- endif %}
+
+  {%- if image_tags.imap_agent[stage] %}
+  {{ service_license('imap_agent') }}
+  imap_agent:
+    container_name: imap-agent
+    restart: always
+    {%- if image_tags.imap_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/imap_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.imap_agent[stage] }}
+    {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access (draft-reply generation)
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # S3 Access connection (mail attachment storage)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: imap-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('imap_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+      - egress  # Outbound access to external IMAP servers
+  {%- endif %}
+
+  {%- if image_tags.email_classification_agent[stage] %}
+  {{ service_license('email_classification_agent') }}
+  email_classification_agent:
+    container_name: email-classification-agent
+    restart: always
+    {%- if image_tags.email_classification_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/email_classification_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.email_classification_agent[stage] }}
+    {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access (mail classification)
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MinerU (reading attachment text into a drafted reply; PDFs and images only —
+      # Office documents are converted in-process by MarkItDown)
+      MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
+
+      # S3 Access connection (mail attachment + original-message archive)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: email-classification-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('email_classification_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+      - egress  # Outbound access to external IMAP servers
   {%- endif %}
 
   {%- if image_tags.default_rag_pipeline[stage] %}
@@ -3819,6 +4087,8 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
@@ -3833,7 +4103,10 @@ services:
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
+      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
+      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
@@ -3897,6 +4170,8 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
@@ -3911,7 +4186,10 @@ services:
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
+      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
+      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
@@ -3930,6 +4208,7 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # Pipeline run-failure notifications (Apprise)
       NOTIFICATION_URLS: ${NOTIFICATION_URLS}
@@ -4065,6 +4344,7 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_VERSION: ${AIHUB_VERSION}

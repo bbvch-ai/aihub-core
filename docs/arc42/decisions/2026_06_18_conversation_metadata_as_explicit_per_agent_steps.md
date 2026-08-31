@@ -1,5 +1,64 @@
 # Conversation Metadata (Title + Follow-up Questions) as Explicit Per-Agent Steps
 
+::: warning Update (2026-07-30)
+Two of this ADR's own stated consequences are reversed:
+
+- **Title generation no longer defers on an unclear-topic verdict.** `do_generate_title` used to leave the
+  `ThreadContext` flag unset when the model judged a turn to have "no identifiable topic yet" (a bare greeting),
+  deferring to a later turn. It now always produces a title on the thread's first check — the prompt no longer permits a
+  null/empty result, `TitleResult.title` is tightened from `str | None` to `str` at the schema level, and a localized
+  generic fallback covers the rare case a model still returns an empty string.
+- **The self-awareness meta-answer branch now generates metadata too**, reversing "left as-is so meta-only conversations
+  keep the default thread name" in Consequences below. `RAGAgent`, `ExpertRAGAgent`, `FewShotAgent`, and
+  `LLMWrappingAgent` (the four self-aware agents that are also metadata adopters — `McpReactAgent` isn't self-aware)
+  each gained a new early, parallel `@step` (`generate_meta_question_title_step`) triggered on the same
+  `MetaQuestionDetectedEvent` as `answer_meta_question_step`, so title generation runs *concurrently* with the meta
+  answer rather than waiting for it — title only needs the user's question, and serializing it behind the answer would
+  add post-answer latency for no reason (the answer is already fully streamed to the user via `ChunkEvent`s by the time
+  the answer step returns, but the stop event — and the client's "generation done" signal — would still be held back).
+  Follow-ups remain inline in `answer_meta_question_step` itself, since they need the answer and so have no earlier
+  point to run.
+
+The same "dispatcher won't dispatch a step waiting on a stop event" mechanic also affected two other exit paths, none
+about meta questions, now fixed the same way: `FewShotAgent`'s guard-reject `stop_step` (both, neither had fired yet)
+and `ExpertRAGAgent`'s `expert_not_answered_step`/`expert_exception_step` (follow-ups only — title already fires early
+there regardless of branch). `McpReactAgent`'s `max_iterations_reached_step` has the identical structural gap but is
+left without metadata by deliberate choice — a run that exhausted its iteration budget without producing an answer isn't
+worth titling.
+
+**Title persistence moved to a long-lived API subscriber** (review finding on the same PR). Point 4 of the Decision
+below — persisting the title from the API streaming bridge (`AgentService`) and the non-streaming JSON path
+(`ChatService`) — is superseded. Those were per-request NATS-core subscriptions that unsubscribe the instant the run's
+stop event is processed, while `do_generate_title` sets the once-per-thread flag unconditionally on publish: a title
+event landing after the stop event was silently dropped and the thread stayed on its default name permanently. The
+meta-question title step (same trigger event as the answer step, zero head start) made that race much tighter than the
+early-anchored normal-flow step ever did. `ThreadEntity.update_thread_name` is now called exclusively by
+`ThreadTitlePersister` (`packages/api/swiss_ai_hub/api/persistance/threads/`), a sibling of `EventPersister`/
+`WebSocketSender` registered once at API startup in `lifetime_manager.py` and never torn down mid-run. As a side effect,
+the streaming JSON path (`start_stream_chat_interaction`) — which never handled the title event at all — now gets title
+persistence too.
+
+The shared generators, event types, and the split/inline wiring shape for the *normal* pipeline are unchanged; the rest
+of this ADR stands.
+:::
+
+::: warning Update (2026-07-24, issue #87)
+For the split agents (`RAGAgent`, `ExpertRAGAgent`) the two metadata events are **no longer both fan-out `@step`s on the
+terminal `LLMEvent`**. Hanging both off the answer event made them run concurrently with the stop step, so their display
+events could be emitted after the StopEvent teardown (dropped/reordered title, ERROR-logged failures) — the production
+regression tracked in issue #87. They are now wired by dependency:
+
+- **Title** — an early fan-out `@step` anchored on a **pre-answer** event (`LimitChatHistoryEvent`). The title only
+  needs the conversation topic, not the answer, so it runs in parallel with retrieval/answer and emits before the stop
+  event. This realises the "Inline ordering is stronger than fan-out" follow-up flagged in Consequences below, without
+  serialising the title behind the answer.
+- **Follow-ups** — generated **inline** in the terminal step before the stop event, exactly like the inline agents. They
+  are grounded on the latest answer, so they cannot start earlier.
+
+The shared generators are unchanged; only the per-agent wiring and the best-effort wrappers (now WARNING, not ERROR)
+were touched. The rest of this ADR stands.
+:::
+
 ## Context
 
 Issue #1073 makes agents produce conversation metadata — a chat **title** and suggested **follow-up questions** — as a

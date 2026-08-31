@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
     from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
     from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
+    from swiss_ai_hub.core.persistence.agents.agent_config_change_hook import AgentConfigChangeHook
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
     from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
     from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import (
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
         User,
     )
     from swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket import EventBucket
+    from swiss_ai_hub.core.persistence.messaging.entities.types.llm_spend import LLMSpend
     from swiss_ai_hub.core.persistence.notification.notification_entity import NotificationEntity
     from swiss_ai_hub.core.persistence.process.process_class_entity import (
         AgentInSpecsEntity,
@@ -90,6 +92,7 @@ if TYPE_CHECKING:
 __all__ = [
     "AccessChangeHook",
     "AgentClassEntity",
+    "AgentConfigChangeHook",
     "AgentConfigEntityDocument",
     "AgentInSpecsEntity",
     "AgentInstanceRef",
@@ -100,6 +103,7 @@ __all__ = [
     "DOCUMENT_STORE_NAME",
     "DOCUMENT_TITLE",
     "EventBucket",
+    "LLMSpend",
     "H1",
     "H2",
     "H3",
@@ -162,6 +166,7 @@ __all__ = [
 _LAZY_IMPORTS = {
     "AccessChangeHook": "swiss_ai_hub.core.persistence.access.access_change_hook",
     "AgentClassEntity": "swiss_ai_hub.core.persistence.agents.agent_class_entity",
+    "AgentConfigChangeHook": "swiss_ai_hub.core.persistence.agents.agent_config_change_hook",
     "AgentConfigEntityDocument": "swiss_ai_hub.core.persistence.agents.agent_config_entity_document",
     "AgentInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",
     "AgentInstanceRef": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
@@ -172,6 +177,7 @@ _LAZY_IMPORTS = {
     "DOCUMENT_STORE_NAME": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_TITLE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "EventBucket": "swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket",
+    "LLMSpend": "swiss_ai_hub.core.persistence.messaging.entities.types.llm_spend",
     "H1": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "H2": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "H3": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

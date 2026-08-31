@@ -4,14 +4,16 @@ from contextlib import asynccontextmanager
 from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any
 
-from llama_index.core.utils import Tokenizer
+from llama_index.core.utils import get_tokenizer
 from pydantic import Field
 
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
@@ -19,8 +21,7 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=1)
 def _fetch_all_model_info_cached() -> dict[str, Any]:
-    client = LiteLLMProxySettings().httpx_client
-    return client.get("/v1/model/info").json()
+    return LiteLLMProxySettings().httpx_client.get("/v1/model/info").json()
 
 
 class LiteLLMBase[OpenAILike](Form, abc.ABC):
@@ -35,28 +36,12 @@ class LiteLLMBase[OpenAILike](Form, abc.ABC):
 
     @property
     def token_counter(self) -> Callable[[str], list[int]]:
-        client = LiteLLMProxySettings().httpx_client
-
-        def token_counter(content: str) -> list[int]:
-            token_response = client.post(
-                "/utils/token_counter", json={"model": self.model_name, "prompt": content}
-            ).json()
-            return [0] * token_response["total_tokens"]
-
-        return token_counter
-
-    @property
-    def tokenizer(self) -> type[Tokenizer]:
-        token_counter = self.token_counter
-
-        class Tokenizer:
-            def encode(self, text: str, *args: Any, **kwargs: Any) -> list[Any]:
-                return token_counter(text)
-
-        return Tokenizer
+        return get_tokenizer()
 
     @abc.abstractmethod
-    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILike, LLMCostTracker]:
+    def to_llama_index(
+        self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
+    ) -> tuple[OpenAILike, LLMCostTracker]:
         pass
 
     @asynccontextmanager
@@ -64,14 +49,22 @@ class LiteLLMBase[OpenAILike](Form, abc.ABC):
         self,
         displayer: "EventDisplayer",
         extra_headers: dict[str, str] | None = None,
+        user: UserIdentity | None = None,
     ) -> AsyncIterator[OpenAILike]:
         """
         Async context manager that yields an LLM configured with merged parameters and a system prompt.
         After the block, it reports costs to `displayer`.
         """
-        llm, cost_tracker = self.to_llama_index(extra_headers=extra_headers)
+        # The per-user key is the only carrier that reaches LiteLLM: it sets `user` on every spend log row
+        # and activates USER_MAX_BUDGET. Tenant is NOT sent — custom request tags (`x-litellm-tags` and
+        # `metadata.tags`) are an enterprise feature and this deployment silently drops them, verified with
+        # a 200 response and no tag in /spend/logs. Tenant attribution lives on LLMCostEvent instead; see
+        # #786 before adding a gateway-side carrier (LiteLLM teams put tenant on `team_id` natively).
+        api_key = await LiteLLMService.api_key_for_user(user) if user else None
+
+        llm, cost_tracker = self.to_llama_index(extra_headers=extra_headers, api_key=api_key)
         yield llm
-        await displayer.display_llm_costs(self.model_name, cost_tracker)
+        await displayer.display_llm_costs(self.model_name, cost_tracker, user)
 
     def get_model_info(self) -> dict[str, Any]:
         model_info = _fetch_all_model_info_cached()

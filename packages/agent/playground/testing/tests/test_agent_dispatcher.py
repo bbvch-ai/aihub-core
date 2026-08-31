@@ -1,3 +1,5 @@
+import inspect
+from fnmatch import fnmatch
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -7,6 +9,8 @@ from bson import ObjectId
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.dispatcher import StepStore
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
@@ -79,8 +83,24 @@ def redis_client():
         redis_data[key] = value.encode() if isinstance(value, str) else value
         return True
 
-    async def mock_delete(key):
-        return redis_data.pop(key, None) is not None
+    async def mock_delete(*keys):
+        return sum(1 for key in keys if redis_data.pop(key, None) is not None)
+
+    def mock_scan_iter(match=None, count=None):
+        async def _iter():
+            for key in list(redis_data):
+                if match is None or fnmatch(key, match):
+                    yield key
+
+        return _iter()
+
+    async def mock_incrby(key, amount):
+        value = int(redis_data.get(key, b"0")) + amount
+        redis_data[key] = str(value).encode()
+        return value
+
+    async def mock_expire(key, ttl):
+        return True
 
     async def mock_hget(name, key):
         hash_data = redis_data.get(name, {})
@@ -116,6 +136,12 @@ def redis_client():
     mock_redis.get = mock_get
     mock_redis.set = mock_set
     mock_redis.delete = mock_delete
+    # scan_iter/incrby/expire let a real StepStore run against this fake. StoreBase.delete_all
+    # logs and swallows its own errors, so without scan_iter it deletes nothing silently and
+    # any ordering assertion would pass vacuously.
+    mock_redis.scan_iter = mock_scan_iter
+    mock_redis.incrby = mock_incrby
+    mock_redis.expire = mock_expire
     mock_redis.hget = mock_hget
     mock_redis.hset = mock_hset
     mock_redis.hdel = mock_hdel
@@ -204,6 +230,9 @@ def agent_dispatcher(mock_agent_config, nats_client, jetstream_context, redis_cl
     dispatcher.event_store.delete_all = AsyncMock()
     dispatcher.step_store = Mock()
     dispatcher.step_store.mark_execution_context_as_crashed = AsyncMock()
+    dispatcher.step_store.mark_execution_context_as_completed = AsyncMock()
+    dispatcher.step_store.is_execution_context_crashed = AsyncMock(return_value=False)
+    dispatcher.step_store.is_execution_context_completed = AsyncMock(return_value=False)
     dispatcher.step_store.delete_all = AsyncMock()
     dispatcher.step_store.get_execution_count = AsyncMock(return_value=0)
     dispatcher.trace_store = Mock()
@@ -339,6 +368,163 @@ class TestAgentDispatcherHandleEvent:
             agent_dispatcher.event_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
             agent_dispatcher.step_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
             agent_dispatcher.trace_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+            agent_dispatcher.step_store.mark_execution_context_as_completed.assert_called_once_with(
+                agent_topic.execution_context_id
+            )
+
+    @pytest.mark.asyncio
+    async def test_handle_stop_event_does_not_require_agent_config(self, agent_dispatcher, agent_topic):
+        """A terminal event must tear the run down even when the config is already gone."""
+        stop_event = StopEvent()
+        run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
+        await run_context.delete("_agent_config")
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(stop_event, agent_topic)
+
+            agent_dispatcher.event_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+            agent_dispatcher.step_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+            agent_dispatcher.trace_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+
+    @pytest.mark.asyncio
+    async def test_redelivered_stop_event_skips_second_teardown(self, agent_dispatcher, agent_topic):
+        """A redelivered StopEvent after teardown must neither error nor tear down again."""
+        stop_event = StopEvent()
+        agent_dispatcher.step_store.is_execution_context_completed = AsyncMock(return_value=True)
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.delete_all = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(stop_event, agent_topic)
+
+            mock_run_context.delete_all.assert_not_called()
+            agent_dispatcher.event_store.delete_all.assert_not_called()
+            agent_dispatcher.step_store.delete_all.assert_not_called()
+            agent_dispatcher.trace_store.delete_all.assert_not_called()
+            agent_dispatcher.step_store.mark_execution_context_as_completed.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_redelivered_exception_event_skips_second_teardown(self, agent_dispatcher, agent_topic):
+        """A redelivered ExceptionEvent after a crash teardown must not tear down or re-mark."""
+        exception_event = ExceptionEvent(message="Test exception")
+        agent_dispatcher.step_store.is_execution_context_crashed = AsyncMock(return_value=True)
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.delete_all = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(exception_event, agent_topic)
+
+            mock_run_context.delete_all.assert_not_called()
+            agent_dispatcher.event_store.delete_all.assert_not_called()
+            agent_dispatcher.step_store.mark_execution_context_as_crashed.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_redelivered_event_after_teardown_returns_quietly(self, agent_dispatcher, agent_topic):
+        """A redelivered mid-run event after teardown must not raise, dispatch steps, or touch run context."""
+        control_event = ControlEvent()
+        control_event._aihub_headers = {"X-AIHub-Token": "token"}
+        agent_dispatcher.step_store.is_execution_context_completed = AsyncMock(return_value=True)
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.get = AsyncMock(return_value=None)
+        mock_run_context.set = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(control_event, agent_topic)
+
+            mock_run_context.set.assert_not_called()
+            agent_dispatcher.agent.get_steps_waiting_for_event.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_redelivered_start_event_after_teardown_skips_run(self, agent_dispatcher, agent_topic):
+        """A redelivered StartEvent after teardown must not re-fetch config or replay the workflow."""
+        start_event = StartEvent()
+        agent_dispatcher.step_store.is_execution_context_completed = AsyncMock(return_value=True)
+        agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.set = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(start_event, agent_topic)
+
+            agent_dispatcher._config_client.fetch_config.assert_not_called()
+            mock_run_context.set.assert_not_called()
+            agent_dispatcher.agent.get_steps_waiting_for_event.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_redelivered_terminal_event_is_a_no_op_against_a_real_step_store(
+        self, agent_dispatcher, agent_topic, redis_client
+    ):
+        """Teardown must leave a marker that outlives its own deletes.
+
+        The other redelivery tests stub ``is_execution_context_completed`` to True, so they prove
+        the skip branch works *given* a marker but never that teardown produces one. A real
+        StepStore is used here so the marker is written and read through real Redis keys: teardown
+        clears ``steps:{id}:*`` while markers live under ``step_markers:{id}:*``, and this asserts
+        the marker is genuinely still readable afterwards rather than mocked into existence.
+        """
+        agent_dispatcher.step_store = StepStore(redis_client)
+        stop_event = StopEvent()
+
+        mock_run_context = Mock(spec=RunContext)
+        mock_run_context.delete_all = AsyncMock()
+        mock_run_context.get = AsyncMock(return_value=None)
+        mock_run_context.set = AsyncMock()
+
+        with (
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
+            mock_base_handle.return_value = None
+
+            await agent_dispatcher.handle_event(stop_event, agent_topic)
+
+            assert await agent_dispatcher.step_store.is_execution_context_completed(agent_topic.execution_context_id), (
+                "teardown left no completed marker — its own deletes wiped it"
+            )
+
+            await agent_dispatcher.handle_event(stop_event, agent_topic)
+
+            assert agent_dispatcher.event_store.delete_all.call_count == 1, (
+                "redelivered terminal event tore the run down a second time"
+            )
+            assert mock_run_context.delete_all.call_count == 1
 
     @pytest.mark.asyncio
     async def test_handle_exception_event_marks_execution_context_crashed(self, agent_dispatcher, agent_topic):
@@ -375,6 +561,23 @@ class TestAgentDispatcherHandleEvent:
                 agent_dispatcher.step_store.mark_execution_context_as_crashed.assert_called_once_with(
                     agent_topic.execution_context_id
                 )
+
+    @pytest.mark.asyncio
+    async def test_terminal_event_tears_down_even_with_unusable_config(self, agent_dispatcher, agent_topic):
+        """Teardown must not depend on the config, or the ExceptionEvent above could never retire its own run."""
+        run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
+        await run_context.set("_agent_config", {"agent_id": "test_agent", "name": {}, "description": {}, "icon": "i"})
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(ExceptionEvent(message="Config was rejected"), agent_topic)
+
+        agent_dispatcher.step_store.mark_execution_context_as_crashed.assert_called_once_with(
+            agent_topic.execution_context_id
+        )
+        # Publishing here would re-enter this same failure and never converge.
+        agent_dispatcher.publish_event.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_handle_event_triggers_ready_steps(self, agent_dispatcher, agent_topic):
@@ -456,21 +659,26 @@ class TestAgentDispatcherHandleEvent:
             assert retrieved_config == stored_config
 
     @pytest.mark.asyncio
-    async def test_handle_event_raises_error_when_no_agent_config_found(self, agent_dispatcher, agent_topic):
-        """Test that handle_event raises ValueError when no agent config is found."""
+    async def test_handle_event_reports_missing_agent_config(self, agent_dispatcher, agent_topic):
+        """A run whose config was never stored is reported, not dropped on the floor."""
         # Arrange - Use a control event without any pre-stored config
         control_event = ControlEvent()
 
         # Ensure the context is empty (no config stored)
         run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
         await run_context.delete("_agent_config")  # Make sure no config exists
+        agent_dispatcher.publish_event = AsyncMock()
 
         with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
             mock_base_handle.return_value = None
 
-            # Act & Assert - The real context should return None, causing the ValueError
-            with pytest.raises(ValueError, match="No agent config found"):
-                await agent_dispatcher.handle_event(control_event, agent_topic)
+            # Act
+            await agent_dispatcher.handle_event(control_event, agent_topic)
+
+        # Assert
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "No agent config found" in published_event.message
 
     @pytest.mark.asyncio
     async def test_handle_event_stores_start_event_context_data(self, agent_dispatcher, agent_topic):
@@ -582,16 +790,22 @@ class TestAgentDispatcherErrorHandling:
 
     @pytest.mark.asyncio
     async def test_handle_event_with_invalid_agent_config_from_rpc(self, agent_dispatcher, agent_topic):
-        """Test handling of invalid agent config returned by RPC."""
-        # Arrange - agent_id comes from the topic, not the event
-        invalid_config: dict[str, Any] = {"invalid": "config"}
+        """A config the agent's own model rejects must surface, not vanish into the subscriber's logger.
+
+        The config is re-validated on every dispatched event, so letting this escape would hang the
+        whole run: the subscriber acked the message already and only logs what reaches it.
+        """
+        # Arrange - a real agent_config is form-mode and contributes no non-configurable values, so
+        # what the admin submitted is what gets validated. An empty name trips the locale validator.
+        invalid_config: dict[str, Any] = {"agent_id": "test_agent", "name": {}, "description": {}, "icon": "test-icon"}
         start_event = StartEvent()
 
-        # Mock the config client to return invalid config
+        agent_dispatcher._non_configurable_values = {}
         agent_dispatcher._config_client.fetch_config = AsyncMock(return_value=invalid_config)
 
         mock_run_context = Mock(spec=RunContext)
         mock_run_context.set = AsyncMock()
+        agent_dispatcher.publish_event = AsyncMock()
 
         with (
             patch(
@@ -601,13 +815,37 @@ class TestAgentDispatcherErrorHandling:
         ):
             mock_base_handle.return_value = None
 
-            # Act & Assert
-            with pytest.raises(Exception):  # This would be a pydantic validation error
-                await agent_dispatcher.handle_event(start_event, agent_topic)
+            # Act
+            await agent_dispatcher.handle_event(start_event, agent_topic)
+
+        # Assert
+        agent_dispatcher.publish_event.assert_awaited_once()
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "configuration is invalid" in published_event.message
+        # The field that failed, so the admin can act on it...
+        assert "name" in published_event.message
+
+    @pytest.mark.asyncio
+    async def test_reported_config_failure_carries_no_field_values(self, agent_dispatcher, agent_topic):
+        """...but never the values: an agent config holds credentials and this text reaches the user's chat."""
+        secret = "s3cret-imap-token"
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher._config_client.fetch_config = AsyncMock(
+            return_value={"agent_id": "test_agent", "name": secret, "description": {}, "icon": "test-icon"}
+        )
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(StartEvent(), agent_topic)
+
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert secret not in published_event.message
+        assert "input_value" not in published_event.message
 
     @pytest.mark.asyncio
     async def test_handle_event_with_context_setup_failure(self, agent_dispatcher, agent_topic):
-        """Test handling of context setup failures."""
+        """A RunContext failure while caching the config is reported like any other config failure."""
         # Arrange - agent_id comes from the topic, not the event
         start_event = StartEvent()
 
@@ -619,6 +857,7 @@ class TestAgentDispatcherErrorHandling:
         mock_tracer = Mock(spec=AgentRunTracer)
         mock_tracer.trace_run_start = AsyncMock(return_value=None)
         agent_dispatcher.agent_run_tracer = mock_tracer
+        agent_dispatcher.publish_event = AsyncMock()
 
         with (
             patch(
@@ -628,9 +867,13 @@ class TestAgentDispatcherErrorHandling:
         ):
             mock_base_handle.return_value = None
 
-            # Act & Assert
-            with pytest.raises(RuntimeError, match="Context setup failed"):
-                await agent_dispatcher.handle_event(start_event, agent_topic)
+            # Act
+            await agent_dispatcher.handle_event(start_event, agent_topic)
+
+        # Assert
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "Context setup failed" in published_event.message
 
 
 class TestAgentDispatcherIntegration:
@@ -803,3 +1046,55 @@ class TestAgentDispatcherAihubHeaders:
 
             run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
             assert await run_context.get(agent_dispatcher._AIHUB_HEADERS_KEY) is None
+
+
+class UserInjectionAgent(Agent):
+    """Declares the two annotation shapes a step can use for the invoking user."""
+
+    @step()
+    async def required_user_step(self, start_event: StartEvent, user: UserIdentity) -> list[BaseEvent]:
+        return []
+
+    @step()
+    async def optional_user_step(self, start_event: StartEvent, user: UserIdentity | None = None) -> list[BaseEvent]:
+        return []
+
+
+class TestUserIdentityInjection:
+    """The programmatically-started agents annotate the user `UserIdentity | None`.
+
+    An equality check against the bare class silently misses that union: the kwarg is dropped, the
+    parameter keeps its `= None` default, and the run authenticates with the master key while looking
+    correctly wired. Nothing else catches it — the type checker sees a valid optional parameter and
+    every conversational agent uses the bare annotation, so the chat path stays green.
+    """
+
+    @staticmethod
+    def _param(step_name: str) -> inspect.Parameter:
+        return inspect.signature(getattr(UserInjectionAgent, step_name)).parameters["user"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("step_name", ["required_user_step", "optional_user_step"])
+    async def test_injects_the_user_for_both_annotation_shapes(self, agent_dispatcher, agent_topic, step_name):
+        user = UserIdentity(id="u1", name="Tester", email="t@example.com", is_sys_admin=False, roles=[])
+        run_context = Mock()
+        run_context.get = AsyncMock(return_value=user.model_dump(mode="json"))
+
+        value = await agent_dispatcher._get_parameter_value(
+            self._param(step_name), {}, Mock(), run_context, Mock(), agent_topic
+        )
+
+        assert isinstance(value, UserIdentity), f"{step_name} did not receive a UserIdentity"
+        assert value.id == "u1"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("step_name", ["required_user_step", "optional_user_step"])
+    async def test_yields_none_when_the_run_carries_no_user(self, agent_dispatcher, agent_topic, step_name):
+        run_context = Mock()
+        run_context.get = AsyncMock(return_value=None)
+
+        value = await agent_dispatcher._get_parameter_value(
+            self._param(step_name), {}, Mock(), run_context, Mock(), agent_topic
+        )
+
+        assert value is None

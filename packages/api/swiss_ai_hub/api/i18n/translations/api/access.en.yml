@@ -87,6 +87,9 @@ capabilities:
     model:
       use:
         description: Use this model.
+        conversation_metadata_description: Use this model. It also generates chat
+          titles and follow-up questions — without access to it, both features are
+          unavailable.
     memory:
       org:
         label: Use organization memory

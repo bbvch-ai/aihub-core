@@ -11,6 +11,7 @@ common:
   loading: Laden...
   selectModel: Modell auswählen
   selectDatabase: Datenbank auswählen
+  selectTenant: Mandant auswählen
 models:
   title: Modelle
   error: Fehler beim Laden der Modelle
@@ -594,7 +595,9 @@ auth:
     description: Bitte melden Sie sich an, um auf die Anwendung zuzugreifen
     tagline: Erleben Sie die Zukunft der künstlichen Intelligenz
     welcome: Willkommen im AI Hub von {companyName}
+    welcomeProvider: Willkommen im AI Hub — Anmeldung mit {provider}
     pleaseLogin: Bitte melden Sie sich an
+    pleaseLoginWith: Bitte melden Sie sich mit {provider} an
     loginWith: Anmelden mit {provider}
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
     logoAlt: Logo des Unternehmens
@@ -827,7 +830,33 @@ process:
 form:
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
+  warnings:
+    org_memory_performance: Diese Funktion funktioniert in manchen Fällen möglicherweise
+      nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
+      sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  cron:
+    errors:
+      required: Jede Position ist erforderlich — eine leere ergibt keinen gültigen
+        Zeitplan.
+      invalid: Hier sind nur Ziffern und die Zeichen * , - / ? erlaubt.
+      range: Werte müssen zwischen {min} und {max} liegen.
+    expression: 'Resultierender Cron-Ausdruck:'
+    minute:
+      label: Minute
+    hour:
+      label: Stunde
+    day_of_month:
+      label: Tag des Monats
+    month:
+      label: Monat
+    day_of_week:
+      label: Wochentag
+    timezone:
+      label: Zeitzone
+      placeholder: Zeitzone auswählen
+      help: Die Cron-Positionen werden in dieser Zeitzone interpretiert, damit ein
+        täglicher Zeitplan über Zeitumstellungen hinweg dieselbe Uhrzeit behält.
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen

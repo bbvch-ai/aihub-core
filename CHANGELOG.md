@@ -5,6 +5,181 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.316.3] - 2026-07-22 - Keycloak Service Updates for Enhanced Stability
+
+### Changed
+
+- 🔄 **Updated Keycloak services:** Upgraded the **Keycloak** container image to `26.5.5` and the **Keycloak-Config-CLI**
+  container image to `6.5.1-26.5.5` across all deployment environments, incorporating stability improvements and
+  potential security fixes.
+
+______________________________________________________________________
+
+## [v0.316.2] - 2026-07-22 - Enhanced Milvus Configuration for Improved Agent Compatibility
+
+### Changed
+
+- ⚙️ **Streamlined Milvus Environment Variable Propagation:** Milvus connection parameters (`MILVUS_URL`,
+  `MILVUS_DIMENSION`, `MILVUS_ROOT_PASSWORD`) are now explicitly included in the environment of additional services
+  across all Docker Compose configurations, ensuring more consistent and robust database connectivity for various
+  components.
+- 📄 **Updated Documentation for Milvus Environment Variables:** The deployment guide's documentation has been revised to
+  reflect the expanded usage of Milvus environment variables, now indicating their relevance for agents like
+  `imap_agent`.
+
+______________________________________________________________________
+
+## [v0.316.1] - 2026-07-21 - Enhanced Development Workflow and SDK Consistency
+
+### Added
+
+- ✅ **Automated SDK Sync Verification:** A new GitHub Actions workflow has been introduced to automatically verify that
+  the committed frontend SDK clients (for both the main `@swiss-ai-hub/web` and `sysadmin-web` applications) are in sync
+  with their respective backend OpenAPI specifications. This crucial check helps prevent API/SDK drift and ensures
+  frontend clients always reflect the latest backend contract.
+- ⚡️ **Efficient Offline OpenAPI Spec Generation:** The new workflow efficiently generates OpenAPI specifications
+  directly from backend ASGI applications without needing a running server, speeding up the verification process.
+- ⚙️ **Proactive Developer Feedback:** Developers will now receive immediate feedback during pull requests if their
+  backend changes necessitate an SDK regeneration, promoting a more consistent and reliable development experience.
+
+______________________________________________________________________
+
+## [v0.316.0] - 2026-07-21 - Introducing the IMAP Agent for Enhanced Mail Automation
+
+### Added
+
+- 🦾 **New IMAP Agent**: Introduced a powerful new `ImapAgent` designed for non-conversational mail automation. This
+  agent can independently read and move emails, and automatically draft LLM-generated replies for incoming messages.
+- 📄 **Docker Service Integration**: The new `ImapAgent` is fully integrated as a deployable Docker service, including
+  comprehensive environment variable configurations for seamless deployment and operation across various deployment
+  stages (build, latest, local, nightly, and GPU versions).
+- ⚙️ **OpenTelemetry Support for IMAP Agent**: The `ImapAgent` now supports OpenTelemetry for enhanced observability and
+  tracing of its mail processing workflows.
+
+### Changed
+
+- 🔄 **Promoted IMAP Functionality**: The IMAP mail automation capabilities have been promoted from a playground example
+  to a core, production-ready `ImapAgent` within the main agent package, making it a formally recognized and deployable
+  component.
+- 📚 **Updated Environment Variable Documentation**: The deployment guide documentation has been updated to include all
+  relevant environment variables for configuring the new `ImapAgent` and its associated services (LiteLLM, S3, MongoDB,
+  NATS, Redis).
+
+______________________________________________________________________
+
+## [v0.315.2] - 2026-07-21 - Unified Package Version Alignment
+
+### Changed
+
+- 🔄 **Core Platform Packages**: Synchronized all internal Python and JavaScript packages, along with their
+  inter-dependencies, to version `0.315.2` for improved consistency and stability across the platform.
+
+______________________________________________________________________
+
+## [v0.315.1] - 2026-07-21 - Enhanced Agent Management and Chat UI Responsiveness
+
+### Added
+
+- ✨ **Immediate Agent Model Updates:** Open WebUI now dynamically reflects agent creation, renaming, and deletion
+  instantly in the model picker, providing real-time feedback and eliminating the previous 60-second update delay.
+- 🦾 **Introduced `AgentConfigChangeHook`:** A new internal mechanism has been implemented to leverage database signals
+  for immediate detection and propagation of agent configuration changes, powering the real-time updates in Open WebUI.
+
+### Fixed
+
+- 🐛 **Robust Agent Configuration Sync:** Resolved a critical issue where internal signal subscriptions could be
+  prematurely garbage-collected, ensuring reliable and persistent synchronization of agent configuration changes.
+- 🖼️ **Improved Agent Deletion Flow:** Corrected a user interface bug by ensuring that when an agent is deleted from its
+  detail page, users are automatically navigated to the main agents list, preventing a disruptive 404 error toast.
+
+______________________________________________________________________
+
+## [v0.315.0] - 2026-07-21 - Major IMAP Agent Upgrade: Smart Drafting and Streamlined Workflows
+
+### Added
+
+- 🦾 **Independent Batch Email Drafting:** Introduced a powerful new capability for IMAP agents to draft replies for a
+  batch of messages autonomously. This feature is triggered by a new `DraftMailStartEvent` and can be scheduled and run
+  independently of the mail reading and moving workflow.
+- ✨ **Configurable Drafting Settings:** A new `DraftEmailSettings` configuration group allows fine-grained control over
+  the drafting process, including the source folder for messages, batch size, the LLM model used for drafting, and the
+  prompt guiding the LLM.
+- 🚀 **Flag-Based Deduplication:** The agent now prevents re-drafting the same message by utilizing a custom IMAP keyword
+  (`$AiHubDrafted`) or falling back to the `\Answered` flag, ensuring idempotency across runs.
+- 📦 **New Events for Drafting:** Introduced `MailBatchDraftedEvent` to summarize the results of a batch drafting run,
+  and `DraftedReplyRef` to provide detailed references for each created draft.
+- 📤 **Robust Draft Appending:** The IMAP client can now append `\Draft`-flagged messages to a configured drafts folder,
+  automatically resolving the exact server folder name (e.g., handling localized "[Gmail]/Drafts") and returning the
+  `APPENDUID` when supported.
+- 🧵 **Enhanced Email Threading:** Mail parsing and `MailFetchedEvent` now include RFC `Message-ID`, `References`, and
+  `Reply-To` headers, enabling `ReplyComposer` to generate correctly threaded replies that appear nested in any mail
+  client.
+- 🛠️ **Dedicated Reply Composition Logic:** A new `ReplyComposer` utility provides deterministic and idempotent
+  generation of reply envelopes, ensuring consistent subject lines (e.g., "Re: Subject") and proper threading.
+
+### Changed
+
+- 🔄 **IMAP Agent Workflow Separation:** The IMAP agent now supports two distinct and independent workflows: one for
+  reading and optionally moving mail, and another for batch drafting replies.
+- ⚙️ **IMAP Configuration Restructuring:** The configuration for IMAP agents has been refactored, moving
+  drafting-related settings into the new `DraftEmailSettings` group. **Note: This is a breaking change to the config
+  shape; existing IMAP agent profiles must be recreated.**
+- 📄 **Flexible Message Fetching:** The IMAP client's `fetch_message` method now accepts an optional folder argument,
+  allowing messages to be fetched from specific mailboxes beyond just the inbox.
+- 🛡️ **Improved Folder Resolution:** IMAP client operations, such as moving mail and appending drafts, now include
+  robust folder resolution logic to ensure the correct mailbox is targeted, with fallbacks to special-use folders where
+  applicable.
+
+### Removed
+
+- 🗑️ **Consolidated `drafts_folder`:** The `drafts_folder` setting has been removed from the general `ImapClientConfig`
+  and integrated into the more specific `DraftEmailSettings`.
+
+### Refactor
+
+- 🧹 **Internal Workflow Streamlining:** The internal IMAP agent steps have been reorganized, separating the
+  `finish_after_move_step` from the new drafting logic to enhance modularity and clarity.
+
+______________________________________________________________________
+
+## [v0.314.0] - 2026-07-21 - Enhanced LLM Structured Output and Agent Self-Awareness
+
+### Added
+
+- 🦾 **Re-enabled Per-Agent Self-Awareness:** Agents can now detect and answer meta-questions about their capabilities
+  and workflows, providing a more intuitive and responsive user experience.
+- 🧪 **New Integration Tests for Meta-Question Routing:** Comprehensive integration tests were added to validate that
+  meta-questions are correctly handled by self-awareness workflows and bypass irrelevant steps like retrieval.
+
+### Changed
+
+- ⚡️ **Optimized LLM Structured Output for Speed and Reliability:** Switched to `response_format` JSON schema as the
+  default mechanism for structured LLM outputs, particularly for reasoning models on Infomaniak. This update
+  significantly improves parsing reliability and drastically reduces latency by disabling unnecessary reasoning during
+  structured data extraction.
+- ⚙️ **Universal `response_format` Support:** All chat models in the LiteLLM configuration now explicitly declare
+  support for `response_format` JSON schema, enabling consistent and high-performance structured output across the
+  board.
+- 🔄 **Introduced Meta-Question Gating for Agent Workflows:** Core agent entry steps (e.g., memory retrieval, chat
+  history processing) are now gated by meta-question detection. This ensures that meta-questions are handled by
+  dedicated self-awareness workflows, preventing them from triggering the main agent pipeline.
+- 📄 **Improved Resilience for Meta-Question Detection and Answering:** Meta-question detection now gracefully handles
+  transient API errors and malformed responses, preventing workflow failures. Additionally, meta-question answers
+  explicitly disable LLM reasoning to further reduce latency and improve responsiveness.
+- 📝 **Updated Structured Output Handling in Conversation Metadata:** The internal logic for generating conversation
+  titles and follow-up questions has been adjusted to leverage the new `response_format` mechanism, no longer relying on
+  forced tool calls. (Note: Conversation metadata generation remains temporarily disabled.)
+- 🛡️ **`McpReactAgent` Opts Out of Self-Awareness:** The `McpReactAgent` now explicitly bypasses self-awareness
+  features, streamlining its specific workflow.
+
+### Refactor
+
+- 🧹 **Superseded Prior Resilience Decision:** The architectural decision to enhance resilience for reasoning models has
+  been updated and superseded by a new document outlining the comprehensive adoption of `response_format` JSON schema
+  for structured LLM outputs.
+
+______________________________________________________________________
+
 ## [v0.313.0] - 2026-07-17 - Streamlined Agent Configuration Import
 
 ### Added

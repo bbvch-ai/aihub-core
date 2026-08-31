@@ -22,9 +22,16 @@ config:
   max_messages:
     label: Nombre max d'e-mails non lus
     help: Nombre maximal de messages non lus répertoriés par exécution.
+  enable_draft:
+    label: Rédiger une réponse
+    help: Si activé, une réponse au message récupéré est rédigée et ajoutée au dossier
+      des brouillons pour qu'un humain la révise et l'envoie. Si désactivé, l'étape
+      de rédaction est ignorée.
   drafts_folder:
     label: Dossier des brouillons
-    help: Dossier de la boîte aux lettres où les brouillons sont écrits.
+    help: Dossier de la boîte aux lettres où les brouillons de réponse sont ajoutés.
+      Si ce dossier est introuvable, le dossier Brouillons special-use du serveur
+      est utilisé à la place.
   enable_move:
     label: Déplacer l'e-mail récupéré
     help: Si activé, le mail récupéré est déplacé dans le dossier traité après sa
@@ -34,3 +41,72 @@ config:
     label: Dossier traité
     help: Dossier de la boîte aux lettres où un mail traité est déplacé lorsque le
       déplacement est activé.
+  source_folder:
+    label: Dossier source du brouillon
+    help: Dossier de la boîte aux lettres d'où le rédacteur lit les messages candidats.
+      Pointez-le vers le dossier traité pour rédiger le courrier qui y est classé.
+  batch_size:
+    label: Taille du lot de brouillons
+    help: Nombre maximal de messages rédigés par exécution.
+  draft_model:
+    label: Modèle LLM
+    help: Modèle de chat utilisé pour rédiger le corps de la réponse.
+  draft_prompt:
+    label: Invite de rédaction
+    help: Instructions guidant la manière dont le LLM rédige le corps de la réponse.
+  category_name:
+    label: Catégorie
+    help: Nom de la catégorie, par ex. support_request. Doit être unique.
+  category_folder:
+    label: Dossier cible
+    help: Dossier de la boîte aux lettres où sont classés les messages de cette catégorie.
+      Créé automatiquement s'il n'existe pas encore.
+  category_description:
+    label: Ce qui appartient ici
+    help: Décrivez le type de courrier qui appartient à cette catégorie. C'est là-dessus
+      que le modèle classe — soyez concret sur l'intention plutôt que d'énumérer des
+      mots-clés.
+  fallback_folder:
+    label: Dossier de repli
+    help: Dossier pour le courrier dont le modèle n'est pas sûr. Ce courrier n'est
+      jamais deviné dans une catégorie ni laissé dans la boîte de réception.
+  failure_folder:
+    label: Dossier d'échec
+    help: Dossier pour les e-mails que le classificateur n'a pas pu traiter du tout.
+      Ces e-mails quittent tout de même la boîte de réception, afin qu'un message
+      défectueux ne bloque pas toutes les exécutions suivantes ; les remettre dans
+      la boîte de réception relance le traitement.
+  classification_input_tokens:
+    label: Jetons d'entrée pour la classification
+    help: Budget de jetons pour l'invite de classification. Les messages longs sont
+      tronqués, en conservant le début du corps.
+  classification_model:
+    label: Modèle de classification
+    help: Modèle de chat utilisé pour classer chaque message. Laissez vide pour utiliser
+      le modèle principal de l'agent.
+  classification_prompt:
+    label: Invite de classification
+    help: Instructions guidant la façon dont le modèle choisit une catégorie.
+  category_draft_reply:
+    label: Rédiger une réponse
+    help: Si activé, les messages classés dans cette catégorie reçoivent un brouillon
+      de réponse déposé dans le dossier Brouillons, qu'un humain relit et envoie.
+      Rien n'est jamais envoyé.
+  draft_input_tokens:
+    label: Jetons d'entrée du brouillon
+    help: Budget de jetons pour l'invite de rédaction. Le corps du message est tronqué
+      et le texte des pièces jointes abandonné pour le respecter.
+  include_attachments:
+    label: Lire les pièces jointes
+    help: Si activé, le texte extrait des pièces jointes est fourni au modèle en plus
+      du corps. Chaque pièce jointe coûte un appel à l'analyseur de documents.
+  max_attachments_per_message:
+    label: Pièces jointes max. par message
+    help: Nombre de pièces jointes lues par message, les plus grandes d'abord.
+  min_attachment_bytes:
+    label: Taille minimale de pièce jointe
+    help: Les pièces jointes plus petites sont ignorées. Les logos de signature et
+      les pixels de suivi arrivent comme pièces jointes sans texte exploitable.
+  attachment_char_limit:
+    label: Limite de caractères par pièce jointe
+    help: Nombre de caractères conservés du texte extrait d'une seule pièce jointe.

@@ -85,7 +85,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     command: >
       master
@@ -120,7 +120,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     command: >
       volume
@@ -151,7 +151,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     command: >
       filer
@@ -202,7 +202,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
@@ -881,7 +881,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak:
     container_name: keycloak
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.5
     restart: unless-stopped
     entrypoint: /bin/bash
     command:
@@ -974,7 +974,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak-config:
     container_name: keycloak-config
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak-config-cli:6.5.0-26.5.4
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak-config-cli:6.5.1-26.5.5
     restart: on-failure
     environment:
       KEYCLOAK_URL: http://keycloak:8080
@@ -1575,6 +1575,7 @@ services:
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
       SWISS_LLM_CLOUD_RERANKING_API_KEY: ${SWISS_LLM_CLOUD_RERANKING_API_KEY}
+      SWISS_LLM_CLOUD_WHISPER_MODEL: ${SWISS_LLM_CLOUD_WHISPER_MODEL}
       SWISS_LLM_CLOUD_WHISPER_API_BASE_URL: ${SWISS_LLM_CLOUD_WHISPER_API_BASE_URL}
       SWISS_LLM_CLOUD_WHISPER_API_KEY: ${SWISS_LLM_CLOUD_WHISPER_API_KEY}
       SWISS_LLM_CLOUD_OCR_API_BASE_URL: ${SWISS_LLM_CLOUD_OCR_API_BASE_URL}
@@ -1583,7 +1584,7 @@ services:
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
       PRESIDIO_ANONYMIZER_API_BASE: http://presidio-anonymizer:3000
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
       STORE_MODEL_IN_DB: true
@@ -1595,6 +1596,8 @@ services:
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       presidio-analyzer:
@@ -1769,7 +1772,8 @@ services:
       MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
-      # Processing configuration
+      # Processing configuration. This cap is the only server-wide memory bound:
+      # baseline + cap x (MINERU_PAGE_BATCH_SIZE x ~30 MB) must fit the memory limit below.
       MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8000/openapi.json]
@@ -1843,10 +1847,26 @@ services:
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+      # Read by otel-config's resource/deployment processor. Written per-VM into .env by
+      # aihub-playbook (env.j2). The `:-` default is a deliberate exception to the "defaults live
+      # in .env.dev/.env.prod" rule: an empty value makes the processor fail to build and the
+      # collector exit, and nothing depends_on it — so an unset var would silently take down all
+      # telemetry instead of just this attribute. The fallback keeps that impossible.
+      # The stage name is a truthful degradation for the environment — it *is* the stage. It is not
+      # one for the host: it would fill SigNoz's Hostname filter with a value that reads as a real
+      # machine and collapse every VM in the stage into one entry, which is worse than the empty
+      # column this fixes, because empty is visibly broken and "latest" is not.
+      - OTEL_DEPLOYMENT_ENVIRONMENT=${OTEL_DEPLOYMENT_ENVIRONMENT:-nightly}
+      - OTEL_HOST_NAME=${OTEL_HOST_NAME:-unset-nightly}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
-    volumes: [./configs/otel/otel-config.nightly.gpu.yml:/etc/otel-config.yml]
-    depends_on: [langfuse-web]
+    volumes:
+      - ./configs/otel/otel-config.nightly.gpu.yml:/etc/otel-config.yml
+    # Deliberately no depends_on: this must be the first thing listening on 4317. Every app SDK
+    # gives up after OTEL_EXPORTER_OTLP_TIMEOUT and DROPS the batch, so gating the collector behind
+    # langfuse-web (and through it postgres/clickhouse/seaweedfs health) costs the startup log of
+    # every service on a cold start. The otlphttp/langfuse exporter has retry_on_failure and needs
+    # no start-order guarantee — langfuse-web is up long before the first OpenInference trace.
     healthcheck:
       test: [NONE]
     labels:
@@ -1859,9 +1879,17 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    # This collector is dual-homed, so its container name is registered in Docker DNS on
+    # both networks — and the egress address is NOT reachable container-to-container,
+    # because egress sets enable_icc=false (an iptables DROP, so a client hangs on connect
+    # rather than getting a refusal). Two OTLP clients sit on egress as well (imap_agent,
+    # email_classification_agent), so for them the bare name is ambiguous by construction.
+    # The alias below is registered on backend only and can therefore resolve to nothing
+    # but the reachable address; every OTLP client targets it instead of the name.
     networks:
-      - backend
-      - egress
+      backend:
+        aliases: [otel-collector-backend]
+      egress: {}
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1878,6 +1906,8 @@ services:
     restart: always
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       seaweedfs-s3:
@@ -1912,9 +1942,13 @@ services:
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
+      # Traces always on. Metrics are opt-in: OpenWebUI emits very high-cardinality
+      # HTTP-server metrics that dominate SigNoz ingestion (see issue 1496), so they
+      # default off (ENABLE_OTEL_METRICS=false in .env.dev/.env.prod) and any deploy
+      # can turn them back on via its own env.
       ENABLE_OTEL: true
-      ENABLE_OTEL_METRICS: true
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      ENABLE_OTEL_METRICS: ${ENABLE_OTEL_METRICS}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_INSECURE: true
       OTEL_SERVICE_NAME: open-webui
@@ -1962,14 +1996,20 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
-      TASK_MODEL_EXTERNAL: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
+      TASK_MODEL: aihub-model-text-generation-Qwen3-VL-30B-A3B-Instruct-FP8
+      TASK_MODEL_EXTERNAL: aihub-model-text-generation-Qwen3-VL-30B-A3B-Instruct-FP8
       ENABLE_OLLAMA_API: false
       ENABLE_OPENAI_API: true
+      # Conversation metadata is owned by the agent pipeline (#1047): the agent emits the title and
+      # follow-up questions as protocol events and the pipeline relays them (plus deterministic tags),
+      # so OpenWebUI must NOT generate its own — otherwise it overwrites the agent-produced values.
+      ENABLE_TITLE_GENERATION: false
+      ENABLE_TAGS_GENERATION: false
+      ENABLE_FOLLOW_UP_GENERATION: false
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
-      AUDIO_STT_MODEL: transcription
+      AUDIO_STT_MODEL: transcription/faster-whisper-large-v3
       AUDIO_STT_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -2246,6 +2286,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
       LOG_LEVEL: ${LOG_LEVEL}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:3000/server_info]
@@ -2279,6 +2320,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
       LOG_LEVEL: ${LOG_LEVEL}
     healthcheck:
       test: [CMD, dagster-daemon, liveness-check]
@@ -2402,6 +2444,8 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/api:nightly
     depends_on:
+      otel-collector:
+        condition: service_started
       nats:
         condition: service_started
       traefik:
@@ -2461,7 +2505,6 @@ services:
       AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
       AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
       AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
-      AIHUB_SHOW_LEGACY_KNOWLEDGE: ${AIHUB_SHOW_LEGACY_KNOWLEDGE}
 
       # Startup tenant — read by StartupTenantSettings on first boot to seed
       # the initial tenant. ID also goes to keycloak for realm-import group naming.
@@ -2508,6 +2551,7 @@ services:
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
       OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+      OPENWEBUI_CONVERSATION_METADATA_MODEL: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -2516,6 +2560,16 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
       REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Cron scheduler (hosted here until the aihub-daemon extraction,  # 1203)
+      SCHEDULER_TICK_INTERVAL_SECONDS: ${SCHEDULER_TICK_INTERVAL_SECONDS}
+      SCHEDULER_LEASE_TTL_SECONDS: ${SCHEDULER_LEASE_TTL_SECONDS}
+      SCHEDULER_MAX_CATCHUP_MINUTES: ${SCHEDULER_MAX_CATCHUP_MINUTES}
+      SCHEDULER_REDIS_KEY_PREFIX: ${SCHEDULER_REDIS_KEY_PREFIX}
+      SCHEDULER_EVENT_RETENTION_DAYS: ${SCHEDULER_EVENT_RETENTION_DAYS}
+      SCHEDULER_RETENTION_INTERVAL_SECONDS: ${SCHEDULER_RETENTION_INTERVAL_SECONDS}
+      SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH: ${SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH}
+      SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH: ${SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH}
 
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
@@ -2526,6 +2580,7 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888
@@ -2539,10 +2594,17 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # OpenTelemetry Configuration
+      # Traces always on. Request metrics are opt-in: the FastAPI auto-instrumentation's
+      # http.server.* histograms were the high-cardinality driver behind issue 1496, so they
+      # default off (OTEL_METRICS_ENABLED=false in .env.dev/.env.prod) and any deploy can turn
+      # them back on via its own env.
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2646,6 +2708,8 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/sysadmin-api:nightly
     depends_on:
+      otel-collector:
+        condition: service_started
       traefik:
         condition: service_started
       ferretdb:
@@ -2717,7 +2781,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: sysadmin-api
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2819,6 +2883,9 @@ services:
     container_name: llm-wrapping-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2855,10 +2922,11 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: llm-wrapping-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2882,6 +2950,9 @@ services:
     container_name: rag-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2930,10 +3001,11 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2953,6 +3025,9 @@ services:
     container_name: expert-rag-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3001,10 +3076,11 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3024,6 +3100,9 @@ services:
     container_name: expert-asking-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3060,6 +3139,7 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
@@ -3071,7 +3151,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3090,6 +3170,9 @@ services:
     container_name: retrieval-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/retrieval_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3129,9 +3212,12 @@ services:
       REDIS_URL: redis://valkey:6379
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: retrieval-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3151,6 +3237,9 @@ services:
     container_name: few-shot-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/few_shot_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3178,9 +3267,12 @@ services:
       REDIS_URL: redis://valkey:6379
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: few-shot-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3199,6 +3291,9 @@ services:
     container_name: namespace-selection-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/namespace_selection_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3226,9 +3321,12 @@ services:
       REDIS_URL: redis://valkey:6379
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: namespace-selection-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3247,6 +3345,9 @@ services:
     container_name: memory-writer-agent
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/memory_writer_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -3283,10 +3384,11 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: memory-writer-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3301,10 +3403,148 @@ services:
       - backend
       - data
   # License: Apache-2.0 — own image (see LICENSES.md)
-  rag_pipeline:
-    container_name: rag-pipeline
+  imap_agent:
+    container_name: imap-agent
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/rag_pipeline:nightly
+    image: ghcr.io/bbvch-ai/aihub-core/imap_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access (draft-reply generation)
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # S3 Access connection (mail attachment storage)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: imap-agent
+      OTEL_RESOURCE_SERVICE_VERSION: nightly
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8090/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+      - egress  # Outbound access to external IMAP servers
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  email_classification_agent:
+    container_name: email-classification-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/email_classification_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access (mail classification)
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MinerU (reading attachment text into a drafted reply; PDFs and images only —
+      # Office documents are converted in-process by MarkItDown)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
+
+      # S3 Access connection (mail attachment + original-message archive)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: email-classification-agent
+      OTEL_RESOURCE_SERVICE_VERSION: nightly
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8090/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+      - egress  # Outbound access to external IMAP servers
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  default_rag_pipeline:
+    container_name: default-rag-pipeline
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -3312,6 +3552,7 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
 
       # NATS
       NATS_ENDPOINT: nats://nats:4222
@@ -3329,6 +3570,8 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
@@ -3343,7 +3586,10 @@ services:
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
+      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
+      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -3352,6 +3598,99 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Pipeline run-failure notifications (Apprise)
+      NOTIFICATION_URLS: ${NOTIFICATION_URLS}
+      NOTIFICATION_DAGSTER_UI_BASE_URL: https://dagster.${DOMAIN}
+      NOTIFICATION_TITLE_PREFIX: Swiss AI Hub Pipeline
+      NOTIFICATION_MIN_INTERVAL_SECONDS: 30
+    healthcheck:
+      test:
+        - CMD
+        - dagster
+        - api
+        - grpc-health-check
+        - --host
+        - localhost
+        - --port
+        - '4000'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  shared_rag_pipeline:
+    container_name: shared-rag-pipeline
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:nightly
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+
+      # NATS
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # DAGSTER
+      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
+      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
+      DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # Pipeline run-failure notifications (Apprise)
       NOTIFICATION_URLS: ${NOTIFICATION_URLS}
@@ -3405,6 +3744,7 @@ services:
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_VERSION: ${AIHUB_VERSION}

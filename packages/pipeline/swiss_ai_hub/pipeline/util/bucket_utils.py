@@ -1,23 +1,15 @@
-import mongoengine
-from mongoengine import DoesNotExist, register_connection
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
+from mongoengine import DoesNotExist
+from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
+
+from swiss_ai_hub.pipeline.util.mongo_utils import ensure_connection
 
 # Default alias for the main database connection
 _DB_ALIAS = "default"
 
 
 def _ensure_connection() -> None:
-    """Ensure MongoDB connection is registered. Safe to call multiple times."""
-    try:
-        mongoengine.connection.get_connection(alias=_DB_ALIAS)
-    except Exception:
-        register_connection(
-            alias=_DB_ALIAS,
-            name=AIHubSettings().MONGO_MAIN_DB_NAME,
-            host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-            uuidRepresentation="standard",
-        )
+    ensure_connection(db_name=AIHubSettings().MONGO_MAIN_DB_NAME, db_alias=_DB_ALIAS)
 
 
 def ensure_main_db_connection() -> None:

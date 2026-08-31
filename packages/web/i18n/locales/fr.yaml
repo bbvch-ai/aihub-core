@@ -11,6 +11,7 @@ common:
   loading: Chargement...
   selectModel: Sélectionner un modèle
   selectDatabase: Sélectionner une base de données
+  selectTenant: Sélectionner un locataire
 models:
   title: Modèles
   error: Erreur lors du chargement des modèles
@@ -592,7 +593,9 @@ auth:
     description: Veuillez vous connecter pour accéder à l'application
     tagline: Découvrez l'avenir de l'intelligence artificielle
     welcome: Bienvenue sur le AI Hub de {companyName}
+    welcomeProvider: Bienvenue sur le AI Hub — connexion avec {provider}
     pleaseLogin: Veuillez vous connecter
+    pleaseLoginWith: Veuillez vous connecter avec {provider}
     loginWith: Se connecter avec {provider}
     customSolutions: Solutions d'IA personnalisées pour votre entreprise
     logoAlt: Logo de l'entreprise
@@ -826,7 +829,33 @@ process:
 form:
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
+  warnings:
+    org_memory_performance: Cette fonctionnalité peut ne pas fonctionner comme prévu
+      dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
+      temporairement jusqu'à la publication d'un correctif.
 lib:
+  cron:
+    errors:
+      required: Chaque position est requise — une position vide ne constitue pas une
+        planification valide.
+      invalid: Seuls les chiffres et les caractères * , - / ? sont autorisés ici.
+      range: Les valeurs doivent être comprises entre {min} et {max}.
+    expression: 'Expression cron résultante :'
+    minute:
+      label: Minute
+    hour:
+      label: Heure
+    day_of_month:
+      label: Jour du mois
+    month:
+      label: Mois
+    day_of_week:
+      label: Jour de la semaine
+    timezone:
+      label: Fuseau horaire
+      placeholder: Sélectionner un fuseau horaire
+      help: Les positions cron sont interprétées dans ce fuseau horaire, afin qu'une
+        planification quotidienne conserve la même heure lors des changements d'heure.
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher

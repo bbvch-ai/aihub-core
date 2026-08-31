@@ -1,10 +1,16 @@
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms import LLM
+from openai import BadRequestError
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import LLMStopEvent, MetaQuestionDetectedEvent, NotAMetaQuestionEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig, merge_consecutive_messages
 from swiss_ai_hub.core.i18n import LocaleHandler
 
-from swiss_ai_hub.agent.self_awareness.meta_question_detector import detect_meta_question
+from swiss_ai_hub.agent.self_awareness.meta_question_detector import (
+    REASONING_DISABLED_EXTRA_BODY,
+    detect_meta_question,
+)
 
 
 async def do_detect_meta_question(
@@ -12,11 +18,12 @@ async def do_detect_meta_question(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
     """Classify the user message and emit the routing event for the self-awareness branch."""
     await displayer.display_thought(t("agent.self_awareness.thought.detecting"))
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         classification = await detect_meta_question(llm=llm, t=t, user_query=user_query)
 
     if classification.is_meta_question and classification.category is not None:
@@ -37,6 +44,7 @@ async def do_answer_meta_question(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity,
 ) -> LLMStopEvent:
     """Answer a meta question from the agent's own identity and workflow, then stop the run."""
     await displayer.display_thought(t("agent.self_awareness.thought.answering"))
@@ -58,5 +66,27 @@ async def do_answer_meta_question(
         [ChatMessage(role=MessageRole.SYSTEM, content=system_prompt), *non_empty_history]
     )
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
-        return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=True)
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
+        # A meta answer restates the agent's own identity and workflow from a fixed system prompt — no
+        # chain-of-thought needed, so the model's reasoning is pure latency (≈16s vs ≈7s with it off on
+        # Qwen3.5). display_llm_stream drives stream_chat without per-call kwargs, so bake the reasoning-off
+        # flag onto this freshly-built instance; fall back to a plain stream for models that reject it (400
+        # before any chunk is emitted, so the retry is safe).
+        _disable_reasoning(llm)
+        try:
+            return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=True)
+        except BadRequestError:
+            _enable_reasoning(llm)
+            return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=True)
+
+
+def _disable_reasoning(llm: LLM) -> None:
+    """Merge the reasoning-off flag into the instance's per-request extra_body for the streaming path."""
+    extra_body = {**llm.additional_kwargs.get("extra_body", {}), **REASONING_DISABLED_EXTRA_BODY}
+    llm.additional_kwargs = {**llm.additional_kwargs, "extra_body": extra_body}
+
+
+def _enable_reasoning(llm: LLM) -> None:
+    """Drop the reasoning-off flag so a Mistral-tokenizer retry sends a plain request."""
+    additional_kwargs = {key: value for key, value in llm.additional_kwargs.items() if key != "extra_body"}
+    llm.additional_kwargs = additional_kwargs

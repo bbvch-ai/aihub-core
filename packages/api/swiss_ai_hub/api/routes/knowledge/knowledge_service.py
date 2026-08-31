@@ -8,6 +8,7 @@ from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import ConnectionFailure, DoesNotExist, NotUniqueError, register_connection
 from nats.aio.client import Client as NATS
 from pydantic import Field
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.events.pipeline import KnowledgeTeardownRequestedEvent, SourceUpdatedEvent
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
@@ -239,7 +240,7 @@ class KnowledgeService:
 
     @staticmethod
     async def _create_and_translate_locale_entity(
-        text: str | None, t: LocaleHandler, llm_config: LLMConfig
+        text: str | None, t: LocaleHandler, llm_config: LLMConfig, user: UserIdentity
     ) -> LocaleStringEntity | None:
         """Helper to create and translate a LocaleStringEntity."""
         if not text or text.strip() == "":
@@ -248,7 +249,7 @@ class KnowledgeService:
         locale_string = LocaleString(**{t.locale: text})
 
         translated_locale_string = await TranslationService.translate(
-            locale_string=locale_string, llm_config=llm_config, t=t, source_locale=t.locale
+            locale_string=locale_string, llm_config=llm_config, t=t, user=user, source_locale=t.locale
         )
         return LocaleStringEntity.from_locale_string(translated_locale_string)
 
@@ -270,6 +271,7 @@ class KnowledgeService:
         request: CreateDatabaseRequest,
         t: LocaleHandler,
         s3_service: S3AnonymousFileAccessService,
+        user: UserIdentity,
         llm_config: LLMConfig | None = None,
     ) -> DatabaseResponse:
         """
@@ -304,10 +306,10 @@ class KnowledgeService:
             )
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
-            text=request.display_name, t=t, llm_config=llm_config
+            text=request.display_name, t=t, llm_config=llm_config, user=user
         )
         description_entity = await KnowledgeService._create_and_translate_locale_entity(
-            request.description, t, llm_config
+            request.description, t, llm_config, user
         )
 
         # Persist the entity before provisioning storage: the unique bucket_name index serialises
@@ -346,6 +348,7 @@ class KnowledgeService:
         namespace: str,
         request: CreateNamespaceRequest,
         t: LocaleHandler,
+        user: UserIdentity,
         llm_config: LLMConfig | None = None,
     ) -> NamespaceResponse:
         """
@@ -363,10 +366,10 @@ class KnowledgeService:
             pass
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
-            text=request.display_name, t=t, llm_config=llm_config
+            text=request.display_name, t=t, llm_config=llm_config, user=user
         )
         description_entity = await KnowledgeService._create_and_translate_locale_entity(
-            request.description, t, llm_config
+            request.description, t, llm_config, user
         )
 
         namespace_entity = NamespaceEntity.create_namespace(
@@ -388,7 +391,11 @@ class KnowledgeService:
 
     @staticmethod
     async def update_namespace(
-        namespace_id: str, request: UpdateNamespaceRequest, t: LocaleHandler, llm_config: LLMConfig | None = None
+        namespace_id: str,
+        request: UpdateNamespaceRequest,
+        t: LocaleHandler,
+        user: UserIdentity,
+        llm_config: LLMConfig | None = None,
     ) -> NamespaceResponse:
         """
         Updates display name and description for an existing namespace.
@@ -399,10 +406,10 @@ class KnowledgeService:
             raise HTTPException(status_code=404, detail=f"Folder with ID '{namespace_id}' not found")
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
-            text=request.display_name, t=t, llm_config=llm_config
+            text=request.display_name, t=t, llm_config=llm_config, user=user
         )
         description_entity = await KnowledgeService._create_and_translate_locale_entity(
-            request.description, t, llm_config
+            request.description, t, llm_config, user
         )
 
         updated_entity = NamespaceEntity.update_namespace(
@@ -560,8 +567,18 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def get_document_url(db: str, namespace: str, document_id: str, s3_service: S3AnonymousFileAccessService) -> str:
-        """Generates a presigned S3 URL for a document's source file."""
+    def get_document_url(
+        db: str,
+        namespace: str,
+        document_id: str,
+        s3_service: S3AnonymousFileAccessService,
+        as_attachment: bool = False,
+    ) -> str:
+        """Generates a presigned S3 URL for a document's source file.
+
+        `as_attachment` forces a browser download via `Content-Disposition: attachment`
+        instead of inline preview (requires SeaweedFS ≥ 4.01 to honor the override).
+        """
         KnowledgeService._ensure_db_exists(db)
         try:
             ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
@@ -572,7 +589,11 @@ class KnowledgeService:
         parts = source.split("/", 1)
         container = parts[0]
         file_path = parts[1] if len(parts) > 1 else ""
-        return s3_service.generate_sas_url(container, file_path)
+        content_disposition = None
+        if as_attachment:
+            filename = file_path.rsplit("/", 1)[-1]
+            content_disposition = f'attachment; filename="{filename}"'
+        return s3_service.generate_sas_url(container, file_path, response_content_disposition=content_disposition)
 
     @staticmethod
     def get_supported_file_types() -> list[str]:

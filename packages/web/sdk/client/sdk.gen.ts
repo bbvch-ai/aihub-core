@@ -166,6 +166,12 @@ import type {
   GetLitellmModelsByModeResponse,
   GetLitellmModelsData,
   GetLitellmModelsResponse,
+  GetLlmSpendByTenantData,
+  GetLlmSpendByTenantError,
+  GetLlmSpendByTenantResponse,
+  GetLlmSpendByUserData,
+  GetLlmSpendByUserError,
+  GetLlmSpendByUserResponse,
   GetLocaleData,
   GetLocaleResponse,
   GetModelsData,
@@ -881,6 +887,72 @@ export const getAgentEventTimeseries = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/events/agents/timeseries/{time_range}",
+    ...options,
+  });
+
+/**
+ * Get Llm Spend By User
+ *
+ * LLM spend per user, from the platform's own cost events.
+ *
+ * Scoped to the caller's acting tenant: spend reveals who used which agents and how much,
+ * so a tenant admin must not see other tenants' users. Only a sysadmin, who acts outside
+ * any single tenant, sees the whole platform.
+ */
+export const getLlmSpendByUser = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetLlmSpendByUserResponse = GetLlmSpendByUserResponse,
+>(
+  options: Options<
+    TComposable,
+    GetLlmSpendByUserData,
+    GetLlmSpendByUserResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetLlmSpendByUserResponse | DefaultT,
+    GetLlmSpendByUserError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/events/spend/users",
+    ...options,
+  });
+
+/**
+ * Get Llm Spend By Tenant
+ *
+ * LLM spend per tenant across the whole platform.
+ *
+ * Sysadmin-only: a cross-tenant total is exactly the view a single tenant must not have.
+ */
+export const getLlmSpendByTenant = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetLlmSpendByTenantResponse = GetLlmSpendByTenantResponse,
+>(
+  options: Options<
+    TComposable,
+    GetLlmSpendByTenantData,
+    GetLlmSpendByTenantResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetLlmSpendByTenantResponse | DefaultT,
+    GetLlmSpendByTenantError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/events/spend/tenants",
     ...options,
   });
 
@@ -3145,7 +3217,7 @@ export const getSupportedFileTypes = <
 /**
  * Get signed document URL
  *
- * Generates a presigned URL for downloading a document's source file.
+ * Generates a presigned URL for a document's source file (inline preview, or attachment download).
  */
 export const getDocumentUrl = <
   TComposable extends Composable = "$fetch",

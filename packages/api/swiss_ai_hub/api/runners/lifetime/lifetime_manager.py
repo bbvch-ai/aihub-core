@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 import boto3
@@ -12,6 +12,7 @@ from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, Externa
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
     LangfuseProvisioner,
+    LiteLLMProxySettings,
     MilvusSettings,
     MongoSettings,
     NatsSettings,
@@ -19,12 +20,14 @@ from swiss_ai_hub.core.infrastructure import (
     RedisSettings,
     S3StorageSettings,
 )
-from swiss_ai_hub.core.persistence import AccessChangeHook
+from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook
+from swiss_ai_hub.core.scheduling import CronScheduler, SchedulerSettings
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.persistance.events.event_persister import EventPersister
+from swiss_ai_hub.api.persistance.threads.thread_title_persister import ThreadTitlePersister
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
@@ -40,6 +43,17 @@ from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
 
 logger = logging.getLogger(__name__)
 _background_tasks: set[asyncio.Task] = set()
+
+
+async def _provision_non_fatal(name: str, provision: Callable[[], Awaitable[None]]) -> None:
+    """Provisioning targets external services; their outage must not stop the API from serving.
+
+    The periodic discovery sync already reconciles OpenWebUI non-fatally, so a startup failure
+    here only degrades the model picker until the next cycle instead of crash-looping the pod."""
+    try:
+        await provision()
+    except Exception as exception:
+        logger.exception(f"{name} provisioning failed (non-fatal): {exception}")
 
 
 @asynccontextmanager
@@ -153,6 +167,18 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         await ws_subscriber.start()
 
+        # Persist conversation titles onto threads from a subscriber that never tears down mid-run —
+        # a per-request aggregator unsubscribes on the run's stop event, so a title emitted concurrently
+        # with the answer could be dropped (permanently, since the producer-side once-per-thread flag is
+        # set on publish).
+        thread_title_subscriber = AgentNCSubscriber.for_all_agents_display_events(
+            nc=nc,
+            topic_manager=agent_topic_manager,
+            handler=ThreadTitlePersister.persist_thread_title,
+            subscriber_name="ThreadTitlePersister",
+        )
+        await thread_title_subscriber.start()
+
         external_agent_event_distributor = ExternalAgentEventDistributor(
             nc=nc, js=js, name="AgentExternalAgentEventDistributor"
         )
@@ -222,14 +248,29 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await finalize_role_setup()
         await initialize_knowledge_buckets()
 
+        # Singleton background work, kept correct across N API replicas by a Redis leader lease.
+        # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
+        # Started after tenant and role initialisation so a first tick cannot outrun them.
+        cron_scheduler = CronScheduler(
+            redis=redis,
+            external_agent_event_distributor=external_agent_event_distributor,
+            settings=SchedulerSettings(),
+        )
+        cron_scheduler.start()
+        app.state.cron_scheduler = cron_scheduler
+
         # Provision Langfuse with AI-Hub LLM connections
-        await langfuse_provisioner.provision()
+        await _provision_non_fatal("Langfuse", langfuse_provisioner.provision)
 
         # Provision OpenWebUI with groups, workspace models, and access grants
-        await openwebui_provisioner.provision()
+        await _provision_non_fatal("OpenWebUI", openwebui_provisioner.provision)
 
         # Re-sync OpenWebUI when access entities change (active tenant switches notify explicitly)
         AccessChangeHook.connect(openwebui_provisioner)
+
+        # Re-sync OpenWebUI workspace models when agent configs are created/renamed/deleted, so the
+        # model picker reflects the change immediately instead of on the next periodic discovery cycle
+        AgentConfigChangeHook.connect(openwebui_provisioner)
 
         # Yield control back to FastAPI to start serving requests
         yield
@@ -238,12 +279,16 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await agent_event_persist_subscriber.stop()
         await process_event_persist_subscriber.stop()
         await ws_subscriber.stop()
+        await thread_title_subscriber.stop()
 
         # Stop RPC responders
         if hasattr(app.state, "agent_config_responder"):
             await app.state.agent_config_responder.stop()
         if hasattr(app.state, "process_config_responder"):
             await app.state.process_config_responder.stop()
+
+        if hasattr(app.state, "cron_scheduler"):
+            await app.state.cron_scheduler.stop()
 
         # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):
@@ -263,6 +308,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Close S3 connections
         s3_client.close()
         s3_public_client.close()
+
+        # Close the pooled LiteLLM clients
+        await LiteLLMProxySettings.aclose_pooled_clients()
 
     finally:
         # Close NATS connection on exit

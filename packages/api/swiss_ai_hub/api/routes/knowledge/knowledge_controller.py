@@ -250,7 +250,7 @@ class KnowledgeController(TenantScopedController):
         async def create_database(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z][a-zA-Z0-9]*$")],
             request: CreateDatabaseRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> DatabaseResponse:
@@ -261,7 +261,9 @@ class KnowledgeController(TenantScopedController):
                 raise HTTPException(
                     status_code=400, detail=f"Database name '{database}' is reserved and cannot be used."
                 )
-            return await KnowledgeService.create_database(database, request, t, s3_service, self.translation_llm_config)
+            return await KnowledgeService.create_database(
+                database, request, t, s3_service, user, self.translation_llm_config
+            )
 
         return self
 
@@ -272,7 +274,7 @@ class KnowledgeController(TenantScopedController):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: CreateNamespaceRequest,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -280,7 +282,9 @@ class KnowledgeController(TenantScopedController):
             """
             Creates a new namespace (folder) in the specified database.
             """
-            return await KnowledgeService.create_namespace(database, namespace, request, t, self.translation_llm_config)
+            return await KnowledgeService.create_namespace(
+                database, namespace, request, t, user, self.translation_llm_config
+            )
 
         return self
 
@@ -290,7 +294,7 @@ class KnowledgeController(TenantScopedController):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: UpdateNamespaceRequest,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -298,7 +302,7 @@ class KnowledgeController(TenantScopedController):
             """
             Updates display name and description for an existing namespace.
             """
-            return await KnowledgeService.update_namespace(namespace, request, t, self.translation_llm_config)
+            return await KnowledgeService.update_namespace(namespace, request, t, user, self.translation_llm_config)
 
         return self
 
@@ -362,12 +366,19 @@ class KnowledgeController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            download: Annotated[
+                bool, Query(description="Force a browser download (Content-Disposition: attachment) instead of preview")
+            ] = False,
         ) -> SignedUrlDto:
-            """Generates a presigned URL for downloading a document's source file."""
+            """Generates a presigned URL for a document's source file (inline preview, or attachment download)."""
             if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             url = KnowledgeService.get_document_url(
-                db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
+                db=database,
+                namespace=namespace,
+                document_id=document_id,
+                s3_service=s3_service,
+                as_attachment=download,
             )
             return SignedUrlDto(url=url)
 

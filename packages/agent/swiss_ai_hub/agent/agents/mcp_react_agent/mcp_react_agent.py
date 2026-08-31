@@ -1,6 +1,7 @@
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LLMStopEvent,
@@ -18,6 +19,7 @@ from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config im
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_conversation_metadata
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
@@ -123,12 +125,13 @@ class McpReactAgent(Agent):
         run_context: RunContext,
         thread_context: ThreadContext,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> list[ToolEvent] | StopEvent:
         """Ask the LLM what to do next — call a tool or respond to the user."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)
 
-        async with config.llm.cost_reporting_llm(displayer) as llm:
+        async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
             response = await llm.achat(chat_messages, tools=tool_schemas)
 
         assistant = Message.from_llama_index(response.message)
@@ -139,6 +142,10 @@ class McpReactAgent(Agent):
                 input_messages=event.input_messages,
                 output_messages=[assistant],
                 chat_model_name=config.llm.model_name,
+            )
+            # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
+            await generate_conversation_metadata(
+                stop_event.chat_messages, config.task_llm, displayer, t, thread_context, user
             )
             return stop_event
 

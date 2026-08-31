@@ -43,7 +43,13 @@ packages/pipeline/                        # SDK framework
 │   ├── sensors/
 │   │   ├── factory.py                     # default_automation_sensor (auto-materialization)
 │   │   ├── run_after_success_sensor.py    # Chain a job after another job's successful run
-│   │   └── nats/nats_document_uploaded_sensor.py  # NATS event-driven triggers
+│   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
+│   │   └── nats/
+│   │       ├── nats_document_uploaded_sensor.py  # NATS event-driven triggers
+│   │       ├── consumed_event_batch.py           # Drains the JetStream backlog, defers acks
+│   │       ├── observation_sensor_cursor.py      # Sensor state carried between ticks
+│   │       ├── observation_run_decider.py        # Pure request-or-wait decision
+│   │       └── observation_run_history.py        # Run-tag lookups the cursor cannot hold
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
 │   ├── executors/factory.py               # default_process_executor (in-process)
@@ -109,10 +115,13 @@ Concrete Stage 1 flows (each uses `data_lake_file_factory` + a source-specific o
 processing chain regardless of origin:
 
 - `observable_data_lake_factory` → monitors S3 for new/changed files
-- `documents_factory` → parse (MinerU) → `RefDocDocument` → MongoDB
-- `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus
+- `documents_factory` → parse (MinerU) → `RefDocDocument` → MongoDB, flagged `is_ingested=False`
+- `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus, which flips `is_ingested=True`
 - `summary_nodes_factory` (optional) → hierarchical summaries → Milvus
 - `removed_documents_factory` → cleanup orphaned documents
+
+A document is only reported as ingested — to the API, the UI, and RAG agents — once its nodes are in Milvus. A parsed
+document has markdown but no embeddings, so it is not retrievable yet and must not be shown as complete.
 
 ## The `default_definitions()` Function
 
@@ -189,6 +198,10 @@ assets.
 - `AzureDataLakeIOManager` — Azure Data Lake Storage. URL-quoted metadata encoding.
 - `DocStoreIOManager` — MongoDB via LlamaIndex `KVDocumentStore`. URI → document ID via `uri_to_id()`.
 - `VectorStoreIOManager` — Milvus. Upsert mode. 30s retry logic for eventual consistency. Filters by `DOCUMENT_ID`.
+  After a successful write it also flips the source `RefDoc`'s `is_ingested` to `True` (via `RefDoc.mark_ingested`,
+  resolving each document from `node.ref_doc_id`). This deliberately lives in the IO manager, not in an op: the Milvus
+  write happens during output handling, so an op could only ever mark the documents *before* their nodes are actually
+  retrievable — which is the bug it guards against. It needs `document_store_name` (the Mongo db alias) at construction.
 
 **Read-Only** (source connectors — `handle_output()` raises `NotImplementedError`):
 
@@ -201,6 +214,14 @@ assets.
 **Data lake hierarchy** (cloud-agnostic abstraction):
 
 - `AbstractDataLakeClient` → `S3DataLakeClient`, `AzureDataLakeClient` (list, get, delete file operations)
+  - **Observation cost is per directory, not per object.** `get_all_files()` answers only "which files exist and has any
+    changed", which `list_objects_v2` already covers — so it issues no per-object `head_object`, and resolves
+    `get_or_create_namespace_for_directory` once per directory rather than per file. The lookup also *registers* the
+    `NamespaceEntity` the knowledge UI and namespace-selection agent read, so the first file of each directory still
+    reaches it. The download path (`create_data_lake_file_from_uri`, `create_data_lake_files_from_uris`) keeps the head
+    because it needs the object's user metadata and content type — it just no longer fetches it twice. `list_objects_v2`
+    and `head_object` return the same ETag and modification time, so the `DataVersion` is identical either way; that
+    equivalence is pinned by tests, because a divergence would re-parse and re-embed the whole corpus.
 - `AbstractDataLakeClientResource` → typed `ConfigurableResource` wrappers for Dagster DI
 - `AbstractDataLakeFileSystemResource` → `s3fs`/`adlfs` wrappers for streaming reads
 
@@ -216,7 +237,8 @@ assets.
 - `DocumentParserResource` — Selects parser by filetype. `LoaderType.MINERU` (default) or `DOCUMENT_INTELLIGENCE`.
   Fallbacks: `EpubReader`, `IPYNBReader`, `RawLoader`, `RTFReader`, `ImageLoader`.
 - `MarkdownStructuralNodeParserResource` — LlamaIndex MD structural parser for chunking.
-- `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG.
+- `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG. Takes `llm_config` and caps
+  each prompt to the LLM's input limit, map-reducing over oversized rollups instead of sending them whole.
 - `TableRefinementResource` — LLM-powered table detection and structure splitting.
 
 **LLM/Embedding**: `EmbeddingModelResource` (wraps `EmbeddingModelConfig`), `LanguageModelResource` (wraps `LLMConfig`).
@@ -229,10 +251,11 @@ collection_name, dimensions, index_type: HNSW or IVF_FLAT).
 
 - `s3_data_lake_resources(container_name)` — client, file_system, io_manager, resource
 - `mongo_document_store_resource(store_name)` — doc_store, io_manager, resource
-- `milvus_vector_store_resource(uri, collection_name, dimensions)` — vector_store, io_manager
+- `milvus_vector_store_resource(vector_store_uri, vector_store_name, dimensions, document_store_name)` — vector_store,
+  io_manager. `document_store_name` is the Mongo alias the IO manager uses to flip `is_ingested` after a write.
 - `default_io_manager_s3_datalake_resources(container_name)` — Dagster PickleIOManager for inter-op data; intermediates
   land in the shared `dagster` bucket under `<container_name>/` with a bucket-wide 1-day TTL.
-- `local_mongo_milvus_storage_context_resource(vector_store_uri, store_name)` — combined MongoDB + Milvus
+- `local_mongo_milvus_storage_context_resource(vector_store_uri, store_name, dimensions)` — combined MongoDB + Milvus
 
 ## Observable Assets & Dynamic Partitions
 
@@ -267,12 +290,38 @@ Four triggering mechanisms work together:
   changes. Enabled by `default_automation_sensor(assets, minimum_interval_seconds=60)`.
 - **NATS sensor**: `nats_document_uploaded_sensor` — polls JetStream for `SourceUpdatedEvent` via
   `PipelineInstanceTopicManager`. Triggers observe job when documents are uploaded externally (e.g., via API).
+  **Single-flight**: an observation scans the whole bucket, so the sensor never requests a second one while one is
+  queued or running (`SingleFlightRunGuard`, scoped per job name — a manually launched run suppresses it too). It does
+  not cancel or queue runs; the second request is simply never made. Events seen during a run arm exactly one follow-up
+  via the sensor cursor (`ObservationSensorCursor`), because a running observation may already have listed the bucket
+  before those files landed. A 30 s debounce (`DEBOUNCE_SECONDS`) collects a burst into one request, and the whole
+  JetStream backlog drains per tick rather than one fetch of ten. Run keys are derived from the highest stream sequence
+  plus a re-arm counter, so Dagster's own run-key deduplication acts as a second line of defence.
 - **Daily schedules**: `daily_schedule_at(job, hour, minute)` — cron-based observation for sources that don't push
   events.
 - **Run-status chaining**: `run_after_success_sensor(monitored_job=..., triggered_job=...)` — fires `triggered_job`
   after `monitored_job` succeeds. Used to order observe → remove jobs, since Dagster forbids mixing observable source
   assets with regular assets in a single `define_asset_job` selection. All `default_*_definitions()` builders wire this
-  automatically; the remove job no longer has its own schedule.
+  automatically; the remove job no longer has its own schedule. Single-flight applies here too: the removal also
+  compares the whole corpus, so one already in flight covers the observation that just succeeded, and the request is
+  keyed on the observing run id so retries deduplicate.
+
+**Run priority**: `observe_source_job` and `materialize_asset_job` tag their runs
+`dagster/priority: "10"` (`ORCHESTRATION_RUN_PRIORITY` in `jobs/factory.py`). `QueuedRunCoordinator` sorts the whole
+queue by that tag before trimming to the dequeue batch, but every run defaults to `0` — which collapses the sort into
+plain FIFO and lets a bulk upload strand an observation behind the hundreds of per-document ingestion runs it just
+authorized. Observation and removal are cheap and gate everything downstream, so they jump the backlog. This is
+ordering only, not reserved capacity: no slot is ever held idle, and ingestion still uses every slot when nothing
+else is waiting. Dagster cannot preempt a *running* run, so the wait is bounded by one ingestion run rather than by
+zero. Only the sensor daemon and the scheduler apply a job's `run_tags`, so runs launched through
+`DagsterGraphQLClient` (or any caller that passes its own tags) land at priority 0 — the sensor, chaining sensor and
+daily schedule paths, which is every automated launch, all carry it.
+
+**Partition-set convergence**: `replace_partition_keys` caps additions and deletions at `max_partitions` (default 1000).
+When it truncates, it logs a warning and tags its own run with `PARTITIONS_TRUNCATED_TAG` — a run cannot write its
+sensor's cursor, so the fact that the partition set has not converged travels back as a run tag. The NATS sensor re-arms
+on an unhandled truncation tag and records the run id it answered, chaining observations until one truncates nothing.
+Without this, single-flight would trade the run storm for partially observed batches above 1000 files.
 
 ## Run-Failure Notifications
 
@@ -300,6 +349,29 @@ failure alerts without per-asset wiring.
 - `playground/quick_start/my_document_pipeline.py` — Complete pipeline with all factories, resources, sensors
 
 Start: `make playground` or `uv run dagster dev -m playground` Access: http://localhost:3000 (Dagster UI)
+
+## Local Dagster Instance
+
+`make playground`, `make quickstart`, and `make rag-pipelines` each depend on the `dagster-home` target, which installs
+`dagster.local.yaml` into `$(DAGSTER_HOME)` as `dagster.yaml` (copy-if-absent), and source the repo-root `.env` for the
+dev-stack connection settings. Two failure modes this prevents: an unset `DAGSTER_HOME` makes `dagster dev` create a
+throwaway `.tmp_dagster_home_*` instance per start, and a missing instance config leaves `DefaultRunCoordinator` in
+place, which fans out runs with no cap and storms MinerU. `dagster.local.yaml` uses the same `QueuedRunCoordinator` as
+`infra/configs/dagster/dagster-config.<stage>.yml`, but with `max_concurrent_runs` as a literal instead of
+`env: DAGSTER_MAX_CONCURRENT_RUNS`. Keep it literal: the file is installed into `$DAGSTER_HOME`, so an unresolvable env
+var would raise `PostProcessingError` in every Dagster process on the machine, including ones started without the repo
+`.env` loaded.
+
+`DAGSTER_HOME ?= $(HOME)/.dagster_home` is defined in the Makefile and exported over whatever `.env` says — same
+directory, but already absolute, so the recipes can `mkdir`/`cp` with it. `.env` keeps the tilde form for the manual
+`set -a && source .env && set +a` flow, where Dagster's own `expanduser` resolves it.
+
+Do NOT use the `-include ../../.env` + `export` pattern from `packages/api/Makefile` here. Make keeps the quotes from
+`.env`, so every value arrives wrapped in literal apostrophes — `DAGSTER_HOME='~/.dagster_home'` reaches Dagster with
+the quotes attached and is rejected as a non-absolute path. Source the file in the recipe instead.
+
+`dagster.local.yaml` is local-only: Dagster reads no filename but `dagster.yaml`, so the copy in this directory is inert
+where it sits, including inside the pipeline images that `COPY packages/pipeline`.
 
 ## Templates
 

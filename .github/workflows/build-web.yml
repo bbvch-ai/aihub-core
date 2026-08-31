@@ -14,7 +14,7 @@ on:
         description: Secondary tag to apply (optional), [nightly, latest, *empty*]
         required: false
         default: ''
-        options: ['', nightly, latest]
+        options: ['', nightly, staging, latest]
 permissions:
   contents: write
   packages: write

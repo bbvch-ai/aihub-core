@@ -22,9 +22,16 @@ config:
   max_messages:
     label: Numero max di e-mail non lette
     help: Numero massimo di messaggi non letti elencati per esecuzione.
+  enable_draft:
+    label: Redigi risposta
+    help: Se attivato, viene redatta una risposta al messaggio recuperato e aggiunta
+      alla cartella delle bozze affinché una persona la revisioni e la invii. Se disattivato,
+      il passaggio di redazione viene saltato.
   drafts_folder:
     label: Cartella Bozze
-    help: Cartella della casella in cui vengono scritte le bozze.
+    help: Cartella della casella in cui le bozze di risposta vengono aggiunte. Se
+      questa cartella non viene trovata, viene usata la cartella Bozze special-use
+      del server.
   enable_move:
     label: Sposta e-mail recuperata
     help: Se attivato, il posta recuperato viene spostato nella cartella elaborati
@@ -34,3 +41,71 @@ config:
     label: Cartella Elaborati
     help: Cartella della casella in cui un posta elaborato viene spostato quando lo
       spostamento è abilitato.
+  source_folder:
+    label: Cartella di origine bozza
+    help: Cartella della casella da cui il redattore legge i messaggi candidati. Puntala
+      alla cartella elaborati per redigere la posta lì archiviata.
+  batch_size:
+    label: Dimensione lotto bozze
+    help: Numero massimo di messaggi redatti per esecuzione.
+  draft_model:
+    label: Modello LLM
+    help: Modello di chat usato per redigere il corpo della risposta.
+  draft_prompt:
+    label: Prompt di redazione
+    help: Istruzioni che guidano il modo in cui l'LLM redige il corpo della risposta.
+  category_name:
+    label: Categoria
+    help: Nome della categoria, ad es. support_request. Deve essere univoco.
+  category_folder:
+    label: Cartella di destinazione
+    help: Cartella della casella in cui vengono archiviati i messaggi di questa categoria.
+      Creata automaticamente se non esiste ancora.
+  category_description:
+    label: Cosa appartiene qui
+    help: Descrivi il tipo di posta che appartiene a questa categoria. È su questo
+      che il modello classifica, quindi sii concreto sull'intento invece di elencare
+      parole chiave.
+  fallback_folder:
+    label: Cartella di riserva
+    help: Cartella per la posta su cui il modello non è sicuro. Tale posta non viene
+      mai indovinata in una categoria né lasciata nella posta in arrivo.
+  failure_folder:
+    label: Cartella degli errori
+    help: Cartella per la posta che il classificatore non è riuscito a elaborare.
+      Tali messaggi lasciano comunque la posta in arrivo, così un messaggio difettoso
+      non blocca tutte le esecuzioni successive; riportarlo nella posta in arrivo
+      lo rimette in coda.
+  classification_input_tokens:
+    label: Token di input per la classificazione
+    help: Budget di token per il prompt di classificazione. I messaggi lunghi vengono
+      troncati, mantenendo l'inizio del corpo.
+  classification_model:
+    label: Modello di classificazione
+    help: Modello di chat usato per classificare ogni messaggio. Lascia vuoto per
+      usare il modello principale dell'agente.
+  classification_prompt:
+    label: Prompt di classificazione
+    help: Istruzioni che guidano il modo in cui il modello sceglie una categoria.
+  category_draft_reply:
+    label: Redigi una risposta
+    help: Se attivo, la posta smistata in questa categoria riceve una bozza di risposta
+      nella cartella Bozze, che una persona rilegge e invia. Nulla viene mai inviato.
+  draft_input_tokens:
+    label: Token di input della bozza
+    help: Budget di token per il prompt di redazione. Il corpo del messaggio viene
+      troncato e il testo degli allegati scartato per rispettarlo.
+  include_attachments:
+    label: Leggi gli allegati
+    help: Se attivo, il testo estratto dagli allegati viene fornito al modello oltre
+      al corpo. Ogni allegato costa una chiamata al parser di documenti.
+  max_attachments_per_message:
+    label: Allegati max per messaggio
+    help: Quanti allegati di un messaggio vengono letti, dal più grande.
+  min_attachment_bytes:
+    label: Dimensione minima allegato
+    help: Gli allegati più piccoli vengono ignorati. Loghi di firma e pixel di tracciamento
+      arrivano come allegati e non forniscono testo utile.
+  attachment_char_limit:
+    label: Limite di caratteri per allegato
+    help: Caratteri conservati dal testo estratto di un singolo allegato.

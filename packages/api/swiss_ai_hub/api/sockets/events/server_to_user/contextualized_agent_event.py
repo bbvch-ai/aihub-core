@@ -19,6 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
     ConversationTitleEvent,
+    CronStartEvent,
     DisplayEvent,
     EmbeddingEvent,
     ExceptionEvent,
@@ -40,6 +41,8 @@ from swiss_ai_hub.core.events.agent import (
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
+    MailBatchClassifiedEvent,
+    MailBatchDraftedEvent,
     MailFetchedEvent,
     MailMovedEvent,
     MetaQuestionDetectedEvent,
@@ -106,6 +109,7 @@ DisplayEvents = (
     | Annotated[ToolEvent, Tag("ToolEvent")]
     | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
     | Annotated[RAGStartEvent, Tag("RAGStartEvent")]
+    | Annotated[CronStartEvent, Tag("CronStartEvent")]
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
     | Annotated[RAGSuccessStopEvent, Tag("RAGSuccessStopEvent")]
     | Annotated[RAGFailureStopEvent, Tag("RAGFailureStopEvent")]
@@ -129,6 +133,8 @@ DisplayEvents = (
     | Annotated[UnreadMailListedEvent, Tag("UnreadMailListedEvent")]
     | Annotated[MailFetchedEvent, Tag("MailFetchedEvent")]
     | Annotated[MailMovedEvent, Tag("MailMovedEvent")]
+    | Annotated[MailBatchDraftedEvent, Tag("MailBatchDraftedEvent")]
+    | Annotated[MailBatchClassifiedEvent, Tag("MailBatchClassifiedEvent")]
 )
 
 

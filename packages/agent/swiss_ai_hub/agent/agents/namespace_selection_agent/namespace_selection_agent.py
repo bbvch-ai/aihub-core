@@ -4,9 +4,13 @@ from typing import ClassVar
 
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoop,
+    LLMStopEvent,
+    MetaQuestionDetectedEvent,
+    NotAMetaQuestionEvent,
     RAGStartEvent,
     StopEvent,
     UserMessageEvent,
@@ -43,6 +47,12 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.utils import (
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
+from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
+from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
+    do_answer_meta_question,
+    do_detect_meta_question,
+)
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -59,15 +69,27 @@ NAMESPACE_SELECTION_KEY = "namespace_selection"
 
 
 @precondition()
-async def needs_selection(thread_context: ThreadContext) -> bool:
-    """Check if user needs to select namespaces (no existing selection)."""
+async def needs_selection(
+    thread_context: ThreadContext,
+    start_event: UserMessageEvent,
+    clear: NotAMetaQuestionEvent | None = None,
+) -> bool:
+    """Check if user needs to select namespaces (no existing selection), gated by meta-question detection."""
+    if not check_passed_meta_question_gate(start_event, clear):
+        return False
     selection = await thread_context.get(NAMESPACE_SELECTION_KEY)
     return selection is None
 
 
 @precondition()
-async def has_selection(thread_context: ThreadContext) -> bool:
-    """Check if user already has namespace selection stored."""
+async def has_selection(
+    thread_context: ThreadContext,
+    start_event: UserMessageEvent,
+    clear: NotAMetaQuestionEvent | None = None,
+) -> bool:
+    """Check if user already has namespace selection stored, gated by meta-question detection."""
+    if not check_passed_meta_question_gate(start_event, clear):
+        return False
     selection = await thread_context.get(NAMESPACE_SELECTION_KEY)
     return selection is not None
 
@@ -112,6 +134,55 @@ class NamespaceSelectionAgent(Agent):
     )
     icon: ClassVar[str] = "mage:book"
 
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
+        icon="mdi:help-circle-outline",
+    )
+    async def detect_meta_question_step(
+        self,
+        event: UserMessageEvent,
+        agent_config: NamespaceSelectionAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        user: UserIdentity,
+    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
+        """Gate every chat message: classify it as a meta question or release the normal pipeline."""
+        return await do_detect_meta_question(
+            user_query=event.user_query,
+            llm_config=agent_config.task_llm,
+            displayer=displayer,
+            user=user,
+            t=t,
+        )
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
+        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
+        icon="mdi:account-voice",
+    )
+    async def answer_meta_question_step(
+        self,
+        event: MetaQuestionDetectedEvent,
+        user_message_event: UserMessageEvent,
+        agent_config: NamespaceSelectionAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        user: UserIdentity,
+    ) -> LLMStopEvent:
+        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
+        return await do_answer_meta_question(
+            event=event,
+            agent_name=t.extract(agent_config.name),
+            agent_description=t.extract(agent_config.description),
+            workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
+            chat_history=user_message_event.messages,
+            llm_config=agent_config.task_llm,
+            displayer=displayer,
+            user=user,
+            t=t,
+        )
+
     # === First-time flow: No selection exists ===
 
     @step(
@@ -129,6 +200,7 @@ class NamespaceSelectionAgent(Agent):
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> DetermineNamespacesEvent:
         """Fetch namespaces, store original query, and start determination loop."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.fetching_namespaces"))
@@ -173,6 +245,7 @@ class NamespaceSelectionAgent(Agent):
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> FollowUpQuestionRequestEvent | NamespaceApprovalRequestEvent | DetermineNamespacesEvent:
         """Use LLM to determine if enough info exists to select namespaces."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.analyzing_request"))
@@ -187,7 +260,7 @@ class NamespaceSelectionAgent(Agent):
         logger.debug("Formatted namespaces string:\n%s", namespaces_str)
         logger.debug("Conversation history:\n%s", conversation_str)
 
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.task_llm.cost_reporting_llm(displayer, user=user) as llm:
             prompt = RichPromptTemplate(t("agent.namespace_selection_agent.prompts.determination"))
             decision: NamespaceDecision = await llm.astructured_predict(
                 NamespaceDecision,
@@ -389,6 +462,7 @@ class NamespaceSelectionAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        _clear: NotAMetaQuestionEvent | None = None,
     ) -> AgentInTheLoop.request:
         """Forward message to RAG agent with stored namespace selection."""
         selected: dict[str, str] = await thread_context.get(NAMESPACE_SELECTION_KEY, {})

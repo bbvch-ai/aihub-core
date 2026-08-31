@@ -223,6 +223,11 @@ rag_start_event:
     le contexte pertinent depuis les sources de connaissances sélectionnées — en utilisant
     les namespaces choisis et d'éventuels filtres de métadonnées — avant de générer
     une réponse.
+cron_start_event:
+  name: Exécution Planifiée Démarrée
+  description: Une exécution planifiée a été démarrée automatiquement par le planificateur
+    cron à l'heure configurée. Aucun utilisateur ne l'a initiée — l'exécution se déroule
+    comme une exécution système sans identité d'exécution.
 rag_success_stop_event:
   name: Succès RAG
   description: L'exécution augmentée par récupération a produit une réponse pour l'utilisateur.
@@ -241,3 +246,12 @@ mail_moved_event:
   name: E-mail Déplacé
   description: L'agent a déplacé un message de son dossier source vers un dossier
     cible.
+mail_batch_classified_event:
+  name: Lot classé
+  description: L'agent a classé un lot de messages non lus et a rangé chacun dans
+    le dossier de sa catégorie, ou dans le dossier de repli lorsqu'il n'était pas
+    sûr.
+mail_batch_drafted_event:
+  name: Lot Rédigé
+  description: L'agent a rédigé des réponses pour un lot de messages et les a ajoutées
+    au dossier des brouillons pour qu'un humain les révise et les envoie.

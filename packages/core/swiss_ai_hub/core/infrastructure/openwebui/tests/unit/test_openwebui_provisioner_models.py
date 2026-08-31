@@ -102,13 +102,34 @@ class TestSyncWorkspaceModels:
 
     @pytest.mark.asyncio
     async def test_sync_deletes_model_for_offline_agent(self, provisioner: OpenWebuiProvisioner) -> None:
+        """A stale model still goes, as long as something is online to make 'stale' meaningful."""
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
             patch.object(
                 provisioner._openwebui,
                 "list_models",
-                return_value=[{"id": "aihub-agent-rag-default"}],
+                return_value=[{"id": "aihub-agent-rag-default", "name": "RAG Agent"}, {"id": "aihub-agent-gone-old"}],
+            ),
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
+
+            mock_create.assert_not_called()
+            mock_delete.assert_called_once_with(mock_client, "aihub-agent-gone-old")
+
+    @pytest.mark.asyncio
+    async def test_sync_skips_deletion_when_no_agent_is_online(self, provisioner: OpenWebuiProvisioner) -> None:
+        """An empty online set means agent downtime, not deprovisioning — deleting every model on a
+        cold start where the API pod outraces the agent pods would wipe the whole picker."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": "aihub-agent-rag-default"}, {"id": "aihub-agent-search-default"}],
             ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
@@ -116,7 +137,7 @@ class TestSyncWorkspaceModels:
             await provisioner._sync_workspace_models(mock_client, [])
 
             mock_create.assert_not_called()
-            mock_delete.assert_called_once_with(mock_client, "aihub-agent-rag-default")
+            mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_sync_updates_model_name_on_rename(self, provisioner: OpenWebuiProvisioner) -> None:

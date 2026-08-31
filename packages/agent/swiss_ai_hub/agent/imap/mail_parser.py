@@ -5,6 +5,7 @@ from email.utils import parsedate_to_datetime
 from swiss_ai_hub.core.events.agent import UnreadMailSummary
 
 from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment, ParsedMessage
+from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS
 
 
 class MailParser:
@@ -15,7 +16,7 @@ class MailParser:
         return UnreadMailSummary(
             message_id=message_id,
             sender=message.get("From", ""),
-            subject=message.get("Subject", ""),
+            subject=MailParser._bounded_subject(message),
             date=MailParser._parse_date(message.get("Date")),
             flags=flags,
         )
@@ -26,9 +27,16 @@ class MailParser:
         message: EmailMessage,
         max_body_bytes: int,
         max_attachment_bytes: int,
+        raw: bytes,
     ) -> ParsedMessage:
         """Parse a MIME message, truncating bodies and dropping oversized attachments so a hostile or
-        oversized mail can never bloat the persisted/streamed event or the agent's memory footprint."""
+        oversized mail can never bloat the persisted/streamed event or the agent's memory footprint.
+
+        ``raw`` is carried through untouched — the truncation above is what the *event* may show, never
+        what is archived, so the stored original stays byte-identical to what the server sent. It has no
+        default: a caller that does not archive must say so with ``b""`` rather than lose the original by
+        omission.
+        """
         body_text: str | None = None
         body_html: str | None = None
         attachments: list[ParsedAttachment] = []
@@ -59,12 +67,28 @@ class MailParser:
         return ParsedMessage(
             message_id=message_id,
             sender=message.get("From", ""),
-            subject=message.get("Subject", ""),
+            subject=MailParser._bounded_subject(message),
             date=MailParser._parse_date(message.get("Date")),
+            rfc_message_id=message.get("Message-ID"),
+            references=message.get("References"),
+            reply_to=message.get("Reply-To"),
             body_text=body_text,
             body_html=body_html,
             attachments=attachments,
+            raw=raw,
         )
+
+    @staticmethod
+    def _bounded_subject(message: EmailMessage) -> str:
+        """Cap the subject at parse time, the same place and for the same reason the body is capped.
+
+        The subject is attacker-controlled and reaches far more than the prompts: it is rendered into `ThoughtEvent`s
+        streamed to the frontend, persisted on `MailClassificationRef` in the audit trail, and copied onto the
+        drafted reply's own `Subject` header by `ReplyComposer`. Bounding it here rather than at each of those sites
+        is what stops the next one added from being unbounded again — a 196,000-character subject reached a real
+        mailbox before this existed.
+        """
+        return message.get("Subject", "")[:MAX_SUBJECT_CHARACTERS]
 
     @staticmethod
     def _decode_text(part: EmailMessage, max_bytes: int) -> str:

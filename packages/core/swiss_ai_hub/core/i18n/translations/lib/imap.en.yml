@@ -21,9 +21,14 @@ config:
   max_messages:
     label: Max Unread Messages
     help: Maximum number of unread messages listed per run.
+  enable_draft:
+    label: Draft Reply
+    help: When on, a reply to the fetched message is drafted and appended to the drafts
+      folder for a human to review and send. When off, the draft step is skipped.
   drafts_folder:
     label: Drafts Folder
-    help: Mailbox folder drafts are written to.
+    help: Mailbox folder reply drafts are appended to. If this folder is not found,
+      the server's Drafts special-use folder is used instead.
   enable_move:
     label: Move Fetched Mail
     help: When on, the fetched mail is moved into the processed folder after it is
@@ -31,3 +36,69 @@ config:
   processed_folder:
     label: Processed Folder
     help: Mailbox folder a processed mail is moved to when Enable Move is on.
+  source_folder:
+    label: Draft Source Folder
+    help: Mailbox folder the drafter reads candidate messages from. Point it at the
+      processed folder to draft mail filed there by the move step.
+  batch_size:
+    label: Draft Batch Size
+    help: Maximum number of messages drafted per run.
+  draft_model:
+    label: LLM Model
+    help: Chat model used to draft the reply body.
+  draft_prompt:
+    label: Draft Prompt
+    help: Instructions steering how the LLM drafts the reply body.
+  category_name:
+    label: Category
+    help: Name of the category, e.g. support_request. Must be unique.
+  category_folder:
+    label: Target Folder
+    help: Mailbox folder messages in this category are filed into. Created automatically
+      if it does not exist yet.
+  category_description:
+    label: What Belongs Here
+    help: Describe the kind of mail that belongs in this category. This is what the
+      model classifies on, so be concrete about intent rather than listing keywords.
+  fallback_folder:
+    label: Fallback Folder
+    help: Folder for mail the model is not confident about. Such mail is never guessed
+      into a category and never left in the inbox.
+  failure_folder:
+    label: Failure Folder
+    help: Folder for mail the classifier could not process at all. Such mail still
+      leaves the inbox, so one bad message cannot block every run behind it, and moving
+      it back to the inbox retries it.
+  classification_input_tokens:
+    label: Classification Input Tokens
+    help: Token budget for the classification prompt. Long messages are trimmed to
+      fit, keeping the opening of the body.
+  classification_model:
+    label: Classification Model
+    help: Chat model used to classify each message. Leave empty to use the agent's
+      main model.
+  classification_prompt:
+    label: Classification Prompt
+    help: Instructions steering how the model chooses a category.
+  category_draft_reply:
+    label: Draft a Reply
+    help: When on, mail filed under this category gets a drafted reply left in the
+      drafts folder for a human to review and send. Mail is never sent.
+  draft_input_tokens:
+    label: Draft Input Tokens
+    help: Input-token budget for the drafting prompt. The message body is trimmed,
+      and attachment text dropped, to stay within it.
+  include_attachments:
+    label: Read Attachments
+    help: When on, text extracted from the message's attachments is given to the model
+      alongside the body. Each attachment costs a document-parser round trip.
+  max_attachments_per_message:
+    label: Max Attachments Per Message
+    help: How many of a message's attachments are read, largest first.
+  min_attachment_bytes:
+    label: Minimum Attachment Size
+    help: Attachments smaller than this are skipped. Signature logos and tracking
+      pixels arrive as attachments and yield no usable text.
+  attachment_char_limit:
+    label: Attachment Character Limit
+    help: Characters kept from a single attachment's extracted text.
