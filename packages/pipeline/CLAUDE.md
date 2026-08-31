@@ -17,10 +17,13 @@ packages/pipeline/                        # SDK framework
 │   │   ├── rclone_to_data_lake/           # Stage 1: observable_rclone
 │   │   └── local_files_system_to_data_lake/  # Stage 1: observable_local_file_system
 │   ├── io/                                # I/O managers (storage handlers)
-│   │   ├── s3_data_lake_io_manager.py      # S3/MinIO/SeaweedFS
-│   │   ├── azure_data_lake_io_manager.py   # Azure Data Lake Storage
-│   │   ├── doc_store_io_manager.py         # MongoDB document store
-│   │   ├── vector_store_io_manager.py      # Milvus vector store
+│   │   ├── s3_data_lake_io_manager.py      # S3/MinIO/SeaweedFS (Stage 1, one bucket)
+│   │   ├── azure_data_lake_io_manager.py   # Azure Data Lake Storage (Stage 1)
+│   │   ├── doc_store_io_manager.py         # MongoDB document store (Stage 1, one db)
+│   │   ├── routed_s3_data_lake_io_manager.py # Stage 2: bucket resolved per run
+│   │   ├── routed_doc_store_io_manager.py  # Stage 2: doc store resolved per run
+│   │   ├── vector_store_io_manager.py      # Stage 2: Milvus, collection resolved per run
+│   │   ├── ingestion_marking.py            # mark_ref_docs_as_ingested() — shared is_ingested flip
 │   │   ├── share_point_io_manager.py       # SharePoint (read-only)
 │   │   ├── rclone_io_manager.py            # Rclone 70+ backends (read-only)
 │   │   └── local_file_system_io_manager.py # Local/network filesystem (read-only)
@@ -43,6 +46,7 @@ packages/pipeline/                        # SDK framework
 │   ├── sensors/
 │   │   ├── factory.py                     # default_automation_sensor (auto-materialization)
 │   │   ├── run_after_success_sensor.py    # Chain a job after another job's successful run
+│   │   ├── run_failure_notification_sensor.py # Apprise alerts on any failed run
 │   │   ├── ingestor_registration_sensor.py # Advertise a custom pipeline as a selectable ingestor
 │   │   ├── knowledge_teardown_sensor.py   # Run teardown for databases/folders flagged `deleting`
 │   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
@@ -53,6 +57,8 @@ packages/pipeline/                        # SDK framework
 │   │       ├── observation_run_decider.py        # Pure request-or-wait decision
 │   │       ├── observation_run_history.py        # Run-tag lookups the cursor cannot hold
 │   │       └── per_bucket_observation_sensor_cursor.py  # One cursor slot, one state per database
+│   ├── services/
+│   │   └── knowledge_teardown_service.py  # Destroys a database/namespace across every store
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
 │   ├── executors/factory.py               # default_process_executor (in-process)
@@ -68,7 +74,10 @@ packages/pipeline/                        # SDK framework
 │   │   ├── document_ingestion_definitions_util.py         # document_ingestion_pipeline_definitions() — Stage 2, route-per-run (CRITICAL)
 │   │   ├── definitions_util.py            # Stage 1 source-specific builders
 │   │   ├── id_utils.py                    # uri_to_id() — URI to document ID (MD5 hash)
-│   │   ├── partition_utils.py             # replace_partition_keys() — dynamic partition management
+│   │   ├── partition_utils.py             # replace_partition_keys(), composite {bucket}|{uri} keys
+│   │   ├── run_routing.py                 # BUCKET_RUN_TAG, bucket_from_run_tag/_partition_key (CRITICAL)
+│   │   ├── store_builders.py              # build_vector_store/doc_store/s3_client for a bucket
+│   │   ├── model_builders.py              # Per-database LLM + embedding model and vector width
 │   │   ├── bucket_utils.py                # get_db_name_from_bucket_name() — S3 bucket → MongoDB name
 │   │   ├── key_utils.py                   # group_name_from_asset_key() — asset group derivation
 │   │   └── meta_utils.py                  # data_lake_metadata_table() — Dagster UI formatting
@@ -122,8 +131,8 @@ document has markdown but no embeddings, so it is not retrievable yet and must n
 
 ## The `document_ingestion_pipeline_definitions()` Function
 
-The primary entry point for creating a Stage-2 pipeline. Located in `util/document_ingestion_definitions_util.py`. Returns a complete
-`Definitions` object with all assets, resources, sensors, jobs, and schedules wired together.
+The primary entry point for creating a Stage-2 pipeline. Located in `util/document_ingestion_definitions_util.py`.
+Returns a complete `Definitions` object with all assets, resources, sensors, jobs, and schedules wired together.
 
 **It carries no bucket name.** One deployment serves every knowledge database whose `BucketEntity.ingestor` matches,
 resolving the target per run — from the composite partition key `{bucket}|{file_uri}` on the write path, from the
@@ -133,7 +142,7 @@ compose service, or env var.
 ```python
 defs = document_ingestion_pipeline_definitions(
     ingestor="document_ingestion",                                    # routing key; namespaces every global Dagster name
-    display_name=LocaleString(en="My RAG"),            # required for a custom ingestor, omitted for "rag"
+    display_name=LocaleString(en="My Pipeline"),       # required for a custom ingestor, omitted for the platform one
     description=LocaleString(en="What it does"),
     embedding_model_name="embedding/large",            # LiteLLM model for embeddings
     llm_model_name="text-generation/mini",             # LiteLLM model for text generation
@@ -150,17 +159,107 @@ is derived from `ingestor`, because asset keys are unique per Dagster deployment
 to the instance. That is what lets a second pipeline *type* be deployed alongside this one.
 
 A custom ingestor must pass `display_name`/`description`: a sensor upserts them as an `IngestorEntity` so the API's
-`GET /knowledge/ingestors` can offer the pipeline in the create-database dialog. Ids colliding with a platform routing
-token (`rag`, `unassigned`, the frozen `default_rag`/`shared_rag`) or with the `datalake` subject token are rejected.
+`GET /knowledge/ingestors` can offer the pipeline in the create-database dialog. See
+[Making a Custom Pipeline Selectable](#making-a-custom-pipeline-selectable-in-the-ui) for the full mechanism.
 
-The deployed app reads its knobs from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`) rather than hardcoding them.
+The deployed app reads its knobs from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`) rather than
+hardcoding them.
 
-Source-specific definition builders for Stage 1 (combine with `document_ingestion_pipeline_definitions()` for end-to-end), in
-`util/definitions_util.py`:
+Source-specific definition builders for Stage 1 (combine with `document_ingestion_pipeline_definitions()` for
+end-to-end), in `util/definitions_util.py`:
 
 - `default_sharepoint_to_datalake_definitions(...)` — SharePoint → S3
 - `default_local_filesystem_to_datalake_definitions(...)` — Local FS → S3
 - `default_rclone_to_datalake_definitions(...)` — Any rclone backend → S3
+
+## Making a Custom Pipeline Selectable in the UI
+
+A deployment can ship its own ingestion pipeline and have it appear in the create-database dialog alongside the
+platform's, without forking anything. This is the mechanism.
+
+**Why a database and not a registry.** The API and the pipelines are separate containers. An in-process registry inside
+a pipeline can never be read by the API, and one inside the API would only ever list what happens to be installed in the
+*API* image — which is exactly the wrong authority, since whether an ingestor exists is decided by what is *deployed*,
+not by what is importable. Mongo is infrastructure both sides already share, so the pipeline writes its own metadata
+there and the API reads it.
+
+**What you write.** Nothing but the three arguments:
+
+```python
+defs = document_ingestion_pipeline_definitions(
+    ingestor="acme_ocr",                                  # your routing id, globally unique
+    display_name=LocaleString(en="ACME OCR", de="ACME OCR"),
+    description=LocaleString(en="OCR-heavy ingestion for scanned contracts"),
+)
+```
+
+**What happens then.** `document_ingestion_pipeline_definitions` adds an `IngestorRegistrationSensorFor_{ingestor}`
+sensor to the returned `Definitions`. It ships `DefaultSensorStatus.RUNNING`, so it is live the moment the code location
+loads — nobody has to enable it in the Dagster UI. Every 300 s it upserts an `IngestorEntity` and returns a
+`SkipReason`; it never launches a run. The upsert is idempotent and last-writer-wins on the labels, so redeploying with
+a changed `display_name` updates it.
+
+Registration is a **sensor rather than an import-time write** on purpose: a momentary Mongo outage would otherwise take
+the whole code location down at load, and this way it simply re-registers on the next tick once the database is back.
+
+**What the API does with it.** `GET /knowledge/ingestors` returns `IngestorType.selectable()` (the platform's own,
+localized from `api/i18n/translations/api/ingestors.*.yml`) **plus** `IngestorEntity.custom()` (yours, localized from
+the labels you passed — they travel on the row because a custom pipeline's translations live in the deployment, not in
+core). `create_database` then gates the submitted value on `IngestorEntity.is_selectable`. The `ingestor` field is a
+plain `str` across the API boundary, not the `IngestorType` enum, precisely so a deployment-defined value is
+representable on the wire.
+
+**Id rules.** `^[a-z][a-z0-9_]*$`, and it may not be a reserved id — `IngestorEntity.reserved_ids()` is every
+`IngestorType` value (`unassigned`, `document_ingestion`, and the frozen `default_rag` / `shared_rag`, which stay
+reserved after their code is gone so nothing can adopt a legacy corpus) plus every `PipelineSourceType` value
+(`datalake`, which would collide with the legacy per-instance streams in the subject grammar).
+
+**The id is not just a label.** Every deployment-global name is derived from it, because asset keys are unique per
+Dagster deployment and `DynamicPartitionsDefinition` names are global to the instance:
+
+| Derived name             | Shape                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| Asset keys               | `[{ingestor}_datalake_to_vectorstore, data_lake\|documents\|nodes\|…]`        |
+| Partition registry       | `{ingestor}_document_partitions`                                              |
+| Job names                | `{ingestor}_source_observation`, `…_remove_documents`, `…_knowledge_teardown` |
+| JetStream stream/subject | `pipeline_{ingestor}_stream` / `pipeline.{ingestor}.>`                        |
+| Dagster intermediates    | `s3://dagster/{ingestor}/`                                                    |
+
+That is what lets two pipeline *types* run side by side. It also means **changing the id later strands everything**:
+existing databases still carry the old value in `BucketEntity.ingestor` and would stop being claimed, and the old
+stream, partitions and asset history are orphaned. Choose it once.
+
+**Failure modes, all at `Definitions`-build time (loud, not silent):**
+
+| Situation                                  | Result                                                  |
+| ------------------------------------------ | ------------------------------------------------------- |
+| Custom id, no `display_name`/`description` | `ValueError` — it could only render as a bare id        |
+| Reserved id (`datalake`)                   | `ValueError` — would collide in the subject grammar     |
+| A platform id (`document_ingestion`, …)    | No sensor added; the API already knows and localizes it |
+
+If the pipeline never appears in the dialog, check in this order: the code location loaded, the sensor exists and is
+running in the Dagster UI, the `ingestors` collection has your row, and the API can reach the same Mongo.
+
+## Per-Database Models
+
+Stage 2 serves many knowledge databases, so the models cannot be baked into a resource at build time any more than a
+store can. `util/model_builders.py` resolves them from the bucket, per run:
+
+- `llm_model_name_for_bucket` / `embedding_model_name_for_bucket` read `BucketEntity.llm_model` / `.embedding_model`,
+  falling back to the deployment default (`DocumentIngestionPipelineSettings`) when the row names none — which is what a
+  database created before models were configurable keeps using.
+- `embedding_dimension_for_bucket` derives the collection's vector width from the embedding model's declared
+  `output_vector_size`. **Not** from a `MILVUS_DIMENSION` setting: a dimension configured independently of the model is
+  not rejected by Milvus, it silently truncates or pads every vector. The API refuses an embedding model that declares
+  no `output_vector_size` for the same reason.
+- `build_embedding_model` / `build_language_model` are `@cache`d per bucket, so a partition-per-document graph reuses
+  one client.
+
+Both fields are set at create time and are not updatable — `update_bucket` exposes no parameter for either.
+
+**Known gap:** retrieval still reads a per-agent `embed_model`, so a database ingested with one embedding model can be
+queried with another. The contract is enforced on the write path only. See ADR
+`2026_08_31_per_database_models_and_embedding_contract` and #1782.
 
 ## Asset Factory Pattern
 
@@ -212,11 +311,13 @@ assets.
 - `S3DataLakeIOManager` — S3/MinIO/SeaweedFS. Metadata stored as S3 object tags.
 - `AzureDataLakeIOManager` — Azure Data Lake Storage. URL-quoted metadata encoding.
 - `DocStoreIOManager` — MongoDB via LlamaIndex `KVDocumentStore`. URI → document ID via `uri_to_id()`.
-- `VectorStoreIOManager` — Milvus. Upsert mode. 30s retry logic for eventual consistency. Filters by `DOCUMENT_ID`.
-  After a successful write it also flips the source `RefDoc`'s `is_ingested` to `True` (via `RefDoc.mark_ingested`,
-  resolving each document from `node.ref_doc_id`). This deliberately lives in the IO manager, not in an op: the Milvus
-  write happens during output handling, so an op could only ever mark the documents *before* their nodes are actually
-  retrievable — which is the bug it guards against. It needs `document_store_name` (the Mongo db alias) at construction.
+- `VectorStoreIOManager` — Milvus, **collection resolved per run**. Upsert mode. 30s retry logic for eventual
+  consistency. Filters by `DOCUMENT_ID`. After a successful write it also flips the source `RefDoc`'s `is_ingested` to
+  `True` (`io/ingestion_marking.py`, resolving each document from `node.ref_doc_id`). This deliberately lives in the IO
+  manager, not in an op: the Milvus write happens during output handling, so an op could only ever mark the documents
+  *before* their nodes are actually retrievable — which is the bug it guards against. It takes no store name: the bucket
+  comes from the composite partition key, and the collection and its vector width from that bucket.
+- `RoutedS3DataLakeIOManager`, `RoutedDocStoreIOManager` — the Stage-2 read/write pair, same routing rule.
 
 **Read-Only** (source connectors — `handle_output()` raises `NotImplementedError`):
 
@@ -257,7 +358,8 @@ assets.
 - `TableRefinementResource` — LLM-powered table detection and structure splitting.
 
 **LLM/Embedding**: `EmbeddingModelResource` (wraps `EmbeddingModelConfig`), `LanguageModelResource` (wraps `LLMConfig`).
-Both use LiteLLM model names.
+Both use LiteLLM model names and bind one model at build time, so — like the store resources — they serve **Stage 1
+only**. Stage 2 resolves its models per database (see [Per-Database Models](#per-database-models)).
 
 **Storage**: `MongoDocumentStoreResource` (LlamaIndex `MongoDocumentStore`), `MilvusVectorStoreResource` (uri,
 collection_name, dimensions, index_type: HNSW or IVF_FLAT). These bind one store at `Definitions`-build time, so they
@@ -270,15 +372,15 @@ therefore comes from `util/store_builders.py`, keyed by a bucket each op and IO 
 via `util/run_routing.py`. One factory, one `context → bucket → store` shape, no per-run store resources. Do not
 reintroduce one: it would recreate the second construction path this replaced.
 
-**Resource factory** (`resources/factory.py`) — assembles resource dicts for `Definitions`:
+**Resource factory** (`resources/factory.py`) — assembles resource dicts for `Definitions`. All of these bind one store
+at build time, so they serve **Stage 1**; Stage 2 builds its stores per run instead (see below):
 
 - `s3_data_lake_resources(container_name)` — client, file_system, io_manager, resource
+- `azure_data_lake_resources(...)` — the Azure equivalent
 - `mongo_document_store_resource(store_name)` — doc_store, io_manager, resource
-- `milvus_vector_store_resource(vector_store_uri, vector_store_name, dimensions, document_store_name)` — vector_store,
-  io_manager. `document_store_name` is the Mongo alias the IO manager uses to flip `is_ingested` after a write.
+- `default_llm_resources()` — `embedding_model` + `language_model` for pipelines that want fixed models
 - `default_io_manager_s3_datalake_resources(container_name)` — Dagster PickleIOManager for inter-op data; intermediates
   land in the shared `dagster` bucket under `<container_name>/` with a bucket-wide 1-day TTL.
-- `local_mongo_milvus_storage_context_resource(vector_store_uri, store_name, dimensions)` — combined MongoDB + Milvus
 
 ## Observable Assets & Dynamic Partitions
 
@@ -312,44 +414,43 @@ Four triggering mechanisms work together:
 - **Eager automation**: `AutomationCondition.eager()` on downstream assets — materialize immediately when upstream
   changes. Enabled by `default_automation_sensor(assets, minimum_interval_seconds=60)`.
 - **NATS sensor**: `nats_document_uploaded_sensor` — polls JetStream for `SourceUpdatedEvent` via
-  `PipelineTypeTopicManager`. Triggers the observe job when documents are uploaded externally (e.g., via API).
-  **One stream per pipeline, not per database**: the subject is keyed on the ingestor
+  `PipelineTypeTopicManager`. Triggers the observe job when documents are uploaded externally (e.g., via API). **One
+  stream per pipeline, not per database**: the subject is keyed on the ingestor
   (`pipeline.{ingestor}.{bucket}.to.knowledge.{db}.…`), so the sensor holds a single stream and a single durable
   consumer however many databases it serves. Each tick drains that stream once, groups the batch by the bucket in the
-  subject, and then decides per database.
-  **Single-flight**: an observation scans the whole bucket, so the sensor never requests a second one for that bucket
-  while one is queued or running (`SingleFlightRunGuard`, filtered by the `aihub/bucket` tag — without that filter one
-  database's run would suppress every other's). It does not cancel or queue runs; the second request is simply never
-  made. Events seen during a run arm exactly one follow-up via that bucket's cursor
-  (`PerBucketObservationSensorCursor` wrapping `ObservationSensorCursor`), because a running observation may already
-  have listed the bucket before those files landed. A 30 s debounce (`DEBOUNCE_SECONDS`) collects a burst into one
-  request, and the whole JetStream backlog drains per tick rather than one fetch of ten. Run keys are derived from the
-  highest stream sequence plus a re-arm counter, so Dagster's own run-key deduplication acts as a second line of
+  subject, and then decides per database. **Single-flight**: an observation scans the whole bucket, so the sensor never
+  requests a second one for that bucket while one is queued or running (`SingleFlightRunGuard`, filtered by the
+  `aihub/bucket` tag — without that filter one database's run would suppress every other's). It does not cancel or queue
+  runs; the second request is simply never made. Events seen during a run arm exactly one follow-up via that bucket's
+  cursor (`PerBucketObservationSensorCursor` wrapping `ObservationSensorCursor`), because a running observation may
+  already have listed the bucket before those files landed. A 30 s debounce (`DEBOUNCE_SECONDS`) collects a burst into
+  one request, and the whole JetStream backlog drains per tick rather than one fetch of ten. Run keys are derived from
+  the highest stream sequence plus a re-arm counter, so Dagster's own run-key deduplication acts as a second line of
   defence.
 - **Teardown sensor**: `knowledge_teardown_sensor` — no NATS at all. It enumerates the `BucketEntity` /
   `NamespaceEntity` rows flagged `deleting` and requests a teardown run per flagged row. The flag *is* the durable
-  request, so nothing can be acknowledged and then lost. The run key is numbered by how many runs the target has
-  already had, which keeps it stable while an attempt is pending and lets a failed teardown re-drive.
+  request, so nothing can be acknowledged and then lost. The run key is numbered by how many runs the target has already
+  had, which keeps it stable while an attempt is pending and lets a failed teardown re-drive.
 - **Daily schedules**: `daily_schedule_at(job, hour, minute)` — cron-based observation for sources that don't push
   events.
 - **Run-status chaining**: `run_after_success_sensor(monitored_job=..., triggered_job=...)` — fires `triggered_job`
   after `monitored_job` succeeds. Used to order observe → remove jobs, since Dagster forbids mixing observable source
   assets with regular assets in a single `define_asset_job` selection. All definition builders wire this automatically;
   the remove job no longer has its own schedule. Single-flight applies here too: the removal also compares the whole
-  corpus, so one already in flight covers the observation that just succeeded, and the request is keyed on the
-  observing run id so retries deduplicate. With `require_bucket_tag=True` the triggered run inherits the observe run's
+  corpus, so one already in flight covers the observation that just succeeded, and the request is keyed on the observing
+  run id so retries deduplicate. With `require_bucket_tag=True` the triggered run inherits the observe run's
   `aihub/bucket` tag and the coverage check is scoped to that bucket.
 
-**Run priority**: `observe_source_job` and `materialize_asset_job` tag their runs
-`dagster/priority: "10"` (`ORCHESTRATION_RUN_PRIORITY` in `jobs/factory.py`). `QueuedRunCoordinator` sorts the whole
-queue by that tag before trimming to the dequeue batch, but every run defaults to `0` — which collapses the sort into
-plain FIFO and lets a bulk upload strand an observation behind the hundreds of per-document ingestion runs it just
-authorized. Observation and removal are cheap and gate everything downstream, so they jump the backlog. This is
-ordering only, not reserved capacity: no slot is ever held idle, and ingestion still uses every slot when nothing
-else is waiting. Dagster cannot preempt a *running* run, so the wait is bounded by one ingestion run rather than by
-zero. Only the sensor daemon and the scheduler apply a job's `run_tags`, so runs launched through
-`DagsterGraphQLClient` (or any caller that passes its own tags) land at priority 0 — the sensor, chaining sensor and
-daily schedule paths, which is every automated launch, all carry it.
+**Run priority**: `observe_source_job` and `materialize_asset_job` tag their runs `dagster/priority: "10"`
+(`ORCHESTRATION_RUN_PRIORITY` in `jobs/factory.py`). `QueuedRunCoordinator` sorts the whole queue by that tag before
+trimming to the dequeue batch, but every run defaults to `0` — which collapses the sort into plain FIFO and lets a bulk
+upload strand an observation behind the hundreds of per-document ingestion runs it just authorized. Observation and
+removal are cheap and gate everything downstream, so they jump the backlog. This is ordering only, not reserved
+capacity: no slot is ever held idle, and ingestion still uses every slot when nothing else is waiting. Dagster cannot
+preempt a *running* run, so the wait is bounded by one ingestion run rather than by zero. Only the sensor daemon and the
+scheduler apply a job's `run_tags`, so runs launched through `DagsterGraphQLClient` (or any caller that passes its own
+tags) land at priority 0 — the sensor, chaining sensor and daily schedule paths, which is every automated launch, all
+carry it.
 
 **Partition-set convergence**: `replace_partition_keys` caps additions and deletions at `max_partitions` (default 1000).
 When it truncates, it logs a warning and tags its own run with `PARTITIONS_TRUNCATED_TAG` — a run cannot write its
@@ -378,24 +479,29 @@ failure alerts without per-asset wiring.
 
 ## Playground
 
-- `playground/__init__.py` — the real `document_ingestion_pipeline_definitions()` pipeline, plus a sensor that registers the
-  playground's own knowledge database
+- `playground/__init__.py` — the real `document_ingestion_pipeline_definitions()` pipeline, plus a sensor that registers
+  the playground's own knowledge database
 - `playground/quick_start/simple_pipeline.py` — Hello-world: 2 basic assets, no external deps
 - `playground/quick_start/my_document_pipeline.py` — Complete pipeline with all factories, resources, sensors
 
 Start: `make playground` or `uv run dagster dev -m playground` Access: http://localhost:3000 (Dagster UI)
 
+**Launching an observe or remove run by hand** (from the Dagster UI's Launchpad) requires the `aihub/bucket` run tag —
+`aihub/bucket: playground` in the playground. Those runs learn their target database from the tag, not from a partition
+key, so without it the run fails with a `ValueError` naming the missing tag. Sensor- and schedule-launched runs set it
+for you; only manual launches need it.
+
 ## Local Dagster Instance
 
-`make playground`, `make quickstart`, and `make document-ingestion-pipeline` each depend on the `dagster-home` target, which installs
-`dagster.local.yaml` into `$(DAGSTER_HOME)` as `dagster.yaml` (copy-if-absent), and source the repo-root `.env` for the
-dev-stack connection settings. Two failure modes this prevents: an unset `DAGSTER_HOME` makes `dagster dev` create a
-throwaway `.tmp_dagster_home_*` instance per start, and a missing instance config leaves `DefaultRunCoordinator` in
-place, which fans out runs with no cap and storms MinerU. `dagster.local.yaml` uses the same `QueuedRunCoordinator` as
-`infra/configs/dagster/dagster-config.<stage>.yml`, but with `max_concurrent_runs` as a literal instead of
-`env: DAGSTER_MAX_CONCURRENT_RUNS`. Keep it literal: the file is installed into `$DAGSTER_HOME`, so an unresolvable env
-var would raise `PostProcessingError` in every Dagster process on the machine, including ones started without the repo
-`.env` loaded.
+`make playground`, `make quickstart`, and `make document-ingestion-pipeline` each depend on the `dagster-home` target,
+which installs `dagster.local.yaml` into `$(DAGSTER_HOME)` as `dagster.yaml` (copy-if-absent), and source the repo-root
+`.env` for the dev-stack connection settings. Two failure modes this prevents: an unset `DAGSTER_HOME` makes
+`dagster dev` create a throwaway `.tmp_dagster_home_*` instance per start, and a missing instance config leaves
+`DefaultRunCoordinator` in place, which fans out runs with no cap and storms MinerU. `dagster.local.yaml` uses the same
+`QueuedRunCoordinator` as `infra/configs/dagster/dagster-config.<stage>.yml`, but with `max_concurrent_runs` as a
+literal instead of `env: DAGSTER_MAX_CONCURRENT_RUNS`. Keep it literal: the file is installed into `$DAGSTER_HOME`, so
+an unresolvable env var would raise `PostProcessingError` in every Dagster process on the machine, including ones
+started without the repo `.env` loaded.
 
 `DAGSTER_HOME ?= $(HOME)/.dagster_home` is defined in the Makefile and exported over whatever `.env` says — same
 directory, but already absolute, so the recipes can `mkdir`/`cp` with it. `.env` keeps the tilde form for the manual
@@ -422,16 +528,12 @@ location, customize. See `templates/sources/README.md` for the full guide includ
 
 `app/` contains deployable Dagster gRPC code locations:
 
-- `document_ingestion_pipeline/` — **the** document ingestion pipeline. One deployment ingests *every* knowledge database whose
-  `BucketEntity.ingestor` is `rag`, resolving the target bucket per run (composite partition key `{bucket}|{uri}` on the
-  write path, `aihub/bucket` run tag on the observe/remove path). Built by `document_ingestion_pipeline_definitions()` in
-  `util/document_ingestion_definitions_util.py`. Creating a knowledge database needs no new code location, compose service, or env var.
-  Every deployment-global name (asset keys, partition registry, jobs) is derived from the ingestor so a second pipeline
-  *type* can be deployed alongside it. A custom pipeline built with a non-`rag` ingestor becomes **user-selectable** by
-  passing `display_name`/`description`: a sensor upserts an `IngestorEntity`, which the API's
-  `GET /knowledge/ingestors` and `create_database` read. Registration goes through the database because the API is a
-  separate container — an in-process registry there would only ever see what is installed in the *API* image. The
-  `ingestor` field is a plain `str` at the API boundary precisely so custom values are representable — see ADR
+- `document_ingestion_pipeline/` — **the** document ingestion pipeline. One deployment ingests *every* knowledge
+  database whose `BucketEntity.ingestor` is `document_ingestion`, resolving the target bucket per run (composite
+  partition key `{bucket}|{uri}` on the write path, `aihub/bucket` run tag on the observe/remove path). Built by
+  `document_ingestion_pipeline_definitions()` in `util/document_ingestion_definitions_util.py`. Creating a knowledge
+  database needs no new code location, compose service, or env var. A deployment's own pipeline can run alongside it and
+  be user-selectable — see [Making a Custom Pipeline Selectable](#making-a-custom-pipeline-selectable-in-the-ui) and ADR
   `2026_06_18_rag_pipeline_route_per_run`.
 
 The legacy `default_rag_pipeline` / `shared_rag_pipeline` are **gone**: their code is deleted and their last published
@@ -454,13 +556,20 @@ Run it locally: `make document-ingestion-pipeline`.
 
 ## New Pipeline Checklist
 
-1. Choose approach: `document_ingestion_pipeline_definitions()` for Stage 2 only, or add Stage 1 source definition builder
+1. Choose approach: `document_ingestion_pipeline_definitions()` for Stage 2 only, or add Stage 1 source definition
+   builder
 2. For new source: create observable factory + source I/O manager + source resource in `resources/`
 3. For custom processing: create ops in `ops/`, compose into `@graph_asset` factory in `assets/factories/`
 4. Wire into `Definitions` with resources, sensors, jobs, schedules
-5. Test in playground: `make playground` → materialize in Dagster UI at http://localhost:3000
-6. Deploy: create `app/{pipeline_name}/` with `__init__.py` + `Dockerfile`
-7. Run `make test`
+5. If it is a **Stage-2 pipeline users should be able to pick**: choose a permanent `ingestor` id and pass
+   `display_name`/`description` — see
+   [Making a Custom Pipeline Selectable](#making-a-custom-pipeline-selectable-in-the-ui). Verify the row lands in the
+   `ingestors` collection and the entry appears in the create-database dialog.
+6. Test in playground: `make playground` → materialize in Dagster UI at http://localhost:3000
+7. Deploy: create `app/{pipeline_name}/` with `__init__.py` + `Dockerfile`, and add a code location to
+   `infra/deployment/templates/configs/workspace.yml.j2` plus an image entry in `infra/deployment/compose-config.yml`,
+   then `make generate-compose`
+8. Run `make test`
 
 ## Essential Files
 
@@ -487,10 +596,15 @@ SharePointFile, RcloneFile
 **Resources**: `packages/pipeline/swiss_ai_hub/pipeline/resources/` — data_lake/ (base, s3, azure), parser/,
 vector_store/, doc_store/, llm/, share_point/, rclone/, local_file_system/
 
-**Sensors**: `packages/pipeline/swiss_ai_hub/pipeline/sensors/nats/nats_document_uploaded_sensor.py`
+**Sensors**: `packages/pipeline/swiss_ai_hub/pipeline/sensors/` — `nats/nats_document_uploaded_sensor.py` (uploads),
+`knowledge_teardown_sensor.py` (deletions), `ingestor_registration_sensor.py` (UI selectability),
+`run_after_success_sensor.py` (job chaining), `run_failure_notification_sensor.py` (alerting)
 
-**Utilities**: `packages/pipeline/swiss_ai_hub/pipeline/util/` — definitions_util, id_utils, partition_utils,
-bucket_utils, key_utils
+**Route-per-run core** (read these before touching Stage 2): `util/run_routing.py` (how a run learns its bucket),
+`util/store_builders.py` (bucket → stores), `util/model_builders.py` (bucket → models and vector width),
+`util/partition_utils.py` (composite `{bucket}|{uri}` keys)
+
+**Utilities**: `packages/pipeline/swiss_ai_hub/pipeline/util/` — definitions_util, id_utils, bucket_utils, key_utils
 
 **App**: `app/document_ingestion_pipeline/__init__.py`
 
