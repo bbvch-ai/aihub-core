@@ -15,16 +15,16 @@ the API already enumerates all databases at runtime. The blocker was purely in t
 A "knowledge database" is a `BucketEntity`; "folder"/"namespace" is a `NamespaceEntity` row; a chunk carries `namespace`
 \+ `document_id` but no `db` field — database identity is simply *which Milvus collection it lives in*.
 
-**Scope: Stage 2 only.** "document ingestion pipeline" here means the data lake → vector store stage (parse, chunk, embed, index). The
-Stage 1 source connectors (SharePoint, rclone, local filesystem → data lake) are unchanged and remain per-source, and a
-deployment is still free to build its own Stage 1 + Stage 2 pipeline for its own bucket. This decision is about how
-knowledge databases are *ingested from the data lake*, not about how documents get into it.
+**Scope: Stage 2 only.** "document ingestion pipeline" here means the data lake → vector store stage (parse, chunk,
+embed, index). The Stage 1 source connectors (SharePoint, rclone, local filesystem → data lake) are unchanged and remain
+per-source, and a deployment is still free to build its own Stage 1 + Stage 2 pipeline for its own bucket. This decision
+is about how knowledge databases are *ingested from the data lake*, not about how documents get into it.
 
 ## Decision Drivers
 
 - *Self-service*: users must create knowledge databases from the UI with no deployment.
-- *One pipeline, many databases*: exactly one deployed ingestion pipeline of a given type should ingest all databases it owns,
-  reading their configs from MongoDB at runtime.
+- *One pipeline, many databases*: exactly one deployed ingestion pipeline of a given type should ingest all databases it
+  owns, reading their configs from MongoDB at runtime.
 - *Isolation preserved*: each database keeps its own vector collection and document store.
 - *No disruption / no reprocessing*: the existing `default`/`shared` databases must keep ingesting and serving
   unchanged, with no re-parse/re-embed of existing corpora.
@@ -51,38 +51,37 @@ knowledge databases are *ingested from the data lake*, not about how documents g
 
 ## Decision
 
-Add a new, **additive** `document_ingestion_pipeline` that ingests all knowledge databases tagged for it, and leave the legacy
-pipelines untouched.
+Add a new, **additive** `document_ingestion_pipeline` that ingests all knowledge databases tagged for it, and leave the
+legacy pipelines untouched.
 
-1. **`ingestor` field on `BucketEntity`** (`unassigned` / `default_rag` / `shared_rag` / `document_ingestion`) records which deployed
-   pipeline owns a database. It is the routing guard that lets the new pipeline coexist with the legacy ones. The
-   startup seeder labels the two managed buckets `default_rag`/`shared_rag`.
+1. **`ingestor` field on `BucketEntity`** (`unassigned` / `default_rag` / `shared_rag` / `document_ingestion`) records
+   which deployed pipeline owns a database. It is the routing guard that lets the new pipeline coexist with the legacy
+   ones. The startup seeder labels the two managed buckets `default_rag`/`shared_rag`.
 
    **The field default is the inert `unassigned`, and this is load-bearing for upgrades.** Rows written by releases
    predating the field have no `ingestor` key, and MongoEngine applies the *field default* when the key is absent — so
-   defaulting to `document_ingestion` would make every knowledge database in an upgraded deployment read as owned
-   by the document ingestion pipeline,
-   which would then claim it and re-parse + re-embed its entire corpus alongside the deploy-bound pipeline that already
-   owns it. The seeder cannot be relied on to repair this: it only touches the two buckets it seeds, it is skipped
-   entirely when `CREATE_DEFAULT_BUCKETS` is off, and the pipeline's sensors do not wait for it. Deployments with
-   additional buckets and their own pipelines therefore would not be covered at all. With an inert default, an
-   un-migrated row is owned by nobody, the legacy pipelines keep working (they never read `ingestor`), and **no
-   migration script or operator action is required on upgrade**. The same default protects
+   defaulting to `document_ingestion` would make every knowledge database in an upgraded deployment read as owned by the
+   document ingestion pipeline, which would then claim it and re-parse + re-embed its entire corpus alongside the
+   deploy-bound pipeline that already owns it. The seeder cannot be relied on to repair this: it only touches the two
+   buckets it seeds, it is skipped entirely when `CREATE_DEFAULT_BUCKETS` is off, and the pipeline's sensors do not wait
+   for it. Deployments with additional buckets and their own pipelines therefore would not be covered at all. With an
+   inert default, an un-migrated row is owned by nobody, the legacy pipelines keep working (they never read `ingestor`),
+   and **no migration script or operator action is required on upgrade**. The same default protects
    `bucket_utils._get_or_create_bucket`, the path by which any pipeline auto-registers a bucket row it does not find.
 
-2. **Self-service create-database** API (`POST /knowledge/databases/{database}`, gated by `aihub.admin.knowledge` —
-   the knowledge root, since the database being created does not exist yet to be named by a rule) and UI, mirroring the
-   existing create-namespace flow. No deployment required. Creation grants the creator and their tenant admin on the
-   new database, and deletion revokes it; see ADR `2026_06_15_auto_grant_creator_access_to_agent_instances`.
+2. **Self-service create-database** API (`POST /knowledge/databases/{database}`, gated by `aihub.admin.knowledge` — the
+   knowledge root, since the database being created does not exist yet to be named by a rule) and UI, mirroring the
+   existing create-namespace flow. No deployment required. Creation grants the creator and their tenant admin on the new
+   database, and deletion revokes it; see ADR `2026_06_15_auto_grant_creator_access_to_agent_instances`.
 
 3. **The user selects the ingestor at creation time**, rather than it being assigned implicitly. The choice is offered
-   as a **server-provided, localized list** (`GET /knowledge/ingestors`), not a
-   client-side enum: the set of pipelines a database may be assigned to is a platform fact, so the API owns it and the
-   UI renders whatever it is given. `create_database` rejects a non-selectable ingestor with a 400.
+   as a **server-provided, localized list** (`GET /knowledge/ingestors`), not a client-side enum: the set of pipelines a
+   database may be assigned to is a platform fact, so the API owns it and the UI renders whatever it is given.
+   `create_database` rejects a non-selectable ingestor with a 400.
 
-   Only `document_ingestion` is selectable out of the box. `default_rag`/`shared_rag` are deliberately **excluded**: each is bound to a
-   single bucket by an env var at deploy time, so a database assigned to one of them would be silently never ingested.
-   They exist as `ingestor` values only to mark the legacy buckets for the routing guard.
+   Only `document_ingestion` is selectable out of the box. `default_rag`/`shared_rag` are deliberately **excluded**:
+   each is bound to a single bucket by an env var at deploy time, so a database assigned to one of them would be
+   silently never ingested. They exist as `ingestor` values only to mark the legacy buckets for the routing guard.
 
    A selector with one built-in option is intentional. When a second pipeline *type* is deployed (a different chunking
    strategy, an OCR-heavy variant, a tenant-specific pipeline), the database must record which one owns it — and that is
@@ -90,9 +89,9 @@ pipelines untouched.
 
    **Extending the selectable set — the pipeline registers itself.** A customer-specific deployment makes its own
    route-per-run pipeline selectable *without forking the platform*: it passes `display_name` and `description`
-   alongside its `ingestor` to `document_ingestion_pipeline_definitions`, and a sensor in that pipeline upserts an `IngestorEntity`
-   row. `GET /knowledge/ingestors` and `create_database` read that collection, so the ingestor is offered as soon as
-   the pipeline is deployed. No `IngestorType` change, no API contract change, no SDK regeneration.
+   alongside its `ingestor` to `document_ingestion_pipeline_definitions`, and a sensor in that pipeline upserts an
+   `IngestorEntity` row. `GET /knowledge/ingestors` and `create_database` read that collection, so the ingestor is
+   offered as soon as the pipeline is deployed. No `IngestorType` change, no API contract change, no SDK regeneration.
 
    The registration goes through the database rather than through the API's own process because the two are separate
    containers. An in-memory registry, or one populated from Python entry points, is only ever visible to the process
@@ -100,11 +99,11 @@ pipelines untouched.
    image, a coupling that is invisible and fails silently: deploy the pipeline, forget the API image, and the ingestor
    simply never shows up. Mongo is infrastructure both sides already share, and it mirrors how ownership is resolved in
    the other direction (which buckets an ingestor owns is a runtime `BucketEntity` query). Registering from a sensor
-   rather than at import means a momentary database outage cannot take a code location down, at the cost of the
-   ingestor appearing one sensor tick after deployment.
+   rather than at import means a momentary database outage cannot take a code location down, at the cost of the ingestor
+   appearing one sensor tick after deployment.
 
-   Two consequences worth stating: labels are **required** for a custom ingestor (an unlabelled one could only render
-   as a bare id in the selector), and re-registration is **last-writer-wins**, so a redeploy carrying changed labels
+   Two consequences worth stating: labels are **required** for a custom ingestor (an unlabelled one could only render as
+   a bare id in the selector), and re-registration is **last-writer-wins**, so a redeploy carrying changed labels
    updates them rather than erroring.
 
    **Why the wire field is a plain `str`, not the `IngestorType` enum.** The `ingestor` value on the request/response
@@ -114,13 +113,13 @@ pipelines untouched.
    defeating the whole mechanism. The selectable set stays authoritative and server-owned, but it is discovered at
    runtime via `GET /knowledge/ingestors` instead of frozen into a type. `BucketEntity.ingestor` likewise carries no
    static `choices` — `create_database` validates the submitted value against `IngestorEntity`, and because routing is
-   exact-match a value owned by no pipeline is simply never ingested. `IngestorType` remains an enum
-   internally for the platform's own values (defaults, the routing guard, the seeder); only the boundary is a string.
+   exact-match a value owned by no pipeline is simply never ingested. `IngestorType` remains an enum internally for the
+   platform's own values (defaults, the routing guard, the seeder); only the boundary is a string.
 
 4. **One Milvus collection per database, routed per run.** The bucket/db becomes a run/partition dimension via a
    composite partition key `{bucket}|{encoded_file_uri}` in a single shared `DynamicPartitionsDefinition`. IO managers
-   and ops resolve `container_name`/`store_name` per run instead of from constructor config. One file still maps
-   to one Dagster partition. (`|` is a safe separator because `BucketEntity` already constrains bucket names to
+   and ops resolve `container_name`/`store_name` per run instead of from constructor config. One file still maps to one
+   Dagster partition. (`|` is a safe separator because `BucketEntity` already constrains bucket names to
    `^[a-zA-Z][a-zA-Z0-9]*$` — a leading letter is also required so the name is a valid Milvus collection.)
 
    **Routing uses two different mechanisms, chosen by how the run was triggered — this is the central correctness
@@ -165,28 +164,28 @@ pipelines untouched.
    `pipeline.{ingestor}.{bucket}.to.knowledge.{db}.…` — the same nine-token grammar as before, with the *ingestor*
    rather than `datalake` in the source-type position. A pipeline therefore owns exactly one stream
    (`pipeline.{ingestor}.>`) and one durable consumer, however many databases it serves, and cannot overlap the legacy
-   `pipeline.datalake.…` streams because the type token differs. The sensor drains that stream once per tick, groups
-   the batch by the bucket in the subject, and decides per database; the schedule still enumerates
+   `pipeline.datalake.…` streams because the type token differs. The sensor drains that stream once per tick, groups the
+   batch by the bucket in the subject, and decides per database; the schedule still enumerates
    `BucketEntity.get_all_buckets()` filtered by `ingestor`.
 
    The alternative — one stream per bucket, keyed source→target like legacy — was implemented first and abandoned:
    streams, consumers and per-tick NATS round-trips all grew linearly with the number of knowledge databases, for no
-   fundamental reason. Two pipeline *types* never react to the same upload, so type-keyed subjects never need to
-   overlap by construction. Existing deployments that ran the per-bucket shape keep orphaned
-   `pipeline_datalake_*_knowledge_*` streams; nothing consumes them and they can be removed with `nats stream rm`.
+   fundamental reason. Two pipeline *types* never react to the same upload, so type-keyed subjects never need to overlap
+   by construction. Existing deployments that ran the per-bucket shape keep orphaned `pipeline_datalake_*_knowledge_*`
+   streams; nothing consumes them and they can be removed with `nats stream rm`.
 
    **Cluster safety.** Sensors evaluate only on the Dagster daemon, which is a singleton — running more than one is
    unsupported — and every request carries a run key Dagster deduplicates, so a bucket cannot be observed twice
    concurrently. Neither is load-bearing for correctness anyway: an observation is a full reconciliation of the bucket,
    so a duplicate trigger converges to the same state and a lost one is picked up by the next upload or the daily
-   schedule. This is why a durable pull consumer suffices here, unlike agent control events, which are state
-   transitions needing exactly-once delivery.
+   schedule. This is why a durable pull consumer suffices here, unlike agent control events, which are state transitions
+   needing exactly-once delivery.
 
 ### Naming
 
 The pipeline is the **Generic Document Ingestion Pipeline**. It parses, chunks, embeds and indexes documents into a
-vector store; it performs no retrieval and no generation, so naming it after RAG would describe the wrong stage. The
-RAG *agent* is what does retrieval-augmented generation and is named accordingly.
+vector store; it performs no retrieval and no generation, so naming it after RAG would describe the wrong stage. The RAG
+*agent* is what does retrieval-augmented generation and is named accordingly.
 
 "Generic" is a display-only adjective. Identifiers use `document_ingestion_pipeline`
 (`document_ingestion_pipeline_definitions`, `DocumentIngestionPipelineSettings`, `DOCUMENT_INGESTION_*`,
@@ -195,9 +194,8 @@ RAG *agent* is what does retrieval-augmented generation and is named accordingly
 
 The frozen `default_rag` / `shared_rag` ingestor ids and the `default_rag_pipeline` / `shared_rag_pipeline` image names
 are deliberately excluded from this naming: they identify images that will never be rebuilt and that existing
-deployments still pull by those exact tags. This ADR's own filename likewise keeps its original slug — ADR filenames
-are dated records, and renaming them breaks inbound links for no gain.
-
+deployments still pull by those exact tags. This ADR's own filename likewise keeps its original slug — ADR filenames are
+dated records, and renaming them breaks inbound links for no gain.
 
 ## Consequences
 
@@ -215,8 +213,9 @@ are dated records, and renaming them breaks inbound links for no gain.
   prefix are all namespaced by their own container name.
 - A second pipeline *type* can be deployed alongside the first, because every deployment-global name is ingestor-scoped.
 - A customer-specific pipeline becomes user-selectable without forking the platform: passing `display_name` and
-  `description` to `document_ingestion_pipeline_definitions` is enough — the pipeline registers itself in the database the API reads,
-  so no `IngestorType` change, no API-contract change, no SDK regeneration, and nothing to install into the API image.
+  `description` to `document_ingestion_pipeline_definitions` is enough — the pipeline registers itself in the database
+  the API reads, so no `IngestorType` change, no API-contract change, no SDK regeneration, and nothing to install into
+  the API image.
 
 ### Trade-offs
 
@@ -239,9 +238,9 @@ are dated records, and renaming them breaks inbound links for no gain.
   retired. The alternative — omitting the field and inferring ownership from a bucket name allowlist — would bury the
   routing rule in the pipeline instead of the data model.
 
-- The document ingestion pipeline runs one asset graph shared across all its databases — one process, one resource pool, one crash
-  domain — rather than the per-database isolation the legacy deployments have. Acceptable at expected scale; the
-  per-tick enumeration of buckets is the scaling limit to watch.
+- The document ingestion pipeline runs one asset graph shared across all its databases — one process, one resource pool,
+  one crash domain — rather than the per-database isolation the legacy deployments have. Acceptable at expected scale;
+  the per-tick enumeration of buckets is the scaling limit to watch.
 
 - IO managers resolve the store per run (a cheap idempotent Mongo lookup, cached per run), trading a little runtime work
   for deploy-time flexibility.

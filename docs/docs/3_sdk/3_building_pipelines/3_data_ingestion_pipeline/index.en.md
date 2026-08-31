@@ -203,8 +203,8 @@ RCLONE_RC_PASS=your-strong-password
 
 ## 2. The Data Lake to Vector Store Pipeline
 
-This is the core document ingestion pipeline. Use the `document_ingestion_pipeline_definitions` factory to process documents from your S3 data lake
-into a vector store.
+This is the core document ingestion pipeline. Use the `document_ingestion_pipeline_definitions` factory to process
+documents from your S3 data lake into a vector store.
 
 - **What it does**: Observes the S3 bucket of every knowledge database assigned to this ingestor, parses documents,
   chunks them into nodes, optionally creates summary nodes, and stores the embeddings in Milvus. It also handles

@@ -84,8 +84,8 @@ defs = document_ingestion_pipeline_definitions(
 )
 ```
 
-Do not give a Stage-2 pipeline a fixed bucket: the target is resolved per run, so a new knowledge database needs no
-code location, compose service or env var.
+Do not give a Stage-2 pipeline a fixed bucket: the target is resolved per run, so a new knowledge database needs no code
+location, compose service or env var.
 
 For a source ingestion pipeline (Stage 1), use the appropriate definition builder instead:
 
@@ -115,8 +115,8 @@ The naming convention is `RCLONE_{SOURCE}_{OPTION}` (e.g., `RCLONE_SHAREPOINT_CL
 
 ### Step 4: Create the Dockerfile
 
-Copy and adapt `packages/pipeline/app/document_ingestion_pipeline/Dockerfile`. The only change needed is the `PIPELINE` build
-arg:
+Copy and adapt `packages/pipeline/app/document_ingestion_pipeline/Dockerfile`. The only change needed is the `PIPELINE`
+build arg:
 
 ```dockerfile
 ARG PIPELINE=<pipeline_name>
@@ -126,8 +126,8 @@ The entrypoint uses this arg: `dagster api grpc -h 0.0.0.0 -p 4000 -m "app.${PIP
 
 ### Step 5: Register for Local Development
 
-Add the new module to the Makefile's run command. In `packages/pipeline/Makefile`, the `document-ingestion-pipeline` target shows the
-pattern:
+Add the new module to the Makefile's run command. In `packages/pipeline/Makefile`, the `document-ingestion-pipeline`
+target shows the pattern:
 
 ```makefile
 my-pipelines:

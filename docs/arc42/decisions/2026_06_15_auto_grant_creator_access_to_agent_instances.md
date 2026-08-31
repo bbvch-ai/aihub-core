@@ -119,15 +119,15 @@ name), it never drifts — a later delete always re-derives the same name.
 
 ## Amendment (2026-08-31): extended to knowledge databases and folders
 
-Self-service knowledge databases had the same create-then-cannot-use gap, plus a second one of their own, and now
-follow this decision's pattern.
+Self-service knowledge databases had the same create-then-cannot-use gap, plus a second one of their own, and now follow
+this decision's pattern.
 
 **Create is guarded on the parent, not on the child.** `create_database` was guarded on
-`aihub.admin.knowledge.{database}` — a rule naming a database that does not exist yet, which in practice only the
-global `aihub.admin.knowledge.>` wildcard could satisfy, and which perversely allowed pre-authorising the creation of
-one specific name. It is now guarded on the knowledge root `aihub.admin.knowledge`, and `create_namespace` on its
-parent database, mirroring how an agent instance is created under its class. Edit and delete stay self-scoped, as they
-always were.
+`aihub.admin.knowledge.{database}` — a rule naming a database that does not exist yet, which in practice only the global
+`aihub.admin.knowledge.>` wildcard could satisfy, and which perversely allowed pre-authorising the creation of one
+specific name. It is now guarded on the knowledge root `aihub.admin.knowledge`, and `create_namespace` on its parent
+database, mirroring how an agent instance is created under its class. Edit and delete stay self-scoped, as they always
+were.
 
 **Create grants, delete revokes.** Creating a database or folder grants the creating user a per-resource admin role
 (`Knowledge{Database}[{Folder}]Admin`) and raises the tenant ceiling when no broader rule already covers it, with the

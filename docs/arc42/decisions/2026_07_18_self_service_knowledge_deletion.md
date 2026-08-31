@@ -53,10 +53,10 @@ Three constraints shaped the design:
 job driven by that flag does the heavy multi-store purge and hard-deletes the rows as its final step.**
 
 - **`202 Accepted`, synchronously O(1).** `DELETE /databases/{database}` and
-  `DELETE /databases/{database}/namespaces/{namespace}` revoke the resource's access rules and roles, flip a new
-  boolean `deleting` flag on the `BucketEntity` / `NamespaceEntity`, and return `202`. Milliseconds regardless of
-  corpus size. Revocation happens here rather than in the job so the teardown never touches the auth collections;
-  it is best-effort, because a stale rule must not be able to block a deletion.
+  `DELETE /databases/{database}/namespaces/{namespace}` revoke the resource's access rules and roles, flip a new boolean
+  `deleting` flag on the `BucketEntity` / `NamespaceEntity`, and return `202`. Milliseconds regardless of corpus size.
+  Revocation happens here rather than in the job so the teardown never touches the auth collections; it is best-effort,
+  because a stale rule must not be able to block a deletion.
 
 - **The `deleting` flag is the tap-shutoff.** Every enumeration path — `get_databases`, the per-bucket observe schedule,
   and the NATS document-uploaded sensor — excludes `deleting` rows, so ingestion stops immediately *and* the in-flight
@@ -82,8 +82,8 @@ job driven by that flag does the heavy multi-store purge and hard-deletes the ro
   **Re-drive after failure.** Dagster deduplicates run keys forever, so keying on the entity id alone would make a
   failed teardown unretryable. The sensor instead tags each request with its target id and numbers the run key by how
   many runs that target has already had: the key stays stable while an attempt is pending (repeated ticks re-request it
-  and Dagster drops the duplicate) and moves on once that attempt has finished, which is exactly when a retry is
-  wanted. On success the row is hard-deleted, so the target stops being enumerated at all.
+  and Dagster drops the duplicate) and moves on once that attempt has finished, which is exactly when a retry is wanted.
+  On success the row is hard-deleted, so the target stops being enumerated at all.
 
 - **The Dagster teardown job owns the heavy work**, in a fixed, idempotent order so a failed run is "retry until clean"
   with a visible failed run rather than a silent half-deletion:
