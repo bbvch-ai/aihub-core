@@ -100,6 +100,9 @@ ______________________________________________________________________
 | Source → data lake       | `observable_*`, `data_lake_file`, `removed_data_lake_files`                        | SeaweedFS (S3)                   |
 | Data lake → vector store | `documents` (parse), `nodes` (chunk + embed), `summary_nodes`, `removed_documents` | MinerU, LiteLLM, MongoDB, Milvus |
 
+A document is reported as ingested only once `nodes` has written its embeddings to Milvus — a parsed document has
+markdown but is not yet retrievable, so it stays pending until then.
+
 Materialization is driven by eager automation, daily schedules, and a NATS sensor that fires when documents are uploaded
 through the API — so ingestion keeps up with changes without manual runs. Key `default_definitions()` knobs:
 `with_summary_nodes`, `with_table_refinement`, `with_figure_descriptions`, `document_parser_loader_type` (MinerU or

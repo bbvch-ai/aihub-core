@@ -88,6 +88,7 @@ def milvus_vector_store_resource(
     vector_store_uri: str,
     vector_store_name: str,
     dimensions: int,
+    document_store_name: str,
     index_type: MilvusIndexType = MilvusIndexType.HNSW,
 ) -> dict[str, ConfigurableResourceFactory]:
     milvus_settings = MilvusSettings()
@@ -98,7 +99,7 @@ def milvus_vector_store_resource(
         index_type=index_type,
         token=milvus_settings.get_token(),
     )
-    vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
+    vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store, document_store_name=document_store_name)
     return {
         "vector_store": vector_store,
         "vector_store_io_manager": vector_store_io_manager,
@@ -113,7 +114,10 @@ def local_mongo_milvus_storage_context_resource(
     return {
         **mongo_document_store_resource(document_store_name=store_name),
         **milvus_vector_store_resource(
-            vector_store_uri=vector_store_uri, vector_store_name=store_name, dimensions=dimensions
+            vector_store_uri=vector_store_uri,
+            vector_store_name=store_name,
+            dimensions=dimensions,
+            document_store_name=store_name,
         ),
     }
 
