@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Callable
 from functools import cache
 
 import boto3
@@ -26,12 +27,28 @@ from the ``aihub/bucket`` run tag on the non-partitioned observe/remove path —
 Builds are cached per identity so repeated lookups within a process reuse a single connection.
 """
 
-# Lazily-created, process-wide event loop for building vector stores from a synchronous caller.
 # pymilvus 2.6+ constructs an AsyncMilvusClient in MilvusVectorStore.__init__ (which calls
-# asyncio.get_running_loop()) and retains a reference to that loop for the store's lifetime, so it
-# cannot be closed. Sharing one loop across every bucket keeps this to a single long-lived loop for the
-# whole process rather than one per store_name (which also avoids N "unclosed event loop" warnings).
+# asyncio.get_running_loop()) and retains a reference to that loop for the store's lifetime, so it cannot
+# be closed. One loop is shared across every bucket rather than one per store, which would leave a
+# per-database trail of unclosed loops.
 _vector_store_loop: asyncio.AbstractEventLoop | None = None
+
+
+def _run_on_vector_store_loop[T](create: Callable[[], T]) -> T:
+    """Run ``create`` with an event loop present, reusing this process's loop if one is already running."""
+    global _vector_store_loop
+    try:
+        asyncio.get_running_loop()
+        return create()
+    except RuntimeError:
+        if _vector_store_loop is None:
+            _vector_store_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(_vector_store_loop)
+
+        async def _create() -> T:  # noqa: S7503
+            return create()
+
+        return _vector_store_loop.run_until_complete(_create())
 
 
 @cache
@@ -50,8 +67,8 @@ def build_vector_store(store_name: str) -> MilvusVectorStore:
     milvus_settings = MilvusSettings()
     client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
 
-    def _create() -> MilvusVectorStore:
-        return create_milvus_vector_store(
+    return _run_on_vector_store_loop(
+        lambda: create_milvus_vector_store(
             client=client,
             collection_name=store_name,
             embedding_vector_dimension=milvus_settings.DIMENSION,
@@ -59,22 +76,10 @@ def build_vector_store(store_name: str) -> MilvusVectorStore:
             uri=milvus_settings.URL,
             token=milvus_settings.get_token(),
         )
-
-    try:
-        asyncio.get_running_loop()
-        return _create()
-    except RuntimeError:
-        global _vector_store_loop
-        if _vector_store_loop is None:
-            _vector_store_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(_vector_store_loop)
-
-        async def _async_create() -> MilvusVectorStore:  # noqa: S7503
-            return _create()
-
-        return _vector_store_loop.run_until_complete(_async_create())
+    )
 
 
+@cache
 def build_s3_data_lake_client(bucket: str, *, ensure_bucket: bool = False) -> S3DataLakeClient:
     """S3 data lake client scoped to ``bucket``.
 

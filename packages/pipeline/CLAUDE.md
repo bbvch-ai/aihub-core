@@ -260,7 +260,15 @@ assets.
 Both use LiteLLM model names.
 
 **Storage**: `MongoDocumentStoreResource` (LlamaIndex `MongoDocumentStore`), `MilvusVectorStoreResource` (uri,
-collection_name, dimensions, index_type: HNSW or IVF_FLAT).
+collection_name, dimensions, index_type: HNSW or IVF_FLAT). These bind one store at `Definitions`-build time, so they
+serve **Stage 1 only**.
+
+**Stage 2 builds its stores instead of injecting them.** A configurable pipeline serves many knowledge databases, and a
+Dagster resource is built once per run from an `InitResourceContext` that carries neither the partition key nor (for
+auto-materialized runs) a run tag — so a resource cannot know which database it is for. Every bucket-scoped store
+therefore comes from `util/store_builders.py`, keyed by a bucket each op and IO manager resolves from its own context
+via `util/run_routing.py`. One factory, one `context → bucket → store` shape, no per-run store resources. Do not
+reintroduce one: it would recreate the second construction path this replaced.
 
 **Resource factory** (`resources/factory.py`) — assembles resource dicts for `Definitions`:
 

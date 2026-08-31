@@ -1,4 +1,4 @@
-from dagster import InitResourceContext, InputContext, OpExecutionContext
+from dagster import InputContext, OpExecutionContext
 
 from swiss_ai_hub.pipeline.util.partition_utils import bucket_of_composite_partition_key
 
@@ -11,22 +11,14 @@ travels into the run differs by trigger:
   the bucket is encoded in the composite partition key ``{bucket}|{file_uri}``. Ops and IO managers that
   see the partition key resolve the bucket from it — auto-materialized runs carry no custom run tag.
 - **Non-partitioned observe/remove path** (launched by our schedule / NATS sensor / run-after-success
-  sensor): the bucket travels in the ``aihub/bucket`` run tag, the only routing signal available to
-  resources (``InitResourceContext`` exposes neither the partition key nor op config).
+  sensor): the bucket travels in the ``aihub/bucket`` run tag, which ops read from their own execution
+  context and IO managers from the input context.
+
+Both resolve to a bucket here and then build stores through ``store_builders``; nothing constructs a
+store any other way.
 """
 
 BUCKET_RUN_TAG = "aihub/bucket"
-
-
-def bucket_from_resource_init(context: InitResourceContext) -> str:
-    """Resolve the run's bucket from the ``aihub/bucket`` run tag during resource initialization."""
-    dagster_run = context.dagster_run
-    if dagster_run is None or BUCKET_RUN_TAG not in dagster_run.tags:
-        raise ValueError(
-            f"Routed run requires the '{BUCKET_RUN_TAG}' run tag to resolve its "
-            f"target knowledge database, but it was not set on the run."
-        )
-    return dagster_run.tags[BUCKET_RUN_TAG]
 
 
 def bucket_from_run_tag(context: OpExecutionContext | InputContext) -> str:

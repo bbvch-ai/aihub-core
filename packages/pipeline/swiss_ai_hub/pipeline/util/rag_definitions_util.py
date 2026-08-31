@@ -26,14 +26,7 @@ from swiss_ai_hub.pipeline.io.routed_s3_data_lake_io_manager import RoutedS3Data
 from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
 from swiss_ai_hub.pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from swiss_ai_hub.pipeline.jobs.knowledge_teardown_job import knowledge_teardown_job
-from swiss_ai_hub.pipeline.resources.data_lake.s3.routed_s3_data_lake_client_resource import (
-    RoutedS3DataLakeClientResource,
-)
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import S3DataLakeFileSystemResource
-from swiss_ai_hub.pipeline.resources.doc_store.routed_doc_store_resource import RoutedDocStoreResource
-from swiss_ai_hub.pipeline.resources.doc_store.routed_mongo_document_store_resource import (
-    RoutedMongoDocumentStoreResource,
-)
 from swiss_ai_hub.pipeline.resources.factory import default_io_manager_s3_datalake_resources
 from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
 from swiss_ai_hub.pipeline.resources.llm.language_model_resource import LanguageModelResource
@@ -43,9 +36,6 @@ from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_reso
 )
 from swiss_ai_hub.pipeline.resources.parser.recursive_summary_parser_resource import RecursiveSummaryParserResource
 from swiss_ai_hub.pipeline.resources.parser.table_refinement_resource import TableRefinementResource
-from swiss_ai_hub.pipeline.resources.vector_store.routed_milvus_vector_store_resource import (
-    RoutedMilvusVectorStoreResource,
-)
 from swiss_ai_hub.pipeline.schedules.per_bucket_schedule import per_bucket_observe_schedule
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 from swiss_ai_hub.pipeline.sensors.ingestor_registration_sensor import ingestor_registration_sensor
@@ -143,11 +133,7 @@ def rag_pipeline_definitions(
         "data_lake_io_manager": RoutedS3DataLakeIOManager(encode_partition_keys=encode_partition_keys),
         "doc_store_io_manager": RoutedDocStoreIOManager(encode_partition_keys=encode_partition_keys),
         "vector_store_io_manager": VectorStoreIOManager(encode_partition_keys=encode_partition_keys),
-        "data_lake_client": RoutedS3DataLakeClientResource(),
         "data_lake_file_system": S3DataLakeFileSystemResource(),
-        "doc_store": RoutedMongoDocumentStoreResource(),
-        "doc_store_resource": RoutedDocStoreResource(),
-        "vector_store": RoutedMilvusVectorStoreResource(),
         "embedding_model": EmbeddingModelResource(embedding_config=embedding_config),
         "language_model": LanguageModelResource(llm_config=llm_config),
         **default_io_manager_s3_datalake_resources(container_name=ingestor),

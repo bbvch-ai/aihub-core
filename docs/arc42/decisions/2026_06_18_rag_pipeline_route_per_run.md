@@ -118,23 +118,31 @@ pipelines untouched.
 
 4. **One Milvus collection per database, routed per run.** The bucket/db becomes a run/partition dimension via a
    composite partition key `{bucket}|{encoded_file_uri}` in a single shared `DynamicPartitionsDefinition`. IO managers
-   and resources resolve `container_name`/`store_name` per run instead of from constructor config. One file still maps
+   and ops resolve `container_name`/`store_name` per run instead of from constructor config. One file still maps
    to one Dagster partition. (`|` is a safe separator because `BucketEntity` already constrains bucket names to
    `^[a-zA-Z][a-zA-Z0-9]*$` — a leading letter is also required so the name is a valid Milvus collection.)
 
    **Routing uses two different mechanisms, chosen by how the run was triggered — this is the central correctness
    constraint of the design.** Dagster's `InitResourceContext` exposes *neither* the partition key *nor* custom run tags
-   for auto-materialized runs, so a resource cannot resolve its own target bucket from the partition. Therefore:
+   for auto-materialized runs, so a resource cannot resolve its own target bucket. That is why nothing bucket-scoped is
+   a resource at all: the stores are built from `store_builders`, keyed by a bucket that each op and IO manager resolves
+   from its own context. Therefore:
 
    - **Partitioned write path** (`documents` / `nodes` / `summary_nodes`, launched by the automation sensor, which
      supplies only a composite partition key): routes on the **partition key**, inside the IO managers and inside the
      two nodes ops that touch the stores directly.
-   - **Observe and remove path** (launched by our schedule, NATS sensor, or run-after-success sensor): routes the
-     **resources** on the `aihub/bucket` run tag. The remove run is non-partitioned, so the S3 IO manager's
-     non-partitioned branch reads the tag too — which is why the run-after-success sensor must propagate the bucket tag
-     from the observe run to the remove run.
+   - **Observe and remove path** (launched by our schedule, NATS sensor, or run-after-success sensor): routes on the
+     `aihub/bucket` run tag, read from the op's own `OpExecutionContext`. The remove run is non-partitioned, so the S3
+     IO manager's non-partitioned branch reads the tag too — which is why the run-after-success sensor must propagate
+     the bucket tag from the observe run to the remove run.
 
-   Collapsing these into one mechanism is not possible without changing Dagster's resource-init contract.
+   Collapsing the two *signals* into one is not possible without changing Dagster's resource-init contract. What is
+   collapsed is the store construction behind them: both paths end at `store_builders`, so there is one factory and one
+   `context → bucket → store` resolution shape rather than a resource seam beside a direct-call seam.
+
+   `InputContext` — unlike `OpExecutionContext` — still exposes no public run-tags accessor, so the IO managers read
+   Dagster's non-public `step_context`. That reliance is pinned by a test that fails if a Dagster upgrade removes it,
+   rather than being discovered when a remove run routes nowhere.
 
 5. **Bucket-scoped partition reconciliation.** `replace_partition_keys_for_bucket` only diffs the current bucket's
    subset of keys within the shared registry, so one bucket's observe run cannot delete another bucket's partitions —
