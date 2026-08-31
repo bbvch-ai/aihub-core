@@ -37,11 +37,20 @@ class RoutedS3DataLakeIOManager(ConfigurableIOManager):
             raise ValueError("Cannot load data without partition information.")
 
         all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
-        return [
-            self._load_data_lake_file(*split_composite_partition_key(key, encode=self.encode_partition_keys), context)
+        uris = [
+            split_composite_partition_key(key, encode=self.encode_partition_keys)[1]
             for key in all_partition_keys
             if key.startswith(bucket_prefix)
         ]
+        context.log.info(f"Loading {len(uris)} DataLakeFile(s) from bucket '{bucket}'")
+
+        # One client and one batched call: resolving each file separately re-derives the namespace of the
+        # directory it sits in, which is a database round-trip per file over the whole corpus.
+        client = build_s3_data_lake_client(bucket, ensure_bucket=False)
+        data_lake_files = client.create_data_lake_files_from_uris(uris)
+        for data_lake_file in data_lake_files:
+            data_lake_file.metadata = S3DataLakeIOManager._decode_metadata(data_lake_file.metadata)
+        return data_lake_files
 
     def _load_data_lake_file(self, bucket: str, uri: str, context: InputContext) -> DataLakeFile:
         context.log.info(f"Loading DataLakeFile from URI: {uri} (bucket: {bucket})")

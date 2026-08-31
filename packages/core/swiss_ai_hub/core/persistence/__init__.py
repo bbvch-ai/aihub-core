@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
     from swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity import BucketEntity
     from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor import Ingestor
-    from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_registry import IngestorRegistry
+    from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_entity import IngestorEntity
     from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
     from swiss_ai_hub.core.persistence.rag.datalake.entities.namespace_entity import NamespaceEntity
     from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
@@ -114,7 +114,7 @@ __all__ = [
     "HumanInSpecsEntity",
     "INDEX",
     "Ingestor",
-    "IngestorRegistry",
+    "IngestorEntity",
     "IngestorType",
     "INSERTED_AT",
     "IS_INGESTED",
@@ -188,7 +188,7 @@ _LAZY_IMPORTS = {
     "HumanInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",
     "INDEX": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "Ingestor": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor",
-    "IngestorRegistry": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_registry",
+    "IngestorEntity": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_entity",
     "IngestorType": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type",
     "INSERTED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "IS_INGESTED": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

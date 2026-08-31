@@ -6,6 +6,7 @@ from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 
+from swiss_ai_hub.pipeline.io.ingestion_marking import mark_ref_docs_as_ingested
 from swiss_ai_hub.pipeline.util.bucket_utils import get_db_name_from_bucket_name
 from swiss_ai_hub.pipeline.util.id_utils import uri_to_id
 from swiss_ai_hub.pipeline.util.partition_utils import split_composite_partition_key
@@ -24,6 +25,9 @@ class RoutedVectorStoreIOManager(ConfigurableIOManager):
     behaviour of ``VectorStoreIOManager`` so re-observes upsert over ``uri_to_id`` ids within their bucket's
     collection. The non-partitioned branch (unused by the standard graph) resolves the bucket from the
     ``aihub/bucket`` run tag for parity.
+
+    A document counts as ingested only once its nodes are in Milvus, so the ``is_ingested`` flip happens
+    here, right after the write — the same contract the non-routed manager holds.
     """
 
     encode_partition_keys: bool = True
@@ -38,9 +42,10 @@ class RoutedVectorStoreIOManager(ConfigurableIOManager):
             context.log.warning("No nodes to add to vector store")
             return
         bucket, _ = split_composite_partition_key(context.partition_key, encode=self.encode_partition_keys)
-        store = self._store_for_bucket(bucket)
-        store.add(nodes)
+        db_name = get_db_name_from_bucket_name(bucket)
+        build_vector_store(db_name).add(nodes)
         context.log.info(f"Successfully added {len(nodes)} nodes to vector store '{bucket}'")
+        mark_ref_docs_as_ingested(nodes, db_name, context.log, self.document_id_key)
 
     def load_input(self, context: InputContext) -> list[TextNode] | list[list[TextNode]]:
         if context.has_partition_key:

@@ -5,8 +5,8 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 
 from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
 
-_MARK_INGESTED = "swiss_ai_hub.pipeline.io.vector_store_io_manager.RefDoc.mark_ingested"
-_ENSURE_CONNECTION = "swiss_ai_hub.pipeline.io.vector_store_io_manager.ensure_connection"
+_MARK_INGESTED = "swiss_ai_hub.pipeline.io.ingestion_marking.RefDoc.mark_ingested"
+_ENSURE_CONNECTION = "swiss_ai_hub.pipeline.io.ingestion_marking.MongoConnectionRegistry.ensure_alias"
 
 _STORE_NAME = "my_knowledge_db"
 

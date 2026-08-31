@@ -2,7 +2,11 @@ from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
+from swiss_ai_hub.core.topic_managers import (
+    PipelineInstanceTopicManager,
+    PipelineSourceType,
+    PipelineTargetType,
+)
 
 # Import AI-Hub pipeline factories
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
@@ -10,7 +14,6 @@ from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_fact
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
     observable_data_lake_factory,
 )
-from swiss_ai_hub.pipeline.const.pipeline_names import INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 from swiss_ai_hub.pipeline.jobs.factory import observe_source_job
 
 # Import AI-Hub resources and utilities
@@ -105,9 +108,9 @@ defs = Definitions(
         nats_document_uploaded_sensor(
             job=observe_job,
             topic_manager=PipelineInstanceTopicManager(
-                source_type=INTERNAL_DATALAKE,
+                source_type=PipelineSourceType.DATALAKE,
                 source_id=CONTAINER_NAME,
-                target_type=INTERNAL_KNOWLEDGE_DB,
+                target_type=PipelineTargetType.KNOWLEDGE,
                 target_id=CONTAINER_NAME,
             ),
         ),

@@ -100,6 +100,12 @@ class BucketEntity(Document):
             return SwitchedBucket.objects().order_by("bucket_name")
 
     @classmethod
+    def get_deleting_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
+        """Buckets flagged for teardown — the durable work queue the teardown sensor reads."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects(deleting=True).order_by("bucket_name")
+
+    @classmethod
     def update_bucket(
         cls,
         bucket_id: str,

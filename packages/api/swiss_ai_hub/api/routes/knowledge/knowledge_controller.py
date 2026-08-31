@@ -435,7 +435,6 @@ class KnowledgeController(TenantScopedController):
         async def delete_database(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
-            nc: Annotated[NATS, Depends(use_nats)],
         ) -> Response:
             """
             Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
@@ -443,7 +442,7 @@ class KnowledgeController(TenantScopedController):
             """
             if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
-            await KnowledgeService.delete_database(nc=nc, database=database)
+            KnowledgeService.delete_database(database=database)
             return Response(status_code=status.HTTP_202_ACCEPTED)
 
         return self
@@ -456,7 +455,6 @@ class KnowledgeController(TenantScopedController):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
-            nc: Annotated[NATS, Depends(use_nats)],
         ) -> Response:
             """
             Schedules asynchronous teardown of one namespace — its S3 folder, doc-store rows and Milvus
@@ -464,7 +462,7 @@ class KnowledgeController(TenantScopedController):
             """
             if database in self._reserved_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
-            await KnowledgeService.delete_namespace(nc=nc, database=database, namespace=namespace)
+            KnowledgeService.delete_namespace(database=database, namespace=namespace)
             return Response(status_code=status.HTTP_202_ACCEPTED)
 
         return self

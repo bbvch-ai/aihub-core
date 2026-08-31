@@ -119,6 +119,12 @@ class NamespaceEntity(Document):
             return SwitchedNamespace.objects().order_by("bucket_id", "namespace_name")
 
     @classmethod
+    def get_deleting_namespaces(cls, db_alias: str = "default") -> list["NamespaceEntity"]:
+        """Namespaces flagged for teardown — the durable work queue the teardown sensor reads."""
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return SwitchedNamespace.objects(deleting=True).order_by("namespace_name")
+
+    @classmethod
     def update_namespace(
         cls,
         namespace_id: str,

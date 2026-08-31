@@ -1,15 +1,13 @@
 from mongoengine import DoesNotExist
-from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoConnectionRegistry
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
-
-from swiss_ai_hub.pipeline.util.mongo_utils import ensure_connection
 
 # Default alias for the main database connection
 _DB_ALIAS = "default"
 
 
 def _ensure_connection() -> None:
-    ensure_connection(db_name=AIHubSettings().MONGO_MAIN_DB_NAME, db_alias=_DB_ALIAS)
+    MongoConnectionRegistry.ensure_alias(AIHubSettings().MONGO_MAIN_DB_NAME, alias=_DB_ALIAS)
 
 
 def ensure_main_db_connection() -> None:

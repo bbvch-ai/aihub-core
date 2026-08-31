@@ -81,12 +81,33 @@ class TestRoutedVectorStoreIOManager:
         with (
             patch(f"{_VEC_MODULE}.get_db_name_from_bucket_name", side_effect=lambda b: f"db_{b}") as db_name,
             patch(f"{_VEC_MODULE}.build_vector_store", return_value=store) as build,
+            patch(f"{_VEC_MODULE}.mark_ref_docs_as_ingested") as mark_ingested,
         ):
             RoutedVectorStoreIOManager().handle_output(ctx, nodes)
 
         db_name.assert_called_once_with("gamma")
         build.assert_called_once_with("db_gamma")
         store.add.assert_called_once_with(nodes)
+        mark_ingested.assert_called_once()
+        assert mark_ingested.call_args.args[:2] == (nodes, "db_gamma")
+
+    def test_handle_output_marks_documents_ingested_only_after_the_vector_write(self) -> None:
+        """A document is queryable only once its nodes are in Milvus, so the flip must follow the write."""
+        calls = MagicMock()
+        store = MagicMock()
+        ctx = MagicMock()
+        ctx.partition_key = make_composite_partition_key("gamma", "s3://gamma/docs/c.pdf")
+
+        with (
+            patch(f"{_VEC_MODULE}.get_db_name_from_bucket_name", side_effect=lambda b: f"db_{b}"),
+            patch(f"{_VEC_MODULE}.build_vector_store", return_value=store),
+            patch(f"{_VEC_MODULE}.mark_ref_docs_as_ingested") as mark_ingested,
+        ):
+            calls.attach_mock(store.add, "add")
+            calls.attach_mock(mark_ingested, "mark_ingested")
+            RoutedVectorStoreIOManager().handle_output(ctx, [MagicMock()])
+
+        assert [call[0] for call in calls.mock_calls] == ["add", "mark_ingested"]
 
     def test_handle_output_skips_empty_nodes(self) -> None:
         ctx = MagicMock()

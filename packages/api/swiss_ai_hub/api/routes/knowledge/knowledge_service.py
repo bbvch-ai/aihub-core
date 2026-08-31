@@ -2,14 +2,13 @@ import logging
 import uuid
 from typing import Annotated
 
-import mongoengine
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from mongoengine import ConnectionFailure, DoesNotExist, NotUniqueError, register_connection
+from mongoengine import DoesNotExist, NotUniqueError
 from nats.aio.client import Client as NATS
 from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
-from swiss_ai_hub.core.events.pipeline import KnowledgeTeardownRequestedEvent, SourceUpdatedEvent
+from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
@@ -17,11 +16,11 @@ from swiss_ai_hub.core.generative_ai.document.types.file_type_config import File
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, trace_fn
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoConnectionRegistry, trace_fn
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import (
     BucketEntity,
-    IngestorRegistry,
+    IngestorEntity,
     IngestorType,
     NamespaceEntity,
 )
@@ -35,8 +34,13 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     TYPE,
     NodeTypeValue,
 )
-from swiss_ai_hub.core.publishers import JSPublisher, NCPublisher
-from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
+from swiss_ai_hub.core.publishers import JSPublisher
+from swiss_ai_hub.core.topic_managers import (
+    PipelineInstanceTopicManager,
+    PipelineSourceType,
+    PipelineTargetType,
+    PipelineTypeTopicManager,
+)
 
 from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import (
     BatchDeleteDocumentsResponse,
@@ -62,27 +66,10 @@ logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
 
-# Teardown requests get their own JetStream stream, keyed by a dedicated pipeline target type, so they
-# never share the SourceUpdatedEvent stream: the upload sensor naks any non-SourceUpdatedEvent, which
-# would make JetStream redeliver a shared teardown event forever. The pipeline teardown sensor's
-# target-type constant MUST match this value.
-_KNOWLEDGE_TEARDOWN_TARGET_TYPE = "knowledge_teardown"
-
-
 class KnowledgeService:
     @staticmethod
     def _ensure_db_exists(db: str):
-        try:
-            mongoengine.connection.get_connection(alias=db)
-        except ConnectionFailure:
-            # ConnectionFailure here means the alias has not been registered yet — register it lazily.
-            # Any other error (e.g. Mongo unreachable) must propagate, not be mistaken for a missing alias.
-            register_connection(
-                alias=db,
-                name=db,
-                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-                uuidRepresentation="standard",
-            )
+        MongoConnectionRegistry.ensure_alias(db)
 
     @staticmethod
     @trace_fn
@@ -259,10 +246,10 @@ class KnowledgeService:
         """Returns the ingestion pipelines a user may pick when creating a knowledge database.
 
         The platform's own pipelines come from ``IngestorType.selectable()``; any custom pipelines a
-        deployment registered via ``IngestorRegistry`` are appended, so they are offered in the UI too.
+        deployment registered from its own pipeline container are appended, so they are offered in the UI too.
         """
         platform = [IngestorDTO.from_ingestor_type(ingestor, t) for ingestor in IngestorType.selectable()]
-        custom = [IngestorDTO.from_ingestor(ingestor, t) for ingestor in IngestorRegistry.custom()]
+        custom = [IngestorDTO.from_ingestor(ingestor, t) for ingestor in IngestorEntity.custom()]
         return platform + custom
 
     @staticmethod
@@ -284,7 +271,7 @@ class KnowledgeService:
         The S3 bucket is provisioned (with browser-upload CORS) up front so documents can be uploaded
         immediately, before the pipeline's first lazy ingest.
         """
-        if not IngestorRegistry.is_selectable(request.ingestor):
+        if not IngestorEntity.is_selectable(request.ingestor):
             raise HTTPException(
                 status_code=400,
                 detail=f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database.",
@@ -485,22 +472,43 @@ class KnowledgeService:
 
         The Dagster observe job reacts by scanning the data lake, so the same event drives
         both ingestion (file uploaded) and cleanup (file deleted, picked up as an orphan).
+
+        The subject is keyed on the owning ingestor rather than on the bucket, so a pipeline needs one
+        JetStream stream and one consumer however many databases it serves. Frozen legacy pipelines
+        keep the old per-instance subject: their images can no longer be changed to read a new one.
         """
-        topic_manager = PipelineInstanceTopicManager(
-            source_type="datalake",
-            source_id=container,
-            target_type="knowledge",
-            target_id=database,
-        )
+        bucket = BucketEntity.get_bucket_by_db_name(database)
+
+        if KnowledgeService._is_legacy_bucket(bucket):
+            topic_manager = PipelineInstanceTopicManager(
+                source_type=PipelineSourceType.DATALAKE,
+                source_id=container,
+                target_type=PipelineTargetType.KNOWLEDGE,
+                target_id=database,
+            )
+            stream_name, stream_subject = topic_manager.get_stream()
+            subject_for = topic_manager.get_subject_for_specific_event_in_pipeline_instance
+        else:
+            type_topic_manager = PipelineTypeTopicManager(pipeline_type=bucket.ingestor)
+            stream_name, stream_subject = type_topic_manager.get_stream()
+
+            def subject_for(run_key: str, event_name: str, event_id: str) -> str:
+                return type_topic_manager.get_subject_for_source_updated(
+                    bucket_name=container,
+                    db_name=database,
+                    run_key=run_key,
+                    event_name=event_name,
+                    event_id=event_id,
+                )
 
         event = SourceUpdatedEvent(path=file_path)
-        subject = topic_manager.get_subject_for_specific_event_in_pipeline_instance(
-            run_key=event.event_id,
-            event_name=event.event_name,
-            event_id=event.event_id,
-        )
+        subject = subject_for(run_key=event.event_id, event_name=event.event_name, event_id=event.event_id)
 
-        publisher = NCPublisher(name="KnowledgeService", nc=nc)
+        # JetStream, and the stream ensured first: an upload that lands before the sensor's first tick
+        # created the stream would otherwise be dropped, leaving the document pending until the next
+        # scheduled observation.
+        publisher = JSPublisher(name="KnowledgeService", js=nc.jetstream())
+        await publisher.ensure_stream_exists(stream_name, stream_subject)
         await publisher.publish_event(event, subject)
 
         logger.info(f"Published SourceUpdatedEvent for file {file_path} to subject {subject}")
@@ -703,13 +711,14 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    async def delete_database(nc: NATS, database: str) -> None:
-        """Flag a knowledge database (and its namespaces) for teardown and hand the heavy purge to the pipeline.
+    def delete_database(database: str) -> None:
+        """Flag a knowledge database (and its namespaces) for teardown; the pipeline does the heavy purge.
 
-        The synchronous work is O(1): flip the ``deleting`` flag — which excludes the rows from every
-        enumeration path, so ingestion stops at once — and publish a durable teardown request. The
-        Dagster teardown job then drops the Milvus collection, the doc-store database and the S3 bucket,
-        and hard-deletes the rows as its final step.
+        The synchronous work is O(1): flip the ``deleting`` flag, which excludes the rows from every
+        enumeration path so ingestion stops at once. The flag *is* the durable teardown request — the
+        pipeline's teardown sensor reads it directly, so there is no message that could be published,
+        acknowledged and then lost, leaving the database hidden but never purged. The Dagster job drops the
+        Milvus collection, the doc-store database and the S3 bucket, and hard-deletes the rows last.
         """
         try:
             bucket = BucketEntity.get_bucket_by_db_name(database)
@@ -721,24 +730,14 @@ class KnowledgeService:
         BucketEntity.mark_deleting(str(bucket.id))
         NamespaceEntity.mark_all_deleting_for_bucket(str(bucket.id))
 
-        await KnowledgeService._publish_teardown_event(
-            nc=nc,
-            bucket_name=bucket.bucket_name,
-            db_name=bucket.db_name,
-            event=KnowledgeTeardownRequestedEvent.for_database(
-                bucket_id=str(bucket.id), bucket_name=bucket.bucket_name, db_name=bucket.db_name
-            ),
-        )
-
     @staticmethod
     @trace_fn
-    async def delete_namespace(nc: NATS, database: str, namespace: str) -> None:
+    def delete_namespace(database: str, namespace: str) -> None:
         """Flag a single namespace for teardown; the bucket and its other namespaces survive.
 
-        Same mark-then-sweep shape as ``delete_database``: flip the namespace's ``deleting`` flag and
-        publish a durable teardown request. The teardown job deletes the namespace's S3 folder, its
-        doc-store rows and its Milvus vectors (by metadata filter — never a partition drop, since
-        namespaces share hashed partitions), then hard-deletes the row.
+        Same flag-as-request shape as ``delete_database``. The teardown job deletes the namespace's S3
+        folder, its doc-store rows and its Milvus vectors (by metadata filter — never a partition drop,
+        since namespaces share hashed partitions), then hard-deletes the row.
         """
         try:
             bucket = BucketEntity.get_bucket_by_db_name(database)
@@ -755,45 +754,3 @@ class KnowledgeService:
             ) from None
 
         NamespaceEntity.mark_deleting(str(namespace_entity.id))
-
-        await KnowledgeService._publish_teardown_event(
-            nc=nc,
-            bucket_name=bucket.bucket_name,
-            db_name=bucket.db_name,
-            event=KnowledgeTeardownRequestedEvent.for_namespace(
-                bucket_id=str(bucket.id),
-                bucket_name=bucket.bucket_name,
-                db_name=bucket.db_name,
-                namespace_id=str(namespace_entity.id),
-                namespace_name=namespace_entity.namespace_name,
-                folder_name=namespace_entity.folder_name,
-            ),
-        )
-
-    @staticmethod
-    @trace_fn
-    async def _publish_teardown_event(
-        nc: NATS, bucket_name: str, db_name: str, event: KnowledgeTeardownRequestedEvent
-    ) -> None:
-        """Publish a teardown request to its own durable JetStream stream.
-
-        JetStream (not NATS core) is used so the request survives an API or pipeline restart until the
-        teardown sensor consumes it — the whole point of doing the destructive work in Dagster. The
-        stream is ensured before publishing so even a first-ever teardown is captured rather than lost.
-        """
-        topic_manager = PipelineInstanceTopicManager(
-            source_type="datalake",
-            source_id=bucket_name,
-            target_type=_KNOWLEDGE_TEARDOWN_TARGET_TYPE,
-            target_id=db_name,
-        )
-        stream_name, stream_subject = topic_manager.get_stream()
-        subject = topic_manager.get_subject_for_specific_event_in_pipeline_instance(
-            run_key=event.event_id, event_name=event.event_name, event_id=event.event_id
-        )
-
-        publisher = JSPublisher(name="KnowledgeService", js=nc.jetstream())
-        await publisher.ensure_stream_exists(stream_name, stream_subject)
-        await publisher.publish_event(event, subject)
-
-        logger.info(f"Published KnowledgeTeardownRequestedEvent ({event.teardown_type}) for '{db_name}' to {subject}")

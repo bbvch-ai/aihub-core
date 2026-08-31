@@ -47,15 +47,11 @@ from swiss_ai_hub.pipeline.resources.vector_store.routed_milvus_vector_store_res
 )
 from swiss_ai_hub.pipeline.schedules.per_bucket_schedule import per_bucket_observe_schedule
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
-from swiss_ai_hub.pipeline.sensors.nats.per_bucket_knowledge_teardown_sensor import (
-    per_bucket_knowledge_teardown_sensor,
-)
+from swiss_ai_hub.pipeline.sensors.knowledge_teardown_sensor import knowledge_teardown_sensor
 from swiss_ai_hub.pipeline.sensors.nats.per_bucket_nats_document_uploaded_sensor import (
     per_bucket_nats_document_uploaded_sensor,
 )
-from swiss_ai_hub.pipeline.sensors.run_after_success_with_bucket_tag_sensor import (
-    run_after_success_with_bucket_tag_sensor,
-)
+from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import run_failure_notification_sensors_from_settings
 
 _DEFAULT_INGESTOR = IngestorType.RAG.value
@@ -159,8 +155,8 @@ def rag_pipeline_definitions(
         sensors=[
             default_automation_sensor(assets),
             per_bucket_nats_document_uploaded_sensor(observe_job, ingestor=ingestor),
-            per_bucket_knowledge_teardown_sensor(teardown_job, ingestor=ingestor),
-            run_after_success_with_bucket_tag_sensor(monitored_job=observe_job, triggered_job=remove_job),
+            knowledge_teardown_sensor(teardown_job, ingestor=ingestor),
+            run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job, require_bucket_tag=True),
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),

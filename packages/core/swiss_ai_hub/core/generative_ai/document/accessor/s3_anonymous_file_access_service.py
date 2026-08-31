@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 from mypy_boto3_s3 import S3Client
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner import S3BucketProvisioner
 from swiss_ai_hub.core.infrastructure.s3.s3_storage_settings import S3StorageSettings
 
 logger = logging.getLogger(__name__)
@@ -61,13 +62,7 @@ class S3AnonymousFileAccessService:
         if not container or not container.strip():
             raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
 
-        try:
-            self._s3_client.head_bucket(Bucket=container)
-        except ClientError as error:
-            if error.response["Error"]["Code"] in ("404", "NoSuchBucket"):
-                return False
-            raise
-        return True
+        return S3BucketProvisioner.bucket_exists(self._s3_client, container)
 
     @trace_fn
     def ensure_bucket_with_cors(self, container: str) -> None:
@@ -81,38 +76,7 @@ class S3AnonymousFileAccessService:
         if not container or not container.strip():
             raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
 
-        try:
-            self._s3_client.head_bucket(Bucket=container)
-        except ClientError as error:
-            if error.response["Error"]["Code"] not in ("404", "NoSuchBucket"):
-                raise
-            self._s3_client.create_bucket(Bucket=container)
-            logger.info(f"Created S3 bucket '{container}' for self-service knowledge database")
-
-        # AllowedOrigins is "*" by design: the entitlement lives in the short-lived, signed presigned URL,
-        # not in CORS. The origin we would otherwise pin is the browser app's own domain (Admin UI /
-        # OpenWebUI), which is deployment-specific and not known to these S3 settings — PUBLIC_ENDPOINT is
-        # the S3 host, not the frontend host. Narrow this to the frontend origin only once it is configurable.
-        self._s3_client.put_bucket_cors(
-            Bucket=container,
-            CORSConfiguration={
-                "CORSRules": [
-                    {
-                        "AllowedHeaders": [
-                            "Content-Type",
-                            "x-amz-date",
-                            "authorization",
-                            "x-amz-security-token",
-                            "x-amz-content-sha256",
-                        ],
-                        "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-                        "AllowedOrigins": ["*"],
-                        "ExposeHeaders": ["ETag", "x-amz-request-id", "x-amz-id-2", "x-amz-server-side-encryption"],
-                        "MaxAgeSeconds": 3000,
-                    }
-                ]
-            },
-        )
+        S3BucketProvisioner.ensure_bucket_with_cors(self._s3_client, container)
 
     @trace_fn
     def generate_sas_url(

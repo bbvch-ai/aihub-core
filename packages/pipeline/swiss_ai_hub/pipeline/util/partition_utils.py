@@ -2,6 +2,7 @@ from dagster import OpExecutionContext
 from swiss_ai_hub.core.generative_ai.utils.path_utils import decode_partition_key, encode_partition_key
 
 COMPOSITE_PARTITION_KEY_SEPARATOR = "|"
+PARTITIONS_TRUNCATED_TAG = {"partitions-truncated": "true"}
 
 
 def make_composite_partition_key(bucket: str, file_uri: str, *, encode: bool = True) -> str:
@@ -48,11 +49,24 @@ def replace_partition_keys_for_bucket(
     partitions_to_add = list(new_keys_set - old_keys_for_bucket)
     partitions_to_delete = list(old_keys_for_bucket - new_keys_set)
 
+    truncated_additions = max(len(partitions_to_add) - max_partitions, 0)
+    truncated_deletions = max(len(partitions_to_delete) - max_partitions, 0)
+
     if len(partitions_to_add) > max_partitions:
         partitions_to_add = partitions_to_add[:max_partitions]
 
     if len(partitions_to_delete) > max_partitions:
         partitions_to_delete = partitions_to_delete[:max_partitions]
+
+    if truncated_additions or truncated_deletions:
+        context.log.warning(
+            f"Truncated to max_partitions={max_partitions} for bucket '{bucket}': dropped "
+            f"{truncated_additions} addition(s) and {truncated_deletions} deletion(s). The partition set "
+            f"is incomplete until observed again."
+        )
+        # The sensor runs in another process and cannot read this run's state, so the fact that the
+        # partition set has not converged travels back to it as a run tag.
+        context.instance.add_run_tags(context.run_id, PARTITIONS_TRUNCATED_TAG)
 
     if partitions_to_add:
         context.instance.add_dynamic_partitions(
@@ -63,9 +77,6 @@ def replace_partition_keys_for_bucket(
     if partitions_to_delete:
         for partition_key in partitions_to_delete:
             context.instance.delete_dynamic_partition(partitions_def_name=partition_name, partition_key=partition_key)
-
-PARTITIONS_TRUNCATED_TAG = {"partitions-truncated": "true"}
-
 
 def replace_partition_keys(
     context: OpExecutionContext,

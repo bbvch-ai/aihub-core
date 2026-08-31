@@ -11,7 +11,11 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.infrastructure import MilvusSettings
 from swiss_ai_hub.core.infrastructure.rclone import RcloneSourceConfig
-from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
+from swiss_ai_hub.core.topic_managers import (
+    PipelineInstanceTopicManager,
+    PipelineSourceType,
+    PipelineTargetType,
+)
 
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
@@ -37,7 +41,6 @@ from swiss_ai_hub.pipeline.assets.factories.source_to_data_lake.data_lake_file_f
 from swiss_ai_hub.pipeline.assets.factories.source_to_data_lake.removed_data_lake_files_factory import (
     removed_data_lake_files_factory,
 )
-from swiss_ai_hub.pipeline.const.pipeline_names import INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 from swiss_ai_hub.pipeline.executors.factory import default_process_executor
 from swiss_ai_hub.pipeline.io.local_file_system_io_manager import LocalFileSystemIOManager
 from swiss_ai_hub.pipeline.io.rclone_io_manager import RcloneIOManager
@@ -178,9 +181,9 @@ def default_definitions(
             nats_document_uploaded_sensor(
                 job=job,
                 topic_manager=PipelineInstanceTopicManager(
-                    source_type=INTERNAL_DATALAKE,
+                    source_type=PipelineSourceType.DATALAKE,
                     source_id=datalake_container_name,
-                    target_type=INTERNAL_KNOWLEDGE_DB,
+                    target_type=PipelineTargetType.KNOWLEDGE,
                     target_id=store_name,
                 ),
             ),

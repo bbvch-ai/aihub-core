@@ -6,6 +6,7 @@ from datetime import datetime
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError, NoCredentialsError
+from swiss_ai_hub.core.infrastructure import S3BucketProvisioner
 from swiss_ai_hub.core.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 
 from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
@@ -296,32 +297,8 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
 
     def _ensure_bucket_with_cors(self) -> None:
-        """Ensure bucket exists and configure CORS for web access."""
-        try:
-            self._client.head_bucket(Bucket=self.container_name)
-        except ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code")
-            if error_code in ("404", "NoSuchBucket"):
-                self._client.create_bucket(Bucket=self.container_name)
-            else:
-                raise
-
-        # AllowedOrigins is "*" by design: the entitlement lives in the short-lived, signed presigned URL,
-        # not in CORS. The origin we would otherwise pin is the browser app's own domain, which is
-        # deployment-specific and not known here. Narrow this once the frontend origin is configurable.
-        cors_config = {
-            "CORSRules": [
-                {
-                    "AllowedOrigins": ["*"],
-                    "AllowedHeaders": ["Content-Type", "x-amz-date", "authorization", "x-amz-security-token"],
-                    "AllowedMethods": ["PUT", "POST", "DELETE", "GET", "HEAD"],
-                    "MaxAgeSeconds": 3000,
-                    "ExposeHeaders": ["ETag"],
-                }
-            ]
-        }
-
-        self._client.put_bucket_cors(Bucket=self.container_name, CORSConfiguration=cors_config)
+        """Ensure the bucket exists and carries the shared browser-upload CORS ruleset."""
+        S3BucketProvisioner.ensure_bucket_with_cors(self._client, self.container_name)
         logger.info(f"CORS configured for bucket: {self.container_name}")
 
     @property
