@@ -83,14 +83,14 @@ jobs:
             echo "::error::Provide one of source_tag (rc promote) or hotfix_branch (hotfix)."; exit 1
           fi
       - name: Checkout (rc tag or release branch, full history)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           ref: ${{ github.event.inputs.source_tag != '' && github.event.inputs.source_tag || github.event.inputs.hotfix_branch }}
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
       - name: Setup uv (hotfix bump needs `uv lock`)
         if: github.event.inputs.hotfix_branch != ''
-        uses: astral-sh/setup-uv@e92bafb6253dcd438e0484186d7669ea7a8ca1cc  # v6.4.3
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6.8.0
       - name: Resolve, auto-bump (hotfix), and tag
         id: r
         env:
@@ -193,7 +193,7 @@ jobs:
       matrix: ${{ steps.parse.outputs.matrix }}
     steps:
       - name: Checkout at rc tag
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           ref: ${{ needs.resolve.outputs.ref }}
       - name: Parse custom app images from compose-config.yml
@@ -219,7 +219,7 @@ jobs:
       matrix: ${{ fromJson(needs.discover-images.outputs.matrix) }}
     steps:
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121  # v4.1.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -342,7 +342,7 @@ jobs:
     needs: [resolve, build-release]
     steps:
       - name: Checkout (full history)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
