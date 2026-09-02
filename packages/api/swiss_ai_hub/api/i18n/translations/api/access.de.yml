@@ -23,6 +23,9 @@ presets:
   user_all_models:
     name: Alle Modelle nutzen
     description: Jedes verfügbare Modell nutzen.
+  user_knowledge:
+    name: Alle Wissensdatenbanken nutzen
+    description: Jede Wissensdatenbank und ihre Dokumente durchsuchen und lesen.
   admin_knowledge_create:
     name: Wissensdatenbanken erstellen
     description: Neue Wissensdatenbanken erstellen. Mit „Wissensdatenbanken verwalten“

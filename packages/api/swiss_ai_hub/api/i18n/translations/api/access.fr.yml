@@ -23,6 +23,10 @@ presets:
   user_all_models:
     name: Utiliser tous les modèles
     description: Utiliser chaque modèle disponible.
+  user_knowledge:
+    name: Utiliser toutes les bases de connaissances
+    description: Parcourir et rechercher dans chaque base de connaissances et ses
+      documents.
   admin_knowledge_create:
     name: Créer des bases de connaissances
     description: Créer de nouvelles bases de connaissances. À combiner avec « Gérer

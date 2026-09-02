@@ -23,6 +23,9 @@ presets:
   user_all_models:
     name: Use all models
     description: Use every available model.
+  user_knowledge:
+    name: Use all knowledge bases
+    description: Browse and search every knowledge base and its documents.
   admin_knowledge_create:
     name: Create knowledge bases
     description: Create new knowledge bases. Pair with "Manage knowledge bases" to

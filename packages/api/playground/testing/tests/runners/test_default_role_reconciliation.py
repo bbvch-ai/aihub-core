@@ -61,3 +61,14 @@ class TestKnowledgeAdminDefinition:
 
         assert "aihub.admin.knowledge" in definition.access_rules
         assert "aihub.admin.knowledge.>" in definition.access_rules
+
+    def test_is_scoped_to_knowledge_like_the_other_scoped_roles(self):
+        """Admin over every agent used to ride along; a knowledge admin is a knowledge admin only."""
+        definition = next(d for d in _DEFAULT_ROLE_DEFINITIONS if d.name == "AIHubKnowledgeAdmin")
+
+        assert all(rule.startswith("aihub.admin.knowledge") for rule in definition.access_rules)
+
+    def test_has_a_user_counterpart_like_agents_and_processes(self):
+        definition = next(d for d in _DEFAULT_ROLE_DEFINITIONS if d.name == "AIHubKnowledgeUser")
+
+        assert definition.access_rules == ["aihub.user.knowledge.>"]
