@@ -512,6 +512,7 @@ knowledge:
     description: Collections are automatically managed
   manual_management:
     description: Collections can be created and managed manually
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Edit collection
   upload_documents: Upload documents
   delete_namespace: Delete collection
@@ -855,8 +856,12 @@ lib:
       label: Database
     namespaces:
       label: Namespaces
-      placeholder: Select namespaces (empty = all)
-      help: Leave empty to search all namespaces
+      placeholder: Select at least one namespace
+      help: Only the selected namespaces are searched
+    allNamespaces:
+      label: Search all namespaces
+      help: Every namespace of this database is searched, including ones added later
+        ({count} today).
     allowedFilterFields:
       label: Allowed Filter Fields
       placeholder: Add a metadata key and press Enter

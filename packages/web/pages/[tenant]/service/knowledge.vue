@@ -22,6 +22,9 @@
               class="pi pi-lock-open text-surface-400 dark:text-surface-500"
               :title="t('knowledge.manual_management.description')"
             />
+            <span class="text-xs text-surface-500 dark:text-surface-400">
+              {{ t('knowledge.pipeline', { name: capitalCase(database.ingestor) }) }}
+            </span>
             <Button
               v-if="database.deletable"
               v-tooltip.top="t('knowledge.delete_database')"

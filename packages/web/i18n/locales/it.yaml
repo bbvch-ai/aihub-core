@@ -517,6 +517,7 @@ knowledge:
     description: Le collezioni sono gestite automaticamente
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Modifica collezione
   upload_documents: Carica documenti
   delete_namespace: Elimina collezione
@@ -868,8 +869,12 @@ lib:
       label: Database
     namespaces:
       label: Spazi dei nomi
-      placeholder: Seleziona gli spazi dei nomi (vuoto = tutti)
-      help: Lascia vuoto per cercare tutti gli spazi dei nomi
+      placeholder: Seleziona almeno uno spazio dei nomi
+      help: Vengono cercati solo gli spazi dei nomi selezionati
+    allNamespaces:
+      label: Cerca in tutti gli spazi dei nomi
+      help: Viene cercato ogni spazio dei nomi di questo database, inclusi quelli
+        aggiunti in seguito ({count} oggi).
     allowedFilterFields:
       label: Campi filtro consentiti
       placeholder: Inserisci una chiave di metadati e premi Invio

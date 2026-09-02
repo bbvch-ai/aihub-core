@@ -177,6 +177,7 @@ class KnowledgeService:
                     display_name=display_name,
                     auto_sync=bucket.auto_sync,
                     deletable=KnowledgeService._is_database_deletable(bucket),
+                    ingestor=bucket.ingestor,
                     namespaces=namespaces,
                 )
             )

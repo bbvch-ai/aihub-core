@@ -518,6 +518,7 @@ knowledge:
     description: Sammlungen werden automatisch verwaltet
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Sammlung bearbeiten
   upload_documents: Dokumente hochladen
   delete_namespace: Sammlung löschen
@@ -873,8 +874,12 @@ lib:
       label: Datenbank
     namespaces:
       label: Namensräume
-      placeholder: Namensräume auswählen (leer = alle)
-      help: Leer lassen, um alle Namensräume zu durchsuchen
+      placeholder: Mindestens einen Namensraum auswählen
+      help: Nur die ausgewählten Namensräume werden durchsucht
+    allNamespaces:
+      label: Alle Namensräume durchsuchen
+      help: Jeder Namensraum dieser Datenbank wird durchsucht, auch später hinzugefügte
+        ({count} heute).
     allowedFilterFields:
       label: Erlaubte Filterfelder
       placeholder: Metadatenschlüssel eingeben und Enter drücken

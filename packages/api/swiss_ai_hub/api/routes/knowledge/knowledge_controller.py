@@ -106,6 +106,7 @@ class KnowledgeController(TenantScopedController):
                             display_name=db.display_name,
                             auto_sync=db.auto_sync,
                             deletable=db.deletable,
+                            ingestor=db.ingestor,
                             namespaces=accessible_namespaces,
                         )
                     )
@@ -300,7 +301,9 @@ class KnowledgeController(TenantScopedController):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: UpdateNamespaceRequest,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> NamespaceResponse:
             """

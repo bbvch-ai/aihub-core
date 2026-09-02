@@ -17,4 +17,13 @@ class DatabaseDTO(BaseModel):
             "default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.",
         ),
     ]
+    ingestor: Annotated[
+        str,
+        Field(
+            ...,
+            description="Identifier of the ingestion pipeline that processes this database, as served by "
+            "GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level "
+            "rule holder learns how it is configured without seeing its namespaces.",
+        ),
+    ]
     namespaces: Annotated[list[NamespaceDTO], Field(..., description="List of namespaces")]

@@ -6593,6 +6593,12 @@ export const DatabaseDTOSchema = {
       description:
         "Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.",
     },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description:
+        "Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.",
+    },
     namespaces: {
       items: {
         $ref: "#/components/schemas/NamespaceDTO",
@@ -6603,7 +6609,14 @@ export const DatabaseDTOSchema = {
     },
   },
   type: "object",
-  required: ["name", "display_name", "auto_sync", "deletable", "namespaces"],
+  required: [
+    "name",
+    "display_name",
+    "auto_sync",
+    "deletable",
+    "ingestor",
+    "namespaces",
+  ],
   title: "DatabaseDTO",
 } as const;
 
@@ -24726,7 +24739,7 @@ export const VectorStoreInputSchema = {
   required: ["label", "validation"],
   title: "VectorStoreInput",
   description:
-    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
 } as const;
 
 export const VideoBlockSchema = {
@@ -38972,5 +38985,5 @@ export const VectorStoreInputWritableSchema = {
   required: ["label"],
   title: "VectorStoreInput",
   description:
-    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
 } as const;

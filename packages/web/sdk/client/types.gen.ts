@@ -4512,6 +4512,12 @@ export type DatabaseDto = {
    */
   deletable: boolean;
   /**
+   * Ingestor
+   *
+   * Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.
+   */
+  ingestor: string;
+  /**
    * Namespaces
    *
    * List of namespaces
@@ -16708,13 +16714,14 @@ export type ValidationError = {
  *
  * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
- * 2. Namespace multi-select (populated based on selected database)
+ * 2. "All namespaces" switch, or a namespace multi-select populated from the selected database
  * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * The output matches the configurable fields of `MilvusVectorStoreConfig`:
  * {
  * "collection_name": str,
  * "index_namespaces": list[str],
+ * "all_namespaces": bool,
  * "allowed_metadata_filter_fields": list[str],
  * }
  *
@@ -25932,13 +25939,14 @@ export type UserMessageEventWritable = {
  *
  * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
- * 2. Namespace multi-select (populated based on selected database)
+ * 2. "All namespaces" switch, or a namespace multi-select populated from the selected database
  * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * The output matches the configurable fields of `MilvusVectorStoreConfig`:
  * {
  * "collection_name": str,
  * "index_namespaces": list[str],
+ * "all_namespaces": bool,
  * "allowed_metadata_filter_fields": list[str],
  * }
  *

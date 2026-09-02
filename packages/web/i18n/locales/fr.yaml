@@ -519,6 +519,7 @@ knowledge:
     description: Les collections sont gérées automatiquement
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
+  pipeline: 'Pipeline : {name}'
   edit_namespace: Modifier la collection
   upload_documents: Télécharger des documents
   delete_namespace: Supprimer la collection
@@ -872,8 +873,12 @@ lib:
       label: Base de données
     namespaces:
       label: Espaces de noms
-      placeholder: Sélectionner les espaces de noms (vide = tous)
-      help: Laisser vide pour rechercher tous les espaces de noms
+      placeholder: Sélectionner au moins un espace de noms
+      help: Seuls les espaces de noms sélectionnés sont recherchés
+    allNamespaces:
+      label: Rechercher dans tous les espaces de noms
+      help: Chaque espace de noms de cette base est recherché, y compris ceux ajoutés
+        plus tard ({count} aujourd'hui).
     allowedFilterFields:
       label: Champs de filtre autorisés
       placeholder: Saisir une clé de métadonnées puis appuyer sur Entrée
