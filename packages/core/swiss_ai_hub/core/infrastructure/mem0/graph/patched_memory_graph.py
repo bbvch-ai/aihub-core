@@ -22,21 +22,25 @@ class PatchedMemoryGraph(MemoryGraph):
         self,
         config: MemoryConfig,
         t: LocaleHandler,
+        max_input_tokens: int | None = None,
     ):
         super().__init__(config)
         if self.config.graph_store.custom_prompt:
             logger.warning("Custom prompt provided in graph store config is ignored.")
         self._t = t
         self.llm = PatchedOpenAILLM.from_llm(self.llm)
-        self.embedding_model = PatchedOpenAIEmbedding.from_embedding(self.embedding_model)
+        self.embedding_model = PatchedOpenAIEmbedding.from_embedding(
+            self.embedding_model, max_input_tokens=max_input_tokens
+        )
 
     @classmethod
     def from_graph(
         cls,
         graph: MemoryGraph,
         t: LocaleHandler,
+        max_input_tokens: int | None = None,
     ) -> Self:
-        return cls(graph.config, t=t)
+        return cls(graph.config, t=t, max_input_tokens=max_input_tokens)
 
     def _retrieve_nodes_from_data(self, data, filters):
         """Extracts all the entities mentioned in the query."""

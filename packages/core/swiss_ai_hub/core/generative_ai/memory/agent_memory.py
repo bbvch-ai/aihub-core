@@ -63,7 +63,7 @@ class AgentMemory:
         return Mem0Service(
             config,
             t=self._t,
-            embedding_max_input_tokens=self._settings.EMBEDDING_MAX_INPUT_TOKENS,
+            embedding_max_input_tokens=self._settings.resolved_embedding_max_input_tokens(),
         )
 
     @property

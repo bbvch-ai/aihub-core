@@ -9,6 +9,10 @@ from mem0.llms.configs import LlmConfig
 from mem0.vector_stores.configs import VectorStoreConfig
 from pydantic import Field
 
+from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
+    DEFAULT_EMBEDDING_MAX_INPUT_TOKENS,
+    EMBEDDING_BUDGET_SAFETY_FACTOR,
+)
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
 from swiss_ai_hub.core.infrastructure.neo4j.neo4j_settings import Neo4jSettings
@@ -24,9 +28,29 @@ class Mem0Settings(EnvironmentSettings):
     SUPPORT_VISION: Annotated[bool, Field(description="Whether to support vision")] = True
     VISION_DETAIL: Annotated[str, Field(description="Vision details")] = "auto"
     EMBEDDING_MAX_INPUT_TOKENS: Annotated[
-        int,
+        int | None,
         Field(description="Maximum number of tokens accepted by the configured embedding model", gt=0),
-    ] = 8192
+    ] = None
+
+    def resolved_embedding_max_input_tokens(self) -> int:
+        if self.EMBEDDING_MAX_INPUT_TOKENS is not None:
+            return self.EMBEDDING_MAX_INPUT_TOKENS
+
+        response_data = LiteLLMProxySettings().httpx_client.get("/v1/model/info").json()
+        models = response_data.get("data", []) if isinstance(response_data, dict) else []
+        model = next(
+            (
+                entry
+                for entry in models
+                if isinstance(entry, dict) and entry.get("model_name") == self.EMBEDDING_MODEL_NAME
+            ),
+            None,
+        )
+        model_info = model.get("model_info") if model else None
+        max_input_tokens = model_info.get("max_input_tokens") if isinstance(model_info, dict) else None
+        if max_input_tokens:
+            return max(1, int(max_input_tokens * EMBEDDING_BUDGET_SAFETY_FACTOR))
+        return int(DEFAULT_EMBEDDING_MAX_INPUT_TOKENS * EMBEDDING_BUDGET_SAFETY_FACTOR)
 
     def get_config(
         self,

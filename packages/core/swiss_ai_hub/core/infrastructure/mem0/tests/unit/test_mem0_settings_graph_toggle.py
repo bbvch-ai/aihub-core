@@ -6,6 +6,8 @@
 on for the admin CRUD paths, so it must remain unchanged.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
@@ -45,8 +47,42 @@ def test_get_config_defaults_to_graph_on(settings):
     assert settings.get_config().graph_store.config
 
 
-def test_embedding_search_limit_defaults_to_model_window(settings):
-    assert settings.EMBEDDING_MAX_INPUT_TOKENS == 8192
+def test_embedding_search_limit_uses_explicit_override(settings):
+    settings.EMBEDDING_MAX_INPUT_TOKENS = 1234
+    assert settings.resolved_embedding_max_input_tokens() == 1234
+
+
+def test_embedding_search_limit_uses_model_info(settings):
+    response = MagicMock()
+    response.json.return_value = {"data": [{"model_name": "embed", "model_info": {"max_input_tokens": 1000}}]}
+    with (
+        patch.object(settings, "EMBEDDING_MAX_INPUT_TOKENS", None),
+        patch("swiss_ai_hub.core.infrastructure.mem0.mem0_settings.LiteLLMProxySettings") as settings_cls,
+    ):
+        settings_cls.return_value.httpx_client.get.return_value = response
+        assert settings.resolved_embedding_max_input_tokens() == 850
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"data": []},
+        {"data": [{"model_name": "other", "model_info": {"max_input_tokens": 1000}}]},
+        {"data": [{"model_name": "embed"}]},
+        {"data": [{"model_name": "embed", "model_info": {}}]},
+        {"data": [{"model_name": "embed", "model_info": {"max_input_tokens": None}}]},
+        {},
+    ],
+)
+def test_embedding_search_limit_falls_back_when_model_info_is_unavailable(settings, payload):
+    response = MagicMock()
+    response.json.return_value = payload
+    with (
+        patch.object(settings, "EMBEDDING_MAX_INPUT_TOKENS", None),
+        patch("swiss_ai_hub.core.infrastructure.mem0.mem0_settings.LiteLLMProxySettings") as settings_cls,
+    ):
+        settings_cls.return_value.httpx_client.get.return_value = response
+        assert settings.resolved_embedding_max_input_tokens() == 6963
 
 
 def test_memory_search_result_relations_defaults_to_empty():

@@ -27,6 +27,9 @@ def mem0_service() -> Mem0Service:
         mock_memory.search = AsyncMock(return_value={"results": [], "relations": []})
         mock_memory_cls.return_value = mock_memory
         service = Mem0Service(config=MagicMock(), t=MagicMock())
+        service._memory.embedding_model._tokenizer = MagicMock()
+        service._memory.embedding_model._tokenizer.encode.side_effect = lambda value: list(value)
+        service._memory.embedding_model._tokenizer.decode.side_effect = lambda value: "".join(value)
     return service
 
 
@@ -54,7 +57,8 @@ async def test_no_namespaces_omits_tenant_namespace_filter(mem0_service):
 @pytest.mark.asyncio
 async def test_oversized_query_is_truncated_and_logged(mem0_service, caplog):
     mem0_service._embedding_max_input_tokens = 3
-    mem0_service._tokenizer = lambda query: list(query)
+    mem0_service._memory.embedding_model._tokenizer.encode.side_effect = lambda value: list(value)
+    mem0_service._memory.embedding_model._tokenizer.decode.side_effect = lambda value: "".join(value)
 
     with caplog.at_level(logging.WARNING):
         await mem0_service.search(
