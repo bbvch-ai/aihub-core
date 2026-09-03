@@ -9,6 +9,7 @@ import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import tiktoken
 
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import Mem0Service
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
@@ -67,8 +68,24 @@ async def test_oversized_query_is_truncated_and_logged(mem0_service, caplog):
             memory_type=MemoryType.ORGANIZATION_MEMORY,
         )
 
-    assert mem0_service._memory.search.await_args.kwargs["query"] == "abc"
-    assert "from 6 to 3 tokens" in caplog.text
+    assert mem0_service._memory.search.await_args.kwargs["query"] == "def"
+    record = caplog.records[-1]
+    assert record.levelno == logging.WARNING
+    assert record.args == (6, 3)
+
+
+@pytest.mark.asyncio
+async def test_oversized_query_uses_real_tokenizer_and_preserves_question_tail(mem0_service):
+    tokenizer = tiktoken.get_encoding("cl100k_base")
+    mem0_service._memory.embedding_model._tokenizer = tokenizer
+    mem0_service._embedding_max_input_tokens = 16
+    question = "What is the retention period?"
+    query = ("Document content. " * 100) + question
+
+    fitted_query = mem0_service._fit_search_query(query)
+
+    assert len(tokenizer.encode(fitted_query)) <= 16
+    assert fitted_query.endswith(question)
 
 
 @pytest.mark.asyncio

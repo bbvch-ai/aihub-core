@@ -52,7 +52,7 @@ class Mem0Service:
         encoded = tokenizer.encode(query)
         if len(encoded) <= self._embedding_max_input_tokens:
             return query
-        fitted_query = tokenizer.decode(encoded[: self._embedding_max_input_tokens])
+        fitted_query = tokenizer.decode(encoded[-self._embedding_max_input_tokens :])
         logger.warning(
             "Truncated oversized mem0 memory search query from %d to %d tokens",
             len(encoded),
