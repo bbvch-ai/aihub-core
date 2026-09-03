@@ -1,3 +1,6 @@
+import logging
+
+from llama_index.core.utils import get_tokenizer
 from mem0.configs.base import MemoryConfig
 
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
@@ -11,14 +14,21 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_added import MemoryAdded
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 
+logger = logging.getLogger(__name__)
+
+DEFAULT_EMBEDDING_MAX_INPUT_TOKENS = 8192
+
 
 class Mem0Service:
     def __init__(
         self,
         config: MemoryConfig,
         t: LocaleHandler,
+        embedding_max_input_tokens: int = DEFAULT_EMBEDDING_MAX_INPUT_TOKENS,
     ):
         self._config = config
+        self._embedding_max_input_tokens = embedding_max_input_tokens
+        self._tokenizer = get_tokenizer()
         self._memory = PatchedAsyncMemory(config=config)
         self._memory.vector_store = PatchedMilvusDB.from_milvus(self._memory.vector_store)
         self._memory.llm = PatchedOpenAILLM.from_llm(self._memory.llm)
@@ -30,6 +40,23 @@ class Mem0Service:
     @property
     def config(self):
         return self._config
+
+    def _fit_search_query(self, query: str) -> tuple[str, int, int]:
+        """Return a query that fits the configured embedding token limit."""
+        original_tokens = len(self._tokenizer(query))
+        if original_tokens <= self._embedding_max_input_tokens:
+            return query, original_tokens, original_tokens
+
+        low, high = 0, len(query)
+        while low < high:
+            midpoint = (low + high + 1) // 2
+            if len(self._tokenizer(query[:midpoint])) <= self._embedding_max_input_tokens:
+                low = midpoint
+            else:
+                high = midpoint - 1
+        fitted_query = query[:low]
+        fitted_tokens = len(self._tokenizer(fitted_query))
+        return fitted_query, original_tokens, fitted_tokens
 
     async def add_memory(
         self,
@@ -129,6 +156,13 @@ class Mem0Service:
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
+        query, original_tokens, effective_tokens = self._fit_search_query(query)
+        if original_tokens != effective_tokens:
+            logger.warning(
+                "Truncated oversized mem0 memory search query from %d to %d tokens",
+                original_tokens,
+                effective_tokens,
+            )
         scalar_filters = {
             "_type": memory_type.value,
             "_user_id": user_id,

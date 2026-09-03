@@ -45,6 +45,10 @@ def test_get_config_defaults_to_graph_on(settings):
     assert settings.get_config().graph_store.config
 
 
+def test_embedding_search_limit_defaults_to_model_window(settings):
+    assert settings.EMBEDDING_MAX_INPUT_TOKENS == 8192
+
+
 def test_memory_search_result_relations_defaults_to_empty():
     """With the graph off, mem0 omits the `relations` key — the model must not require it."""
     assert MemorySearchResult(results=[]).relations == []

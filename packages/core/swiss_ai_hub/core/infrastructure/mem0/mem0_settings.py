@@ -23,6 +23,10 @@ class Mem0Settings(EnvironmentSettings):
 
     SUPPORT_VISION: Annotated[bool, Field(description="Whether to support vision")] = True
     VISION_DETAIL: Annotated[str, Field(description="Vision details")] = "auto"
+    EMBEDDING_MAX_INPUT_TOKENS: Annotated[
+        int,
+        Field(description="Maximum number of tokens accepted by the configured embedding model", gt=0),
+    ] = 8192
 
     def get_config(
         self,

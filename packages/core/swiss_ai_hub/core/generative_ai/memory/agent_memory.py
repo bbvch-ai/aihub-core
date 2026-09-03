@@ -60,7 +60,11 @@ class AgentMemory:
             custom_update_memory_prompt=self._custom_update_memory_prompt,
             enable_graph=False,
         )
-        return Mem0Service(config, t=self._t)
+        return Mem0Service(
+            config,
+            t=self._t,
+            embedding_max_input_tokens=self._settings.EMBEDDING_MAX_INPUT_TOKENS,
+        )
 
     @property
     def agent_id(self):

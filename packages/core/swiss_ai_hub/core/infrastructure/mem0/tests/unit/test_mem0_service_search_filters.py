@@ -5,6 +5,7 @@ shape: empty/None → no `_tenant_namespace` filter; single → bare string
 equality; multiple → `{"in": [...]}` advanced operator.
 """
 
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -47,6 +48,23 @@ async def test_no_namespaces_omits_tenant_namespace_filter(mem0_service):
     filters = _captured_filters(mem0_service)
     assert "_tenant_namespace" not in filters
     assert filters["_tenant_id"] == "ACME"
+    assert mem0_service._memory.search.await_args.kwargs["query"] == "q"
+
+
+@pytest.mark.asyncio
+async def test_oversized_query_is_truncated_and_logged(mem0_service, caplog):
+    mem0_service._embedding_max_input_tokens = 3
+    mem0_service._tokenizer = lambda query: list(query)
+
+    with caplog.at_level(logging.WARNING):
+        await mem0_service.search(
+            query="abcdef",
+            owner_id="owner",
+            memory_type=MemoryType.ORGANIZATION_MEMORY,
+        )
+
+    assert mem0_service._memory.search.await_args.kwargs["query"] == "abc"
+    assert "from 6 to 3 tokens" in caplog.text
 
 
 @pytest.mark.asyncio
