@@ -6,6 +6,7 @@ from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from pymilvus import MilvusClient
+from pymilvus.exceptions import MilvusException
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
@@ -207,9 +208,15 @@ class AgentRunner(HealthCheckProvider):
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()
 
-        # Connect to Milvus
+        # Connect to Milvus. Optional on purpose: this client only feeds the readiness report - RAG
+        # builds its own connection through MilvusVectorStoreConfig - so letting it raise turned a
+        # slow Milvus start into a restart loop across every agent container, the same way it did
+        # for the API on staging 2026-09-03.
         milvus_settings = MilvusSettings()
-        self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        try:
+            self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        except MilvusException:
+            logger.exception("Milvus unreachable at startup, continuing without a client")
 
         # Connect to MongoDB (skip if already connected)
         try:
