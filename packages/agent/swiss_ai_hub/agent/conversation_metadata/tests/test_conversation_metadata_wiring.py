@@ -36,7 +36,10 @@ can't silently regress to hanging off the answer event (which raced teardown), a
 can't silently gain metadata.
 """
 
+import ast
 import inspect
+
+import pytest
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent import ExpertAskingAgent
@@ -47,6 +50,7 @@ from swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent import McpReactAg
 from swiss_ai_hub.agent.agents.namespace_selection_agent.namespace_selection_agent import NamespaceSelectionAgent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.retrieval_agent.retrieval_agent import RetrievalAgent
+from swiss_ai_hub.agent.conversation_metadata import conversation_metadata_step_functions
 
 INLINE_HELPER = "generate_conversation_metadata"
 TITLE_GENERATOR = "generate_title"
@@ -54,6 +58,11 @@ FOLLOW_UP_GENERATOR = "generate_follow_up_questions"
 TITLE_STEP = "generate_conversation_title_step"
 FOLLOW_UP_STEP = "generate_follow_up_questions_step"
 METADATA_STEP_WRAPPERS = {TITLE_STEP, FOLLOW_UP_STEP}
+METADATA_HELPERS = {INLINE_HELPER, TITLE_GENERATOR, FOLLOW_UP_GENERATOR}
+
+# Stands in for every argument at a call site: the signature check is about arity and parameter names,
+# so the values never matter.
+PLACEHOLDER = object()
 
 META_ANSWER_STEP = "answer_meta_question_step"
 META_TITLE_STEP = "generate_meta_question_title_step"
@@ -206,3 +215,35 @@ def test_mcp_react_agent_max_iterations_generates_no_metadata():
     assert INLINE_HELPER not in source, (
         "McpReactAgent.max_iterations_reached_step must not call generate_conversation_metadata"
     )
+
+
+def _metadata_calls(agent_type) -> list[ast.Call]:
+    module_source = inspect.getsource(inspect.getmodule(agent_type))
+    return [
+        node
+        for node in ast.walk(ast.parse(module_source))
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in METADATA_HELPERS
+    ]
+
+
+def test_every_metadata_call_site_matches_its_helper_signature():
+    """Every adopter's call must bind against the real helper signature, not merely name it.
+
+    The other tests here are substring checks, so a call site that names the right helper with the wrong
+    arguments passes them. That is exactly how the guard-reject path in ``FewShotAgent.stop_step`` kept a
+    five-argument call after the helpers gained ``user`` for cost attribution: every wiring assertion
+    stayed green while production raised ``TypeError`` on each guard rejection. Binding placeholders
+    against ``inspect.signature`` catches any future parameter a call site forgets, not just ``user``.
+    """
+    for agent_type in SPLIT_AGENTS + INLINE_AGENTS:
+        for call in _metadata_calls(agent_type):
+            signature = inspect.signature(getattr(conversation_metadata_step_functions, call.func.id))
+            positional = [PLACEHOLDER] * len(call.args)
+            keywords = {keyword.arg: PLACEHOLDER for keyword in call.keywords}
+            try:
+                signature.bind(*positional, **keywords)
+            except TypeError as mismatch:
+                pytest.fail(
+                    f"{agent_type.__name__} line {call.lineno}: {call.func.id}{signature} does not accept this "
+                    f"call — {mismatch}"
+                )
