@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import socket
 import threading
 from abc import ABC, abstractmethod
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -67,6 +66,7 @@ class HealthServer:
         provider: HealthCheckProvider,
         default_port: int = 8090,
         port_env_var: str | None = None,
+        bind_retry_seconds: float = 5.0,
     ):
         """
         Initialize the health server.
@@ -74,10 +74,12 @@ class HealthServer:
         self.provider = provider
         self.default_port = default_port
         self.port_env_var = port_env_var
+        self.bind_retry_seconds = bind_retry_seconds
 
         self._server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
         self._port: int | None = None
+        self._stop_event = threading.Event()
 
     @property
     def port(self) -> int | None:
@@ -133,53 +135,53 @@ class HealthServer:
 
         return HealthHandler
 
-    def _is_port_available(self, port: int) -> bool:
-        """Check if a port is available for binding."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(("0.0.0.0", port))
-                return True
-            except OSError:
-                return False
-
-    def _find_free_port(self) -> int:
-        """Find a random available port."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("0.0.0.0", 0))
-            return s.getsockname()[1]
-
     def _resolve_port(self) -> int:
-        """Determine which port to use based on env var, default, or fallback."""
+        """Determine which port to use, from the env var if set, otherwise the default."""
         if self.port_env_var:
             env_port = os.environ.get(self.port_env_var)
             if env_port is not None:
-                port = int(env_port)
-                if not self._is_port_available(port):
-                    raise OSError(f"{self.port_env_var}={port} is not available. Port is already in use.")
-                return port
+                return int(env_port)
 
-        if self._is_port_available(self.default_port):
-            return self.default_port
+        return self.default_port
 
-        port = self._find_free_port()
-        logger.warning(f"Default health port {self.default_port} is occupied, falling back to port {port}")
-        return port
+    def _serve(self, port: int, handler_class: type[BaseHTTPRequestHandler]) -> None:
+        """Bind the requested port, retrying until it succeeds or the server is stopped."""
+        while not self._stop_event.is_set():
+            try:
+                server = HTTPServer(("0.0.0.0", port), handler_class)
+            except OSError as e:
+                logger.warning(
+                    f"Health check server could not bind port {port} ({e}); retrying in {self.bind_retry_seconds}s"
+                )
+                self._stop_event.wait(self.bind_retry_seconds)
+                continue
+
+            self._server = server
+            self._port = port
+            logger.info(f"Health check server started on port {port}")
+            try:
+                server.serve_forever()
+            finally:
+                server.server_close()
+            return
 
     def start(self) -> None:
         """Start the HTTP health check server in a background thread."""
-        if self._server is not None:
+        if self._thread is not None:
             logger.warning("Health server is already running")
             return
 
-        self._port = self._resolve_port()
-        handler_class = self._create_handler()
-        self._server = HTTPServer(("0.0.0.0", self._port), handler_class)
-        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+        self._stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._serve,
+            args=(self._resolve_port(), self._create_handler()),
+            daemon=True,
+        )
         self._thread.start()
-        logger.info(f"Health check server started on port {self._port}")
 
     def stop(self) -> None:
         """Stop the HTTP health check server."""
+        self._stop_event.set()
         if self._server:
             self._server.shutdown()
             self._server = None
