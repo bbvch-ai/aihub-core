@@ -23,7 +23,7 @@ from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import S
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
 from swiss_ai_hub.api.routes.openai.dto.history_response import HistoryResponse
-from swiss_ai_hub.api.routes.thread.conversation_history_projector import project_conversation_history
+from swiss_ai_hub.api.routes.thread.conversation_history_projector import ConversationHistoryProjector
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
 from swiss_ai_hub.api.routes.thread.dto.statistics.calculated_thread_stats import CalculatedThreadStats
 from swiss_ai_hub.api.routes.thread.dto.statistics.display_statistics import DisplayStatistics
@@ -183,7 +183,7 @@ class ThreadService:
     ) -> HistoryResponse:
         persisted_events = PersistedAgentEventEntity.conversation_events_for_thread(thread_id)
         return HistoryResponse(
-            messages=project_conversation_history(
+            messages=ConversationHistoryProjector.project(
                 persisted_events,
                 primary_agent_class=primary_agent_class,
                 primary_agent_id=primary_agent_id,
