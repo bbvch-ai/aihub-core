@@ -14,7 +14,7 @@ from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_enti
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
-from swiss_ai_hub.api.routes.thread.conversation_history_projector import project_conversation_history
+from swiss_ai_hub.api.routes.thread.conversation_history_projector import ConversationHistoryProjector
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 
 THREAD_ID = str(ObjectId())
@@ -195,7 +195,7 @@ def _project(
     primary_agent_class: str | None = PRIMARY_CLASS,
     primary_agent_id: str | None = PRIMARY_ID,
 ) -> list[ChatCompletionMessageParam]:
-    return project_conversation_history(
+    return ConversationHistoryProjector.project(
         events,
         primary_agent_class=primary_agent_class,
         primary_agent_id=primary_agent_id,
@@ -295,6 +295,18 @@ def test_malformed_relevant_event_is_skipped_and_later_event_survives(caplog):
 
     assert messages == [_text("user", "question"), _text("assistant", "valid answer")]
     assert caplog.records[-1].event_id == "bad-chunk"
+    assert caplog.records[-1].error_type == "ValueError"
+
+
+def test_empty_chunk_is_skipped_without_creating_assistant_message(caplog):
+    marker = _user("question", created_at=1, event_id="u1")
+    empty_chunk = _chunk("", created_at=2, event_id="empty-chunk")
+
+    with caplog.at_level(logging.WARNING, logger=PROJECTOR_LOGGER):
+        messages = _project([marker, empty_chunk])
+
+    assert messages == [_text("user", "question")]
+    assert caplog.records[-1].event_id == "empty-chunk"
     assert caplog.records[-1].error_type == "ValueError"
 
 
@@ -578,7 +590,7 @@ async def test_thread_service_preserves_optional_primary_identity_contract():
     with (
         patch.object(PersistedAgentEventEntity, "conversation_events_for_thread", return_value=events) as query,
         patch(
-            "swiss_ai_hub.api.routes.thread.thread_service.project_conversation_history",
+            "swiss_ai_hub.api.routes.thread.thread_service.ConversationHistoryProjector.project",
             return_value=expected,
         ) as projector,
     ):
