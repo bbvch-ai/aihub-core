@@ -17,6 +17,16 @@ from swiss_ai_hub.core.topics import Topic
 
 logger = logging.getLogger(__name__)
 
+# The replay consumer created in `start()` is only ever needed for the duration of a single
+# startup replay, but its name is unique per process (a fresh uuid), so a durable consumer left
+# behind by a killed process (SIGKILL/OOM/liveness-probe kill) is never reused or reaped by any
+# future process. Setting `inactive_threshold` makes the JetStream server delete the consumer
+# itself once it has been idle this long, regardless of how the client died -- a client-side
+# try/finally (added below) cannot help against SIGKILL. Five minutes is comfortably longer than
+# a full-stream replay is ever expected to take (polled in batches of 100 with a 1s fetch
+# timeout), so this only ever fires for genuinely abandoned consumers.
+REPLAY_CONSUMER_INACTIVE_THRESHOLD_SECONDS = 5 * 60
+
 
 class JetStreamEventStore:
     """
@@ -135,31 +145,37 @@ class JetStreamEventStore:
                     deliver_policy=DeliverPolicy.ALL,
                     ack_policy=AckPolicy.NONE,
                     filter_subject=self.control_subject,
+                    inactive_threshold=REPLAY_CONSUMER_INACTIVE_THRESHOLD_SECONDS,
                 )
 
-                msg_count = 0
-                while True:
-                    batch_had_messages = False
-                    async for polled_msg in poller.poll(batch_size=100, timeout=1.0):
-                        batch_had_messages = True
-                        try:
-                            topic = self.topic.from_subject(polled_msg.subject)
-                            event = polled_msg.event
-                            event._jetstream_sequence = polled_msg.sequence
-                            self._add_event_to_store(topic.execution_context_id, event)
-                            msg_count += 1
-                        except Exception as e:
-                            logger.exception(f"Error processing replayed message: {e}")
-
-                    if not batch_had_messages:
-                        break
-
-                logger.info(f"Replayed {msg_count} historical events")
-
                 try:
-                    await self.js.delete_consumer(self.stream_name, self.replay_durable_name)
-                except Exception as e:
-                    logger.warning(f"Error deleting temporary consumer: {e}")
+                    msg_count = 0
+                    while True:
+                        batch_had_messages = False
+                        async for polled_msg in poller.poll(batch_size=100, timeout=1.0):
+                            batch_had_messages = True
+                            try:
+                                topic = self.topic.from_subject(polled_msg.subject)
+                                event = polled_msg.event
+                                event._jetstream_sequence = polled_msg.sequence
+                                self._add_event_to_store(topic.execution_context_id, event)
+                                msg_count += 1
+                            except Exception as e:
+                                logger.exception(f"Error processing replayed message: {e}")
+
+                        if not batch_had_messages:
+                            break
+
+                    logger.info(f"Replayed {msg_count} historical events")
+                finally:
+                    # Best-effort prompt cleanup for the normal (non-killed) path. This is a
+                    # backstop, not the primary fix: it cannot run if the process is SIGKILLed, which
+                    # is why the consumer is also created with `inactive_threshold` above so the
+                    # JetStream server reaps it independently of the client's fate.
+                    try:
+                        await self.js.delete_consumer(self.stream_name, self.replay_durable_name)
+                    except Exception as e:
+                        logger.warning(f"Error deleting temporary consumer: {e}")
 
                 self.is_initialized = True
                 logger.info("Event store initialization complete")
