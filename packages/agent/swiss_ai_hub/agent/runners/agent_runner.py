@@ -207,9 +207,18 @@ class AgentRunner(HealthCheckProvider):
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()
 
-        # Connect to Milvus
+        # Connect to Milvus. Optional on purpose: this client only feeds the readiness report - RAG
+        # builds its own connection through MilvusVectorStoreConfig - so letting it raise turned a
+        # slow Milvus start into a restart loop across every agent container, the same way it did
+        # for the API on staging 2026-09-03.
         milvus_settings = MilvusSettings()
-        self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        try:
+            self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+        # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+        # UNAUTHENTICATED from a token mismatch crash-loop the container exactly as before.
+        except Exception:
+            logger.exception("Milvus unreachable at startup, continuing without a client")
 
         # Connect to MongoDB (skip if already connected)
         try:
