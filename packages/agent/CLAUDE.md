@@ -280,6 +280,10 @@ also that the API cannot run such validators at save time at all — it validate
 rebuilt from the model, which cannot express cross-field rules — so a config violating one saves regardless. See ADR
 `2026_08_07_agent_config_failures_surface_as_exception_events`.
 
+Per-field constraints are different, and `Field(min_length=…, pattern=…)` is the tool for them: they *do* survive into
+the JSON Schema, so they reject the bad save instead of reporting it once per run. `AgentRef` constrains both halves
+that way for exactly that reason. The rule above is about cross-field validators, which the schema cannot carry.
+
 ## AgentRunner & AgentDispatcher
 
 **AgentRunner**: Connects agent to infrastructure (NATS, JetStream, Redis, Milvus, MongoDB). Responds to discovery

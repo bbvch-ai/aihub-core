@@ -42,6 +42,9 @@ def test_additional_rules_are_appended_after_agent_ref_required():
     element = AgentSelector(label=_label(), required=True, additional_validation_rules="length:3")
     assert element.validation == "agentRefRequired|length:3"
 
+    cross_field = AgentSelector(label=_label(), required=True, additional_validation_rules="memberOf:allowed_agents")
+    assert cross_field.validation == "agentRefRequired|memberOf:allowed_agents"
+
 
 class TestAgentRefConstraints:
     """A blank half renders as the NATS wildcard `*` in `PartialAgentTopic.to_subject`, so the
@@ -67,6 +70,58 @@ class TestAgentRefConstraints:
         """A whitespace segment reaches NATS just as blank as an empty one, and `min_length` alone lets it through."""
         with pytest.raises(ValidationError):
             AgentRef(agent_class=agent_class, agent_id=agent_id)
+
+    @pytest.mark.parametrize(
+        ("agent_class", "agent_id"),
+        [("  RAGAgent  ", "shared-knowledge-rag"), ("RAGAgent", " shared-knowledge-rag ")],
+    )
+    def test_padded_half_is_rejected(self, agent_class: str, agent_id: str):
+        """pydantic-core treats `pattern` as a *search*, so the unanchored `\\S` this replaced accepted these.
+
+        A padded half is not blank, so no other guard catches it: it reaches `to_subject` verbatim and
+        renders a subject with spaces in it, which addresses no instance.
+        """
+        with pytest.raises(ValidationError):
+            AgentRef(agent_class=agent_class, agent_id=agent_id)
+
+    @pytest.mark.parametrize(
+        ("agent_class", "agent_id"),
+        [("RAG Agent", "shared-knowledge-rag"), ("RAGAgent", "shared rag")],
+    )
+    def test_interior_whitespace_is_rejected(self, agent_class: str, agent_id: str):
+        """A space inside the segment splits it into two NATS tokens, shifting every later segment."""
+        with pytest.raises(ValidationError):
+            AgentRef(agent_class=agent_class, agent_id=agent_id)
+
+    @pytest.mark.parametrize(
+        ("agent_class", "agent_id"),
+        [("RAG.Agent", "shared-knowledge-rag"), ("RAGAgent", "a.b"), ("RAGAgent", "*"), ("RAGAgent", ">")],
+    )
+    def test_subject_separator_or_wildcard_half_is_rejected(self, agent_class: str, agent_id: str):
+        """Each of these is a NATS token separator or wildcard, so the delegation fans out or misses.
+
+        Each also makes `AccessChecker.validate_permission_template` *raise* rather than deny, which would
+        turn the intended 403 in `validate_authorization` into a 500.
+        """
+        with pytest.raises(ValidationError):
+            AgentRef(agent_class=agent_class, agent_id=agent_id)
+
+    @pytest.mark.parametrize(
+        ("agent_class", "agent_id"),
+        [
+            ("RAGAgent", "shared-knowledge-rag"),
+            ("ExpertAskingAgent", "engineering-expert"),
+            ("ExpertRAGAgent", "engineering-expert-rag"),
+            ("LLMWrappingAgent", "dev_agent"),
+        ],
+    )
+    def test_every_shipped_reference_is_accepted(self, agent_class: str, agent_id: str):
+        """The counterweight to the rejections above: these are the references the app templates ship.
+
+        Tightening the pattern further than the class `validate_permission_template` accepts would start
+        rejecting configs that work today, so this pins the accepted side too.
+        """
+        assert AgentRef(agent_class=agent_class, agent_id=agent_id).agent_id == agent_id
 
 
 class TestPartialReferenceAuthorization:

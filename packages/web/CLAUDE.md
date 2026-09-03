@@ -157,14 +157,15 @@ surfaces as the FormKit node's `validation` string. Cross-field rules read sibli
 FormKit tracks whatever the rule reads, so it re-runs when that sibling changes too. Such rules are advisory: the API
 validates submissions against a JSON Schema and never sees them.
 
+An element whose value is an **object** needs more than that. FormKit's built-in `required` only asks whether a value is
+present, so it passes on a `localeInput` with every locale blank, or an `agentSelector` with a class chosen and no
+instance. Such an element overrides the `validation` computed property on the Python side to emit its own rule instead
+of `required` (`localeRequired`, `agentRefRequired`), and that rule must set `skipEmpty = false` or it never runs on a
+never-touched field, whose value is still `null` — precisely the case it exists to catch. Add a message for all four
+locales.
+
 Custom input components receive props via `context` (not Vue props): read from `context.value`, write via
 `context.node.input(newValue)`.
-
-**Custom validation rules** also live in `formkit.config.ts` (`localeRequired`, `agentRefRequired`). FormKit's built-in
-`required` only asks whether a value is present, so it passes on any non-empty object — a `localeInput` with every
-locale blank, or an `agentSelector` with a class chosen and no instance. Elements whose value is an object therefore
-override the `validation` computed property on the Python side to emit their own rule name instead of `required`, and
-the rule must set `skipEmpty = false` or it never runs on a never-touched field. Add a message for all four locales.
 
 **Repeater elements** must be extracted separately and rendered via `<FormKitRepeater>` — the standard `repeater` type
 is not supported inside `<FormKitSchema>`.

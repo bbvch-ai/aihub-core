@@ -44,11 +44,16 @@ def test_min_length_survives_into_the_emitted_json_schema(emitted_schema: dict):
 
 
 def test_pattern_survives_into_the_emitted_json_schema(emitted_schema: dict):
-    """`minLength` alone accepts a single space, which renders as a blank NATS segment just as `""` does."""
+    """`minLength` alone accepts a single space, which renders as a blank NATS segment just as `""` does.
+
+    The pattern is deliberately the same character class `AccessChecker.validate_permission_template`
+    accepts, so a reference that passes this save path can never make the access check raise instead of
+    answering. It must also stay anchored: pydantic-core treats `pattern` as a search.
+    """
     agent_ref_properties = emitted_schema["$defs"]["AgentRef"]["properties"]
 
-    assert agent_ref_properties["agent_class"]["pattern"] == r"\S"
-    assert agent_ref_properties["agent_id"]["pattern"] == r"\S"
+    assert agent_ref_properties["agent_class"]["pattern"] == r"^[A-Za-z0-9_-]+$"
+    assert agent_ref_properties["agent_id"]["pattern"] == r"^[A-Za-z0-9_-]+$"
 
 
 def test_complete_reference_is_accepted(submission_model: type):
@@ -73,3 +78,40 @@ def test_whitespace_only_half_is_rejected_on_the_save_path(
 ) -> None:
     with pytest.raises(Exception, match="pattern"):
         submission_model(rag_agent={"agent_class": agent_class, "agent_id": agent_id})
+
+
+@pytest.mark.parametrize(
+    ("agent_class", "agent_id"),
+    [("  RAGAgent  ", "shared-knowledge-rag"), ("RAGAgent", " shared-knowledge-rag ")],
+)
+def test_padded_half_is_rejected_on_the_save_path(submission_model: type, agent_class: str, agent_id: str) -> None:
+    """The unanchored pattern this replaced accepted a padded half, which reaches `to_subject` verbatim."""
+    with pytest.raises(Exception, match="pattern"):
+        submission_model(rag_agent={"agent_class": agent_class, "agent_id": agent_id})
+
+
+@pytest.mark.parametrize(
+    ("agent_class", "agent_id"),
+    [("RAG.Agent", "shared-knowledge-rag"), ("RAGAgent", "a.b"), ("RAGAgent", "*")],
+)
+def test_subject_separator_is_rejected_on_the_save_path(
+    submission_model: type, agent_class: str, agent_id: str
+) -> None:
+    """A `.` splits the segment into two NATS tokens and a `*` fans the delegation out to every instance."""
+    with pytest.raises(Exception, match="pattern"):
+        submission_model(rag_agent={"agent_class": agent_class, "agent_id": agent_id})
+
+
+@pytest.mark.parametrize(
+    ("agent_class", "agent_id"),
+    [
+        ("RAGAgent", "shared-knowledge-rag"),
+        ("ExpertAskingAgent", "engineering-expert"),
+        ("LLMWrappingAgent", "dev_agent"),
+    ],
+)
+def test_the_shipped_references_are_accepted_on_the_save_path(
+    submission_model: type, agent_class: str, agent_id: str
+) -> None:
+    """So the pattern cannot be tightened past the references the app templates ship without failing here."""
+    submission_model(rag_agent={"agent_class": agent_class, "agent_id": agent_id})
