@@ -78,3 +78,39 @@ def test_optional_dependency_reports_unreachable_milvus_as_no_client(monkeypatch
         side_effect=MilvusException(message="Milvus Proxy is not ready yet"),
     ):
         assert use_optional_milvus(request) is None
+
+
+def test_raises_503_when_the_driver_fails_outside_milvus_exception(monkeypatch: pytest.MonkeyPatch):
+    """pymilvus re-raises the codes in its IGNORE_RETRY_CODES set as bare `grpc.RpcError`.
+
+    An UNAUTHENTICATED from a token mismatch therefore never reaches the caller as a
+    `MilvusException`, and must still degrade to a 503 instead of a 500.
+    """
+    for key, value in MILVUS_SETTINGS.items():
+        monkeypatch.setenv(key, value)
+    request = _request_with_client(None)
+
+    with (
+        patch(
+            "swiss_ai_hub.core.infrastructure.milvus.use_milvus.MilvusClient",
+            side_effect=RuntimeError("StatusCode.UNAUTHENTICATED, auth check failure"),
+        ),
+        pytest.raises(HTTPException) as raised,
+    ):
+        use_milvus(request)
+
+    assert raised.value.status_code == HTTP_503_SERVICE_UNAVAILABLE
+    assert request.app.state.milvus_client is None
+
+
+def test_optional_dependency_tolerates_a_failure_outside_milvus_exception(monkeypatch: pytest.MonkeyPatch):
+    """Readiness must report `milvus: false` for a bare `grpc.RpcError` too, not fail the whole report."""
+    for key, value in MILVUS_SETTINGS.items():
+        monkeypatch.setenv(key, value)
+    request = _request_with_client(None)
+
+    with patch(
+        "swiss_ai_hub.core.infrastructure.milvus.use_milvus.MilvusClient",
+        side_effect=RuntimeError("StatusCode.UNAUTHENTICATED, auth check failure"),
+    ):
+        assert use_optional_milvus(request) is None

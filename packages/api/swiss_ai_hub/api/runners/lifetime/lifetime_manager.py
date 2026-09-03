@@ -8,7 +8,6 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
-from pymilvus.exceptions import MilvusException
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
@@ -120,7 +119,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     milvus_client: MilvusClient | None = None
     try:
         milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
-    except MilvusException:
+    # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+    # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+    # UNAUTHENTICATED from a token mismatch crash-loop the process exactly as before.
+    except Exception:
         logger.exception("Milvus unreachable at startup, continuing without a client")
 
     # Connect to S3 (SeaweedFS)

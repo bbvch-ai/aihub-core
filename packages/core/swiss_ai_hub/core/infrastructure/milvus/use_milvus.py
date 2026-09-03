@@ -2,7 +2,6 @@ import logging
 
 from fastapi import HTTPException, Request
 from pymilvus import MilvusClient
-from pymilvus.exceptions import MilvusException
 from starlette.status import HTTP_503_SERVICE_UNAVAILABLE
 
 from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
@@ -22,7 +21,10 @@ def use_milvus(request: Request) -> MilvusClient:
         milvus_settings = MilvusSettings()
         try:
             request.app.state.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
-        except MilvusException as milvus_unreachable_exception:
+        # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+        # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+        # UNAUTHENTICATED from a token mismatch escape as a 500.
+        except Exception as milvus_unreachable_exception:
             logger.warning(f"Milvus is unreachable: {milvus_unreachable_exception}")
             raise HTTPException(
                 status_code=HTTP_503_SERVICE_UNAVAILABLE, detail="Vector store is temporarily unavailable."

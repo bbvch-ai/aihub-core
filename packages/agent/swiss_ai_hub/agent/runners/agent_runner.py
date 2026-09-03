@@ -6,7 +6,6 @@ from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from pymilvus import MilvusClient
-from pymilvus.exceptions import MilvusException
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
@@ -215,7 +214,10 @@ class AgentRunner(HealthCheckProvider):
         milvus_settings = MilvusSettings()
         try:
             self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
-        except MilvusException:
+        # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+        # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+        # UNAUTHENTICATED from a token mismatch crash-loop the container exactly as before.
+        except Exception:
             logger.exception("Milvus unreachable at startup, continuing without a client")
 
         # Connect to MongoDB (skip if already connected)

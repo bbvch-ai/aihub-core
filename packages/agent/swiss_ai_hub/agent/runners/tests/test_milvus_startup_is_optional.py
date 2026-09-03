@@ -68,3 +68,27 @@ async def test_readiness_reports_a_missing_milvus_client_as_unhealthy():
 
     assert runner.milvus_client is None
     assert checks.milvus is False
+
+
+@pytest.mark.asyncio
+async def test_start_survives_a_failure_outside_milvus_exception():
+    """pymilvus re-raises the codes in its IGNORE_RETRY_CODES set as bare `grpc.RpcError`.
+
+    An UNAUTHENTICATED from a token mismatch is therefore not a `MilvusException`, and naming that
+    type in the handler would have left the crash loop reachable for a plain config drift.
+    """
+    runner = AgentRunner(agent_type=_ChatAgent, agent_config=AgentConfig.as_form())
+
+    with (
+        patch(f"{RUNNER_MODULE}.NatsSettings.create_client", AsyncMock(return_value=MagicMock())),
+        patch(f"{RUNNER_MODULE}.RedisSettings.create_client", MagicMock()),
+        patch(
+            f"{RUNNER_MODULE}.MilvusClient",
+            side_effect=RuntimeError("StatusCode.UNAUTHENTICATED, auth check failure"),
+        ),
+        patch(f"{RUNNER_MODULE}.AgentDispatcher", side_effect=_StartupReachedTheDispatcher),
+        pytest.raises(_StartupReachedTheDispatcher),
+    ):
+        await runner.start()
+
+    assert runner.milvus_client is None
