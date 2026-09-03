@@ -387,6 +387,12 @@ def replace_partition_keys(context, partition_name, keys, max_partitions):
 
 **Partition key = document URI** (e.g., `s3://bucket/path/to/doc.pdf`).
 
+**Truncation is signalled, not silent**: additions and deletions are capped at `max_partitions` per run. When the cap
+bites, `replace_partition_keys` logs a warning and tags its own run with `PARTITIONS_TRUNCATED_TAG` — a run cannot write
+its sensor's cursor, so non-convergence travels back as a run tag. The NATS sensor re-arms on an unhandled tag and
+records the run id it answered, chaining observations until one truncates nothing. An upload larger than
+`max_partitions` therefore still ends up fully observed.
+
 ### DataVersionsByPartition
 
 Observable assets return content hashes per partition to trigger downstream:
@@ -471,6 +477,14 @@ sensor = nats_document_uploaded_sensor(
 
 **Flow**: Document uploaded via API sends `SourceUpdatedEvent` to NATS. Sensor triggers `observe_job`. Observable asset
 detects new partition. Downstream assets with `AutomationCondition.eager()` auto-materialize.
+
+**Single-flight**: an observation scans the whole bucket, so the sensor never requests a second one while one is queued
+or running — a burst of uploads yields one run, not one per tick. It drains the entire JetStream backlog each tick,
+holds events for a 30 s debounce, and derives run keys from the highest stream sequence plus a re-arm counter so
+Dagster's own deduplication is a second line of defence. Events that arrive *during* a run arm exactly one follow-up,
+because a running observation may already have listed the bucket before those files landed. The guard is scoped per job
+name, so a manually launched run suppresses the sensor too. `run_after_success_sensor` applies the same guard to the
+chained remove job, keyed on the observing run id.
 
 ### Schedules
 

@@ -150,12 +150,15 @@ continues to build locally so developers test Dockerfile edits without round-tri
 ### Publishing the open-terminal image
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
-libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/python-docx/weasyprint/matplotlib/xlsxwriter) and
-is published manually via `make -C infra/deployment build-and-push-open-terminal-image` (requires
-`docker login ghcr.io`). Re-publish whenever:
+libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
+pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and is published manually via
+`make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
 - A new Python library dependency must be baked into the image
+
+The baked-in inventory decides which file formats the sandbox can produce for end users, so re-verify the format matrix
+in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the base tag moves.
 
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
@@ -290,10 +293,11 @@ Two collectors run on a deployed VM and it matters which one you change:
 | `otel-collector` (this compose) | aihub-core     | OTLP from the instrumented Python services → SigNoz + Langfuse             |
 | `otel-collector-docker`         | aihub-playbook | `docker_stats`, health events, and **third-party container stdout/stderr** |
 
-App services export to `http://otel-collector:4317`, so the playbook's collector never sees their telemetry — that is
-why `resource/deployment` has to exist here too. Conversely, **do not add a `filelog` receiver for container logs
-here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container *name*
-and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
+App services export to `http://otel-collector-backend:4317` (a `backend`-only alias on this collector; the bare
+container name also resolves on `egress`, where ICC is disabled), so the playbook's collector never sees their telemetry
+— that is why `resource/deployment` has to exist here too. Conversely, **do not add a `filelog` receiver for container
+logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container
+*name* and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
 
 ## Traefik Configuration
 

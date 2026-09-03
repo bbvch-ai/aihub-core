@@ -5,9 +5,11 @@ from datetime import datetime, timedelta
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
+from swiss_ai_hub.core.persistence import RefDoc
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 
 from swiss_ai_hub.pipeline.util.id_utils import uri_to_id
+from swiss_ai_hub.pipeline.util.mongo_utils import ensure_connection
 
 
 class VectorStoreIOManager(ConfigurableIOManager):
@@ -59,7 +61,7 @@ class VectorStoreIOManager(ConfigurableIOManager):
             ...
 
         vector_store = MilvusVectorStoreResource(collection_name="my_vector_store")
-        vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
+        vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store, document_store_name="my_doc_store")
 
         defs = Definitions(
             assets=[text_nodes, downstream_asset],
@@ -72,6 +74,7 @@ class VectorStoreIOManager(ConfigurableIOManager):
     """  # noqa: E501
 
     vector_store: ResourceDependency[BasePydanticVectorStore]
+    document_store_name: str
     document_id_key: str = DOCUMENT_ID
 
     def handle_output(self, context: OutputContext, obj: list[TextNode] | list[list[TextNode]]) -> None:
@@ -97,6 +100,31 @@ class VectorStoreIOManager(ConfigurableIOManager):
         # - No explicit delete needed, preventing memory leaks from partition loading
         self.vector_store.add(nodes)
         context.log.info("Successfully added nodes to vector store")
+        self._mark_ref_docs_as_ingested(nodes, context)
+
+    def _mark_ref_docs_as_ingested(self, nodes: list[TextNode], context: OutputContext) -> None:
+        """Flags the source documents as queryable, now that their nodes are in the vector store.
+
+        This lives in the IO manager rather than in an op because the vector store write happens
+        during output handling: an op could only ever mark the documents *before* their nodes are
+        actually retrievable, which is the bug this guards against.
+        """
+        ensure_connection(db_name=self.document_store_name, db_alias=self.document_store_name)
+
+        document_ids = {document_id for node in nodes if (document_id := self._resolve_document_id(node))}
+        marked = {
+            document_id
+            for document_id in document_ids
+            if RefDoc.mark_ingested(db_alias=self.document_store_name, doc_id=document_id)
+        }
+        context.log.info(f"Marked {len(marked)} document(s) as ingested: {sorted(marked)}")
+
+        unknown = sorted(document_ids - marked)
+        if unknown:
+            context.log.warning(f"No RefDoc found to mark as ingested for document IDs: {unknown}")
+
+    def _resolve_document_id(self, node: TextNode) -> str | None:
+        return node.ref_doc_id or node.metadata.get(self.document_id_key)
 
     def load_input(self, context: InputContext) -> list[TextNode] | list[list[TextNode]]:
         if context.has_partition_key:

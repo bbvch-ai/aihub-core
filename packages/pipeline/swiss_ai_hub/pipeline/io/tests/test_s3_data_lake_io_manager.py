@@ -28,6 +28,9 @@ def _make_s3_client() -> MagicMock:
     mock.create_data_lake_file_from_uri.return_value = _make_data_lake_file(
         "simple.txt", "docs", "s3://bucket/docs/simple.txt", content_type="text/plain", hash="def456"
     )
+    mock.create_data_lake_files_from_uris.side_effect = lambda uris: [
+        _make_data_lake_file(uri.rsplit("/", 1)[-1], "docs", uri) for uri in uris
+    ]
 
     mock.build_uri.side_effect = lambda path: f"s3://bucket/{path}"
 
@@ -108,7 +111,7 @@ class TestLoadInputEncoded:
 
         assert len(result) == 1
         assert result[0].name == "report, Q1.pdf"
-        s3_client.create_data_lake_file_from_uri.assert_called_once_with("s3://bucket/docs/report, Q1.pdf")
+        s3_client.create_data_lake_files_from_uris.assert_called_once_with(["s3://bucket/docs/report, Q1.pdf"])
 
     def test_non_partitioned_without_encoding_loads_each_key(self) -> None:
         s3_client = _make_s3_client()
@@ -133,4 +136,4 @@ class TestLoadInputEncoded:
 
         assert len(result) == 1
         assert result[0].name == "simple.txt"
-        s3_client.create_data_lake_file_from_uri.assert_called_once_with("s3://bucket/docs/simple.txt")
+        s3_client.create_data_lake_files_from_uris.assert_called_once_with(["s3://bucket/docs/simple.txt"])

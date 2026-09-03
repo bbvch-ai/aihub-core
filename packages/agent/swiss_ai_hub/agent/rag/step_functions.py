@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from collections.abc import Callable
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -16,15 +18,22 @@ from swiss_ai_hub.core.events.agent import (
     MemoryStorageRequestedEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
+    RAGStartEvent,
     RAGSuccessStopEvent,
     RerankerEvent,
+    RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
+    RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
     StoreUserMemoryRequestedEvent,
+    UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
+    AgentMemory,
     IngestedNode,
     LLMConfig,
+    OrgMemoryNamespaceResolver,
+    OrgMemoryReadConfig,
     RetrievalRuntimeConfig,
     combine_nodes_in_order,
     condense_standalone_question,
@@ -52,7 +61,12 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 
+logger = logging.getLogger(__name__)
+
 PREV_GROUNDING_NODES_KEY = "prev_grounding_nodes"
+
+# Bounds a hung backend, not normal latency: well above the ~0.25s graph-free median from issue #1713.
+MEMORY_RETRIEVAL_TIMEOUT_SECONDS = 15.0
 
 
 def do_limit_chat_history(
@@ -145,6 +159,86 @@ async def do_few_shot_guard(
         return FewShotRejectEvent(reason=guard_result.reasoning)
 
     return FewShotAcceptEvent(reason=guard_result.reasoning)
+
+
+async def do_retrieve_user_memory(
+    event: UserMessageEvent | RAGStartEvent,
+    memory: AgentMemory,
+    rerank: bool,
+) -> RetrieveUserMemoryEvent:
+    """Retrieve user memories for personalized context.
+
+    A failing memory subsystem degrades to an empty event instead of propagating (issue #1713): raising
+    would end the run, while `stop_on_error=False` would suppress the `ExceptionEvent` but emit nothing at
+    all — and `check_memory_ready_for_chat_history` blocks until this event exists, so the run would hang.
+    A hung backend degrades the same way, since a stall blocks the chat turn just as a raise ends it.
+    """
+    user_id = event.user.id
+    try:
+        memory_result = await asyncio.wait_for(
+            memory.search_user_memory(
+                query=event.user_query,
+                user_id=user_id,
+                limit=10,
+                threshold=0.5,
+                rerank=rerank,
+            ),
+            timeout=MEMORY_RETRIEVAL_TIMEOUT_SECONDS,
+        )
+    except Exception:
+        logger.warning(
+            "User memory retrieval failed; answering without user memory. user_id=%s",
+            user_id,
+            exc_info=True,
+        )
+        return RetrieveUserMemoryEvent(memories=[], relations=[])
+
+    return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
+
+
+async def do_retrieve_organization_memory(
+    event: UserMessageEvent | RAGStartEvent,
+    org_memory: OrgMemoryReadConfig,
+    memory: AgentMemory,
+) -> RetrieveOrganizationMemoryEvent:
+    """Retrieve organization memories for shared expert-knowledge context.
+
+    Degrades to an empty event on failure for the same reason as `do_retrieve_user_memory`.
+
+    Namespace resolution is deliberately left outside that safety net: a start event asking for a namespace
+    outside the configured allow-list is a caller error, and silently answering from the wrong scope (or
+    from none) would hide it. Only the memory-subsystem call degrades.
+    """
+    requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
+    tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
+        requested=requested,
+        configured=org_memory.allowed_tenant_namespaces,
+    )
+    try:
+        memory_result = await asyncio.wait_for(
+            memory.search_organization_memory(
+                query=event.user_query,
+                tenant_id=org_memory.tenant_id,
+                tenant_namespaces=tenant_namespaces,
+                user_id=None,
+                limit=10,
+                threshold=0.5,
+                rerank=org_memory.rerank_organization_memory,
+            ),
+            timeout=MEMORY_RETRIEVAL_TIMEOUT_SECONDS,
+        )
+    except Exception:
+        logger.warning(
+            "Organization memory retrieval failed; answering without organization memory. "
+            "tenant_id=%s namespaces=%s user_id=%s",
+            org_memory.tenant_id,
+            tenant_namespaces,
+            event.user.id,
+            exc_info=True,
+        )
+        return RetrieveOrganizationMemoryEvent(memories=[], relations=[])
+
+    return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
 
 
 async def do_retrieve(

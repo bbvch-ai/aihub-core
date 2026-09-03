@@ -67,7 +67,9 @@ Dokumentenrekonstruktion zeigt, wie der Parser Ihr Dokument interpretiert hat. P
 
 Chunk-Inspektion zeigt an, wie das System Inhalte segmentiert, welche Metadaten es extrahiert hat und wie es Chunks für den Abruf darstellt. Nützlich, wenn Agents erwartete Inhalte nicht finden.
 
-Verarbeitungsstatus gibt an, ob Dokumente hochgeladen, verarbeitet oder bereit sind.
+Verarbeitungsstatus gibt an, ob Dokumente hochgeladen, verarbeitet oder bereit sind. Ein Dokument gilt erst dann
+als bereit, wenn seine Embeddings in die Vektordatenbank geschrieben wurden — bis dahin wird es weiterhin
+verarbeitet und Agenten können es nicht abrufen, auch wenn sein Text bereits geparst wurde.
 
 ## Zugriffskontrolle
 
