@@ -426,8 +426,18 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus-config.local.gpu.yml:/milvus/configs/milvus.yaml
     healthcheck:
+      # /healthz answers 500 with "Not all components are healthy" until every
+      # component has registered its session in etcd, which took just under four
+      # minutes on staging after a crash-restart. start_period has to clear that with
+      # room to spare: below it, Docker marks a still-initialising Milvus unhealthy and
+      # milvus-watchdog restarts it mid-startup, forever. The intervals were previously
+      # left to Docker's defaults; they are explicit so the watchdog's own timing can be
+      # reasoned about against them.
       test: [CMD, curl, -f, http://localhost:9091/healthz]
-      start_period: 90s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 360s
     ports: [19530:19530, 9091:9091]
     depends_on:
       etcd-init:
@@ -437,11 +447,83 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: 10m
-        max-file: 2
+        # Milvus logs several MB per minute, so the 10m x 2 used elsewhere in this file
+        # holds roughly three minutes. On 2026-09-03 that was the difference between
+        # diagnosing the crash and only being able to see that it had happened.
+        max-size: 100m
+        max-file: 5
     networks:
       - data
       - storage  # For S3 access to SeaweedFS
+
+  # ===================================================================
+  # Milvus Restart Plane
+  # ===================================================================
+  # Docker restarts a container when its process exits, never when its healthcheck
+  # fails, so `restart: always` above does not cover a Milvus that stays up while
+  # serving nothing. These two services close that gap for Milvus alone.
+  # ===================================================================
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  docker-socket-proxy-heal:
+    container_name: docker-socket-proxy-heal
+    image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
+    restart: always
+    # Required for Docker socket access in SELinux/AppArmor environments
+    privileged: true
+    healthcheck:
+      test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes: [/var/run/docker.sock:/var/run/docker.sock:ro]
+    environment:
+      # A second proxy instance rather than POST on the Traefik one: restarting a
+      # container is a POST, and enabling it there would hand container start/stop/kill
+      # to everything that can reach Traefik's proxy on the backend network. Here it is
+      # reachable only from the `heal` network, whose sole other member is the watchdog.
+      CONTAINERS: 1  # Required to read milvus' health status and to restart it
+      POST: 1  # Required for /containers/milvus/restart
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      EXEC: 0
+      IMAGES: 0
+      NETWORKS: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+      VOLUMES: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels: [traefik.enable=false]
+    networks:
+      - heal
+
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  milvus-watchdog:
+    container_name: milvus-watchdog
+    build:
+      context: ./configs/milvus
+      dockerfile: watchdog.Dockerfile
+    restart: always
+    depends_on:
+      docker-socket-proxy-heal:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels: [traefik.enable=false]
+    networks:
+      - heal
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   attu:
@@ -3868,5 +3950,12 @@ networks:
   # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
   code-sandbox:
     name: code-sandbox
+    driver: bridge
+    internal: true
+  # Restart plane: the POST-capable docker socket proxy and the single watchdog that
+  # uses it. Kept off `backend` so that no application service can reach a Docker API
+  # able to start, stop or restart containers.
+  heal:
+    name: heal
     driver: bridge
     internal: true

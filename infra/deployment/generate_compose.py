@@ -76,6 +76,8 @@ CONFIG_SPECS = [
     # Static scripts - no stage/hardware variations
     ("templates/configs/clickhouse-backup.xml.j2", "configs/clickhouse", "clickhouse-backup.xml"),
     ("templates/configs/init.Dockerfile.j2", "configs/etcd", "init.Dockerfile"),
+    ("templates/configs/milvus-watchdog.Dockerfile.j2", "configs/milvus", "watchdog.Dockerfile"),
+    ("templates/configs/milvus-watchdog.sh.j2", "configs/milvus", "watchdog.sh"),
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
@@ -171,6 +173,10 @@ OWN_IMAGE_LICENSES = {
     # upstream terms — the SPDX-identifiable base is Apache-2.0.
     "mineru-api": "Apache-2.0",
     "mineru-vlm": "Apache-2.0",
+    # Alpine plus a script of ours, built locally. Listed explicitly because the
+    # prefix tier would otherwise match `milvus` and label it with the vector
+    # database's license, and this image ships no Milvus code.
+    "milvus-watchdog": "Apache-2.0",
 }
 
 # Aliases that map a compose service-name to the canonical entry name in
