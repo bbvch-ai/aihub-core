@@ -67,6 +67,7 @@ class HealthServer:
         default_port: int = 8090,
         port_env_var: str | None = None,
         bind_retry_seconds: float = 5.0,
+        bind_host: str = "0.0.0.0",
     ):
         """
         Initialize the health server.
@@ -75,6 +76,7 @@ class HealthServer:
         self.default_port = default_port
         self.port_env_var = port_env_var
         self.bind_retry_seconds = bind_retry_seconds
+        self.bind_host = bind_host
 
         self._server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
@@ -148,10 +150,11 @@ class HealthServer:
         """Bind the requested port, retrying until it succeeds or the server is stopped."""
         while not self._stop_event.is_set():
             try:
-                server = HTTPServer(("0.0.0.0", port), handler_class)
+                server = HTTPServer((self.bind_host, port), handler_class)
             except OSError as e:
                 logger.warning(
-                    f"Health check server could not bind port {port} ({e}); retrying in {self.bind_retry_seconds}s"
+                    f"Health check server could not bind {self.bind_host}:{port} ({e}); "
+                    f"retrying in {self.bind_retry_seconds}s"
                 )
                 self._stop_event.wait(self.bind_retry_seconds)
                 continue

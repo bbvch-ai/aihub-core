@@ -27,7 +27,7 @@ class _FakeProvider(HealthCheckProvider):
 def _free_port() -> int:
     """Ask the OS for a currently-unused ephemeral port."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("0.0.0.0", 0))
+        s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
 
 
@@ -44,7 +44,7 @@ def _wait_until(predicate, timeout: float = 5.0, interval: float = 0.02) -> bool
 def test_binds_the_requested_port() -> None:
     """The server must bind exactly the configured port -- never a random fallback."""
     port = _free_port()
-    server = HealthServer(_FakeProvider(), default_port=port, bind_retry_seconds=0.05)
+    server = HealthServer(_FakeProvider(), default_port=port, bind_retry_seconds=0.05, bind_host="127.0.0.1")
 
     server.start()
     try:
@@ -68,10 +68,12 @@ def test_retries_and_eventually_binds_when_port_initially_occupied() -> None:
     """
     port = _free_port()
     blocker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    blocker.bind(("0.0.0.0", port))
+    # Blocker and server bind the same address, so the conflict is deterministic across platforms
+    # (a loopback listener does not reliably block an INADDR_ANY bind that sets SO_REUSEADDR).
+    blocker.bind(("127.0.0.1", port))
     blocker.listen(1)
 
-    server = HealthServer(_FakeProvider(), default_port=port, bind_retry_seconds=0.05)
+    server = HealthServer(_FakeProvider(), default_port=port, bind_retry_seconds=0.05, bind_host="127.0.0.1")
     server.start()
     try:
         # Give the server a couple of retry cycles to observe the occupied port.
@@ -89,11 +91,11 @@ def test_retries_and_eventually_binds_when_port_initially_occupied() -> None:
 def test_stop_is_safe_when_never_bound() -> None:
     """stop() must not hang or raise if the port never became available."""
     blocker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    blocker.bind(("0.0.0.0", 0))
+    blocker.bind(("127.0.0.1", 0))
     port = blocker.getsockname()[1]
     blocker.listen(1)
 
-    server = HealthServer(_FakeProvider(), default_port=port, bind_retry_seconds=0.05)
+    server = HealthServer(_FakeProvider(), default_port=port, bind_retry_seconds=0.05, bind_host="127.0.0.1")
     server.start()
     try:
         time.sleep(0.15)
