@@ -37,6 +37,8 @@ import type {
   GetAccessPresetsResponse,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
+  GetDefaultAccessRulesData,
+  GetDefaultAccessRulesResponse,
   GetHealthData,
   GetHealthResponse,
   GetMyIdentityData,
@@ -197,6 +199,37 @@ export const listUnconfiguredTenants = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/admin/tenants/unconfigured",
+    ...options,
+  });
+
+/**
+ * Get Default Access Rules
+ *
+ * The ceiling a new tenant starts with, so the configure form can show it before saving.
+ */
+export const getDefaultAccessRules = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetDefaultAccessRulesResponse =
+    GetDefaultAccessRulesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetDefaultAccessRulesData,
+    GetDefaultAccessRulesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetDefaultAccessRulesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/admin/tenants/default-access-rules",
     ...options,
   });
 

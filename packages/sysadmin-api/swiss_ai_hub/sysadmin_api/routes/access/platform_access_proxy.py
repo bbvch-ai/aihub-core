@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 from fastapi import HTTPException, Request, status
 from swiss_ai_hub.api import AccessCapabilitiesRequest, AccessCapabilitiesResponse, AccessPresetDTO
@@ -46,6 +48,33 @@ class PlatformAccessProxy:
                 return [AccessPresetDTO.model_validate(item) for item in response.json()]
         except httpx.HTTPError as error:
             raise PlatformAccessProxy._gateway_error(error) from error
+
+    @staticmethod
+    async def fetch_default_tenant_rules(base_url: str, tenant_id: str, request: Request) -> list[str]:
+        """The ceiling a new tenant should start with. Derived on the main API because only it is wired to the
+        model gateway — the sysadmin plane has no LiteLLM configuration and deriving here would add one."""
+        try:
+            async with httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT) as client:
+                response = await client.get(
+                    f"/api/v1/{tenant_id}/access/default-tenant-rules",
+                    headers=PlatformAccessProxy._forward_headers(request),
+                )
+                response.raise_for_status()
+                return [str(rule) for rule in response.json()]
+        except httpx.HTTPError as error:
+            raise PlatformAccessProxy._gateway_error(error) from error
+
+    @staticmethod
+    def base_url_or_raise(runner: Any) -> str:
+        """Shared by every controller that proxies to the platform API, so the "not configured" failure reads
+        the same wherever it surfaces."""
+        base_url = runner.platform_api_base_url
+        if base_url is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Sysadmin plane has no platform API base URL configured to proxy to.",
+            )
+        return base_url
 
     @staticmethod
     def _gateway_error(error: httpx.HTTPError) -> HTTPException:

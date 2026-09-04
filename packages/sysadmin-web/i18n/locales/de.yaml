@@ -26,6 +26,9 @@ tenant_admin:
     tenant_id_label: Keycloak-Tenant-ID
     empty_unconfigured: Keine unkonfigurierten Keycloak-Tenants verfügbar. Erstellen
       Sie zuerst eine Tenant-Gruppe in der Keycloak-Admin-Konsole.
+    default_rules_error: Die Standard-Zugriffsregeln dieser Instanz konnten nicht
+      geladen werden. Ein jetzt gespeicherter Mandant hätte keinerlei Zugriff — prüfen
+      Sie, ob die Plattform-API und das Modell-Gateway erreichbar sind.
   form:
     name: Tenant-Name
     description: Beschreibung

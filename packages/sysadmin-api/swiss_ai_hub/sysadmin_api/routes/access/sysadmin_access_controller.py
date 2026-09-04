@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, Self
 
-from fastapi import Body, HTTPException, Request, Security, status
+from fastapi import Body, Request, Security
 from swiss_ai_hub.api import AccessCapabilitiesRequest, AccessCapabilitiesResponse, AccessController, AccessPresetDTO
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 
@@ -56,10 +56,4 @@ class SysadminAccessController(AccessController):
         return self
 
     def _platform_api_base_url(self) -> str:
-        base_url = self._runner.platform_api_base_url
-        if base_url is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Sysadmin plane has no platform API base URL configured to proxy the access catalog to.",
-            )
-        return base_url
+        return PlatformAccessProxy.base_url_or_raise(self._runner)

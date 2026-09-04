@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, Self
 
-from fastapi import Body, Depends, Security
+from fastapi import Body, Depends, HTTPException, Security, status
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -12,9 +12,11 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.routes.access.access_capability_service import AccessCapabilityService
 from swiss_ai_hub.api.routes.access.access_preset_service import AccessPresetService
+from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import AccessCapabilitiesResponse
 from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import AccessCapabilitiesRequest
 from swiss_ai_hub.api.routes.access.dto.access_preset_dto import AccessPresetDTO
+from swiss_ai_hub.api.routes.access.model_roster_unavailable_error import ModelRosterUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -82,5 +84,25 @@ class AccessController(TenantScopedController):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[AccessPresetDTO]:
             return AccessPresetService.get_presets(t)
+
+        return self
+
+    def get_default_tenant_rules(self, route: str = "/default-tenant-rules") -> Self:
+        @self.router.get(
+            route,
+            summary="Derive Default Tenant Access Rules",
+            description="Returns the access ceiling a newly created tenant should start with, derived from the "
+            "models this instance actually serves minus the configured exclusions.",
+            tags=self.tags,
+        )
+        async def get_default_tenant_rules(
+            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+        ) -> list[str]:
+            try:
+                return await DefaultTenantAccessRulesService.derive()
+            except ModelRosterUnavailableError as roster_error:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(roster_error)
+                ) from roster_error
 
         return self

@@ -2298,6 +2298,8 @@ services:
         condition: service_healthy
       mineru-api:
         condition: service_healthy
+      litellm:
+        condition: service_healthy
       openwebui-init:
         condition: service_completed_successfully
     environment:
@@ -2352,6 +2354,7 @@ services:
       AIHUB_STARTUP_TENANT_NAME: ${AIHUB_STARTUP_TENANT_NAME}
       AIHUB_STARTUP_TENANT_DESCRIPTION: ${AIHUB_STARTUP_TENANT_DESCRIPTION}
       AIHUB_STARTUP_TENANT_ACCESS_RULES: ${AIHUB_STARTUP_TENANT_ACCESS_RULES}
+      AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS: ${AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS}
 
       # User signup roles — read by UserSignupSettings.
       AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES: ${AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES}

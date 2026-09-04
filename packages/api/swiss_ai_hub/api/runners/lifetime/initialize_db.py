@@ -20,6 +20,8 @@ from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 
+from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
+
 logger = logging.getLogger(__name__)
 
 
@@ -102,11 +104,17 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
         await initialize_default_roles_for_tenant(str(existing_tenant.id))
         return existing_tenant
 
+    # An unset ACCESS_RULES means "whatever this instance considers standard", which can only be answered by
+    # reading the live model roster. Only reachable on the very first boot of a new instance — the early
+    # return above covers every later start — so an unreachable gateway costs a container restart, not an
+    # outage, and naming the rules explicitly opts out of the lookup altogether.
+    access_rules = settings.access_rules_list or await DefaultTenantAccessRulesService.derive()
+
     tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id=settings.ID,
         name=settings.NAME,
         description=settings.DESCRIPTION,
-        access_rules=settings.access_rules_list,
+        access_rules=access_rules,
     )
     logger.info(f"Successfully created startup tenant '{tenant.name}' (id={tenant.id})")
 

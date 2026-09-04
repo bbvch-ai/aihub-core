@@ -26,6 +26,9 @@ tenant_admin:
     tenant_id_label: ID del tenant Keycloak
     empty_unconfigured: Nessun tenant Keycloak non configurato disponibile. Crea prima
       un gruppo di tenant nella console di amministrazione Keycloak.
+    default_rules_error: Impossibile caricare le regole di accesso standard di questa
+      istanza. Salvare ora creerebbe un tenant senza alcun accesso — verificare che
+      l'API della piattaforma e il gateway dei modelli siano raggiungibili.
   form:
     name: Nome del tenant
     description: Descrizione

@@ -48,9 +48,18 @@
         </label>
       </FloatLabel>
 
+      <Message
+        v-if="defaultAccessRulesError"
+        severity="warn"
+        variant="simple"
+        size="small"
+      >
+        {{ t('tenant_admin.configure.default_rules_error') }}
+      </Message>
+
       <AccessRulesEditor
         v-model:rules="accessRules"
-        :initial-rules="[]"
+        :initial-rules="defaultAccessRules ?? []"
         :restrict-to-tenant="false"
       />
 
@@ -80,14 +89,26 @@ import type { CreateTenantMetadataRequest } from '~/sdk/client'
 const { t } = useI18n()
 
 const { unconfiguredTenantIds, unconfiguredTenantIdsAreLoading } = useUnconfiguredTenantIds()
+const { defaultAccessRules, defaultAccessRulesError } = useDefaultTenantAccessRules()
 const { createTenantMetadata } = useCreateTenantMetadata()
 
 const tenant = ref<CreateTenantMetadataRequest>({
   tenant_id: '',
   name: '',
   description: '',
-  access_rules: [],
+  // Left undefined, not [], so that a failed prefill omits the field and lets the backend derive the
+  // default itself. Sending [] would read as "a tenant that deliberately starts with no access at all".
+  access_rules: undefined,
 })
+
+// Seeded once, so the standard set is visible and editable before saving rather than applied invisibly
+// by the backend. Guarded against re-firing so a refetch cannot discard edits already made in the form.
+const defaultRulesSeeded = ref(false)
+watch(defaultAccessRules, (rules) => {
+  if (defaultRulesSeeded.value || !rules) return
+  tenant.value.access_rules = [...rules]
+  defaultRulesSeeded.value = true
+}, { immediate: true })
 
 const accessRules = computed({
   get: () => tenant.value.access_rules ?? [],

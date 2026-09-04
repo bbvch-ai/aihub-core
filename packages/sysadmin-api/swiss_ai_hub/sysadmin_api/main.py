@@ -27,6 +27,7 @@ runner.mount(
     TenantAdminController(auth=auth)
     .list_tenants()
     .list_unconfigured_tenants()
+    .get_default_access_rules()
     .get_tenant()
     .create_tenant_metadata()
     .update_tenant_metadata()
