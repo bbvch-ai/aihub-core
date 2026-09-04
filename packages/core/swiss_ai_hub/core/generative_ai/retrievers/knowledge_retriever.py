@@ -34,7 +34,7 @@ class KnowledgeRetriever(BaseRetriever):
             message=query,
             embed_model=embed_model,
             retrieve_k=self.config.retrieve_k,
-            index_namespaces=self.config.vector_store.index_namespaces,
+            index_namespaces=self.config.vector_store.namespace_filter,
             query_mode=self.config.query_mode,
             node_types=self.config.node_types,
             vector_store=vector_store,

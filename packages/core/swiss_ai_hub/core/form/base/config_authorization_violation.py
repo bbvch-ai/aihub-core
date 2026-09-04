@@ -8,7 +8,8 @@ class ConfigAuthorizationViolation(BaseModel):
 
     field: Annotated[str, Field(description="Dot-path to the form field, e.g. 'rag_config.knowledge_databases'.")]
     resource_type: Annotated[
-        str, Field(description="Type of the unauthorized resource: 'knowledge_database' or 'agent'.")
+        str,
+        Field(description="Kind of resource refused: knowledge_database, knowledge_namespace, agent or tenant."),
     ]
     resource: Annotated[str, Field(description="Identifier of the unauthorized resource.")]
     message: Annotated[str, Field(description="Human-readable explanation of the violation.")]

@@ -452,7 +452,7 @@ document:
     deleting: Eliminazione in corso
     button: Elimina
     button_selected: Elimina selezionati
-    confirmMessage: Vuoi davvero eliminare questo documento? Verrà rimosso definitivamente
+    confirmMessage: Vuoi davvero eliminare "{title}"? Verrà rimosso definitivamente
       dalla base di conoscenza. Questa azione non può essere annullata.
     confirmMessageBatch: Vuoi davvero eliminare {count} documento/i? Verranno rimossi
       definitivamente dalla base di conoscenza. Questa azione non può essere annullata.
@@ -509,21 +509,68 @@ knowledge:
     title: Aggiungi collezione
     description: Crea una nuova collezione di conoscenza
     cancel: Annulla
+  add_database:
+    title: Aggiungi database di conoscenza
+    description: Crea un nuovo database di conoscenza self-service
   auto_sync:
     title: Sincronizzato automaticamente
     description: Le collezioni sono gestite automaticamente
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Modifica collezione
   upload_documents: Carica documenti
+  delete_namespace: Elimina collezione
+  delete_database: Elimina database
+  delete:
+    confirm_label: Digita {name} per confermare
+    database:
+      title: Elimina database di conoscenza
+      warning: Questa operazione elimina definitivamente il database {name}, tutte
+        le sue collezioni e i suoi {count} documenti. L’operazione non può essere
+        annullata.
+    namespace:
+      title: Elimina collezione
+      warning: Questa operazione elimina definitivamente la collezione {name} e i
+        suoi {count} documenti. L’operazione non può essere annullata.
+    actions:
+      delete: Elimina
+    scheduled:
+      summary: Eliminazione avviata
+      detail: L’eliminazione viene eseguita in background e potrebbe richiedere un
+        momento.
+    error:
+      summary: Eliminazione non riuscita
+      detail: Impossibile avviare l’eliminazione. Riprova.
   form:
     create:
       title: Crea collezione
+    create_error: Creazione della collezione non riuscita. Riprova.
+    create_database:
+      title: Crea database di conoscenza
     edit:
       title: Modifica collezione
     database:
       label: Database di conoscenza
       placeholder: Nome del database di conoscenza
+    database_name:
+      label: Nome del database
+      placeholder: ilmiodatabase
+      help: Sono consentiti solo caratteri alfanumerici. Il nome non può essere modificato
+        in seguito.
+      validation_error: Il nome del database può contenere solo caratteri alfanumerici
+    ingestor:
+      label: Pipeline di ingestione
+      placeholder: Seleziona una pipeline di ingestione
+      help: La pipeline che elabora i documenti caricati in questo database.
+    llm_model:
+      label: Modello di testo
+      placeholder: Usa il valore predefinito dell'installazione
+      help: Genera riassunti, affina le tabelle e descrive le figure di questo database.
+    embedding_model:
+      label: Modello di embedding
+      placeholder: Usa il valore predefinito dell'installazione
+      help: Indicizza i documenti di questo database. Non modificabile dopo la creazione.
     folder_name:
       label: Nome collezione
       placeholder: mia-collezione
@@ -822,8 +869,12 @@ lib:
       label: Database
     namespaces:
       label: Spazi dei nomi
-      placeholder: Seleziona gli spazi dei nomi (vuoto = tutti)
-      help: Lascia vuoto per cercare tutti gli spazi dei nomi
+      placeholder: Seleziona almeno uno spazio dei nomi
+      help: Vengono cercati solo gli spazi dei nomi selezionati
+    allNamespaces:
+      label: Cerca in tutti gli spazi dei nomi
+      help: Viene cercato ogni spazio dei nomi di questo database, inclusi quelli
+        aggiunti in seguito ({count} oggi).
     allowedFilterFields:
       label: Campi filtro consentiti
       placeholder: Inserisci una chiave di metadati e premi Invio

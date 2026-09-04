@@ -110,6 +110,8 @@ runner.mount(
         auth=auth,
         translation_llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
     )
+    .get_ingestors()
+    .create_database()
     .create_namespace()
     .update_namespace()
     .get_databases()
@@ -122,7 +124,9 @@ runner.mount(
     .get_supported_file_types()
     .get_document_url()
     .delete_document()
-    .batch_delete_documents(),
+    .batch_delete_documents()
+    .delete_namespace()
+    .delete_database(),
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     UserMemoryController(auth=auth)

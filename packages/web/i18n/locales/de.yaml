@@ -454,9 +454,8 @@ document:
     deleting: Wird gelöscht
     button: Löschen
     button_selected: Ausgewählte löschen
-    confirmMessage: Möchten Sie dieses Dokument wirklich löschen? Es wird dauerhaft
-      aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht
-      werden.
+    confirmMessage: Möchten Sie "{title}" wirklich löschen? Es wird dauerhaft aus
+      der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
     confirmMessageBatch: Möchten Sie {count} Dokument(e) wirklich löschen? Sie werden
       dauerhaft aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig
       gemacht werden.
@@ -511,21 +510,70 @@ knowledge:
     title: Sammlung hinzufügen
     description: Eine neue Wissenssammlung erstellen
     cancel: Abbrechen
+  add_database:
+    title: Wissensdatenbank hinzufügen
+    description: Eine neue Self-Service-Wissensdatenbank erstellen
   auto_sync:
     title: Automatisch synchronisiert
     description: Sammlungen werden automatisch verwaltet
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Sammlung bearbeiten
   upload_documents: Dokumente hochladen
+  delete_namespace: Sammlung löschen
+  delete_database: Datenbank löschen
+  delete:
+    confirm_label: Geben Sie zur Bestätigung {name} ein
+    database:
+      title: Wissensdatenbank löschen
+      warning: Dadurch werden die Datenbank {name}, alle ihre Sammlungen und ihre
+        {count} Dokumente unwiderruflich gelöscht. Dies kann nicht rückgängig gemacht
+        werden.
+    namespace:
+      title: Sammlung löschen
+      warning: Dadurch werden die Sammlung {name} und ihre {count} Dokumente unwiderruflich
+        gelöscht. Dies kann nicht rückgängig gemacht werden.
+    actions:
+      delete: Löschen
+    scheduled:
+      summary: Löschung gestartet
+      detail: Die Löschung läuft im Hintergrund und kann einen Moment dauern.
+    error:
+      summary: Löschung fehlgeschlagen
+      detail: Die Löschung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.
   form:
     create:
       title: Sammlung erstellen
+    create_error: Die Sammlung konnte nicht erstellt werden. Bitte versuchen Sie es
+      erneut.
+    create_database:
+      title: Wissensdatenbank erstellen
     edit:
       title: Sammlung bearbeiten
     database:
       label: Wissensdatenbank
       placeholder: Name der Wissensdatenbank
+    database_name:
+      label: Datenbankname
+      placeholder: meinewissensdatenbank
+      help: Nur alphanumerische Zeichen sind erlaubt. Der Name kann später nicht geändert
+        werden.
+      validation_error: Der Datenbankname darf nur alphanumerische Zeichen enthalten
+    ingestor:
+      label: Ingestion-Pipeline
+      placeholder: Ingestion-Pipeline auswählen
+      help: Die Pipeline, die in diese Datenbank hochgeladene Dokumente verarbeitet.
+    llm_model:
+      label: Textmodell
+      placeholder: Standard der Installation verwenden
+      help: Erstellt Zusammenfassungen, verfeinert Tabellen und beschreibt Abbildungen
+        dieser Datenbank.
+    embedding_model:
+      label: Embedding-Modell
+      placeholder: Standard der Installation verwenden
+      help: Indexiert die Dokumente dieser Datenbank. Nach der Erstellung nicht mehr
+        änderbar.
     folder_name:
       label: Sammlungsname
       placeholder: meine-sammlung
@@ -826,8 +874,12 @@ lib:
       label: Datenbank
     namespaces:
       label: Namensräume
-      placeholder: Namensräume auswählen (leer = alle)
-      help: Leer lassen, um alle Namensräume zu durchsuchen
+      placeholder: Mindestens einen Namensraum auswählen
+      help: Nur die ausgewählten Namensräume werden durchsucht
+    allNamespaces:
+      label: Alle Namensräume durchsuchen
+      help: Jeder Namensraum dieser Datenbank wird durchsucht, auch später hinzugefügte
+        ({count} heute).
     allowedFilterFields:
       label: Erlaubte Filterfelder
       placeholder: Metadatenschlüssel eingeben und Enter drücken

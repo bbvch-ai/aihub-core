@@ -1,6 +1,10 @@
 ---
 authorization:
   no_access_knowledge_database: Non hai accesso alla base di conoscenza '%{name}'.
+  no_access_knowledge_namespace: Non hai accesso alla raccolta '%{namespace}' della
+    base di conoscenza '%{database}'.
+  no_access_whole_knowledge_database: Selezionare l'intera base di conoscenza '%{name}'
+    richiede l'accesso a tutte le sue raccolte.
   no_access_agent: Non hai accesso all'agente '%{agent}'.
   no_access_tenant: Non sei membro del tenant '%{tenant}'.
   no_access_section: Non hai accesso alla sezione '%{section}'.

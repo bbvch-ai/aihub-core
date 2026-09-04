@@ -1,5 +1,7 @@
 """Tests for embed_nodes degrading on rejected chunks instead of failing the whole document."""
 
+from unittest.mock import patch
+
 import httpx
 import pytest
 from dagster import build_op_context
@@ -58,8 +60,14 @@ class FakeEmbeddingModel:
         return any(f"content {node_id.removeprefix('node-')}" == text for node_id in self.reject)
 
 
+_MODULE = "swiss_ai_hub.pipeline.ops.nodes.embed_nodes"
+
+
 def run_embed_nodes(nodes: list[TextNode], model: FakeEmbeddingModel):
-    return embed_nodes(build_op_context(resources={"embedding_model": model}), nodes)
+    """The op resolves the embedding model from the run's knowledge database, so the fake is patched in
+    where that lookup happens rather than injected as a resource."""
+    with patch(f"{_MODULE}.build_embedding_model", return_value=model):
+        return embed_nodes(build_op_context(partition_key="bucket|s3:%2F%2Fbucket%2Fa.pdf"), nodes)
 
 
 class TestEmbedNodes:

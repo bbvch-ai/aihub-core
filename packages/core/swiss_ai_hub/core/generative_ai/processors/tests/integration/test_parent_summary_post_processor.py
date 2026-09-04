@@ -65,6 +65,7 @@ def milvus_vector_store(nodes_with_relationships):
         uri="http://localhost:19530",
         collection_name=collection_name,
         dimensions=1024,
+        all_namespaces=True,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 

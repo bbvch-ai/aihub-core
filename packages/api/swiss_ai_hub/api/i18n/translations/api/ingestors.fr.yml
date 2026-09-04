@@ -1,0 +1,5 @@
+---
+document_ingestion:
+  display_name: Pipeline générique d'ingestion de documents
+  description: Analyse les documents téléversés, les découpe en segments et les vectorise
+    pour la recherche sémantique.
