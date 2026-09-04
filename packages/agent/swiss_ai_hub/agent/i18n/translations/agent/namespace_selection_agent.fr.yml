@@ -32,6 +32,9 @@ thoughts:
   forwarding_to_rag: Recherche d'informations pertinentes
   rag_error: "Une erreur s'est produite lors de la recherche : %{error_message}"
 messages:
+  determination_failed: Je n'ai pas pu déterminer quelles sources de connaissances
+    consulter pour cette demande. Pourriez-vous la reformuler ou m'indiquer le sujet
+    qui vous intéresse ?
   default_follow_up: Pourriez-vous fournir plus de détails sur votre demande afin
     que je puisse déterminer les sources de connaissances les plus pertinentes ?
   user_rejected_selection: J'ai rejeté la sélection de namespaces proposée. Veuillez
@@ -55,7 +58,9 @@ prompts:
     \ DOIT avoir exactement UN namespace sélectionné - ni plus, ni moins.\n- Votre\
     \ follow_up_question DOIT lister les noms exacts des namespaces de <available_namespaces>\
     \ ci-dessus comme options.\n- N'inventez PAS de noms - utilisez uniquement les\
-    \ noms réels affichés ci-dessus.\n"
+    \ noms réels affichés ci-dessus.\n- Incluez TOUJOURS les quatre champs - has_enough_information,\
+    \ selected_namespaces, follow_up_question et reasoning - même lorsqu'une valeur\
+    \ est null. N'omettez jamais un champ.\n"
 steps:
   initialize_determination:
     name: Initialiser la détermination de namespace

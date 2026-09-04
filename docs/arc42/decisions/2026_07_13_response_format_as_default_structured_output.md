@@ -29,6 +29,34 @@ the stop event; the **follow-ups** are generated **inline** in the terminal step
 grounded on the answer, so cannot start earlier). The best-effort wrappers now log at WARNING, not ERROR.
 :::
 
+::: warning Update (2026-08-26, aihub-core-private#142)
+**The 5/5 pass rates below do not cover schemas with optional fields, and strict mode is not safe for them by default.**
+`TitleResult` and `FollowUpQuestionsResult` — the two models measured — have no conditionally-empty field, so neither
+exercised the failure mode described here. The concluding claim "no omitted fields" holds only for schemas where every
+field is always populated.
+
+Strict `response_format` puts **every** property into `required`, discarding the `= None` defaults a schema declares. A
+model that omits any one of them cannot emit `}` or EOS: guided decoding masks its preferred tokens, so it pads
+whitespace until `max_tokens` and the JSON arrives unterminated. On `gemma-4-31B-it` with `NamespaceDecision` (four
+fields, two optional) this reproduced 3/3 at 8192 tokens and ~2 minutes, and `ResilientOpenAILike` then retried the
+identical request 3× because nothing about it could succeed.
+
+What we learned, in order of usefulness:
+
+- **The prompt is the binding lever, not the field descriptions.** Rewording the two `description=` strings changed
+  nothing — the model does not act on them. Naming every field explicitly in the prompt fixed it 3/3. A generic "include
+  every field" instruction was **not** sufficient: the model still dropped `reasoning`, the one field the prompt never
+  named anywhere.
+- **Never write "only set if …" in a field description.** It instructs the model to do precisely what strict mode
+  forbids.
+- **Cap `max_tokens` for small structured calls.** The model's full output budget is the cost of any deadlock. A
+  `NamespaceDecision` answer measures ~133 tokens against an 8192-token ceiling.
+- A per-call `max_tokens` is silently discarded — `OpenAI._get_model_kwargs` lets `self.max_tokens` win over the passed
+  kwargs — so the ceiling must be set on the LLM instance (or a `model_copy` of it).
+
+The mechanism (decision #3) is unchanged and remains the default. This update narrows the evidence behind it.
+:::
+
 ## Context
 
 Swiss AI Hub routes all chat LLM access through LiteLLM. On CPU (non-GPU) deployments every text-generation model is
