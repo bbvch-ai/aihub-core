@@ -242,28 +242,32 @@ jobs:
     if: ${{ github.event.inputs.hotfix_branch != '' }}
     needs: resolve
     runs-on: ubuntu-slim
-    timeout-minutes: 5
+    # Waits for every dispatched build, so the timeout must cover the slowest
+    # image (build-agents allows 45 minutes per agent), not just the dispatch.
+    timeout-minutes: 75
     permissions:
       actions: write
       contents: read
     steps:
-      - name: Dispatch build workflows at the clean tag
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          VERSION: ${{ needs.resolve.outputs.clean }}
-          SECONDARY: ${{ needs.resolve.outputs.secondary_tag }}
-        run: |-
-          set -euo pipefail
-          BUILDS=(
-            build-agents.yml build-pipelines.yml build-api-and-bot.yml
-            build-dagster.yml build-web.yml build-backup.yml build-sysadmin.yml
-          )
-          for wf in "${BUILDS[@]}"; do
-            echo "Dispatching $wf @ $VERSION (secondary_tag='${SECONDARY}')"
-            gh workflow run "$wf" --ref "$VERSION" \
-              -f release_version="$VERSION" -f secondary_tag="$SECONDARY"
-          done
+      - name: Checkout at the clean tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ needs.resolve.outputs.clean }}
+      - name: Dispatch build workflows at the clean tag and wait
+        uses: ./.github/actions/dispatch_builds
+        with:
+          workflows: |
+            build-agents.yml
+            build-pipelines.yml
+            build-api-and-bot.yml
+            build-dagster.yml
+            build-web.yml
+            build-backup.yml
+            build-sysadmin.yml
+          ref: ${{ needs.resolve.outputs.clean }}
+          release_version: ${{ needs.resolve.outputs.clean }}
+          secondary_tag: ${{ needs.resolve.outputs.secondary_tag }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # ---- shared tail: publish -> gated release -> move latest -------------------
   publish-npm:
@@ -282,16 +286,19 @@ jobs:
     secrets: inherit
   build-release:
     name: Publish versioned Release (atomic gate)
-    # Gated on BOTH registries green. In rc mode also waits for the image retag;
-    # in hotfix mode retag-clean-docker is skipped (images build async), matching
-    # the previous hotfix behaviour.
-    needs: [resolve, retag-clean-docker, publish-npm, publish-pypi]
+    # Gated on BOTH registries green AND on the images existing: rc mode waits
+    # for the retag, hotfix mode for the builds. Exactly one of the two runs per
+    # promote; the other is skipped. Publishing the release before the images are
+    # pushed hands the deploy VMs a bundle whose tags 404 in the registry.
+    needs: [resolve, retag-clean-docker, build-hotfix-images, publish-npm, publish-pypi]
     if: >-
       always()
       && needs.resolve.result == 'success'
       && needs.publish-npm.result == 'success'
       && needs.publish-pypi.result == 'success'
       && (needs.retag-clean-docker.result == 'success' || needs.retag-clean-docker.result
+      == 'skipped')
+      && (needs.build-hotfix-images.result == 'success' || needs.build-hotfix-images.result
       == 'skipped')
     uses: ./.github/workflows/create-release.yml
     with:
@@ -327,8 +334,8 @@ jobs:
 
   # hotfix: images already carry :latest (built with secondary_tag=latest), and
   # create-release(channel=latest) marks the Release Latest — so only the git
-  # `latest` pointer remains. Done inline (not set-latest.yml) to avoid racing its
-  # docker retag against the async hotfix image builds.
+  # `latest` pointer remains. Done inline (not set-latest.yml) because its docker
+  # retag would be redundant: the hotfix images were pushed with :latest already.
   move-latest-hotfix:
     name: Move latest (hotfix)
     if: >-
