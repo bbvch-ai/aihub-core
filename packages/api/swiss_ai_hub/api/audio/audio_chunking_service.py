@@ -39,8 +39,13 @@ class AudioChunkingService:
 
         OpenAI answers a silent upload with an empty transcript, but the gateway's WhisperX service
         raises instead — a recording the user never spoke into comes back as `Transcription failed: 0`,
-        an HTTP 500 the caller can do nothing with. Verified against the provider on 2026-09-03 with
-        silence, white noise and a pure tone.
+        an HTTP 500 the caller can do nothing with.
+
+        This is a cheap pre-filter, not the whole answer: -40 dB detects *sound*, where the provider
+        detects *speech*. Measured against it on 2026-09-04, a 440 Hz tone and white noise both pass
+        here (dBFS -3.7 and -4.8) and are still rejected upstream, while 1.3 s of speech at -24 dBFS
+        transcribes fine. `OpenaiService.stt` therefore has to handle that verdict arriving from the
+        gateway as well, and answers it the same way this guard does.
         """
         return bool(
             detect_nonsilent(
