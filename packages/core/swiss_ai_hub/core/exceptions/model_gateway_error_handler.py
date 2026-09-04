@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Any, ClassVar
 
 from fastapi import FastAPI
@@ -44,6 +45,17 @@ class ModelGatewayErrorHandler:
     # which is the very incident this handler exists for.
     NON_ACTIONABLE_STATUSES: ClassVar[frozenset[int]] = frozenset({413, 422, 429})
 
+    # Upstream failures whose own wording names a component of the provider's pipeline rather than
+    # anything the caller can recognise. The raw message still goes to the log — only the response
+    # is rewritten, because the caller reading it is a chat user, not an operator.
+    UPSTREAM_CAUSE_PATTERNS: ClassVar[tuple[tuple[re.Pattern[str], str], ...]] = (
+        (
+            re.compile(r"No default align-model for language: (?P<language>[A-Za-z-]+)"),
+            "Transcription is not available for the language detected in this recording "
+            "('{language}'): the speech-to-text provider ships no alignment model for it.",
+        ),
+    )
+
     @staticmethod
     def register(app: FastAPI) -> None:
         """``APITimeoutError`` subclasses ``APIConnectionError``, and every concrete status
@@ -84,7 +96,7 @@ class ModelGatewayErrorHandler:
         ModelGatewayErrorHandler._log_status_error(request, exception.status_code, message)
         return ModelGatewayErrorHandler._failure_response(
             status_code=ModelGatewayErrorHandler._caller_facing_status(exception.status_code),
-            message=message,
+            message=ModelGatewayErrorHandler._readable_cause(message),
             upstream_status=exception.status_code,
             exception=exception,
         )
@@ -156,8 +168,21 @@ class ModelGatewayErrorHandler:
         way too. Anything that is not a gateway error is returned unchanged.
         """
         if isinstance(exception, APIStatusError):
-            return ModelGatewayErrorHandler._upstream_message(exception)
+            return ModelGatewayErrorHandler._readable_cause(ModelGatewayErrorHandler._upstream_message(exception))
         return str(exception)
+
+    @staticmethod
+    def _readable_cause(message: str) -> str:
+        """Rewrites the known provider-internal failures into what the caller can act on.
+
+        A message that matches nothing is returned unchanged: the gateway's own wording is still the
+        best available description, and guessing at an unrecognised failure would hide it.
+        """
+        for pattern, template in ModelGatewayErrorHandler.UPSTREAM_CAUSE_PATTERNS:
+            match = pattern.search(message)
+            if match:
+                return template.format(**match.groupdict())
+        return message
 
     @staticmethod
     def _upstream_message(exception: APIStatusError) -> str:
