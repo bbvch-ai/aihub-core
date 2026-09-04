@@ -161,12 +161,15 @@ litellm_settings:
 # Router Settings
 # ===================================================================
 router_settings:
-  # default_fallbacks registers a "*" wildcard that applies to embedding and rerank calls too, so a rejected
-  # embedding gets retried against a chat model that cannot serve it and the real error is buried three levels
-  # deep. An explicit empty list wins over the wildcard on exact match, so these surface their own error.
+  # default_fallbacks registers a "*" wildcard that applies to embedding, rerank, transcription and image
+  # calls too, so a rejected embedding gets retried against a chat model that cannot serve it and the real
+  # error is buried three levels deep. An explicit empty list wins over the wildcard on exact match, so these
+  # surface their own error. Transcription needs it most: it has a single deployment, so a retry against a
+  # chat model is pure latency on a failure that will never succeed.
   fallbacks:
     - embedding/bge-m3: []
     - reranker/bge: []
+    - transcription/faster-whisper-large-v3: []
   routing_strategy: usage-based-routing-v2
   retry_policy:
     TimeoutErrorRetries: 2
