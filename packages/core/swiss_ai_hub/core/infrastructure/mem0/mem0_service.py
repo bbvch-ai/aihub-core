@@ -1,5 +1,11 @@
+import logging
+
 from mem0.configs.base import MemoryConfig
 
+from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
+    DEFAULT_EMBEDDING_MAX_INPUT_TOKENS,
+    EMBEDDING_BUDGET_SAFETY_FACTOR,
+)
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.graph.patched_memory_graph import PatchedMemoryGraph
 from swiss_ai_hub.core.infrastructure.mem0.patched_async_memory import PatchedAsyncMemory
@@ -11,25 +17,48 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_added import MemoryAdded
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 
+logger = logging.getLogger(__name__)
+
 
 class Mem0Service:
     def __init__(
         self,
         config: MemoryConfig,
         t: LocaleHandler,
+        embedding_max_input_tokens: int = int(DEFAULT_EMBEDDING_MAX_INPUT_TOKENS * EMBEDDING_BUDGET_SAFETY_FACTOR),
     ):
         self._config = config
+        self._embedding_max_input_tokens = embedding_max_input_tokens
         self._memory = PatchedAsyncMemory(config=config)
         self._memory.vector_store = PatchedMilvusDB.from_milvus(self._memory.vector_store)
         self._memory.llm = PatchedOpenAILLM.from_llm(self._memory.llm)
-        self._memory.embedding_model = PatchedOpenAIEmbedding.from_embedding(self._memory.embedding_model)
+        self._memory.embedding_model = PatchedOpenAIEmbedding.from_embedding(
+            self._memory.embedding_model,
+            max_input_tokens=embedding_max_input_tokens,
+        )
         # When the graph store is disabled, mem0 sets enable_graph=False and self.graph=None — nothing to wrap.
         if self._memory.enable_graph:
-            self._memory.graph = PatchedMemoryGraph.from_graph(self._memory.graph, t=t)
+            self._memory.graph = PatchedMemoryGraph.from_graph(
+                self._memory.graph, t=t, max_input_tokens=embedding_max_input_tokens
+            )
 
     @property
     def config(self):
         return self._config
+
+    def _fit_search_query(self, query: str) -> str:
+        """Keep search input within the model budget before mem0 forwards it to the embedder."""
+        tokenizer = self._memory.embedding_model._tokenizer
+        encoded = tokenizer.encode(query)
+        if len(encoded) <= self._embedding_max_input_tokens:
+            return query
+        fitted_query = tokenizer.decode(encoded[-self._embedding_max_input_tokens :])
+        logger.warning(
+            "Truncated oversized mem0 memory search query from %d to %d tokens",
+            len(encoded),
+            len(tokenizer.encode(fitted_query)),
+        )
+        return fitted_query
 
     async def add_memory(
         self,
@@ -129,6 +158,7 @@ class Mem0Service:
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
+        query = self._fit_search_query(query)
         scalar_filters = {
             "_type": memory_type.value,
             "_user_id": user_id,
