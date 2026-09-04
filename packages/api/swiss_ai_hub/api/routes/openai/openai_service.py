@@ -384,7 +384,10 @@ class OpenaiService:
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request, thread_id
+                chat_completion_request,
+                thread_id,
+                primary_agent_class=agent_class,
+                primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
@@ -450,7 +453,10 @@ class OpenaiService:
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request, thread_id
+                chat_completion_request,
+                thread_id,
+                primary_agent_class=agent_class,
+                primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
@@ -503,15 +509,8 @@ class OpenaiService:
             return stop_event.question
         if stop_event.is_exception_event:
             return f"\n\n>[!CAUTION]\n>**Error:** {stop_event.message}\n"
-        # Backstop: emit only the portion of the authoritative answer the client never received, in case
-        # chunks were lost to the stop-vs-chunk dispatch race. Empty once everything has already streamed.
-        # Best-effort: the prefix match can miss if the stream parser normalized whitespace differently
-        # from output_messages, in which case we keep what streamed rather than risk duplicating it.
-        output_messages = getattr(stop_event, "output_messages", None) or []
-        full_answer = (output_messages[-1].content or "") if output_messages else ""
-        if full_answer and full_answer.startswith(streamed):
-            return full_answer[len(streamed) :]
-        return "" if streamed else full_answer
+        full_answer = ChatService.terminal_output_text(getattr(stop_event, "output_messages", None))
+        return ChatService.missing_suffix(streamed, full_answer)
 
     @staticmethod
     def _build_chunk_sse(*, content: str, model: str, finish_reason: str | None = None) -> str:
@@ -679,11 +678,24 @@ class OpenaiService:
 
     @staticmethod
     async def _reconstruct_history(
-        chat_completion_request: ChatCompletionRequest, thread_id: str
+        chat_completion_request: ChatCompletionRequest,
+        thread_id: str,
+        *,
+        primary_agent_class: str,
+        primary_agent_id: str,
     ) -> list[ChatCompletionMessageParam]:
-        history = await ThreadService.thread_as_message_history(thread_id)
-        user_message = chat_completion_request.messages[-1]
-        return history.messages + [user_message]
+        if not chat_completion_request.messages:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one message is required when reconstruct_history is enabled.",
+            )
+        normalized_thread_id = str(str_to_object_id(thread_id))
+        history = await ThreadService.thread_as_message_history(
+            normalized_thread_id,
+            primary_agent_class=primary_agent_class,
+            primary_agent_id=primary_agent_id,
+        )
+        return [*history.messages, chat_completion_request.messages[-1]]
 
     @staticmethod
     def _filter_kwargs(
