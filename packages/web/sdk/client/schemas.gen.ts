@@ -5088,11 +5088,6 @@ export const CitationBlockSchema = {
   description: "A representation of cited content from past messages.",
 } as const;
 
-export const ClassifyMailStartEventInputSchema = {
-  type: "object",
-  title: "ClassifyMailStartEventInput",
-} as const;
-
 export const ColorPickerSchema = {
   properties: {
     is_formkit_element: {
@@ -6377,21 +6372,6 @@ export const CronStartEventSchema = {
   title: "CronStartEvent",
   description:
     "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
-} as const;
-
-export const CronStartEventInputSchema = {
-  properties: {
-    scheduled_for: {
-      type: "string",
-      format: "date-time",
-      title: "Scheduled For",
-      description:
-        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
-    },
-  },
-  type: "object",
-  required: ["scheduled_for"],
-  title: "CronStartEventInput",
 } as const;
 
 export const Custom_OutputSchema = {
@@ -21395,37 +21375,6 @@ export const StopEventSchema = {
     "An event signaling the conclusion of a run within a thread, acting both as a control signal\nand a user-facing message.\n\n### Why StopEvent?\nIn many workflows, reaching a terminal state (e.g., producing a final result or hitting an\nend-of-workflow condition) must:\n- Influence the system’s control flow, ensuring no further steps are executed.\n- Provide a visible indicator to the end-user or UI that the process has completed.\n\nBy inheriting from both `ControlEvent` and `DisplayEvent`:\n- As a `ControlEvent`, it instructs the workflow engine to stop processing subsequent steps.\n- As a `DisplayEvent`, it can be shown to users or captured by dashboards, indicating that\n  the run is over and providing any final output or status messages.\n\n### Use Cases\n- Signaling that a response is ready, and no more actions are needed.\n- Informing the user interface that the conversation or task has concluded.",
 } as const;
 
-export const StopEventOutputSchema = {
-  properties: {
-    display_name: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Display Name",
-      description: "Display name for the event",
-    },
-    display_description: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Display Description",
-      description: "Display description for the event",
-    },
-  },
-  type: "object",
-  title: "StopEventOutput",
-} as const;
-
 export const StoreOrganizationMemoryEventSchema = {
   properties: {
     event_id: {
@@ -27208,11 +27157,6 @@ export const ChunkEventWritableSchema = {
   title: "ChunkEvent",
   description:
     'An event representing a portion of output or generated content (a "chunk") that is\nstreamed or delivered in segments - common in incremental output scenarios like LLM\ntoken streaming.\n\n### Why ChunkEvent?\nIn conversational or streaming AI outputs, the model might emit content in pieces rather\nthan all at once. `ChunkEvent` allows the frontend or other consumers to display partial\nresponses as they are generated, improving user experience by not forcing them to wait\nfor the entire answer.',
-} as const;
-
-export const ClassifyMailStartEventInputWritableSchema = {
-  type: "object",
-  title: "ClassifyMailStartEventInput",
 } as const;
 
 export const ColorPickerWritableSchema = {

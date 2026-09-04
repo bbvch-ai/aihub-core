@@ -277,12 +277,6 @@ import type {
   SearchUserMemoriesData,
   SearchUserMemoriesError,
   SearchUserMemoriesResponse,
-  SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostData,
-  SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostError,
-  SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponse,
-  SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostData,
-  SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostError,
-  SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponse,
   SendProcessOpenFormData,
   SendProcessOpenFormError,
   SendProcessOpenFormResponse,
@@ -292,10 +286,6 @@ import type {
   SetMyActiveTenantData,
   SetMyActiveTenantError,
   SetMyActiveTenantResponse,
-  StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostData,
-  StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostError,
-  StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostData,
-  StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostError,
   TranslateTextData,
   TranslateTextError,
   TranslateTextResponse,
@@ -3692,143 +3682,3 @@ export const receiveOpenwebuiWebhook = <
       ...options.headers,
     },
   });
-
-/**
- * Send Classify Mail Start Event To Email Classification Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPost =
-  <
-    TComposable extends Composable = "$fetch",
-    DefaultT extends
-      SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponse =
-      SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponse,
-  >(
-    options: Options<
-      TComposable,
-      SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostData,
-      SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponse,
-      DefaultT
-    >,
-  ) =>
-    (options.client ?? client).post<
-      TComposable,
-      | SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponse
-      | DefaultT,
-      SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostError,
-      DefaultT
-    >({
-      security: [
-        { scheme: "bearer", type: "http" },
-        { scheme: "bearer", type: "http" },
-      ],
-      url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/ClassifyMailStartEvent",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-
-/**
- * Stream Classify Mail Start Event To Email Classification Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPost =
-  <TComposable extends Composable = "$fetch", DefaultT = undefined>(
-    options: Options<
-      TComposable,
-      StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostData,
-      unknown,
-      DefaultT
-    >,
-  ) =>
-    (options.client ?? client).post<
-      TComposable,
-      unknown | DefaultT,
-      StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostError,
-      DefaultT
-    >({
-      security: [
-        { scheme: "bearer", type: "http" },
-        { scheme: "bearer", type: "http" },
-      ],
-      url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/ClassifyMailStartEvent/stream",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-
-/**
- * Send Cron Start Event To Email Classification Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPost =
-  <
-    TComposable extends Composable = "$fetch",
-    DefaultT extends
-      SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponse =
-      SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponse,
-  >(
-    options: Options<
-      TComposable,
-      SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostData,
-      SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponse,
-      DefaultT
-    >,
-  ) =>
-    (options.client ?? client).post<
-      TComposable,
-      | SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponse
-      | DefaultT,
-      SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostError,
-      DefaultT
-    >({
-      security: [
-        { scheme: "bearer", type: "http" },
-        { scheme: "bearer", type: "http" },
-      ],
-      url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/CronStartEvent",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-
-/**
- * Stream Cron Start Event To Email Classification Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPost =
-  <TComposable extends Composable = "$fetch", DefaultT = undefined>(
-    options: Options<
-      TComposable,
-      StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostData,
-      unknown,
-      DefaultT
-    >,
-  ) =>
-    (options.client ?? client).post<
-      TComposable,
-      unknown | DefaultT,
-      StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostError,
-      DefaultT
-    >({
-      security: [
-        { scheme: "bearer", type: "http" },
-        { scheme: "bearer", type: "http" },
-      ],
-      url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/CronStartEvent/stream",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });

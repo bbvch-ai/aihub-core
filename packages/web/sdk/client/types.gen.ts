@@ -3478,13 +3478,6 @@ export type CitationBlock = {
 };
 
 /**
- * ClassifyMailStartEventInput
- */
-export type ClassifyMailStartEventInput = {
-  [key: string]: unknown;
-};
-
-/**
  * ColorPicker
  *
  * https://formkit-primevue.netlify.app/inputs/ColorPicker
@@ -4363,18 +4356,6 @@ export type CronStartEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
-};
-
-/**
- * CronStartEventInput
- */
-export type CronStartEventInput = {
-  /**
-   * Scheduled For
-   *
-   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
-   */
-  scheduled_for: Date;
 };
 
 /**
@@ -14505,24 +14486,6 @@ export type StopEvent = {
 };
 
 /**
- * StopEventOutput
- */
-export type StopEventOutput = {
-  /**
-   * Display Name
-   *
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display Description
-   *
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-};
-
-/**
  * StoreOrganizationMemoryEvent
  *
  * Specialized BaseStoreMemoryEvent for organization-wide memories.
@@ -18522,13 +18485,6 @@ export type ChunkEventWritable = {
    * The name of the AI model generating the chunks.
    */
   model_name?: string;
-  [key: string]: unknown;
-};
-
-/**
- * ClassifyMailStartEventInput
- */
-export type ClassifyMailStartEventInputWritable = {
   [key: string]: unknown;
 };
 
@@ -30320,205 +30276,3 @@ export type ReceiveOpenwebuiWebhookResponses = {
 
 export type ReceiveOpenwebuiWebhookResponse =
   ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];
-
-export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostData =
-  {
-    body: ClassifyMailStartEventInputWritable;
-    path: {
-      /**
-       * Tenant Id
-       *
-       * Tenant identifier: a name, ObjectId, or 'active'
-       */
-      tenant_id: string;
-      /**
-       * Agent ID
-       *
-       * The specific agent instance ID
-       */
-      agent_id: string;
-    };
-    query?: {
-      /**
-       * Thread Id
-       */
-      thread_id?: string;
-      /**
-       * Display Id
-       */
-      display_id?: string;
-    };
-    url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/ClassifyMailStartEvent";
-  };
-
-export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostErrors =
-  {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-  };
-
-export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostError =
-  SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostErrors[keyof SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostErrors];
-
-export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponses =
-  {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-  };
-
-export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponse =
-  SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponses[keyof SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponses];
-
-export type StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostData =
-  {
-    body: ClassifyMailStartEventInputWritable;
-    path: {
-      /**
-       * Tenant Id
-       *
-       * Tenant identifier: a name, ObjectId, or 'active'
-       */
-      tenant_id: string;
-      /**
-       * Agent ID
-       *
-       * The specific agent instance ID
-       */
-      agent_id: string;
-    };
-    query?: {
-      /**
-       * Thread Id
-       */
-      thread_id?: string;
-      /**
-       * Display Id
-       */
-      display_id?: string;
-    };
-    url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/ClassifyMailStartEvent/stream";
-  };
-
-export type StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostErrors =
-  {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-  };
-
-export type StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostError =
-  StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostErrors[keyof StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostErrors];
-
-export type StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostResponses =
-  {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-  };
-
-export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostData =
-  {
-    body: CronStartEventInput;
-    path: {
-      /**
-       * Tenant Id
-       *
-       * Tenant identifier: a name, ObjectId, or 'active'
-       */
-      tenant_id: string;
-      /**
-       * Agent ID
-       *
-       * The specific agent instance ID
-       */
-      agent_id: string;
-    };
-    query?: {
-      /**
-       * Thread Id
-       */
-      thread_id?: string;
-      /**
-       * Display Id
-       */
-      display_id?: string;
-    };
-    url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/CronStartEvent";
-  };
-
-export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostErrors =
-  {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-  };
-
-export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostError =
-  SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostErrors[keyof SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostErrors];
-
-export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponses =
-  {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-  };
-
-export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponse =
-  SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponses[keyof SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponses];
-
-export type StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostData =
-  {
-    body: CronStartEventInput;
-    path: {
-      /**
-       * Tenant Id
-       *
-       * Tenant identifier: a name, ObjectId, or 'active'
-       */
-      tenant_id: string;
-      /**
-       * Agent ID
-       *
-       * The specific agent instance ID
-       */
-      agent_id: string;
-    };
-    query?: {
-      /**
-       * Thread Id
-       */
-      thread_id?: string;
-      /**
-       * Display Id
-       */
-      display_id?: string;
-    };
-    url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/CronStartEvent/stream";
-  };
-
-export type StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostErrors =
-  {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-  };
-
-export type StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostError =
-  StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostErrors[keyof StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostErrors];
-
-export type StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostResponses =
-  {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-  };
