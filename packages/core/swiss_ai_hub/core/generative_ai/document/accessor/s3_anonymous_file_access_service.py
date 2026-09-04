@@ -4,12 +4,14 @@ from botocore.exceptions import ClientError
 from mypy_boto3_s3 import S3Client
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner import S3BucketProvisioner
 from swiss_ai_hub.core.infrastructure.s3.s3_storage_settings import S3StorageSettings
 
 logger = logging.getLogger(__name__)
 
 _CONTAINER_NAME_EMPTY_ERROR = "Container name cannot be empty"
 _FILE_PATH_EMPTY_ERROR = "File path cannot be empty"
+_PREFIX_EMPTY_ERROR = "Prefix cannot be empty"
 
 
 class S3AnonymousFileAccessService:
@@ -48,6 +50,33 @@ class S3AnonymousFileAccessService:
         self._s3_public_client = s3_public_client
         self._s3_internal_client = s3_internal_client or s3_client
         self._s3_config = s3_settings
+
+    @trace_fn
+    def container_exists(self, container: str) -> bool:
+        """Whether the S3 container exists, independent of whether any ``BucketEntity`` row references it.
+
+        Lets callers distinguish "free name" from "name already taken by storage we did not create" —
+        platform buckets (``dagster``, ``milvus``, ``langfuse``, …) have no bucket row, so an entity-only
+        duplicate check would happily bind a knowledge database onto one of them.
+        """
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+
+        return S3BucketProvisioner.bucket_exists(self._s3_client, container)
+
+    @trace_fn
+    def ensure_bucket_with_cors(self, container: str) -> None:
+        """Idempotently create the bucket and apply browser-upload CORS rules.
+
+        Self-service knowledge databases are provisioned here at creation time: the static
+        ``init-buckets.sh`` only covers the built-in buckets, so without this a presigned browser
+        upload to a freshly created bucket fails its CORS preflight (the bucket has no CORS, or does
+        not exist yet because the pipeline only creates it lazily on first ingest).
+        """
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+
+        S3BucketProvisioner.ensure_bucket_with_cors(self._s3_client, container)
 
     @trace_fn
     def generate_sas_url(
@@ -91,17 +120,13 @@ class S3AnonymousFileAccessService:
             params["ResponseContentDisposition"] = response_content_disposition
 
         signing_client = self._s3_internal_client if internal else self._s3_public_client
-        try:
-            # so the URL is accessible from browsers
-            presigned_url = signing_client.generate_presigned_url(
-                "get_object",
-                Params=params,
-                ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds
-            )
-            logger.debug(f"Generated presigned URL for {container}/{file_path}, expires in {lifetime_hours}h")
-            return presigned_url
-        except ClientError as e:
-            raise Exception(f"Failed to generate presigned URL: {e}")
+        presigned_url = signing_client.generate_presigned_url(
+            "get_object",
+            Params=params,
+            ExpiresIn=int(lifetime_hours * 3600),
+        )
+        logger.debug(f"Generated presigned URL for {container}/{file_path}, expires in {lifetime_hours}h")
+        return presigned_url
 
     @trace_fn
     def get_url_signing_secret(self) -> str:
@@ -133,17 +158,13 @@ class S3AnonymousFileAccessService:
         if lifetime_hours <= 0 or lifetime_hours > 24:  # 24 hours max for uploads
             raise ValueError("Lifetime must be between 1 and 24 hours")
 
-        try:
-            # so the URL is accessible from browsers
-            presigned_url = self._s3_public_client.generate_presigned_url(
-                "put_object",
-                Params={"Bucket": container, "Key": file_path, "ContentType": content_type},
-                ExpiresIn=int(lifetime_hours * 3600),  # Convert hours to seconds
-            )
-            logger.debug(f"Generated presigned upload URL for {container}/{file_path}, expires in {lifetime_hours}h")
-            return presigned_url
-        except ClientError as e:
-            raise Exception(f"Failed to generate presigned upload URL: {e}")
+        presigned_url = self._s3_public_client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": container, "Key": file_path, "ContentType": content_type},
+            ExpiresIn=int(lifetime_hours * 3600),
+        )
+        logger.debug(f"Generated presigned upload URL for {container}/{file_path}, expires in {lifetime_hours}h")
+        return presigned_url
 
     @trace_fn
     def download_file(self, container: str, file_path: str) -> bytes:
@@ -174,23 +195,16 @@ class S3AnonymousFileAccessService:
             raise ValueError(_FILE_PATH_EMPTY_ERROR)
 
         try:
-            # Use head_object to check existence without downloading the file
             self._s3_client.head_object(Bucket=container, Key=file_path)
             logger.debug(f"File verification successful: {container}/{file_path}")
             return True
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code in ["404", "NoSuchKey"]:
-                # File doesn't exist - this is expected behavior, not an error
+                # A missing object is the expected negative result, not a failure.
                 logger.debug(f"File does not exist: {container}/{file_path}")
                 return False
-            else:
-                # Unexpected error occurred
-                logger.error(f"Failed to verify file existence {container}/{file_path}: {e}")
-                raise Exception(f"Failed to verify file existence: {e}")
-        except Exception as e:
-            logger.error(f"Failed to verify file existence {container}/{file_path}: {e}")
-            raise Exception(f"Failed to verify file existence: {e}")
+            raise
 
     def list_files(self, container: str, prefix: str = "") -> list[dict]:
         """
@@ -203,41 +217,33 @@ class S3AnonymousFileAccessService:
         if not container or not container.strip():
             raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
 
-        try:
-            files = []
-            paginator = self._s3_client.get_paginator("list_objects_v2")
-            page_iterator = paginator.paginate(
-                Bucket=container,
-                Prefix=prefix,
-            )
+        files = []
+        paginator = self._s3_client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(
+            Bucket=container,
+            Prefix=prefix,
+        )
 
-            for page in page_iterator:
-                if "Contents" not in page:
+        for page in page_iterator:
+            if "Contents" not in page:
+                continue
+
+            for obj in page["Contents"]:
+                # Skip directories (keys ending with '/')
+                if obj["Key"].endswith("/"):
                     continue
 
-                for obj in page["Contents"]:
-                    # Skip directories (keys ending with '/')
-                    if obj["Key"].endswith("/"):
-                        continue
+                files.append(
+                    {
+                        "key": obj["Key"],
+                        "size": obj["Size"],
+                        "last_modified": obj["LastModified"].isoformat(),
+                        "etag": obj.get("ETag", "").strip('"'),
+                    }
+                )
 
-                    files.append(
-                        {
-                            "key": obj["Key"],
-                            "size": obj["Size"],
-                            "last_modified": obj["LastModified"].isoformat(),
-                            "etag": obj.get("ETag", "").strip('"'),
-                        }
-                    )
-
-            logger.debug(f"Listed {len(files)} files in {container} with prefix '{prefix}'")
-            return files
-
-        except ClientError as e:
-            logger.error(f"Failed to list files in {container} with prefix '{prefix}': {e}")
-            raise Exception(f"Failed to list files: {e}")
-        except Exception as e:
-            logger.error(f"Failed to list files in {container} with prefix '{prefix}': {e}")
-            raise Exception(f"Failed to list files: {e}")
+        logger.debug(f"Listed {len(files)} files in {container} with prefix '{prefix}'")
+        return files
 
     @trace_fn
     def delete_file(self, container: str, file_path: str) -> None:
@@ -249,3 +255,53 @@ class S3AnonymousFileAccessService:
 
         self._s3_client.delete_object(Bucket=container, Key=file_path)
         logger.info(f"Deleted file: {container}/{file_path}")
+
+    @trace_fn
+    def delete_prefix(self, container: str, prefix: str) -> None:
+        """Delete every object under a key prefix (paginated, 1000-key batches), leaving the bucket in place.
+
+        This is the namespace-teardown counterpart to ``delete_container``: a namespace maps to a
+        ``folder_name/`` prefix within a shared bucket. Idempotent — a missing bucket is treated as
+        success — so the step is safe to retry as part of the teardown job.
+        """
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+        if not prefix or not prefix.strip():
+            raise ValueError(_PREFIX_EMPTY_ERROR)
+
+        try:
+            paginator = self._s3_client.get_paginator("list_objects_v2")
+            for page in paginator.paginate(Bucket=container, Prefix=prefix):
+                keys = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
+                if keys:
+                    self._s3_client.delete_objects(Bucket=container, Delete={"Objects": keys})
+            logger.info(f"Deleted objects under prefix '{prefix}' in container '{container}'")
+        except ClientError as error:
+            if error.response["Error"]["Code"] in ("404", "NoSuchBucket"):
+                return
+            raise
+
+    @trace_fn
+    def delete_container(self, container: str) -> None:
+        """Empty and remove an S3 container, tolerating one that is already gone.
+
+        S3 refuses to delete a non-empty bucket, so every object is removed first (paginated, in
+        1000-key batches). Idempotent: a missing bucket is treated as success, so this is safe to call
+        as a create-time rollback and as a repeatable knowledge-database teardown step.
+        """
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+
+        try:
+            paginator = self._s3_client.get_paginator("list_objects_v2")
+            for page in paginator.paginate(Bucket=container):
+                keys = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
+                if keys:
+                    self._s3_client.delete_objects(Bucket=container, Delete={"Objects": keys})
+
+            self._s3_client.delete_bucket(Bucket=container)
+            logger.info(f"Deleted S3 container '{container}'")
+        except ClientError as error:
+            if error.response["Error"]["Code"] in ("404", "NoSuchBucket"):
+                return
+            raise

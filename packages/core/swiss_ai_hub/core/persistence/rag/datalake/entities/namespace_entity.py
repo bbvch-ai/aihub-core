@@ -3,7 +3,7 @@ import time
 from typing import Self
 
 from bson import ObjectId
-from mongoengine import Document, EmbeddedDocumentField, IntField, StringField, ValidationError
+from mongoengine import BooleanField, Document, EmbeddedDocumentField, IntField, StringField, ValidationError
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -33,6 +33,9 @@ class NamespaceEntity(Document):
     created_at = IntField(required=True)
     updated_at = IntField(required=True)
     inserted_at = IntField(required=True)
+    # See BucketEntity.deleting — a namespace flagged for teardown is excluded from enumeration so ingestion
+    # stops, while the row survives for the teardown job to read (folder_name/namespace_name). Hard-deleted last.
+    deleting = BooleanField(default=False)
 
     @staticmethod
     def _validate_namespace_name(name: str) -> None:
@@ -116,6 +119,12 @@ class NamespaceEntity(Document):
             return SwitchedNamespace.objects().order_by("bucket_id", "namespace_name")
 
     @classmethod
+    def get_deleting_namespaces(cls, db_alias: str = "default") -> list["NamespaceEntity"]:
+        """Namespaces flagged for teardown — the durable work queue the teardown sensor reads."""
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return SwitchedNamespace.objects(deleting=True).order_by("namespace_name")
+
+    @classmethod
     def update_namespace(
         cls,
         namespace_id: str,
@@ -142,7 +151,30 @@ class NamespaceEntity(Document):
         return namespace
 
     @classmethod
+    def mark_deleting(cls, namespace_id: str, db_alias: str = "default") -> Self:
+        """Flag a single namespace for teardown so enumeration excludes it while the teardown job runs."""
+        namespace = cls.get_namespace_by_id(namespace_id, db_alias=db_alias)
+        namespace.deleting = True
+        namespace.updated_at = int(time.time())
+        namespace.save()
+        return namespace
+
+    @classmethod
+    def mark_all_deleting_for_bucket(cls, bucket_id: str, db_alias: str = "default") -> int:
+        """Flag every namespace of a bucket for teardown (database deletion); returns the number updated."""
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return SwitchedNamespace.objects.filter(bucket_id=bucket_id).update(
+                set__deleting=True, set__updated_at=int(time.time())
+            )
+
+    @classmethod
     def delete_namespace(cls, namespace_id: str, db_alias: str = "default") -> Self:
         namespace = cls.get_namespace_by_id(namespace_id, db_alias=db_alias)
         namespace.delete()
         return namespace
+
+    @classmethod
+    def delete_all_for_bucket(cls, bucket_id: str, db_alias: str = "default") -> int:
+        """Hard-delete every namespace row of a bucket; returns the number removed. Teardown's final row-purge step."""
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return SwitchedNamespace.objects.filter(bucket_id=bucket_id).delete()

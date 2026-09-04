@@ -18,7 +18,7 @@
 # Explainability and Data Lineage
 
 2_platform/10_chat_ui/4_chat_with_company_knowledge/index.en.md 2_platform/5_agents/2_rag_agent/index.en.md
-2_platform/6_pipelines/2_rag_ingestion_pipeline/index.en.md
+2_platform/6_pipelines/2_document_ingestion_pipeline/index.en.md
 
 # Cost Control (FinOps)
 

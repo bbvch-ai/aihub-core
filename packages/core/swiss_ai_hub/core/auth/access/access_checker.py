@@ -29,6 +29,14 @@ class AccessChecker:
         - User Access Rule: `aihub.user.agent.class_a.*`
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match!
         - Permission Template: `aihub.user.agent.?>` -> Match!
+        A '?>' asks "any access at or below this node", so a rule naming exactly that node also matches:
+        - User Access Rule: `aihub.user.knowledge.db_a`
+        - Permission Template: `aihub.user.knowledge.db_a.?>` -> Match!
+        A literal '*' in a template asks for *every* child: only a rule holding a wildcard there satisfies it.
+        - User Access Rule: `aihub.user.knowledge.db_a.reports`
+        - Permission Template: `aihub.user.knowledge.db_a.*` -> No match (one namespace is not all of them)
+        - User Access Rule: `aihub.user.knowledge.db_a.>`
+        - Permission Template: `aihub.user.knowledge.db_a.*` -> Match!
 
     3.  Admin Check: aihub.admin are automatically also aihub.user. To differentiate whether a user accessing an
         endpoint has user or admin privilege, we use AccessLevel.ACCESS_ADMIN or AccessLevel.ACCESS_USER.
@@ -116,11 +124,15 @@ class AccessChecker:
         parts = template.split(".")
         for part in parts:
             is_valid_token = re.fullmatch(r"[a-z0-9\-\_]+", part, re.IGNORECASE)
-            is_special_wildcard = part in ["?*", "?>"]
+            is_special_wildcard = part in ["?*", "?>", "*"]
             if not (is_valid_token or is_special_wildcard):
                 raise ValueError(f"Invalid permission template: Contains invalid token '{part}' in '{template}'")
         if "?>" in parts and parts[-1] != "?>":
             raise ValueError(f"Invalid permission template: '?>' must be the last token. Got: {template}")
+        if "*" in parts and (parts[-1] != "*" or len(parts) < 5):
+            raise ValueError(
+                f"Invalid permission template: '*' may only close a template below a named resource. Got: {template}"
+            )
 
     def _get_validated_access_rules(self, access_rules: list[str]) -> set[str]:
         """Filters and validates the user's access_rules."""
@@ -160,9 +172,17 @@ class AccessChecker:
             if r_part != t_part:
                 return False
             ti, ri = ti + 1, ri + 1
-        if ri < len(access_rule_parts) and access_rule_parts[ri] == ">":
+        return self._unconsumed_parts_match(access_rule_parts[ri:], template_parts[ti:])
+
+    @staticmethod
+    def _unconsumed_parts_match(access_rule_remainder: list[str], template_remainder: list[str]) -> bool:
+        """Decides the walk once either side runs out: a rule continuing with '>' covers whatever the
+        template still asks for, and an exhausted rule still satisfies a '?>' naming its own subtree root."""
+        if access_rule_remainder[:1] == [">"]:
             return True
-        return ri == len(access_rule_parts) and ti == len(template_parts)
+        if access_rule_remainder:
+            return False
+        return template_remainder in ([], ["?>"])
 
     @staticmethod
     def agent_instance_admin_rule(agent_class: str, agent_id: str) -> str:
@@ -173,6 +193,35 @@ class AccessChecker:
     def agent_instance_user_rule(agent_class: str, agent_id: str) -> str:
         """Canonical user permission for a specific agent instance (not the agent class/blueprint)."""
         return f"{_USER_PREFIX}agent.{agent_class}.{agent_id}"
+
+    @staticmethod
+    def knowledge_database_admin_rule(database: str) -> str:
+        """Canonical admin permission for one knowledge database."""
+        return f"{_ADMIN_PREFIX}knowledge.{database}"
+
+    @staticmethod
+    def knowledge_database_user_rule(database: str) -> str:
+        """Canonical user permission for one knowledge database."""
+        return f"{_USER_PREFIX}knowledge.{database}"
+
+    @staticmethod
+    def knowledge_namespace_admin_rule(database: str, namespace: str) -> str:
+        """Canonical admin permission for one namespace inside a knowledge database."""
+        return f"{_ADMIN_PREFIX}knowledge.{database}.{namespace}"
+
+    @staticmethod
+    def knowledge_namespace_user_rule(database: str, namespace: str) -> str:
+        """Canonical user permission for one namespace inside a knowledge database."""
+        return f"{_USER_PREFIX}knowledge.{database}.{namespace}"
+
+    @staticmethod
+    def knowledge_all_namespaces_user_rule(database: str) -> str:
+        """Template satisfied only by a rule covering every namespace of the database (``.*`` or ``.>``).
+
+        Reading a whole database, as a retriever configured without namespaces does, needs this; a rule
+        naming one namespace must not qualify.
+        """
+        return f"{_USER_PREFIX}knowledge.{database}.*"
 
     @staticmethod
     def model_user_rule(model_capability: str, model_name: str) -> str:
@@ -220,8 +269,16 @@ class AccessChecker:
         Used to decide whether a per-instance grant is redundant (e.g. a tenant already
         holding ``aihub.admin.>``), without the two-tier tenant/user evaluation.
         """
+        return cls.rules_grant_admin(rules, cls.agent_instance_admin_rule(agent_class, agent_id))
+
+    @classmethod
+    def rules_grant_admin(cls, rules: list[str], admin_permission: str) -> bool:
+        """Whether a flat rule list already grants admin to a concrete permission.
+
+        Used to decide whether a per-resource grant is redundant (e.g. a tenant already holding
+        ``aihub.admin.>``), without the two-tier tenant/user evaluation.
+        """
         checker = cls(user_access_rules=rules, tenant_access_rules=[])
-        admin_permission = cls.agent_instance_admin_rule(agent_class, agent_id)
         return any(
             checker._access_rule_matches_concrete_permission(access_rule, admin_permission)
             for access_rule in checker.user_admin_access_rules
@@ -339,6 +396,12 @@ class AccessChecker:
     def has_access_to_agent_class(self, agent_class: str) -> bool:
         """Convenience method to check access level for a specific agent."""
         return self.access_level(f"{_USER_PREFIX}agent.{agent_class}.?*") != AccessLevel.ACCESS_DENIED
+
+    def has_access_to_knowledge_namespace(self, database: str, namespace: str) -> bool:
+        return self.has_access(self.knowledge_namespace_user_rule(database, namespace))
+
+    def has_access_to_all_knowledge_namespaces(self, database: str) -> bool:
+        return self.has_access(self.knowledge_all_namespaces_user_rule(database))
 
     def access_level_for_model(self, model_capability: str, model_name: str) -> AccessLevel:
         """Convenience method to check access level for a specific model."""

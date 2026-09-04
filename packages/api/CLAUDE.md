@@ -164,7 +164,9 @@ params, or path params (default: `"de"`, whitelist: `["de", "en", "fr", "it"]`).
 **Permission template**: `aihub.[user|admin].<resource>.{path_param}` — path parameters (`{agent_class}`, `{agent_id}`,
 `{thread_id}`) are interpolated from the URL at request time.
 
-**Wildcards**: `?>` matches single level, `>` matches multiple levels.
+**Wildcards**: in a *rule*, `*` matches one token and `>` one or more trailing tokens. In a *template*, `?*` asks "any
+rule with one more token here" and `?>` asks "any rule at or below this node" — a rule naming exactly that node
+(`aihub.user.knowledge.db_a` vs `aihub.user.knowledge.db_a.?>`) satisfies it.
 
 **Controller integration**: `Security(self.user_with_permission("aihub.user.agent.{agent_class}.?>"))` handles auth +
 permission validation + OpenTelemetry span enrichment (user ID, email, roles, resource context) automatically.

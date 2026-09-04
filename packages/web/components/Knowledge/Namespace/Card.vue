@@ -45,6 +45,16 @@
           severity="secondary"
           @click.stop="handleUploadClick"
         />
+        <Button
+          v-if="!autoSync"
+          v-tooltip.top="t('knowledge.delete_namespace')"
+          icon="pi pi-trash"
+          rounded
+          text
+          size="small"
+          severity="danger"
+          @click.stop="handleDeleteClick"
+        />
         <Badge
           :value="namespace.number_of_documents"
           size="large"
@@ -75,6 +85,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   upload: [namespace: NamespaceDto]
   edit: [namespace: NamespaceDto]
+  delete: [namespace: NamespaceDto]
 }>()
 
 const route = useRoute()
@@ -104,5 +115,10 @@ const handleUploadClick = (event: Event) => {
 const handleEditClick = (event: Event) => {
   event.stopPropagation()
   emit('edit', props.namespace)
+}
+
+const handleDeleteClick = (event: Event) => {
+  event.stopPropagation()
+  emit('delete', props.namespace)
 }
 </script>
