@@ -45,6 +45,14 @@ class ModelGatewayErrorHandler:
     # which is the very incident this handler exists for.
     NON_ACTIONABLE_STATUSES: ClassVar[frozenset[int]] = frozenset({413, 422, 429})
 
+    # The provider reports a transcription that yielded nothing as a bare segment count, so its own
+    # wording names no cause at all. Matched in two places: to rewrite the response, and to let a
+    # caller transcribing in chunks tell audio the provider cannot use from a gateway fault that
+    # every chunk would hit. The lookahead is what separates the two: the provider nests its own
+    # statuses in the same phrase ("Transcription failed: 503: Failed to load alignment model"), and
+    # a status is a fault that may well be transient, while a count is a verdict on this audio.
+    UNTRANSCRIBABLE_AUDIO: ClassVar[re.Pattern[str]] = re.compile(r"Transcription failed: \d+(?!\d|:)")
+
     # Upstream failures whose own wording names a component of the provider's pipeline rather than
     # anything the caller can recognise. The raw message still goes to the log — only the response
     # is rewritten, because the caller reading it is a chat user, not an operator.
@@ -53,6 +61,11 @@ class ModelGatewayErrorHandler:
             re.compile(r"No default align-model for language: (?P<language>[A-Za-z-]+)"),
             "Transcription is not available for the language detected in this recording "
             "('{language}'): the speech-to-text provider ships no alignment model for it.",
+        ),
+        (
+            UNTRANSCRIBABLE_AUDIO,
+            "The speech-to-text provider produced no transcript for this recording: it found no "
+            "speech it could align in the audio.",
         ),
     )
 
@@ -92,7 +105,7 @@ class ModelGatewayErrorHandler:
 
     @staticmethod
     async def handle_status_error(request: Request, exception: APIStatusError) -> JSONResponse:
-        message = ModelGatewayErrorHandler._upstream_message(exception)
+        message = ModelGatewayErrorHandler.upstream_message(exception)
         ModelGatewayErrorHandler._log_status_error(request, exception.status_code, message)
         return ModelGatewayErrorHandler._failure_response(
             status_code=ModelGatewayErrorHandler._caller_facing_status(exception.status_code),
@@ -168,8 +181,23 @@ class ModelGatewayErrorHandler:
         way too. Anything that is not a gateway error is returned unchanged.
         """
         if isinstance(exception, APIStatusError):
-            return ModelGatewayErrorHandler._readable_cause(ModelGatewayErrorHandler._upstream_message(exception))
+            return ModelGatewayErrorHandler._readable_cause(ModelGatewayErrorHandler.upstream_message(exception))
         return str(exception)
+
+    @staticmethod
+    def is_untranscribable_audio(exception: Exception) -> bool:
+        """Whether the provider rejected the audio itself rather than failing to serve the request.
+
+        A caller that splits a recording into chunks needs the distinction: this failure repeats on
+        every retry of the same chunk, so aborting the whole transcription over it throws away the
+        chunks that did transcribe.
+        """
+        if not isinstance(exception, APIStatusError):
+            return False
+
+        return bool(
+            ModelGatewayErrorHandler.UNTRANSCRIBABLE_AUDIO.search(ModelGatewayErrorHandler.upstream_message(exception))
+        )
 
     @staticmethod
     def _readable_cause(message: str) -> str:
@@ -185,7 +213,7 @@ class ModelGatewayErrorHandler:
         return message
 
     @staticmethod
-    def _upstream_message(exception: APIStatusError) -> str:
+    def upstream_message(exception: APIStatusError) -> str:
         """Unwraps the OpenAI error envelope, whose ``error.message`` is what actually names the
         cause ("Invalid model name passed in model=..."). ``exception.message`` only wraps that
         same body in "Error code: N - {...}"."""

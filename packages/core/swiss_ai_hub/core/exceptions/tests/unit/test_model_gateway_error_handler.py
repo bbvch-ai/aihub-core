@@ -68,13 +68,13 @@ class TestUpstreamStatusIsTranslatedForTheCaller:
 
 class TestUpstreamMessageIsUnwrapped:
     def test_nested_openai_envelope_message_is_used(self):
-        assert ModelGatewayErrorHandler._upstream_message(_status_error(400, UPSTREAM_BODY)) == UPSTREAM_MESSAGE
+        assert ModelGatewayErrorHandler.upstream_message(_status_error(400, UPSTREAM_BODY)) == UPSTREAM_MESSAGE
 
     def test_plain_string_error_is_used(self):
-        assert ModelGatewayErrorHandler._upstream_message(_status_error(400, {"error": "no capacity"})) == "no capacity"
+        assert ModelGatewayErrorHandler.upstream_message(_status_error(400, {"error": "no capacity"})) == "no capacity"
 
     def test_unrecognized_body_falls_back_to_sdk_message(self):
-        assert ModelGatewayErrorHandler._upstream_message(_status_error(500, {"unexpected": 1})) == "Error code: 500"
+        assert ModelGatewayErrorHandler.upstream_message(_status_error(500, {"unexpected": 1})) == "Error code: 500"
 
 
 class TestFailureResponseNamesTheCause:
