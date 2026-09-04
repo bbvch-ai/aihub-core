@@ -531,11 +531,11 @@ class PersistedAgentEventEntity(Document):
         carried_fields = [*group_fields, *cost_fields]
         pipeline = [
             {"$match": match},
-            # Lift the handful of fields the group stages read out of `event_data` before the dedup,
-            # rather than carrying the document with `$first: "$event_data"`. A cost event's payload
-            # holds the whole request context, so the old shape hauled every matched event's full
-            # body through the aggregation: 123s for a cold 30-day window on staging's 405k-event
-            # collection, against 1s once the fields are projected first.
+            # Lift the five fields the group stages read out of `event_data` before the dedup, rather
+            # than carrying the document with `$first: "$event_data"`: a cost event's payload holds the
+            # whole request context, and the stage needs none of it. Measured on staging over 33k cost
+            # events, this is worth single-digit seconds at most — the 123s that took the API's event
+            # loop down was a cold read of 30 days off disk, which no pipeline shape avoids.
             {"$project": {"_id": 0, "event_id": 1, **{field: f"$event_data.{field}" for field in carried_fields}}},
             {"$group": {"_id": "$event_id", **{field: {"$first": f"${field}"} for field in carried_fields}}},
             {

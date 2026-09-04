@@ -305,9 +305,8 @@ class TestLLMSpendAggregation:
         assert spend[0].calls == 1
 
     def test_payload_beyond_the_attributed_fields_does_not_change_the_sum(self):
-        """The pipeline projects the five fields it groups on instead of carrying `event_data` whole —
-        a cost event's payload holds the entire request context, and hauling it through the dedup stage
-        cost 123s for a 30-day window on staging. Anything outside those fields must be irrelevant."""
+        """The pipeline projects the five fields it groups on instead of carrying `event_data` whole, so
+        anything outside those fields must be unable to change the result."""
         _persist_cost_event("e1", user_id="u1", tenant_id="acme", prompt=1.0, completion=2.0)
         event = PersistedAgentEventEntity.objects(event_id="e1").first()
         event.event_data["messages"] = ["x" * 4096]
