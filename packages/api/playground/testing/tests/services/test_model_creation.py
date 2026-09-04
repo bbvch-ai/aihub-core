@@ -5,7 +5,8 @@ import pytest
 from pydantic import BaseModel
 from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
 from swiss_ai_hub.core.events import BaseEvent, EventSpecs
-from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent, AgentConfigSpecs
+from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.testing.tests.services.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent
@@ -615,7 +616,7 @@ class TestSchemaValidation:
             stop_events=[],
             network_graph=WorkflowGraph(nodes=[], links=[]),
             form=agent_config.to_formkit_form(),
-            agent_config_specs=AgentConfigSpecs.from_agent_config(agent_config, agent_class="TestAgent"),
+            agent_config_specs=ConfigSpecs.from_form(agent_config, config_class="TestAgent"),
             hitl_request_events=[],
             hitl_response_events=[],
         )

@@ -255,7 +255,7 @@ These are `AfterValidator`s that skip validation when the value is a `FormkitEle
 
    - `to_formkit_form()` → extracts FormKit elements for Admin UI
    - `get_non_configurable_values()` → pre-computes deployment-fixed values
-   - `AgentConfigSpecs.from_agent_config()` → `to_configurable_submission_model().model_json_schema()` → JSON schema
+   - `ConfigSpecs.from_form()` → `to_configurable_submission_model().model_json_schema()` → JSON schema
    - All published in `AgentClassDiscoveryResponseEvent` (form, specs, event specs, workflow graph)
 
 3. **Storage**: Admin creates a profile via Admin UI. API validates submission against
@@ -455,7 +455,8 @@ config seeder needed.
 - Form base: `packages/core/swiss_ai_hub/core/form/form.py`
 - FormKit elements: `packages/core/swiss_ai_hub/core/form/elements/`
 - Form constraints: `packages/core/swiss_ai_hub/core/form/constraints.py`
-- AgentConfigSpecs: `packages/core/swiss_ai_hub/core/events/agent/discovery/agent_config_specs.py`
+- ConfigSpecs (announced schema, shared with processes and ingestors):
+  `packages/core/swiss_ai_hub/core/form/config_specs.py`
 - AgentConfigClient (RPC): `packages/core/swiss_ai_hub/core/rpc/agent_config_client.py`
 - AgentConfigEntityDocument: `packages/core/swiss_ai_hub/core/persistence/agents/agent_config_entity_document.py`
 - EventDisplayer: `packages/core/swiss_ai_hub/core/displayers/event_displayer.py`

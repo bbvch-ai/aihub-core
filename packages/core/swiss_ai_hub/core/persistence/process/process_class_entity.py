@@ -17,13 +17,13 @@ from pydantic import TypeAdapter
 
 from swiss_ai_hub.core.events.process.discovery.agent_in.agent_in_specs import AgentInSpecs
 from swiss_ai_hub.core.events.process.discovery.human_in.human_in_specs import HumanInSpecs
-from swiss_ai_hub.core.events.process.discovery.process_config_specs import ProcessConfigSpecs
-from swiss_ai_hub.core.events.process.discovery.process_config_specs_entity import ProcessConfigSpecsEntity
 from swiss_ai_hub.core.events.process.discovery.program_in.program_in_specs import ProgramInSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
+from swiss_ai_hub.core.form.config_specs import ConfigSpecs
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import EventSpec
+from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 if TYPE_CHECKING:
@@ -153,7 +153,7 @@ class ProcessClassEntity(Document):
     icon = StringField(required=True, default="mage:broadcast", description="Icon for this process class.")
 
     form = ListField(DictField(), default=list, description="FormKit elements defining the process configuration form.")
-    process_config_specs = EmbeddedDocumentField(ProcessConfigSpecsEntity, required=False)
+    process_config_specs = EmbeddedDocumentField(ConfigSpecsEntity, required=False)
 
     # Process-specific metadata
     human_inputs = ListField(EmbeddedDocumentField(HumanInSpecsEntity), default=list)
@@ -188,7 +188,7 @@ class ProcessClassEntity(Document):
         description: LocaleStringEntity | None,
         icon: str,
         form: list[dict],
-        process_config_specs: ProcessConfigSpecsEntity | None,
+        process_config_specs: ConfigSpecsEntity | None,
         human_inputs: list[HumanInSpecsEntity],
         program_inputs: list[ProgramInSpecsEntity],
         agent_inputs: list[AgentInSpecsEntity],
@@ -222,7 +222,7 @@ class ProcessClassEntity(Document):
         description: LocaleString,
         icon: str,
         form: list[ALL_FORM_OPTIONS],
-        process_config_specs: ProcessConfigSpecs,
+        process_config_specs: ConfigSpecs,
         human_inputs: list[HumanInSpecs],
         program_inputs: list[ProgramInSpecs],
         agent_inputs: list[AgentInSpecs],
@@ -239,7 +239,7 @@ class ProcessClassEntity(Document):
 
         # Store WITHOUT aliases - MongoDB doesn't allow keys starting with '$'
         form_dicts = [element.model_dump() for element in form]
-        process_config_specs_entity = ProcessConfigSpecsEntity.from_specs(process_config_specs)
+        process_config_specs_entity = ConfigSpecsEntity.from_specs(process_config_specs)
 
         human_inputs_entities = [HumanInSpecsEntity.from_specs(h) for h in human_inputs]
         program_inputs_entities = [ProgramInSpecsEntity.from_specs(p) for p in program_inputs]
