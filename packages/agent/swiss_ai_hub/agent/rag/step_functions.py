@@ -84,7 +84,7 @@ async def do_condense_standalone_question(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> StandaloneQuestionCondenserEvent:
     """Condense chat history and user query into standalone question."""
     await displayer.display_thought(t("agent.thought.condense_question"))
@@ -103,7 +103,7 @@ async def do_respond_with_llm(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
     as_stop_step: bool = True,
 ) -> LLMStopEvent | LLMEvent:
     """Generate LLM response with proper message building and streaming."""
@@ -141,7 +141,7 @@ async def do_few_shot_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> FewShotRejectEvent | FewShotAcceptEvent:
     """Execute few-shot guard logic and return appropriate event."""
     if not examples:
@@ -248,7 +248,7 @@ async def do_retrieve(
     event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
     runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
     if isinstance(event, StandaloneQuestionCondenserEvent):
@@ -266,7 +266,7 @@ async def do_rerank_nodes(
     reranking_config: RerankingConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> RerankerEvent:
     """Rerank nodes and build RerankerEvent."""
     await displayer.display_thought(t("agent.thought.reranking_results"))
@@ -342,7 +342,7 @@ async def do_context_sufficient_guard(
     displayer: EventDisplayer,
     t: LocaleHandler,
     chat_history: list[ChatMessage],
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))

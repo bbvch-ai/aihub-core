@@ -43,7 +43,7 @@ async def do_generate_title(
     displayer: EventDisplayer,
     t: LocaleHandler,
     thread_context: ThreadContext,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> str | None:
     """Generate a stable conversation title once per thread and emit it as a display event.
 
@@ -79,7 +79,7 @@ async def do_generate_follow_up_questions(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> list[str]:
     """Generate follow-up questions grounded on the latest answer and emit them as a display event.
 
@@ -144,7 +144,7 @@ async def generate_title(
     displayer: EventDisplayer,
     t: LocaleHandler,
     thread_context: ThreadContext,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> None:
     """Best-effort title generation — never propagates (see ``_run_best_effort``).
 
@@ -164,7 +164,7 @@ async def generate_follow_up_questions(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> None:
     """Best-effort follow-up question generation — never propagates (see ``_run_best_effort``).
 

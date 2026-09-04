@@ -234,7 +234,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
@@ -257,7 +257,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> LLMStopEvent:
         """Answer a meta question from the agent's own identity and workflow, then stop the run."""
         stop_event = await do_answer_meta_question(
@@ -290,7 +290,7 @@ class RAGAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> None:
         """Generate the thread's title in parallel with the meta answer.
 
@@ -417,7 +417,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> StandaloneQuestionCondenserEvent:
         return await do_condense_standalone_question(
             event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
@@ -434,7 +434,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
             event.condensed_chat_message.content,
@@ -457,7 +457,7 @@ class RAGAgent(Agent):
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(start_event, RAGStartEvent):
@@ -483,7 +483,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> RerankerEvent:
         return await do_rerank_nodes(
             event.nodes,
@@ -528,7 +528,7 @@ class RAGAgent(Agent):
         user_query_event: StandaloneQuestionCondenserEvent,
         chat_history_event: LimitChatHistoryEvent,
         run_context: RunContext,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         return await do_context_sufficient_guard(
             user_query_event.condensed_chat_message.content,
@@ -599,7 +599,7 @@ class RAGAgent(Agent):
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> LLMEvent:
         # Use as_stop_step=False to return LLMEvent (not LLMStopEvent)
         # This allows store_user_memory_step to run before the final stop_step
@@ -628,7 +628,7 @@ class RAGAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> None:
         """Generate a stable conversation title once per thread, concurrently with the answer pipeline.
 
@@ -701,7 +701,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping.
 
