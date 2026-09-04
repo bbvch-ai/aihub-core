@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
     from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
     from swiss_ai_hub.core.infrastructure.milvus.use_milvus import use_milvus
+    from swiss_ai_hub.core.infrastructure.milvus.use_optional_milvus import use_optional_milvus
     from swiss_ai_hub.core.infrastructure.milvus.use_vector_store_factory import use_vector_store_factory
     from swiss_ai_hub.core.infrastructure.mineru.mineru_settings import MineruSettings
     from swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry import MongoConnectionRegistry
@@ -103,6 +104,7 @@ __all__ = [
     "no_trace",
     "trace_fn",
     "use_milvus",
+    "use_optional_milvus",
     "use_redis",
     "use_s3",
     "use_s3_service",
@@ -154,6 +156,7 @@ _LAZY_IMPORTS = {
     "no_trace": "swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.no_trace",
     "trace_fn": "swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn",
     "use_milvus": "swiss_ai_hub.core.infrastructure.milvus.use_milvus",
+    "use_optional_milvus": "swiss_ai_hub.core.infrastructure.milvus.use_optional_milvus",
     "use_redis": "swiss_ai_hub.core.infrastructure.redis.use_redis",
     "use_s3": "swiss_ai_hub.core.infrastructure.s3.use_s3",
     "use_s3_service": "swiss_ai_hub.core.infrastructure.s3.use_s3",
