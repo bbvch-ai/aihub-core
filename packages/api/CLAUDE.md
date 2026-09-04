@@ -144,6 +144,25 @@ flooding the log pipeline.
 New upstream integrations that raise their own SDK exception types belong in the same place — do not wrap service calls
 in try/except to compensate.
 
+**The one deliberate exception** is `OpenaiService.stt`, because one failure there is not a failure at all. The
+transcription provider reports "I found no speech in this audio" as an HTTP 500 whose body reads
+`Transcription failed: 0` — the `0` is a segment count, not a status. Measured against the provider on 2026-09-04:
+silence, a 440 Hz tone and white noise all return it; 1.3 s of speech at -24 dBFS transcribes fine. So it is a verdict
+on the audio, and it is the same verdict `AudioChunkingService.contains_speech` reaches locally for silence — where
+this API already answers with an empty transcript, as OpenAI's own API does.
+
+`stt` therefore catches exactly that classified cause (`ModelGatewayErrorHandler.is_untranscribable_audio`, never a
+bare `APIStatusError`) and treats the chunk as holding no speech: it keeps the chunks that did transcribe, and returns
+an empty transcript when none did. Everything else re-raises untouched — a misconfigured model or an expired key is not
+a verdict on the audio, and answering it with an empty transcript would report "nobody spoke" for a deployment that
+transcribes nothing. Two things make the silence recoverable afterwards, since a transcript quietly missing a passage is
+worse than a failure: each such chunk logs the provider's verbatim message (it carries the upstream request id, the
+only handle for asking the provider about it), and a summary logs how many of the recording's milliseconds are not in
+the transcript.
+
+`contains_speech` stays as a pre-filter rather than the whole answer: it detects sound at -40 dB, where the provider
+detects speech, so tone and noise pass it and are rejected upstream.
+
 ## i18n System
 
 **Hierarchy**: `LocaleString`/`LocaleHandler` (packages/core) → `ApiLocaleString`/`ApiLocaleHandler` (packages/api
