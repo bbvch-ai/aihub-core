@@ -491,7 +491,7 @@ class AgentDispatcher(BaseDispatcher):
         They are only meaningful while this process holds the response subscriptions they guard: once it is stopping,
         a timer that later fires would publish a failure for a delegation nobody is listening to any more.
         """
-        for timeout_task in list(self._aitl_timeout_tasks):
+        for timeout_task in self._aitl_timeout_tasks:
             timeout_task.cancel()
         self._aitl_timeout_tasks.clear()
         await super().stop()
@@ -656,16 +656,17 @@ class AgentDispatcher(BaseDispatcher):
         request_event_id = aitl_request_event.event_id
 
         # Guards the answer against the timeout below. Both run on this event loop, and nothing awaits between the
-        # read and the write, so a plain flag is enough to make exactly one of them win — a delegate answering as
-        # its deadline expires must resume the caller once, not twice.
-        settled = False
+        # read and the write, so checking-then-setting is enough to make exactly one of them win — a delegate
+        # answering as its deadline expires must resume the caller once, not twice. An `asyncio.Event` rather than a
+        # nonlocal bool because static analysis cannot see a closure's write to the latter and reads the check below
+        # as constant-False.
+        settled = asyncio.Event()
         timeout_task: asyncio.Task | None = None
 
         async def settle(outcome: AgentInTheLoopResponseEvent | AgentInTheLoopExceptionEvent, success: bool) -> None:
-            nonlocal settled
-            if settled:
+            if settled.is_set():
                 return
-            settled = True
+            settled.set()
             # Cancelled rather than left to expire against the guard above: a delegation that answered in a second
             # would otherwise keep a task asleep for the whole deadline, and a dispatcher serving a steady stream of
             # them accumulates one per delegation for no purpose.
@@ -713,7 +714,7 @@ class AgentDispatcher(BaseDispatcher):
         # A delegate fast enough to answer between the publish above and this line settled while `timeout_task` was
         # still None, so `settle` had nothing to cancel. Cancelling here is what stops that timer sleeping out a
         # deadline for a delegation that is already done.
-        if settled and timeout_task is not None:
+        if settled.is_set() and timeout_task is not None:
             timeout_task.cancel()
 
     def _schedule_agent_in_the_loop_timeout(

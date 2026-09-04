@@ -366,16 +366,20 @@ def test_a_grounded_setup_that_can_produce_a_draft_passes():
 
 
 def test_grounding_without_a_knowledge_agent_is_rejected():
+    settings = _grounded_settings()
+    draft = _drafting()
     with pytest.raises(ValueError, match="no knowledge agent is configured"):
-        EmailClassificationAgent._validate(_grounded_settings(), _drafting(), "INBOX", _counter, None)
+        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, None)
 
 
 def test_grounding_without_a_knowledge_database_is_rejected():
     """A collection name alone identifies nothing — retrieval would be scoped to no bucket and answer from nothing."""
     settings = _grounded_settings()
     settings.knowledge_databases = []
+    draft = _drafting()
+    delegation = _delegation()
     with pytest.raises(ValueError, match="no knowledge database is configured"):
-        EmailClassificationAgent._validate(settings, _drafting(), "INBOX", _counter, _delegation())
+        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
 
 
 def test_a_grounded_category_that_gets_no_drafted_reply_is_rejected():
@@ -391,16 +395,20 @@ def test_a_grounded_category_that_gets_no_drafted_reply_is_rejected():
         ]
     )
     settings.knowledge_databases = ["support-kb"]
+    draft = _drafting()
+    delegation = _delegation()
     with pytest.raises(ValueError, match="name a knowledge collection but are not set to get a drafted reply"):
-        EmailClassificationAgent._validate(settings, _drafting(), "INBOX", _counter, _delegation())
+        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
 
 
 def test_a_blank_fallback_text_is_rejected_up_front():
     """The one message that needs a fallback text is the one nobody is watching for — a blank has to fail here."""
     draft = _drafting()
     draft.no_information_draft = "   "
+    settings = _grounded_settings()
+    delegation = _delegation()
     with pytest.raises(ValueError, match="both fallback draft texts must be set"):
-        EmailClassificationAgent._validate(_grounded_settings(), draft, "INBOX", _counter, _delegation())
+        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
 
 
 def test_grounding_is_not_checked_when_drafting_is_off():
