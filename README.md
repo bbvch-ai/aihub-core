@@ -455,6 +455,9 @@ Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and ope
 | [Open an issue](https://github.com/bbvch-ai/aihub-core/issues) | Report bugs and request features                             |
 | [Read the ADRs](https://bbvch-ai.github.io/aihub-core/arc42/)  | Understand key decisions before proposing structural changes |
 
+Pull requests opened by repository members receive an automated Claude Code review. It runs once when the PR is opened
+and again if a draft is marked ready for review, so pushing further commits does not re-trigger it.
+
 ## License
 
 Swiss AI Hub is **fully open-source** under a **dual-license model** — each published artifact carries its own license,
