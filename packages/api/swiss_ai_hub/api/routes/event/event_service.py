@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 
@@ -115,12 +116,19 @@ class EventService:
 
     @staticmethod
     @trace_fn
-    def get_llm_spend_by_user(tenant_id: str | None = None, since: datetime | None = None) -> list[LLMSpend]:
-        """LLM spend per user, narrowed to one tenant unless the caller may see the whole platform."""
-        return PersistedAgentEventEntity.get_llm_spend_by_user(tenant_id=tenant_id, since=since)
+    async def get_llm_spend_by_user(tenant_id: str | None = None, since: datetime | None = None) -> list[LLMSpend]:
+        """LLM spend per user, narrowed to one tenant unless the caller may see the whole platform.
+
+        Off the event loop, because the aggregation is synchronous and its runtime grows with the
+        window: measured at 123s on staging for a cold 30-day window, which froze every other
+        request — including the health probe, whose three failures then had Docker call the whole
+        container unhealthy and gunicorn kill the worker."""
+        return await asyncio.to_thread(
+            PersistedAgentEventEntity.get_llm_spend_by_user, tenant_id=tenant_id, since=since
+        )
 
     @staticmethod
     @trace_fn
-    def get_llm_spend_by_tenant(since: datetime | None = None) -> list[LLMSpend]:
-        """LLM spend per tenant across the platform."""
-        return PersistedAgentEventEntity.get_llm_spend_by_tenant(since=since)
+    async def get_llm_spend_by_tenant(since: datetime | None = None) -> list[LLMSpend]:
+        """LLM spend per tenant across the platform. Off the event loop — see `get_llm_spend_by_user`."""
+        return await asyncio.to_thread(PersistedAgentEventEntity.get_llm_spend_by_tenant, since=since)

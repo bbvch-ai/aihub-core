@@ -259,14 +259,14 @@ class EventController(TenantScopedController):
             any single tenant, sees the whole platform.
             """
             if user.is_sys_admin:
-                return EventService.get_llm_spend_by_user(since=since)
+                return await EventService.get_llm_spend_by_user(since=since)
 
             # Deny rather than fall open: an unset acting tenant would otherwise mean "no filter",
             # handing a single-tenant admin every tenant's user spend.
             tenant_id = _acting_tenant_id(user)
             if tenant_id is None:
                 raise HTTPException(status_code=403, detail="Must act within a tenant to view user spend.")
-            return EventService.get_llm_spend_by_user(tenant_id=tenant_id, since=since)
+            return await EventService.get_llm_spend_by_user(tenant_id=tenant_id, since=since)
 
         return self
 
@@ -288,6 +288,6 @@ class EventController(TenantScopedController):
             Sysadmin-only: a cross-tenant total is exactly the view a single tenant must not have.
             """
             del user
-            return EventService.get_llm_spend_by_tenant(since=since)
+            return await EventService.get_llm_spend_by_tenant(since=since)
 
         return self
