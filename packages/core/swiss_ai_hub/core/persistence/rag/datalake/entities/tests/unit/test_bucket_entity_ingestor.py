@@ -73,9 +73,24 @@ class TestIngestorDefault:
 
         assert bucket.ingestor == IngestorType.UNASSIGNED.value
 
-    def test_unassigned_is_not_offered_as_a_user_choice(self):
-        assert IngestorType.UNASSIGNED not in IngestorType.selectable()
-        assert IngestorType.selectable() == [IngestorType.DOCUMENT_INGESTION]
+    def test_unassigned_is_a_legacy_routing_token_not_a_registrable_ingestor(self):
+        assert IngestorType.UNASSIGNED in IngestorType.legacy()
+        assert IngestorType.DOCUMENT_INGESTION not in IngestorType.legacy()
+
+    def test_the_ingestor_configuration_is_stored_and_read_back_as_given(self):
+        bucket = BucketEntity.create_bucket(
+            bucket_name="configureddb", configuration={"embedding_model": "embedding/bge-m3", "with_summaries": False}
+        )
+
+        stored = BucketEntity.get_bucket_by_bucket_name("configureddb")
+
+        assert stored.configuration == {"embedding_model": "embedding/bge-m3", "with_summaries": False}
+        assert bucket.configuration == stored.configuration
+
+    def test_a_row_predating_the_configuration_field_reads_as_empty(self, mongo_connection):
+        _insert_pre_upgrade_row(mongo_connection, "legacyknowledge")
+
+        assert BucketEntity.get_bucket_by_bucket_name("legacyknowledge").configuration == {}
 
 
 class TestUpdateBucket:

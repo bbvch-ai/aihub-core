@@ -541,6 +541,12 @@ knowledge:
     create_error: Failed to create the collection. Please try again.
     create_database:
       title: Create Knowledge Database
+      success: Knowledge database created
+      error: Failed to create the knowledge database
+      no_ingestors: No ingestion pipeline is available. Make sure at least one pipeline
+        is running.
+      steps:
+        basic_info: Basic Info
     edit:
       title: Edit Collection
     database:
@@ -555,14 +561,6 @@ knowledge:
       label: Ingestion Pipeline
       placeholder: Select an ingestion pipeline
       help: The pipeline that processes documents uploaded to this database.
-    llm_model:
-      label: Text Model
-      placeholder: Use the deployment default
-      help: Generates summaries, refines tables and describes figures for this database.
-    embedding_model:
-      label: Embedding Model
-      placeholder: Use the deployment default
-      help: Indexes this database's documents. Cannot be changed after creation.
     folder_name:
       label: Collection Name
       placeholder: my-collection

@@ -548,6 +548,12 @@ knowledge:
     create_error: Échec de la création de la collection. Veuillez réessayer.
     create_database:
       title: Créer une base de connaissances
+      success: Base de connaissances créée
+      error: La base de connaissances n'a pas pu être créée
+      no_ingestors: Aucun pipeline d'ingestion disponible. Assurez-vous qu'au moins
+        un pipeline est en cours d'exécution.
+      steps:
+        basic_info: Informations de base
     edit:
       title: Modifier la collection
     database:
@@ -564,15 +570,6 @@ knowledge:
       label: Pipeline d'ingestion
       placeholder: Sélectionner un pipeline d'ingestion
       help: Le pipeline qui traite les documents téléversés dans cette base de données.
-    llm_model:
-      label: Modèle de texte
-      placeholder: Utiliser la valeur par défaut du déploiement
-      help: Génère les résumés, affine les tableaux et décrit les figures de cette
-        base.
-    embedding_model:
-      label: Modèle d'embedding
-      placeholder: Utiliser la valeur par défaut du déploiement
-      help: Indexe les documents de cette base. Non modifiable après la création.
     folder_name:
       label: Nom de la collection
       placeholder: ma-collection

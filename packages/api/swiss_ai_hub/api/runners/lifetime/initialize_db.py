@@ -292,6 +292,35 @@ async def initialize_knowledge_buckets() -> None:
     logger.info("Knowledge bucket initialization completed successfully")
 
 
+_RETIRED_MODEL_COLUMNS = ("llm_model", "embedding_model")
+
+
+@no_trace
+async def carry_over_bucket_model_columns() -> None:
+    """Moves the retired per-database model columns into the ingestor configuration object.
+
+    Databases created before ingestors announced their form stored ``llm_model`` / ``embedding_model`` as columns.
+    The pipeline now reads both from ``configuration`` under the same keys, so each row is carried over once and
+    the old keys removed; a row with neither column is left alone. Idempotent, so it is safe on every start.
+    """
+    collection = BucketEntity._get_collection()
+    rows = collection.find({"$or": [{column: {"$exists": True}} for column in _RETIRED_MODEL_COLUMNS]})
+    carried = 0
+    for row in rows:
+        values = {
+            f"configuration.{column}": row[column]
+            for column in _RETIRED_MODEL_COLUMNS
+            if row.get(column) is not None and column not in row.get("configuration", {})
+        }
+        update: dict = {"$unset": {column: "" for column in _RETIRED_MODEL_COLUMNS}}
+        if values:
+            update["$set"] = values
+        collection.update_one({"_id": row["_id"]}, update)
+        carried += 1
+    if carried:
+        logger.info(f"Carried the retired model columns of {carried} knowledge database(s) into their configuration")
+
+
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:
     """Ensure a bucket exists in the database with the correct ingestor, creating it if necessary.
 

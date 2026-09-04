@@ -242,6 +242,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `BACKUP_VALKEY_CONTAINER` | `BackupSettings.VALKEY_CONTAINER` | `'valkey'` | `backup-code` |  |
 | `BACKUP_VALKEY_HOST` | `BackupSettings.VALKEY_HOST` | `'valkey'` |  |  |
 | `BACKUP_VALKEY_PORT` | `BackupSettings.VALKEY_PORT` | `6379` |  |  |
+| `DOCUMENT_INGESTION_VISION_MODEL` | `DocumentIngestionPipelineSettings.VISION_MODEL` | `None` |  | LiteLLM model name used for figure descriptions; the text model when unset. |
 | `KEYCLOAK_API_SERVICE_CLIENT_ID` | `KeycloakSettings.API_SERVICE_CLIENT_ID` | `'aihub-api-service'` |  | Client ID for the API service account |
 | `KEYCLOAK_EXTERNAL_URL` | `KeycloakSettings.EXTERNAL_URL` | `None` | `api`, `bot`, `sysadmin-api` | Keycloak external URL as seen by browsers, used for issuer validation |
 | `KEYCLOAK_REALM` | `KeycloakSettings.REALM` | `'aihub'` | `api`, `bot`, `sysadmin-api` | Keycloak realm name |

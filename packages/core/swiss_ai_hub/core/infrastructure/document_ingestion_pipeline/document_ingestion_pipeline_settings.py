@@ -24,6 +24,13 @@ class DocumentIngestionPipelineSettings(EnvironmentSettings):
             description="LiteLLM model name used for summaries, table refinement and figure descriptions.",
         ),
     ]
+    VISION_MODEL: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="LiteLLM model name used for figure descriptions; the text model when unset.",
+        ),
+    ]
     WITH_SUMMARY_NODES: Annotated[
         bool, Field(default=True, description="Generate recursive summaries for hierarchical RAG.")
     ]

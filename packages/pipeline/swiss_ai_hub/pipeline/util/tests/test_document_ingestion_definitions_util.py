@@ -1,6 +1,13 @@
-from dagster import AssetKey, Definitions
-from swiss_ai_hub.core.i18n import LocaleString
+from typing import Annotated, Self
 
+import pytest
+from dagster import AssetKey, Definitions
+from pydantic import Field
+from swiss_ai_hub.core.form import InputNumber
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.persistence import IngestorType
+
+from swiss_ai_hub.pipeline.ingestors.document_ingestion_config import DocumentIngestionConfig
 from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 
 
@@ -87,14 +94,61 @@ class TestResourcesAreFullyWired:
         assert node_parser.embedding_config is not None
         assert node_parser.llm_config is not None
 
-    def test_the_summary_parser_knows_which_model_writes_its_summaries(self):
-        summary_parser = document_ingestion_pipeline_definitions().resources["summary_parser"]
+    def test_every_enrichment_resource_is_wired_whatever_the_deployment_defaults_say(self):
+        """The graph is the same for every database; a database opts in or out per run, not the deployment."""
+        defs = document_ingestion_pipeline_definitions(
+            with_summary_nodes=False, with_table_refinement=False, with_figure_descriptions=False
+        )
 
-        assert summary_parser.llm_config is not None
+        assert "table_refinement" in defs.resources
+        assert "summary_parser" in defs.resources
+        assert AssetKey(["document_ingestion_datalake_to_vectorstore", "summary_nodes"]) in _asset_keys(defs)
 
-    def test_the_table_refiner_knows_which_model_refines_its_tables(self):
-        table_refinement = document_ingestion_pipeline_definitions(with_table_refinement=True).resources[
-            "table_refinement"
-        ]
 
-        assert table_refinement.llm_config is not None
+def _registration_sensor(defs: Definitions):
+    return next(sensor for sensor in defs.sensors if sensor.name.startswith("IngestorRegistrationSensorFor_"))
+
+
+class _CrawlConfig(DocumentIngestionConfig):
+    """A deployment's own knob on top of the shipped ones."""
+
+    crawl_depth: Annotated[int | InputNumber | None, Field(description="How deep to crawl")] = None
+
+    @classmethod
+    def as_form(cls, **defaults) -> Self:
+        base = DocumentIngestionConfig.as_form(**defaults)
+        return cls(**dict(base), crawl_depth=InputNumber(label=LocaleString(en="Crawl depth"), value=2))
+
+
+class TestIngestorRegistration:
+    """A pipeline announces itself — labels, form and schema — through one record the API reads."""
+
+    def test_the_shipped_pipeline_registers_itself_like_any_custom_one(self):
+        sensor = _registration_sensor(document_ingestion_pipeline_definitions())
+
+        assert sensor.name == f"IngestorRegistrationSensorFor_{IngestorType.DOCUMENT_INGESTION.value}"
+
+    def test_a_custom_pipeline_registers_under_its_own_id(self):
+        assert _registration_sensor(_custom_pipeline()).name == "IngestorRegistrationSensorFor_ocr_heavy_rag"
+
+    def test_a_custom_ingestor_without_labels_is_rejected_at_build_time(self):
+        with pytest.raises(ValueError, match="display_name"):
+            document_ingestion_pipeline_definitions(ingestor="unlabelled")
+
+    @pytest.mark.parametrize("reserved", [IngestorType.DEFAULT_RAG.value, IngestorType.UNASSIGNED.value, "datalake"])
+    def test_a_reserved_id_is_rejected_at_build_time(self, reserved):
+        with pytest.raises(ValueError, match="reserved"):
+            document_ingestion_pipeline_definitions(
+                ingestor=reserved, display_name=LocaleString(en="x"), description=LocaleString(en="y")
+            )
+
+    def test_a_custom_config_extends_the_announced_form_without_platform_changes(self):
+        """Accepted-when #1 of #1822: a new knob is a pipeline-side declaration and nothing else."""
+        defs = document_ingestion_pipeline_definitions(
+            ingestor="crawler",
+            display_name=LocaleString(en="Crawler"),
+            description=LocaleString(en="Crawls sites"),
+            config=_CrawlConfig.as_form(llm_model="text-generation/x", embedding_model="embedding/y"),
+        )
+
+        assert _registration_sensor(defs).name == "IngestorRegistrationSensorFor_crawler"

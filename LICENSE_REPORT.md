@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 31.08.2026
+Generated on: 04.09.2026
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -244,7 +244,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j-graphrag                                   | 1.17.0          | Apache-2.0 (override)                                   |                                                                      |
 | ✅     | nest-asyncio                                     | 1.6.0           | BSD License                                             |                                                                      |
 | ✅     | networkx                                         | 3.6.1           | BSD-3-Clause                                            |                                                                      |
-| ✅     | nltk                                             | 3.9.4           | Apache Software License                                 |                                                                      |
+| ✅     | nltk                                             | 3.10.3          | Apache Software License                                 |                                                                      |
 | ✅     | numpy                                            | 2.4.6           | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0      |                                                                      |
 | ✅     | oauthlib                                         | 3.3.1           | BSD-3-Clause                                            |                                                                      |
 | ✅     | olefile                                          | 0.47            | BSD License                                             |                                                                      |

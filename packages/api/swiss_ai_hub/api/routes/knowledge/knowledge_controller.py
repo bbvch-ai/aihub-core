@@ -270,9 +270,7 @@ class KnowledgeController(TenantScopedController):
                 raise HTTPException(
                     status_code=400, detail=f"Database name '{database}' is reserved and cannot be used."
                 )
-            return await KnowledgeService.create_database(
-                database, request, t, s3_service, user, self.translation_llm_config
-            )
+            return await KnowledgeService.create_database(database, request, t, s3_service, user)
 
         return self
 
