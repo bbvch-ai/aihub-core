@@ -123,6 +123,9 @@ model_list:
       # The chunker reads this to size nodes. Without it LiteLLM reports null and callers have to guess,
       # which is how oversized chunks reached the model and failed the whole document.
       max_input_tokens: 8192
+      # The dimension of a knowledge database's Milvus collection is derived from this. It must be the
+      # model's real output width — a wrong value is not rejected, it silently truncates or pads vectors.
+      output_vector_size: 1024
       input_cost_per_token: 0.0000004309
 
   # ===================================================================
@@ -234,12 +237,16 @@ litellm_settings:
 # Router Settings
 # ===================================================================
 router_settings:
-  # default_fallbacks registers a "*" wildcard that applies to embedding and rerank calls too, so a rejected
-  # embedding gets retried against a chat model that cannot serve it and the real error is buried three levels
-  # deep. An explicit empty list wins over the wildcard on exact match, so these surface their own error.
+  # default_fallbacks registers a "*" wildcard that applies to embedding, rerank, transcription and image
+  # calls too, so a rejected embedding gets retried against a chat model that cannot serve it and the real
+  # error is buried three levels deep. An explicit empty list wins over the wildcard on exact match, so these
+  # surface their own error. Transcription needs it most: it has a single deployment, so a retry against a
+  # chat model is pure latency on a failure that will never succeed.
   fallbacks:
     - embedding/bge-m3: []
     - reranker/bge: []
+    - transcription/whisper-large-v3: []
+    - image-generation/flux: []
   routing_strategy: usage-based-routing-v2
   retry_policy:
     TimeoutErrorRetries: 2

@@ -131,9 +131,14 @@ Use the error information from Step 1 to match against these known patterns.
 
 - Read: `packages/pipeline/swiss_ai_hub/pipeline/sensors/nats/nats_document_uploaded_sensor.py`
 - Is NATS reachable? Check `NATS_ENDPOINT` env var
-- Is the JetStream stream created? (poller creates it on first run)
+- Is the JetStream stream created? (poller creates it on first run) — events published *before* the stream exists are
+  dropped, since JetStream has nowhere to store them
 - Are `SourceUpdatedEvent` messages being published?
 - Check consumer name uniqueness
+- `skipped: Observation run <id> is already in flight` is **normal**, not a fault — the sensor deliberately keeps one
+  observation at a time and re-arms afterwards. Likewise `Debouncing N pending event(s)` means a burst is being
+  collected (30 s). Read the sensor's cursor in the Dagster UI to see `pending_events` / `followup_armed`; if a run
+  seems missing, check whether its `dagster/run_key` was deduplicated
 
 ### Embedding Failures
 

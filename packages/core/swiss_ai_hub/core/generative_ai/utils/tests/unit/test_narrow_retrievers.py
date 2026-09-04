@@ -20,6 +20,7 @@ def _retriever(
             collection_name=bucket,
             dimensions=1024,
             index_namespaces=index_namespaces or [],
+            all_namespaces=index_namespaces is None,
             allowed_metadata_filter_fields=allowed or [],
         ),
         retrieve_k=5,
@@ -46,6 +47,16 @@ class TestNamespaceNarrowing:
         assert len(runtime_configs) == 1
         assert runtime_configs[0].config.vector_store.collection_name == "bucket_a"
         assert runtime_configs[0].config.vector_store.index_namespaces == ["ns1"]
+
+    def test_all_namespaces_accepts_any_selection_and_narrows_to_it(self):
+        retrievers = [_retriever("bucket_a")]
+        runtime_configs = narrow_retrievers(
+            retrievers,
+            [BucketNamespacePair(bucket_name="bucket_a", namespace_name="anything")],
+        )
+        narrowed = runtime_configs[0].config.vector_store
+        assert narrowed.index_namespaces == ["anything"]
+        assert narrowed.all_namespaces is False
 
     def test_namespace_outside_configured_set_drops_retriever(self):
         retrievers = [_retriever("bucket_a", ["ns1"])]

@@ -26,6 +26,25 @@ Database names, namespace labels, and folder descriptions support German, Englis
 displays labels according to user language preference.
 :::
 
+## Creating a knowledge database
+
+You create knowledge databases yourself from the admin UI — no deployment, configuration change, or restart is involved,
+and a new database starts accepting documents immediately.
+
+When you create one you choose:
+
+- **The ingestion pipeline** that will process its documents. Most deployments offer one, the Generic Document Ingestion
+  Pipeline; a deployment that ships its own pipeline offers that here too.
+- **A text-generation model**, used for the enrichment steps — summaries, table refinement, figure descriptions.
+- **An embedding model**, which turns text into the vectors agents search.
+
+Leave the models unset to use the deployment's defaults. Because a database's vectors are only comparable to other
+vectors produced by the same embedding model, the models are fixed once the database exists — to change them, create a
+new database and re-upload.
+
+Whoever creates a database is granted administrative access to it automatically, so you can use what you just made
+without asking an administrator for a second step.
+
 ## Managing content
 
 ### Manual management
@@ -34,12 +53,13 @@ By default, databases allow manual control:
 
 1. Create collections through the web interface
 2. Upload documents to specific collections
-3. Wait for the next scheduled pipeline run
+3. Watch them process
 
 ![Empty knowledge database](../../../media/knowledge/empty_knowledge_base.png)
 
-You control what gets uploaded and where it lives. The pipeline runs on a schedule (commonly configured for nightly
-processing) to handle document processing and indexing.
+You control what gets uploaded and where it lives. Uploading a document notifies the pipeline directly, so processing
+normally begins within a minute or two rather than waiting for a scheduled run. A daily run still sweeps every database
+as a safety net, catching anything a missed notification would otherwise have left behind.
 
 ### Auto-sync from external sources
 
@@ -52,6 +72,26 @@ Mark a database as auto-sync to connect it to external content sources like Shar
 
 The external system becomes the source of truth. Your team continues working in SharePoint, and the sync pipeline brings
 changes into the Swiss AI Hub on the configured schedule.
+
+### Deleting databases and collections
+
+You can remove a whole knowledge database or an individual collection from the web interface. Both actions are
+permanent.
+
+- **Delete a collection** removes that collection's documents from storage and the vector index; the database and its
+  other collections stay.
+- **Delete a database** removes the database entirely — every collection, all its documents, its vector collection, and
+  its file storage.
+
+To prevent accidents, the confirmation dialog shows how many documents will be removed and requires you to type the
+exact database or collection name before the delete button becomes active.
+
+Deletion runs in the background. The moment you confirm, the item disappears from the list and stops accepting new
+uploads, while the platform frees the underlying storage shortly afterwards. If you later re-upload a document that was
+deleted, it is ingested again normally.
+
+Auto-synced databases cannot be deleted from the UI — their content is owned by the external source, which would simply
+re-sync it. Remove the external connection instead.
 
 ## Document processing
 
@@ -80,21 +120,45 @@ sidebars, and other structural elements.
 Chunk inspection displays how the system segmented content, what metadata it extracted, and how it represents chunks for
 retrieval. Useful when agents aren't finding expected content.
 
-Processing status indicates whether documents are uploading, processing, or ready.
+Processing status indicates whether documents are uploading, processing, or ready. A document counts as ready only once
+its embeddings have been written to the vector database — until then it is still processing and agents cannot retrieve
+it, even though its text has already been parsed.
 
 ## Access control
 
-The permission system controls all knowledge operations:
+Knowledge permissions follow the same two-level hierarchy as agent classes and agent instances: the database is the
+parent, its collections (namespaces) are the children, and a rule on one level never implies its neighbours.
 
-- Viewing databases requires appropriate permissions
-- Accessing namespaces checks user authorization
-- Uploading documents validates user rights
-- Inspecting processing details requires permission
+| Rule                                  | Grants                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `aihub.admin.knowledge`               | Create new knowledge databases and list the pipelines they can be assigned                  |
+| `aihub.admin.knowledge.<db>`          | See the database, create collections inside it, delete the whole database                   |
+| `aihub.admin.knowledge.<db>.<ns>`     | Upload, edit, and delete documents in that collection; rename or delete the collection      |
+| `aihub.user.knowledge.<db>`           | See that the database exists, its name and configured pipeline, but none of its collections |
+| `aihub.user.knowledge.<db>.<ns>`      | Browse and search one collection                                                            |
+| `aihub.user.knowledge.<db>.*` or `.>` | Browse every collection of one database                                                     |
+| `aihub.user.knowledge.>`              | Browse every database and every collection                                                  |
 
-Knowledge databases provide natural isolation boundaries. Organizations can create separate databases per department or
-project, then use permissions to control who accesses each database.
+The seeded `AIHubKnowledgeUser` and `AIHubKnowledgeAdmin` roles bundle the last row and the first two rows respectively,
+and the role editor offers the same three rules as presets. Admin rules imply the matching user rule.
+`aihub.admin.knowledge.>` covers every existing database and collection but not the bare `aihub.admin.knowledge` root,
+so a role that should create databases needs the root rule explicitly.
+
+Creating a resource grants access to it automatically, mirroring agent instances: the creator receives a per-resource
+admin role (`Knowledge<Db>Admin` or `Knowledge<Db><Ns>Admin`) and the tenant ceiling is raised to include the new rule
+unless a broader rule already covers it. Deleting a database or collection revokes those rules and roles again.
 
 ## Agent integration
+
+An agent's knowledge scope is always explicit: it either names the collections to search or opts into every collection
+of a database with the "Search all namespaces" switch. Leaving the selection empty is rejected when the configuration is
+saved rather than silently widened to the whole database. Agents configured before this rule existed, with an empty
+selection and no switch, fail validation until an administrator re-saves them with an explicit scope; the agent's error
+message names the retriever field to fix.
+
+Saving an agent configuration also checks that scope against the saving user's rules: each named collection needs
+`aihub.user.knowledge.<db>.<ns>` (or a rule covering it), and opting into all collections needs a rule covering every
+one of them (`...<db>.*`, `...<db>.>` or broader).
 
 Agents connect to specific collections rather than entire databases. When configuring an agent, you specify which
 collections it can search. A customer support agent might access "products" and "faq" but not "engineering."

@@ -40,26 +40,34 @@ ______________________________________________________________________
 The `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py` provides factory functions that assemble complete
 `Definitions` objects with all assets, resources, sensors, jobs, and schedules wired together.
 
-### `default_definitions()` — Stage 2 (DataLake to Vector Store)
+### `document_ingestion_pipeline_definitions()` — Stage 2 (DataLake to Vector Store)
+
+Defined in `util/document_ingestion_definitions_util.py`. Carries no bucket name: one deployment serves every knowledge
+database whose `BucketEntity.ingestor` matches, resolving the target per run from the composite partition key
+`{bucket}|{uri}` or the `aihub/bucket` run tag.
 
 ```python
-from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 
-defs = default_definitions(
-    datalake_container_name="my-bucket",          # S3 bucket name
+defs = document_ingestion_pipeline_definitions(
+    ingestor="document_ingestion",                               # routing key; also namespaces every global Dagster name
+    display_name=LocaleString(en="My Pipeline"),  # required for a custom ingestor, omitted for the platform one
+    description=LocaleString(en="What it does"),
     embedding_model_name="embedding/large",       # LiteLLM model
     llm_model_name="text-generation/mini",        # LiteLLM model
     with_summary_nodes=True,                      # Hierarchical RAG
     with_table_refinement=True,                   # LLM table structure detection
     with_figure_descriptions=True,                # Vision LLM figure descriptions
-    auto_sync=False,                              # True if auto-synced via local FS
     observe_job_hour=2,                           # Daily observation at 2 AM
     observe_job_minute=0,
-    vector_store_dimensions=None,                 # None = use MilvusSettings default
     max_partitions=1000,                          # Max partitions per operation
     document_parser_loader_type=LoaderType.MINERU,    # MinerU (default) or Azure Doc Intelligence
 )
 ```
+
+The deployed pipeline reads these from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*` env vars) rather than
+hardcoding them.
 
 ### `default_sharepoint_to_datalake_definitions()` — Stage 1 (SharePoint to S3)
 
@@ -387,6 +395,12 @@ def replace_partition_keys(context, partition_name, keys, max_partitions):
 
 **Partition key = document URI** (e.g., `s3://bucket/path/to/doc.pdf`).
 
+**Truncation is signalled, not silent**: additions and deletions are capped at `max_partitions` per run. When the cap
+bites, `replace_partition_keys` logs a warning and tags its own run with `PARTITIONS_TRUNCATED_TAG` — a run cannot write
+its sensor's cursor, so non-convergence travels back as a run tag. The NATS sensor re-arms on an unhandled tag and
+records the run id it answered, chaining observations until one truncates nothing. An upload larger than
+`max_partitions` therefore still ends up fully observed.
+
 ### DataVersionsByPartition
 
 Observable assets return content hashes per partition to trigger downstream:
@@ -471,6 +485,14 @@ sensor = nats_document_uploaded_sensor(
 
 **Flow**: Document uploaded via API sends `SourceUpdatedEvent` to NATS. Sensor triggers `observe_job`. Observable asset
 detects new partition. Downstream assets with `AutomationCondition.eager()` auto-materialize.
+
+**Single-flight**: an observation scans the whole bucket, so the sensor never requests a second one while one is queued
+or running — a burst of uploads yields one run, not one per tick. It drains the entire JetStream backlog each tick,
+holds events for a 30 s debounce, and derives run keys from the highest stream sequence plus a re-arm counter so
+Dagster's own deduplication is a second line of defence. Events that arrive *during* a run arm exactly one follow-up,
+because a running observation may already have listed the bucket before those files landed. The guard is scoped per job
+name, so a manually launched run suppresses the sensor too. `run_after_success_sensor` applies the same guard to the
+chained remove job, keyed on the observing run id.
 
 ### Schedules
 

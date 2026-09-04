@@ -581,6 +581,12 @@ class OpenaiService:
 
         file_ext = file.filename.rsplit(".", 1)[-1].lower()
         audio = AudioSegment.from_file(file.file, format=file_ext)
+
+        if not AudioChunkingService.contains_speech(audio):
+            return OpenaiService._transcription_response(
+                text="", audio=audio, language=language, response_format=response_format
+            )
+
         audio_chunks: list[AudioSegment] = await AudioChunkingService.chunk_audio(audio)
         transcription_chunks: list[TranscriptionChunk] = []
 
@@ -598,28 +604,40 @@ class OpenaiService:
                 prompt=prompt,
                 response_format=response_format,
                 temperature=temperature,
-                timestamp_granularities=timestamp_granularities,
+                timestamp_granularities=timestamp_granularities if response_format == "verbose_json" else None,
             )
 
             transcription_chunks.append(result)
 
         merged_text: str = AudioChunkingService.merge_transcriptions(transcription_chunks)
 
+        return OpenaiService._transcription_response(
+            text=merged_text, audio=audio, language=language, response_format=response_format
+        )
+
+    @staticmethod
+    def _transcription_response(
+        *, text: str, audio: AudioSegment, language: str | None, response_format: str | None
+    ) -> Transcription | TranscriptionVerbose | str:
+        """Chunking merges every chunk into one text, so the formats that carry per-segment timing
+        cannot be reassembled and degrade to plain text."""
         if response_format == "text":
-            return merged_text
+            return text
         elif response_format == "srt" or response_format == "vtt":
             logger.warning(f"Format {response_format} not fully supported with chunking, returning as text")
-            return merged_text
+            return text
         elif response_format == "verbose_json":
             return TranscriptionVerbose(
-                text=merged_text,
-                language=language,
+                text=text,
+                # The gateway reports no detected language, and the field is required, so an
+                # unrequested language has nothing to report but the empty string.
+                language=language or "",
                 duration=len(audio) / 1000,  # Convert milliseconds to seconds
                 segments=[],
                 words=[],
             )
         else:
-            return Transcription(text=merged_text)
+            return Transcription(text=text)
 
     @staticmethod
     @trace_fn

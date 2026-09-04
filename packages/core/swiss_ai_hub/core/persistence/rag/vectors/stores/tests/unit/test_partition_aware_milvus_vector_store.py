@@ -1,4 +1,5 @@
 import json
+from unittest.mock import MagicMock
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
@@ -7,6 +8,7 @@ from llama_index.core.vector_stores.types import FilterCondition, VectorStoreQue
 from llama_index.core.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE, TYPE
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import get_partition_name_for_namespace
 from swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store import (
     MILVUS_DYNAMIC_FIELD_MAX_BYTES,
     PartitionAwareMilvusVectorStore,
@@ -16,6 +18,19 @@ from swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vec
 def _make_store() -> PartitionAwareMilvusVectorStore:
     """Bypass __init__ — these tests cover pure helpers that don't need a Milvus client."""
     return PartitionAwareMilvusVectorStore.__new__(PartitionAwareMilvusVectorStore)
+
+
+def _store_with_client(client: MagicMock, has_manual_partitions: bool = True) -> PartitionAwareMilvusVectorStore:
+    """Bypass pydantic init to inject a mock client for the teardown delete/drop paths."""
+    store = PartitionAwareMilvusVectorStore.__new__(PartitionAwareMilvusVectorStore)
+    object.__setattr__(store, "__dict__", {})
+    object.__setattr__(store, "__pydantic_private__", {})
+    object.__setattr__(store, "__pydantic_fields_set__", set())
+    object.__setattr__(store, "__pydantic_extra__", {})
+    store._milvusclient = client
+    store._has_manual_partitions = has_manual_partitions
+    store.collection_name = "tenant_db"
+    return store
 
 
 class _StubMilvusClient:
@@ -145,6 +160,55 @@ def test_extract_namespaces_from_metadata_filters_directly() -> None:
     )
 
     assert store._extract_namespaces_from_metadata_filters(filters) == ["alpha"]
+
+
+def test_delete_by_namespace_is_a_filtered_delete_scoped_to_the_namespace_partition() -> None:
+    """Shared-partition safety: namespace cleanup MUST filter by ``namespace ==`` and target only that
+    namespace's hashed partition — never drop the partition, which would wipe colliding namespaces."""
+    client = MagicMock()
+    store = _store_with_client(client, has_manual_partitions=True)
+
+    store.delete_by_namespace("alpha")
+
+    client.delete.assert_called_once_with(
+        collection_name="tenant_db",
+        filter=f'{NAMESPACE} == "alpha"',
+        partition_name=get_partition_name_for_namespace("alpha"),
+    )
+    client.drop_partition.assert_not_called()
+
+
+def test_delete_by_namespace_without_manual_partitions_deletes_collection_wide() -> None:
+    client = MagicMock()
+    store = _store_with_client(client, has_manual_partitions=False)
+
+    store.delete_by_namespace("alpha")
+
+    client.delete.assert_called_once_with(
+        collection_name="tenant_db",
+        filter=f'{NAMESPACE} == "alpha"',
+        partition_name=None,
+    )
+
+
+def test_drop_collection_drops_when_present() -> None:
+    client = MagicMock()
+    client.has_collection.return_value = True
+    store = _store_with_client(client)
+
+    store.drop_collection()
+
+    client.drop_collection.assert_called_once_with(collection_name="tenant_db")
+
+
+def test_drop_collection_is_idempotent_when_absent() -> None:
+    client = MagicMock()
+    client.has_collection.return_value = False
+    store = _store_with_client(client)
+
+    store.drop_collection()
+
+    client.drop_collection.assert_not_called()
 
 
 def test_stripping_children_keeps_summary_node_under_the_dynamic_field_limit() -> None:

@@ -2,13 +2,11 @@ from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_aws.s3 import S3PickleIOManager, S3Resource
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.infrastructure import MilvusSettings, S3StorageSettings
-from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import MilvusIndexType
+from swiss_ai_hub.core.infrastructure import S3StorageSettings
 
 from swiss_ai_hub.pipeline.io.azure_data_lake_io_manager import AzureDataLakeIOManager
 from swiss_ai_hub.pipeline.io.doc_store_io_manager import DocStoreIOManager
 from swiss_ai_hub.pipeline.io.s3_data_lake_io_manager import S3DataLakeIOManager
-from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
 from swiss_ai_hub.pipeline.resources.data_lake.azure.azure_data_lake_client_resource import AzureDataLakeClientResource
 from swiss_ai_hub.pipeline.resources.data_lake.azure.azure_data_lake_file_system_resource import (
     AzureDataLakeFileSystemResource,
@@ -20,7 +18,6 @@ from swiss_ai_hub.pipeline.resources.doc_store.doc_store_resource import DocStor
 from swiss_ai_hub.pipeline.resources.doc_store.mongo_document_store_resource import MongoDocumentStoreResource
 from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
 from swiss_ai_hub.pipeline.resources.llm.language_model_resource import LanguageModelResource
-from swiss_ai_hub.pipeline.resources.vector_store.milvus_vector_store_resource import MilvusVectorStoreResource
 
 
 def azure_data_lake_resources(
@@ -81,40 +78,6 @@ def mongo_document_store_resource(
         "doc_store": doc_store,
         "doc_store_io_manager": doc_store_io_manager,
         "doc_store_resource": doc_store_resource,
-    }
-
-
-def milvus_vector_store_resource(
-    vector_store_uri: str,
-    vector_store_name: str,
-    dimensions: int,
-    index_type: MilvusIndexType = MilvusIndexType.HNSW,
-) -> dict[str, ConfigurableResourceFactory]:
-    milvus_settings = MilvusSettings()
-    vector_store = MilvusVectorStoreResource(
-        uri=vector_store_uri,
-        collection_name=vector_store_name,
-        embedding_vector_dimension=dimensions,
-        index_type=index_type,
-        token=milvus_settings.get_token(),
-    )
-    vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
-    return {
-        "vector_store": vector_store,
-        "vector_store_io_manager": vector_store_io_manager,
-    }
-
-
-def local_mongo_milvus_storage_context_resource(
-    vector_store_uri: str,
-    store_name: str,
-    dimensions: int,
-) -> dict[str, ConfigurableResourceFactory]:
-    return {
-        **mongo_document_store_resource(document_store_name=store_name),
-        **milvus_vector_store_resource(
-            vector_store_uri=vector_store_uri, vector_store_name=store_name, dimensions=dimensions
-        ),
     }
 
 

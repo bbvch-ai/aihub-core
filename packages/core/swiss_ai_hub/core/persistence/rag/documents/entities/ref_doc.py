@@ -13,6 +13,7 @@ from mongoengine import (
     Q,
     StringField,
 )
+from mongoengine.connection import get_db
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -351,27 +352,23 @@ class RefDoc(Document):
     ) -> tuple["RefDoc", bool]:
         """Get existing RefDoc by source or create a placeholder.
 
-        If the document exists and is already ingested, it atomically resets the status
-        to pending (for re-upload/re-processing scenarios).
+        An existing document is atomically reset to pending, whatever its current state. The reset is
+        deliberately unconditional: document IDs are derived from the source URI, so re-uploading a file
+        reuses the ID of the one it replaces, and a re-upload of an *already* pending document would
+        otherwise leave the row byte-identical. Bumping ``updated_at`` on every re-upload is what lets
+        the UI tell a re-upload apart from a document still awaiting deletion.
 
         Returns (ref_doc, created) where created is True if new placeholder was created.
         """
         doc_id = source_to_doc_id(source)
 
         with switch_db(cls, db_alias) as SwitchedRefDoc:
-            # Atomic update: only reset to pending if currently ingested
-            updated = SwitchedRefDoc.objects(id=doc_id, data__metadata__is_ingested=True).update_one(
+            updated = SwitchedRefDoc.objects(id=doc_id).update_one(
                 set__data__metadata__is_ingested=False,
                 set__data__metadata__updated_at=int(time.time()),
             )
             if updated:
                 return SwitchedRefDoc.objects.get(id=doc_id), False
-
-            try:
-                existing = SwitchedRefDoc.objects.get(id=doc_id)
-                return existing, False
-            except SwitchedRefDoc.DoesNotExist:
-                pass
 
         try:
             new_doc = cls.create_placeholder(db_alias, source, namespace, document_title)
@@ -397,14 +394,31 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
-    def mark_ingested(cls, db_alias: str, doc_id: str) -> "RefDoc | None":
-        """Mark a document as fully ingested."""
+    def delete_by_namespace(cls, db_alias: str, namespace: str) -> int:
+        """Delete every RefDoc of a namespace from the doc store in one server-side call; returns the count removed."""
         with switch_db(cls, db_alias) as SwitchedRefDoc:
-            try:
-                ref_doc = SwitchedRefDoc.objects.get(id=doc_id)
-                ref_doc.data.metadata.is_ingested = True
-                ref_doc.data.metadata.updated_at = int(time.time())
-                ref_doc.save()
-                return ref_doc
-            except SwitchedRefDoc.DoesNotExist:
-                return None
+            return SwitchedRefDoc.objects.filter(data__metadata__namespace=namespace).delete()
+
+    @classmethod
+    @trace_fn
+    def drop_database(cls, db_alias: str) -> None:
+        """Drop the entire doc-store Mongo database backing a knowledge database.
+
+        Used by database teardown, where every namespace is going away — cheaper and cleaner than
+        deleting RefDocs namespace-by-namespace. The alias must already be registered by the caller.
+        """
+        database = get_db(db_alias)
+        database.client.drop_database(database.name)
+
+    @classmethod
+    @trace_fn
+    def mark_ingested(cls, db_alias: str, doc_id: str) -> bool:
+        """Mark a document as fully ingested, returning whether a document was updated.
+
+        Deliberately an atomic single-field `$set` rather than a full `save()`: the ingestion
+        pipeline may re-write the same RefDoc concurrently, and a full rewrite would revert it.
+        `updated_at` is left alone — it carries the *source file's* timestamp, which feeds asset
+        data versions and the default document sort.
+        """
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return bool(SwitchedRefDoc.objects(id=doc_id).update_one(set__data__metadata__is_ingested=True))

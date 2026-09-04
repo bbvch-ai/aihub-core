@@ -13,7 +13,7 @@ Generate boilerplate for a new data pipeline. The pipeline name/purpose should b
 Read these files to understand the patterns:
 
 - `packages/pipeline/CLAUDE.md` -- scope architecture and folder structure
-- `packages/pipeline/app/default_rag_pipeline/__init__.py` -- real app entry point (~18 lines)
+- `packages/pipeline/app/document_ingestion_pipeline/__init__.py` -- real app entry point (~18 lines)
 - `packages/pipeline/templates/sources/README.md` -- source template guide with namespace explanation
 - `packages/pipeline/playground/quick_start/my_document_pipeline.py` -- full manual wiring example
 
@@ -55,26 +55,37 @@ For SharePoint via native MS Graph API (not rclone), use `default_sharepoint_to_
 
 Create a new directory in `packages/pipeline/app/<pipeline_name>/` with an `__init__.py`.
 
-Follow the pattern from `packages/pipeline/app/default_rag_pipeline/__init__.py`:
+Follow the pattern from `packages/pipeline/app/document_ingestion_pipeline/__init__.py`:
 
 ```python
 # packages/pipeline/app/<pipeline_name>/__init__.py
-from swiss_ai_hub.core.infrastructure.logging import enable_logging
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings, enable_logging
 
-from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 
 enable_logging()
 
-defs = default_definitions(
-    datalake_container_name="<bucket-name>",
-    embedding_model_name="embedding/large",
-    llm_model_name="text-generation/mini",
-    with_summary_nodes=True,
-    with_table_refinement=True,
-    observe_job_hour=2,
-    observe_job_minute=0,
+settings = DocumentIngestionPipelineSettings()
+
+defs = document_ingestion_pipeline_definitions(
+    # Routing key: this pipeline serves every knowledge database whose BucketEntity names it, and
+    # namespaces every deployment-global Dagster name. Labels are required for a custom ingestor —
+    # a sensor publishes them so the create-database dialog can offer it.
+    ingestor="<ingestor_id>",
+    display_name=LocaleString(en="<Display name>"),
+    description=LocaleString(en="<What it does>"),
+    embedding_model_name=settings.EMBEDDING_MODEL,
+    llm_model_name=settings.LLM_MODEL,
+    with_summary_nodes=settings.WITH_SUMMARY_NODES,
+    with_table_refinement=settings.WITH_TABLE_REFINEMENT,
+    observe_job_hour=settings.OBSERVE_JOB_HOUR,
+    observe_job_minute=settings.OBSERVE_JOB_MINUTE,
 )
 ```
+
+Do not give a Stage-2 pipeline a fixed bucket: the target is resolved per run, so a new knowledge database needs no code
+location, compose service or env var.
 
 For a source ingestion pipeline (Stage 1), use the appropriate definition builder instead:
 
@@ -104,8 +115,8 @@ The naming convention is `RCLONE_{SOURCE}_{OPTION}` (e.g., `RCLONE_SHAREPOINT_CL
 
 ### Step 4: Create the Dockerfile
 
-Copy and adapt `packages/pipeline/app/default_rag_pipeline/Dockerfile`. The only change needed is the `PIPELINE` build
-arg:
+Copy and adapt `packages/pipeline/app/document_ingestion_pipeline/Dockerfile`. The only change needed is the `PIPELINE`
+build arg:
 
 ```dockerfile
 ARG PIPELINE=<pipeline_name>
@@ -115,8 +126,8 @@ The entrypoint uses this arg: `dagster api grpc -h 0.0.0.0 -p 4000 -m "app.${PIP
 
 ### Step 5: Register for Local Development
 
-Add the new module to the Makefile's run command. In `packages/pipeline/Makefile`, the `rag-pipelines` target shows the
-pattern:
+Add the new module to the Makefile's run command. In `packages/pipeline/Makefile`, the `document-ingestion-pipeline`
+target shows the pattern:
 
 ```makefile
 my-pipelines:

@@ -1,9 +1,7 @@
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 from llama_index.core.schema import TextNode
 
-from swiss_ai_hub.pipeline.ops.nodes.chunk_ref_doc_into_nodes_using_md_structural_node_parser import (
-    chunk_ref_doc_into_nodes_using_md_structural_node_parser,
-)
+from swiss_ai_hub.pipeline.ops.nodes.chunk_ref_doc_into_nodes import chunk_ref_doc_into_nodes
 from swiss_ai_hub.pipeline.ops.nodes.delete_nodes_for_ref_doc import delete_nodes_for_ref_doc
 from swiss_ai_hub.pipeline.ops.nodes.embed_nodes import embed_nodes
 from swiss_ai_hub.pipeline.ops.nodes.ensure_node_default_metadata import ensure_node_default_metadata
@@ -13,9 +11,12 @@ from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 
 def nodes_factory(key: AssetKey, document_key: str | AssetKey, partitions: DynamicPartitionsDefinition) -> graph_asset:
-    """Creates a nodes asset that represents nodes from a chunked up Ref Doc in the Vector Store.
-    This asset takes a Ref Doc as input, splits it into nodes, and saves the nodes in the Vector Store as
-    well as providing the nodes as an output for downstream assets.
+    """Route-per-run variant of ``nodes_factory``.
+
+    Identical chunk → embed → insert chain, but the delete and chunk ops are the routed variants that resolve
+    their store from the composite partition key (the per-run write path carries no bucket tag). Embedding,
+    metadata, and insertion are reused unchanged — ``insert_nodes_into_vector_store`` persists via the
+    ``vector_store_io_manager`` key, which is wired to the routed vector-store IO manager.
     """
 
     @graph_asset(
@@ -24,17 +25,11 @@ def nodes_factory(key: AssetKey, document_key: str | AssetKey, partitions: Dynam
         ins={"document": AssetIn(key=document_key)},
         partitions_def=partitions,
         automation_condition=AutomationCondition.eager(),
-        description="Chunks a RefDoc into Nodes and inserts them into the Vector Store",
+        description="Chunks a RefDoc into Nodes and inserts them into the routed Vector Store",
     )
-    def nodes(
-        document: RefDocDocument,
-    ) -> Output[list[TextNode]]:
+    def nodes(document: RefDocDocument) -> Output[list[TextNode]]:
         return insert_nodes_into_vector_store(
-            embed_nodes(
-                ensure_node_default_metadata(
-                    chunk_ref_doc_into_nodes_using_md_structural_node_parser(delete_nodes_for_ref_doc(document))
-                )
-            ),
+            embed_nodes(ensure_node_default_metadata(chunk_ref_doc_into_nodes(delete_nodes_for_ref_doc(document)))),
             document,
         )
 

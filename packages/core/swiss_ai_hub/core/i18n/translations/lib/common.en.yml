@@ -2,6 +2,10 @@
 test: This is an english test
 authorization:
   no_access_knowledge_database: You do not have access to knowledge database '%{name}'.
+  no_access_knowledge_namespace: You do not have access to collection '%{namespace}'
+    of knowledge database '%{database}'.
+  no_access_whole_knowledge_database: Selecting knowledge database '%{name}' as a
+    whole requires access to every one of its collections.
   no_access_agent: You do not have access to agent '%{agent}'.
   no_access_tenant: You are not a member of tenant '%{tenant}'.
   no_access_section: You do not have access to the '%{section}' section.
