@@ -172,10 +172,17 @@ class AccessChecker:
             if r_part != t_part:
                 return False
             ti, ri = ti + 1, ri + 1
-        if ri < len(access_rule_parts) and access_rule_parts[ri] == ">":
+        return self._unconsumed_parts_match(access_rule_parts[ri:], template_parts[ti:])
+
+    @staticmethod
+    def _unconsumed_parts_match(access_rule_remainder: list[str], template_remainder: list[str]) -> bool:
+        """Decides the walk once either side runs out: a rule continuing with '>' covers whatever the
+        template still asks for, and an exhausted rule still satisfies a '?>' naming its own subtree root."""
+        if access_rule_remainder[:1] == [">"]:
             return True
-        rule_ends_at_subtree_root = ri == len(access_rule_parts) and template_parts[ti:] == ["?>"]
-        return rule_ends_at_subtree_root or (ri == len(access_rule_parts) and ti == len(template_parts))
+        if access_rule_remainder:
+            return False
+        return template_remainder in ([], ["?>"])
 
     @staticmethod
     def agent_instance_admin_rule(agent_class: str, agent_id: str) -> str:

@@ -27,5 +27,7 @@ class TestReservedIds:
         assert "datalake" in IngestorEntity.reserved_ids()
 
     def test_upsert_rejects_a_reserved_id_before_touching_the_database(self):
+        reserved_ingestor = _ingestor(IngestorType.DOCUMENT_INGESTION.value)
+
         with pytest.raises(ValidationError, match="reserved"):
-            IngestorEntity.upsert(_ingestor(IngestorType.DOCUMENT_INGESTION.value))
+            IngestorEntity.upsert(reserved_ingestor)
