@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-4">
-    <!-- Agent Class Selection -->
-    <div>
+    <!-- Agent Class Selection (omitted when the config pins the class) -->
+    <div v-if="!pinnedClass">
       <label
         for="agent-class-select"
         class="mb-1 block text-sm font-medium"
@@ -139,6 +139,7 @@ interface AgentSelectorProps {
     value?: AgentSelectorValue | null
     attrs: Record<string, unknown>
     startEvent?: string
+    agentClass?: string
     classPlaceholder?: string
     idPlaceholder?: string
     filter?: boolean
@@ -151,6 +152,9 @@ const { tenantId } = useTenant()
 
 // Get custom props from context (FormKit passes them there, not as direct props)
 const startEvent = computed(() => props.context.startEvent)
+// Set by configs that already know which blueprint answers: the class dropdown is not rendered and only
+// this class's profiles are offered.
+const pinnedClass = computed(() => props.context.agentClass)
 const classPlaceholder = computed(() => props.context.classPlaceholder)
 const idPlaceholder = computed(() => props.context.idPlaceholder)
 const filter = computed(() => props.context.filter ?? true)
@@ -166,7 +170,7 @@ const currentValue = computed(() => props.context.value ?? null)
 
 // Selected class (computed property that syncs with the form value)
 const selectedClass = computed({
-  get: () => currentValue.value?.agent_class ?? null,
+  get: () => currentValue.value?.agent_class ?? pinnedClass.value ?? null,
   set: (value: string | null) => {
     if (value) {
       // When class changes, reset agent ID and fetch instances
@@ -290,16 +294,25 @@ async function fetchInstances(agentClass: string) {
 
 // Fetch classes on mount
 onMounted(() => {
-  fetchClasses()
+  // A pinned class needs no class list — nothing renders it, and the profile dropdown is driven by
+  // fetchInstances alone.
+  if (!pinnedClass.value) {
+    fetchClasses()
+  }
 
-  // If there's already a selected class, fetch its instances
-  if (currentValue.value?.agent_class) {
-    fetchInstances(currentValue.value.agent_class)
+  // Pinned, or already chosen: either way the profile dropdown needs that class's instances up front.
+  const classToLoad = currentValue.value?.agent_class ?? pinnedClass.value
+  if (classToLoad) {
+    fetchInstances(classToLoad)
   }
 })
 
 // Refetch if startEvent changes
 watch(startEvent, () => {
+  // A pinned class is not filtered by start event, and its class list is never fetched — so the check below
+  // would find no match and clear a perfectly valid selection.
+  if (pinnedClass.value) return
+
   // Clear selection if current class no longer matches filter
   if (selectedClass.value && !filteredClassOptions.value.some(opt => opt.name === selectedClass.value)) {
     props.context.node.input(null)

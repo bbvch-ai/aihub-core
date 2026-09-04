@@ -28,6 +28,11 @@ class AgentSelector(PrimeVueElement):
 
     This is similar to ModelSelect's `mode` parameter for filtering by model type.
 
+    ### Pinning to One Agent Class
+
+    When `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only
+    that class's profiles. `start_event` is redundant then — the class is already decided — so set one or the other.
+
     ### Form Duality
 
     When used with AgentRef, the form submission is validated directly into AgentRef:
@@ -72,6 +77,16 @@ class AgentSelector(PrimeVueElement):
             description="Optional filter: only show agent classes that accept this start event type. "
             "Matches against event_name or event_parents in the agent's start_events.",
             alias="startEvent",
+        ),
+    ] = None
+
+    agent_class: Annotated[
+        str | None,
+        Field(
+            description="Pin the selection to one agent class. The class dropdown is not rendered and the profile "
+            "dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers "
+            "— a dropdown offering one choice asks the admin to make a decision that was never theirs.",
+            alias="agentClass",
         ),
     ] = None
 

@@ -5,7 +5,7 @@ from swiss_ai_hub.core.agents import AgentRef
 from swiss_ai_hub.core.form import AgentSelector
 from swiss_ai_hub.core.form.form import Form
 
-from swiss_ai_hub.agent.agents.rag_agent.events import RAGStartEvent
+from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
@@ -17,9 +17,10 @@ class KnowledgeDelegationConfig(Form):
     that drifts. What this blueprint contributes is the one thing the RAG agent cannot know — which collection answers
     this particular message, which is exactly what the classification verdict decided.
 
-    Filtered to agents that accept `RAGStartEvent`, following `RAGDelegationConfig` on the namespace selection agent —
-    that event is what carries `selected_namespaces`, so an agent that does not accept it cannot be scoped to one
-    collection and must not be offered here.
+    Pinned to `RAGAgent` rather than filtered by start event. Accepting `RAGStartEvent` is necessary but not
+    sufficient: `ExpertRAGAgent` accepts it too, and offering a blueprint whose expert-escalation path waits on a human
+    turns a mailbox run into one that blocks on somebody answering. The class is not an admin decision here, so the
+    class dropdown is not rendered and only RAG agent profiles are listed.
     """
 
     rag_agent: Annotated[
@@ -33,10 +34,7 @@ class KnowledgeDelegationConfig(Form):
             rag_agent=AgentSelector(
                 label=AgentLocaleString.from_i18n_path("agent.email_classification_agent.config.rag_agent.label"),
                 help=AgentLocaleString.from_i18n_path("agent.email_classification_agent.config.rag_agent.help"),
-                start_event=RAGStartEvent.event_name_from_class(),
-                class_placeholder=AgentLocaleString.from_i18n_path(
-                    "agent.email_classification_agent.config.rag_agent.class_placeholder"
-                ),
+                agent_class=RAGAgent.__name__,
                 id_placeholder=AgentLocaleString.from_i18n_path(
                     "agent.email_classification_agent.config.rag_agent.id_placeholder"
                 ),
