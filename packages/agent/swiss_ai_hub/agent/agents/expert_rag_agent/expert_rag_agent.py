@@ -157,13 +157,24 @@ async def user_memory_retrieval_enabled(
     clear: NotAMetaQuestionEvent | None = None,
 ) -> bool:
     """Precondition to check if user memory retrieval is enabled (gated by meta-question detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(config)
+    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(
+        config, has_user=start_event.user is not None
+    )
 
 
 @precondition()
-async def user_memory_storage_enabled(config: ExpertRAGAgentConfig) -> bool:
-    """Precondition to check if user memory storage is enabled."""
-    return check_user_memory_storage_enabled(config)
+async def user_memory_storage_enabled(
+    config: ExpertRAGAgentConfig,
+    user: UserIdentity | None = None,
+) -> bool:
+    """Precondition to check if user memory storage is enabled and this run has an identity to attribute it to.
+
+    The identity comes from `RunContext` rather than from the start event, because a precondition can only be handed
+    events its *step* declares — `handle_event` builds the event map from the step's input events, not the
+    precondition's. Asking for a start event a step does not consume yields no kwarg at all and the precondition
+    raises `TypeError` before it can decide anything.
+    """
+    return check_user_memory_storage_enabled(config, has_user=user is not None)
 
 
 @precondition()
@@ -176,7 +187,7 @@ async def memory_ready_for_chat_history(
 ) -> bool:
     """Precondition to ensure all required memory events are present before extending chat history."""
     return check_passed_meta_question_gate(start_event, clear) and check_memory_ready_for_chat_history(
-        config, user_memory_event, org_memory_event
+        config, start_event.user is not None, user_memory_event, org_memory_event
     )
 
 
@@ -189,7 +200,7 @@ async def memory_added_to_chat_history(
 ) -> bool:
     """Precondition to ensure memory has been added to chat history when required (gated by meta detection)."""
     return check_passed_meta_question_gate(start_event, clear) and check_memory_added_to_chat_history(
-        config, memory_history_event
+        config, start_event.user is not None, memory_history_event
     )
 
 
@@ -198,9 +209,18 @@ async def ready_for_stop(
     config: ExpertRAGAgentConfig,
     store_memory_event: StoreUserMemoryEvent | None = None,
     memory_storage_request: MemoryStorageRequestedEvent | None = None,
+    user: UserIdentity | None = None,
 ) -> bool:
-    """Precondition to ensure all required steps are complete before stopping."""
-    return check_ready_for_stop(config, store_memory_event, memory_storage_request)
+    """Precondition to ensure all required steps are complete before stopping.
+
+    Needs the identity because a run with none skips the memory write, and gating the stop on an event that will
+    never be emitted hangs the run at its terminal step, having already produced the answer.
+
+    Taken from `RunContext`, not from the start event: `stop_step` triggers on `LLMEvent` and declares no start
+    event, and a precondition is only handed events its step declares. Requiring one here raised `TypeError` on
+    every RAG run — the kwarg was simply never built.
+    """
+    return check_ready_for_stop(config, user is not None, store_memory_event, memory_storage_request)
 
 
 class ExpertRAGAgent(Agent):

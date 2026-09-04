@@ -18,6 +18,21 @@ _DEFAULT_DRAFT_PROMPT = (
     "and never invent facts. Output only the reply body, without a subject line or signature."
 )
 
+# Grounded drafting never leaves a message without a draft. That is not politeness: filing is this blueprint's only
+# dedup, so a message that got no draft is filed, unflagged and never looked at again — it would fall between "drafted"
+# and "untouched" and nothing would ever pick it back up. Two texts rather than one because the two situations are not
+# the same fact: "we have nothing on file that answers this" is a true statement about the knowledge base, while a
+# delegate that crashed tells the reviewer nothing except that the machinery broke, and reporting an outage as an
+# absence of knowledge is how a broken deployment gets read as a working one.
+_DEFAULT_NO_INFORMATION_DRAFT = (
+    "Thank you for your message. We could not find reliable information in our documentation to answer it, so this "
+    "draft has deliberately been left without an answer. Please reply personally."
+)
+_DEFAULT_GROUNDING_FAILED_DRAFT = (
+    "Thank you for your message. This reply could not be prepared automatically because the knowledge lookup failed. "
+    "Please reply personally, and let IT know if you see this repeatedly."
+)
+
 _DRAFT_ENABLED_REF = "draft_reply_enabled"
 _VISIBLE_WHEN_ENABLED = f"$get({_DRAFT_ENABLED_REF}).value"
 
@@ -85,6 +100,36 @@ class DraftEmailSettings(StepConfig):
             default=32768,
             description="Input-token budget for the drafting prompt. The body is trimmed, and attachment extracts "
             "dropped, to stay within it.",
+        ),
+        Gt(0),
+    ]
+    no_information_draft: Annotated[
+        str | Textarea,
+        Field(
+            default=_DEFAULT_NO_INFORMATION_DRAFT,
+            description="Draft body used when retrieval found nothing that answers the message. Used verbatim — the "
+            "model is never asked to write around an empty context, because an ungrounded reply that reads like a "
+            "grounded one is worse than an honest blank.",
+        ),
+        MinLen(1),
+    ]
+    grounding_failed_draft: Annotated[
+        str | Textarea,
+        Field(
+            default=_DEFAULT_GROUNDING_FAILED_DRAFT,
+            description="Draft body used when the knowledge lookup itself failed or never answered. Kept apart from "
+            "the no-information text so a reviewer can tell a gap in the documentation from a broken deployment.",
+        ),
+        MinLen(1),
+    ]
+    grounding_timeout_seconds: Annotated[
+        int | InputNumber,
+        Field(
+            default=600,
+            description="How long a knowledge lookup may take before the message is drafted with the failure text "
+            "instead. A delegated agent that is offline or misconfigured never answers at all, and without a "
+            "deadline the run waits for it forever — holding the mailbox and leaving a batch of already-filed mail "
+            "with no drafts and no way to retry.",
         ),
         Gt(0),
     ]
@@ -171,6 +216,27 @@ class DraftEmailSettings(StepConfig):
                 help=LocaleString.from_i18n_path("lib.imap.config.draft_input_tokens.help"),
                 min=1024,
                 step=1024,
+                condition_if=_VISIBLE_WHEN_ENABLED,
+            ),
+            no_information_draft=Textarea(
+                label=LocaleString.from_i18n_path("lib.imap.config.no_information_draft.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.no_information_draft.help"),
+                rows=4,
+                auto_resize=True,
+                condition_if=_VISIBLE_WHEN_ENABLED,
+            ),
+            grounding_failed_draft=Textarea(
+                label=LocaleString.from_i18n_path("lib.imap.config.grounding_failed_draft.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.grounding_failed_draft.help"),
+                rows=4,
+                auto_resize=True,
+                condition_if=_VISIBLE_WHEN_ENABLED,
+            ),
+            grounding_timeout_seconds=InputNumber(
+                label=LocaleString.from_i18n_path("lib.imap.config.grounding_timeout_seconds.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.grounding_timeout_seconds.help"),
+                min=1,
+                step=30,
                 condition_if=_VISIBLE_WHEN_ENABLED,
             ),
             include_attachments=ToggleSwitch(

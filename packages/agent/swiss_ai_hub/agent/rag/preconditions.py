@@ -61,18 +61,29 @@ def check_organization_memory_enabled(config: RAGAgentConfig) -> bool:
     return config.org_memory is not None
 
 
-def check_user_memory_retrieval_enabled(config: RAGAgentConfig) -> bool:
-    """Check if user memory retrieval is enabled in the agent configuration."""
-    return config.user_memory.enable_user_memory_retrieval
+def check_user_memory_retrieval_enabled(config: RAGAgentConfig, has_user: bool) -> bool:
+    """Check if user memory retrieval is enabled in the agent configuration and there is a user to scope it to.
+
+    `has_user` is not a second switch an admin sets — it is whether this run has an identity at all.
+    `RAGStartEvent.user` is optional, so a run delegated by a scheduled agent has none, and user memory is
+    per-user by definition: without an identity the only alternatives are reading nobody's memories (this) or
+    reading a shared identity's, which is how one mailbox's context ends up in another customer's answer.
+    """
+    return config.user_memory.enable_user_memory_retrieval and has_user
 
 
-def check_user_memory_storage_enabled(config: RAGAgentConfig) -> bool:
-    """Check if user memory storage is enabled in the agent configuration."""
-    return config.user_memory.enable_user_memory_storage
+def check_user_memory_storage_enabled(config: RAGAgentConfig, has_user: bool) -> bool:
+    """Check if user memory storage is enabled and there is a user to attribute the write to.
+
+    Gated on the identity for the same reason as retrieval, and more sharply: a write under a shared identity
+    is not merely a bad answer this once, it is a bad answer for everyone who reads that identity afterwards.
+    """
+    return config.user_memory.enable_user_memory_storage and has_user
 
 
 def check_memory_ready_for_chat_history(
     config: RAGAgentConfig,
+    has_user: bool,
     user_memory_event: RetrieveUserMemoryEvent | None,
     org_memory_event: RetrieveOrganizationMemoryEvent | None,
 ) -> bool:
@@ -83,8 +94,12 @@ def check_memory_ready_for_chat_history(
     - If user memory is enabled, wait for user memory event
     - If org memory is enabled, wait for org memory event
     - Only execute once when all required events are present
+
+    The user-memory half has to agree with `check_user_memory_retrieval_enabled` about `has_user`, or an
+    identity-less run waits forever for an event the skipped retrieval step never emits. Organization memory
+    is unaffected: it is scoped to a tenant, which comes from the agent's own profile, not from the caller.
     """
-    user_enabled = config.user_memory.enable_user_memory_retrieval
+    user_enabled = check_user_memory_retrieval_enabled(config, has_user)
     org_enabled = config.org_memory is not None
     if user_enabled and user_memory_event is None:
         return False
@@ -95,6 +110,7 @@ def check_memory_ready_for_chat_history(
 
 def check_memory_added_to_chat_history(
     config: RAGAgentConfig,
+    has_user: bool,
     memory_history_event: AddMemoryToChatHistoryEvent | None,
 ) -> bool:
     """
@@ -104,13 +120,14 @@ def check_memory_added_to_chat_history(
     - If any memory is enabled, wait for memory history event
     - If no memory is enabled, proceed immediately (no wait)
     """
-    if config.user_memory.enable_user_memory_retrieval or config.org_memory is not None:
+    if check_user_memory_retrieval_enabled(config, has_user) or config.org_memory is not None:
         return memory_history_event is not None
     return True
 
 
 def check_ready_for_stop(
     config: RAGAgentConfig,
+    has_user: bool,
     store_memory_event: StoreUserMemoryEvent | None,
     memory_storage_request: MemoryStorageRequestedEvent | None = None,
 ) -> bool:
@@ -122,8 +139,12 @@ def check_ready_for_stop(
     (`enable_async_memory_storage`) the store step returns a `MemoryStorageRequestedEvent` — a
     millisecond-cheap delegation marker, NOT storage completion — so the run finalizes as soon as the answer
     is ready (issue #1179). In inline mode it returns a `StoreUserMemoryEvent` only after the write finishes.
+
+    This is the gate that makes the identity check load-bearing rather than cosmetic: without agreeing with
+    `check_user_memory_storage_enabled` about `has_user`, an identity-less run would answer correctly and then
+    never terminate, waiting at its terminal step for a write that was deliberately skipped.
     """
-    if not config.user_memory.enable_user_memory_storage:
+    if not check_user_memory_storage_enabled(config, has_user):
         return True
     if config.user_memory.enable_async_memory_storage:
         return memory_storage_request is not None

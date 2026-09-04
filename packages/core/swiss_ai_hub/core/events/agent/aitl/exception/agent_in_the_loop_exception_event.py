@@ -27,3 +27,10 @@ class AgentInTheLoopExceptionEvent(ControlAndDisplayEvent):
         ExceptionEvent,
         Field(description="The exception event from the delegated agent containing error details and failure context."),
     ]
+    request_event_id: Annotated[
+        str,
+        Field(
+            description="`event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason "
+            "the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.",
+        ),
+    ]

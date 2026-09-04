@@ -153,16 +153,55 @@ An orchestrator delegates the same task to multiple agents simultaneously and th
 ```python
 class ParallelProcessorAgent(Agent):
     @step()
-    async def fan_out(self, event: UserMessageEvent) -> list[AgentInTheLoop.request]:
-        # Return a list of requests to trigger parallel execution
-        return [
-            AgentInTheLoop.invoke(agent_id="processor_a", ...),
-            AgentInTheLoop.invoke(agent_id="processor_b", ...)
+    async def fan_out(self, event: UserMessageEvent) -> list[FanOutStartedEvent | AgentInTheLoop.request]:
+        requests = [
+            AgentInTheLoop.invoke(agent_class="ProcessorAgent", agent_id=agent_id, start_event=..., share_run_id=False)
+            for agent_id in ("processor_a", "processor_b")
         ]
+        # The marker carries the count the join waits for, and is emitted even when nothing is delegated.
+        return [FanOutStartedEvent(expected=len(requests)), *requests]
 
-    @step()
-    async def combine_results(self, responses: list[AgentInTheLoop.response]) -> StopEvent:
-        # This step waits for all responses before running
-        results = [r.stop_event.result for r in responses]
+    @step(precondition=all_delegates_answered)
+    async def combine_results(
+        self,
+        event: FanOutStartedEvent,
+        answers: list[AgentInTheLoop.response | AgentInTheLoop.exception],
+    ) -> StopEvent:
+        results = [answer.stop_event.result for answer in answers if answer.is_aitl_response_event]
         return StopEvent(final_message=f"Combined results: {results}")
+
+
+@precondition()
+async def all_delegates_answered(
+    event: FanOutStartedEvent,
+    answers: list[AgentInTheLoop.response | AgentInTheLoop.exception],
+) -> bool:
+    return len({answer.request_event_id for answer in answers}) >= event.expected
 ```
+
+Three things about that shape are load-bearing, and each is a bug if you leave it out:
+
+- **A `list[Event]` parameter does not wait.** It re-executes its step on *every* arrival, binding everything received
+  so far. Without the precondition, `combine_results` fires on the first answer and returns a `StopEvent`, ending the
+  run before the other delegates have finished. The precondition is the join; the list is only how the events are bound.
+- **The count comes from a marker event, not from `FixedList`.** `FixedList(T, N)` bakes `N` into a class at import
+  time, so it cannot express a count only known at runtime. Count *distinct* `request_event_id`s and compare with `>=` —
+  JetStream delivery is at-least-once, so a redelivered answer is an ordinary event, and `==` over a raw count would
+  overshoot and wedge the run at the point it was supposed to finish.
+- **Responses and exceptions arrive on one parameter.** A delegate that fails produces an
+  `AgentInTheLoopExceptionEvent`, never a response, so a join that waits only on responses waits forever as soon as one
+  delegate fails.
+
+Answers are told apart by `request_event_id`, which names the `AgentInTheLoopRequestEvent` each one answers. Without it,
+N parallel answers arrive on one topic indistinguishable from one another.
+
+::: warning A delegate that never answers blocks the caller forever
+`AgentInTheLoop` waits indefinitely by default. An agent that is offline, or a mistyped `agent_id`, publishes neither a
+stop event nor an exception, so the caller's run never resumes — and in a fan-out one silent delegate wedges the whole
+batch. Pass `timeout_seconds` when the caller cannot tolerate that; it synthesises the exception on expiry. It covers a
+delegate that does not answer, not a caller that restarts: the timer and the response subscription both live in the
+caller's dispatcher process.
+
+Keep `share_run_id=False` (the default) in a fan-out. The response subscription is keyed by the delegated run id, so
+sharing it makes every subscriber fire on every delegate's answer.
+:::

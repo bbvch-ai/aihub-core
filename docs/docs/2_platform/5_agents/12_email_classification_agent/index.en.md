@@ -201,10 +201,61 @@ Each draft is threaded to the message it answers — `Re:` subject, correct `In-
 appears inside the original conversation in your mail client rather than as a stray new message.
 
 ::: warning A draft is a first pass, not an answer
-Read every draft before sending it. The model writes from the message and, optionally, its attachments — it has no
-access to your systems, your prices or your case history, and it will not know what it does not know. Grounding drafts
-in your own documents is a separate, planned capability.
+Read every draft before sending it. Even a draft grounded in your own documents (below) is only as good as the documents
+behind it, and an ungrounded one is written from the message alone — it has no access to your systems, your prices or
+your case history, and it will not know what it does not know.
 :::
+
+#### Grounding drafts in your own documents
+
+A reply written from the incoming message alone can acknowledge it, but it cannot *answer* it. Point a category at a
+**Knowledge Collection** and its replies are written from the documents in that collection instead — the agent asks a
+knowledge agent to answer the message from that collection, and uses the answer as the draft.
+
+Grounding is chosen per category, on the same row as the folder and the description. This is what keeps retrieval
+precise: a message classified as `support_request` is answered from your support material and from nothing else, so the
+category verdict is what makes the lookup accurate. A category with no collection keeps writing from the message alone,
+so you can adopt this one category at a time.
+
+**The knowledge base layout this needs.** A collection is a top-level folder in your knowledge database — ingestion
+creates one collection per folder automatically. So the setup is: one folder per category, holding the documents that
+answer that category.
+
+```text
+support-kb/                 ← knowledge database
+├── support/                ← collection, for the support_request category
+│   ├── troubleshooting-guide.pdf
+│   └── known-issues.md
+└── information/            ← collection, for the information_request category
+    ├── price-list.pdf
+    └── opening-hours.md
+```
+
+Configure it in three places:
+
+| Field                    | Where                | What it is                                                                                             |
+| ------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Knowledge Agent**      | Knowledge delegation | The agent that answers a message from a collection. Only agents that can be scoped to one are offered. |
+| **Knowledge Databases**  | Email classification | The databases your collections live in. A collection name alone does not identify one.                 |
+| **Knowledge Collection** | On each category     | The collection that category's replies are answered from. Leave empty for no retrieval.                |
+
+A category naming a collection that none of the configured databases holds fails the run **before** any mail is
+classified, rather than quietly answering from nothing. So does a grounded category whose **Draft a Reply** switch is
+off, which would otherwise have you looking for drafts that were never due.
+
+**Every message still gets a draft.** When the lookup finds nothing that answers a message, the agent does not ask the
+model to write around an empty result — an ungrounded reply that reads like a grounded one is worse than an honest
+blank, because a reviewer skims it and sends it. Instead you get a draft carrying a fixed text you configure:
+
+| Field                            | Used when                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------- |
+| **Draft When Nothing Was Found** | Retrieval ran and found nothing relevant. A true statement about your knowledge base. |
+| **Draft When The Lookup Failed** | The lookup itself broke or never answered. A statement about your deployment.         |
+| **Knowledge Lookup Timeout**     | How long to wait before treating a lookup as failed. Defaults to 10 minutes.          |
+
+The two are kept apart deliberately: reporting an outage as an absence of knowledge is how a broken deployment gets read
+as a working one. And the reason there is always *some* draft is filing — a message that got no draft would be filed,
+unflagged and never looked at again, sitting in neither the drafted nor the untouched state.
 
 #### Attachments
 
@@ -259,6 +310,8 @@ Input Tokens** if your model accepts more and you want less trimming.
 5. **Then put it on a schedule** (above), and the inbox drains itself.
 6. **Turn on drafting last**, and only for the categories that need it. Read the first few drafts before you trust the
    rest.
+7. **Then ground the categories worth grounding.** Load the documents that answer a category into its own collection and
+   point the category at it. An ungrounded draft can only acknowledge a message; a grounded one can answer it.
 
 ## What it does *not* do
 
@@ -266,9 +319,9 @@ Input Tokens** if your model accepts more and you want less trimming.
   leaves the mailbox, and the platform has no way to send mail at all.
 - **It does not read attachments to classify.** Classification uses the headers and the plain-text body only.
   Attachments can feed a *drafted reply* (above), but never the choice of category.
-- **It does not ground drafts in your documents.** A draft is written from the message and its attachments alone.
-  Answering from your knowledge base is a separate, planned capability.
-- **It has no chat interface** and no knowledge base.
+- **It does not answer from a collection you did not point it at.** Grounding is per category and opt-in; a category
+  with no collection is drafted from the message and its attachments alone.
+- **It has no chat interface.**
 - **It does not skip a message it cannot handle.** A run is all-or-nothing: if one message fails to classify, nothing in
   that batch is filed and the whole batch is retried next run. That keeps a transient outage from scattering mail into
   the fallback folder, but it does mean one persistently unprocessable message blocks the mailbox until you move it out

@@ -3,8 +3,12 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from swiss_ai_hub.core.agents import AgentRef
 from swiss_ai_hub.core.imap import DraftEmailSettings, EmailClassificationSettings, MailCategory
 
+from swiss_ai_hub.agent.agents.email_classification_agent.configs.knowledge_delegation_config import (
+    KnowledgeDelegationConfig,
+)
 from swiss_ai_hub.agent.agents.email_classification_agent.email_classification_agent import EmailClassificationAgent
 from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import (
     ClassificationOutcome,
@@ -338,3 +342,81 @@ def test_a_workable_budget_passes_validation():
     settings = _settings(categories=[_SUPPORT.model_copy(update={"draft_reply": True})])
 
     EmailClassificationAgent._validate(settings, _drafting(), "INBOX", _counter)
+
+
+# --- grounding validation ---
+
+
+def _grounded(namespace: str = "support") -> MailCategory:
+    return _SUPPORT.model_copy(update={"draft_reply": True, "knowledge_namespace": namespace})
+
+
+def _delegation() -> KnowledgeDelegationConfig:
+    return KnowledgeDelegationConfig(rag_agent=AgentRef(agent_class="RAGAgent", agent_id="rag-support"))
+
+
+def _grounded_settings() -> EmailClassificationSettings:
+    settings = _settings([_grounded(), _INVOICE])
+    settings.knowledge_databases = ["support-kb"]
+    return settings
+
+
+def test_a_grounded_setup_that_can_produce_a_draft_passes():
+    EmailClassificationAgent._validate(_grounded_settings(), _drafting(), "INBOX", _counter, _delegation())
+
+
+def test_grounding_without_a_knowledge_agent_is_rejected():
+    settings = _grounded_settings()
+    draft = _drafting()
+    with pytest.raises(ValueError, match="no knowledge agent is configured"):
+        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, None)
+
+
+def test_grounding_without_a_knowledge_database_is_rejected():
+    """A collection name alone identifies nothing — retrieval would be scoped to no bucket and answer from nothing."""
+    settings = _grounded_settings()
+    settings.knowledge_databases = []
+    draft = _drafting()
+    delegation = _delegation()
+    with pytest.raises(ValueError, match="no knowledge database is configured"):
+        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
+
+
+def test_a_grounded_category_that_gets_no_drafted_reply_is_rejected():
+    """It would retrieve nothing and leave the admin looking for drafts that were never due.
+
+    Another category *is* opted in, so this has to be caught by the grounding rule specifically — the existing
+    "drafting on but nothing opted in" check does not fire here.
+    """
+    settings = _settings(
+        [
+            _grounded().model_copy(update={"draft_reply": False}),
+            _INVOICE.model_copy(update={"draft_reply": True}),
+        ]
+    )
+    settings.knowledge_databases = ["support-kb"]
+    draft = _drafting()
+    delegation = _delegation()
+    with pytest.raises(ValueError, match="name a knowledge collection but are not set to get a drafted reply"):
+        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
+
+
+def test_a_blank_fallback_text_is_rejected_up_front():
+    """The one message that needs a fallback text is the one nobody is watching for — a blank has to fail here."""
+    draft = _drafting()
+    draft.no_information_draft = "   "
+    settings = _grounded_settings()
+    delegation = _delegation()
+    with pytest.raises(ValueError, match="both fallback draft texts must be set"):
+        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
+
+
+def test_grounding_is_not_checked_when_drafting_is_off():
+    """Drafting off means grounding cannot execute, so it must not be able to fail the run either.
+
+    The reachable case is an admin who set grounding up and later paused drafting: every classification run would
+    otherwise die on a feature that `_drafting_batch` disables anyway.
+    """
+    settings = _grounded_settings()
+    settings.knowledge_databases = []
+    EmailClassificationAgent._validate(settings, _no_drafting(), "INBOX", _counter, None)

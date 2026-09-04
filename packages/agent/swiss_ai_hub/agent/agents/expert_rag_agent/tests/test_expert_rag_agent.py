@@ -226,7 +226,7 @@ async def _(expert_rag_agent_runner: AgentTestRunner, query: str):
             topic=topic,
         )
         # Wait for AgentInTheLoop request to expert
-        await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+        aitl_request = await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
         # Mock expert response by sending AnswerStopEvent to the expert agent's topic
         # The ExpertRAGAgent's internal subscription will pick this up and convert it to AgentInTheLoopResponseEvent
@@ -238,7 +238,9 @@ async def _(expert_rag_agent_runner: AgentTestRunner, query: str):
             ],
         )
         await expert_rag_agent_runner.send_event_from_topic(
-            start_event=AgentInTheLoopResponseEvent(stop_event=mock_expert_answer),
+            start_event=AgentInTheLoopResponseEvent(
+                stop_event=mock_expert_answer, request_event_id=aitl_request.event_id
+            ),
             topic=topic,
         )
 

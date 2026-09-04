@@ -16,7 +16,9 @@ from swiss_ai_hub.core.dispatcher import BaseDispatcher, EventsAndKwargs, TraceS
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
+    AgentInTheLoopExceptionEvent,
     AgentInTheLoopRequestEvent,
+    AgentInTheLoopResponseEvent,
     ControlEvent,
     ExceptionEvent,
     MemoryStorageRequestedEvent,
@@ -99,6 +101,9 @@ class AgentDispatcher(BaseDispatcher):
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
+
+        # Strong references to the in-flight AITL deadline timers; see _schedule_agent_in_the_loop_timeout.
+        self._aitl_timeout_tasks: set[asyncio.Task] = set()
 
     @override
     async def handle_event(
@@ -524,6 +529,18 @@ class AgentDispatcher(BaseDispatcher):
             otel_context.detach(detached_context_token)
 
     @override
+    async def stop(self):
+        """Cancel any delegation deadlines still pending before the dispatcher goes away.
+
+        They are only meaningful while this process holds the response subscriptions they guard: once it is stopping,
+        a timer that later fires would publish a failure for a delegation nobody is listening to any more.
+        """
+        for timeout_task in self._aitl_timeout_tasks:
+            timeout_task.cancel()
+        self._aitl_timeout_tasks.clear()
+        await super().stop()
+
+    @override
     async def publish_event(
         self,
         event: Annotated[BaseEvent, "The event to publish."],
@@ -680,24 +697,47 @@ class AgentDispatcher(BaseDispatcher):
         )
 
         target_topic = aitl_request_event.other_agent_topic
+        request_event_id = aitl_request_event.event_id
+
+        # Guards the answer against the timeout below. Both run on this event loop, and nothing awaits between the
+        # read and the write, so checking-then-setting is enough to make exactly one of them win — a delegate
+        # answering as its deadline expires must resume the caller once, not twice. An `asyncio.Event` rather than a
+        # nonlocal bool because static analysis cannot see a closure's write to the latter and reads the check below
+        # as constant-False.
+        settled = asyncio.Event()
+        timeout_task: asyncio.Task | None = None
+
+        async def settle(outcome: AgentInTheLoopResponseEvent | AgentInTheLoopExceptionEvent, success: bool) -> None:
+            if settled.is_set():
+                return
+            settled.set()
+            # Cancelled rather than left to expire against the guard above: a delegation that answered in a second
+            # would otherwise keep a task asleep for the whole deadline, and a dispatcher serving a steady stream of
+            # them accumulates one per delegation for no purpose.
+            #
+            # Never the task we are running on, though. On the timeout path this runs *inside* `timeout_task`, and
+            # cancelling the current task makes asyncio raise CancelledError at the next suspension — which is the
+            # unsubscribe below, before the publish. The delegation would then be marked settled with nothing
+            # published and the guard swallowing the delegate's real answer if it ever came: the exact hang the
+            # deadline exists to prevent, turned from possible into certain. A timer that reached here is finishing
+            # anyway; only one that never fired needs cancelling.
+            if timeout_task is not None and timeout_task is not asyncio.current_task():
+                timeout_task.cancel()
+            await event_subscriber.stop()
+            await self.agent_run_tracer.end_aitl_wrapper_span(
+                aitl_wrapper_span, success=success, target_topic=target_topic
+            )
+            await self.publish_event(outcome, topic)
 
         async def convert_event_to_agent_in_the_loop_response(aitl_event: BaseEvent, aitl_topic: Topic):
             if aitl_event.is_stop_event:
-                aitl_response = response_event_class(stop_event=aitl_event)
+                aitl_response = response_event_class(stop_event=aitl_event, request_event_id=request_event_id)
                 logger.debug(f"Received Agent in the Loop StopEvent: {aitl_response}, stopping subscriber.")
-                await event_subscriber.stop()
-                await self.agent_run_tracer.end_aitl_wrapper_span(
-                    aitl_wrapper_span, success=True, target_topic=target_topic
-                )
-                await self.publish_event(aitl_response, topic)
+                await settle(aitl_response, success=True)
             if aitl_event.is_exception_event:
-                aitl_exception = exception_event_class(exception_event=aitl_event)
+                aitl_exception = exception_event_class(exception_event=aitl_event, request_event_id=request_event_id)
                 logger.debug(f"Received Agent in the Loop ExceptionEvent: {aitl_exception}, stopping subscriber.")
-                await event_subscriber.stop()
-                await self.agent_run_tracer.end_aitl_wrapper_span(
-                    aitl_wrapper_span, success=False, target_topic=target_topic
-                )
-                await self.publish_event(aitl_exception, topic)
+                await settle(aitl_exception, success=False)
 
         logger.debug(f"Temporarily subscribing to {aitl_request_event.other_agent_topic}")
         event_subscriber = AgentNCSubscriber.for_thread_control_events(
@@ -711,3 +751,61 @@ class AgentDispatcher(BaseDispatcher):
         subject = aitl_request_event.other_agent_topic.to_subject()
         logger.debug(f"Publishing to Agent in the Loop to subject {subject}")
         await self.js_publisher.publish_event(start_event, subject)
+
+        timeout_task = self._schedule_agent_in_the_loop_timeout(
+            aitl_request_event, settle, exception_event_class, target_topic
+        )
+        # A delegate fast enough to answer between the publish above and this line settled while `timeout_task` was
+        # still None, so `settle` had nothing to cancel. Cancelling here is what stops that timer sleeping out a
+        # deadline for a delegation that is already done.
+        if settled.is_set() and timeout_task is not None:
+            timeout_task.cancel()
+
+    def _schedule_agent_in_the_loop_timeout(
+        self,
+        aitl_request_event: Annotated[AgentInTheLoopRequestEvent, "The delegation whose deadline is being armed."],
+        settle: Annotated[Callable[..., Awaitable[None]], "Publishes the outcome, once, whoever gets there first."],
+        exception_event_class: Annotated[type[AgentInTheLoopExceptionEvent], "The caller's AITL exception type."],
+        target_topic: Annotated[AgentInstanceTopic, "The delegated run, for the log line and the span."],
+    ) -> asyncio.Task | None:
+        """Fail a delegation the target never answers, rather than leaving the caller's run waiting forever.
+
+        Without this a delegate that never starts — an agent that is offline, a mistyped `agent_id`, a profile that
+        does not exist — publishes no stop event and no exception, so the caller's run sits in the event store until
+        someone notices. A fan-out makes that worse: one silent delegate wedges the whole batch.
+
+        Opt-in per request, because for a chat-facing delegation waiting is the right behaviour and a deadline would
+        only turn a slow answer into a wrong one.
+
+        This covers a delegate that does not answer. It does NOT cover a caller that restarts: the timer, like the
+        NATS Core subscription it guards, lives in this process and dies with it, and the answer then has nobody
+        listening for it. Making that survivable means moving AITL response routing onto JetStream.
+        """
+        if aitl_request_event.timeout_seconds is None:
+            return None
+
+        async def fail_on_timeout() -> None:
+            await asyncio.sleep(aitl_request_event.timeout_seconds)
+            logger.warning(
+                "Agent in the Loop delegation to %s timed out after %ss — failing it so the caller can continue",
+                target_topic.to_subject(),
+                aitl_request_event.timeout_seconds,
+            )
+            await settle(
+                exception_event_class(
+                    exception_event=ExceptionEvent(
+                        message=f"The delegated agent {target_topic.agent_class}/{target_topic.agent_id} did not "
+                        f"answer within {aitl_request_event.timeout_seconds}s."
+                    ),
+                    request_event_id=aitl_request_event.event_id,
+                ),
+                success=False,
+            )
+
+        # Held on the dispatcher because `asyncio` only keeps a weak reference to a running task: a local would be
+        # collectable the moment this method returns, and the deadline would fire or not depending on the GC. The
+        # done-callback is what keeps the set from being a leak of its own once a timer is cancelled or fires.
+        timeout_task = asyncio.create_task(fail_on_timeout())
+        self._aitl_timeout_tasks.add(timeout_task)
+        timeout_task.add_done_callback(self._aitl_timeout_tasks.discard)
+        return timeout_task

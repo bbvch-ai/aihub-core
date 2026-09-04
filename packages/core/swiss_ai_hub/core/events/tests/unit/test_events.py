@@ -86,12 +86,12 @@ def aitl_request_event(test_start_event):
 
 @pytest.fixture
 def aitl_response_event(test_stop_event):
-    return AgentInTheLoopResponseEvent(stop_event=test_stop_event)
+    return AgentInTheLoopResponseEvent(stop_event=test_stop_event, request_event_id="request_event_id")
 
 
 @pytest.fixture
 def aitl_exception_event(test_exception_event):
-    return AgentInTheLoopExceptionEvent(exception_event=test_exception_event)
+    return AgentInTheLoopExceptionEvent(exception_event=test_exception_event, request_event_id="request_event_id")
 
 
 # ====== Helper Functions ======
