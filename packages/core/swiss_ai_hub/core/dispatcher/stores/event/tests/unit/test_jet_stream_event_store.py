@@ -15,6 +15,7 @@ from nats.js.errors import NotFoundError
 
 from swiss_ai_hub.core.dispatcher.stores.event.jet_stream_event_store import (
     REPLAY_CONSUMER_INACTIVE_THRESHOLD_SECONDS,
+    SUBSCRIPTION_CONSUMER_INACTIVE_THRESHOLD_SECONDS,
     JetStreamEventStore,
 )
 from swiss_ai_hub.core.topic_managers.abstract_stream_topic_manager import AbstractStreamTopicManager
@@ -65,6 +66,54 @@ class TestReplayConsumerCreation:
         config = kwargs["config"]
         assert config.durable_name == event_store.replay_durable_name
         assert config.inactive_threshold == REPLAY_CONSUMER_INACTIVE_THRESHOLD_SECONDS
+
+
+class TestSubscriptionConsumerCreation:
+    @pytest.mark.asyncio
+    async def test_subscription_consumer_is_created_with_the_server_side_inactive_threshold(
+        self, event_store: JetStreamEventStore, mock_js: MagicMock
+    ) -> None:
+        """The live subscription consumer is durable and uuid-named, so a killed process strands it
+        forever. The server-side threshold is what reclaims it when no `stop()` ever runs."""
+        mock_js.pull_subscribe = AsyncMock(return_value=MagicMock(fetch=AsyncMock(return_value=[])))
+
+        await event_store.start()
+
+        _, kwargs = mock_js.subscribe.call_args
+        assert kwargs["durable"] == event_store.subscription_durable_name
+        assert kwargs["inactive_threshold"] == SUBSCRIPTION_CONSUMER_INACTIVE_THRESHOLD_SECONDS
+
+
+class TestSubscriptionConsumerCleanup:
+    @pytest.mark.asyncio
+    async def test_stop_deletes_the_subscription_consumer_not_just_unsubscribes(
+        self, event_store: JetStreamEventStore, mock_js: MagicMock
+    ) -> None:
+        """`unsubscribe()` only detaches this client; the durable stays registered on the server.
+        Every start used to strand one -- the majority of consumers observed on live streams."""
+        mock_js.pull_subscribe = AsyncMock(return_value=MagicMock(fetch=AsyncMock(return_value=[])))
+        await event_store.start()
+        subscription = event_store.subscription
+        mock_js.delete_consumer.reset_mock()
+
+        await event_store.stop()
+
+        subscription.unsubscribe.assert_awaited_once()
+        mock_js.delete_consumer.assert_awaited_once_with("my-stream", event_store.subscription_durable_name)
+
+    @pytest.mark.asyncio
+    async def test_stop_survives_a_failing_consumer_delete(
+        self, event_store: JetStreamEventStore, mock_js: MagicMock
+    ) -> None:
+        """Shutdown must not break if the delete fails; the inactive_threshold still reclaims it."""
+        mock_js.pull_subscribe = AsyncMock(return_value=MagicMock(fetch=AsyncMock(return_value=[])))
+        await event_store.start()
+        mock_js.delete_consumer = AsyncMock(side_effect=Exception("delete failed"))
+
+        await event_store.stop()
+
+        assert event_store.is_initialized is False
+        assert event_store.subscription is None
 
 
 class TestReplayConsumerCleanup:

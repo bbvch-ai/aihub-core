@@ -27,6 +27,20 @@ logger = logging.getLogger(__name__)
 # timeout), so this only ever fires for genuinely abandoned consumers.
 REPLAY_CONSUMER_INACTIVE_THRESHOLD_SECONDS = 5 * 60
 
+# The live subscription consumer created in `start()` leaks the same way, and worse: nothing ever
+# deleted it on any path. `stop()` only unsubscribed, which detaches the client but leaves the
+# durable registered on the server, and the name carries a fresh uuid per process, so every single
+# start -- clean or not -- stranded one. Measured 2026-09-03: of the consumers on
+# `agent_RAGAgent_stream`, 28 of 30 on preprod and 89 of 155 on be were stranded subscription
+# consumers, i.e. the majority of the leak.
+#
+# Unlike the replay consumer this one is legitimately long-lived, so the threshold only starts
+# counting once it goes unbound (the owning pod died). It is deliberately more generous than the
+# replay threshold so a transient NATS disconnect on a still-healthy pod cannot get the consumer
+# reaped out from under it; graceful shutdowns do not wait for it, because `stop()` now deletes
+# the consumer explicitly.
+SUBSCRIPTION_CONSUMER_INACTIVE_THRESHOLD_SECONDS = 30 * 60
+
 
 class JetStreamEventStore:
     """
@@ -128,6 +142,7 @@ class JetStreamEventStore:
                 durable=self.subscription_durable_name,
                 stream=self.stream_name,
                 cb=self._handle_new_event,
+                inactive_threshold=SUBSCRIPTION_CONSUMER_INACTIVE_THRESHOLD_SECONDS,
             )
 
             logger.debug(f"Subscribed to {self.control_subject} for new events")
@@ -186,11 +201,21 @@ class JetStreamEventStore:
 
     async def stop(self):
         """
-        Stop the event store by unsubscribing from JetStream.
+        Stop the event store by unsubscribing from JetStream and deleting its consumer.
+
+        `unsubscribe()` alone only detaches this client; the durable consumer stays registered on
+        the server. Since the durable name carries a fresh uuid per process, nothing would ever
+        reuse or clean it up, so it is deleted explicitly here. The `inactive_threshold` set in
+        `start()` remains the backstop for the paths that never reach this method (SIGKILL, OOM).
         """
         if self.subscription:
             await self.subscription.unsubscribe()
             self.subscription = None
+
+            try:
+                await self.js.delete_consumer(self.stream_name, self.subscription_durable_name)
+            except Exception as e:
+                logger.warning(f"Error deleting subscription consumer: {e}")
 
         self.is_initialized = False
         logger.info("Event store stopped")
