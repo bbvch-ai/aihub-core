@@ -1015,6 +1015,12 @@ export const AgentInTheLoopExceptionEventSchema = {
       description:
         "The exception event from the delegated agent containing error details and failure context.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -1035,7 +1041,12 @@ export const AgentInTheLoopExceptionEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["exception_event", "_event_name", "_parent_event_names"],
+  required: [
+    "exception_event",
+    "request_event_id",
+    "_event_name",
+    "_parent_event_names",
+  ],
   title: "AgentInTheLoopExceptionEvent",
   description:
     "An error response from an agent when a delegated task fails.\n\n### Why AgentInTheLoopExceptionEvent?\nWhen an agent encounters an error during a delegated task, this event:\n- Signals workflow disruption (since it's a `ControlEvent`), allowing error handling in the original agent\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring and debugging of agent failures\n- Provides a dedicated error channel separate from successful responses",
@@ -1119,8 +1130,21 @@ export const AgentInTheLoopRequestEventSchema = {
       type: "boolean",
       title: "Share Run Id",
       description:
-        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
+        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
       default: false,
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
     },
     _event_name: {
       type: "string",
@@ -1192,6 +1216,12 @@ export const AgentInTheLoopResponseEventSchema = {
       description:
         "The stop event from the delegated agent containing the task results and marks the completion.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -1212,7 +1242,12 @@ export const AgentInTheLoopResponseEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["stop_event", "_event_name", "_parent_event_names"],
+  required: [
+    "stop_event",
+    "request_event_id",
+    "_event_name",
+    "_parent_event_names",
+  ],
   title: "AgentInTheLoopResponseEvent",
   description:
     "A response from an agent after completing a delegated task.\n\n### Why AgentInTheLoopResponseEvent?\nWhen an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:\n- Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions",
@@ -5053,6 +5088,11 @@ export const CitationBlockSchema = {
   description: "A representation of cited content from past messages.",
 } as const;
 
+export const ClassifyMailStartEventInputSchema = {
+  type: "object",
+  title: "ClassifyMailStartEventInput",
+} as const;
+
 export const ColorPickerSchema = {
   properties: {
     is_formkit_element: {
@@ -6337,6 +6377,21 @@ export const CronStartEventSchema = {
   title: "CronStartEvent",
   description:
     "Start event fired by the cron scheduler — handling it is what makes an agent schedulable.\n\nMirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives\n`is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step\nthat consumes this event, with no separate registration.\n\nScheduled runs are system runs, so `user` is always None and the agent must not depend on an\ninitiating identity. Whatever tenant context the agent needs comes from its own profile\nconfiguration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.",
+} as const;
+
+export const CronStartEventInputSchema = {
+  properties: {
+    scheduled_for: {
+      type: "string",
+      format: "date-time",
+      title: "Scheduled For",
+      description:
+        "The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.",
+    },
+  },
+  type: "object",
+  required: ["scheduled_for"],
+  title: "CronStartEventInput",
 } as const;
 
 export const Custom_OutputSchema = {
@@ -18404,8 +18459,16 @@ export const RAGStartEventSchema = {
       default: "de",
     },
     user: {
-      $ref: "#/components/schemas/UserIdentity",
-      description: "User on whose behalf the RAG run is executed.",
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.",
     },
     messages: {
       items: {
@@ -18486,12 +18549,7 @@ export const RAGStartEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: [
-    "user",
-    "selected_namespaces",
-    "_event_name",
-    "_parent_event_names",
-  ],
+  required: ["selected_namespaces", "_event_name", "_parent_event_names"],
   title: "RAGStartEvent",
   description:
     "Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.",
@@ -21335,6 +21393,37 @@ export const StopEventSchema = {
   title: "StopEvent",
   description:
     "An event signaling the conclusion of a run within a thread, acting both as a control signal\nand a user-facing message.\n\n### Why StopEvent?\nIn many workflows, reaching a terminal state (e.g., producing a final result or hitting an\nend-of-workflow condition) must:\n- Influence the system’s control flow, ensuring no further steps are executed.\n- Provide a visible indicator to the end-user or UI that the process has completed.\n\nBy inheriting from both `ControlEvent` and `DisplayEvent`:\n- As a `ControlEvent`, it instructs the workflow engine to stop processing subsequent steps.\n- As a `DisplayEvent`, it can be shown to users or captured by dashboards, indicating that\n  the run is over and providing any final output or status messages.\n\n### Use Cases\n- Signaling that a response is ready, and no more actions are needed.\n- Informing the user interface that the conversation or task has concluded.",
+} as const;
+
+export const StopEventOutputSchema = {
+  properties: {
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Description",
+      description: "Display description for the event",
+    },
+  },
+  type: "object",
+  title: "StopEventOutput",
 } as const;
 
 export const StoreOrganizationMemoryEventSchema = {
@@ -25436,10 +25525,16 @@ export const AgentInTheLoopExceptionEventWritableSchema = {
       description:
         "The exception event from the delegated agent containing error details and failure context.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.",
+    },
   },
   additionalProperties: true,
   type: "object",
-  required: ["exception_event"],
+  required: ["exception_event", "request_event_id"],
   title: "AgentInTheLoopExceptionEvent",
   description:
     "An error response from an agent when a delegated task fails.\n\n### Why AgentInTheLoopExceptionEvent?\nWhen an agent encounters an error during a delegated task, this event:\n- Signals workflow disruption (since it's a `ControlEvent`), allowing error handling in the original agent\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring and debugging of agent failures\n- Provides a dedicated error channel separate from successful responses",
@@ -25523,8 +25618,21 @@ export const AgentInTheLoopRequestEventWritableSchema = {
       type: "boolean",
       title: "Share Run Id",
       description:
-        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
+        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
       default: false,
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
     },
   },
   additionalProperties: true,
@@ -25574,10 +25682,16 @@ export const AgentInTheLoopResponseEventWritableSchema = {
       description:
         "The stop event from the delegated agent containing the task results and marks the completion.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.",
+    },
   },
   additionalProperties: true,
   type: "object",
-  required: ["stop_event"],
+  required: ["stop_event", "request_event_id"],
   title: "AgentInTheLoopResponseEvent",
   description:
     "A response from an agent after completing a delegated task.\n\n### Why AgentInTheLoopResponseEvent?\nWhen an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:\n- Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions",
@@ -27094,6 +27208,11 @@ export const ChunkEventWritableSchema = {
   title: "ChunkEvent",
   description:
     'An event representing a portion of output or generated content (a "chunk") that is\nstreamed or delivered in segments - common in incremental output scenarios like LLM\ntoken streaming.\n\n### Why ChunkEvent?\nIn conversational or streaming AI outputs, the model might emit content in pieces rather\nthan all at once. `ChunkEvent` allows the frontend or other consumers to display partial\nresponses as they are generated, improving user experience by not forcing them to wait\nfor the entire answer.',
+} as const;
+
+export const ClassifyMailStartEventInputWritableSchema = {
+  type: "object",
+  title: "ClassifyMailStartEventInput",
 } as const;
 
 export const ColorPickerWritableSchema = {
@@ -34639,8 +34758,16 @@ export const RAGStartEventWritableSchema = {
       default: "de",
     },
     user: {
-      $ref: "#/components/schemas/UserIdentity",
-      description: "User on whose behalf the RAG run is executed.",
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.",
     },
     messages: {
       items: {
@@ -34704,7 +34831,7 @@ export const RAGStartEventWritableSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["user", "selected_namespaces"],
+  required: ["selected_namespaces"],
   title: "RAGStartEvent",
   description:
     "Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.",

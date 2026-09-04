@@ -771,6 +771,12 @@ export type AgentInTheLoopExceptionEvent = {
    */
   exception_event: ExceptionEvent;
   /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.
+   */
+  request_event_id: string;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -844,9 +850,15 @@ export type AgentInTheLoopRequestEvent = {
   /**
    * Share Run Id
    *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
    */
   share_run_id?: boolean;
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   */
+  timeout_seconds?: number | null;
   /**
    * Event Name
    *
@@ -896,6 +908,12 @@ export type AgentInTheLoopResponseEvent = {
    * The stop event from the delegated agent containing the task results and marks the completion.
    */
   stop_event: StopEvent;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
+   */
+  request_event_id: string;
   /**
    * Event Name
    *
@@ -3460,6 +3478,13 @@ export type CitationBlock = {
 };
 
 /**
+ * ClassifyMailStartEventInput
+ */
+export type ClassifyMailStartEventInput = {
+  [key: string]: unknown;
+};
+
+/**
  * ColorPicker
  *
  * https://formkit-primevue.netlify.app/inputs/ColorPicker
@@ -4338,6 +4363,18 @@ export type CronStartEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * CronStartEventInput
+ */
+export type CronStartEventInput = {
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
 };
 
 /**
@@ -12520,9 +12557,9 @@ export type RagStartEvent = {
    */
   locale?: string;
   /**
-   * User on whose behalf the RAG run is executed.
+   * User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.
    */
-  user: UserIdentity;
+  user?: UserIdentity | null;
   /**
    * Messages
    *
@@ -14465,6 +14502,24 @@ export type StopEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * StopEventOutput
+ */
+export type StopEventOutput = {
+  /**
+   * Display Name
+   *
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display Description
+   *
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
 };
 
 /**
@@ -17331,6 +17386,12 @@ export type AgentInTheLoopExceptionEventWritable = {
    * The exception event from the delegated agent containing error details and failure context.
    */
   exception_event: ExceptionEventWritable;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.
+   */
+  request_event_id: string;
   [key: string]: unknown;
 };
 
@@ -17392,9 +17453,15 @@ export type AgentInTheLoopRequestEventWritable = {
   /**
    * Share Run Id
    *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
    */
   share_run_id?: boolean;
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   */
+  timeout_seconds?: number | null;
   [key: string]: unknown;
 };
 
@@ -17431,6 +17498,12 @@ export type AgentInTheLoopResponseEventWritable = {
    * The stop event from the delegated agent containing the task results and marks the completion.
    */
   stop_event: StopEventWritable;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
+   */
+  request_event_id: string;
   [key: string]: unknown;
 };
 
@@ -18449,6 +18522,13 @@ export type ChunkEventWritable = {
    * The name of the AI model generating the chunks.
    */
   model_name?: string;
+  [key: string]: unknown;
+};
+
+/**
+ * ClassifyMailStartEventInput
+ */
+export type ClassifyMailStartEventInputWritable = {
   [key: string]: unknown;
 };
 
@@ -23301,9 +23381,9 @@ export type RagStartEventWritable = {
    */
   locale?: string;
   /**
-   * User on whose behalf the RAG run is executed.
+   * User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.
    */
-  user: UserIdentity;
+  user?: UserIdentity | null;
   /**
    * Messages
    *
@@ -30240,3 +30320,205 @@ export type ReceiveOpenwebuiWebhookResponses = {
 
 export type ReceiveOpenwebuiWebhookResponse =
   ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];
+
+export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostData =
+  {
+    body: ClassifyMailStartEventInputWritable;
+    path: {
+      /**
+       * Tenant Id
+       *
+       * Tenant identifier: a name, ObjectId, or 'active'
+       */
+      tenant_id: string;
+      /**
+       * Agent ID
+       *
+       * The specific agent instance ID
+       */
+      agent_id: string;
+    };
+    query?: {
+      /**
+       * Thread Id
+       */
+      thread_id?: string;
+      /**
+       * Display Id
+       */
+      display_id?: string;
+    };
+    url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/ClassifyMailStartEvent";
+  };
+
+export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostError =
+  SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostErrors[keyof SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostErrors];
+
+export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: StopEventOutput;
+  };
+
+export type SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponse =
+  SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponses[keyof SendClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventPostResponses];
+
+export type StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostData =
+  {
+    body: ClassifyMailStartEventInputWritable;
+    path: {
+      /**
+       * Tenant Id
+       *
+       * Tenant identifier: a name, ObjectId, or 'active'
+       */
+      tenant_id: string;
+      /**
+       * Agent ID
+       *
+       * The specific agent instance ID
+       */
+      agent_id: string;
+    };
+    query?: {
+      /**
+       * Thread Id
+       */
+      thread_id?: string;
+      /**
+       * Display Id
+       */
+      display_id?: string;
+    };
+    url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/ClassifyMailStartEvent/stream";
+  };
+
+export type StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostError =
+  StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostErrors[keyof StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostErrors];
+
+export type StreamClassifyMailStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdClassifyMailStartEventStreamPostResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+  };
+
+export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostData =
+  {
+    body: CronStartEventInput;
+    path: {
+      /**
+       * Tenant Id
+       *
+       * Tenant identifier: a name, ObjectId, or 'active'
+       */
+      tenant_id: string;
+      /**
+       * Agent ID
+       *
+       * The specific agent instance ID
+       */
+      agent_id: string;
+    };
+    query?: {
+      /**
+       * Thread Id
+       */
+      thread_id?: string;
+      /**
+       * Display Id
+       */
+      display_id?: string;
+    };
+    url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/CronStartEvent";
+  };
+
+export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostError =
+  SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostErrors[keyof SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostErrors];
+
+export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: StopEventOutput;
+  };
+
+export type SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponse =
+  SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponses[keyof SendCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventPostResponses];
+
+export type StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostData =
+  {
+    body: CronStartEventInput;
+    path: {
+      /**
+       * Tenant Id
+       *
+       * Tenant identifier: a name, ObjectId, or 'active'
+       */
+      tenant_id: string;
+      /**
+       * Agent ID
+       *
+       * The specific agent instance ID
+       */
+      agent_id: string;
+    };
+    query?: {
+      /**
+       * Thread Id
+       */
+      thread_id?: string;
+      /**
+       * Display Id
+       */
+      display_id?: string;
+    };
+    url: "/{tenant_id}/agents/classes/EmailClassificationAgent/instances/{agent_id}/CronStartEvent/stream";
+  };
+
+export type StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostError =
+  StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostErrors[keyof StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostErrors];
+
+export type StreamCronStartEventToEmailClassificationAgentTenantIdAgentsClassesEmailClassificationAgentInstancesAgentIdCronStartEventStreamPostResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+  };
