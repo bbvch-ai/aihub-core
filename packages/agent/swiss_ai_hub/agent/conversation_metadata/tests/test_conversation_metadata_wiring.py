@@ -39,8 +39,6 @@ can't silently gain metadata.
 import ast
 import inspect
 
-import pytest
-
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent import ExpertAskingAgent
 from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
@@ -226,6 +224,17 @@ def _metadata_calls(agent_type) -> list[ast.Call]:
     ]
 
 
+def _signature_mismatch(call: ast.Call) -> str | None:
+    signature = inspect.signature(getattr(conversation_metadata_step_functions, call.func.id))
+    positional = [PLACEHOLDER] * len(call.args)
+    keywords = {keyword.arg: PLACEHOLDER for keyword in call.keywords}
+    try:
+        signature.bind(*positional, **keywords)
+    except TypeError as mismatch:
+        return f"{call.func.id}{signature} does not accept this call — {mismatch}"
+    return None
+
+
 def test_every_metadata_call_site_matches_its_helper_signature():
     """Every adopter's call must bind against the real helper signature, not merely name it.
 
@@ -235,15 +244,10 @@ def test_every_metadata_call_site_matches_its_helper_signature():
     stayed green while production raised ``TypeError`` on each guard rejection. Binding placeholders
     against ``inspect.signature`` catches any future parameter a call site forgets, not just ``user``.
     """
-    for agent_type in SPLIT_AGENTS + INLINE_AGENTS:
-        for call in _metadata_calls(agent_type):
-            signature = inspect.signature(getattr(conversation_metadata_step_functions, call.func.id))
-            positional = [PLACEHOLDER] * len(call.args)
-            keywords = {keyword.arg: PLACEHOLDER for keyword in call.keywords}
-            try:
-                signature.bind(*positional, **keywords)
-            except TypeError as mismatch:
-                pytest.fail(
-                    f"{agent_type.__name__} line {call.lineno}: {call.func.id}{signature} does not accept this "
-                    f"call — {mismatch}"
-                )
+    mismatches = [
+        f"{agent_type.__name__} line {call.lineno}: {mismatch}"
+        for agent_type in SPLIT_AGENTS + INLINE_AGENTS
+        for call in _metadata_calls(agent_type)
+        if (mismatch := _signature_mismatch(call))
+    ]
+    assert not mismatches, "conversation metadata call sites do not match their helpers: " + "; ".join(mismatches)
