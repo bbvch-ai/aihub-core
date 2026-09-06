@@ -12,6 +12,7 @@ from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
+from swiss_ai_hub.core.form import FormkitElement, Group, ModelSelect, Repeater
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
@@ -68,6 +69,9 @@ from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDT
 from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import UpdateNamespaceRequest
 from swiss_ai_hub.api.routes.model.model_service import ModelService
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
+from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
+from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
+from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 logger = logging.getLogger(__name__)
 
@@ -339,58 +343,70 @@ class KnowledgeService:
 
     @staticmethod
     async def _validated_model(
-        model_name: Annotated[str | None, "Model the caller asked for, or None to take the deployment default"],
-        expected_mode: Annotated[str, "LiteLLM mode the slot requires, e.g. 'chat' or 'embedding'"],
+        field_path: Annotated[str, "Where on the form the model was chosen, named in any rejection"],
+        model_name: str,
+        expected_mode: Annotated[str, "LiteLLM mode the picker requires, e.g. 'chat' or 'embedding'"],
         user: UserIdentity,
-    ) -> str | None:
+    ) -> None:
         """Rejects a model this deployment does not serve, the caller cannot use, or that cannot do the job.
 
         Goes through ``ModelService`` rather than LiteLLM directly so the tenant's own model access rules
         apply: a database must not be bound to a model its creator is not allowed to use.
         """
-        if model_name is None:
-            return None
-
         model = await ModelService.get_model_by_name(user, model_name)
         if model.model_info.mode != expected_mode:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"Model '{model_name}' is a '{model.model_info.mode}' model and cannot be used as the "
-                    f"'{expected_mode}' model of a knowledge database."
+                    f"Configuration validation failed: {field_path}: '{model_name}' is a "
+                    f"'{model.model_info.mode}' model and cannot be used where a '{expected_mode}' model is required."
                 ),
             )
-        return model_name
-
-    @staticmethod
-    async def _validated_embedding_model(model_name: str | None, user: UserIdentity) -> str | None:
-        """Additionally requires a declared output width, which the collection's dimension is derived from."""
-        validated = await KnowledgeService._validated_model(model_name, "embedding", user)
-        if validated is None:
-            return None
-
-        model = await ModelService.get_model_by_name(user, validated)
-        if model.model_info.output_vector_size is None:
+        if expected_mode == "embedding" and model.model_info.output_vector_size is None:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"Embedding model '{validated}' declares no output_vector_size, so the vector "
-                    f"collection's dimension cannot be derived from it. Add it to the LiteLLM model config."
+                    f"Configuration validation failed: {field_path}: embedding model '{model_name}' declares no "
+                    "output_vector_size, so the vector collection's dimension cannot be derived from it. "
+                    "Add it to the LiteLLM model config."
                 ),
             )
-        return validated
+
+    @staticmethod
+    async def _validate_model_selections(
+        elements: list[FormkitElement], config: dict[str, Any], user: UserIdentity, prefix: str = ""
+    ) -> None:
+        """Every ``ModelSelect`` the ingestor announced is checked against LiteLLM, wherever it sits on the form.
+
+        The API knows nothing about a pipeline's field names; it knows which elements are model pickers and what
+        mode each requires, which is all the check needs.
+        """
+        for element in elements:
+            name = getattr(element, "name", None)
+            if not name:
+                continue
+            field_path = f"{prefix}{name}"
+            value = config.get(name)
+            if isinstance(element, Group) and isinstance(value, dict):
+                await KnowledgeService._validate_model_selections(element.children, value, user, f"{field_path}.")
+            elif isinstance(element, Repeater) and isinstance(value, list):
+                for index, item in enumerate(value):
+                    if isinstance(item, dict):
+                        await KnowledgeService._validate_model_selections(
+                            element.children, item, user, f"{field_path}.{index}."
+                        )
+            elif isinstance(element, ModelSelect) and value is not None:
+                await KnowledgeService._validated_model(field_path, value, element.mode, user)
 
     @staticmethod
     @trace_fn
     def get_ingestors(t: LocaleHandler) -> list[IngestorDTO]:
-        """Returns the ingestion pipelines a user may pick when creating a knowledge database.
+        """The ingestion pipelines a user may pick when creating a knowledge database, with their forms.
 
-        The platform's own pipelines come from ``IngestorType.selectable()``; any custom pipelines a
-        deployment registered from its own pipeline container are appended, so they are offered in the UI too.
+        Every deployed pipeline — the platform's own included — registers itself from its own container, so what
+        is offered is exactly what is running, localized from the labels and form it announced.
         """
-        platform = [IngestorDTO.from_ingestor_type(ingestor, t) for ingestor in IngestorType.selectable()]
-        custom = [IngestorDTO.from_ingestor(ingestor, t) for ingestor in IngestorEntity.custom()]
-        return platform + custom
+        return [IngestorDTO.from_ingestor(ingestor, t) for ingestor in IngestorEntity.all()]
 
     @staticmethod
     async def create_database(
@@ -399,22 +415,26 @@ class KnowledgeService:
         t: LocaleHandler,
         s3_service: S3AnonymousFileAccessService,
         user: UserIdentity,
-        llm_config: LLMConfig | None = None,
     ) -> DatabaseResponse:
         """
         Creates a new self-service knowledge database (bucket).
 
         The database name doubles as the S3 bucket, Mongo store, and Milvus collection name. The bucket
         records the ingestor that owns it, so the matching deployed pipeline picks it up without any
-        redeployment.
+        redeployment, and the configuration that ingestor's announced form produced — validated here against
+        the schema it announced, the way an agent instance is validated against its class.
 
         The S3 bucket is provisioned (with browser-upload CORS) up front so documents can be uploaded
         immediately, before the pipeline's first lazy ingest.
         """
-        if not IngestorEntity.is_selectable(request.ingestor):
+        ingestor = IngestorEntity.find(request.ingestor)
+        if ingestor is None or ingestor.config_specs is None:
             raise HTTPException(
                 status_code=400,
-                detail=f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database.",
+                detail=(
+                    f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database: no running "
+                    "pipeline has announced it with a configuration form."
+                ),
             )
 
         try:
@@ -432,29 +452,32 @@ class KnowledgeService:
                 ),
             )
 
-        display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
-            text=request.display_name, t=t, llm_config=llm_config, user=user
+        config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
+        config_model = ModelCreationService.create_config_model(ingestor.config_specs.to_specs())
+        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        await ConfigAuthorizationService.validate_for_user_or_raise(
+            form_elements=ingestor.form, config=config, user=user, t=t
         )
-        description_entity = await KnowledgeService._create_and_translate_locale_entity(
-            request.description, t, llm_config, user
-        )
+        await KnowledgeService._validate_model_selections(ingestor.form_elements, config, user)
+
+        metadata = InstanceConfigHelper.extract_config_metadata(config_instance, fallback_icon="")
+        locale = InstanceConfigHelper.build_locale_entities(metadata.name, metadata.description, database, "")
+        configuration = {
+            key: value for key, value in config.items() if key not in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
+        }
 
         # Persist the entity before provisioning storage: the unique bucket_name index serialises
         # concurrent admin calls (the loser gets NotUniqueError, not a second bucket), so any failure
         # before this point leaves no orphan. If provisioning fails, roll back both the container and
         # the row so a retry starts clean.
-        llm_model = await KnowledgeService._validated_model(request.llm_model, "chat", user)
-        embedding_model = await KnowledgeService._validated_embedding_model(request.embedding_model, user)
-
         try:
             bucket = BucketEntity.create_bucket(
                 bucket_name=database,
                 db_name=database,
-                name=display_name_entity,
-                description=description_entity,
+                name=locale.name,
+                description=locale.description,
                 ingestor=request.ingestor,
-                llm_model=llm_model,
-                embedding_model=embedding_model,
+                configuration=configuration,
             )
         except NotUniqueError:
             raise HTTPException(status_code=409, detail=f"Database '{database}' already exists.") from None
@@ -483,8 +506,7 @@ class KnowledgeService:
             name=bucket.db_name,
             bucket_name=bucket.bucket_name,
             ingestor=bucket.ingestor,
-            llm_model=bucket.llm_model,
-            embedding_model=bucket.embedding_model,
+            configuration=bucket.configuration,
             display_name=KnowledgeService._safe_extract_locale_string(bucket.name, t),
             description=KnowledgeService._safe_extract_locale_string(bucket.description, t),
         )

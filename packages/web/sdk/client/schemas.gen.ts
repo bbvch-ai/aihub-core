@@ -495,7 +495,7 @@ export const AgentClassDTOSchema = {
         "FormKit elements defining the agent configuration form. Default values are embedded in the elements themselves.",
     },
     agent_config_specs: {
-      $ref: "#/components/schemas/AgentConfigSpecs",
+      $ref: "#/components/schemas/ConfigSpecs",
       description:
         "Validation specification including the JSON schema for form submissions. Used by ModelCreationService to create Pydantic models for validation.",
     },
@@ -735,29 +735,6 @@ export const AgentConfigDTOSchema = {
   title: "AgentConfigDTO",
   description:
     "Encapsulates the data transfer object for an agent INSTANCE's configuration.\n\nContains instance-level data (agent_id, name, description, icon) and the\nconfiguration form. Values come from both:\n- AgentClassEntity: class-level form schema\n- AgentConfigEntityDocument: instance-specific name, description, icon, agent_id\n\nNOTE: This represents config for an INSTANCE (with agent_id), not an agent CLASS.",
-} as const;
-
-export const AgentConfigSpecsSchema = {
-  properties: {
-    agent_class: {
-      type: "string",
-      title: "Agent Class",
-      description: "The class name of the agent.",
-    },
-    agent_config_schema: {
-      additionalProperties: true,
-      type: "object",
-      title: "Agent Config Schema",
-      description:
-        "JSON schema for validating form submissions. Generated from the agent's configurable fields via to_configurable_submission_model().",
-      default: {},
-    },
-  },
-  type: "object",
-  required: ["agent_class"],
-  title: "AgentConfigSpecs",
-  description:
-    "Validation specification for agent configuration form submissions.\n\nContains ONLY the agent class identifier and JSON schema for validation.\nInstance-level fields (name, description, icon, agent_id) are stored\nseparately in AgentConfigEntityDocument and provided by the Agent class.\n\nThe JSON schema is generated from the agent's configurable fields via\nto_configurable_submission_model() and is used to validate form submissions.",
 } as const;
 
 export const AgentEventSchema = {
@@ -5342,6 +5319,29 @@ export const CompletionUsageSchema = {
   description: "Usage statistics for the completion request.",
 } as const;
 
+export const ConfigSpecsSchema = {
+  properties: {
+    config_class: {
+      type: "string",
+      title: "Config Class",
+      description: "The class name of the configuration this schema describes.",
+      default: "",
+    },
+    config_schema: {
+      additionalProperties: true,
+      type: "object",
+      title: "Config Schema",
+      description:
+        "JSON schema for validating form submissions. Generated from the configuration's configurable fields via to_configurable_submission_model().",
+      default: {},
+    },
+  },
+  type: "object",
+  title: "ConfigSpecs",
+  description:
+    "Validation specification for a form-duality configuration, as announced by the service that owns it.\n\nCarries only the JSON schema the API validates submissions against, so a configuration class defined in\nan agent, process or pipeline container can be enforced by the API without that class being installed there.",
+} as const;
+
 export const ContextInsufficientRejectEventSchema = {
   properties: {
     event_id: {
@@ -5880,32 +5880,6 @@ export const CreateAgentInstanceRequestSchema = {
 
 export const CreateDatabaseRequestSchema = {
   properties: {
-    display_name: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Display Name",
-      description:
-        "The display name of the knowledge database in the user's locale.",
-    },
-    description: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Description",
-      description:
-        "A short description of the knowledge database in the user's locale.",
-    },
     ingestor: {
       type: "string",
       title: "Ingestor",
@@ -5913,31 +5887,13 @@ export const CreateDatabaseRequestSchema = {
         "The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.",
       default: "document_ingestion",
     },
-    llm_model: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Llm Model",
+    configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Configuration",
       description:
-        "Text-generation model used to summarize, refine tables and describe figures for this database. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=chat.",
-    },
-    embedding_model: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Embedding Model",
-      description:
-        "Embedding model this database's documents are indexed with. Cannot be changed after creation. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=embedding.",
+        "The database's configuration as submitted through the ingestor's announced form: its multilingual name and description plus every knob the pipeline declares. Validated against the ingestor's schema.",
+      default: {},
     },
   },
   type: "object",
@@ -6638,30 +6594,13 @@ export const DatabaseResponseSchema = {
       title: "Ingestor",
       description: "The deployed ingestion pipeline that owns this database.",
     },
-    llm_model: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Llm Model",
+    configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Configuration",
       description:
-        "Text-generation model, or None to follow the deployment default.",
-    },
-    embedding_model: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Embedding Model",
-      description: "Embedding model, or None to follow the deployment default.",
+        "The ingestor's settings for this database, as validated against its announced schema.",
+      default: {},
     },
     display_name: {
       anyOf: [
@@ -8663,7 +8602,7 @@ export const FullProcessInstanceDTOSchema = {
         "List of agent work events that the process can receive. Agent work events are used to trigger the execution of an agent.",
     },
     process_config_specs: {
-      $ref: "#/components/schemas/ProcessConfigSpecs",
+      $ref: "#/components/schemas/ConfigSpecs",
       description:
         "Configuration specifications of the process class, including schema and parameters.",
     },
@@ -11584,6 +11523,113 @@ export const IngestorDTOSchema = {
       ],
       title: "Description",
       description: "Localized description of what the pipeline does.",
+    },
+    form: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelector",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelect",
+          },
+          {
+            $ref: "#/components/schemas/Checkbox",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInput",
+          },
+          {
+            $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
+            $ref: "#/components/schemas/DatePicker",
+          },
+          {
+            $ref: "#/components/schemas/Group",
+          },
+          {
+            $ref: "#/components/schemas/IconSelector",
+          },
+          {
+            $ref: "#/components/schemas/InputMask",
+          },
+          {
+            $ref: "#/components/schemas/InputNumber",
+          },
+          {
+            $ref: "#/components/schemas/InputOtp",
+          },
+          {
+            $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelector",
+          },
+          {
+            $ref: "#/components/schemas/Knob",
+          },
+          {
+            $ref: "#/components/schemas/Listbox",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelect",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelect",
+          },
+          {
+            $ref: "#/components/schemas/Password",
+          },
+          {
+            $ref: "#/components/schemas/RadioButton",
+          },
+          {
+            $ref: "#/components/schemas/Rating",
+          },
+          {
+            $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/Select",
+          },
+          {
+            $ref: "#/components/schemas/SelectButton",
+          },
+          {
+            $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
+            $ref: "#/components/schemas/Textarea",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButton",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitch",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInput",
+          },
+        ],
+      },
+      type: "array",
+      title: "Form",
+      description:
+        "FormKit elements a database of this ingestor is configured through, localized.",
+      default: [],
     },
   },
   type: "object",
@@ -17937,7 +17983,7 @@ export const ProcessClassDTOSchema = {
       description: "FormKit elements defining the configuration form.",
     },
     process_config_specs: {
-      $ref: "#/components/schemas/ProcessConfigSpecs",
+      $ref: "#/components/schemas/ConfigSpecs",
       description:
         "Configuration specifications of the process class, including schema and parameters.",
     },
@@ -18033,29 +18079,6 @@ export const ProcessConfigDTOSchema = {
   type: "object",
   required: ["process_id", "name", "description"],
   title: "ProcessConfigDTO",
-} as const;
-
-export const ProcessConfigSpecsSchema = {
-  properties: {
-    process_class: {
-      type: "string",
-      title: "Process Class",
-      description: "The class name of the process.",
-      default: "",
-    },
-    process_config_schema: {
-      additionalProperties: true,
-      type: "object",
-      title: "Process Config Schema",
-      description:
-        "JSON schema for validating form submissions. Generated from the process's configurable fields via to_configurable_submission_model().",
-      default: {},
-    },
-  },
-  type: "object",
-  title: "ProcessConfigSpecs",
-  description:
-    "Validation specification for process configuration form submissions.\n\nContains the process class identifier and JSON schema for validation.\nInstance-level fields (name, description, icon, process_id) are stored\nseparately in ProcessConfigEntityDocument and provided by the Process class.\n\nThe JSON schema is generated from the process's configurable fields via\nto_configurable_submission_model() and is used to validate form submissions.",
 } as const;
 
 export const ProcessHealthChecksSchema = {
@@ -25311,7 +25334,7 @@ export const AgentClassDTOWritableSchema = {
         "FormKit elements defining the agent configuration form. Default values are embedded in the elements themselves.",
     },
     agent_config_specs: {
-      $ref: "#/components/schemas/AgentConfigSpecs",
+      $ref: "#/components/schemas/ConfigSpecs",
       description:
         "Validation specification including the JSON schema for form submissions. Used by ModelCreationService to create Pydantic models for validation.",
     },
@@ -29009,7 +29032,7 @@ export const FullProcessInstanceDTOWritableSchema = {
         "List of agent work events that the process can receive. Agent work events are used to trigger the execution of an agent.",
     },
     process_config_specs: {
-      $ref: "#/components/schemas/ProcessConfigSpecs",
+      $ref: "#/components/schemas/ConfigSpecs",
       description:
         "Configuration specifications of the process class, including schema and parameters.",
     },
@@ -30531,6 +30554,151 @@ export const IconSelectorWritableSchema = {
   title: "IconSelector",
   description:
     'A FormKit element for selecting or entering an Iconify icon name.\n\nThis element renders as an editable select with icon preview capability.\nUsers can either select from preset icon options or enter any valid Iconify icon name.\nThe selected/entered icon is displayed live in the input field.\n\n### Features\n- Dropdown with preset icon options (each showing the icon preview)\n- Editable input for entering custom Iconify icon names\n- Live icon preview in the input field\n- Supports any valid Iconify icon (e.g., \'lucide:bot\', \'meteor-icons:robot\')\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    icon: Annotated[\n        str | IconSelector,\n        Field(description="Icon for the agent"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    ...,\n    icon=IconSelector(label=LocaleString(en="Icon", de="Symbol")),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    ...,\n    icon="mage:robot",\n)\n```',
+} as const;
+
+export const IngestorDTOWritableSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Ingestor identifier, as served by GET /knowledge/ingestors.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the ingestion pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of what the pipeline does.",
+    },
+    form: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/CheckboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/DatePickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/GroupWritable",
+          },
+          {
+            $ref: "#/components/schemas/IconSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputMaskWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputOtpWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnobWritable",
+          },
+          {
+            $ref: "#/components/schemas/ListboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/PasswordWritable",
+          },
+          {
+            $ref: "#/components/schemas/RadioButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/RatingWritable",
+          },
+          {
+            $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/TextareaWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitchWritable",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInputWritable",
+          },
+        ],
+      },
+      type: "array",
+      title: "Form",
+      description:
+        "FormKit elements a database of this ingestor is configured through, localized.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "IngestorDTO",
 } as const;
 
 export const InputMaskWritableSchema = {
@@ -34568,7 +34736,7 @@ export const ProcessClassDTOWritableSchema = {
       description: "FormKit elements defining the configuration form.",
     },
     process_config_specs: {
-      $ref: "#/components/schemas/ProcessConfigSpecs",
+      $ref: "#/components/schemas/ConfigSpecs",
       description:
         "Configuration specifications of the process class, including schema and parameters.",
     },

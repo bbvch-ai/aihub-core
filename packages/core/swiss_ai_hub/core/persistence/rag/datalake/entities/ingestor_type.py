@@ -3,11 +3,11 @@ from typing import Self
 
 
 class IngestorType(StrEnum):
-    """Identifies which deployed ingestion pipeline owns a knowledge database.
+    """The platform's own routing tokens for which deployed ingestion pipeline owns a knowledge database.
 
-    Used as a routing guard: the single ``document_ingestion`` pipeline reads this off each
-    ``BucketEntity`` to decide which buckets it ingests, so it can coexist with the legacy
-    per-bucket ``default_rag`` / ``shared_rag`` deployments without double-processing them.
+    ``document_ingestion`` is the shipped pipeline; it registers itself like any custom ingestor, so the API
+    learns about it from its registration record rather than from this enum. The others are routing guards
+    only, never offered to users.
 
     ``UNASSIGNED`` is the field default, and exists so that rows written before this field was
     introduced — which have no ``ingestor`` key, and for which MongoEngine therefore applies the
@@ -23,12 +23,11 @@ class IngestorType(StrEnum):
     DOCUMENT_INGESTION = "document_ingestion"
 
     @classmethod
-    def selectable(cls) -> list[Self]:
-        """Ingestors a user may assign when creating a knowledge database.
+    def legacy(cls) -> list[Self]:
+        """Tokens no pipeline may register.
 
         ``default_rag`` and ``shared_rag`` are bound to one bucket by env var at deploy time, so a
         database assigned to either would never be ingested — they exist only to mark the legacy
-        buckets for the routing guard. ``unassigned`` means "no ingestion pipeline owns this"
-        and is likewise not something a user picks.
+        buckets for the routing guard. ``unassigned`` means "no ingestion pipeline owns this".
         """
-        return [cls.DOCUMENT_INGESTION]
+        return [cls.UNASSIGNED, cls.DEFAULT_RAG, cls.SHARED_RAG]

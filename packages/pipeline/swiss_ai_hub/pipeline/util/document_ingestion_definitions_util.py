@@ -5,11 +5,13 @@ from dagster import (
     AssetSelection,
     Definitions,
     DynamicPartitionsDefinition,
+    SensorDefinition,
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.persistence import IngestorEntity, IngestorType
+from swiss_ai_hub.core.ingestors import IngestorConfig
+from swiss_ai_hub.core.persistence import Ingestor, IngestorEntity, IngestorType
 
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
@@ -21,6 +23,7 @@ from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.removed_do
 )
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import summary_nodes_factory
 from swiss_ai_hub.pipeline.executors.factory import default_process_executor
+from swiss_ai_hub.pipeline.ingestors.document_ingestion_config import DocumentIngestionConfig
 from swiss_ai_hub.pipeline.io.routed_doc_store_io_manager import RoutedDocStoreIOManager
 from swiss_ai_hub.pipeline.io.routed_s3_data_lake_io_manager import RoutedS3DataLakeIOManager
 from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
@@ -50,13 +53,19 @@ _DEFAULT_INGESTOR = IngestorType.DOCUMENT_INGESTION.value
 def document_ingestion_pipeline_definitions(
     *,
     ingestor: Annotated[str, "Ingestor that owns the databases this pipeline serves"] = _DEFAULT_INGESTOR,
-    display_name: Annotated[LocaleString | None, "Localized name of a custom ingestor, shown in the UI"] = None,
-    description: Annotated[LocaleString | None, "Localized description of a custom ingestor"] = None,
-    embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/bge-m3",
-    llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/gemma-4-31B-it",
-    with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
-    with_table_refinement: Annotated[bool, "Refine tables with LLM to detect structure and split"] = True,
-    with_figure_descriptions: Annotated[bool, "Generate figure descriptions with vision LLM"] = True,
+    display_name: Annotated[LocaleString | None, "Localized name shown in the create-database selector"] = None,
+    description: Annotated[LocaleString | None, "Localized description of what the pipeline does"] = None,
+    config: Annotated[IngestorConfig | None, "Form-mode config announced for this ingestor's databases"] = None,
+    embedding_model_name: Annotated[
+        str, "Default LiteLLM embedding model, per database overridable"
+    ] = "embedding/bge-m3",
+    llm_model_name: Annotated[
+        str, "Default LiteLLM text-generation model, per database overridable"
+    ] = "text-generation/gemma-4-31B-it",
+    vision_model_name: Annotated[str | None, "Default figure-description model; the text model when None"] = None,
+    with_summary_nodes: Annotated[bool, "Default for recursive summaries, per database overridable"] = True,
+    with_table_refinement: Annotated[bool, "Default for LLM table refinement, per database overridable"] = True,
+    with_figure_descriptions: Annotated[bool, "Default for figure descriptions, per database overridable"] = True,
     observe_job_hour: Annotated[int, "Hour to run the daily per-bucket observation schedule"] = 0,
     observe_job_minute: Annotated[int, "Minute to run the daily per-bucket observation schedule"] = 0,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
@@ -75,6 +84,10 @@ def document_ingestion_pipeline_definitions(
     intermediates prefix) is derived from ``ingestor``, because asset keys are unique per Dagster deployment and
     dynamic-partition registry names are global to the instance. That is what lets a second pipeline *type* be
     deployed alongside this one instead of colliding with it.
+
+    The models and enrichment flags are *deployment defaults*: they pre-fill the form this pipeline announces
+    (``config``) and are what a database that stores no value of its own falls back to at run time. The asset
+    graph is the same for every database; each enrichment op decides per run from the bucket's configuration.
     """
     asset_group = f"{ingestor}_datalake_to_vectorstore"
 
@@ -94,22 +107,15 @@ def document_ingestion_pipeline_definitions(
     assets = [
         observable_asset,
         removed_documents_factory(removed_documents_key, data_lake_key=data_lake_key),
-        documents_factory(
-            document_key,
-            data_lake_key=data_lake_key,
-            partitions=document_partitions,
-            enable_table_refinement=with_table_refinement,
-            enable_figure_descriptions=with_figure_descriptions,
-        ),
+        documents_factory(document_key, data_lake_key=data_lake_key, partitions=document_partitions),
         nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
+        summary_nodes_factory(
+            AssetKey([asset_group, "summary_nodes"]),
+            document_key=document_key,
+            nodes_key=nodes_key,
+            partitions=document_partitions,
+        ),
     ]
-    if with_summary_nodes:
-        summary_nodes_key = AssetKey([asset_group, "summary_nodes"])
-        assets.append(
-            summary_nodes_factory(
-                summary_nodes_key, document_key=document_key, nodes_key=nodes_key, partitions=document_partitions
-            )
-        )
 
     observe_job = observe_source_job(observable_asset=observable_asset, source_location_name=ingestor)
     remove_job = materialize_asset_job(
@@ -119,25 +125,30 @@ def document_ingestion_pipeline_definitions(
     )
     teardown_job = knowledge_teardown_job(source_location_name=ingestor)
 
-    registration_sensors = _registration_sensors(ingestor, display_name, description)
+    announced_config = config or DocumentIngestionConfig.as_form(
+        llm_model=llm_model_name,
+        embedding_model=embedding_model_name,
+        vision_model=vision_model_name,
+        with_summary_nodes=with_summary_nodes,
+        with_table_refinement=with_table_refinement,
+        with_figure_descriptions=with_figure_descriptions,
+    )
+    registration_sensor = _registration_sensor(ingestor, display_name, description, announced_config)
 
-    # Deployment defaults. A database that names its own models overrides these per run; these are what a
-    # database created before models were configurable keeps using.
     llm_config = LLMConfig(model_name=llm_model_name)
     embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
 
     resources: dict = {
         "document_parser": DocumentParserResource(loader_type=document_parser_loader_type),
         "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config, embedding_config=embedding_config),
-        "summary_parser": RecursiveSummaryParserResource(llm_config=llm_config),
+        "summary_parser": RecursiveSummaryParserResource(),
         "data_lake_io_manager": RoutedS3DataLakeIOManager(encode_partition_keys=encode_partition_keys),
         "doc_store_io_manager": RoutedDocStoreIOManager(encode_partition_keys=encode_partition_keys),
         "vector_store_io_manager": VectorStoreIOManager(encode_partition_keys=encode_partition_keys),
         "data_lake_file_system": S3DataLakeFileSystemResource(),
+        "table_refinement": TableRefinementResource(),
         **default_io_manager_s3_datalake_resources(container_name=ingestor),
     }
-    if with_table_refinement:
-        resources["table_refinement"] = TableRefinementResource(llm_config=llm_config)
 
     return Definitions(
         assets=assets,
@@ -147,7 +158,7 @@ def document_ingestion_pipeline_definitions(
             nats_document_uploaded_sensor(observe_job, ingestor=ingestor),
             knowledge_teardown_sensor(teardown_job, ingestor=ingestor),
             run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job, require_bucket_tag=True),
-            *registration_sensors,
+            registration_sensor,
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
@@ -160,23 +171,25 @@ def document_ingestion_pipeline_definitions(
     )
 
 
-def _registration_sensors(
+def _registration_sensor(
     ingestor: str,
     display_name: LocaleString | None,
     description: LocaleString | None,
-) -> list:
-    """The self-registration sensor, for a custom ingestor only.
+    config: IngestorConfig,
+) -> SensorDefinition:
+    """The self-registration sensor that announces this pipeline's labels, form and schema to the API.
 
-    The platform's own ingestors are already in ``IngestorType`` and localized by the API, so they need
-    no row. A custom one is unknown to the API until this pipeline advertises it — and unlabelled it
-    could only ever render as a bare id in the selector, so its labels are required rather than optional.
+    The shipped pipeline registers like any custom one — the API learns what it can offer, and how a database of
+    it is configured, from the record alone. Only the shipped ingestor may leave the labels out, since the
+    platform carries translations for it; a custom one unlabelled could only ever render as a bare id.
     """
-    if ingestor in {ingestor_type.value for ingestor_type in IngestorType}:
-        return []
     if ingestor in IngestorEntity.reserved_ids():
         msg = f"Ingestor '{ingestor}' is reserved by the platform and cannot be claimed by a pipeline."
         raise ValueError(msg)
+    if ingestor == IngestorType.DOCUMENT_INGESTION.value:
+        display_name = display_name or LocaleString.from_i18n_path("lib.ingestors.document_ingestion.display_name")
+        description = description or LocaleString.from_i18n_path("lib.ingestors.document_ingestion.description")
     if display_name is None or description is None:
         msg = f"Custom ingestor '{ingestor}' needs a display_name and a description to be selectable."
         raise ValueError(msg)
-    return [ingestor_registration_sensor(ingestor, display_name, description)]
+    return ingestor_registration_sensor(Ingestor.from_config(ingestor, display_name, description, config))

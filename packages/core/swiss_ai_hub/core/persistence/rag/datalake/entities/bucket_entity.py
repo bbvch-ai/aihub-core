@@ -2,11 +2,13 @@ import re
 from typing import Self
 
 from bson import ObjectId
-from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringField, ValidationError
+from mongoengine import BooleanField, DictField, Document, EmbeddedDocumentField, StringField, ValidationError
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
+
+_RETIRED_MODEL_COLUMNS = ("llm_model", "embedding_model")
 
 
 class BucketEntity(Document):
@@ -31,12 +33,10 @@ class BucketEntity(Document):
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
     ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
-    # Models this database is ingested with. Unset on rows created before they were configurable; the
-    # pipeline falls back to its deployment defaults for those, so they keep ingesting unchanged.
-    llm_model = StringField(required=False, default=None)
-    # Immutable once set: the collection's vector dimension is derived from this model, and an existing
-    # collection cannot be re-dimensioned. Changing the embedding model means a new database.
-    embedding_model = StringField(required=False, default=None)
+    # The ingestor's own settings for this database, shaped by the form the ingestor announced and validated
+    # against its schema by the API. The pipeline reads it per run; a key it does not find falls back to the
+    # deployment default, which is what rows created before a knob existed keep using.
+    configuration = DictField(default=dict)
     # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
     deleting = BooleanField(default=False)
 
@@ -60,8 +60,7 @@ class BucketEntity(Document):
         auto_sync: bool = False,
         datalake_type: str = "s3",
         ingestor: str = IngestorType.UNASSIGNED.value,
-        llm_model: str | None = None,
-        embedding_model: str | None = None,
+        configuration: dict | None = None,
         db_alias: str = "default",
     ) -> Self:
         cls._validate_name(bucket_name, "bucket_name")
@@ -77,8 +76,7 @@ class BucketEntity(Document):
                 auto_sync=auto_sync,
                 datalake_type=datalake_type,
                 ingestor=ingestor,
-                llm_model=llm_model,
-                embedding_model=embedding_model,
+                configuration=configuration or {},
             )
             bucket.save()
             return bucket
@@ -139,6 +137,30 @@ class BucketEntity(Document):
             bucket.ingestor = ingestor
         bucket.save()
         return bucket
+
+    @classmethod
+    def carry_over_retired_model_columns(cls, db_alias: str = "default") -> int:
+        """Moves the retired ``llm_model`` / ``embedding_model`` columns into ``configuration`` under the same keys.
+
+        Idempotent and cheap on a reconciled collection, so both the API (at start) and the pipeline (on every
+        registration tick) run it: whichever side comes up first after an upgrade reconciles the rows before a
+        partition could read a legacy database with its models missing.
+        """
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            collection = SwitchedBucket._get_collection()
+        carried = 0
+        for row in collection.find({"$or": [{column: {"$exists": True}} for column in _RETIRED_MODEL_COLUMNS]}):
+            values = {
+                f"configuration.{column}": row[column]
+                for column in _RETIRED_MODEL_COLUMNS
+                if row.get(column) is not None and column not in row.get("configuration", {})
+            }
+            update: dict = {"$unset": {column: "" for column in _RETIRED_MODEL_COLUMNS}}
+            if values:
+                update["$set"] = values
+            collection.update_one({"_id": row["_id"]}, update)
+            carried += 1
+        return carried
 
     @classmethod
     def mark_deleting(cls, bucket_id: str, db_alias: str = "default") -> Self:

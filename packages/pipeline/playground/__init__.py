@@ -38,6 +38,7 @@ settings = DocumentIngestionPipelineSettings()
 _pipeline = document_ingestion_pipeline_definitions(
     embedding_model_name=settings.EMBEDDING_MODEL,
     llm_model_name=settings.LLM_MODEL,
+    vision_model_name=settings.VISION_MODEL,
     with_summary_nodes=settings.WITH_SUMMARY_NODES,
     with_table_refinement=settings.WITH_TABLE_REFINEMENT,
     with_figure_descriptions=settings.WITH_FIGURE_DESCRIPTIONS,

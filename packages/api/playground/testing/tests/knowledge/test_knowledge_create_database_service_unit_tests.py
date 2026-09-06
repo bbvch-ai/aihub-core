@@ -1,29 +1,136 @@
+from typing import Annotated, Self
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
 from mongoengine import DoesNotExist, NotUniqueError
+from pydantic import Field
+from swiss_ai_hub.core.form import Checkbox, Form, ModelSelect
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.ingestors import IngestorConfig
+from swiss_ai_hub.core.persistence import ConfigSpecsEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import Ingestor, IngestorType
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.routes.knowledge.dto.create_database_request import CreateDatabaseRequest
 from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
+from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 
 _SERVICE_MODULE = "swiss_ai_hub.api.routes.knowledge.knowledge_service"
 
 DATABASE = "researchdocs"
 
 
-@pytest.fixture(autouse=True)
-def _no_registered_custom_ingestors():
-    """The entity is Mongo-backed; stub it so these unit tests need no database."""
-    with patch(f"{_SERVICE_MODULE}.IngestorEntity") as ingestor_entity:
-        ingestor_entity.custom.return_value = []
-        ingestor_entity.is_selectable.side_effect = lambda ingestor_id: (
-            ingestor_id == IngestorType.DOCUMENT_INGESTION.value
+class _RagConfig(IngestorConfig):
+    """The shape the shipped pipeline announces: identity fields plus a model picker and a flag."""
+
+    embedding_model: Annotated[str | ModelSelect, Field(description="Embedding model")]
+    with_summaries: Annotated[bool | Checkbox | None, Field(description="Summaries")] = None
+
+    @classmethod
+    def as_form(cls) -> Self:
+        base = IngestorConfig.as_form()
+        return cls(
+            name=base.name,
+            description=base.description,
+            embedding_model=ModelSelect(
+                label=LocaleString(en="Embedding"), mode="embedding", value="embedding/default"
+            ),
+            with_summaries=Checkbox(label=LocaleString(en="Summaries"), value=True),
         )
+
+
+class _CrawlConfig(IngestorConfig):
+    """A second, differently shaped ingestor."""
+
+    crawl_depth: Annotated[int, Field(description="Depth")] = 2
+    llm_model: Annotated[str | ModelSelect, Field(description="Text model")]
+
+    @classmethod
+    def as_form(cls) -> Self:
+        base = IngestorConfig.as_form()
+        return cls(
+            name=base.name,
+            description=base.description,
+            llm_model=ModelSelect(label=LocaleString(en="Text"), mode="chat"),
+        )
+
+
+class _EnrichmentConfig(Form):
+    model: Annotated[str | ModelSelect, Field(description="Enrichment model")]
+
+
+class _SourceConfig(Form):
+    model: Annotated[str | ModelSelect, Field(description="Per-source embedding model")]
+
+
+class _NestedConfig(IngestorConfig):
+    """Model pickers inside a group and a repeater, as a pipeline with structured knobs would declare them."""
+
+    enrichment: Annotated[_EnrichmentConfig, Field(description="Enrichment")]
+    sources: Annotated[list[_SourceConfig], Field(description="Sources")]
+
+    @classmethod
+    def as_form(cls) -> Self:
+        base = IngestorConfig.as_form()
+        return cls(
+            name=base.name,
+            description=base.description,
+            enrichment=_EnrichmentConfig(model=ModelSelect(label=LocaleString(en="Model"), mode="chat")),
+            sources=[_SourceConfig(model=ModelSelect(label=LocaleString(en="Embedding"), mode="embedding"))],
+        )
+
+
+def _ingestor(ingestor_id: str, config: IngestorConfig) -> Ingestor:
+    return Ingestor.from_config(ingestor_id, LocaleString(en=ingestor_id), LocaleString(en="pipeline"), config)
+
+
+def _registered(ingestor: Ingestor) -> MagicMock:
+    """An ``IngestorEntity`` row as ``IngestorEntity.find`` returns it."""
+    entity = MagicMock()
+    entity.form = [element.model_dump() for element in ingestor.form]
+    entity.form_elements = ingestor.form
+    entity.config_specs = ConfigSpecsEntity.from_specs(ingestor.config_specs)
+    entity.to_ingestor.return_value = ingestor
+    return entity
+
+
+RAG = _ingestor(IngestorType.DOCUMENT_INGESTION.value, _RagConfig.as_form())
+CRAWLER = _ingestor("crawler", _CrawlConfig.as_form())
+NESTED = _ingestor("nested", _NestedConfig.as_form())
+
+
+@pytest.fixture(autouse=True)
+def registered_ingestors():
+    """The entity is Mongo-backed; stub it with two differently shaped ingestors so these tests need no database."""
+    labels_only = MagicMock(form=[], config_specs=None)
+    rows = {
+        RAG.id: _registered(RAG),
+        CRAWLER.id: _registered(CRAWLER),
+        NESTED.id: _registered(NESTED),
+        "stale": labels_only,
+    }
+    with patch(f"{_SERVICE_MODULE}.IngestorEntity") as ingestor_entity:
+        ingestor_entity.find.side_effect = lambda ingestor_id: rows.get(ingestor_id)
+        ingestor_entity.all.return_value = [RAG, CRAWLER]
         yield ingestor_entity
+
+
+@pytest.fixture(autouse=True)
+def _no_keycloak():
+    with patch(f"{_SERVICE_MODULE}.ConfigAuthorizationService.validate_for_user_or_raise", new_callable=AsyncMock):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def models():
+    """LiteLLM as ``ModelService`` serves it: one chat and one embedding model."""
+    chat = MagicMock(model_info=MagicMock(mode="chat", output_vector_size=None))
+    embedding = MagicMock(model_info=MagicMock(mode="embedding", output_vector_size=1024))
+    by_name = {"text-generation/pick": chat, "embedding/default": embedding, "embedding/pick": embedding}
+    with patch(f"{_SERVICE_MODULE}.ModelService.get_model_by_name", new_callable=AsyncMock) as get_model:
+        get_model.side_effect = lambda user, name: by_name[name]
+        yield get_model
 
 
 def _user() -> MagicMock:
@@ -33,11 +140,21 @@ def _user() -> MagicMock:
     return user
 
 
-def _custom_ingestor() -> Ingestor:
-    return Ingestor(
-        id="acme_rag",
-        display_name=LocaleString(en="Acme RAG"),
-        description=LocaleString(en="Acme's custom ingestion pipeline"),
+def _rag_request(**overrides) -> CreateDatabaseRequest:
+    configuration = {
+        "name": {"en": "Research Docs"},
+        "description": {"en": "Papers"},
+        "embedding_model": "embedding/default",
+        **overrides,
+    }
+    return CreateDatabaseRequest(ingestor=RAG.id, configuration=configuration)
+
+
+def _created_bucket(
+    configuration: dict | None = None, ingestor: str = IngestorType.DOCUMENT_INGESTION.value
+) -> MagicMock:
+    return MagicMock(
+        db_name=DATABASE, bucket_name=DATABASE, id="abc123", ingestor=ingestor, configuration=configuration or {}
     )
 
 
@@ -59,29 +176,12 @@ def s3_service():
 class TestCreateDatabase:
     @pytest.mark.asyncio
     async def test_creates_bucket_with_rag_ingestor(self, locale_handler, s3_service):
-        created_bucket = MagicMock(
-            db_name=DATABASE,
-            bucket_name=DATABASE,
-            ingestor=IngestorType.DOCUMENT_INGESTION.value,
-            llm_model=None,
-            embedding_model=None,
-        )
-        with (
-            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
-        ):
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = created_bucket
+            bucket_cls.create_bucket.return_value = _created_bucket()
 
             response = await KnowledgeService.create_database(
-                DATABASE,
-                CreateDatabaseRequest(display_name="Research Docs"),
-                locale_handler,
-                s3_service,
-                _user(),
-                llm_config=None,
+                DATABASE, _rag_request(), locale_handler, s3_service, _user()
             )
 
         s3_service.ensure_bucket_with_cors.assert_called_once_with(DATABASE)
@@ -92,16 +192,11 @@ class TestCreateDatabase:
         assert response.ingestor == IngestorType.DOCUMENT_INGESTION.value
 
     @pytest.mark.asyncio
-    async def test_rejects_ingestor_that_is_not_self_service_selectable(self, locale_handler, s3_service):
+    async def test_rejects_an_unregistered_ingestor(self, locale_handler, s3_service):
         with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             with pytest.raises(HTTPException) as exc_info:
                 await KnowledgeService.create_database(
-                    DATABASE,
-                    CreateDatabaseRequest(ingestor=IngestorType.DEFAULT_RAG),
-                    locale_handler,
-                    s3_service,
-                    _user(),
-                    llm_config=None,
+                    DATABASE, CreateDatabaseRequest(ingestor="never_registered"), locale_handler, s3_service, _user()
                 )
 
         assert exc_info.value.status_code == 400
@@ -114,9 +209,7 @@ class TestCreateDatabase:
             bucket_cls.get_bucket_by_bucket_name.return_value = MagicMock()
 
             with pytest.raises(HTTPException) as exc_info:
-                await KnowledgeService.create_database(
-                    DATABASE, CreateDatabaseRequest(), locale_handler, s3_service, _user(), llm_config=None
-                )
+                await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, _user())
 
         assert exc_info.value.status_code == 409
         bucket_cls.create_bucket.assert_not_called()
@@ -127,22 +220,14 @@ class TestCreateDatabase:
         self, locale_handler, s3_service
     ):
         """A partially-provisioned container and its row must never outlive a failed create."""
-        created_bucket = MagicMock(id="abc123")
         s3_service.ensure_bucket_with_cors.side_effect = RuntimeError("s3 down")
 
-        with (
-            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
-        ):
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = created_bucket
+            bucket_cls.create_bucket.return_value = _created_bucket()
 
             with pytest.raises(RuntimeError):
-                await KnowledgeService.create_database(
-                    DATABASE, CreateDatabaseRequest(), locale_handler, s3_service, _user(), llm_config=None
-                )
+                await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, _user())
 
             s3_service.delete_container.assert_called_once_with(DATABASE)
             bucket_cls.delete_bucket.assert_called_once_with("abc123")
@@ -151,69 +236,16 @@ class TestCreateDatabase:
     async def test_concurrent_create_loses_the_unique_index_race_with_409(self, locale_handler, s3_service):
         """Two admins passing the existence check before either saves: the unique index serialises them,
         and the loser must get a 409 without ever provisioning storage."""
-        with (
-            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
-        ):
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
             bucket_cls.create_bucket.side_effect = NotUniqueError
 
             with pytest.raises(HTTPException) as exc_info:
-                await KnowledgeService.create_database(
-                    DATABASE, CreateDatabaseRequest(), locale_handler, s3_service, _user(), llm_config=None
-                )
+                await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, _user())
 
         assert exc_info.value.status_code == 409
         s3_service.ensure_bucket_with_cors.assert_not_called()
         bucket_cls.delete_bucket.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_accepts_a_custom_ingestor_registered_by_a_deployment(
-        self, locale_handler, s3_service, _no_registered_custom_ingestors
-    ):
-        """A pipeline that registered itself in the DB is selectable, so create_database must accept it."""
-        _no_registered_custom_ingestors.is_selectable.side_effect = lambda ingestor_id: ingestor_id == "acme_rag"
-        created_bucket = MagicMock(
-            db_name="acmedb", bucket_name="acmedb", ingestor="acme_rag", llm_model=None, embedding_model=None
-        )
-
-        with (
-            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
-        ):
-            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = created_bucket
-
-            await KnowledgeService.create_database(
-                "acmedb",
-                CreateDatabaseRequest(ingestor="acme_rag"),
-                locale_handler,
-                s3_service,
-                _user(),
-                llm_config=None,
-            )
-
-        assert bucket_cls.create_bucket.call_args.kwargs["ingestor"] == "acme_rag"
-
-    @pytest.mark.asyncio
-    async def test_rejects_an_unregistered_ingestor(self, locale_handler, s3_service):
-        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
-            with pytest.raises(HTTPException) as exc_info:
-                await KnowledgeService.create_database(
-                    DATABASE,
-                    CreateDatabaseRequest(ingestor="never_registered"),
-                    locale_handler,
-                    s3_service,
-                    _user(),
-                    None,
-                )
-
-        assert exc_info.value.status_code == 400
-        bucket_cls.create_bucket.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_rejects_name_taken_by_an_existing_storage_container(self, locale_handler, s3_service):
@@ -225,35 +257,232 @@ class TestCreateDatabase:
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
 
             with pytest.raises(HTTPException) as exc_info:
-                await KnowledgeService.create_database(
-                    "dagster", CreateDatabaseRequest(), locale_handler, s3_service, _user(), llm_config=None
-                )
+                await KnowledgeService.create_database("dagster", _rag_request(), locale_handler, s3_service, _user())
 
         assert exc_info.value.status_code == 409
         bucket_cls.create_bucket.assert_not_called()
         s3_service.ensure_bucket_with_cors.assert_not_called()
 
 
+class TestAnnouncedConfiguration:
+    """The database's configuration is validated against the form its ingestor announced, like an agent instance."""
+
+    @pytest.mark.asyncio
+    async def test_identity_fields_land_on_the_row_and_the_knobs_in_the_configuration(self, locale_handler, s3_service):
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            bucket_cls.create_bucket.return_value = _created_bucket({"embedding_model": "embedding/default"})
+
+            response = await KnowledgeService.create_database(
+                DATABASE, _rag_request(with_summaries=False), locale_handler, s3_service, _user()
+            )
+
+        kwargs = bucket_cls.create_bucket.call_args.kwargs
+        assert kwargs["name"].en == "Research Docs"
+        assert kwargs["configuration"] == {"embedding_model": "embedding/default", "with_summaries": False}
+        assert response.configuration == {"embedding_model": "embedding/default"}
+
+    @pytest.mark.asyncio
+    async def test_a_configuration_that_does_not_match_the_form_is_rejected_naming_the_field(
+        self, locale_handler, s3_service
+    ):
+        """Accepted-when #2 of #1822."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE, _rag_request(with_summaries="sometimes"), locale_handler, s3_service, _user()
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "with_summaries" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_blank_name_is_rejected(self, locale_handler, s3_service):
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE, _rag_request(name={"en": ""}), locale_handler, s3_service, _user()
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "name" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_two_ingestors_with_different_forms_coexist(self, locale_handler, s3_service):
+        """Accepted-when #4 of #1822: each database is held to its own ingestor's form, not a platform-wide one."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            bucket_cls.create_bucket.return_value = _created_bucket(ingestor="crawler")
+
+            await KnowledgeService.create_database(
+                "sites",
+                CreateDatabaseRequest(
+                    ingestor="crawler",
+                    configuration={
+                        "name": {"en": "Sites"},
+                        "description": {"en": "Crawled"},
+                        "crawl_depth": 5,
+                        "llm_model": "text-generation/pick",
+                    },
+                ),
+                locale_handler,
+                s3_service,
+                _user(),
+            )
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    "sites2",
+                    CreateDatabaseRequest(
+                        ingestor=RAG.id,
+                        configuration={"name": {"en": "Sites"}, "description": {"en": "x"}, "crawl_depth": 5},
+                    ),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert bucket_cls.create_bucket.call_args.kwargs["configuration"]["crawl_depth"] == 5
+        assert exc_info.value.status_code == 400
+        assert "embedding_model" in exc_info.value.detail
+
+
+class TestModelSelection:
+    """Every announced model picker is checked against LiteLLM, whatever the pipeline named the field."""
+
+    @pytest.mark.asyncio
+    async def test_a_picker_inside_a_group_and_inside_a_repeater_is_checked_too(self, locale_handler, s3_service):
+        """A ``ModelSelect`` nested in structured knobs must not bypass the mode and access checks."""
+        identity = {"name": {"en": "Nested"}, "description": {"en": "x"}}
+        wrong_group = {**identity, "enrichment": {"model": "embedding/pick"}, "sources": []}
+        wrong_repeater = {
+            **identity,
+            "enrichment": {"model": "text-generation/pick"},
+            "sources": [{"model": "text-generation/pick"}],
+        }
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as group_error:
+                await KnowledgeService.create_database(
+                    "nested",
+                    CreateDatabaseRequest(ingestor="nested", configuration=wrong_group),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+            with pytest.raises(HTTPException) as repeater_error:
+                await KnowledgeService.create_database(
+                    "nested",
+                    CreateDatabaseRequest(ingestor="nested", configuration=wrong_repeater),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert "enrichment.model" in group_error.value.detail
+        assert "sources.0.model" in repeater_error.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_chosen_model_is_checked_for_the_pickers_mode(self, models, locale_handler, s3_service):
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            bucket_cls.create_bucket.return_value = _created_bucket()
+
+            await KnowledgeService.create_database(
+                DATABASE, _rag_request(embedding_model="embedding/pick"), locale_handler, s3_service, _user()
+            )
+
+        models.assert_called_once()
+        assert models.call_args.args[1] == "embedding/pick"
+
+    @pytest.mark.asyncio
+    async def test_rejects_a_chat_model_in_an_embedding_picker(self, locale_handler, s3_service):
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE, _rag_request(embedding_model="text-generation/pick"), locale_handler, s3_service, _user()
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "embedding_model" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_rejects_an_embedding_model_that_declares_no_output_width(self, models, locale_handler, s3_service):
+        """The collection's dimension is derived from it, so an undeclared width cannot be guessed."""
+        models.side_effect = lambda user, name: MagicMock(
+            model_info=MagicMock(mode="embedding", output_vector_size=None)
+        )
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, _user())
+
+        assert exc_info.value.status_code == 400
+        assert "output_vector_size" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+
+class TestAnnouncedFormIsRequired:
+    @pytest.mark.asyncio
+    async def test_an_ingestor_that_announced_no_form_is_rejected_not_served_a_500(self, locale_handler, s3_service):
+        """A row left by a pre-announcement pipeline image has labels but no schema to validate against."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE,
+                    CreateDatabaseRequest(ingestor="stale", configuration={}),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "configuration form" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    def test_the_stored_alias_free_form_dicts_drive_the_authorization_walk(self):
+        """The entity stores elements without ``$``-aliases; the walk must rehydrate exactly those dicts."""
+        ConfigAuthorizationService.validate_config_authorization_or_raise(
+            form_elements=_registered(RAG).form,
+            config={"name": {"en": "x"}, "embedding_model": "embedding/default", "with_summaries": True},
+            access_checker=MagicMock(),
+            accessible_tenant_ids=set(),
+            t=MagicMock(),
+        )
+
+
 class TestGetIngestors:
-    def test_offers_only_self_service_ingestors_with_localized_labels(self):
+    def test_offers_every_registered_ingestor_with_its_labels_and_localized_form(self, registered_ingestors):
         t = ApiLocaleHandler("en")
 
         ingestors = KnowledgeService.get_ingestors(t)
 
-        assert [ingestor.name for ingestor in ingestors] == [IngestorType.DOCUMENT_INGESTION.value]
-        assert ingestors[0].display_name == "Generic Document Ingestion Pipeline"
-        assert ingestors[0].description
+        assert [ingestor.name for ingestor in ingestors] == [IngestorType.DOCUMENT_INGESTION.value, "crawler"]
+        assert ingestors[0].display_name == IngestorType.DOCUMENT_INGESTION.value
+        assert [element.name for element in ingestors[0].form] == [
+            "name",
+            "description",
+            "embedding_model",
+            "with_summaries",
+        ]
+        assert ingestors[0].form[0].label == "Name *"
 
-    def test_appends_registered_custom_ingestors_with_their_own_labels(self, _no_registered_custom_ingestors):
-        _no_registered_custom_ingestors.custom.return_value = [_custom_ingestor()]
-        t = ApiLocaleHandler("en")
+    def test_offers_nothing_while_no_pipeline_has_registered(self, registered_ingestors):
+        """Without a running pipeline nothing would ingest the database, so nothing is offered."""
+        registered_ingestors.all.return_value = []
 
-        ingestors = KnowledgeService.get_ingestors(t)
-
-        assert [ingestor.name for ingestor in ingestors] == [IngestorType.DOCUMENT_INGESTION.value, "acme_rag"]
-        custom = ingestors[-1]
-        assert custom.display_name == "Acme RAG"
-        assert custom.description == "Acme's custom ingestion pipeline"
+        assert KnowledgeService.get_ingestors(ApiLocaleHandler("en")) == []
 
 
 def _tenant_user() -> MagicMock:
@@ -274,24 +503,12 @@ class TestCreateGrantsAccess:
             patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
             patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity") as user_role_cls,
             patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = MagicMock(
-                db_name=DATABASE,
-                bucket_name=DATABASE,
-                id="abc123",
-                ingestor=IngestorType.DOCUMENT_INGESTION.value,
-                llm_model=None,
-                embedding_model=None,
-            )
+            bucket_cls.create_bucket.return_value = _created_bucket()
             role_cls.objects.return_value.first.return_value = None
 
-            await KnowledgeService.create_database(
-                DATABASE, CreateDatabaseRequest(), locale_handler, s3_service, user, llm_config=None
-            )
+            await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, user)
 
         tenant_cls.grant_access_rule.assert_called_once_with("tenant-1", f"aihub.admin.knowledge.{DATABASE}")
         role_cls.create_tenant_role.assert_called_once()
@@ -307,24 +524,12 @@ class TestCreateGrantsAccess:
             patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
             patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity"),
             patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = MagicMock(
-                db_name=DATABASE,
-                bucket_name=DATABASE,
-                id="abc123",
-                ingestor=IngestorType.DOCUMENT_INGESTION.value,
-                llm_model=None,
-                embedding_model=None,
-            )
+            bucket_cls.create_bucket.return_value = _created_bucket()
             role_cls.objects.return_value.first.return_value = None
 
-            await KnowledgeService.create_database(
-                DATABASE, CreateDatabaseRequest(), locale_handler, s3_service, user, llm_config=None
-            )
+            await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, user)
 
         tenant_cls.grant_access_rule.assert_not_called()
 
@@ -337,26 +542,14 @@ class TestCreateGrantsAccess:
             patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
             patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity"),
             patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = MagicMock(
-                db_name=DATABASE,
-                bucket_name=DATABASE,
-                id="abc123",
-                ingestor=IngestorType.DOCUMENT_INGESTION.value,
-                llm_model=None,
-                embedding_model=None,
-            )
+            bucket_cls.create_bucket.return_value = _created_bucket()
             role_cls.objects.return_value.first.return_value = None
             tenant_cls.grant_access_rule.side_effect = RuntimeError("tenant store unavailable")
 
             with pytest.raises(HTTPException) as exc_info:
-                await KnowledgeService.create_database(
-                    DATABASE, CreateDatabaseRequest(), locale_handler, s3_service, user, llm_config=None
-                )
+                await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, user)
 
         assert exc_info.value.status_code == 500
         s3_service.delete_container.assert_called_once_with(DATABASE)
@@ -368,134 +561,11 @@ class TestCreateGrantsAccess:
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
             patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
             patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity") as user_role_cls,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = MagicMock(
-                db_name=DATABASE,
-                bucket_name=DATABASE,
-                id="abc123",
-                ingestor=IngestorType.DOCUMENT_INGESTION.value,
-                llm_model=None,
-                embedding_model=None,
-            )
+            bucket_cls.create_bucket.return_value = _created_bucket()
 
-            await KnowledgeService.create_database(
-                DATABASE, CreateDatabaseRequest(), locale_handler, s3_service, _user(), llm_config=None
-            )
+            await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, _user())
 
         tenant_cls.grant_access_rule.assert_not_called()
         user_role_cls.add_roles.assert_not_called()
-
-
-class TestModelSelection:
-    """A database records the models it is ingested with, and refuses ones that cannot do the job."""
-
-    @pytest.mark.asyncio
-    async def test_stores_the_chosen_models_on_the_database(self, locale_handler, s3_service):
-        chat = MagicMock(model_info=MagicMock(mode="chat", output_vector_size=None))
-        embedding = MagicMock(model_info=MagicMock(mode="embedding", output_vector_size=1024))
-        by_name = {"text-generation/pick": chat, "embedding/pick": embedding}
-
-        with (
-            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.ModelService.get_model_by_name", new_callable=AsyncMock) as get_model,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
-        ):
-            get_model.side_effect = lambda user, name: by_name[name]
-            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = MagicMock(
-                db_name=DATABASE,
-                bucket_name=DATABASE,
-                ingestor=IngestorType.DOCUMENT_INGESTION.value,
-                llm_model="text-generation/pick",
-                embedding_model="embedding/pick",
-            )
-
-            response = await KnowledgeService.create_database(
-                DATABASE,
-                CreateDatabaseRequest(llm_model="text-generation/pick", embedding_model="embedding/pick"),
-                locale_handler,
-                s3_service,
-                _user(),
-                llm_config=None,
-            )
-
-        assert bucket_cls.create_bucket.call_args.kwargs["llm_model"] == "text-generation/pick"
-        assert bucket_cls.create_bucket.call_args.kwargs["embedding_model"] == "embedding/pick"
-        assert response.embedding_model == "embedding/pick"
-
-    @pytest.mark.asyncio
-    async def test_rejects_a_chat_model_in_the_embedding_slot(self, locale_handler, s3_service):
-        with (
-            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.ModelService.get_model_by_name", new_callable=AsyncMock) as get_model,
-        ):
-            get_model.return_value = MagicMock(model_info=MagicMock(mode="chat"))
-            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-
-            with pytest.raises(HTTPException) as exc_info:
-                await KnowledgeService.create_database(
-                    DATABASE,
-                    CreateDatabaseRequest(embedding_model="text-generation/gemma"),
-                    locale_handler,
-                    s3_service,
-                    _user(),
-                    llm_config=None,
-                )
-
-        assert exc_info.value.status_code == 400
-        bucket_cls.create_bucket.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_rejects_an_embedding_model_that_declares_no_output_width(self, locale_handler, s3_service):
-        """The collection's dimension is derived from it, so an undeclared width cannot be guessed."""
-        with (
-            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.ModelService.get_model_by_name", new_callable=AsyncMock) as get_model,
-        ):
-            get_model.return_value = MagicMock(model_info=MagicMock(mode="embedding", output_vector_size=None))
-            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-
-            with pytest.raises(HTTPException) as exc_info:
-                await KnowledgeService.create_database(
-                    DATABASE,
-                    CreateDatabaseRequest(embedding_model="embedding/unknown-width"),
-                    locale_handler,
-                    s3_service,
-                    _user(),
-                    llm_config=None,
-                )
-
-        assert exc_info.value.status_code == 400
-        assert "output_vector_size" in exc_info.value.detail
-        bucket_cls.create_bucket.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_a_database_with_no_choice_follows_the_deployment_default(self, locale_handler, s3_service):
-        with (
-            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.ModelService.get_model_by_name", new_callable=AsyncMock) as get_model,
-            patch.object(
-                KnowledgeService, "_create_and_translate_locale_entity", new_callable=AsyncMock, return_value=None
-            ),
-        ):
-            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
-            bucket_cls.create_bucket.return_value = MagicMock(
-                db_name=DATABASE,
-                bucket_name=DATABASE,
-                ingestor=IngestorType.DOCUMENT_INGESTION.value,
-                llm_model=None,
-                embedding_model=None,
-            )
-
-            await KnowledgeService.create_database(
-                DATABASE, CreateDatabaseRequest(), locale_handler, s3_service, _user(), llm_config=None
-            )
-
-        get_model.assert_not_called()
-        assert bucket_cls.create_bucket.call_args.kwargs["llm_model"] is None

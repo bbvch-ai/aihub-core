@@ -11,11 +11,10 @@ from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
     CronStartEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.form import FormkitElement
+from swiss_ai_hub.core.form import ConfigSpecs, FormkitElement
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MilvusSettings, MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.publishers import NCPublisher
@@ -168,7 +167,7 @@ class AgentRunner(HealthCheckProvider):
 
         network_graph = WorkflowVisualizer(agent=self.agent_type).build()
 
-        agent_config_specs = AgentConfigSpecs.from_agent_config(self.published_config, self.agent_class)
+        agent_config_specs = ConfigSpecs.from_form(self.published_config, self.agent_class)
 
         templates_data: list[TemplateData] = [t.to_template_data(self.published_config) for t in self.templates]
 

@@ -19,10 +19,10 @@ from pydantic import TypeAdapter
 from swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event import (
     AgentClassDiscoveryResponseEvent,
 )
-from swiss_ai_hub.core.events.agent.discovery.agent_config_specs_entity import AgentConfigSpecsEntity
 from swiss_ai_hub.core.events.discovery.event_specs import EventSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ class AgentClassEntity(Document):
     icon = StringField(required=True, default="mage:robot", description="Icon for this agent class.")
 
     form = ListField(DictField(), default=list, description="FormKit elements defining the agent configuration form.")
-    agent_config_specs = EmbeddedDocumentField(AgentConfigSpecsEntity, required=False)
+    agent_config_specs = EmbeddedDocumentField(ConfigSpecsEntity, required=False)
     is_conversational = BooleanField(required=True)
     # Defaulted, unlike is_conversational: classes discovered before this field existed have no stored
     # value, and reads must not yield None into the non-optional DTO field. Self-heals on next discovery.
@@ -130,7 +130,7 @@ class AgentClassEntity(Document):
         description: LocaleStringEntity | None,
         icon: str,
         form: list[dict],
-        agent_config_specs: AgentConfigSpecsEntity | None,
+        agent_config_specs: ConfigSpecsEntity | None,
         is_conversational: bool,
         is_schedulable: bool,
         start_events: list[EventSpec],
@@ -181,7 +181,7 @@ class AgentClassEntity(Document):
         # Store WITHOUT aliases - MongoDB doesn't allow keys starting with '$'
         # Alias conversion happens in the API layer when serving to frontend
         form_dicts = [element.model_dump() for element in discovery.form]
-        agent_config_specs_entity = AgentConfigSpecsEntity.from_specs(discovery.agent_config_specs)
+        agent_config_specs_entity = ConfigSpecsEntity.from_specs(discovery.agent_config_specs)
 
         start_events_entities = [EventSpec.from_specs(event) for event in discovery.start_events]
         stop_events_entities = [EventSpec.from_specs(event) for event in discovery.stop_events]

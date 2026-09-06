@@ -385,7 +385,7 @@ export type AgentClassDto = {
   /**
    * Validation specification including the JSON schema for form submissions. Used by ModelCreationService to create Pydantic models for validation.
    */
-  agent_config_specs: AgentConfigSpecs;
+  agent_config_specs: ConfigSpecs;
   /**
    * Start Events
    *
@@ -516,35 +516,6 @@ export type AgentConfigDto = {
     | ToggleSwitch
     | VectorStoreInput
   > | null;
-};
-
-/**
- * AgentConfigSpecs
- *
- * Validation specification for agent configuration form submissions.
- *
- * Contains ONLY the agent class identifier and JSON schema for validation.
- * Instance-level fields (name, description, icon, agent_id) are stored
- * separately in AgentConfigEntityDocument and provided by the Agent class.
- *
- * The JSON schema is generated from the agent's configurable fields via
- * to_configurable_submission_model() and is used to validate form submissions.
- */
-export type AgentConfigSpecs = {
-  /**
-   * Agent Class
-   *
-   * The class name of the agent.
-   */
-  agent_class: string;
-  /**
-   * Agent Config Schema
-   *
-   * JSON schema for validating form submissions. Generated from the agent's configurable fields via to_configurable_submission_model().
-   */
-  agent_config_schema?: {
-    [key: string]: unknown;
-  };
 };
 
 /**
@@ -3626,6 +3597,31 @@ export type CompletionUsage = {
 };
 
 /**
+ * ConfigSpecs
+ *
+ * Validation specification for a form-duality configuration, as announced by the service that owns it.
+ *
+ * Carries only the JSON schema the API validates submissions against, so a configuration class defined in
+ * an agent, process or pipeline container can be enforced by the API without that class being installed there.
+ */
+export type ConfigSpecs = {
+  /**
+   * Config Class
+   *
+   * The class name of the configuration this schema describes.
+   */
+  config_class?: string;
+  /**
+   * Config Schema
+   *
+   * JSON schema for validating form submissions. Generated from the configuration's configurable fields via to_configurable_submission_model().
+   */
+  config_schema?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -3994,35 +3990,19 @@ export type CreateAgentInstanceRequest = {
  */
 export type CreateDatabaseRequest = {
   /**
-   * Display Name
-   *
-   * The display name of the knowledge database in the user's locale.
-   */
-  display_name?: string | null;
-  /**
-   * Description
-   *
-   * A short description of the knowledge database in the user's locale.
-   */
-  description?: string | null;
-  /**
    * Ingestor
    *
    * The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.
    */
   ingestor?: string;
   /**
-   * Llm Model
+   * Configuration
    *
-   * Text-generation model used to summarize, refine tables and describe figures for this database. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=chat.
+   * The database's configuration as submitted through the ingestor's announced form: its multilingual name and description plus every knob the pipeline declares. Validated against the ingestor's schema.
    */
-  llm_model?: string | null;
-  /**
-   * Embedding Model
-   *
-   * Embedding model this database's documents are indexed with. Cannot be changed after creation. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=embedding.
-   */
-  embedding_model?: string | null;
+  configuration?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -4548,17 +4528,13 @@ export type DatabaseResponse = {
    */
   ingestor: string;
   /**
-   * Llm Model
+   * Configuration
    *
-   * Text-generation model, or None to follow the deployment default.
+   * The ingestor's settings for this database, as validated against its announced schema.
    */
-  llm_model?: string | null;
-  /**
-   * Embedding Model
-   *
-   * Embedding model, or None to follow the deployment default.
-   */
-  embedding_model?: string | null;
+  configuration?: {
+    [key: string]: unknown;
+  };
   /**
    * Display Name
    *
@@ -6043,7 +6019,7 @@ export type FullProcessInstanceDto = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Form
    *
@@ -7867,6 +7843,45 @@ export type IngestorDto = {
    * Localized description of what the pipeline does.
    */
   description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database of this ingestor is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
 };
 
 /**
@@ -12128,7 +12143,7 @@ export type ProcessClassDto = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Human Inputs
    *
@@ -12189,35 +12204,6 @@ export type ProcessConfigDto = {
    * The icon representing the process.
    */
   icon?: string;
-};
-
-/**
- * ProcessConfigSpecs
- *
- * Validation specification for process configuration form submissions.
- *
- * Contains the process class identifier and JSON schema for validation.
- * Instance-level fields (name, description, icon, process_id) are stored
- * separately in ProcessConfigEntityDocument and provided by the Process class.
- *
- * The JSON schema is generated from the process's configurable fields via
- * to_configurable_submission_model() and is used to validate form submissions.
- */
-export type ProcessConfigSpecs = {
-  /**
-   * Process Class
-   *
-   * The class name of the process.
-   */
-  process_class?: string;
-  /**
-   * Process Config Schema
-   *
-   * JSON schema for validating form submissions. Generated from the process's configurable fields via to_configurable_submission_model().
-   */
-  process_config_schema?: {
-    [key: string]: unknown;
-  };
 };
 
 /**
@@ -17260,7 +17246,7 @@ export type AgentClassDtoWritable = {
   /**
    * Validation specification including the JSON schema for form submissions. Used by ModelCreationService to create Pydantic models for validation.
    */
-  agent_config_specs: AgentConfigSpecs;
+  agent_config_specs: ConfigSpecs;
   /**
    * Start Events
    *
@@ -19775,7 +19761,7 @@ export type FullProcessInstanceDtoWritable = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Form
    *
@@ -20694,6 +20680,69 @@ export type IconSelectorWritable = {
    */
   placeholder?: LocaleString | string | null;
   [key: string]: unknown;
+};
+
+/**
+ * IngestorDTO
+ */
+export type IngestorDtoWritable = {
+  /**
+   * Name
+   *
+   * Ingestor identifier, as served by GET /knowledge/ingestors.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the ingestion pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of what the pipeline does.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database of this ingestor is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
 };
 
 /**
@@ -23239,7 +23288,7 @@ export type ProcessClassDtoWritable = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Human Inputs
    *

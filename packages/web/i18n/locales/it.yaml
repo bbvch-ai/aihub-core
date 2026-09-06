@@ -548,6 +548,12 @@ knowledge:
     create_error: Creazione della collezione non riuscita. Riprova.
     create_database:
       title: Crea database di conoscenza
+      success: Base di conoscenza creata
+      error: Impossibile creare la base di conoscenza
+      no_ingestors: Nessuna pipeline di ingestione disponibile. Assicurati che almeno
+        una pipeline sia in esecuzione.
+      steps:
+        basic_info: Informazioni di base
     edit:
       title: Modifica collezione
     database:
@@ -563,14 +569,6 @@ knowledge:
       label: Pipeline di ingestione
       placeholder: Seleziona una pipeline di ingestione
       help: La pipeline che elabora i documenti caricati in questo database.
-    llm_model:
-      label: Modello di testo
-      placeholder: Usa il valore predefinito dell'installazione
-      help: Genera riassunti, affina le tabelle e descrive le figure di questo database.
-    embedding_model:
-      label: Modello di embedding
-      placeholder: Usa il valore predefinito dell'installazione
-      help: Indicizza i documenti di questo database. Non modificabile dopo la creazione.
     folder_name:
       label: Nome collezione
       placeholder: mia-collezione

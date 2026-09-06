@@ -292,6 +292,14 @@ async def initialize_knowledge_buckets() -> None:
     logger.info("Knowledge bucket initialization completed successfully")
 
 
+@no_trace
+async def carry_over_bucket_model_columns() -> None:
+    """Reconciles knowledge databases created before ingestors announced their form; see ``BucketEntity``."""
+    carried = BucketEntity.carry_over_retired_model_columns()
+    if carried:
+        logger.info(f"Carried the retired model columns of {carried} knowledge database(s) into their configuration")
+
+
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:
     """Ensure a bucket exists in the database with the correct ingestor, creating it if necessary.
 

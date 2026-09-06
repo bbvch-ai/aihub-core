@@ -549,6 +549,12 @@ knowledge:
       erneut.
     create_database:
       title: Wissensdatenbank erstellen
+      success: Wissensdatenbank erstellt
+      error: Die Wissensdatenbank konnte nicht erstellt werden
+      no_ingestors: Keine Ingestion-Pipeline verfügbar. Stellen Sie sicher, dass mindestens
+        eine Pipeline läuft.
+      steps:
+        basic_info: Grundinformationen
     edit:
       title: Sammlung bearbeiten
     database:
@@ -564,16 +570,6 @@ knowledge:
       label: Ingestion-Pipeline
       placeholder: Ingestion-Pipeline auswählen
       help: Die Pipeline, die in diese Datenbank hochgeladene Dokumente verarbeitet.
-    llm_model:
-      label: Textmodell
-      placeholder: Standard der Installation verwenden
-      help: Erstellt Zusammenfassungen, verfeinert Tabellen und beschreibt Abbildungen
-        dieser Datenbank.
-    embedding_model:
-      label: Embedding-Modell
-      placeholder: Standard der Installation verwenden
-      help: Indexiert die Dokumente dieser Datenbank. Nach der Erstellung nicht mehr
-        änderbar.
     folder_name:
       label: Sammlungsname
       placeholder: meine-sammlung
