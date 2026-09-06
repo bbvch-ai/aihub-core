@@ -202,7 +202,7 @@ const {
   classes: ingestors,
   classField: 'name',
   idField: 'name',
-  initialClass: () => '',
+  initialClass: () => ingestors.value?.[0]?.name ?? '',
   locale,
 })
 
@@ -215,15 +215,11 @@ const visible = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
-watch(ingestors, (available) => {
-  if (!selectedClass.value && available?.length) {
-    selectedClass.value = available[0].name
-  }
-}, { immediate: true })
-
 watch(visible, async (isVisible) => {
   if (!isVisible) {
     formReady.value = false
+    databaseName.value = ''
+    resetForm()
     return
   }
   await nextTick()
@@ -244,8 +240,6 @@ const canSubmit = computed(
 
 function closeModal() {
   visible.value = false
-  databaseName.value = ''
-  resetForm()
 }
 
 function triggerFormSubmit() {

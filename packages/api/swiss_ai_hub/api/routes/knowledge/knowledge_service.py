@@ -12,7 +12,7 @@ from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
-from swiss_ai_hub.core.form import ConfigSpecs, FormkitElement, Group, ModelSelect
+from swiss_ai_hub.core.form import FormkitElement, Group, ModelSelect, Repeater
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
@@ -389,6 +389,12 @@ class KnowledgeService:
             value = config.get(name)
             if isinstance(element, Group) and isinstance(value, dict):
                 await KnowledgeService._validate_model_selections(element.children, value, user, f"{field_path}.")
+            elif isinstance(element, Repeater) and isinstance(value, list):
+                for index, item in enumerate(value):
+                    if isinstance(item, dict):
+                        await KnowledgeService._validate_model_selections(
+                            element.children, item, user, f"{field_path}.{index}."
+                        )
             elif isinstance(element, ModelSelect) and value is not None:
                 await KnowledgeService._validated_model(field_path, value, element.mode, user)
 
@@ -422,10 +428,13 @@ class KnowledgeService:
         immediately, before the pipeline's first lazy ingest.
         """
         ingestor = IngestorEntity.find(request.ingestor)
-        if ingestor is None:
+        if ingestor is None or ingestor.config_specs is None:
             raise HTTPException(
                 status_code=400,
-                detail=f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database.",
+                detail=(
+                    f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database: no running "
+                    "pipeline has announced it with a configuration form."
+                ),
             )
 
         try:
@@ -444,8 +453,7 @@ class KnowledgeService:
             )
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
-        config_specs = ingestor.config_specs.to_specs() if ingestor.config_specs else ConfigSpecs()
-        config_model = ModelCreationService.create_config_model(config_specs)
+        config_model = ModelCreationService.create_config_model(ingestor.config_specs.to_specs())
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=ingestor.form, config=config, user=user, t=t

@@ -1,8 +1,8 @@
 import logging
 from typing import Annotated
 
-from dagster import DefaultSensorStatus, SensorEvaluationContext, SkipReason, sensor
-from swiss_ai_hub.core.persistence import Ingestor, IngestorEntity
+from dagster import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext, SkipReason, sensor
+from swiss_ai_hub.core.persistence import BucketEntity, Ingestor, IngestorEntity
 
 from swiss_ai_hub.pipeline.util.bucket_utils import ensure_main_db_connection
 
@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 _REGISTRATION_INTERVAL_SECONDS = 300
 
 
-def ingestor_registration_sensor(ingestor: Annotated[Ingestor, "This pipeline's labels, form and schema"]):
+def ingestor_registration_sensor(
+    ingestor: Annotated[Ingestor, "This pipeline's labels, form and schema"],
+) -> SensorDefinition:
     """Advertises this pipeline as a selectable ingestor, with the form its databases are configured through.
 
     The API and the pipelines are separate containers, so a pipeline cannot hand the API anything
@@ -27,9 +29,12 @@ def ingestor_registration_sensor(ingestor: Annotated[Ingestor, "This pipeline's 
         description="Keeps this pipeline listed as a selectable ingestor, with its configuration form, for new "
         "knowledge databases.",
     )
-    def _sensor(context: SensorEvaluationContext):
+    def _sensor(context: SensorEvaluationContext) -> SkipReason:
         ensure_main_db_connection()
         IngestorEntity.upsert(ingestor)
+        carried = BucketEntity.carry_over_retired_model_columns()
+        if carried:
+            context.log.info(f"Carried the retired model columns of {carried} knowledge database(s) into configuration")
         return SkipReason(f"Ingestor '{ingestor.id}' is registered.")
 
     return _sensor

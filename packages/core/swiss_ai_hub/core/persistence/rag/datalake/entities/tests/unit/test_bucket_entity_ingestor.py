@@ -93,6 +93,48 @@ class TestIngestorDefault:
         assert BucketEntity.get_bucket_by_bucket_name("legacyknowledge").configuration == {}
 
 
+class TestCarryOverRetiredModelColumns:
+    def _insert_pre_announcement_row(self, mongo_connection, bucket_name: str, **columns) -> None:
+        mongo_connection[AIHubSettings().MONGO_MAIN_DB_NAME]["buckets"].insert_one(
+            {
+                "_id": ObjectId(),
+                "bucket_name": bucket_name,
+                "db_name": bucket_name,
+                "name": {"en": bucket_name},
+                "description": {"en": ""},
+                "ingestor": IngestorType.DOCUMENT_INGESTION.value,
+                **columns,
+            }
+        )
+
+    def test_the_retired_columns_become_configuration_keys_and_are_removed(self, mongo_connection):
+        self._insert_pre_announcement_row(
+            mongo_connection, "olddb", llm_model="text-generation/old", embedding_model="embedding/old"
+        )
+
+        carried = BucketEntity.carry_over_retired_model_columns()
+
+        raw = mongo_connection[AIHubSettings().MONGO_MAIN_DB_NAME]["buckets"].find_one({"bucket_name": "olddb"})
+        assert carried == 1
+        assert raw["configuration"] == {"llm_model": "text-generation/old", "embedding_model": "embedding/old"}
+        assert "llm_model" not in raw and "embedding_model" not in raw
+        assert BucketEntity.get_bucket_by_bucket_name("olddb").configuration["embedding_model"] == "embedding/old"
+
+    def test_a_null_column_is_dropped_without_writing_a_key(self, mongo_connection):
+        """``None`` meant "deployment default"; a missing key means the same, so nothing is carried."""
+        self._insert_pre_announcement_row(mongo_connection, "defaultsdb", llm_model=None, embedding_model=None)
+
+        BucketEntity.carry_over_retired_model_columns()
+
+        assert BucketEntity.get_bucket_by_bucket_name("defaultsdb").configuration == {}
+
+    def test_running_twice_is_a_no_op(self, mongo_connection):
+        self._insert_pre_announcement_row(mongo_connection, "olddb", embedding_model="embedding/old")
+        BucketEntity.carry_over_retired_model_columns()
+
+        assert BucketEntity.carry_over_retired_model_columns() == 0
+
+
 class TestUpdateBucket:
     def test_auto_sync_can_be_toggled_off(self):
         """A truthy check would swallow ``auto_sync=False`` and make the flag impossible to turn off."""

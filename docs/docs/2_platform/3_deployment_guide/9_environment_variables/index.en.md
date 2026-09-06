@@ -55,6 +55,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DOCUMENT_INGESTION_LLM_MODEL` | `DocumentIngestionPipelineSettings.LLM_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used for summaries, table refinement and figure descriptions. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_HOUR` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_HOUR` | `document_ingestion_pipeline` | Hour of the daily per-bucket observation schedule. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_MINUTE` | `document_ingestion_pipeline` | Minute of the daily per-bucket observation schedule. |
+| `DOCUMENT_INGESTION_VISION_MODEL` | `DocumentIngestionPipelineSettings.VISION_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used for figure descriptions; the text model when unset. |
 | `DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS` | `DocumentIngestionPipelineSettings.WITH_FIGURE_DESCRIPTIONS` | `document_ingestion_pipeline` | Generate figure descriptions with a vision LLM. |
 | `DOCUMENT_INGESTION_WITH_SUMMARY_NODES` | `DocumentIngestionPipelineSettings.WITH_SUMMARY_NODES` | `document_ingestion_pipeline` | Generate recursive summaries for hierarchical RAG. |
 | `DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT` | `DocumentIngestionPipelineSettings.WITH_TABLE_REFINEMENT` | `document_ingestion_pipeline` | Refine tables with the LLM to detect structure and split them. |
@@ -242,7 +243,6 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `BACKUP_VALKEY_CONTAINER` | `BackupSettings.VALKEY_CONTAINER` | `'valkey'` | `backup-code` |  |
 | `BACKUP_VALKEY_HOST` | `BackupSettings.VALKEY_HOST` | `'valkey'` |  |  |
 | `BACKUP_VALKEY_PORT` | `BackupSettings.VALKEY_PORT` | `6379` |  |  |
-| `DOCUMENT_INGESTION_VISION_MODEL` | `DocumentIngestionPipelineSettings.VISION_MODEL` | `None` |  | LiteLLM model name used for figure descriptions; the text model when unset. |
 | `KEYCLOAK_API_SERVICE_CLIENT_ID` | `KeycloakSettings.API_SERVICE_CLIENT_ID` | `'aihub-api-service'` |  | Client ID for the API service account |
 | `KEYCLOAK_EXTERNAL_URL` | `KeycloakSettings.EXTERNAL_URL` | `None` | `api`, `bot`, `sysadmin-api` | Keycloak external URL as seen by browsers, used for issuer validation |
 | `KEYCLOAK_REALM` | `KeycloakSettings.REALM` | `'aihub'` | `api`, `bot`, `sysadmin-api` | Keycloak realm name |

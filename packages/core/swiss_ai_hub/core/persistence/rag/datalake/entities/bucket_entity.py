@@ -8,6 +8,8 @@ from mongoengine.context_managers import switch_db
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
 
+_RETIRED_MODEL_COLUMNS = ("llm_model", "embedding_model")
+
 
 class BucketEntity(Document):
     """
@@ -135,6 +137,30 @@ class BucketEntity(Document):
             bucket.ingestor = ingestor
         bucket.save()
         return bucket
+
+    @classmethod
+    def carry_over_retired_model_columns(cls, db_alias: str = "default") -> int:
+        """Moves the retired ``llm_model`` / ``embedding_model`` columns into ``configuration`` under the same keys.
+
+        Idempotent and cheap on a reconciled collection, so both the API (at start) and the pipeline (on every
+        registration tick) run it: whichever side comes up first after an upgrade reconciles the rows before a
+        partition could read a legacy database with its models missing.
+        """
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            collection = SwitchedBucket._get_collection()
+        carried = 0
+        for row in collection.find({"$or": [{column: {"$exists": True}} for column in _RETIRED_MODEL_COLUMNS]}):
+            values = {
+                f"configuration.{column}": row[column]
+                for column in _RETIRED_MODEL_COLUMNS
+                if row.get(column) is not None and column not in row.get("configuration", {})
+            }
+            update: dict = {"$unset": {column: "" for column in _RETIRED_MODEL_COLUMNS}}
+            if values:
+                update["$set"] = values
+            collection.update_one({"_id": row["_id"]}, update)
+            carried += 1
+        return carried
 
     @classmethod
     def mark_deleting(cls, bucket_id: str, db_alias: str = "default") -> Self:

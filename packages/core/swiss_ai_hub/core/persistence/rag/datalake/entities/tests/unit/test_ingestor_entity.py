@@ -6,6 +6,7 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.ingestors.ingestor_config import IngestorConfig
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor import Ingestor
 from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_entity import IngestorEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
@@ -41,7 +42,7 @@ class TestUpsert:
     def test_a_registered_ingestor_becomes_selectable_and_is_offered_with_its_labels(self):
         IngestorEntity.upsert(_ingestor())
 
-        assert IngestorEntity.is_selectable("acme_rag")
+        assert IngestorEntity.find("acme_rag") is not None
         registered = IngestorEntity.all()
         assert [ingestor.id for ingestor in registered] == ["acme_rag"]
         assert registered[0].display_name.en == "Acme RAG"
@@ -70,17 +71,26 @@ class TestUpsert:
     def test_the_shipped_document_ingestion_pipeline_registers_like_any_other(self):
         IngestorEntity.upsert(_ingestor(IngestorType.DOCUMENT_INGESTION.value))
 
-        assert IngestorEntity.is_selectable(IngestorType.DOCUMENT_INGESTION.value)
+        assert IngestorEntity.find(IngestorType.DOCUMENT_INGESTION.value) is not None
 
 
-class TestIsSelectable:
-    def test_an_unregistered_platform_pipeline_is_not_selectable(self):
+class TestOffered:
+    def test_an_unregistered_platform_pipeline_is_not_offered(self):
         """Without a running pipeline nothing would ingest the database, so nothing is offered."""
-        assert not IngestorEntity.is_selectable(IngestorType.DOCUMENT_INGESTION.value)
+        assert IngestorEntity.find(IngestorType.DOCUMENT_INGESTION.value) is None
+        assert IngestorEntity.all() == []
 
-    @pytest.mark.parametrize("not_selectable", [ingestor_type.value for ingestor_type in IngestorType.legacy()])
-    def test_inert_and_legacy_tokens_are_never_selectable(self, not_selectable):
-        assert not IngestorEntity.is_selectable(not_selectable)
+    @pytest.mark.parametrize("token", [ingestor_type.value for ingestor_type in IngestorType.legacy()])
+    def test_inert_and_legacy_tokens_are_never_registered(self, token):
+        assert IngestorEntity.find(token) is None
 
-    def test_an_unregistered_ingestor_is_not_selectable(self):
-        assert not IngestorEntity.is_selectable("never_registered")
+    def test_a_row_without_an_announced_form_is_not_offered(self, mongo_connection):
+        """A pre-announcement pipeline image left labels only; an empty form could not be validated."""
+        IngestorEntity(
+            ingestor_id="legacy_labels_only",
+            display_name=LocaleStringEntity(en="Legacy"),
+            description=LocaleStringEntity(en="Registered by an older image"),
+        ).save()
+
+        assert [ingestor.id for ingestor in IngestorEntity.all()] == []
+        assert IngestorEntity.find("legacy_labels_only").config_specs is None

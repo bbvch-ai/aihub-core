@@ -57,9 +57,10 @@ against them; the platform renders and validates generically.**
    `document_ingestion` leaves the reserved-id set; the inert and frozen tokens (`unassigned`, `default_rag`,
    `shared_rag`) stay reserved.
 
-5. **`BucketEntity.configuration`** (a dict) replaces the `llm_model` and `embedding_model` columns. The API startup
-   reconcile (`carry_over_bucket_model_columns` in `initialize_db.py`) moves existing values into the object once and
-   unsets the columns — the repo's reconcile-on-startup pattern, since it has no migration runner.
+5. **`BucketEntity.configuration`** (a dict) replaces the `llm_model` and `embedding_model` columns.
+   `BucketEntity.carry_over_retired_model_columns()` moves existing values into the object and unsets the columns; the
+   API runs it at start and the pipeline on every registration tick — the repo's reconcile-on-startup pattern, since it
+   has no migration runner.
 
 6. **`create_database` mirrors `create_agent_instance`.** It looks the ingestor up, builds the model from the announced
    schema, validates with `InstanceConfigHelper` (a mismatch is a 400 naming the field path), walks the form for
@@ -98,6 +99,11 @@ against them; the platform renders and validates generically.**
 - **Nothing is offered until a pipeline registers.** The dropdown is empty until the ingestor's sensor has ticked once
   after a first deploy (it runs at code-location load); a dev stack whose pipeline is down offers no ingestor. This is
   deliberate: the alternative accepts databases nobody would ingest.
+- **A registration without a form is not offered.** A row left by a pre-announcement pipeline image carries labels but
+  no schema; `IngestorEntity.all()` skips it and `create_database` rejects it, rather than rendering an empty form whose
+  submission nothing could validate. It becomes usable on that pipeline's first tick after its own upgrade.
+- **The retired columns are carried over by whichever side starts first.** The API runs the carry-over at start and the
+  pipeline on every registration tick, so a pipeline image that rolls before the API still reads legacy rows correctly.
 - **The embedding model is a configuration key, not a column.** `configuration["embedding_model"]` becomes the
   cross-package contract the retriever will read for #1820. The query side still does not honour it; the write-path-only
   enforcement noted in `2026_08_31_per_database_models_and_embedding_contract` stands.

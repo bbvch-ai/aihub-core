@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
@@ -40,6 +40,13 @@ class DocumentIngestionPipelineSettings(EnvironmentSettings):
     WITH_FIGURE_DESCRIPTIONS: Annotated[
         bool, Field(default=True, description="Generate figure descriptions with a vision LLM.")
     ]
+
+    @field_validator("VISION_MODEL", mode="before")
+    @classmethod
+    def _blank_means_unset(cls, value: str | None) -> str | None:
+        """Compose substitutes an unset variable with an empty string, which must read as "no vision model"."""
+        return value or None
+
     OBSERVE_JOB_HOUR: Annotated[
         int, Field(default=0, ge=0, le=23, description="Hour of the daily per-bucket observation schedule.")
     ]

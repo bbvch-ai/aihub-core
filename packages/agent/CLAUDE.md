@@ -259,8 +259,8 @@ These are `AfterValidator`s that skip validation when the value is a `FormkitEle
    - All published in `AgentClassDiscoveryResponseEvent` (form, specs, event specs, workflow graph)
 
 3. **Storage**: Admin creates a profile via Admin UI. API validates submission against
-   `agent_config_specs.agent_config_schema`, saves to `AgentConfigEntityDocument` (MongoDB `agent_configs` collection)
-   with `(agent_class, agent_id)` compound unique index.
+   `agent_config_specs.config_schema`, saves to `AgentConfigEntityDocument` (MongoDB `agent_configs` collection) with
+   `(agent_class, agent_id)` compound unique index.
 
 4. **Runtime Fetch**: On each `StartEvent`, dispatcher calls `AgentConfigClient.fetch_config(agent_class, agent_id)` →
    NATS RPC (`aihub.rpc.config.agent.{class}.{id}`) → `AgentConfigResponder` (API side) →

@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 from mongoengine import DoesNotExist, NotUniqueError
 from pydantic import Field
-from swiss_ai_hub.core.form import Checkbox, ModelSelect
+from swiss_ai_hub.core.form import Checkbox, Form, ModelSelect
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.ingestors import IngestorConfig
 from swiss_ai_hub.core.persistence import ConfigSpecsEntity
@@ -14,6 +14,7 @@ from swiss_ai_hub.core.persistence.rag.datalake.entities import Ingestor, Ingest
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.routes.knowledge.dto.create_database_request import CreateDatabaseRequest
 from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
+from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 
 _SERVICE_MODULE = "swiss_ai_hub.api.routes.knowledge.knowledge_service"
 
@@ -55,6 +56,31 @@ class _CrawlConfig(IngestorConfig):
         )
 
 
+class _EnrichmentConfig(Form):
+    model: Annotated[str | ModelSelect, Field(description="Enrichment model")]
+
+
+class _SourceConfig(Form):
+    model: Annotated[str | ModelSelect, Field(description="Per-source embedding model")]
+
+
+class _NestedConfig(IngestorConfig):
+    """Model pickers inside a group and a repeater, as a pipeline with structured knobs would declare them."""
+
+    enrichment: Annotated[_EnrichmentConfig, Field(description="Enrichment")]
+    sources: Annotated[list[_SourceConfig], Field(description="Sources")]
+
+    @classmethod
+    def as_form(cls) -> Self:
+        base = IngestorConfig.as_form()
+        return cls(
+            name=base.name,
+            description=base.description,
+            enrichment=_EnrichmentConfig(model=ModelSelect(label=LocaleString(en="Model"), mode="chat")),
+            sources=[_SourceConfig(model=ModelSelect(label=LocaleString(en="Embedding"), mode="embedding"))],
+        )
+
+
 def _ingestor(ingestor_id: str, config: IngestorConfig) -> Ingestor:
     return Ingestor.from_config(ingestor_id, LocaleString(en=ingestor_id), LocaleString(en="pipeline"), config)
 
@@ -71,12 +97,19 @@ def _registered(ingestor: Ingestor) -> MagicMock:
 
 RAG = _ingestor(IngestorType.DOCUMENT_INGESTION.value, _RagConfig.as_form())
 CRAWLER = _ingestor("crawler", _CrawlConfig.as_form())
+NESTED = _ingestor("nested", _NestedConfig.as_form())
 
 
 @pytest.fixture(autouse=True)
 def registered_ingestors():
     """The entity is Mongo-backed; stub it with two differently shaped ingestors so these tests need no database."""
-    rows = {RAG.id: _registered(RAG), CRAWLER.id: _registered(CRAWLER)}
+    labels_only = MagicMock(form=[], config_specs=None)
+    rows = {
+        RAG.id: _registered(RAG),
+        CRAWLER.id: _registered(CRAWLER),
+        NESTED.id: _registered(NESTED),
+        "stale": labels_only,
+    }
     with patch(f"{_SERVICE_MODULE}.IngestorEntity") as ingestor_entity:
         ingestor_entity.find.side_effect = lambda ingestor_id: rows.get(ingestor_id)
         ingestor_entity.all.return_value = [RAG, CRAWLER]
@@ -323,6 +356,40 @@ class TestModelSelection:
     """Every announced model picker is checked against LiteLLM, whatever the pipeline named the field."""
 
     @pytest.mark.asyncio
+    async def test_a_picker_inside_a_group_and_inside_a_repeater_is_checked_too(self, locale_handler, s3_service):
+        """A ``ModelSelect`` nested in structured knobs must not bypass the mode and access checks."""
+        identity = {"name": {"en": "Nested"}, "description": {"en": "x"}}
+        wrong_group = {**identity, "enrichment": {"model": "embedding/pick"}, "sources": []}
+        wrong_repeater = {
+            **identity,
+            "enrichment": {"model": "text-generation/pick"},
+            "sources": [{"model": "text-generation/pick"}],
+        }
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as group_error:
+                await KnowledgeService.create_database(
+                    "nested",
+                    CreateDatabaseRequest(ingestor="nested", configuration=wrong_group),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+            with pytest.raises(HTTPException) as repeater_error:
+                await KnowledgeService.create_database(
+                    "nested",
+                    CreateDatabaseRequest(ingestor="nested", configuration=wrong_repeater),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert "enrichment.model" in group_error.value.detail
+        assert "sources.0.model" in repeater_error.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_a_chosen_model_is_checked_for_the_pickers_mode(self, models, locale_handler, s3_service):
         with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
@@ -364,6 +431,35 @@ class TestModelSelection:
         assert exc_info.value.status_code == 400
         assert "output_vector_size" in exc_info.value.detail
         bucket_cls.create_bucket.assert_not_called()
+
+
+class TestAnnouncedFormIsRequired:
+    @pytest.mark.asyncio
+    async def test_an_ingestor_that_announced_no_form_is_rejected_not_served_a_500(self, locale_handler, s3_service):
+        """A row left by a pre-announcement pipeline image has labels but no schema to validate against."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE,
+                    CreateDatabaseRequest(ingestor="stale", configuration={}),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "configuration form" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    def test_the_stored_alias_free_form_dicts_drive_the_authorization_walk(self):
+        """The entity stores elements without ``$``-aliases; the walk must rehydrate exactly those dicts."""
+        ConfigAuthorizationService.validate_config_authorization_or_raise(
+            form_elements=_registered(RAG).form,
+            config={"name": {"en": "x"}, "embedding_model": "embedding/default", "with_summaries": True},
+            access_checker=MagicMock(),
+            accessible_tenant_ids=set(),
+            t=MagicMock(),
+        )
 
 
 class TestGetIngestors:

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated, Self
 
 from mongoengine import (
@@ -48,7 +48,7 @@ class IngestorEntity(Document):
     # Stored without aliases: MongoDB rejects keys starting with '$'. Aliases are restored when serving.
     form = ListField(DictField(), default=list)
     config_specs = EmbeddedDocumentField(ConfigSpecsEntity, required=False)
-    last_registered = DateTimeField(required=True, default=datetime.now)
+    last_registered = DateTimeField(required=True, default=lambda: datetime.now(UTC))
 
     @staticmethod
     def reserved_ids() -> set[str]:
@@ -87,24 +87,24 @@ class IngestorEntity(Document):
                 set__description=LocaleStringEntity.from_locale_string(ingestor.description),
                 set__form=[element.model_dump() for element in ingestor.form],
                 set__config_specs=ConfigSpecsEntity.from_specs(ingestor.config_specs),
-                set__last_registered=datetime.now(),
+                set__last_registered=datetime.now(UTC),
             )
 
     @classmethod
     def all(cls, db_alias: str = "default") -> list[Ingestor]:
-        """Every registered ingestor, as the value object the API serves."""
+        """Every ingestor that announced a configuration form, as the value object the API serves.
+
+        A row a pre-announcement pipeline image left behind carries labels but no schema; offering it would render
+        an empty form whose submission nothing could validate.
+        """
         with switch_db(cls, db_alias) as SwitchedIngestor:
-            return [entity.to_ingestor() for entity in SwitchedIngestor.objects.order_by("ingestor_id")]
+            registered = SwitchedIngestor.objects(config_specs__exists=True).order_by("ingestor_id")
+            return [entity.to_ingestor() for entity in registered]
 
     @classmethod
     def find(cls, ingestor_id: str, db_alias: str = "default") -> Self | None:
         with switch_db(cls, db_alias) as SwitchedIngestor:
             return SwitchedIngestor.objects(ingestor_id=ingestor_id).first()
-
-    @classmethod
-    def is_selectable(cls, ingestor_id: str, db_alias: str = "default") -> bool:
-        """Whether a user may assign this ingestor to a new knowledge database: a pipeline has registered it."""
-        return cls.find(ingestor_id, db_alias=db_alias) is not None
 
     def to_ingestor(self) -> Ingestor:
         return Ingestor(

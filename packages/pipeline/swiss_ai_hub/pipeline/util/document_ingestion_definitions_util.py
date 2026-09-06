@@ -5,6 +5,7 @@ from dagster import (
     AssetSelection,
     Definitions,
     DynamicPartitionsDefinition,
+    SensorDefinition,
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
@@ -175,7 +176,7 @@ def _registration_sensor(
     display_name: LocaleString | None,
     description: LocaleString | None,
     config: IngestorConfig,
-):
+) -> SensorDefinition:
     """The self-registration sensor that announces this pipeline's labels, form and schema to the API.
 
     The shipped pipeline registers like any custom one — the API learns what it can offer, and how a database of
