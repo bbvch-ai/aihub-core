@@ -257,7 +257,17 @@ class KnowledgeController(TenantScopedController):
     def create_database(self, route: str = "/databases/{database}") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_database(
-            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z][a-zA-Z0-9]*$")],
+            # Deliberately the same loose pattern as every other route: a stricter one here would be
+            # answered by FastAPI with a 422 whose body is a regex mismatch, before the handler runs, so
+            # the caller would never see the service's message naming the actual rule.
+            database: Annotated[
+                str,
+                Path(
+                    title="Database name",
+                    description="Lowercase letters and digits, starting with a letter, 3 to 63 characters",
+                    pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$",
+                ),
+            ],
             request: CreateDatabaseRequest,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],

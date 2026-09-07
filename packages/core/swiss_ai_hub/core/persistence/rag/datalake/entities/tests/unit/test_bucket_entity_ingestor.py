@@ -105,3 +105,24 @@ class TestBucketNameValidation:
         bucket = BucketEntity.create_bucket(bucket_name="db001")
 
         assert bucket.bucket_name == "db001"
+
+    def test_still_adopts_a_mixed_case_name_the_platform_did_not_choose(self):
+        """Deployment config and pre-existing storage containers supply names nobody can rename, so the
+        row-level invariant must keep accepting them; only newly requested names are held to S3's rules."""
+        bucket = BucketEntity.create_bucket(bucket_name="SharePointDocs")
+
+        assert bucket.bucket_name == "SharePointDocs"
+
+
+class TestNewDatabaseNameValidation:
+    @pytest.mark.parametrize(
+        "name",
+        ["MyDb", "myDb", "1db", "ab", "a" * 64, "my-db", "my_db", "my db", "my.db", ""],
+    )
+    def test_rejects_a_name_no_store_would_accept(self, name):
+        with pytest.raises(ValidationError):
+            BucketEntity.validate_new_database_name(name)
+
+    @pytest.mark.parametrize("name", ["mydb", "abc", "db001", "a" * 63])
+    def test_accepts_a_lowercase_alphanumeric_name(self, name):
+        BucketEntity.validate_new_database_name(name)

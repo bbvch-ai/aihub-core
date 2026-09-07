@@ -8,6 +8,8 @@ from mongoengine.context_managers import switch_db
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
 
+_NEW_DATABASE_NAME_PATTERN = r"^[a-z][a-z0-9]{2,62}$"
+
 
 class BucketEntity(Document):
     """
@@ -48,6 +50,17 @@ class BucketEntity(Document):
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9]*$", name):
             raise ValidationError(
                 f"{field_name} '{name}' must start with a letter and contain only alphanumeric characters"
+            )
+
+    @staticmethod
+    def validate_new_database_name(name: str) -> None:
+        """Stricter than ``_validate_name``: what S3, Milvus and Mongo all accept, since the name doubles as
+        bucket, collection and store. ``_validate_name`` stays tolerant because it also guards rows adopted
+        from deployment configuration and from pre-existing containers, which the platform cannot rename."""
+        if not re.match(_NEW_DATABASE_NAME_PATTERN, name):
+            raise ValidationError(
+                f"Database name '{name}' must start with a lowercase letter, contain only lowercase letters "
+                "and digits, and be between 3 and 63 characters long"
             )
 
     @classmethod

@@ -234,6 +234,24 @@ class TestCreateDatabase:
         s3_service.ensure_bucket_with_cors.assert_not_called()
 
 
+class TestCreateDatabaseNameValidation:
+    """The name is used verbatim as the S3 bucket, so a name S3 rejects used to surface as an uncaught
+    botocore error — a bare 500 after the row had already been written."""
+
+    @pytest.mark.parametrize("database", ["ResearchDocs", "researchDocs", "1research", "ab", "a" * 64])
+    @pytest.mark.asyncio
+    async def test_rejects_a_name_no_storage_backend_would_accept(self, database, locale_handler, s3_service):
+        with pytest.raises(HTTPException) as exc_info:
+            await KnowledgeService.create_database(
+                database, CreateDatabaseRequest(), locale_handler, s3_service, _user(), llm_config=None
+            )
+
+        assert exc_info.value.status_code == 400
+        assert "lowercase" in exc_info.value.detail
+        s3_service.container_exists.assert_not_called()
+        s3_service.ensure_bucket_with_cors.assert_not_called()
+
+
 class TestGetIngestors:
     def test_offers_only_self_service_ingestors_with_localized_labels(self):
         t = ApiLocaleHandler("en")

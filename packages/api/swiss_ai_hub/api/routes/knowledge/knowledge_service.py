@@ -6,7 +6,7 @@ from typing import Annotated, Any
 
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from mongoengine import DoesNotExist, NotUniqueError
+from mongoengine import DoesNotExist, NotUniqueError, ValidationError
 from nats.aio.client import Client as NATS
 from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
@@ -411,6 +411,12 @@ class KnowledgeService:
         The S3 bucket is provisioned (with browser-upload CORS) up front so documents can be uploaded
         immediately, before the pipeline's first lazy ingest.
         """
+        # First, so a rejected name costs neither a translation call nor a storage probe.
+        try:
+            BucketEntity.validate_new_database_name(database)
+        except ValidationError as invalid_name:
+            raise HTTPException(status_code=400, detail=str(invalid_name)) from None
+
         if not IngestorEntity.is_selectable(request.ingestor):
             raise HTTPException(
                 status_code=400,

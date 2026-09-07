@@ -208,7 +208,7 @@ watch(defaultIngestor, (fallback) => {
 const nameValidationError = computed(() => {
   if (!name.value.trim()) return ''
 
-  const namePattern = /^[a-zA-Z0-9]+$/
+  const namePattern = /^[a-z][a-z0-9]{2,62}$/
   if (!namePattern.test(name.value)) {
     return t('knowledge.form.database_name.validation_error')
   }
@@ -249,8 +249,16 @@ const handleCreate = async () => {
     tenantId: tenantId.value!,
   }
 
-  await createDatabase(requestBody)
-  emit('success', { database: name.value })
-  closeModal()
+  try {
+    await createDatabase(requestBody)
+    emit('success', { database: name.value })
+    closeModal()
+  }
+  catch {
+    error.value = t('knowledge.form.create_error')
+  }
+  finally {
+    isCreating.value = false
+  }
 }
 </script>
