@@ -126,6 +126,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `OAUTH_COOKIE_SECRET_SEAWEEDFS` |  | `oauth2proxy-seaweed` |  |
 | `OAUTH_CUSTOM_SIGN_IN_LOGO` |  | `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed` |  |
 | `OAUTH_TENANT_ID` |  | `api`, `sysadmin-api` |  |
+| `OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL` |  | `open-webui` |  |
+| `OPENWEBUI_ENABLE_ADMIN_EXPORT` |  | `open-webui` |  |
 | `OPENWEBUI_MODEL_NAME_LOCALE` | `OpenWebuiSettings.MODEL_NAME_LOCALE` | `open-webui` | Locale used to render agent workspace-model names in OpenWebUI, which only stores a single name per model. Falls back to the platform default locale and then any available translation. |
 | `OPENWEBUI_SCIM_TOKEN` | `OpenWebuiSettings.SCIM_TOKEN` | `api`, `open-webui`, `sysadmin-api` | SCIM 2.0 bearer token for group and user provisioning |
 | `OPENWEBUI_SECRET_KEY` | `OpenWebuiSettings.SECRET_KEY` | `api`, `open-webui`, `sysadmin-api` | OpenWebUI WEBUI_SECRET_KEY for JWT signing |

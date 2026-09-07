@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from mongoengine import DictField, Document, ListField, StringField
+from mongoengine.queryset.visitor import Q
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket import EventBucket
@@ -18,6 +19,21 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 logger = logging.getLogger(__name__)
+_VISIBLE_DISPLAY_MARKER = Q(
+    event_parents__in=[
+        "UserMessageEvent",
+        "HumanInTheLoopResponseEvent",
+    ]
+)
+_PROJECTABLE_CONVERSATION_EVENT = Q(
+    event_parents__in=[
+        "UserMessageEvent",
+        "HumanInTheLoopResponseEvent",
+        "ChunkEvent",
+        "HumanInTheLoopRequestEvent",
+        "StopEvent",
+    ]
+)
 
 
 class TimeRange(StrEnum):
@@ -175,6 +191,36 @@ class PersistedAgentEventEntity(Document):
             query = query.filter(event_parents__contains=event_name)
 
         return query.order_by("event_data__created_at")
+
+    @classmethod
+    @trace_fn
+    def conversation_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
+        """Return only OpenAI-projectable events on displays proven visible to a user."""
+        visible_display_ids = (
+            cls.objects(
+                thread_id=thread_id,
+                event_type=AgentTopicManager.DISPLAY_EVENT,
+                agent_class="UserAgent",
+            )
+            .filter(_VISIBLE_DISPLAY_MARKER)
+            .distinct("display_id")
+        )
+        if not visible_display_ids:
+            logger.warning(
+                "No client-visible display marker found for thread history",
+                extra={"thread_id": thread_id},
+            )
+            return []
+
+        return list(
+            cls.objects(
+                thread_id=thread_id,
+                event_type=AgentTopicManager.DISPLAY_EVENT,
+                display_id__in=visible_display_ids,
+            )
+            .filter(_PROJECTABLE_CONVERSATION_EVENT)
+            .order_by("event_data__created_at", "event_id")
+        )
 
     @classmethod
     @trace_fn
