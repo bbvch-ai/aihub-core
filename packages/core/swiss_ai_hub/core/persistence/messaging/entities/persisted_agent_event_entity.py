@@ -528,14 +528,22 @@ class PersistedAgentEventEntity(Document):
             match["event_data.tenant_id"] = tenant_id
 
         cost_fields = ["prompt_tokens_costs", "completion_tokens_costs", "embedding_tokens_costs"]
+        carried_fields = [*group_fields, *cost_fields]
         pipeline = [
             {"$match": match},
-            {"$group": {"_id": "$event_id", "event_data": {"$first": "$event_data"}}},
+            # Lift the five fields the group stages read out of `event_data` before the dedup, rather
+            # than carrying the document with `$first: "$event_data"`: a cost event's payload holds the
+            # whole request context, and the stage needs none of it. Measured warm on staging over 33k
+            # cost events, 6.5s carrying the documents against 1.2s carrying the fields. It is not what
+            # took the event loop down, though — that was a 123s cold read of 30 days off disk, which
+            # no pipeline shape avoids and only the threadpool hand-off contains.
+            {"$project": {"_id": 0, "event_id": 1, **{field: f"$event_data.{field}" for field in carried_fields}}},
+            {"$group": {"_id": "$event_id", **{field: {"$first": f"${field}"} for field in carried_fields}}},
             {
                 "$group": {
-                    "_id": {field: f"$event_data.{field}" for field in group_fields},
+                    "_id": {field: f"${field}" for field in group_fields},
                     "calls": {"$sum": 1},
-                    **{field: {"$sum": {"$ifNull": [f"$event_data.{field}", 0]}} for field in cost_fields},
+                    **{field: {"$sum": {"$ifNull": [f"${field}", 0]}} for field in cost_fields},
                 }
             },
             {"$sort": {"_id": 1}},
