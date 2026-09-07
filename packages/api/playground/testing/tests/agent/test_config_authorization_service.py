@@ -10,6 +10,7 @@ from swiss_ai_hub.core.form import (
     ModelSelect,
     Repeater,
     TenantSelect,
+    VectorStoreInput,
 )
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
@@ -21,28 +22,37 @@ ORG_MEMORY_MESSAGE_PATH = "lib.common.authorization.no_access_organization_memor
 
 def _make_access_checker(
     knowledge_dbs: set[str] | None = None,
+    knowledge_namespaces: set[str] | None = None,
     agents: set[str] | None = None,
     org_memory: bool = False,
     is_sys_admin: bool = False,
 ) -> Mock:
-    """Create a mock AccessChecker that grants access to specified resources."""
+    """Create a mock AccessChecker that grants access to specified resources.
+
+    ``knowledge_dbs`` are databases the user may read as a whole; ``knowledge_namespaces`` are
+    ``"db/namespace"`` pairs the user may read individually.
+    """
     allowed_knowledge_dbs = knowledge_dbs or set()
+    allowed_knowledge_namespaces = knowledge_namespaces or set()
     allowed_agents = agents or set()
 
     checker = Mock()
 
     def has_access(permission_template: str) -> bool:
-        for db_name in allowed_knowledge_dbs:
-            if f"aihub.user.knowledge.{db_name}" in permission_template:
-                return True
-        if org_memory and permission_template.startswith("aihub.user.memory.organization"):
-            return True
-        return False
+        return org_memory and permission_template.startswith("aihub.user.memory.organization")
+
+    def has_access_to_all_knowledge_namespaces(database: str) -> bool:
+        return database in allowed_knowledge_dbs
+
+    def has_access_to_knowledge_namespace(database: str, namespace: str) -> bool:
+        return database in allowed_knowledge_dbs or f"{database}/{namespace}" in allowed_knowledge_namespaces
 
     def has_access_to_agent(agent_class: str, agent_id: str) -> bool:
         return f"{agent_class}/{agent_id}" in allowed_agents
 
     checker.has_access = Mock(side_effect=has_access)
+    checker.has_access_to_all_knowledge_namespaces = Mock(side_effect=has_access_to_all_knowledge_namespaces)
+    checker.has_access_to_knowledge_namespace = Mock(side_effect=has_access_to_knowledge_namespace)
     checker.has_access_to_agent = Mock(side_effect=has_access_to_agent)
     checker.is_sys_admin = is_sys_admin
     return checker
@@ -388,3 +398,62 @@ class TestMixedForms:
         checker = _make_access_checker(knowledge_dbs={"allowed_db"}, agents={"MyAgent/inst_1"})
 
         _validate(form, config, checker, t)
+
+
+class TestVectorStoreInputAuthorization:
+    """The RAG retriever's database + namespaces selection is what most agents read from."""
+
+    @staticmethod
+    def _form() -> list[dict]:
+        return _to_dicts([VectorStoreInput(label="Store", name="vector_store")])
+
+    @staticmethod
+    def _config(namespaces: list[str] | None = None, all_namespaces: bool = False) -> dict:
+        return {
+            "vector_store": {
+                "collection_name": "db_a",
+                "index_namespaces": namespaces or [],
+                "all_namespaces": all_namespaces,
+            }
+        }
+
+    def test_named_namespaces_the_user_may_read_pass(self, t: LocaleHandler):
+        checker = _make_access_checker(knowledge_namespaces={"db_a/reports", "db_a/policies"})
+        _validate(self._form(), self._config(["reports", "policies"]), checker, t)
+
+    def test_a_named_namespace_the_user_may_not_read_is_rejected_individually(self, t: LocaleHandler):
+        checker = _make_access_checker(knowledge_namespaces={"db_a/reports"})
+        with pytest.raises(Exception) as exc_info:
+            _validate(self._form(), self._config(["reports", "secret"]), checker, t)
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 1
+        assert violations[0]["resource_type"] == "knowledge_namespace"
+        assert violations[0]["resource"] == "db_a/secret"
+        assert violations[0]["field"] == "vector_store"
+
+    def test_all_namespaces_needs_access_to_the_whole_database(self, t: LocaleHandler):
+        checker = _make_access_checker(knowledge_namespaces={"db_a/reports"})
+        with pytest.raises(Exception) as exc_info:
+            _validate(self._form(), self._config(all_namespaces=True), checker, t)
+        violations = exc_info.value.detail["violations"]
+        assert violations[0]["resource_type"] == "knowledge_database"
+        assert violations[0]["resource"] == "db_a"
+
+    def test_all_namespaces_passes_with_whole_database_access(self, t: LocaleHandler):
+        _validate(self._form(), self._config(all_namespaces=True), _make_access_checker(knowledge_dbs={"db_a"}), t)
+
+    def test_an_empty_scope_is_not_an_authorization_matter(self, t: LocaleHandler):
+        """Nothing is read, so nothing is refused here; the config model rejects the empty scope itself."""
+        _validate(self._form(), self._config([]), _make_access_checker(), t)
+
+    def test_incomplete_value_skipped(self, t: LocaleHandler):
+        _validate(self._form(), {"vector_store": {"index_namespaces": ["x"]}}, _make_access_checker(), t)
+
+
+class TestKnowledgeDatabaseSelectorNeedsWholeDatabase:
+    def test_partial_namespace_access_does_not_allow_selecting_the_database(self, t: LocaleHandler):
+        form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="knowledge_databases")])
+        checker = _make_access_checker(knowledge_namespaces={"db_a/reports"})
+        with pytest.raises(Exception) as exc_info:
+            _validate(form, {"knowledge_databases": ["db_a"]}, checker, t)
+        assert exc_info.value.detail["violations"][0]["resource"] == "db_a"

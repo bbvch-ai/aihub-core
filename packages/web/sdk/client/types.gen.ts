@@ -771,6 +771,12 @@ export type AgentInTheLoopExceptionEvent = {
    */
   exception_event: ExceptionEvent;
   /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.
+   */
+  request_event_id: string;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -844,9 +850,15 @@ export type AgentInTheLoopRequestEvent = {
   /**
    * Share Run Id
    *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
    */
   share_run_id?: boolean;
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   */
+  timeout_seconds?: number | null;
   /**
    * Event Name
    *
@@ -896,6 +908,12 @@ export type AgentInTheLoopResponseEvent = {
    * The stop event from the delegated agent containing the task results and marks the completion.
    */
   stop_event: StopEvent;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
+   */
+  request_event_id: string;
   /**
    * Event Name
    *
@@ -1041,6 +1059,11 @@ export type AgentProcessStepDto = {
  *
  * This is similar to ModelSelect's `mode` parameter for filtering by model type.
  *
+ * ### Pinning to One Agent Class
+ *
+ * When `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only
+ * that class's profiles. `start_event` is redundant then — the class is already decided — so set one or the other.
+ *
  * ### Form Duality
  *
  * When used with AgentRef, the form submission is validated directly into AgentRef:
@@ -1161,6 +1184,12 @@ export type AgentSelector = {
    * Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.
    */
   startEvent?: string | null;
+  /**
+   * Agentclass
+   *
+   * Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.
+   */
+  agentClass?: string | null;
   /**
    * Classplaceholder
    *
@@ -3990,6 +4019,42 @@ export type CreateAgentInstanceRequest = {
 };
 
 /**
+ * CreateDatabaseRequest
+ */
+export type CreateDatabaseRequest = {
+  /**
+   * Display Name
+   *
+   * The display name of the knowledge database in the user's locale.
+   */
+  display_name?: string | null;
+  /**
+   * Description
+   *
+   * A short description of the knowledge database in the user's locale.
+   */
+  description?: string | null;
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.
+   */
+  ingestor?: string;
+  /**
+   * Llm Model
+   *
+   * Text-generation model used to summarize, refine tables and describe figures for this database. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=chat.
+   */
+  llm_model?: string | null;
+  /**
+   * Embedding Model
+   *
+   * Embedding model this database's documents are indexed with. Cannot be changed after creation. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=embedding.
+   */
+  embedding_model?: string | null;
+};
+
+/**
  * CreateNamespaceRequest
  */
 export type CreateNamespaceRequest = {
@@ -4470,11 +4535,71 @@ export type DatabaseDto = {
    */
   auto_sync: boolean;
   /**
+   * Deletable
+   *
+   * Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.
+   */
+  deletable: boolean;
+  /**
+   * Ingestor
+   *
+   * Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.
+   */
+  ingestor: string;
+  /**
    * Namespaces
    *
    * List of namespaces
    */
   namespaces: Array<NamespaceDto>;
+};
+
+/**
+ * DatabaseResponse
+ */
+export type DatabaseResponse = {
+  /**
+   * Name
+   *
+   * The database name (also the Milvus collection and Mongo store name).
+   */
+  name: string;
+  /**
+   * Bucket Name
+   *
+   * The S3 bucket / data lake container name.
+   */
+  bucket_name: string;
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that owns this database.
+   */
+  ingestor: string;
+  /**
+   * Llm Model
+   *
+   * Text-generation model, or None to follow the deployment default.
+   */
+  llm_model?: string | null;
+  /**
+   * Embedding Model
+   *
+   * Embedding model, or None to follow the deployment default.
+   */
+  embedding_model?: string | null;
+  /**
+   * Display Name
+   *
+   * A user-friendly display name for the database.
+   */
+  display_name?: string | null;
+  /**
+   * Description
+   *
+   * A brief description of the database's contents.
+   */
+  description?: string | null;
 };
 
 /**
@@ -7747,6 +7872,30 @@ export type IngestedNode = {
    * Score representing the relevance of the document.
    */
   score?: number | null;
+};
+
+/**
+ * IngestorDTO
+ */
+export type IngestorDto = {
+  /**
+   * Name
+   *
+   * Ingestor identifier, as served by GET /knowledge/ingestors.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the ingestion pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of what the pipeline does.
+   */
+  description: string | null;
 };
 
 /**
@@ -12520,9 +12669,9 @@ export type RagStartEvent = {
    */
   locale?: string;
   /**
-   * User on whose behalf the RAG run is executed.
+   * User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.
    */
-  user: UserIdentity;
+  user?: UserIdentity | null;
   /**
    * Messages
    *
@@ -16594,13 +16743,14 @@ export type ValidationError = {
  *
  * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
- * 2. Namespace multi-select (populated based on selected database)
+ * 2. "All namespaces" switch, or a namespace multi-select populated from the selected database
  * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * The output matches the configurable fields of `MilvusVectorStoreConfig`:
  * {
  * "collection_name": str,
  * "index_namespaces": list[str],
+ * "all_namespaces": bool,
  * "allowed_metadata_filter_fields": list[str],
  * }
  *
@@ -17331,6 +17481,12 @@ export type AgentInTheLoopExceptionEventWritable = {
    * The exception event from the delegated agent containing error details and failure context.
    */
   exception_event: ExceptionEventWritable;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.
+   */
+  request_event_id: string;
   [key: string]: unknown;
 };
 
@@ -17392,9 +17548,15 @@ export type AgentInTheLoopRequestEventWritable = {
   /**
    * Share Run Id
    *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
    */
   share_run_id?: boolean;
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   */
+  timeout_seconds?: number | null;
   [key: string]: unknown;
 };
 
@@ -17431,6 +17593,12 @@ export type AgentInTheLoopResponseEventWritable = {
    * The stop event from the delegated agent containing the task results and marks the completion.
    */
   stop_event: StopEventWritable;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
+   */
+  request_event_id: string;
   [key: string]: unknown;
 };
 
@@ -17493,6 +17661,11 @@ export type AgentProcessStepDtoWritable = {
  * whose `start_events` contain an event with matching `event_name` or `event_parents`.
  *
  * This is similar to ModelSelect's `mode` parameter for filtering by model type.
+ *
+ * ### Pinning to One Agent Class
+ *
+ * When `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only
+ * that class's profiles. `start_event` is redundant then — the class is already decided — so set one or the other.
  *
  * ### Form Duality
  *
@@ -17614,6 +17787,12 @@ export type AgentSelectorWritable = {
    * Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.
    */
   startEvent?: string | null;
+  /**
+   * Agentclass
+   *
+   * Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.
+   */
+  agentClass?: string | null;
   /**
    * Classplaceholder
    *
@@ -23301,9 +23480,9 @@ export type RagStartEventWritable = {
    */
   locale?: string;
   /**
-   * User on whose behalf the RAG run is executed.
+   * User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.
    */
-  user: UserIdentity;
+  user?: UserIdentity | null;
   /**
    * Messages
    *
@@ -25818,13 +25997,14 @@ export type UserMessageEventWritable = {
  *
  * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
- * 2. Namespace multi-select (populated based on selected database)
+ * 2. "All namespaces" switch, or a namespace multi-select populated from the selected database
  * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * The output matches the configurable fields of `MilvusVectorStoreConfig`:
  * {
  * "collection_name": str,
  * "index_namespaces": list[str],
+ * "all_namespaces": bool,
  * "allowed_metadata_filter_fields": list[str],
  * }
  *
@@ -28854,6 +29034,144 @@ export type UpdateDatasetResponses = {
 
 export type UpdateDatasetResponse =
   UpdateDatasetResponses[keyof UpdateDatasetResponses];
+
+export type GetIngestorsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/ingestors";
+};
+
+export type GetIngestorsResponses = {
+  /**
+   * Response Get Ingestors  Tenant Id  Knowledge Ingestors Get
+   *
+   * Successful Response
+   */
+  200: Array<IngestorDto>;
+};
+
+export type GetIngestorsResponse =
+  GetIngestorsResponses[keyof GetIngestorsResponses];
+
+export type DeleteDatabaseData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type DeleteDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteDatabaseError =
+  DeleteDatabaseErrors[keyof DeleteDatabaseErrors];
+
+export type DeleteDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
+
+export type CreateDatabaseData = {
+  body: CreateDatabaseRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type CreateDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateDatabaseError =
+  CreateDatabaseErrors[keyof CreateDatabaseErrors];
+
+export type CreateDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type CreateDatabaseResponse =
+  CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type DeleteNamespaceData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}";
+};
+
+export type DeleteNamespaceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteNamespaceError =
+  DeleteNamespaceErrors[keyof DeleteNamespaceErrors];
+
+export type DeleteNamespaceResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
 
 export type CreateNamespaceData = {
   body: CreateNamespaceRequest;

@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.slider import Slider
     from swiss_ai_hub.core.form.elements.tenant_select import TenantSelect
     from swiss_ai_hub.core.form.elements.textarea import Textarea
+    from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput
     from swiss_ai_hub.core.form.form import Form
     from swiss_ai_hub.core.form.normalization import (
         normalize_empty_locale_strings,
@@ -53,6 +54,7 @@ __all__ = [
     "Slider",
     "TemplateData",
     "TenantSelect",
+    "VectorStoreInput",
     "Textarea",
     "normalize_empty_locale_strings",
     "normalize_empty_objects_to_none",
@@ -82,6 +84,7 @@ _LAZY_IMPORTS = {
     "Slider": "swiss_ai_hub.core.form.elements.slider",
     "TemplateData": "swiss_ai_hub.core.form.template_data",
     "TenantSelect": "swiss_ai_hub.core.form.elements.tenant_select",
+    "VectorStoreInput": "swiss_ai_hub.core.form.elements.vector_store_input",
     "Textarea": "swiss_ai_hub.core.form.elements.textarea",
     "normalize_empty_locale_strings": "swiss_ai_hub.core.form.normalization",
     "normalize_empty_objects_to_none": "swiss_ai_hub.core.form.normalization",

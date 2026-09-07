@@ -408,3 +408,23 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
                 pks=ids_to_delete,
                 partition_name=partition_name,
             )
+
+    def delete_by_namespace(self, namespace: str) -> None:
+        """Delete every vector of a namespace via a metadata-filtered delete.
+
+        Namespaces hash into shared partitions (collisions are expected — see milvus_partition_manager),
+        so this MUST filter on ``namespace ==`` and MUST NOT drop the partition: a partition drop would
+        also wipe the vectors of any other namespace that hashed to the same partition.
+        """
+        partition_name = get_partition_name_for_namespace(namespace) if self._check_has_manual_partitions() else None
+        self._ensure_collection_loaded([partition_name] if partition_name else None)
+        self.client.delete(
+            collection_name=self.collection_name,
+            filter=f'{NAMESPACE} == "{namespace}"',
+            partition_name=partition_name,
+        )
+
+    def drop_collection(self) -> None:
+        """Drop the whole collection backing a knowledge database. Idempotent — a missing collection is fine."""
+        if self.client.has_collection(collection_name=self.collection_name):
+            self.client.drop_collection(collection_name=self.collection_name)

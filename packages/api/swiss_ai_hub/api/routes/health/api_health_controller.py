@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 from starlette.status import HTTP_200_OK, HTTP_503_SERVICE_UNAVAILABLE
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.dependencies import use_nats
-from swiss_ai_hub.core.infrastructure import use_milvus, use_redis, use_s3
+from swiss_ai_hub.core.infrastructure import use_optional_milvus, use_redis, use_s3
 from swiss_ai_hub.core.routes import (
     ApiHealthChecks,
     HealthController,
@@ -42,7 +42,7 @@ class ApiHealthController(HealthController):
             response: Response,
             nc: Annotated[NATS, Depends(use_nats)],
             redis: Annotated[Redis, Depends(use_redis)],
-            milvus_client: Annotated[MilvusClient, Depends(use_milvus)],
+            milvus_client: Annotated[MilvusClient | None, Depends(use_optional_milvus)],
             s3_client: Annotated[object, Depends(use_s3)],
         ) -> HealthResponse:
             """

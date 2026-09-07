@@ -102,3 +102,26 @@ config:
   attachment_char_limit:
     label: Attachment Character Limit
     help: Characters kept from a single attachment's extracted text.
+  category_knowledge_namespace:
+    label: Knowledge Collection
+    help: Collection this category's replies are grounded in. Set it and the reply
+      is answered from the documents in that collection and no other. Leave it empty
+      and the reply is written from the message alone, without retrieval.
+  knowledge_databases:
+    label: Knowledge Databases
+    help: Databases the categories' collections are looked up in. Only needed when
+      a category names a collection.
+  no_information_draft:
+    label: Draft When Nothing Was Found
+    help: Draft body used when retrieval found nothing that answers the message. Used
+      verbatim, so the reply never invents an answer it has no documents for.
+  grounding_failed_draft:
+    label: Draft When The Lookup Failed
+    help: Draft body used when the knowledge lookup itself failed or never answered.
+      Kept apart from the no-information text so a reviewer can tell a gap in the
+      documentation from a broken deployment.
+  grounding_timeout_seconds:
+    label: Knowledge Lookup Timeout (seconds)
+    help: How long a knowledge lookup may take before the message is drafted with
+      the failure text instead. Without a deadline, an offline knowledge agent leaves
+      the run waiting forever.

@@ -453,7 +453,7 @@ document:
     deleting: Suppression en cours
     button: Supprimer
     button_selected: Supprimer la sélection
-    confirmMessage: Voulez-vous vraiment supprimer ce document ? Il sera définitivement
+    confirmMessage: Voulez-vous vraiment supprimer « {title} » ? Il sera définitivement
       retiré de la base de connaissances. Cette action est irréversible.
     confirmMessageBatch: Voulez-vous vraiment supprimer {count} document(s) ? Ils
       seront définitivement retirés de la base de connaissances. Cette action est
@@ -511,21 +511,68 @@ knowledge:
     title: Ajouter une collection
     description: Créer une nouvelle collection de connaissances
     cancel: Annuler
+  add_database:
+    title: Ajouter une base de connaissances
+    description: Créer une nouvelle base de connaissances en libre-service
   auto_sync:
     title: Synchronisé automatiquement
     description: Les collections sont gérées automatiquement
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
+  pipeline: 'Pipeline : {name}'
   edit_namespace: Modifier la collection
   upload_documents: Télécharger des documents
+  delete_namespace: Supprimer la collection
+  delete_database: Supprimer la base de données
+  delete:
+    confirm_label: Saisissez {name} pour confirmer
+    database:
+      title: Supprimer la base de connaissances
+      warning: Cette action supprime définitivement la base de données {name}, toutes
+        ses collections et ses {count} documents. Cette action est irréversible.
+    namespace:
+      title: Supprimer la collection
+      warning: Cette action supprime définitivement la collection {name} et ses {count}
+        documents. Cette action est irréversible.
+    actions:
+      delete: Supprimer
+    scheduled:
+      summary: Suppression lancée
+      detail: La suppression s’exécute en arrière-plan et peut prendre un moment.
+    error:
+      summary: Échec de la suppression
+      detail: La suppression n’a pas pu être lancée. Veuillez réessayer.
   form:
     create:
       title: Créer une collection
+    create_error: Échec de la création de la collection. Veuillez réessayer.
+    create_database:
+      title: Créer une base de connaissances
     edit:
       title: Modifier la collection
     database:
       label: Base de connaissances
       placeholder: Nom de la base de connaissances
+    database_name:
+      label: Nom de la base de données
+      placeholder: mabasedeconnaissances
+      help: Seuls les caractères alphanumériques sont autorisés. Le nom ne peut pas
+        être modifié ultérieurement.
+      validation_error: Le nom de la base de données ne peut contenir que des caractères
+        alphanumériques
+    ingestor:
+      label: Pipeline d'ingestion
+      placeholder: Sélectionner un pipeline d'ingestion
+      help: Le pipeline qui traite les documents téléversés dans cette base de données.
+    llm_model:
+      label: Modèle de texte
+      placeholder: Utiliser la valeur par défaut du déploiement
+      help: Génère les résumés, affine les tableaux et décrit les figures de cette
+        base.
+    embedding_model:
+      label: Modèle d'embedding
+      placeholder: Utiliser la valeur par défaut du déploiement
+      help: Indexe les documents de cette base. Non modifiable après la création.
     folder_name:
       label: Nom de la collection
       placeholder: ma-collection
@@ -826,8 +873,12 @@ lib:
       label: Base de données
     namespaces:
       label: Espaces de noms
-      placeholder: Sélectionner les espaces de noms (vide = tous)
-      help: Laisser vide pour rechercher tous les espaces de noms
+      placeholder: Sélectionner au moins un espace de noms
+      help: Seuls les espaces de noms sélectionnés sont recherchés
+    allNamespaces:
+      label: Rechercher dans tous les espaces de noms
+      help: Chaque espace de noms de cette base est recherché, y compris ceux ajoutés
+        plus tard ({count} aujourd'hui).
     allowedFilterFields:
       label: Champs de filtre autorisés
       placeholder: Saisir une clé de métadonnées puis appuyer sur Entrée

@@ -9,7 +9,12 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.topic_managers.agents.agent_thread_topic_manager import AgentThreadTopicManager
     from swiss_ai_hub.core.topic_managers.agents.agent_topic_manager import AgentTopicManager
     from swiss_ai_hub.core.topic_managers.pipeline.pipeline_instance_topic_manager import PipelineInstanceTopicManager
+    from swiss_ai_hub.core.topic_managers.pipeline.pipeline_subject_types import (
+        PipelineSourceType,
+        PipelineTargetType,
+    )
     from swiss_ai_hub.core.topic_managers.pipeline.pipeline_topic_manager import PipelineTopicManager
+    from swiss_ai_hub.core.topic_managers.pipeline.pipeline_type_topic_manager import PipelineTypeTopicManager
     from swiss_ai_hub.core.topic_managers.process.process_class_topic_manager import ProcessClassTopicManager
     from swiss_ai_hub.core.topic_managers.process.process_instance_topic_manager import ProcessInstanceTopicManager
     from swiss_ai_hub.core.topic_managers.process.process_topic_manager import ProcessTopicManager
@@ -25,7 +30,10 @@ __all__ = [
     "AgentThreadTopicManager",
     "AgentTopicManager",
     "PipelineInstanceTopicManager",
+    "PipelineSourceType",
+    "PipelineTargetType",
     "PipelineTopicManager",
+    "PipelineTypeTopicManager",
     "ProcessClassTopicManager",
     "ProcessInstanceTopicManager",
     "ProcessTopicManager",
@@ -40,7 +48,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "AgentThreadTopicManager": "swiss_ai_hub.core.topic_managers.agents.agent_thread_topic_manager",
     "AgentTopicManager": "swiss_ai_hub.core.topic_managers.agents.agent_topic_manager",
     "PipelineInstanceTopicManager": "swiss_ai_hub.core.topic_managers.pipeline.pipeline_instance_topic_manager",
+    "PipelineSourceType": "swiss_ai_hub.core.topic_managers.pipeline.pipeline_subject_types",
+    "PipelineTargetType": "swiss_ai_hub.core.topic_managers.pipeline.pipeline_subject_types",
     "PipelineTopicManager": "swiss_ai_hub.core.topic_managers.pipeline.pipeline_topic_manager",
+    "PipelineTypeTopicManager": "swiss_ai_hub.core.topic_managers.pipeline.pipeline_type_topic_manager",
     "ProcessClassTopicManager": "swiss_ai_hub.core.topic_managers.process.process_class_topic_manager",
     "ProcessInstanceTopicManager": "swiss_ai_hub.core.topic_managers.process.process_instance_topic_manager",
     "ProcessTopicManager": "swiss_ai_hub.core.topic_managers.process.process_topic_manager",

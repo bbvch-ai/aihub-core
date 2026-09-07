@@ -1015,6 +1015,12 @@ export const AgentInTheLoopExceptionEventSchema = {
       description:
         "The exception event from the delegated agent containing error details and failure context.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -1035,7 +1041,12 @@ export const AgentInTheLoopExceptionEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["exception_event", "_event_name", "_parent_event_names"],
+  required: [
+    "exception_event",
+    "request_event_id",
+    "_event_name",
+    "_parent_event_names",
+  ],
   title: "AgentInTheLoopExceptionEvent",
   description:
     "An error response from an agent when a delegated task fails.\n\n### Why AgentInTheLoopExceptionEvent?\nWhen an agent encounters an error during a delegated task, this event:\n- Signals workflow disruption (since it's a `ControlEvent`), allowing error handling in the original agent\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring and debugging of agent failures\n- Provides a dedicated error channel separate from successful responses",
@@ -1119,8 +1130,21 @@ export const AgentInTheLoopRequestEventSchema = {
       type: "boolean",
       title: "Share Run Id",
       description:
-        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
+        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
       default: false,
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
     },
     _event_name: {
       type: "string",
@@ -1192,6 +1216,12 @@ export const AgentInTheLoopResponseEventSchema = {
       description:
         "The stop event from the delegated agent containing the task results and marks the completion.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -1212,7 +1242,12 @@ export const AgentInTheLoopResponseEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["stop_event", "_event_name", "_parent_event_names"],
+  required: [
+    "stop_event",
+    "request_event_id",
+    "_event_name",
+    "_parent_event_names",
+  ],
   title: "AgentInTheLoopResponseEvent",
   description:
     "A response from an agent after completing a delegated task.\n\n### Why AgentInTheLoopResponseEvent?\nWhen an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:\n- Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions",
@@ -1499,6 +1534,19 @@ export const AgentSelectorSchema = {
       description:
         "Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.",
     },
+    agentClass: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentclass",
+      description:
+        "Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.",
+    },
     classPlaceholder: {
       anyOf: [
         {
@@ -1546,7 +1594,7 @@ export const AgentSelectorSchema = {
   required: ["label", "validation"],
   title: "AgentSelector",
   description:
-    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
+    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Pinning to One Agent Class\n\nWhen `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only\nthat class\'s profiles. `start_event` is redundant then — the class is already decided — so set one or the other.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
 } as const;
 
 export const AgentSuitabilityAcceptEventSchema = {
@@ -5878,6 +5926,72 @@ export const CreateAgentInstanceRequestSchema = {
     "Request body for creating a new agent instance.\nThe agent_class is provided in the URL path, not in the request body.",
 } as const;
 
+export const CreateDatabaseRequestSchema = {
+  properties: {
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description:
+        "The display name of the knowledge database in the user's locale.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description:
+        "A short description of the knowledge database in the user's locale.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description:
+        "The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.",
+      default: "document_ingestion",
+    },
+    llm_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model",
+      description:
+        "Text-generation model used to summarize, refine tables and describe figures for this database. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=chat.",
+    },
+    embedding_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Embedding Model",
+      description:
+        "Embedding model this database's documents are indexed with. Cannot be changed after creation. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=embedding.",
+    },
+  },
+  type: "object",
+  title: "CreateDatabaseRequest",
+} as const;
+
 export const CreateNamespaceRequestSchema = {
   properties: {
     folder_name: {
@@ -6521,6 +6635,18 @@ export const DatabaseDTOSchema = {
       title: "Auto Sync",
       description: "Whether this database auto-syncs namespaces",
     },
+    deletable: {
+      type: "boolean",
+      title: "Deletable",
+      description:
+        "Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description:
+        "Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.",
+    },
     namespaces: {
       items: {
         $ref: "#/components/schemas/NamespaceDTO",
@@ -6531,8 +6657,88 @@ export const DatabaseDTOSchema = {
     },
   },
   type: "object",
-  required: ["name", "display_name", "auto_sync", "namespaces"],
+  required: [
+    "name",
+    "display_name",
+    "auto_sync",
+    "deletable",
+    "ingestor",
+    "namespaces",
+  ],
   title: "DatabaseDTO",
+} as const;
+
+export const DatabaseResponseSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "The database name (also the Milvus collection and Mongo store name).",
+    },
+    bucket_name: {
+      type: "string",
+      title: "Bucket Name",
+      description: "The S3 bucket / data lake container name.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description: "The deployed ingestion pipeline that owns this database.",
+    },
+    llm_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model",
+      description:
+        "Text-generation model, or None to follow the deployment default.",
+    },
+    embedding_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Embedding Model",
+      description: "Embedding model, or None to follow the deployment default.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "A user-friendly display name for the database.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "A brief description of the database's contents.",
+    },
+  },
+  type: "object",
+  required: ["name", "bucket_name", "ingestor"],
+  title: "DatabaseResponse",
 } as const;
 
 export const DatasetSchema = {
@@ -11393,6 +11599,44 @@ export const IngestedNodeSchema = {
   title: "IngestedNode",
   description:
     "A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.\nThe attributes defined here are the minimal number of attributes that a node must have to ensure the\nUI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.\nmust be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes\nthat are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,\nare strictly necessary.",
+} as const;
+
+export const IngestorDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Ingestor identifier, as served by GET /knowledge/ingestors.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the ingestion pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of what the pipeline does.",
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "IngestorDTO",
 } as const;
 
 export const InputAudioSchema = {
@@ -18404,8 +18648,16 @@ export const RAGStartEventSchema = {
       default: "de",
     },
     user: {
-      $ref: "#/components/schemas/UserIdentity",
-      description: "User on whose behalf the RAG run is executed.",
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.",
     },
     messages: {
       items: {
@@ -18486,12 +18738,7 @@ export const RAGStartEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: [
-    "user",
-    "selected_namespaces",
-    "_event_name",
-    "_parent_event_names",
-  ],
+  required: ["selected_namespaces", "_event_name", "_parent_event_names"],
   title: "RAGStartEvent",
   description:
     "Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.",
@@ -24543,7 +24790,7 @@ export const VectorStoreInputSchema = {
   required: ["label", "validation"],
   title: "VectorStoreInput",
   description:
-    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
 } as const;
 
 export const VideoBlockSchema = {
@@ -25436,10 +25683,16 @@ export const AgentInTheLoopExceptionEventWritableSchema = {
       description:
         "The exception event from the delegated agent containing error details and failure context.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.",
+    },
   },
   additionalProperties: true,
   type: "object",
-  required: ["exception_event"],
+  required: ["exception_event", "request_event_id"],
   title: "AgentInTheLoopExceptionEvent",
   description:
     "An error response from an agent when a delegated task fails.\n\n### Why AgentInTheLoopExceptionEvent?\nWhen an agent encounters an error during a delegated task, this event:\n- Signals workflow disruption (since it's a `ControlEvent`), allowing error handling in the original agent\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring and debugging of agent failures\n- Provides a dedicated error channel separate from successful responses",
@@ -25523,8 +25776,21 @@ export const AgentInTheLoopRequestEventWritableSchema = {
       type: "boolean",
       title: "Share Run Id",
       description:
-        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
+        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
       default: false,
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
     },
   },
   additionalProperties: true,
@@ -25574,10 +25840,16 @@ export const AgentInTheLoopResponseEventWritableSchema = {
       description:
         "The stop event from the delegated agent containing the task results and marks the completion.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.",
+    },
   },
   additionalProperties: true,
   type: "object",
-  required: ["stop_event"],
+  required: ["stop_event", "request_event_id"],
   title: "AgentInTheLoopResponseEvent",
   description:
     "A response from an agent after completing a delegated task.\n\n### Why AgentInTheLoopResponseEvent?\nWhen an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:\n- Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions",
@@ -25803,6 +26075,19 @@ export const AgentSelectorWritableSchema = {
       description:
         "Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.",
     },
+    agentClass: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentclass",
+      description:
+        "Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.",
+    },
     classPlaceholder: {
       anyOf: [
         {
@@ -25845,7 +26130,7 @@ export const AgentSelectorWritableSchema = {
   required: ["label"],
   title: "AgentSelector",
   description:
-    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
+    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Pinning to One Agent Class\n\nWhen `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only\nthat class\'s profiles. `start_event` is redundant then — the class is already decided — so set one or the other.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
 } as const;
 
 export const AgentSuitabilityAcceptEventWritableSchema = {
@@ -34639,8 +34924,16 @@ export const RAGStartEventWritableSchema = {
       default: "de",
     },
     user: {
-      $ref: "#/components/schemas/UserIdentity",
-      description: "User on whose behalf the RAG run is executed.",
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.",
     },
     messages: {
       items: {
@@ -34704,7 +34997,7 @@ export const RAGStartEventWritableSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["user", "selected_namespaces"],
+  required: ["selected_namespaces"],
   title: "RAGStartEvent",
   description:
     "Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.",
@@ -38789,5 +39082,5 @@ export const VectorStoreInputWritableSchema = {
   required: ["label"],
   title: "VectorStoreInput",
   description:
-    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
 } as const;

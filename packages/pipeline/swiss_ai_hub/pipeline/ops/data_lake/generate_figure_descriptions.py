@@ -12,16 +12,18 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 
 from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
+from swiss_ai_hub.pipeline.util.model_builders import build_language_model
+from swiss_ai_hub.pipeline.util.run_routing import bucket_from_partition_key
 
 
 @op(code_version="v1")
 def generate_figure_descriptions(
     context: OpExecutionContext,
     ref_doc: RefDocDocument,
-    language_model: ResourceParam[LLM],
     data_lake_file_system: ResourceParam[AbstractFileSystem],
 ) -> RefDocDocument:
     """Injects image Markdown tags into the document content by replacing HTML figure tags."""
+    language_model = build_language_model(bucket_from_partition_key(context.partition_key))
 
     if ref_doc.text_resource is None:
         context.log.warning(f"Document has no text content, skipping figure description generation: {ref_doc.id_}")

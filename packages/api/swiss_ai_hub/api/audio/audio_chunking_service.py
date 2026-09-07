@@ -34,6 +34,24 @@ class AudioChunkingService:
     ] = -40  # -40dB threshold identifies most speech pauses without excessive chunking
 
     @staticmethod
+    def contains_speech(audio: AudioSegment) -> bool:
+        """Whether the upload holds anything worth sending to the transcription gateway.
+
+        OpenAI answers a silent upload with an empty transcript, but the gateway's WhisperX service
+        raises instead — a recording the user never spoke into comes back as `Transcription failed: 0`,
+        an HTTP 500 the caller can do nothing with. Verified against the provider on 2026-09-03 with
+        silence, white noise and a pure tone.
+        """
+        return bool(
+            detect_nonsilent(
+                audio,
+                min_silence_len=AudioChunkingService.MIN_SILENCE_LEN,
+                silence_thresh=AudioChunkingService.SILENCE_THRESH,
+                seek_step=10,
+            )
+        )
+
+    @staticmethod
     async def chunk_audio(audio: AudioSegment) -> list[AudioSegment]:
         file_size: Annotated[int, "bytes"] = len(audio.raw_data)
         total_duration: Annotated[int, "ms"] = len(audio)

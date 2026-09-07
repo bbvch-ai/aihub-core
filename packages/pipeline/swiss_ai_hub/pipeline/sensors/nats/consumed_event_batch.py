@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -59,6 +60,25 @@ class ConsumedEventBatch(BaseModel):
             if len(messages) >= _MAX_DRAIN_MESSAGES:
                 logger.info(f"Stopping drain at {len(messages)} events; the rest is collected next tick.")
                 return cls(messages=messages)
+
+    @classmethod
+    async def drain_grouped(
+        cls,
+        poller: Annotated[JSPoller, "Poller for this pipeline type's single event stream"],
+        bucket_of: Annotated[Callable[[str], str], "Resolves a message subject to the bucket it concerns"],
+    ) -> dict[str, Self]:
+        """Drains the one type-keyed stream and splits the batch per knowledge database.
+
+        One stream carries the uploads of every database this pipeline owns, but each database gets its
+        own debounce state and its own observation run, so the batch has to be grouped before it is
+        folded into any cursor.
+        """
+        batch = await cls.drain(poller)
+
+        grouped: dict[str, list[PolledMessage]] = {}
+        for message in batch.messages:
+            grouped.setdefault(bucket_of(message.subject), []).append(message)
+        return {bucket: cls(messages=messages) for bucket, messages in grouped.items()}
 
     @property
     def count(self) -> int:
