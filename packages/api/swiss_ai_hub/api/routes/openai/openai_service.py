@@ -617,7 +617,7 @@ class OpenaiService:
                 # carries the upstream request id, which is the only handle for asking the provider
                 # about a chunk it rejected. `str(exception)` would not do — the SDK puts the body
                 # there only when it built the exception itself, so the id has to be unwrapped.
-                logger.error(
+                logger.exception(
                     f"Chunk {i + 1}/{len(audio_chunks)} ({len(audio_chunk)} ms) of {file.filename} produced no "
                     f"transcript: {ModelGatewayErrorHandler.upstream_message(gateway_failure)}"
                 )

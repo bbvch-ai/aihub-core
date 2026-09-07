@@ -51,7 +51,7 @@ class ModelGatewayErrorHandler:
     # every chunk would hit. The lookahead is what separates the two: the provider nests its own
     # statuses in the same phrase ("Transcription failed: 503: Failed to load alignment model"), and
     # a status is a fault that may well be transient, while a count is a verdict on this audio.
-    UNTRANSCRIBABLE_AUDIO: ClassVar[re.Pattern[str]] = re.compile(r"Transcription failed: \d+(?!\d|:)")
+    UNTRANSCRIBABLE_AUDIO: ClassVar[re.Pattern[str]] = re.compile(r"Transcription failed: \d+(?![\d:])")
 
     # Upstream failures whose own wording names a component of the provider's pipeline rather than
     # anything the caller can recognise. The raw message still goes to the log — only the response
