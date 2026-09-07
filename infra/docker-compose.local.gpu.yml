@@ -1786,7 +1786,7 @@ services:
   # Document Processing Stack
   # ===================================================================
   # This stack, powered by MinerU, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # uploaded documents for the document ingestion pipeline. VLM requests are routed
   # through LiteLLM for unified model routing.
   # ===================================================================
 
@@ -2544,6 +2544,7 @@ services:
       AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
       AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
       AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+      AIHUB_SHOW_LEGACY_KNOWLEDGE: ${AIHUB_SHOW_LEGACY_KNOWLEDGE}
 
       # Startup tenant — read by StartupTenantSettings on first boot to seed
       # the initial tenant. ID also goes to keycloak for realm-import group naming.
@@ -2607,6 +2608,8 @@ services:
       SCHEDULER_REDIS_KEY_PREFIX: ${SCHEDULER_REDIS_KEY_PREFIX}
       SCHEDULER_EVENT_RETENTION_DAYS: ${SCHEDULER_EVENT_RETENTION_DAYS}
       SCHEDULER_RETENTION_INTERVAL_SECONDS: ${SCHEDULER_RETENTION_INTERVAL_SECONDS}
+      SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH: ${SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH}
+      SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH: ${SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH}
 
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
@@ -3578,10 +3581,10 @@ services:
       - storage
       - egress  # Outbound access to external IMAP servers
   # License: Apache-2.0 — own image (see LICENSES.md)
-  default_rag_pipeline:
-    container_name: default-rag-pipeline
+  document_ingestion_pipeline:
+    container_name: document-ingestion-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest
+    image: ghcr.io/bbvch-ai/aihub-core/document_ingestion_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -3589,7 +3592,6 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
 
       # NATS
       NATS_ENDPOINT: nats://nats:4222
@@ -3607,8 +3609,6 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
-      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
-      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
@@ -3622,11 +3622,17 @@ services:
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
+      # Generic Document Ingestion Pipeline processing recipe
+      DOCUMENT_INGESTION_EMBEDDING_MODEL: ${DOCUMENT_INGESTION_EMBEDDING_MODEL}
+      DOCUMENT_INGESTION_LLM_MODEL: ${DOCUMENT_INGESTION_LLM_MODEL}
+      DOCUMENT_INGESTION_WITH_SUMMARY_NODES: ${DOCUMENT_INGESTION_WITH_SUMMARY_NODES}
+      DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT: ${DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT}
+      DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS: ${DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS}
+      DOCUMENT_INGESTION_OBSERVE_JOB_HOUR: ${DOCUMENT_INGESTION_OBSERVE_JOB_HOUR}
+      DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE: ${DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE}
+
       # DAGSTER
-      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
-      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
       DAGSTER_HOME: /dagster_home
-      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -3635,99 +3641,6 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
-
-      # Pipeline run-failure notifications (Apprise)
-      NOTIFICATION_URLS: ${NOTIFICATION_URLS}
-      NOTIFICATION_DAGSTER_UI_BASE_URL: https://dagster.${DOMAIN}
-      NOTIFICATION_TITLE_PREFIX: Swiss AI Hub Pipeline
-      NOTIFICATION_MIN_INTERVAL_SECONDS: 30
-    healthcheck:
-      test:
-        - CMD
-        - dagster
-        - api
-        - grpc-health-check
-        - --host
-        - localhost
-        - --port
-        - '4000'
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    networks:
-      - backend
-      - data
-      - storage
-  # License: Apache-2.0 — own image (see LICENSES.md)
-  shared_rag_pipeline:
-    container_name: shared-rag-pipeline
-    restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:latest
-    environment:
-      PYTHONUNBUFFERED: 1
-      LOG_LEVEL: ${LOG_LEVEL}
-
-      # AI-Hub Settings
-      AIHUB_VERSION: ${AIHUB_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
-
-      # NATS
-      NATS_ENDPOINT: nats://nats:4222
-      NATS_TOKEN: ${NATS_TOKEN}
-
-      # LiteLLM Proxy Server Settings
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
-      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
-
-      # MinerU (document parsing)
-      MINERU_API_BASE_URL: http://mineru-api:8000
-      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
-      MINERU_VLM_SERVER_URL: http://litellm:4000
-      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
-      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
-      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
-      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
-      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
-      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
-
-      # Postgres
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
-      # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
-
-      # MILVUS
-      MILVUS_URL: http://milvus-standalone:19530
-      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
-      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
-
-      # DAGSTER
-      # Run workers are spawned in this container by DefaultRunLauncher and rehydrate the
-      # serialized InstanceRef, so every env-var reference in dagster.yaml must resolve here too.
-      DAGSTER_HOME: /dagster_home
-      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
-
-      # S3 Access connection (access and secret key same as SeaweedFS)
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
-      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
-      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
-      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
-      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
-
-      # Neo4j
-      NEO4J_URL: bolt://neo4j:7687
-      NEO4J_USERNAME: ${NEO4J_USERNAME}
-      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
-
-      # Mem0
-      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
-      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
-      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
-      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # Pipeline run-failure notifications (Apprise)
       NOTIFICATION_URLS: ${NOTIFICATION_URLS}

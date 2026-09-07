@@ -6,6 +6,7 @@ from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringFie
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
 
 
 class BucketEntity(Document):
@@ -29,14 +30,25 @@ class BucketEntity(Document):
     description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
+    ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
+    # Models this database is ingested with. Unset on rows created before they were configurable; the
+    # pipeline falls back to its deployment defaults for those, so they keep ingesting unchanged.
+    llm_model = StringField(required=False, default=None)
+    # Immutable once set: the collection's vector dimension is derived from this model, and an existing
+    # collection cannot be re-dimensioned. Changing the embedding model means a new database.
+    embedding_model = StringField(required=False, default=None)
+    # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
+    deleting = BooleanField(default=False)
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
         if not name:
             raise ValidationError(f"{field_name} cannot be empty")
 
-        if not re.match(r"^[a-zA-Z0-9]+$", name):
-            raise ValidationError(f"{field_name} '{name}' can only contain alphanumeric characters")
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9]*$", name):
+            raise ValidationError(
+                f"{field_name} '{name}' must start with a letter and contain only alphanumeric characters"
+            )
 
     @classmethod
     def create_bucket(
@@ -47,6 +59,9 @@ class BucketEntity(Document):
         description: LocaleStringEntity | None = None,
         auto_sync: bool = False,
         datalake_type: str = "s3",
+        ingestor: str = IngestorType.UNASSIGNED.value,
+        llm_model: str | None = None,
+        embedding_model: str | None = None,
         db_alias: str = "default",
     ) -> Self:
         cls._validate_name(bucket_name, "bucket_name")
@@ -61,6 +76,9 @@ class BucketEntity(Document):
                 description=description or LocaleStringEntity(),
                 auto_sync=auto_sync,
                 datalake_type=datalake_type,
+                ingestor=ingestor,
+                llm_model=llm_model,
+                embedding_model=embedding_model,
             )
             bucket.save()
             return bucket
@@ -86,6 +104,12 @@ class BucketEntity(Document):
             return SwitchedBucket.objects().order_by("bucket_name")
 
     @classmethod
+    def get_deleting_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
+        """Buckets flagged for teardown — the durable work queue the teardown sensor reads."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects(deleting=True).order_by("bucket_name")
+
+    @classmethod
     def update_bucket(
         cls,
         bucket_id: str,
@@ -95,6 +119,7 @@ class BucketEntity(Document):
         description: LocaleStringEntity | None = None,
         auto_sync: bool | None = None,
         datalake_type: str | None = None,
+        ingestor: str | None = None,
         db_alias: str = "default",
     ) -> Self:
         bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
@@ -106,10 +131,20 @@ class BucketEntity(Document):
             bucket.name = name
         if description:
             bucket.description = description
-        if auto_sync:
+        if auto_sync is not None:
             bucket.auto_sync = auto_sync
         if datalake_type:
             bucket.datalake_type = datalake_type
+        if ingestor is not None:
+            bucket.ingestor = ingestor
+        bucket.save()
+        return bucket
+
+    @classmethod
+    def mark_deleting(cls, bucket_id: str, db_alias: str = "default") -> Self:
+        """Flag a bucket for teardown so enumeration excludes it while the teardown job runs."""
+        bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
+        bucket.deleting = True
         bucket.save()
         return bucket
 

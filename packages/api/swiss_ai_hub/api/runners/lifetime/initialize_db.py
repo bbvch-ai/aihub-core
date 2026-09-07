@@ -18,7 +18,7 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings, StartupTenantSetting
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
 
 logger = logging.getLogger(__name__)
 
@@ -65,9 +65,17 @@ _DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
         access_rules=["aihub.admin.agent.>"],
     ),
     _DefaultRoleDefinition(
+        name="AIHubKnowledgeUser",
+        description="Grants access to all knowledge databases but to nothing else",
+        access_rules=["aihub.user.knowledge.>"],
+    ),
+    _DefaultRoleDefinition(
         name="AIHubKnowledgeAdmin",
-        description="Grants admin access to knowledge and agents",
-        access_rules=["aihub.admin.agent.>", "aihub.admin.knowledge.>"],
+        description="Grants admin access to all knowledge databases but to nothing else",
+        # Both forms are needed: ``knowledge.>`` covers every existing database, while the bare
+        # ``knowledge`` root is what creating a new one is guarded on — a database that does not exist
+        # yet cannot be named by a rule.
+        access_rules=["aihub.admin.knowledge", "aihub.admin.knowledge.>"],
     ),
     _DefaultRoleDefinition(
         name="AIHubProcessUser",
@@ -125,10 +133,31 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     return tenant
 
 
+def _reconcile_default_role_rules(existing: RoleEntity, role_def: _DefaultRoleDefinition, tenant_id: str) -> None:
+    """Adds access rules a default role definition gained since the role row was seeded.
+
+    Purely additive: rules an admin added by hand are kept, because the platform cannot tell a
+    deliberate customization from stale state. Without this, a deployment that seeded its roles
+    before a guard was introduced keeps a role that no longer grants what its name promises —
+    ``AIHubKnowledgeAdmin`` without the ``aihub.admin.knowledge`` root, for instance, cannot
+    create a database.
+    """
+    missing = [rule for rule in role_def.access_rules if rule not in existing.access_rules]
+    if not missing:
+        logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
+        return
+    existing.access_rules = list(existing.access_rules) + missing
+    existing.save()
+    logger.info(f"Added missing access rules {missing} to existing role '{role_def.name}' for tenant '{tenant_id}'")
+
+
 @no_trace
 async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
     """
     Seed the default role set for a tenant. Idempotent.
+
+    Roles that already exist are reconciled additively, so a deployment seeded before a
+    definition gained a rule picks that rule up on the next startup.
 
     Gated by ``AIHubSettings().CREATE_DEFAULT_ROLES``: when disabled, tenants
     start empty and an admin is expected to create roles manually.
@@ -140,7 +169,7 @@ async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
     for role_def in _DEFAULT_ROLE_DEFINITIONS:
         existing = RoleEntity.objects(name=role_def.name, tenant_id=tenant_id).first()
         if existing:
-            logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
+            _reconcile_default_role_rules(existing, role_def, tenant_id)
             continue
         try:
             RoleEntity.create_tenant_role(
@@ -244,26 +273,44 @@ async def initialize_knowledge_buckets() -> None:
         return
 
     buckets_config = [
-        {"bucket_name": settings.DEFAULT_BUCKET_NAME, "namespace": settings.DEFAULT_NAMESPACE_NAME},
-        {"bucket_name": settings.SHARED_BUCKET_NAME, "namespace": settings.SHARED_NAMESPACE_NAME},
+        {
+            "bucket_name": settings.DEFAULT_BUCKET_NAME,
+            "namespace": settings.DEFAULT_NAMESPACE_NAME,
+            "ingestor": IngestorType.DEFAULT_RAG.value,
+        },
+        {
+            "bucket_name": settings.SHARED_BUCKET_NAME,
+            "namespace": settings.SHARED_NAMESPACE_NAME,
+            "ingestor": IngestorType.SHARED_RAG.value,
+        },
     ]
 
     for config in buckets_config:
-        bucket = await _ensure_bucket_exists(config["bucket_name"])
+        bucket = await _ensure_bucket_exists(config["bucket_name"], config["ingestor"])
         await _ensure_namespace_exists(bucket, config["namespace"])
 
     logger.info("Knowledge bucket initialization completed successfully")
 
 
-async def _ensure_bucket_exists(bucket_name: str) -> BucketEntity:
-    """Ensure a bucket exists in the database, creating it if necessary."""
+async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:
+    """Ensure a bucket exists in the database with the correct ingestor, creating it if necessary.
+
+    The ``ingestor`` is re-asserted on existing rows so the two seeded buckets are labelled with the legacy
+    pipeline that owns them. This is labelling, not a safety net: rows predating the field read the inert
+    ``unassigned`` default, so no pipeline claims them even if this seeder never runs (e.g. when
+    ``CREATE_DEFAULT_BUCKETS`` is off).
+    """
     try:
         bucket = BucketEntity.get_bucket_by_bucket_name(bucket_name)
-        logger.info(f"Bucket '{bucket_name}' already exists, skipping creation")
+        if bucket.ingestor != ingestor:
+            bucket = BucketEntity.update_bucket(str(bucket.id), ingestor=ingestor)
+            logger.info(f"Updated bucket '{bucket_name}' ingestor to '{ingestor}'")
+        else:
+            logger.info(f"Bucket '{bucket_name}' already exists, skipping creation")
         return bucket
     except DoesNotExist:
         try:
-            bucket = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name)
+            bucket = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name, ingestor=ingestor)
             logger.info(f"Successfully created bucket '{bucket_name}'")
             return bucket
         except Exception:

@@ -1,11 +1,12 @@
-from dagster import Backoff, MetadataValue, OpExecutionContext, Output, ResourceParam, RetryPolicy, op
-from llama_index.core.base.embeddings.base import BaseEmbedding
+from dagster import Backoff, MetadataValue, OpExecutionContext, Output, RetryPolicy, op
 from llama_index.core.schema import MetadataMode, TextNode
 from openai import BadRequestError
 from pydantic_core import ValidationError
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE, PAGE
 
 from swiss_ai_hub.pipeline.util.meta_utils import skipped_nodes_metadata_table
+from swiss_ai_hub.pipeline.util.model_builders import build_embedding_model
+from swiss_ai_hub.pipeline.util.run_routing import bucket_from_partition_key
 
 
 @op(
@@ -17,7 +18,6 @@ from swiss_ai_hub.pipeline.util.meta_utils import skipped_nodes_metadata_table
 def embed_nodes(
     context: OpExecutionContext,
     nodes: list[TextNode],
-    embedding_model: ResourceParam[BaseEmbedding],
 ) -> Output[list[TextNode]]:
     """
     Adds vector embeddings to a list of TextNodes, dropping the individual nodes the model refuses.
@@ -25,6 +25,7 @@ def embed_nodes(
     A single unembeddable chunk used to fail the whole partition, so one oversized table cost the document
     every other node it had. Nodes the model rejects deterministically are now reported and skipped.
     """
+    embedding_model = build_embedding_model(bucket_from_partition_key(context.partition_key))
     texts = [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes]
 
     def embed_text_batch(batch_texts: list[str], offset: int) -> list[list[float] | None]:

@@ -5,8 +5,9 @@ from pydantic import BaseModel, ValidationError
 from swiss_ai_hub.core.agents import CRON_CONFIG_KEY
 from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
 from swiss_ai_hub.core.i18n import LOCALES, LocaleString
+from swiss_ai_hub.core.persistence import AgentInstanceRef
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
-from swiss_ai_hub.core.scheduling import CronSchedule
+from swiss_ai_hub.core.scheduling import CronSchedule, ScheduleAdmission
 
 
 class ConfigMetadata(NamedTuple):
@@ -42,7 +43,11 @@ class InstanceConfigHelper:
         return config
 
     @staticmethod
-    def validate_config_for_create(config: dict[str, Any], config_model: type[BaseModel]) -> BaseModel:
+    def validate_config_for_create(
+        config: dict[str, Any],
+        config_model: type[BaseModel],
+        agent: AgentInstanceRef | None = None,
+    ) -> BaseModel:
         """Validate configuration for instance creation with detailed field-path error messages."""
         try:
             instance = config_model.model_validate(config)
@@ -54,11 +59,15 @@ class InstanceConfigHelper:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(error_messages)}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
-        InstanceConfigHelper.validate_cron_field(config)
+        InstanceConfigHelper.validate_cron_field(config, agent)
         return instance
 
     @staticmethod
-    def validate_config_for_update(config: dict[str, Any], config_model: type[BaseModel]) -> BaseModel:
+    def validate_config_for_update(
+        config: dict[str, Any],
+        config_model: type[BaseModel],
+        agent: AgentInstanceRef | None = None,
+    ) -> BaseModel:
         """Validate configuration for instance update with simple error passthrough."""
         try:
             instance = config_model.model_validate(config)
@@ -66,12 +75,12 @@ class InstanceConfigHelper:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
-        InstanceConfigHelper.validate_cron_field(config)
+        InstanceConfigHelper.validate_cron_field(config, agent)
         return instance
 
     @staticmethod
-    def validate_cron_field(config: dict[str, Any]) -> None:
-        """Reject a config whose cron schedule is malformed, before it is stored.
+    def validate_cron_field(config: dict[str, Any], agent: AgentInstanceRef | None = None) -> None:
+        """Reject a config whose cron schedule is malformed or too costly, before it is stored.
 
         Same jambo gap as `validate_identity_locale_fields`, with a far wider blast radius. `CronSchedule` rejects a
         bad expression and an unknown timezone in a `model_validator`, which the generated model does not carry: every
@@ -83,6 +92,10 @@ class InstanceConfigHelper:
         Keyed on the field name because `CRON_CONFIG_KEY` is platform-owned: `cron` lives on the `AgentConfig` base
         and the scheduler reads a profile's schedule from exactly this top-level key, so a blueprint cannot use the
         name for anything else.
+
+        The same call also rejects a schedule that is well-formed but produces more runs than the deployment allows.
+        How many a cron expression produces is computable from the expression alone, so the admin who typed it can be
+        told now — which is the only moment the answer is useful.
         """
         cron = config.get(CRON_CONFIG_KEY)
         if not isinstance(cron, dict):
@@ -96,10 +109,22 @@ class InstanceConfigHelper:
             return
 
         try:
-            CronSchedule.model_validate(cron)
+            schedule = CronSchedule.model_validate(cron)
         except ValidationError as e:
             details = "; ".join(InstanceConfigHelper._cron_error_message(error) for error in e.errors())
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {details}")
+
+        if agent is None:
+            # Only the agent save path knows which profile is being written, and only agents carry a
+            # schedule at all — `cron` lives on `AgentConfig`. Without an identity the aggregate check
+            # would count the profile being edited against itself, so it is skipped rather than guessed.
+            return
+
+        rejection = ScheduleAdmission.rejection_reason(schedule, agent.agent_class, agent.agent_id)
+        if rejection:
+            raise HTTPException(
+                status_code=400, detail=f"Configuration validation failed: {CRON_CONFIG_KEY}: {rejection}"
+            )
 
     @staticmethod
     def _cron_error_message(error: Any) -> str:

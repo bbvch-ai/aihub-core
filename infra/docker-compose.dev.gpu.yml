@@ -1481,7 +1481,7 @@ services:
   # Document Processing Stack
   # ===================================================================
   # This stack, powered by MinerU, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # uploaded documents for the document ingestion pipeline. VLM requests are routed
   # through LiteLLM for unified model routing.
   # ===================================================================
 

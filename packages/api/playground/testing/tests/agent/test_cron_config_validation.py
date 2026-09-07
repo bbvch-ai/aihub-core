@@ -6,11 +6,17 @@ here and reach storage, where the scheduler skipped it with an error log and the
 no feedback at all.
 """
 
+from unittest.mock import patch
+
 import pytest
 from fastapi import HTTPException
 from pydantic import BaseModel
+from swiss_ai_hub.core.persistence import AgentInstanceRef
+from swiss_ai_hub.core.scheduling import SchedulerSettings
 
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
+
+_ADMISSION = "swiss_ai_hub.core.scheduling.schedule_admission"
 
 _VALID = {
     "minute": "0",
@@ -114,3 +120,42 @@ class TestAnUntouchedScheduleIsNotASchedule:
             _validate({**{key: "" for key in _VALID}, "hour": "9"})
 
         assert raised.value.status_code == 400
+
+
+class TestRejectsASchedulePastTheDeploymentsCeiling:
+    """The second half of save-time validation: not "is this a cron expression" but "is this more work
+    than this deployment wants". Both are answerable from the expression alone, so both belong in front
+    of the admin who typed it rather than in a counter they will never see."""
+
+    @staticmethod
+    def _validate(schedule: dict, settings: SchedulerSettings | None = None) -> None:
+        """Drives the real admission check, with the stored estate empty and the knobs settable."""
+        with (
+            patch(f"{_ADMISSION}.AgentConfigEntityDocument.find_with_config_key", return_value=[]),
+            patch(f"{_ADMISSION}.SchedulerSettings", return_value=settings or SchedulerSettings()),
+        ):
+            InstanceConfigHelper.validate_config_for_create(
+                {"agent_id": "demo", "cron": schedule},
+                _AcceptsAnything,
+                AgentInstanceRef(agent_class="CronDemoAgent", agent_id="demo"),
+            )
+
+    def test_the_default_ceiling_accepts_every_minute(self) -> None:
+        """Every-minute is a supported schedule. A deployment nobody has configured must not refuse it,
+        or the platform is offering something it will not honour."""
+        self._validate({**_VALID, "minute": "*", "hour": "*", "day_of_week": "*"})
+
+    def test_an_over_ceiling_schedule_is_a_400_naming_the_problem(self) -> None:
+        with pytest.raises(HTTPException) as rejected:
+            self._validate(
+                {**_VALID, "minute": "*", "hour": "*"},
+                SchedulerSettings(MAX_RUNS_PER_PROFILE_PER_MONTH=100),
+            )
+
+        assert rejected.value.status_code == 400
+        assert "runs more than 100 times per 30 days" in rejected.value.detail
+
+    def test_without_an_identity_the_check_is_skipped(self) -> None:
+        """Processes share this helper and carry no schedule; without knowing which profile is being
+        written the aggregate check would count it against itself."""
+        _validate({**_VALID, "minute": "*", "hour": "*"})

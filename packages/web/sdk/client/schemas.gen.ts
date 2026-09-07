@@ -5878,6 +5878,72 @@ export const CreateAgentInstanceRequestSchema = {
     "Request body for creating a new agent instance.\nThe agent_class is provided in the URL path, not in the request body.",
 } as const;
 
+export const CreateDatabaseRequestSchema = {
+  properties: {
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description:
+        "The display name of the knowledge database in the user's locale.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description:
+        "A short description of the knowledge database in the user's locale.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description:
+        "The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.",
+      default: "document_ingestion",
+    },
+    llm_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model",
+      description:
+        "Text-generation model used to summarize, refine tables and describe figures for this database. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=chat.",
+    },
+    embedding_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Embedding Model",
+      description:
+        "Embedding model this database's documents are indexed with. Cannot be changed after creation. Defaults to the deployment's configured model. Valid values are served by GET /models with mode=embedding.",
+    },
+  },
+  type: "object",
+  title: "CreateDatabaseRequest",
+} as const;
+
 export const CreateNamespaceRequestSchema = {
   properties: {
     folder_name: {
@@ -6521,6 +6587,18 @@ export const DatabaseDTOSchema = {
       title: "Auto Sync",
       description: "Whether this database auto-syncs namespaces",
     },
+    deletable: {
+      type: "boolean",
+      title: "Deletable",
+      description:
+        "Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description:
+        "Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.",
+    },
     namespaces: {
       items: {
         $ref: "#/components/schemas/NamespaceDTO",
@@ -6531,8 +6609,88 @@ export const DatabaseDTOSchema = {
     },
   },
   type: "object",
-  required: ["name", "display_name", "auto_sync", "namespaces"],
+  required: [
+    "name",
+    "display_name",
+    "auto_sync",
+    "deletable",
+    "ingestor",
+    "namespaces",
+  ],
   title: "DatabaseDTO",
+} as const;
+
+export const DatabaseResponseSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "The database name (also the Milvus collection and Mongo store name).",
+    },
+    bucket_name: {
+      type: "string",
+      title: "Bucket Name",
+      description: "The S3 bucket / data lake container name.",
+    },
+    ingestor: {
+      type: "string",
+      title: "Ingestor",
+      description: "The deployed ingestion pipeline that owns this database.",
+    },
+    llm_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model",
+      description:
+        "Text-generation model, or None to follow the deployment default.",
+    },
+    embedding_model: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Embedding Model",
+      description: "Embedding model, or None to follow the deployment default.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "A user-friendly display name for the database.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "A brief description of the database's contents.",
+    },
+  },
+  type: "object",
+  required: ["name", "bucket_name", "ingestor"],
+  title: "DatabaseResponse",
 } as const;
 
 export const DatasetSchema = {
@@ -11393,6 +11551,44 @@ export const IngestedNodeSchema = {
   title: "IngestedNode",
   description:
     "A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.\nThe attributes defined here are the minimal number of attributes that a node must have to ensure the\nUI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.\nmust be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes\nthat are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,\nare strictly necessary.",
+} as const;
+
+export const IngestorDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Ingestor identifier, as served by GET /knowledge/ingestors.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the ingestion pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of what the pipeline does.",
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "IngestorDTO",
 } as const;
 
 export const InputAudioSchema = {
@@ -24543,7 +24739,7 @@ export const VectorStoreInputSchema = {
   required: ["label", "validation"],
   title: "VectorStoreInput",
   description:
-    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
 } as const;
 
 export const VideoBlockSchema = {
@@ -38789,5 +38985,5 @@ export const VectorStoreInputWritableSchema = {
   required: ["label"],
   title: "VectorStoreInput",
   description:
-    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+    'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
 } as const;

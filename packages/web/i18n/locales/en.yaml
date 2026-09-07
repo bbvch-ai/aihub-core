@@ -448,7 +448,7 @@ document:
     deleting: Deleting
     button: Delete
     button_selected: Delete selected
-    confirmMessage: Are you sure you want to delete this document? It will be permanently
+    confirmMessage: Are you sure you want to delete "{title}"? It will be permanently
       removed from the knowledge base. This action cannot be undone.
     confirmMessageBatch: Are you sure you want to delete {count} document(s)? They
       will be permanently removed from the knowledge base. This action cannot be undone.
@@ -504,21 +504,65 @@ knowledge:
     title: Add Collection
     description: Create a new knowledge collection
     cancel: Cancel
+  add_database:
+    title: Add Knowledge Database
+    description: Create a new self-service knowledge database
   auto_sync:
     title: Auto-synchronized
     description: Collections are automatically managed
   manual_management:
     description: Collections can be created and managed manually
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Edit collection
   upload_documents: Upload documents
+  delete_namespace: Delete collection
+  delete_database: Delete database
+  delete:
+    confirm_label: Type {name} to confirm
+    database:
+      title: Delete knowledge database
+      warning: This permanently deletes the database {name}, all its collections,
+        and its {count} documents. This cannot be undone.
+    namespace:
+      title: Delete collection
+      warning: This permanently deletes the collection {name} and its {count} documents.
+        This cannot be undone.
+    actions:
+      delete: Delete
+    scheduled:
+      summary: Deletion started
+      detail: The deletion runs in the background and may take a moment.
+    error:
+      summary: Deletion failed
+      detail: The deletion could not be started. Please try again.
   form:
     create:
       title: Create Collection
+    create_error: Failed to create the collection. Please try again.
+    create_database:
+      title: Create Knowledge Database
     edit:
       title: Edit Collection
     database:
       label: Knowledge Database
       placeholder: Knowledge Database Name
+    database_name:
+      label: Database Name
+      placeholder: myknowledgebase
+      help: Only alphanumeric characters are allowed. The name cannot be changed later.
+      validation_error: Database name can only contain alphanumeric characters
+    ingestor:
+      label: Ingestion Pipeline
+      placeholder: Select an ingestion pipeline
+      help: The pipeline that processes documents uploaded to this database.
+    llm_model:
+      label: Text Model
+      placeholder: Use the deployment default
+      help: Generates summaries, refines tables and describes figures for this database.
+    embedding_model:
+      label: Embedding Model
+      placeholder: Use the deployment default
+      help: Indexes this database's documents. Cannot be changed after creation.
     folder_name:
       label: Collection Name
       placeholder: my-collection
@@ -812,8 +856,12 @@ lib:
       label: Database
     namespaces:
       label: Namespaces
-      placeholder: Select namespaces (empty = all)
-      help: Leave empty to search all namespaces
+      placeholder: Select at least one namespace
+      help: Only the selected namespaces are searched
+    allNamespaces:
+      label: Search all namespaces
+      help: Every namespace of this database is searched, including ones added later
+        ({count} today).
     allowedFilterFields:
       label: Allowed Filter Fields
       placeholder: Add a metadata key and press Enter

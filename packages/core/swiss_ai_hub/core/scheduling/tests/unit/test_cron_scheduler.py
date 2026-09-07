@@ -335,6 +335,43 @@ class TestInstanceSelection:
         service._store.set_watermark.assert_awaited_once_with(_NOW)
 
     @pytest.mark.asyncio
+    async def test_a_schedule_over_the_per_profile_ceiling_is_skipped(self, distributor: MagicMock) -> None:
+        """The save path rejects these, but only for rows written since it existed and only while the
+        setting held its value. Lowering the ceiling must not leave the profiles that were admissible
+        under the old one firing forever — the same write-validation-plus-scan-skip pairing a malformed
+        schedule gets."""
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(MAX_RUNS_PER_PROFILE_PER_MONTH=100),
+        )
+
+        await _run_tick(service, configs=[_config(schedule=_HOURLY)])
+
+        distributor.distribute_event.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_an_over_ceiling_profile_does_not_starve_the_others(self, distributor: MagicMock) -> None:
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(MAX_RUNS_PER_PROFILE_PER_MONTH=750),
+        )
+        every_five = _config(agent_id="greedy", schedule=_EVERY_FIVE_MINUTES)
+
+        await _run_tick(service, configs=[every_five, _config(agent_id="hourly", schedule=_HOURLY)])
+
+        fired = {call.kwargs["target_agent"].agent_id for call in distributor.distribute_event.call_args_list}
+        assert fired == {"hourly"}
+
+    @pytest.mark.asyncio
+    async def test_the_default_ceiling_skips_nothing(self, service: CronScheduler, distributor: MagicMock) -> None:
+        """Every-minute is supported, so an untouched deployment must fire it."""
+        await _run_tick(service, configs=[_config(schedule={**_HOURLY, "minute": "*"})])
+
+        distributor.distribute_event.assert_awaited()
+
+    @pytest.mark.asyncio
     async def test_does_nothing_when_no_class_is_schedulable(
         self, service: CronScheduler, distributor: MagicMock
     ) -> None:

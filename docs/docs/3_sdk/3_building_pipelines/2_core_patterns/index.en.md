@@ -113,14 +113,15 @@ Factories are the highest level of abstraction in the SDK. They are functions th
 resources, allowing you to define an entire pipeline in just a few lines of code.
 
 - **Asset Factories (`*_factory.py`)**: Functions that create individual, configured assets (like `documents_factory`).
-- **Resource Factories (`definitions_util.py`)**: Functions that assemble a complete set of resources needed for a
-  pipeline (like `local_mongo_milvus_storage_context_resource`).
-- **Definitions Factories (`definitions_util.py`)**: The top-level factory (`default_definitions`) that uses all other
-  factories to create a complete, runnable `Definitions` object.
+- **Resource Factories (`resources/factory.py`)**: Functions that assemble a complete set of resources needed for a
+  pipeline (like `s3_data_lake_resources`).
+- **Definitions Factories (`document_ingestion_definitions_util.py`)**: The top-level factory
+  (`document_ingestion_pipeline_definitions`) that uses all other factories to create a complete, runnable `Definitions`
+  object.
 
 ```python
-# From definitions_util.py
-def default_definitions(datalake_container_name: str, ...) -> Definitions:
+# From document_ingestion_definitions_util.py
+def document_ingestion_pipeline_definitions(ingestor: str = "document_ingestion", ...) -> Definitions:
     """
     A factory that assembles an entire pipeline from other factories.
     """
