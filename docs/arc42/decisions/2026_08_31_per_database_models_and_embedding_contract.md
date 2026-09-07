@@ -89,10 +89,10 @@ they are one careless edit away from a corpus that indexes cleanly and retrieves
 
 ## Related Decisions
 
-- `2026_09_04_ingestors_announce_their_configuration_form` — supersedes decision 1: the two columns became keys of
-  `BucketEntity.configuration`, declared by the pipeline's announced form and validated against its announced schema.
-  The dimension contract (decisions 3 and 5) is kept and enforced on the announced `ModelSelect` elements instead of
-  fixed fields.
+- `2026_09_04_ingestors_announce_their_configuration_form` supersedes decision 1. The two columns became settings the
+  pipeline declares for itself, held in one configuration object on the database. Decisions 3 and 5 stand: a
+  collection's dimension is still derived from the embedding model, and a model that cannot state its width is still
+  refused when the database is created.
 - `2026_06_18_rag_pipeline_route_per_run` — one deployment serving every database, which is what makes per-database
   configuration necessary in the first place.
 - `2026_08_31_legacy_rag_pipelines_frozen_and_removed` — the frozen legacy pipelines keep their deploy-time model

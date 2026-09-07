@@ -74,7 +74,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── retrievers/                  # KnowledgeRetriever (Milvus), BaseRetriever
 │   ├── routing/                     # LLM-based event routing
 │   └── utils/                       # Shared AI utilities
-├── ingestors/                       # Ingestor config base (Form duality) — the AgentConfig of ingestion pipelines
+├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
 ├── i18n/                            # Internationalization
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
@@ -610,7 +610,7 @@ Real-time event emission for streaming LLM output to the UI:
 - `core/agents/agent_config.py` — agent config with form duality
 - `core/processes/process_config.py` — process config with form duality
 - `core/ingestors/ingestor_config.py` — ingestor config with form duality (knowledge database creation form)
-- `core/form/config_specs.py` — the announced schema every one of those is validated against
+- `core/form/config_specs.py` — the announced schema all three are validated against
 - `core/i18n/locale_string.py` — multi-language strings
 
 **Infrastructure**:

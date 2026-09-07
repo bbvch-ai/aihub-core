@@ -98,23 +98,23 @@ This single function call provides:
 - A multi-stage processing workflow including **parsing**, **chunking**, and **embedding**.
 - Integration with MongoDB for a **document store** and Milvus for a **vector store**.
 - Pre-configured **jobs**, **schedules**, and **sensors** for production-ready automation.
-- Registration as a selectable ingestor, so users can create databases for it from the admin UI with no redeploy —
-  together with the **configuration form** its databases are created through: model pickers and enrichment flags,
-  pre-filled with the defaults above, and any knob you add yourself.
+- Registration as a selectable ingestor, so users can create databases for it from the admin UI with no redeploy,
+  together with the **configuration form** its databases are created through: model pickers, enrichment switches, and
+  any setting you add yourself, pre-filled with the defaults above.
 
 ## Making your pipeline selectable in the UI
 
 Passing `display_name` and `description` alongside your `ingestor` is what makes your pipeline appear in the
 create-database dialog. There is nothing else to install and nothing to change in the platform.
 
-Your pipeline advertises itself: a sensor it ships with publishes those labels, its configuration form and the form's
-schema to the platform database on a short interval, and the API reads them from there — the same contract an agent
-class has with the platform. The dialog renders the form generically and the API validates every submission against the
-schema, so a knob you declare on your config class is offered, checked and stored without touching the API or the UI.
-Registration goes through the database rather than an in-process registry because the API and the pipelines run in
-**separate containers** — whether an ingestor exists is decided by what is deployed, not by what happens to be
-importable inside the API image. Using a sensor rather than a module-level write means a momentary database outage
-cannot stop your code location from loading; it simply registers on the next tick.
+Your pipeline advertises itself. A sensor it ships with publishes the labels, the configuration form and the form's
+schema to the platform database on a short interval, and the API reads them from there. This is the same contract an
+agent blueprint has with the platform: the dialog renders whatever the form declares, and the API validates every
+submission against the schema. A setting you declare on your config class is therefore offered, checked and stored
+without touching the API or the UI. Registration goes through the database rather than an in-process registry because
+the API and the pipelines run in **separate containers**. Whether an ingestor exists is decided by what is deployed, not
+by what happens to be importable inside the API image. Using a sensor rather than a module-level write means a momentary
+database outage cannot stop your code location from loading; it simply registers on the next tick.
 
 Three rules are worth knowing before you choose an id:
 
@@ -128,9 +128,10 @@ Three rules are worth knowing before you choose an id:
 If your pipeline never appears in the dialog, check in order: the code location loaded, its registration sensor is
 running in the Dagster UI, the row exists in the platform database, and the API can reach that same database.
 
-To add a setting of your own, extend `DocumentIngestionConfig` (a Form-duality class, like an agent's `AgentConfig`)
-with a field such as `crawl_depth: int | InputNumber`, pass its `as_form()` as `config=` to the factory, and read it per
-run with `ingestor_config_for_bucket(bucket, YourConfig)`. Full details, including the exact call, are in the
+To add a setting of your own, extend `DocumentIngestionConfig` with a field such as `crawl_depth: int | InputNumber`,
+pass its `as_form()` to the factory as `config=`, and read it back per run in your ops. The class works the same way an
+agent's config does, so a nested section or a repeated entry needs no extra work. Full details, including the exact
+call, are in the
 [package README](https://github.com/bbvch-ai/aihub-core/tree/main/packages/pipeline#making-a-custom-pipeline-selectable-in-the-ui).
 
 ## Next Steps

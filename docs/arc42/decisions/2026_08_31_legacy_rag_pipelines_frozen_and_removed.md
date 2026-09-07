@@ -8,8 +8,8 @@ deploy time. Two such deployments exist: `default_rag_pipeline` (`AIHubSettings(
 `default_definitions`, the public SDK builder for fixed-bucket pipelines.
 
 `document_ingestion_pipeline` supersedes them entirely: one deployment serves every knowledge database, resolving its
-target per run. Nothing new is ever assigned to a legacy pipeline — their routing tokens are reserved ids no pipeline
-can register (see `2026_09_04_ingestors_announce_their_configuration_form`), so the API never offers them — and the two
+target per run. Nothing new is ever assigned to a legacy pipeline: their routing tokens are reserved, so no pipeline can
+register them and the API never offers them (see `2026_09_04_ingestors_announce_their_configuration_form`). The two
 remaining deployments exist solely to keep ingesting into corpora that already exist.
 
 Keeping them alive is not free. Route-per-run forked the whole Stage-2 storage surface into ~12 `routed_*` modules, each

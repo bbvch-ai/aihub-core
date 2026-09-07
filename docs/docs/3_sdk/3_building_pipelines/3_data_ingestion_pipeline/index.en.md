@@ -227,10 +227,10 @@ defs = document_ingestion_pipeline_definitions(
 )
 ```
 
-The models and enrichment flags are deployment defaults. The pipeline announces a configuration form pre-filled with
-them, and every knowledge database created for this ingestor chooses its own values in the create dialog; the pipeline
-reads them per run. See [Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add a
-setting of your own.
+The models and enrichment switches above are deployment defaults, not fixed behaviour. The pipeline announces a
+configuration form pre-filled with them, each knowledge database created for this ingestor chooses its own values in the
+create dialog, and the pipeline reads those values per run. See
+[Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add a setting of your own.
 
 ## Default Data Mapping
 
