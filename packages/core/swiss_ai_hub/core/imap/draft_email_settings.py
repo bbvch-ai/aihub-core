@@ -125,7 +125,7 @@ class DraftEmailSettings(StepConfig):
     grounding_timeout_seconds: Annotated[
         int | InputNumber,
         Field(
-            default=600,
+            default=300,
             description="How long a knowledge lookup may take before the message is drafted with the failure text "
             "instead. A delegated agent that is offline or misconfigured never answers at all, and without a "
             "deadline the run waits for it forever — holding the mailbox and leaving a batch of already-filed mail "
