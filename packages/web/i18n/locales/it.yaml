@@ -556,7 +556,7 @@ knowledge:
     database_name:
       label: Nome del database
       placeholder: ilmiodatabase
-      help: Sono consentiti solo lettere minuscole e cifre, iniziando con una lettera, da
+      help: Sono consentite solo lettere minuscole e cifre, iniziando con una lettera, da
         3 a 63 caratteri. Il nome non può essere modificato in seguito.
       validation_error: Il nome del database deve iniziare con una lettera minuscola e può
         contenere solo lettere minuscole e cifre, tra 3 e 63 caratteri

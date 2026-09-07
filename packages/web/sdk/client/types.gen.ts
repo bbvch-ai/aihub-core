@@ -29107,6 +29107,8 @@ export type CreateDatabaseData = {
     tenant_id: string;
     /**
      * Database name
+     *
+     * Lowercase letters and digits, starting with a letter, 3 to 63 characters
      */
     database: string;
   };

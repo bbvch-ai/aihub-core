@@ -57,7 +57,7 @@ class BucketEntity(Document):
         """Stricter than ``_validate_name``: what S3, Milvus and Mongo all accept, since the name doubles as
         bucket, collection and store. ``_validate_name`` stays tolerant because it also guards rows adopted
         from deployment configuration and from pre-existing containers, which the platform cannot rename."""
-        if not re.match(_NEW_DATABASE_NAME_PATTERN, name):
+        if not re.fullmatch(_NEW_DATABASE_NAME_PATTERN, name):
             raise ValidationError(
                 f"Database name '{name}' must start with a lowercase letter, contain only lowercase letters "
                 "and digits, and be between 3 and 63 characters long"

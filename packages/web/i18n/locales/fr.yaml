@@ -556,7 +556,7 @@ knowledge:
     database_name:
       label: Nom de la base de données
       placeholder: mabasedeconnaissances
-      help: Seuls les lettres minuscules et les chiffres sont autorisés, en commençant par
+      help: Seules les lettres minuscules et les chiffres sont autorisés, en commençant par
         une lettre, de 3 à 63 caractères. Le nom ne peut pas être modifié ultérieurement.
       validation_error: Le nom de la base de données doit commencer par une lettre minuscule
         et ne contenir que des lettres minuscules et des chiffres, entre 3 et 63 caractères
