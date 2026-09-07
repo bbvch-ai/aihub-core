@@ -873,6 +873,12 @@ class KnowledgeService:
         legacy databases are ordinary corpora that their frozen pipelines still serve, so the per-resource
         rules govern them like any other. They drop back in here only when the deployment hides legacy
         knowledge, so that hidden means unreadable and not merely unlisted.
+
+        Keyed on the two configured names, while ``get_databases`` hides by the bucket's ``ingestor``. The
+        two agree on every deployment that has not renamed its buckets since seeding. A bucket carrying a
+        legacy ingestor under some other name is therefore unlisted but still readable by name — acceptable,
+        because the name settings are what a deployment declares its legacy corpora to be, and closing the
+        gap would mean a bucket lookup on every guarded read.
         """
         aihub_settings = AIHubSettings()
         system_names = _SYSTEM_DATABASE_NAMES | {aihub_settings.MONGO_MAIN_DB_NAME}
