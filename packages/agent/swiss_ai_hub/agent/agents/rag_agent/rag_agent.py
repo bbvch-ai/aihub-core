@@ -109,6 +109,7 @@ async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, 
 async def context_ready_for_history_limit(
     context_event: InOrderNodeCombinerEvent,
     config: RAGAgentConfig,
+    user: UserIdentity | None = None,
     context_sufficient_event: ContextSufficientAcceptEvent | None = None,
     memory_history_event: AddMemoryToChatHistoryEvent | None = None,
 ) -> bool:
@@ -117,7 +118,7 @@ async def context_ready_for_history_limit(
     Requires ContextSufficientAcceptEvent and, when a memory source is enabled, the memory-extended history.
     """
     return check_context_ready_for_history_limit(context_sufficient_event) and check_memory_added_to_chat_history(
-        config, memory_history_event
+        config, user is not None, memory_history_event
     )
 
 
@@ -137,34 +138,48 @@ async def organization_memory_enabled(config: RAGAgentConfig) -> bool:
 
 
 @precondition()
-async def user_memory_retrieval_enabled(config: RAGAgentConfig) -> bool:
-    """Precondition to check if user memory retrieval is enabled."""
-    return check_user_memory_retrieval_enabled(config)
+async def user_memory_retrieval_enabled(
+    config: RAGAgentConfig,
+    user: UserIdentity | None = None,
+) -> bool:
+    """Precondition to check if user memory retrieval is enabled and this run has an identity to read for."""
+    return check_user_memory_retrieval_enabled(config, has_user=user is not None)
 
 
 @precondition()
-async def user_memory_storage_enabled(config: RAGAgentConfig) -> bool:
-    """Precondition to check if user memory storage is enabled."""
-    return check_user_memory_storage_enabled(config)
+async def user_memory_storage_enabled(
+    config: RAGAgentConfig,
+    user: UserIdentity | None = None,
+) -> bool:
+    """Precondition to check if user memory storage is enabled and this run has an identity to attribute it to.
+
+    The identity comes from `RunContext` rather than from the start event, because a precondition can only be handed
+    events its *step* declares — `handle_event` builds the event map from the step's input events, not the
+    precondition's. Asking for a start event a step does not consume yields no kwarg at all and the precondition
+    raises `TypeError` before it can decide anything.
+    """
+    return check_user_memory_storage_enabled(config, has_user=user is not None)
 
 
 @precondition()
 async def memory_ready_for_chat_history(
     config: RAGAgentConfig,
+    user: UserIdentity | None = None,
     user_memory_event: RetrieveUserMemoryEvent | None = None,
     org_memory_event: RetrieveOrganizationMemoryEvent | None = None,
 ) -> bool:
     """Precondition to ensure all required memory events are present before extending chat history."""
-    return check_memory_ready_for_chat_history(config, user_memory_event, org_memory_event)
+    return check_memory_ready_for_chat_history(config, user is not None, user_memory_event, org_memory_event)
 
 
 @precondition()
 async def memory_added_to_chat_history(
     config: RAGAgentConfig,
+    user: UserIdentity | None = None,
     memory_history_event: AddMemoryToChatHistoryEvent | None = None,
 ) -> bool:
     """Precondition to ensure memory has been added to chat history when a memory source is enabled."""
-    return check_memory_added_to_chat_history(config, memory_history_event)
+    return check_memory_added_to_chat_history(config, user is not None, memory_history_event)
 
 
 @precondition()
@@ -172,9 +187,18 @@ async def ready_for_stop(
     config: RAGAgentConfig,
     store_memory_event: StoreUserMemoryEvent | None = None,
     memory_storage_request: MemoryStorageRequestedEvent | None = None,
+    user: UserIdentity | None = None,
 ) -> bool:
-    """Precondition to ensure all required steps are complete before stopping."""
-    return check_ready_for_stop(config, store_memory_event, memory_storage_request)
+    """Precondition to ensure all required steps are complete before stopping.
+
+    Needs the identity because a run with none skips the memory write, and gating the stop on an event that will
+    never be emitted hangs the run at its terminal step, having already produced the answer.
+
+    Taken from `RunContext`, not from the start event: `stop_step` triggers on `LLMEvent` and declares no start
+    event, and a precondition is only handed events its step declares. Requiring one here raised `TypeError` on
+    every RAG run — the kwarg was simply never built.
+    """
+    return check_ready_for_stop(config, user is not None, store_memory_event, memory_storage_request)
 
 
 class RAGAgent(Agent):
@@ -212,7 +236,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
@@ -235,7 +259,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> LLMStopEvent:
         """Answer a meta question from the agent's own identity and workflow, then stop the run."""
         stop_event = await do_answer_meta_question(
@@ -268,7 +292,7 @@ class RAGAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> None:
         """Generate the thread's title in parallel with the meta answer.
 
@@ -327,7 +351,7 @@ class RAGAgent(Agent):
         return await do_retrieve_organization_memory(
             query=event.condensed_chat_message.content or "",
             requested_namespaces=requested,
-            user_id=start_event.user.id,
+            user_id=start_event.user.id if start_event.user else None,
             org_memory=agent_config.org_memory,
             memory=memory,
         )
@@ -397,7 +421,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> StandaloneQuestionCondenserEvent:
         return await do_condense_standalone_question(
             event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
@@ -414,7 +438,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
             event.condensed_chat_message.content,
@@ -437,7 +461,7 @@ class RAGAgent(Agent):
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(start_event, RAGStartEvent):
@@ -463,7 +487,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> RerankerEvent:
         return await do_rerank_nodes(
             event.nodes,
@@ -510,7 +534,7 @@ class RAGAgent(Agent):
         chat_history_event: LimitChatHistoryEvent,
         memory_history_event: AddMemoryToChatHistoryEvent | None,
         run_context: RunContext,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         chat_history = (
             memory_history_event.extended_history
@@ -594,7 +618,7 @@ class RAGAgent(Agent):
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> LLMEvent:
         chat_history = (
             memory_history_event.extended_history
@@ -628,7 +652,7 @@ class RAGAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> None:
         """Generate a stable conversation title once per thread, concurrently with the answer pipeline.
 
@@ -706,7 +730,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping.
 

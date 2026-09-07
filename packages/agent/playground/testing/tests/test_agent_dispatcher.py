@@ -1,18 +1,20 @@
 import inspect
 from fnmatch import fnmatch
-from typing import Any
+from typing import Annotated, Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import nats
 import pytest
 from bson import ObjectId
 from nats.js import JetStreamContext
+from pydantic import Field
 from redis.asyncio import Redis
-from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.agents import AgentConfig, AgentRef
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.dispatcher import StepStore
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import ControlEvent, ExceptionEvent, StartEvent, StopEvent
+from swiss_ai_hub.core.form import AgentSelector
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
@@ -49,6 +51,12 @@ class MockAgent(Agent):
     @step(precondition=conditional_step_precondition)
     async def conditional_step(self, start_event: StartEvent) -> list[BaseEvent]:
         return []
+
+
+class DelegatingAgentConfig(AgentConfig):
+    """Stands in for any config that delegates to an agent — `RAGDelegationConfig`, `ExpertEscalationConfig`."""
+
+    rag_agent: Annotated[AgentRef | AgentSelector, Field(description="The target agent to delegate to.")]
 
 
 @pytest.fixture
@@ -842,6 +850,62 @@ class TestAgentDispatcherErrorHandling:
         published_event = agent_dispatcher.publish_event.await_args.args[0]
         assert secret not in published_event.message
         assert "input_value" not in published_event.message
+
+    @pytest.mark.asyncio
+    async def test_stored_blank_agent_reference_is_reported_with_its_field(self, agent_dispatcher, agent_topic):
+        """A row stored before `AgentRef` constrained its halves must name the field, not hang the chat.
+
+        `AgentRef` gained `min_length`/`pattern` after such rows could already be saved, and the config is
+        re-validated on every dispatched event — so this is the one failure the constraint introduces. It
+        is bounded because it arrives as a terminal `ExceptionEvent` carrying the field the admin has to
+        fix, rather than as the silent hang this used to be (ADR
+        `2026_08_07_agent_config_failures_surface_as_exception_events`).
+        """
+        agent_dispatcher.agent_config_type = DelegatingAgentConfig
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher._config_client.fetch_config = AsyncMock(
+            return_value={
+                "agent_id": "test_agent",
+                "name": {"en": "Test"},
+                "description": {"en": "Test"},
+                "icon": "test-icon",
+                "rag_agent": {"agent_class": "RAGAgent", "agent_id": ""},
+            }
+        )
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(StartEvent(), agent_topic)
+
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "configuration is invalid" in published_event.message
+        # The exact field, so the admin can fix the row without reading the backend log.
+        assert "rag_agent.AgentRef.agent_id" in published_event.message
+
+    @pytest.mark.asyncio
+    async def test_stored_padded_agent_reference_is_reported_with_its_field(self, agent_dispatcher, agent_topic):
+        """The anchored pattern observed end to end: a padded half is not blank, so only `pattern` catches it."""
+        agent_dispatcher.agent_config_type = DelegatingAgentConfig
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher._config_client.fetch_config = AsyncMock(
+            return_value={
+                "agent_id": "test_agent",
+                "name": {"en": "Test"},
+                "description": {"en": "Test"},
+                "icon": "test-icon",
+                "rag_agent": {"agent_class": "  RAGAgent  ", "agent_id": "shared-knowledge-rag"},
+            }
+        )
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(StartEvent(), agent_topic)
+
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "rag_agent.AgentRef.agent_class" in published_event.message
+        assert "should match pattern" in published_event.message
 
     @pytest.mark.asyncio
     async def test_handle_event_with_context_setup_failure(self, agent_dispatcher, agent_topic):
