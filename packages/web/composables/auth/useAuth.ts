@@ -1,8 +1,13 @@
 export const useAuth = () => {
-  const login = (idpHint?: string) => {
+  const login = async (idpHint?: string) => {
     const { $auth } = useNuxtApp()
     const extraQueryParams = idpHint ? { kc_idp_hint: idpHint } : {}
-    $auth.signinRedirect({ prompt: 'login', extraQueryParams })
+    // Drop orphaned signin-state left in web storage by abandoned or superseded login attempts
+    // (e.g. from an earlier deployment that used a different OAUTH client id). A stale entry is a
+    // common cause of "mismatching_state" on the callback in a long-lived browser profile, where it
+    // works only in a fresh incognito window. Clearing before starting a new flow keeps the store clean.
+    await $auth.clearStaleState()
+    await $auth.signinRedirect({ prompt: 'login', extraQueryParams })
   }
 
   const logout = async () => {

@@ -42,6 +42,9 @@ try {
 }
 catch (err) {
   error.value = err.message || t('auth.callback.genericError')
+  // A failed exchange (e.g. mismatching_state) leaves the consumed/orphaned state behind; clear it
+  // so the retry starts from a clean store instead of tripping over the same stale entry.
+  await $auth.clearStaleState()
   setTimeout(() => {
     navigateTo(`/${locale.value}/auth/login`)
   }, 3000)

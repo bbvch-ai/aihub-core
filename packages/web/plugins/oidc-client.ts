@@ -20,6 +20,10 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     silentRequestTimeoutInSeconds: 30,
     accessTokenExpiringNotificationTimeInSeconds: 120,
     userStore: new WebStorageStateStore({ store: globalThis?.localStorage }),
+    // Purge orphaned signin-state sooner (default 900s) so an abandoned attempt cannot linger and
+    // cause a later "mismatching_state" on the callback. The in-flight state of an active login is
+    // age 0 and never at risk from clearStaleState().
+    staleStateAgeInSeconds: 300,
     // Keycloak supports PKCE
     disablePKCE: false,
     // Disabled: OpenWebUI logout destroys the Keycloak SSO session, but we
