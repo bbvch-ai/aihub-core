@@ -891,12 +891,13 @@ class KnowledgeService:
 
     @staticmethod
     def _is_database_deletable(bucket: BucketEntity) -> bool:
-        """Whether the database itself or one of its namespaces may be torn down.
+        """Whether the database *itself* may be torn down.
 
-        Auto-synced databases are refilled by their source, and the legacy ``default_rag`` / ``shared_rag``
-        buckets are served by frozen images that predate the teardown sensor, so neither can be purged.
-        The frontend gates both delete affordances on this one flag. Single documents are governed
-        separately — their removal is published to the owning pipeline — and stay deletable.
+        Auto-synced databases are refilled by their source. A legacy ``default_rag`` / ``shared_rag`` bucket is
+        re-provisioned by three separate paths — the API's bucket seeder, the S3 init script, and its own
+        pipeline's definitions build — so removing it needs the code location retired afterwards, which the
+        platform cannot do for the operator. Its namespaces and its documents are deletable; only the
+        database as a whole is not.
         """
         return not bucket.auto_sync and not KnowledgeService._is_legacy_bucket(bucket)
 
@@ -918,24 +919,6 @@ class KnowledgeService:
         KnowledgeService._reject_if_auto_synced(bucket)
         if KnowledgeService._is_legacy_bucket(bucket):
             raise HTTPException(status_code=403, detail=f"Legacy database '{bucket.db_name}' cannot be deleted.")
-
-    @staticmethod
-    def _reject_undeletable_namespace(bucket: BucketEntity) -> None:
-        """Namespace deletion guard, refusing the same databases as ``_reject_undeletable_database``.
-
-        Deletion is a request, not the work: it flags the row and a pipeline's teardown sensor purges S3, the
-        doc store and the vectors. The legacy images are frozen at a release predating that sensor and nothing
-        else claims their buckets, so a flagged legacy namespace would leave the UI and never be purged.
-        """
-        KnowledgeService._reject_if_auto_synced(bucket)
-        if KnowledgeService._is_legacy_bucket(bucket):
-            raise HTTPException(
-                status_code=403,
-                detail=(
-                    f"Namespaces in legacy database '{bucket.db_name}' cannot be deleted: its ingestion "
-                    "pipeline is frozen and cannot tear down data."
-                ),
-            )
 
     @staticmethod
     @trace_fn
@@ -997,7 +980,9 @@ class KnowledgeService:
         except DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
 
-        KnowledgeService._reject_undeletable_namespace(bucket)
+        # Only auto-sync is refused. A legacy database's namespaces are deletable: its frozen images carry the
+        # teardown sensor from v0.320.1, so the flag this sets is a queue something actually reads.
+        KnowledgeService._reject_if_auto_synced(bucket)
 
         try:
             namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)

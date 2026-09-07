@@ -41,7 +41,6 @@
               v-for="namespace in database.namespaces"
               :key="namespace.name"
               :namespace="namespace"
-              :deletable="database.deletable"
               :auto-sync="database.auto_sync"
               @click="toNamespace(database.name, namespace)"
               @upload="openUploadModal(database, namespace)"

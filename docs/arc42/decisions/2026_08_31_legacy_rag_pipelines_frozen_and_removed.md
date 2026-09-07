@@ -37,10 +37,17 @@ distinction that no longer distinguishes anything.
   fixed-bucket pipelines, which is the model being retired. `document_ingestion_pipeline_definitions` replaces it and is
   now the exported builder.
 
-- **The images are pinned to their last release** (`v0.319.0`) in `nightly` and `latest` only. They carry no `build` or
-  `local` key, so they render in no other stage; the compose template's build branch is removed, since the Dockerfile it
-  referenced no longer exists. CI leaves them alone by construction: image discovery requires `build: localbuild`, and
-  the `latest` retagging step requires a `:latest` tag.
+- **The images are pinned to `v0.320.1`** in `nightly` and `latest` only. They carry no `build` or `local` key, so they
+  render in no other stage; the compose template's build branch is removed, since the Dockerfile it referenced no longer
+  exists on `main`. CI leaves them alone by construction: image discovery requires `build: localbuild`, and the `latest`
+  retagging step requires a `:latest` tag.
+
+  `v0.320.0` is the last release that still contained the legacy source — this decision landed on `main` after that
+  release was cut. `v0.320.1` is that code plus the knowledge namespace teardown sensor, built once from a branch off
+  the `v0.320.0` tag and pushed with no secondary tag. **The freeze deliberately takes effect at the version where a
+  frozen corpus can still have folders removed from it**, because the alternative was shipping a corpus that could be
+  added to forever and never pruned. Frozen still means frozen: `v0.320.1` is the terminal version, and the branch it
+  was built from is not maintained.
 
 - **The Dagster workspace is guarded on the same image tags as the compose services**, so a code location can no longer
   outlive its container. This is what actually went wrong before: the services were commented out of `compose-config`
@@ -59,10 +66,11 @@ distinction that no longer distinguishes anything.
   > **Amended 2026-09-07 (#1835).** Reserved originally meant one set, applied to creation *and* to every read and
   > delete, which made the two legacy databases return `403` on listing documents, opening one, and deleting one — for
   > every user including the superuser, whatever `AIHUB_SHOW_LEGACY_KNOWLEDGE` said. That is not what reserving a name
-  > is for. The two policies are now separate: the names are closed to **creation** always, while reads and document
-  > deletion are governed by the ordinary per-resource rules, exactly as before the split. The legacy names re-enter the
-  > read guard only when the deployment hides legacy knowledge, so that hidden means unreadable and not merely unlisted.
-  > Deleting a legacy database or one of its namespaces stays refused, in the service, with a message naming the cause.
+  > is for. The two policies are now separate: the names are closed to **creation** always, while reads, document
+  > deletion and namespace deletion are governed by the ordinary per-resource rules, exactly as before the split. The
+  > legacy names re-enter the read guard only when the deployment hides legacy knowledge, so that hidden means
+  > unreadable and not merely unlisted. Deleting a legacy database *as a whole* stays refused, in the service, with a
+  > message naming the cause.
 
 ## Consequences
 
@@ -75,9 +83,16 @@ distinction that no longer distinguishes anything.
 
 ### Trade-offs
 
-- **Legacy bugs can no longer be fixed.** A published image cannot receive a patch, and the branch that could build one
-  no longer contains the code. Shipping a legacy fix would mean cutting a maintenance branch from the last release that
-  contained it — a policy that must exist *before* it is needed, tracked as a follow-up.
+- **Legacy bugs can no longer be fixed.** A published image cannot receive a patch, and `main` no longer contains the
+  code to build one. Shipping a legacy fix means branching from the `v0.320.0` tag and dispatching `build-pipelines.yml`
+  against that branch, where `compose-config.yml` still carries `build: localbuild` for both images — which is exactly
+  how `v0.320.1` was produced, and the one time it is intended to be done. That escape hatch stays open by accident of
+  git history rather than by policy: nothing keeps the old branch buildable as its dependencies age, and the rebuilt
+  image is not digest-identical to the original (`python:3.13-slim` floats and the apt layer is unpinned).
+- **Nothing removes a torn-down legacy namespace permanently while the seeder runs.** `AIHUB_CREATE_DEFAULT_BUCKETS`
+  (default true) re-creates the two configured bucket and namespace rows on every API start, and `init-buckets.sh`
+  re-creates the S3 buckets from the same variable. Deleting `defaultnamespace` itself therefore purges its contents but
+  the empty row returns on the next restart. A deployment that wants it gone sets that variable to false.
 - **Downstream users of `default_definitions` break on upgrade** with no deprecation window.
 - **Two dead names are reserved forever**, in `IngestorType` and in the controller's creation-reserved set, long after
   anything reads them.
