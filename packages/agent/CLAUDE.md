@@ -139,7 +139,7 @@ reference):
 
    - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`): add a **required**
      `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates the step — no precondition.
-   - **Entry also accepts a programmatic start** (e.g. `RAGAgent`, `ExpertRAGAgent`, `NamespaceSelectionAgent` accept
+   - **Entry also accepts a programmatic start** (e.g. `RAGAgent`, `ExpertRAGAgent` accept
      `UserMessageEvent | RAGStartEvent`): keep `_clear: NotAMetaQuestionEvent | None = None` and combine the step's
      precondition with `check_passed_meta_question_gate(start_event, clear)`, so programmatic starts skip detection.
 
