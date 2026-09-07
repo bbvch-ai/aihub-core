@@ -17,14 +17,15 @@ The literal reading is to delete that entry from `litellm-config.yml.j2`. Two fi
 
 `default_fallbacks` does not rescue it — the rejection happens during model-name resolution, before the router selects a
 deployment, so there is no failed deployment call for a fallback to catch. This is the same failure recorded in
-[model_gateway_error_translation](2026_08_19_model_gateway_error_translation.md), where a model name the upstream did not
-serve simply broke the feature.
+[model_gateway_error_translation](2026_08_19_model_gateway_error_translation.md), where a model name the upstream did
+not serve simply broke the feature.
 
 **Agent configs pin model names as unvalidated strings.** `ModelSelect` is a *render hint*: it populates a dropdown from
 `/api/v1/models/mode/{mode}` when the form renders. The chosen value is stored as a plain string in
-`config_data.llm.model_name` and is **never re-validated** — not on save, and not on any later read. An agent pinned to a
-removed model therefore looks entirely normal in the database and fails only when it next runs, surfacing as an
-`ExceptionEvent` (per [agent_config_failures_surface_as_exception_events](2026_08_07_agent_config_failures_surface_as_exception_events.md)).
+`config_data.llm.model_name` and is **never re-validated** — not on save, and not on any later read. An agent pinned to
+a removed model therefore looks entirely normal in the database and fails only when it next runs, surfacing as an
+`ExceptionEvent` (per
+[agent_config_failures_surface_as_exception_events](2026_08_07_agent_config_failures_surface_as_exception_events.md)).
 
 Gateway removal is also instance-wide and needs a redeploy to undo, so it cannot express "new tenants start clean" at
 all — the requirement is inherently per-tenant.
@@ -55,27 +56,27 @@ all — the requirement is inherently per-tenant.
 **1 — The default ceiling is derived, not hardcoded.** `DefaultTenantAccessRulesService.derive()`
 (`packages/api/swiss_ai_hub/api/routes/access/`) reads the live roster via
 `AccessCapabilityService.available_models_by_capability()` and emits, per model capability: a wildcard
-`aihub.user.model.<capability>.>` when nothing in it is excluded, otherwise one concrete
-`AccessChecker.model_user_rule` per survivor. Fixed non-model rules cover the other five families.
+`aihub.user.model.<capability>.>` when nothing in it is excluded, otherwise one concrete `AccessChecker.model_user_rule`
+per survivor. Fixed non-model rules cover the other five families.
 
 Deriving is what makes this hardware-agnostic — the same code yields the right ceiling on CPU and GPU with no per-mode
 configuration. The wildcard/enumerate split is deliberate: infrastructure models (embedding, rerank, STT, image) reach
 new tenants automatically, while a new **chat** model — the kind QC vets and users pick — needs an explicit grant.
 
 **2 — Policy lives in exclusions, not an allow list.** `TenantDefaultAccessSettings.EXCLUDED_MODELS`
-(`AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS`, default `text-generation/Apertus-70B-Instruct-2509`). An allow list would
-have to be maintained per hardware mode; the exclusion is the same policy on both. An exclusion the roster does not serve
-**warns and is ignored** rather than failing — legitimate on a mode that never served it.
+(`AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS`, default `text-generation/Apertus-70B-Instruct-2509`). An allow list
+would have to be maintained per hardware mode; the exclusion is the same policy on both. An exclusion the roster does
+not serve **warns and is ignored** rather than failing — legitimate on a mode that never served it.
 
 **3 — It is a seed, read once.** The setting is consulted only while computing a new tenant's starting ceiling.
 Afterwards the tenant's `access_rules` is the sole authority, so granting an excluded model later is an ordinary
 access-rule edit and the setting has no say in it.
 
 **4 — The sysadmin plane proxies rather than gaining a gateway dependency.** `create_tenant_metadata` and the
-form-prefill endpoint call the platform API through `PlatformAccessProxy` — the pattern
-`SysadminAccessController` already uses. `AIHUB_INTERNAL_API_BASE_URL` is already configured, so this adds no
-infrastructure. Resolution happens in the controller (HTTP-layer work needing a `Request`) and **before any side
-effect**, so a gateway failure leaves the tenant Unconfigured and retryable rather than half-built.
+form-prefill endpoint call the platform API through `PlatformAccessProxy` — the pattern `SysadminAccessController`
+already uses. `AIHUB_INTERNAL_API_BASE_URL` is already configured, so this adds no infrastructure. Resolution happens in
+the controller (HTTP-layer work needing a `Request`) and **before any side effect**, so a gateway failure leaves the
+tenant Unconfigured and retryable rather than half-built.
 
 **5 — `access_rules` is nullable, and the distinction is load-bearing.** Omitted means "this instance's standard set";
 an explicit `[]` means a tenant that deliberately starts with no access. Defaulting to `[]` would have collapsed the two
@@ -88,11 +89,11 @@ present — `locked = granted and rule not in granted_rules`, and a locked row c
 ceiling was previously `aihub.admin.>`, **no model could be unticked at all**. After this change, in the sysadmin's
 tenant-ceiling editor:
 
-| Row | `granted` | `locked` | Result |
-| --- | --- | --- | --- |
-| the surviving chat models | true | false | ticked, can be unticked |
-| the excluded model | false | false | empty checkbox — tick to grant |
-| embedding / rerank / STT / image | true | true | ticked and locked, as before |
+| Row                              | `granted` | `locked` | Result                         |
+| -------------------------------- | --------- | -------- | ------------------------------ |
+| the surviving chat models        | true      | false    | ticked, can be unticked        |
+| the excluded model               | false     | false    | empty checkbox — tick to grant |
+| embedding / rerank / STT / image | true      | true     | ticked and locked, as before   |
 
 Inside the tenant, a tenant admin editing a *role* never sees the excluded row — `_capability_for_guard` returns `None`
 for anything the ceiling cannot grant, "hidden, never merely disabled".
@@ -101,14 +102,28 @@ for anything the ceiling cannot grant, "hidden, never merely disabled".
 
 - *The stored ceiling is an enumerated snapshot.* With no deny syntax, "all chat models except X" cannot be persisted as
   a live rule, so a chat model added later does not appear for tenants created earlier.
+
 - *Two classes of tenant coexist.* Existing tenants keep `aihub.admin.>` and continue to auto-inherit new models, until
   someone migrates them. Out of scope here, and the reason nothing breaks.
+
 - *This is a permission control, not a hard block.* The model stays served and callable by anyone permitted, and
   sysadmins bypass the ceiling entirely. If a model must become genuinely unreachable, that is gateway removal — and it
   must be preceded by a check for agent configs pinned to it, because nothing else will catch them.
+
 - *Unticking does not stop a running agent.* Model access is enforced on the plain-LLM chat path, the model listing, and
   the OpenWebUI grant computation — never in the agent runtime, which calls LiteLLM with whatever its config names. This
   is the same property that makes the change non-breaking and the reason unticking is not an enforcement boundary.
+
 - *The startup tenant now reads the roster on first boot.* `AIHUB_STARTUP_TENANT_ACCESS_RULES` defaults to empty,
-  meaning "derive". `api` gained `depends_on: litellm: service_healthy` so a first-boot race is an ordered start rather
-  than a restart loop; naming the rules explicitly opts out of the lookup for deployments without a reachable gateway.
+  meaning "derive". That puts a network call inside `initialize_startup_tenant`, which is **not** wrapped in
+  `_provision_non_fatal` — so on the first boot of a brand-new instance, an unreachable gateway fails API startup
+  outright rather than degrading. `restart: always` recovers it once LiteLLM is healthy, and the early return makes the
+  window unreachable on every later start. Naming the rules explicitly opts out of the lookup entirely, which is the
+  escape hatch for a deployment whose gateway is not reachable at boot.
+
+  A `depends_on: litellm: service_healthy` on `api` was considered and **rejected**: it would have bought an ordered
+  first boot at the price of the API refusing to start whenever LiteLLM is unhealthy, on every start of every
+  deployment, despite serving threads, users, roles and the admin UI perfectly well without it. Ordering containers is
+  the wrong layer for this — the underlying fragility is the bare `await initialize_startup_tenant()` in
+  `lifetime_manager`, sitting outside the `_provision_non_fatal` wrapper its neighbours use. That call could already
+  take startup down before this decision (a duplicate tenant name does it) and is not made materially worse by it.
