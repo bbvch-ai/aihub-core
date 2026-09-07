@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Self
 
-from mongoengine import DateTimeField, Document, ListField, NotUniqueError, StringField
+from mongoengine import DateTimeField, Document, IntField, ListField, NotUniqueError, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -35,6 +35,10 @@ class TenantMetadataEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
+    # The originating LCDM Hub tenant id (numeric), set when a tenant is pushed in from the LCDM Hub.
+    # It is what the LCDM MCP expects in its X-LCDM-Tenant header, so exposing it here lets an admin
+    # read it off the AI Hub tenant when wiring an McpReactAgent profile. None for non-LCDM tenants.
+    lcdm_tenant_id = IntField(null=True)
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
     updated_at = DateTimeField(default=lambda: datetime.now(UTC))
 
@@ -76,6 +80,7 @@ class TenantMetadataEntity(Document):
         name: str,
         description: str = "",
         access_rules: list[str] | None = None,
+        lcdm_tenant_id: int | None = None,
     ) -> Self:
         """Stores metadata for an existing Keycloak tenant group.
 
@@ -87,6 +92,7 @@ class TenantMetadataEntity(Document):
             name=name,
             description=description,
             access_rules=access_rules or [],
+            lcdm_tenant_id=lcdm_tenant_id,
         )
         tenant.save()
         return tenant
@@ -129,6 +135,7 @@ class TenantMetadataEntity(Document):
         name: str | None = None,
         description: str | None = None,
         access_rules: list[str] | None = None,
+        lcdm_tenant_id: int | None = None,
     ) -> Self | None:
         """
         Updates stored metadata for an existing tenant. Returns the updated entity or None if no metadata was stored.
@@ -146,6 +153,8 @@ class TenantMetadataEntity(Document):
             tenant.description = description
         if access_rules is not None:
             tenant.access_rules = access_rules
+        if lcdm_tenant_id is not None:
+            tenant.lcdm_tenant_id = lcdm_tenant_id
 
         tenant.updated_at = datetime.now(UTC)
         tenant.save()

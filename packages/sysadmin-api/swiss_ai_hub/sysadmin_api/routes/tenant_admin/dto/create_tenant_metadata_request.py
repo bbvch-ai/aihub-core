@@ -35,6 +35,13 @@ class CreateTenantMetadataRequest(BaseModel):
         Field(description="A short description of the tenant."),
     ] = ""
     access_rules: Annotated[list[str], Field(description="Access rules granted to this tenant.")] = []
+    lcdm_tenant_id: Annotated[
+        int | None,
+        Field(
+            description="Originating LCDM Hub tenant id (numeric). Set when the tenant is pushed in from the "
+            "LCDM Hub; it is the value the LCDM MCP expects in its X-LCDM-Tenant header.",
+        ),
+    ] = None
 
     @field_validator("access_rules")
     @classmethod

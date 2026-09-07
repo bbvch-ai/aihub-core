@@ -108,6 +108,7 @@ class TenantAdminService:
             name=data.name,
             description=data.description,
             access_rules=[AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules],
+            lcdm_tenant_id=data.lcdm_tenant_id,
         )
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
@@ -141,6 +142,7 @@ class TenantAdminService:
                 name=data.name,
                 description=data.description,
                 access_rules=normalized_rules,
+                lcdm_tenant_id=data.lcdm_tenant_id,
             )
         else:
             entity = TenantMetadataEntity.create_tenant_metadata(
@@ -148,6 +150,7 @@ class TenantAdminService:
                 name=data.name,
                 description=data.description,
                 access_rules=normalized_rules,
+                lcdm_tenant_id=data.lcdm_tenant_id,
             )
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
@@ -217,6 +220,7 @@ class TenantAdminService:
             "name": tenant.name,
             "description": tenant.description,
             "access_rules": list(tenant.access_rules),
+            "lcdm_tenant_id": tenant.lcdm_tenant_id,
         }
 
         if not TenantMetadataEntity.delete_tenant_metadata(tenant_id):

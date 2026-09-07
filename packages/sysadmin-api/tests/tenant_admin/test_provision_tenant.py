@@ -25,13 +25,20 @@ def _fake_entity() -> MagicMock:
     entity.name = "My Tenant"
     entity.description = "desc"
     entity.access_rules = []
+    entity.lcdm_tenant_id = 5
     entity.created_at = datetime.now(UTC)
     entity.updated_at = datetime.now(UTC)
     return entity
 
 
-def _make_request() -> CreateTenantMetadataRequest:
-    return CreateTenantMetadataRequest(tenant_id="my-tenant", name="My Tenant", description="desc", access_rules=[])
+def _make_request(lcdm_tenant_id: int | None = None) -> CreateTenantMetadataRequest:
+    return CreateTenantMetadataRequest(
+        tenant_id="my-tenant",
+        name="My Tenant",
+        description="desc",
+        access_rules=[],
+        lcdm_tenant_id=lcdm_tenant_id,
+    )
 
 
 @pytest.mark.asyncio
@@ -74,6 +81,41 @@ async def test_provision_existing_tenant_updates_metadata_idempotently(monkeypat
     update_mock.assert_called_once()
     create_mock.assert_not_called()
     assert result.id == "my-tenant"
+
+
+@pytest.mark.asyncio
+async def test_provision_passes_lcdm_tenant_id_through_on_create(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The LCDM tenant id from the request is stored on create so it can be read off the AI Hub tenant."""
+    _stub_metadata_lookups(monkeypatch)
+    monkeypatch.setattr(KeycloakAdminService, "create_tenant_group", AsyncMock(return_value=None))
+    monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
+    monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
+
+    create_mock = MagicMock(return_value=_fake_entity())
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
+    monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", MagicMock())
+
+    result = await TenantAdminService.provision_tenant(_make_request(lcdm_tenant_id=5))
+
+    assert create_mock.call_args.kwargs["lcdm_tenant_id"] == 5
+    assert result.lcdm_tenant_id == 5
+
+
+@pytest.mark.asyncio
+async def test_provision_passes_lcdm_tenant_id_through_on_update(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Re-syncing an existing tenant transfers the LCDM id via update, not just on first insert."""
+    _stub_metadata_lookups(monkeypatch, by_id=MagicMock(id="my-tenant"), by_name=MagicMock(id="my-tenant"))
+    monkeypatch.setattr(KeycloakAdminService, "create_tenant_group", AsyncMock(return_value=None))
+    monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
+    monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
+
+    update_mock = MagicMock(return_value=_fake_entity())
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", MagicMock())
+    monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", update_mock)
+
+    await TenantAdminService.provision_tenant(_make_request(lcdm_tenant_id=5))
+
+    assert update_mock.call_args.kwargs["lcdm_tenant_id"] == 5
 
 
 @pytest.mark.asyncio

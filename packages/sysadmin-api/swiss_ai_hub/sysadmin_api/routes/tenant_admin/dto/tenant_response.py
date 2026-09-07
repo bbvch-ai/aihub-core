@@ -14,6 +14,10 @@ class TenantResponse(BaseModel):
     name: Annotated[str, Field(description="Tenant display name.")]
     description: Annotated[str, Field(description="Tenant description.")]
     access_rules: Annotated[list[str], Field(description="Access rules granted to this tenant.")]
+    lcdm_tenant_id: Annotated[
+        int | None,
+        Field(description="Originating LCDM Hub tenant id (numeric), if this tenant was pushed in from the LCDM Hub."),
+    ] = None
     state: Annotated[
         TenantState, Field(description="Whether the tenant also exists in Keycloak (active) or not (orphaned).")
     ]
@@ -27,6 +31,7 @@ class TenantResponse(BaseModel):
             name=entity.name,
             description=entity.description or "",
             access_rules=entity.access_rules or [],
+            lcdm_tenant_id=entity.lcdm_tenant_id,
             state=state,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
