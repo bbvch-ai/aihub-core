@@ -1,6 +1,6 @@
 ---
 title: Technische Referenz - Zugriffssteuerung
-source_sha: 687cf8c26a74c5b75eba6ef75c23c12905f088c0bc886cb4aedbdd667fbd7e97
+source_sha: f8f09b38b887088132340c3f00a9dbb73d8c8b10beab19c65e9b27332c8c86e5
 ---
 
 # Technische Referenz: Zugriffssteuerung
@@ -24,13 +24,13 @@ aihub.admin.service.tenant              # Tenant management service
 
 ### Platzhalter
 
-**Ein-Ebenen-Platzhalter** (`*`) entspricht genau einem Segment:
+**Ein-Ebenen-Platzhalter** (`*`) stimmt mit genau einem Segment überein:
 
-- `agent.research.*` entspricht `agent.research.instance-1`, aber nicht `agent.research.team.instance-1`
+- `agent.research.*` stimmt mit `agent.research.instance-1` überein, aber nicht mit `agent.research.team.instance-1`
 
-**Mehr-Ebenen-Platzhalter** (`>`) entspricht einem oder mehreren Segmenten am Ende:
+**Mehr-Ebenen-Platzhalter** (`>`) stimmt mit einem oder mehreren Segmenten am Ende überein:
 
-- `agent.>` entspricht `agent.research.instance-1`, `agent.analysis.team.special` und jedem anderen Agentenpfad
+- `agent.>` stimmt mit `agent.research.instance-1`, `agent.analysis.team.special` und jedem anderen Agent-Pfad überein
 - Muss das letzte Token in der Regel sein
 
 ### Admin- vs. Benutzerregeln
@@ -41,16 +41,25 @@ gleichwertigen Benutzerzugriff.
 Ein Benutzer mit `aihub.admin.agent.>` kann auf Ressourcen zugreifen, die entweder `aihub.admin.agent.*` oder
 `aihub.user.agent.*` erfordern.
 
-## Auflösung von Berechtigungen
+### Die Chat-Oberfläche ist eine separate Achse
+
+Die oben genannten Regeln steuern die Plattform-API. Die Chat-Oberfläche hat ihre eigene Administratorrolle, die durch
+die Keycloak-Realm-Rolle `AIHubSysAdmin` gewährt wird, und nicht durch eine Mandantenrolle oder Zugriffsregel. Das
+Halten von `aihub.admin.*` in einem Mandanten macht Sie nicht zu einem Chat-Administrator, und ein Chat-Administrator zu
+sein, gewährt keine Einsicht in die Uploads oder Konversationen anderer Benutzer – diese sind standardmäßig auf ihren
+Eigentümer beschränkt. Siehe
+[ADR: OpenWebUI-Administratoren auf eigene Dateien und Chats beschränken](/arc42/decisions/2026_09_07_openwebui_admin_scoped_to_own_data.md).
+
+## Berechtigungsauflösung
 
 Wenn eine Anfrage eingeht, führt die Plattform Folgendes aus:
 
-1. Extrahiert die Benutzeridentität aus dem Authentifizierungstoken
+1. Extrahiert die Identität des Benutzers aus dem Authentifizierungstoken
 2. Liest den `X-Tenant-Id`-Header, um den Mandantenkontext zu bestimmen
 3. Fragt die Rollen des Benutzers innerhalb dieses spezifischen Mandanten ab
 4. Sammelt alle Zugriffsregeln aus diesen Rollen
 5. Ruft die Zugriffsregeln des Mandanten ab
-6. Prüft, ob sowohl der Mandant als auch der Benutzer die angeforderte Aktion zulassen
+6. Überprüft, ob sowohl der Mandant als auch der Benutzer die angeforderte Aktion zulassen
 
 ```mermaid
 sequenceDiagram
@@ -76,12 +85,12 @@ Der Zugriff erfordert das Bestehen beider Schichten:
 **Schicht 1: Mandantengrenze** – Erlaubt der Mandant diese Ressource überhaupt?
 
 Wenn die Zugriffsregeln des Mandanten die angeforderte Ressource nicht enthalten, wird der Zugriff sofort verweigert,
-ohne die Benutzerrollen zu prüfen.
+ohne die Benutzerrollen zu überprüfen.
 
 **Schicht 2: Benutzerberechtigungen** – Erlaubt die Rolle des Benutzers diese Aktion?
 
-Nachdem bestätigt wurde, dass der Mandant die Ressource erlaubt, prüft das System, ob die Rollen des Benutzers die
-erforderliche Berechtigung erteilen.
+Nachdem bestätigt wurde, dass der Mandant die Ressource zulässt, überprüft das System, ob die Rollen des Benutzers die
+erforderliche Berechtigung gewähren.
 
 Beide müssen bestanden werden, damit der Zugriff gewährt wird.
 
@@ -106,7 +115,7 @@ Benutzeranfrage: `aihub.user.agent.finance.instance-1`
 
 Jeder Service erfordert eine Basisberechtigung: `aihub.user.service.<service-name>`
 
-Bevor ressourcenspezifische Berechtigungen geprüft werden, verifiziert das System, dass der Benutzer Zugriff auf den
+Bevor ressourcenspezifische Berechtigungen überprüft werden, verifiziert das System, ob der Benutzer Zugriff auf den
 Service selbst hat.
 
 Um auf einen Agent zuzugreifen, benötigen Sie:
@@ -121,33 +130,33 @@ anderen Regeln.
 
 Berechtigungsvorlagen verwenden Platzhalter, die aus der Anfrage aufgelöst werden:
 
-Vorlage: `aihub.user.agent.{agent_class}.{agent_id}`
+Template: `aihub.user.agent.{agent_class}.{agent_id}`
 
-Anfrage: `GET /api/v1/agents/research/instance-alpha`
+Request: `GET /api/v1/agents/research/instance-alpha`
 
-Aufgelöste Berechtigung: `aihub.user.agent.research.instance-alpha`
+Resolved permission: `aihub.user.agent.research.instance-alpha`
 
-Das System prüft diese konkrete Berechtigung anhand der Benutzer- und Mandanten-Zugriffsregeln.
+Das System überprüft diese konkrete Berechtigung anhand der Benutzer- und Mandanten-Zugriffsregeln.
 
-## Zugriffsebenen
+## Zugriffsstufen
 
-Das System gibt drei Ebenen zurück:
+Das System gibt drei Stufen zurück:
 
 **ACCESS_DENIED**: Keine Berechtigung. Gibt HTTP 403 zurück.
 
-**ACCESS_USER**: Zugriff auf Benutzerebene, um die Ressource anzuzeigen und mit ihr zu interagieren.
+**ACCESS_USER**: Benutzerzugriff zum Anzeigen und Interagieren mit der Ressource.
 
-**ACCESS_ADMIN**: Zugriff auf Administratorebene, um die Ressource zu ändern, zu konfigurieren oder zu löschen.
+**ACCESS_ADMIN**: Admin-Zugriff zum Ändern, Konfigurieren oder Löschen der Ressource.
 
-Controller können zwischen Benutzer- und Administratorzugriff für Prüfzwecke unterscheiden, obwohl viele Operationen nur
-prüfen, ob der Zugriff gewährt (nicht verweigert) wird.
+Controller können zwischen Benutzer- und Admin-Zugriff für Audit-Zwecke unterscheiden, obwohl viele Operationen nur
+prüfen, ob der Zugriff gewährt wird (nicht verweigert).
 
 ## Konfiguration über Umgebungsvariablen
 
 Konfigurieren Sie das Standardverhalten über Umgebungsvariablen:
 
 ```bash
-# Startup tenant (seeded on first boot; an ordinary tenant thereafter).
+# Start-Mandant (wird beim ersten Start eingerichtet; danach ein gewöhnlicher Mandant)
 # ACCESS_RULES leer lassen, um die Obergrenze aus den Modellen dieser Instanz abzuleiten,
 # abzüglich AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS. "aihub.admin.>" setzen für
 # uneingeschränkten Zugriff; das überspringt zugleich die Modell-Gateway-Abfrage beim ersten Start.
@@ -155,7 +164,7 @@ AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
 AIHUB_STARTUP_TENANT_ACCESS_RULES=""
 AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS="text-generation/Apertus-70B-Instruct-2509"
 
-# Automatic user signup
+# Automatische Benutzerregistrierung
 AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
 AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
 FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
@@ -163,33 +172,33 @@ FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 
 ## Sysadmin-Zugriff
 
-Benutzer mit der Keycloak Realm-Rolle `AIHubSysAdmin` erhalten impliziten Admin-Zugriff auf jeden Mandanten und jede
+Benutzer mit der Keycloak-Realm-Rolle `AIHubSysAdmin` erhalten impliziten Admin-Zugriff auf jeden Mandanten und jede
 Ressource. Die oben beschriebene zweistufige Mandanten-/Benutzerprüfung wird umgangen – ein Sysadmin wird überall als
 Admin behandelt.
 
 Sysadmins können auch ohne Mandantenkontext agieren, was mandantenübergreifende Endpunkte wie die
 Mandantenverwaltungs-UI ermöglicht. Jeder Sysadmin ist ein echter Keycloak-Benutzer mit einer echten Benutzer-ID, sodass
-seine Aktionen in Langfuse nachvollziehbar bleiben und sie in Mandanten-Mitgliederlisten wie jeder andere Benutzer
+seine Aktionen in Langfuse nachvollziehbar bleiben und sie in Mandantenmitgliederlisten wie jeder andere Benutzer
 erscheinen.
 
-Weisen Sie die Keycloak Realm-Rolle `AIHubSysAdmin` direkt oder über Identity Provider Mapper zu. Die Plattform legt
-auch ein dediziertes Superuser-Konto aus `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` an (der Benutzername wird gleich
-`SUPERUSER_EMAIL` gesetzt, sodass sich dieses Konto mit seiner E-Mail-Adresse anmeldet) und materialisiert
+Weisen Sie die `AIHubSysAdmin`-Realm-Rolle in Keycloak direkt oder über Identitätsanbieter-Mapper zu. Die Plattform
+richtet auch ein dediziertes Superuser-Konto aus `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` ein (der Benutzername wird
+gleich `SUPERUSER_EMAIL` gesetzt, sodass sich dieses Konto mit seiner E-Mail-Adresse anmeldet) und materialisiert
 `SUPERUSER_TOKEN` als Bearer-Token für diesen Benutzer, damit interne Services die API ohne Browsersitzung aufrufen
 können.
 
-Sparsam verwenden – der Sysadmin-Zugriff dient der Plattformadministration, nicht dem Tagesgeschäft.
+Sparsam verwenden — Sysadmin-Zugriff ist für die Plattformadministration gedacht, nicht für den täglichen Betrieb.
 
 ## Validierungsregeln
 
-::: warning Anforderungen an das Format von Zugriffsregeln
+::: warning Anforderungen an das Format der Zugriffsregeln
 Beim Erstellen von Zugriffsregeln:
 
 **Erforderliches Format**:
 
-- Muss mit `aihub.user.` oder `aihub.admin.` beginnen
-- Nur Kleinbuchstaben, Zahlen, Punkte, Bindestriche, Unterstriche, `*`, `>`
-- Mehr-Ebenen-Platzhalter `>` nur am Ende
+- Muss mit `aihub.user.` oder `aihub.admin.` beginnen.
+- Nur Kleinbuchstaben, Zahlen, Punkte, Bindestriche, Unterstriche, `*`, `>` sind erlaubt.
+- Mehr-Ebenen-Platzhalter `>` nur am Ende.
 
 **`>` erfasst die eigene Wurzel nicht**:
 
@@ -203,23 +212,23 @@ Rollen: eine Obergrenze, die nur die `.>`-Form enthält, kappt die Wurzel-Berech
 
 **Verboten**:
 
-- Grossbuchstaben
-- Sonderzeichen ausser `.`, `-`, `_`, `*`, `>`
-- `>` in der Mitte einer Regel
+- Großbuchstaben
+- Sonderzeichen außer `.`, `-`, `_`, `*`, `>`
+- `>` mitten in einer Regel
 
 Das System validiert Regeln beim Erstellen oder Bearbeiten von Mandanten und Rollen. Ungültige Regeln lösen einen Fehler
 mit dem spezifischen Problem aus.
 :::
 
-## Häufige Muster
+## Gängige Muster
 
-### Umfassender Plattformzugriff
+### Breiter Plattformzugriff
 
 ```
 aihub.admin.>
 ```
 
-Voller Admin-Zugriff auf alles. Verwendung für Sysadmin-Mandanten.
+Voller Admin-Zugriff auf alles. Verwenden Sie dies für Sysadmin-Mandanten.
 
 ### Service-Administratoren
 
@@ -229,7 +238,7 @@ aihub.admin.service.role
 aihub.admin.service.tenant
 ```
 
-Kann Benutzer, Rollen und Mandanten verwalten, aber keine anderen Services.
+Können Benutzer, Rollen und Mandanten verwalten, aber keine anderen Services.
 
 ### Abteilungszugriff
 
@@ -239,9 +248,9 @@ aihub.user.knowledge.finance-docs.>
 aihub.user.process.finance-workflows.*
 ```
 
-Nur Zugriff auf finanzspezifische Ressourcen.
+Zugriff nur auf finanzspezifische Ressourcen.
 
-### Schreibgeschützter Zugriff
+### Lesezugriff
 
 ```
 aihub.user.agent.>
@@ -250,7 +259,7 @@ aihub.user.knowledge.>
 
 Kann Agents und Wissen anzeigen und nutzen, aber nicht erstellen oder ändern.
 
-### Power-User
+### Power-Benutzer
 
 ```
 aihub.user.>
@@ -263,27 +272,27 @@ Benutzerzugriff überall, Admin-Zugriff nur auf Abteilungsressourcen.
 ## Fehlerbehebung bei Zugriffsproblemen
 
 ::: details Checkliste zur Fehlerbehebung
-Bei der Fehlerbehebung überprüfen Sie diese Punkte in der angegebenen Reihenfolge:
+Bei der Fehlerbehebung überprüfen Sie diese Punkte der Reihe nach:
 
 1. **Mandantenauswahl**: Verifizieren Sie, dass der Benutzer den beabsichtigten Mandanten ausgewählt hat
 2. **Mandantengrenze**: Bestätigen Sie, dass die Zugriffsregeln des Mandanten die Ressource enthalten
-3. **Benutzerzugehörigkeit**: Verifizieren Sie, dass der Benutzer zum Mandanten gehört
+3. **Benutzerzugehörigkeit**: Verifizieren Sie, dass der Benutzer dem Mandanten angehört
 4. **Rollenzuweisung**: Prüfen Sie, ob der Benutzer Rollen in diesem Mandanten hat
 5. **Rollenregeln**: Überprüfen Sie, was diese Rollen erlauben
-6. **Service-Zugriff**: Verifizieren Sie, dass die Berechtigung auf Service-Ebene existiert
+6. **Service-Zugriff**: Verifizieren Sie, dass eine Berechtigung auf Service-Ebene existiert
 
 Die Plattform gibt detaillierte Fehlermeldungen zurück, die angeben, welche Berechtigung fehlgeschlagen ist. Verwenden
-Sie diese, um die fehlende Regel zu identifizieren.
+Sie dies, um die fehlende Regel zu identifizieren.
 :::
 
-## Hinweise zur Performance
+## Leistungshinweise
 
 Die Zugriffsprüfung ist optimiert:
 
 - Regeln werden einmal pro Anfrage kompiliert
 - Mehrere Berechtigungsprüfungen für denselben Benutzer verwenden die kompilierten Regeln wieder
-- Komplexe Platzhaltermuster haben minimale Performance-Auswirkungen
+- Komplexe Platzhalter-Muster haben minimale Auswirkungen auf die Leistung
 - Rollenänderungen treten sofort ohne Cache-Verzögerungen in Kraft
 
-Das Wechseln von Mandanten löst eine vollständige Cache-Invalidierung im Frontend aus, was dazu führt, dass Daten neu
-abgerufen werden.
+Das Wechseln von Mandanten löst eine vollständige Cache-Invalidierung im Frontend aus, wodurch Daten neu abgerufen
+werden.

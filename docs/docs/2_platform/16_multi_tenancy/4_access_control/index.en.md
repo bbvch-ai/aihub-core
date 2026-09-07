@@ -38,6 +38,14 @@ user access.
 
 A user with `aihub.admin.agent.>` can access resources requiring either `aihub.admin.agent.*` or `aihub.user.agent.*`.
 
+### The chat interface is a separate axis
+
+The rules above govern the platform API. The chat interface has its own administrator role, granted by the
+`AIHubSysAdmin` Keycloak realm role rather than by any tenant role or access rule. Holding `aihub.admin.*` in a tenant
+does not make you a chat administrator, and being a chat administrator does not grant visibility into other users'
+uploads or conversations - those are scoped to their owner by default. See
+[ADR: Scope OpenWebUI Admins to Their Own Files and Chats](/arc42/decisions/2026_09_07_openwebui_admin_scoped_to_own_data.md).
+
 ## Permission resolution
 
 When a request arrives, the platform:

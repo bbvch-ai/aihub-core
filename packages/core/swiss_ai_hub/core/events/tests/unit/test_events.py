@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from swiss_ai_hub.core.events.agent.aitl.agent_in_the_loop import AgentInTheLoop
 from swiss_ai_hub.core.events.agent.aitl.exception.agent_in_the_loop_exception_event import (
     AgentInTheLoopExceptionEvent,
 )
@@ -429,3 +430,29 @@ def test_llm_events_hierarchy():
 
     # Data should be preserved
     assert remote_event.chat_model_name == "test"
+
+
+class TestAgentInTheLoopInvokeGuards:
+    """`PartialAgentTopic.to_subject` renders a blank segment as the NATS wildcard `*`, so an
+    incomplete reference would publish the delegation to a subject no instance is subscribed to and
+    the caller would wait forever with nothing logged. `invoke` must refuse it instead."""
+
+    @pytest.mark.parametrize(
+        ("agent_class", "agent_id"),
+        [
+            ("RAGAgent", ""),
+            ("", "shared-knowledge-rag"),
+            ("", ""),
+            ("RAGAgent", "   "),
+            ("   ", "shared-knowledge-rag"),
+        ],
+    )
+    def test_incomplete_reference_is_refused(self, test_start_event, agent_class, agent_id):
+        with pytest.raises(ValueError, match="incomplete agent reference"):
+            AgentInTheLoop.invoke(agent_class=agent_class, agent_id=agent_id, start_event=test_start_event)
+
+    def test_complete_reference_is_accepted(self, test_start_event):
+        request = AgentInTheLoop.invoke(
+            agent_class="RAGAgent", agent_id="shared-knowledge-rag", start_event=test_start_event
+        )
+        assert request.other_agent_topic.agent_id == "shared-knowledge-rag"

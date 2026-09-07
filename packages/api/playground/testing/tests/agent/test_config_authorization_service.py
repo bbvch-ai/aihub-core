@@ -150,12 +150,30 @@ class TestAgentSelectorValidation:
         assert violations[0]["resource_type"] == "agent"
         assert violations[0]["resource"] == "SecretAgent/inst_1"
 
-    def test_incomplete_value_skipped(self, t: LocaleHandler):
+    def test_partial_reference_is_denied(self, t: LocaleHandler):
+        """A half-filled reference cannot be evaluated, so it must fail closed rather than be waved through.
+
+        A blank agent_id renders as a NATS wildcard at runtime, so treating it as "nothing to check"
+        would let it skip the access check entirely.
+        """
         form = _to_dicts([AgentSelector(label="Agent", name="target_agent")])
         config = {"target_agent": {"agent_class": "MyAgent"}}
         checker = _make_access_checker()
 
-        _validate(form, config, checker, t)
+        with pytest.raises(Exception) as exc_info:
+            _validate(form, config, checker, t)
+
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 1
+        assert violations[0]["resource"] == "MyAgent/"
+
+    def test_fully_unset_reference_is_skipped(self, t: LocaleHandler):
+        """An untouched field is the `required` rule's job, not the authorization checker's."""
+        form = _to_dicts([AgentSelector(label="Agent", name="target_agent")])
+        checker = _make_access_checker()
+
+        _validate(form, {"target_agent": {}}, checker, t)
+        _validate(form, {"target_agent": {"agent_class": "", "agent_id": ""}}, checker, t)
 
 
 class TestModelSelectSkipped:
