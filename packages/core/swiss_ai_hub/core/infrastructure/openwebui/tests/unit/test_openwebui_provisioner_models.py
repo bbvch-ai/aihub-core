@@ -5,7 +5,7 @@ import pytest
 
 from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
-    AIHUB_AGENT_PREFIX,
+    AIHUB_MANAGED_META_KEY,
     OpenWebuiProvisioner,
 )
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -34,7 +34,11 @@ class TestResolveDisplayName:
         assert provisioner._resolve_display_name(name, "rag") == "rag"
 
 
-_RAG_MODEL_ID = f"{AIHUB_AGENT_PREFIX}rag-default"
+_RAG_MODEL_ID = "aihub-pipeline.rag.default"
+
+
+def _managed_row(model_id: str, name: str) -> dict:
+    return {"id": model_id, "name": name, "meta": {AIHUB_MANAGED_META_KEY: True}}
 
 
 class TestComputeModelDiff:
@@ -86,7 +90,7 @@ class TestSyncWorkspaceModels:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
-            patch.object(provisioner._openwebui, "list_models", return_value=[]) as mock_list,
+            patch.object(provisioner._openwebui, "list_base_models", return_value=[]) as mock_list,
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
@@ -95,9 +99,10 @@ class TestSyncWorkspaceModels:
             mock_list.assert_called_once()
             mock_create.assert_called_once()
             create_data = mock_create.call_args[0][1]
-            assert create_data["id"] == "aihub-agent-rag-default"
-            assert create_data["base_model_id"] == "aihub-pipeline.rag.default"
+            assert create_data["id"] == _RAG_MODEL_ID
+            assert "base_model_id" not in create_data
             assert create_data["name"] == "RAG Agent"
+            assert create_data["meta"][AIHUB_MANAGED_META_KEY] is True
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
@@ -108,8 +113,11 @@ class TestSyncWorkspaceModels:
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": "aihub-agent-rag-default", "name": "RAG Agent"}, {"id": "aihub-agent-gone-old"}],
+                "list_base_models",
+                return_value=[
+                    _managed_row(_RAG_MODEL_ID, "RAG Agent"),
+                    _managed_row("aihub-pipeline.gone.old", "Gone"),
+                ],
             ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
@@ -117,7 +125,7 @@ class TestSyncWorkspaceModels:
             await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
 
             mock_create.assert_not_called()
-            mock_delete.assert_called_once_with(mock_client, "aihub-agent-gone-old")
+            mock_delete.assert_called_once_with(mock_client, "aihub-pipeline.gone.old")
 
     @pytest.mark.asyncio
     async def test_sync_skips_deletion_when_no_agent_is_online(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -128,8 +136,11 @@ class TestSyncWorkspaceModels:
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": "aihub-agent-rag-default"}, {"id": "aihub-agent-search-default"}],
+                "list_base_models",
+                return_value=[
+                    _managed_row(_RAG_MODEL_ID, "RAG Agent"),
+                    _managed_row("aihub-pipeline.search.default", "Search Agent"),
+                ],
             ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
@@ -146,8 +157,8 @@ class TestSyncWorkspaceModels:
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": "aihub-agent-rag-default", "name": "Old Name"}],
+                "list_base_models",
+                return_value=[_managed_row(_RAG_MODEL_ID, "Old Name")],
             ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "update_model") as mock_update,
@@ -159,7 +170,7 @@ class TestSyncWorkspaceModels:
             mock_delete.assert_not_called()
             mock_update.assert_called_once()
             update_data = mock_update.call_args[0][1]
-            assert update_data["id"] == "aihub-agent-rag-default"
+            assert update_data["id"] == _RAG_MODEL_ID
             assert update_data["name"] == "RAG Agent"
 
     @pytest.mark.asyncio
@@ -169,8 +180,8 @@ class TestSyncWorkspaceModels:
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": "aihub-agent-rag-default", "name": "RAG Agent"}],
+                "list_base_models",
+                return_value=[_managed_row(_RAG_MODEL_ID, "RAG Agent")],
             ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "update_model") as mock_update,
@@ -183,14 +194,15 @@ class TestSyncWorkspaceModels:
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_sync_ignores_non_aihub_models(self, provisioner: OpenWebuiProvisioner) -> None:
+    async def test_sync_ignores_non_managed_base_rows(self, provisioner: OpenWebuiProvisioner) -> None:
+        """A human-created base row (no aihub_managed marker) must survive an agent sync untouched."""
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": "custom-model-123"}],
+                "list_base_models",
+                return_value=[{"id": "aihub-pipeline.custom.123", "name": "Human-made"}],
             ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
@@ -198,4 +210,25 @@ class TestSyncWorkspaceModels:
             await provisioner._sync_workspace_models(mock_client, [])
 
             mock_create.assert_not_called()
+            mock_delete.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_ignores_managed_llm_rows(self, provisioner: OpenWebuiProvisioner) -> None:
+        """An LLM model's managed row must not be mistaken for a stale agent row and deleted."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_base_models",
+                return_value=[_managed_row("text-generation/Kimi-K2.6", "Kimi")],
+            ),
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
+
+            mock_create.assert_called_once()
+            create_data = mock_create.call_args[0][1]
+            assert create_data["id"] == _RAG_MODEL_ID
             mock_delete.assert_not_called()

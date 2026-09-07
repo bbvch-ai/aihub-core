@@ -11,9 +11,9 @@ _MOCK_SCIM = MagicMock(name="mock_scim_client")
 
 @pytest.fixture(autouse=True)
 def unregistered_base_models():
-    """Defaults every sync to the healthy state — raw bases carry no registry entry.
+    """Defaults every sync's base-registry read to the healthy state — no managed rows yet.
 
-    Tests exercising the shadowing repair shadow this with their own instance-level
+    Tests exercising specific base rows shadow this with their own instance-level
     ``list_base_models`` patch, which takes precedence over this class-level one.
     """
     with patch.object(OpenWebuiClient, "list_base_models", return_value=[]):
@@ -56,4 +56,9 @@ def provisioner(mock_settings: MagicMock, mock_redis: MagicMock) -> OpenWebuiPro
     ):
         prov = OpenWebuiProvisioner(redis=mock_redis)
         prov._openwebui.scim_session = _mock_scim_session
+        # Defaults _delete_legacy_preset_models's read to the healthy state — nothing to migrate.
+        # Scoped to this instance (not OpenWebuiClient globally) so it doesn't affect
+        # test_openwebui_client.py's direct tests of the real list_models implementation. Tests
+        # exercising the migration itself override this with their own patch.object call.
+        prov._openwebui.list_models = AsyncMock(return_value=[])
         return prov
