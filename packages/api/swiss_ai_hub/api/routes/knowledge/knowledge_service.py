@@ -855,12 +855,13 @@ class KnowledgeService:
         """Names a new knowledge database may never be created on.
 
         A database's name doubles as its Mongo store and Milvus collection, so Mongo's own system databases
-        and the application's main database would collide. The two legacy names are reserved on top of that
-        because their corpora are frozen with no migration path — a new database bound to one would be
-        ingested on top of it — and stay reserved whether or not the legacy databases are shown.
+        and the application's main database would collide, and the two legacy names would put a new database
+        on top of a frozen corpus that has no migration path. Spelled out rather than derived from
+        ``non_browsable_database_names``, so that widening one policy cannot silently widen the other.
         """
         aihub_settings = AIHubSettings()
-        return KnowledgeService.non_browsable_database_names() | {
+        return _SYSTEM_DATABASE_NAMES | {
+            aihub_settings.MONGO_MAIN_DB_NAME,
             aihub_settings.DEFAULT_BUCKET_NAME,
             aihub_settings.SHARED_BUCKET_NAME,
         }
@@ -869,17 +870,13 @@ class KnowledgeService:
     def non_browsable_database_names() -> frozenset[str]:
         """Names no caller may read from or delete in, whatever access rules they hold.
 
-        Reserving a name for creation is not a reason to refuse reads of the database already on it: the
-        legacy databases are ordinary corpora that their frozen pipelines still serve, so the per-resource
-        rules govern them like any other. They drop back in here only when the deployment hides legacy
-        knowledge, so that hidden means unreadable and not merely unlisted.
-
-        Keyed on the two configured names, while ``get_databases`` hides by the bucket's ``ingestor``. The
-        two agree on every deployment that has not renamed its buckets since seeding. A bucket carrying a
-        legacy ingestor under some other name is therefore unlisted but still readable by name — acceptable,
-        because the name settings are what a deployment declares its legacy corpora to be, and closing the
-        gap would mean a bucket lookup on every guarded read.
+        Reserving a name for creation is not a reason to refuse reads of the database already on it, so the
+        legacy names appear here only when the deployment hides legacy knowledge, making hidden mean
+        unreadable rather than merely unlisted. Uploads and namespace creation stay open either way.
         """
+        # Keyed on the two configured names, while get_databases hides by the bucket's ingestor. The two
+        # agree unless a deployment renamed its buckets after seeding, which would leave such a bucket
+        # unlisted yet readable by name; closing that would cost a bucket lookup on every guarded read.
         aihub_settings = AIHubSettings()
         system_names = _SYSTEM_DATABASE_NAMES | {aihub_settings.MONGO_MAIN_DB_NAME}
         if aihub_settings.SHOW_LEGACY_KNOWLEDGE:
@@ -888,11 +885,12 @@ class KnowledgeService:
 
     @staticmethod
     def _is_database_deletable(bucket: BucketEntity) -> bool:
-        """Whether anything in this database may be torn down, the database itself or a single namespace.
+        """Whether the database itself or one of its namespaces may be torn down.
 
         Auto-synced databases are refilled by their source, and the legacy ``default_rag`` / ``shared_rag``
         buckets are served by frozen images that predate the teardown sensor, so neither can be purged.
-        The frontend gates both the database and the namespace delete affordance on this one flag.
+        The frontend gates both delete affordances on this one flag. Single documents are governed
+        separately — their removal is published to the owning pipeline — and stay deletable.
         """
         return not bucket.auto_sync and not KnowledgeService._is_legacy_bucket(bucket)
 

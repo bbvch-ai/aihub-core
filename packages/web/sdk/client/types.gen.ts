@@ -4537,7 +4537,7 @@ export type DatabaseDto = {
   /**
    * Deletable
    *
-   * Whether anything in this database may be deleted, the database itself or a single namespace; false for auto-synced and legacy default_rag/shared_rag databases, whose content is owned by a source or served by a frozen pipeline that cannot tear it down.
+   * Whether the database itself or one of its namespaces may be deleted; false for auto-synced and legacy default_rag/shared_rag databases, whose content is owned by a source or served by a frozen pipeline that cannot tear it down. Individual documents are governed separately and stay deletable.
    */
   deletable: boolean;
   /**
