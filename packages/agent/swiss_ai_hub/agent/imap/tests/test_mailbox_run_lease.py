@@ -249,3 +249,66 @@ async def test_a_heartbeat_survives_a_redis_blip_without_abandoning_the_run():
         del lease.renew
         await lease.release(_AGENT_CLASS, agent_id, "run-a")
         await redis.aclose()
+
+
+@async_test
+async def test_a_run_takes_back_a_lease_that_lapsed_unclaimed():
+    """The delegation window has nothing to heartbeat from, so a lapsed lease there is expected, not a competitor.
+
+    By that point every message of the batch has been filed out of the inbox, so no concurrent run can be working
+    the same mail — and refusing would throw away a whole batch's drafts that nothing will ever retry.
+    """
+    lease, redis = _lease(ttl=timedelta(seconds=1))
+    agent_id = _agent_id()
+    try:
+        await lease.acquire(_AGENT_CLASS, agent_id, "run-a")
+        await asyncio.sleep(1.5)
+
+        assert await lease.renew(_AGENT_CLASS, agent_id, "run-a") is False, "precondition: the lease has lapsed"
+        assert await lease.reacquire(_AGENT_CLASS, agent_id, "run-a") is True
+    finally:
+        await lease.release(_AGENT_CLASS, agent_id, "run-a")
+        await redis.aclose()
+
+
+@async_test
+async def test_a_run_that_still_holds_its_lease_simply_extends_it():
+    lease, redis = _lease()
+    agent_id = _agent_id()
+    try:
+        await lease.acquire(_AGENT_CLASS, agent_id, "run-a")
+
+        assert await lease.reacquire(_AGENT_CLASS, agent_id, "run-a") is True
+    finally:
+        await lease.release(_AGENT_CLASS, agent_id, "run-a")
+        await redis.aclose()
+
+
+@async_test
+async def test_a_mailbox_another_run_holds_is_never_taken_back():
+    """The one case reacquire must still refuse: two runs appending into the same Drafts folder."""
+    lease, redis = _lease()
+    agent_id = _agent_id()
+    try:
+        await lease.acquire(_AGENT_CLASS, agent_id, "run-b")
+
+        assert await lease.reacquire(_AGENT_CLASS, agent_id, "run-a") is False
+    finally:
+        await lease.release(_AGENT_CLASS, agent_id, "run-b")
+        await redis.aclose()
+
+
+@async_test
+async def test_taking_a_lease_back_does_not_hand_it_to_the_taker_when_someone_else_holds_it():
+    """A refused reacquire must leave the real holder in place, not overwrite it."""
+    lease, redis = _lease()
+    agent_id = _agent_id()
+    try:
+        await lease.acquire(_AGENT_CLASS, agent_id, "run-b")
+        await lease.reacquire(_AGENT_CLASS, agent_id, "run-a")
+
+        assert await lease.renew(_AGENT_CLASS, agent_id, "run-b") is True
+        assert await lease.renew(_AGENT_CLASS, agent_id, "run-a") is False
+    finally:
+        await lease.release(_AGENT_CLASS, agent_id, "run-b")
+        await redis.aclose()
