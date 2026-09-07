@@ -7,6 +7,8 @@ Needs the dev stack (NATS + Valkey) but no LLM — detection, the guard, and the
 all stubbed. Marked self_hosted so the lean CI skips it.
 """
 
+from unittest.mock import patch
+
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
@@ -56,17 +58,20 @@ async def test_guard_reject_generates_title_and_follow_ups(monkeypatch):
     async def fake_guard(**_):
         return GuardResult(success=False, reasoning="forced rejection")
 
-    async def fake_generate_metadata(chat_messages, llm_config, displayer, t, thread_context):
+    async def fake_generate_metadata(chat_messages, llm_config, displayer, t, thread_context, user):
         await displayer.display_event(ConversationTitleEvent(title="Fake Title"))
         await displayer.display_event(FollowUpQuestionsEvent(questions=["Fake follow-up?"]))
 
     monkeypatch.setattr(f"{FEW_SHOT_MODULE}.do_detect_meta_question", fake_detect)
     monkeypatch.setattr(f"{FEW_SHOT_MODULE}.agent_description_guard", fake_guard)
-    monkeypatch.setattr(f"{FEW_SHOT_MODULE}.generate_conversation_metadata", fake_generate_metadata)
 
     runner = AgentTestRunner(agent_type=FewShotAgent, agent_config=_config())
-    async with runner.test_run(delay_before_stop=20) as topic:
-        await runner.send_event_from_topic(topic=topic, start_event=_user_message("Fight Club"))
+    # autospec, not monkeypatch.setattr: a bare stub silently accepts whatever the step passes, so when
+    # the real helper gained its `user` parameter this test kept passing while production raised
+    # TypeError on every guard rejection. autospec binds the call against the real signature instead.
+    with patch(f"{FEW_SHOT_MODULE}.generate_conversation_metadata", autospec=True, side_effect=fake_generate_metadata):
+        async with runner.test_run(delay_before_stop=20) as topic:
+            await runner.send_event_from_topic(topic=topic, start_event=_user_message("Fight Club"))
 
     assert runner.has_stop_event, "guard-reject path did not terminate the run"
     assert runner.has_event_of_class(ConversationTitleEvent), "guard-reject path did not generate a title"
