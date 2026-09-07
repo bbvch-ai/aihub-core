@@ -2095,8 +2095,12 @@ services:
       CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN};https://${DOMAIN}
 
       # --- Admin ---
-      ENABLE_ADMIN_EXPORT: true
+      # OpenWebUI admin is the AIHubSysAdmin realm role (OAUTH_ADMIN_ROLES below). Upstream lets that role
+      # read every user's files and export every user's chats across all tenants; both are scoped to the
+      # admin's own data by default here and can be opened up per deployment (issue #104).
+      ENABLE_ADMIN_EXPORT: ${OPENWEBUI_ENABLE_ADMIN_EXPORT}
       ENABLE_ADMIN_CHAT_ACCESS: false
+      BYPASS_ADMIN_ACCESS_CONTROL: ${OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL}
       SHOW_ADMIN_DETAILS: true
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
