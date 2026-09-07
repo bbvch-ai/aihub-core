@@ -110,3 +110,27 @@ config:
   attachment_char_limit:
     label: Limite de caractères par pièce jointe
     help: Nombre de caractères conservés du texte extrait d'une seule pièce jointe.
+  category_knowledge_namespace:
+    label: Collection de connaissances
+    help: Collection sur laquelle les réponses de cette catégorie sont fondées. Si
+      elle est définie, la réponse provient uniquement des documents de cette collection.
+      Si elle est vide, la réponse est rédigée à partir du seul message, sans recherche.
+  knowledge_databases:
+    label: Bases de connaissances
+    help: Bases dans lesquelles les collections des catégories sont recherchées. Nécessaire
+      uniquement lorsqu'une catégorie nomme une collection.
+  no_information_draft:
+    label: Brouillon lorsque rien n'a été trouvé
+    help: Texte du brouillon lorsque la recherche n'a rien trouvé qui réponde au message.
+      Utilisé tel quel, afin que la réponse n'invente jamais ce pour quoi il n'existe
+      aucun document.
+  grounding_failed_draft:
+    label: Brouillon lorsque la recherche a échoué
+    help: Texte du brouillon lorsque la recherche de connaissances a échoué ou n'a
+      jamais répondu. Distinct du texte d'absence d'information, pour différencier
+      une lacune documentaire d'une installation défaillante.
+  grounding_timeout_seconds:
+    label: Délai de la recherche de connaissances (secondes)
+    help: Durée maximale d'une recherche de connaissances avant que le message soit
+      rédigé avec le texte d'échec. Sans délai, un agent de connaissances hors ligne
+      laisse l'exécution attendre indéfiniment.

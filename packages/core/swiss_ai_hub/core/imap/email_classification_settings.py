@@ -6,6 +6,7 @@ from swiss_ai_hub.core.agents.agent_config import StepConfig
 from swiss_ai_hub.core.form.constraints import Gt, MinLen
 from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.input_text import InputText
+from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.textarea import Textarea
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -34,6 +35,16 @@ class EmailClassificationSettings(StepConfig):
             default_factory=list,
             title="Categories",
             description="Categories mail is sorted into. Each needs a folder and a description of what belongs in it.",
+        ),
+    ]
+    knowledge_databases: Annotated[
+        list[str] | KnowledgeDatabaseSelector,
+        Field(
+            default_factory=list,
+            title="Knowledge databases",
+            description="Databases the categories' collections are looked up in. Needed only when a category names a "
+            "collection: a collection name alone does not identify a database, and the RAG agent's retrievers are "
+            "keyed by database.",
         ),
     ]
     fallback_folder: Annotated[
@@ -78,6 +89,10 @@ class EmailClassificationSettings(StepConfig):
     def as_form(cls) -> Self:
         return cls(
             categories=[MailCategory.as_form()],
+            knowledge_databases=KnowledgeDatabaseSelector(
+                label=LocaleString.from_i18n_path("lib.imap.config.knowledge_databases.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.knowledge_databases.help"),
+            ),
             fallback_folder=InputText(
                 label=LocaleString.from_i18n_path("lib.imap.config.fallback_folder.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.fallback_folder.help"),

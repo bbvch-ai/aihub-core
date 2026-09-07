@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Any
 
 import mongoengine.errors
 from bson import ObjectId
@@ -36,6 +36,7 @@ from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_input_respon
 from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
     HumanInTheLoopResponseEvent,
 )
+from swiss_ai_hub.core.events.agent.semantic.llm.message import Message
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_costs import LLMCosts
@@ -411,13 +412,30 @@ class ChatService:
         return resources
 
     @staticmethod
+    def terminal_output_text(output_messages: list[Any] | None) -> str:
+        """Return terminal answer text from live LlamaIndex/core messages or raw persisted payloads."""
+        if not output_messages:
+            return ""
+        last_message = output_messages[-1]
+        if isinstance(last_message, ChatMessage):
+            return last_message.content or ""
+        if isinstance(last_message, Message):
+            return last_message.content
+        return Message.model_validate(last_message).content
+
+    @staticmethod
+    def missing_suffix(streamed: str, full_answer: str) -> str:
+        """Return the unstreamed suffix when the full answer extends the streamed prefix."""
+        if full_answer and full_answer.startswith(streamed):
+            return full_answer[len(streamed) :]
+        return "" if streamed else full_answer
+
+    @staticmethod
     @trace_fn
     def build_json_response_content(
         chunk_events: list[ChunkEvent | ThoughtEvent], stop_event: StopEvent | HumanInTheLoopRequestEvent | None
     ) -> ChatContent:
-        """
-        Construct a JSON response from collected chunk events.
-        """
+        """Construct a JSON response from collected chunk events."""
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
         streamed = "".join(chunk.content for chunk in sorted_chunks)
         chat_content = ChatContent(content=streamed, reasoning_content="")
@@ -425,11 +443,8 @@ class ChatService:
         if stop_event.is_hitl_request_event:
             chat_content.content += stop_event.question
             return chat_content
-        # Backstop: if chunks were lost to the stop-vs-chunk dispatch race, recover from the stop event's
-        # durable payload. Use the full answer whenever what streamed is a prefix of it (covers a fully
-        # empty body and a partial loss). Best-effort: a streamed value that diverges keeps what streamed.
-        output_messages = getattr(stop_event, "output_messages", None) or []
-        full_answer = (output_messages[-1].content or "") if output_messages else ""
-        if full_answer and full_answer.startswith(streamed):
-            chat_content.content = full_answer
+        full_answer = ChatService.terminal_output_text(getattr(stop_event, "output_messages", None))
+        suffix = ChatService.missing_suffix(streamed, full_answer)
+        if suffix:
+            chat_content.content = streamed + suffix
         return chat_content
