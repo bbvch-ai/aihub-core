@@ -63,6 +63,19 @@ Deriving is what makes this hardware-agnostic — the same code yields the right
 configuration. The wildcard/enumerate split is deliberate: infrastructure models (embedding, rerank, STT, image) reach
 new tenants automatically, while a new **chat** model — the kind QC vets and users pick — needs an explicit grant.
 
+*A `.>` rule does not match its own root.* This is the non-obvious constraint that makes an enumerated ceiling harder to
+get right than the single `aihub.admin.>` it replaces. `aihub.admin.knowledge.>` covers every named database but not the
+bare `aihub.admin.knowledge`, which is what *creating* one is guarded on — a database that does not exist yet cannot be
+named by a rule. `_NON_MODEL_RULES` therefore carries both forms for `knowledge`, exactly as the seeded
+`AIHubKnowledgeAdmin` role does. Because a ceiling caps every role beneath it, omitting the root does not merely narrow
+a role — it makes the permission unreachable for the whole tenant, and `AccessCapabilityService._capability_for_guard`
+*hides* such a row rather than showing it blocked, so the loss is silent.
+
+Getting this right per family by hand is what the family-coverage guard failed to catch, because the gap was one of
+*depth*, not of family. `test_the_derived_ceiling_permits_every_route_guard` therefore reads the guards off the real
+mounted routes via `AccessCapabilityService._route_template` and asserts the derived ceiling permits each one — the same
+"derive it, do not restate it" principle the model half already follows.
+
 **2 — Policy lives in exclusions, not an allow list.** `TenantDefaultAccessSettings.EXCLUDED_MODELS`
 (`AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS`, default `text-generation/Apertus-70B-Instruct-2509`). An allow list
 would have to be maintained per hardware mode; the exclusion is the same policy on both. An exclusion the roster does

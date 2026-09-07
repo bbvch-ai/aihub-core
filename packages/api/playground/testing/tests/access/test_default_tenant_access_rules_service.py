@@ -8,13 +8,11 @@ the emitted strings.
 
 import httpx
 import pytest
+from fastapi.routing import APIRoute
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 
 from swiss_ai_hub.api.routes.access.access_capability_service import AccessCapabilityService
-from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import (
-    KNOWN_RULE_FAMILIES,
-    DefaultTenantAccessRulesService,
-)
+from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 from swiss_ai_hub.api.routes.access.model_roster_unavailable_error import ModelRosterUnavailableError
 
 _EXCLUDED = "text-generation/Apertus-70B-Instruct-2509"
@@ -114,6 +112,9 @@ async def test_non_model_families_stay_reachable(monkeypatch: pytest.MonkeyPatch
     assert checker.has_access_to_agent("RAGAgent", "shared-knowledge-rag")
     assert checker.has_access_to_process("SomeProcess", "some-id")
     assert checker.has_access_to_service("model")
+    # The knowledge root, not the subtree: creating a database is guarded on the bare rule, which
+    # ``aihub.admin.knowledge.>`` cannot satisfy.
+    assert checker.has_access("aihub.admin.knowledge")
 
 
 @pytest.mark.asyncio
@@ -153,13 +154,35 @@ async def test_empty_roster_raises_rather_than_seeding_a_model_less_tenant(monke
         await DefaultTenantAccessRulesService.derive()
 
 
+class _DummyPathParams(dict):
+    """Fills a guard template's ``{path_params}`` with any concrete value — which segment a rule names
+    is irrelevant here, only how many segments deep the guard sits."""
+
+    def __missing__(self, key: str) -> str:
+        return "probe"
+
+
 @pytest.mark.asyncio
-async def test_every_known_rule_family_is_covered(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A seventh family added to the platform would otherwise be silently absent from every new tenant's
-    ceiling — denied by omission, with nothing failing to say so."""
+async def test_the_derived_ceiling_permits_every_route_guard(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The ceiling caps every role, so a guard it cannot grant is unreachable for the whole tenant — and
+    ``_capability_for_guard`` hides such a row rather than reporting it, making the failure silent.
+
+    Read off the real mounted routes rather than a hand-kept list, because the gap this replaces was not a
+    missing *family* but a missing *depth*: ``aihub.admin.knowledge.>`` never matches the bare
+    ``aihub.admin.knowledge`` root that creating a database is guarded on, yet reports its family covered.
+    """
+    from app.main import runner
+
     _stub_roster(monkeypatch, _CPU_ROSTER)
+    checker = _checker(await DefaultTenantAccessRulesService.derive())
 
-    rules = await DefaultTenantAccessRulesService.derive()
-    covered = {rule.removeprefix("aihub.user.").removeprefix("aihub.admin.").split(".")[0] for rule in rules}
+    guards = {
+        template.format_map(_DummyPathParams())
+        for controller in runner.controllers
+        for route in controller.router.routes
+        if isinstance(route, APIRoute) and (template := AccessCapabilityService._route_template(route)) is not None
+    }
 
-    assert covered == KNOWN_RULE_FAMILIES
+    assert guards, "no route guards discovered — the closure walk broke, not the ceiling"
+    for guard in sorted(guards):
+        assert checker.has_access(guard), guard

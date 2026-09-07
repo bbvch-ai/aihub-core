@@ -147,9 +147,13 @@ prüfen, ob der Zugriff gewährt (nicht verweigert) wird.
 Konfigurieren Sie das Standardverhalten über Umgebungsvariablen:
 
 ```bash
-# Startup tenant (seeded on first boot; an ordinary tenant thereafter)
+# Startup tenant (seeded on first boot; an ordinary tenant thereafter).
+# ACCESS_RULES leer lassen, um die Obergrenze aus den Modellen dieser Instanz abzuleiten,
+# abzüglich AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS. "aihub.admin.>" setzen für
+# uneingeschränkten Zugriff; das überspringt zugleich die Modell-Gateway-Abfrage beim ersten Start.
 AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
-AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
+AIHUB_STARTUP_TENANT_ACCESS_RULES=""
+AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS="text-generation/Apertus-70B-Instruct-2509"
 
 # Automatic user signup
 AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
@@ -186,6 +190,16 @@ Beim Erstellen von Zugriffsregeln:
 - Muss mit `aihub.user.` oder `aihub.admin.` beginnen
 - Nur Kleinbuchstaben, Zahlen, Punkte, Bindestriche, Unterstriche, `*`, `>`
 - Mehr-Ebenen-Platzhalter `>` nur am Ende
+
+**`>` erfasst die eigene Wurzel nicht**:
+
+`aihub.admin.knowledge.>` erfasst `aihub.admin.knowledge.hr-docs`, aber **nicht** das blosse `aihub.admin.knowledge` —
+`>` verlangt mindestens ein weiteres Segment. Einige Berechtigungen sind genau deshalb auf einer blossen Wurzel
+abgesichert, weil die Ressource noch nicht existiert: das Erstellen einer Wissensdatenbank wird gegen
+`aihub.admin.knowledge` geprüft, denn eine noch nicht erstellte Datenbank kann von keiner Regel benannt werden. Ein
+Regelsatz, der beides abdecken soll, muss beide Formen führen — deshalb wird `AIHubKnowledgeAdmin` mit
+`aihub.admin.knowledge` *und* `aihub.admin.knowledge.>` angelegt. Das gilt für Mandanten-Obergrenzen ebenso wie für
+Rollen: eine Obergrenze, die nur die `.>`-Form enthält, kappt die Wurzel-Berechtigung für jede Rolle im Mandanten.
 
 **Verboten**:
 

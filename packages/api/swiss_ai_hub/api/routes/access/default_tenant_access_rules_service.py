@@ -13,15 +13,16 @@ logger = logging.getLogger(__name__)
 # model-only ceiling would leave the tenant unable to reach agents, knowledge, processes or the admin UI.
 _NON_MODEL_RULES: tuple[str, ...] = (
     "aihub.admin.agent.>",
+    # Both forms are needed: ``knowledge.>`` covers every existing database, while the bare root is what
+    # *creating* one is guarded on — a database that does not exist yet cannot be named by a rule, and a
+    # ``.>`` rule never matches its own root. Mirrors the ``AIHubKnowledgeAdmin`` seed in
+    # ``initialize_db._DEFAULT_ROLE_DEFINITIONS``, which carries both for the same reason.
+    "aihub.admin.knowledge",
     "aihub.admin.knowledge.>",
     "aihub.admin.process.>",
     "aihub.admin.service.>",
     "aihub.user.memory.>",
 )
-
-# Guards against a seventh rule family being added to the platform and silently missing from every new
-# tenant's ceiling. Update both this set and _NON_MODEL_RULES together.
-KNOWN_RULE_FAMILIES: frozenset[str] = frozenset({"agent", "knowledge", "memory", "model", "process", "service"})
 
 
 class DefaultTenantAccessRulesService:
