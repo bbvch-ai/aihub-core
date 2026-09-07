@@ -18,6 +18,8 @@ tenant_admin:
     orphaned_label: Orfano
     orphaned_tooltip: Questo tenant ha metadati ma nessun gruppo Keycloak corrispondente.
       Gli utenti non possono accedervi.
+  card:
+    more_rules: +{count} altre
   configure:
     title: Configura tenant
     description: Collega metadati a un gruppo di tenant Keycloak esistente. L'ID del

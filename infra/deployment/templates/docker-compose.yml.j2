@@ -2828,11 +2828,6 @@ services:
         condition: service_healthy
       mineru-api:
         condition: service_healthy
-      {#- Seeding the startup tenant on a brand-new instance derives its access ceiling from the live model
-          roster, and that runs outside the non-fatal provisioning block. Waiting for litellm turns a first-boot
-          race into an ordered start rather than a restart loop. #}
-      litellm:
-        condition: service_healthy
       openwebui-init:
         condition: service_completed_successfully
     environment:

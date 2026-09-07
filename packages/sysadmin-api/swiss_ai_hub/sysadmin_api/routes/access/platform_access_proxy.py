@@ -1,5 +1,3 @@
-from typing import Any
-
 import httpx
 from fastapi import HTTPException, Request, status
 from swiss_ai_hub.api import AccessCapabilitiesRequest, AccessCapabilitiesResponse, AccessPresetDTO
@@ -65,10 +63,10 @@ class PlatformAccessProxy:
             raise PlatformAccessProxy._gateway_error(error) from error
 
     @staticmethod
-    def base_url_or_raise(runner: Any) -> str:
+    def base_url_or_raise(base_url: str | None) -> str:
         """Shared by every controller that proxies to the platform API, so the "not configured" failure reads
-        the same wherever it surfaces."""
-        base_url = runner.platform_api_base_url
+        the same wherever it surfaces. Takes the value rather than the runner, so this stays independent of
+        which object happens to expose it."""
         if base_url is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

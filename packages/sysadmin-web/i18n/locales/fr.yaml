@@ -18,6 +18,8 @@ tenant_admin:
     orphaned_label: Orphelin
     orphaned_tooltip: Ce tenant a des métadonnées mais aucun groupe Keycloak correspondant.
       Les utilisateurs n'y ont pas accès.
+  card:
+    more_rules: +{count} autres
   configure:
     title: Configurer un tenant
     description: Attachez des métadonnées à un groupe de tenants Keycloak existant.

@@ -56,4 +56,4 @@ class SysadminAccessController(AccessController):
         return self
 
     def _platform_api_base_url(self) -> str:
-        return PlatformAccessProxy.base_url_or_raise(self._runner)
+        return PlatformAccessProxy.base_url_or_raise(self._runner.platform_api_base_url)

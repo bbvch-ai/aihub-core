@@ -18,6 +18,8 @@ tenant_admin:
     orphaned_label: Orphaned
     orphaned_tooltip: This tenant has metadata but no matching Keycloak group. Users
       cannot access it.
+  card:
+    more_rules: +{count} more
   configure:
     title: Configure Tenant
     description: Attach metadata to an existing Keycloak tenant group. The tenant

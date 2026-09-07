@@ -2510,8 +2510,6 @@ services:
         condition: service_healthy
       mineru-api:
         condition: service_healthy
-      litellm:
-        condition: service_healthy
       openwebui-init:
         condition: service_completed_successfully
     environment:

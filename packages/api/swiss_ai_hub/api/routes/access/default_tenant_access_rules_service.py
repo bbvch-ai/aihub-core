@@ -39,9 +39,13 @@ class DefaultTenantAccessRulesService:
 
         try:
             models_by_capability = await AccessCapabilityService.available_models_by_capability()
-        except httpx.HTTPError as roster_error:
+        except (httpx.HTTPError, KeyError, ValueError) as roster_error:
+            # A transport failure is the obvious case, but the fetch also indexes ``["data"]`` and
+            # ``["model_name"]``, so a 200 carrying an unexpected body raises KeyError or ValueError
+            # (JSONDecodeError subclasses it). Those are roster problems too, and letting them past here
+            # costs the caller its actionable 503 — or, at startup, the whole API.
             raise ModelRosterUnavailableError(
-                f"Could not read the model roster from the model gateway: {roster_error}"
+                f"Could not read the model roster from the model gateway: {roster_error!r}"
             ) from roster_error
 
         if not models_by_capability:

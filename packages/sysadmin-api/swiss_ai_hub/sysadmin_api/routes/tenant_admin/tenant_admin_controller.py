@@ -131,6 +131,7 @@ class TenantAdminController(Controller):
     async def _fetch_default_access_rules(self, http_request: Request) -> list[str]:
         """Proxied to the platform API, which owns the model-gateway connection. ``active`` resolves to the
         acting sysadmin's own tenant — the response does not depend on which tenant asks."""
+        base_url = PlatformAccessProxy.base_url_or_raise(self._runner.platform_api_base_url)
         return await PlatformAccessProxy.fetch_default_tenant_rules(
-            PlatformAccessProxy.base_url_or_raise(self._runner), AuthHandler.ACTIVE_TENANT_SLUG, http_request
+            base_url, AuthHandler.ACTIVE_TENANT_SLUG, http_request
         )
