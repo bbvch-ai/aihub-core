@@ -303,3 +303,17 @@ class TestLLMSpendAggregation:
 
         assert len(spend) == 1
         assert spend[0].calls == 1
+
+    def test_payload_beyond_the_attributed_fields_does_not_change_the_sum(self):
+        """The pipeline projects the five fields it groups on instead of carrying `event_data` whole, so
+        anything outside those fields must be unable to change the result."""
+        _persist_cost_event("e1", user_id="u1", tenant_id="acme", prompt=1.0, completion=2.0)
+        event = PersistedAgentEventEntity.objects(event_id="e1").first()
+        event.event_data["messages"] = ["x" * 4096]
+        event.event_data["model_parameters"] = {"temperature": 0.7, "prompt": "y" * 4096}
+        event.save()
+
+        spend = PersistedAgentEventEntity.get_llm_spend_by_user()
+
+        assert spend[0].calls == 1
+        assert spend[0].total_costs == pytest.approx(3.0)
