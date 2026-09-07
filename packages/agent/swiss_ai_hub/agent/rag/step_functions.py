@@ -18,7 +18,6 @@ from swiss_ai_hub.core.events.agent import (
     MemoryStorageRequestedEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
-    RAGStartEvent,
     RAGSuccessStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
@@ -26,7 +25,6 @@ from swiss_ai_hub.core.events.agent import (
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
     StoreUserMemoryRequestedEvent,
-    UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
@@ -162,22 +160,25 @@ async def do_few_shot_guard(
 
 
 async def do_retrieve_user_memory(
-    event: UserMessageEvent | RAGStartEvent,
+    query: str,
+    user_id: str,
     memory: AgentMemory,
     rerank: bool,
 ) -> RetrieveUserMemoryEvent:
     """Retrieve user memories for personalized context.
+
+    Searches with the condensed standalone question, never the raw last user message — chat clients
+    running full-context RAG inline whole documents into that message (issue #1753).
 
     A failing memory subsystem degrades to an empty event instead of propagating (issue #1713): raising
     would end the run, while `stop_on_error=False` would suppress the `ExceptionEvent` but emit nothing at
     all — and `check_memory_ready_for_chat_history` blocks until this event exists, so the run would hang.
     A hung backend degrades the same way, since a stall blocks the chat turn just as a raise ends it.
     """
-    user_id = event.user.id
     try:
         memory_result = await asyncio.wait_for(
             memory.search_user_memory(
-                query=event.user_query,
+                query=query,
                 user_id=user_id,
                 limit=10,
                 threshold=0.5,
@@ -197,27 +198,29 @@ async def do_retrieve_user_memory(
 
 
 async def do_retrieve_organization_memory(
-    event: UserMessageEvent | RAGStartEvent,
+    query: str,
+    requested_namespaces: list[str],
+    user_id: str,
     org_memory: OrgMemoryReadConfig,
     memory: AgentMemory,
 ) -> RetrieveOrganizationMemoryEvent:
     """Retrieve organization memories for shared expert-knowledge context.
 
-    Degrades to an empty event on failure for the same reason as `do_retrieve_user_memory`.
+    Searches with the condensed standalone question for the same reason as `do_retrieve_user_memory`
+    (issue #1753). Degrades to an empty event on failure for the same reason as well.
 
     Namespace resolution is deliberately left outside that safety net: a start event asking for a namespace
     outside the configured allow-list is a caller error, and silently answering from the wrong scope (or
     from none) would hide it. Only the memory-subsystem call degrades.
     """
-    requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
     tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
-        requested=requested,
+        requested=requested_namespaces,
         configured=org_memory.allowed_tenant_namespaces,
     )
     try:
         memory_result = await asyncio.wait_for(
             memory.search_organization_memory(
-                query=event.user_query,
+                query=query,
                 tenant_id=org_memory.tenant_id,
                 tenant_namespaces=tenant_namespaces,
                 user_id=None,
@@ -233,7 +236,7 @@ async def do_retrieve_organization_memory(
             "tenant_id=%s namespaces=%s user_id=%s",
             org_memory.tenant_id,
             tenant_namespaces,
-            event.user.id,
+            user_id,
             exc_info=True,
         )
         return RetrieveOrganizationMemoryEvent(memories=[], relations=[])
@@ -411,6 +414,22 @@ def do_finalize_rag_stop(
     if context_insufficient_reject is not None:
         return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT, answer=answer)
     return RAGSuccessStopEvent(answer=answer)
+
+
+def build_memory_conversation(
+    condense_event: StandaloneQuestionCondenserEvent,
+    llm_event: LLMEvent,
+) -> list[ChatMessage]:
+    """
+    Build the mem0 fact-extraction payload: the condensed standalone question plus the answer.
+
+    Never the final LLM input — that carries the client-augmented user message and the USER-role RAG
+    context message, both of which feed document text into stored "user facts" (issue #1753). The
+    condensed question is the turn's only doc-free representation; prior turns were already extracted
+    by their own runs' store steps.
+    """
+    output_messages = llm_event.output_messages or []
+    return [condense_event.condensed_chat_message, *(message.to_llama_index() for message in output_messages)]
 
 
 def build_memory_storage_request(

@@ -4,6 +4,9 @@ A raising retrieval step ends the run with an `ExceptionEvent`, but marking the 
 is worse: the dispatcher then publishes nothing, and `check_memory_ready_for_chat_history` blocks until the
 retrieval event exists — so the run hangs rather than degrading. The contract pinned here is that failure,
 timeout included, yields an *empty* event, which keeps that precondition satisfiable.
+
+Since #1753 both functions take the condensed standalone question as an explicit `query` string — never a
+start event whose last user message may carry client-inlined documents.
 """
 
 import asyncio
@@ -11,7 +14,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from swiss_ai_hub.core.events.agent import (
-    RAGStartEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieveUserMemoryEvent,
 )
@@ -22,12 +24,7 @@ from swiss_ai_hub.agent.rag import step_functions
 from swiss_ai_hub.agent.rag.preconditions import check_memory_ready_for_chat_history
 from swiss_ai_hub.agent.rag.step_functions import do_retrieve_organization_memory, do_retrieve_user_memory
 
-
-def _event() -> MagicMock:
-    event = MagicMock()
-    event.user_query = "what is the vacation policy?"
-    event.user.id = "user-1"
-    return event
+CONDENSED_QUESTION = "what is the vacation policy?"
 
 
 def _org_config(**overrides) -> OrgMemoryReadConfig:
@@ -57,7 +54,9 @@ def _empty_result_memory() -> MagicMock:
 
 @pytest.mark.asyncio
 async def test_user_memory_failure_yields_empty_event():
-    result = await do_retrieve_user_memory(event=_event(), memory=_failing_memory(), rerank=True)
+    result = await do_retrieve_user_memory(
+        query=CONDENSED_QUESTION, user_id="user-1", memory=_failing_memory(), rerank=True
+    )
 
     assert isinstance(result, RetrieveUserMemoryEvent)
     assert result.memories == []
@@ -66,7 +65,13 @@ async def test_user_memory_failure_yields_empty_event():
 
 @pytest.mark.asyncio
 async def test_organization_memory_failure_yields_empty_event():
-    result = await do_retrieve_organization_memory(event=_event(), org_memory=_org_config(), memory=_failing_memory())
+    result = await do_retrieve_organization_memory(
+        query=CONDENSED_QUESTION,
+        requested_namespaces=[],
+        user_id="user-1",
+        org_memory=_org_config(),
+        memory=_failing_memory(),
+    )
 
     assert isinstance(result, RetrieveOrganizationMemoryEvent)
     assert result.memories == []
@@ -84,7 +89,13 @@ async def test_hung_backend_degrades_rather_than_stalling_the_turn(monkeypatch):
     memory = MagicMock()
     memory.search_organization_memory = _never_returns
 
-    result = await do_retrieve_organization_memory(event=_event(), org_memory=_org_config(), memory=memory)
+    result = await do_retrieve_organization_memory(
+        query=CONDENSED_QUESTION,
+        requested_namespaces=[],
+        user_id="user-1",
+        org_memory=_org_config(),
+        memory=memory,
+    )
 
     assert result.memories == []
 
@@ -96,9 +107,15 @@ async def test_degraded_events_still_satisfy_the_chat_history_precondition():
     config.user_memory.enable_user_memory_retrieval = True
     config.org_memory = _org_config()
 
-    user_event = await do_retrieve_user_memory(event=_event(), memory=_failing_memory(), rerank=True)
+    user_event = await do_retrieve_user_memory(
+        query=CONDENSED_QUESTION, user_id="user-1", memory=_failing_memory(), rerank=True
+    )
     org_event = await do_retrieve_organization_memory(
-        event=_event(), org_memory=_org_config(), memory=_failing_memory()
+        query=CONDENSED_QUESTION,
+        requested_namespaces=[],
+        user_id="user-1",
+        org_memory=_org_config(),
+        memory=_failing_memory(),
     )
 
     assert check_memory_ready_for_chat_history(config, user_event, org_event) is True
@@ -108,10 +125,10 @@ async def test_degraded_events_still_satisfy_the_chat_history_precondition():
 async def test_user_memory_search_receives_the_query_and_rerank_flag():
     memory = _empty_result_memory()
 
-    await do_retrieve_user_memory(event=_event(), memory=memory, rerank=False)
+    await do_retrieve_user_memory(query=CONDENSED_QUESTION, user_id="user-1", memory=memory, rerank=False)
 
     kwargs = memory.search_user_memory.await_args.kwargs
-    assert kwargs["query"] == "what is the vacation policy?"
+    assert kwargs["query"] == CONDENSED_QUESTION
     assert kwargs["user_id"] == "user-1"
     assert kwargs["rerank"] is False
 
@@ -125,9 +142,16 @@ async def test_organization_memory_search_receives_the_resolved_scope():
         rerank_organization_memory=False,
     )
 
-    await do_retrieve_organization_memory(event=_event(), org_memory=org_memory, memory=memory)
+    await do_retrieve_organization_memory(
+        query=CONDENSED_QUESTION,
+        requested_namespaces=[],
+        user_id="user-1",
+        org_memory=org_memory,
+        memory=memory,
+    )
 
     kwargs = memory.search_organization_memory.await_args.kwargs
+    assert kwargs["query"] == CONDENSED_QUESTION
     assert kwargs["tenant_id"] == "tenant-1"
     assert kwargs["tenant_namespaces"] == ["engineering", "legal"]
     assert kwargs["user_id"] is None
@@ -137,12 +161,15 @@ async def test_organization_memory_search_receives_the_resolved_scope():
 @pytest.mark.asyncio
 async def test_namespace_outside_the_allow_list_stays_fatal():
     """Namespace validation is a caller error, deliberately outside the degrade-to-empty safety net."""
-    event = MagicMock(spec=RAGStartEvent)
-    event.user_query = "q"
-    event.org_memory_namespaces = ["enginering"]
     org_memory = _org_config(default_tenant_namespace="engineering", allowed_tenant_namespaces=["engineering"])
 
     memory = _empty_result_memory()
 
     with pytest.raises(ValueError, match="not in the configured allow-list"):
-        await do_retrieve_organization_memory(event=event, org_memory=org_memory, memory=memory)
+        await do_retrieve_organization_memory(
+            query=CONDENSED_QUESTION,
+            requested_namespaces=["enginering"],
+            user_id="user-1",
+            org_memory=org_memory,
+            memory=memory,
+        )

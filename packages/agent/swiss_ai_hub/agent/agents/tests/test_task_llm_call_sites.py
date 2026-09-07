@@ -125,6 +125,7 @@ async def test_context_sufficient_guard_uses_task_llm(request, config_fixture: s
             event=_event(),
             user_query_event=_event(),
             chat_history_event=_event(limited_history=[]),
+            memory_history_event=None,
             run_context=MagicMock(),
         )
 
@@ -137,6 +138,7 @@ async def test_main_answer_and_trimming_stay_on_main_llm(config_with_task_llm) -
         await RAGAgent().respond_with_llm_step(
             event=_event(),
             limited_history_without_context=_event(limited_history=[]),
+            memory_history_event=None,
             agent_config=config_with_task_llm,
             guard_config=MagicMock(),
             displayer=MagicMock(),
@@ -153,6 +155,7 @@ async def test_main_answer_and_trimming_stay_on_main_llm(config_with_task_llm) -
         await RAGAgent().limit_chat_history_with_context_step(
             context_event=_event(),
             chat_history_event=_event(limited_history=[]),
+            memory_history_event=None,
             _=None,
             start_event=_event(),
             agent_config=config_with_task_llm,
