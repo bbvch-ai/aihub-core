@@ -44,11 +44,7 @@ machinery is specific to agents beyond the names of its parts.
    nested sections, repeated entries, optional groups, model pickers and translations. Reimplementing a subset would
    mean two half-answers.
 
-4. **Announce the declaration over the event bus, as agents do.** Attractive for symmetry, but pipelines already publish
-   their registration through the shared database, and Dagster code locations are not event subscribers. Adding a second
-   transport for the same fact buys nothing.
-
-5. **Let the API keep a built-in declaration for the pipeline the platform ships.** Rejected: it splits the code into a
+4. **Let the API keep a built-in declaration for the pipeline the platform ships.** Rejected: it splits the code into a
    privileged path and a general one, and the privileged path can offer an ingestor that nothing is running.
 
 ## Decision
@@ -60,25 +56,37 @@ without knowing what is in it.**
    says what a database of its kind can be configured with, in two forms: the controls to render, and a schema to
    validate against. Both come from one class in the pipeline, so they cannot disagree.
 
-2. **Pipelines reuse the agent configuration stack rather than a parallel one.** The base class for a pipeline's
+2. **The declaration is written to the shared database, not broadcast over the event bus.** This is the one place
+   pipelines deliberately diverge from agents, so it is worth stating why. Agent discovery is a broadcast: the API asks
+   who is out there and collects replies within a few seconds, which tells it not only what each agent can be configured
+   with but that the agent is *alive right now*. It needs that, because it hands a chat request to an agent
+   synchronously and refuses to create a profile for a class nothing is serving. Nothing hands a pipeline work
+   synchronously. Ingestion is picked up by a scheduler on its own cadence, so a pipeline being momentarily down changes
+   nothing about whether a database may be created for it. The reply window is also the wrong shape for the runtime: a
+   Dagster code location has no always-on subscriber, only periodic sensor ticks measured in tens of seconds, which
+   would arrive long after a discovery round had closed. Both paths end in the same collection either way, since agent
+   discovery caches what it learns into Mongo as well. For pipelines the broadcast would add a transport without adding
+   the liveness that justifies it for agents.
+
+3. **Pipelines reuse the agent configuration stack rather than a parallel one.** The base class for a pipeline's
    configuration is the sibling of the one agents use, and the schema helper that was named for agents is now named for
    what it does. Every form element, the renderer, the validator and the authorization walk are shared. A pipeline that
    wants a repeated section or an optional group gets it for free.
 
-3. **The pipeline the platform ships has no special status.** It registers through the same path as a third-party one,
+4. **The pipeline the platform ships has no special status.** It registers through the same path as a third-party one,
    and its labels travel on its record like everyone else's. Nothing is offered in the dialog until a pipeline has
    registered, which is what makes an offer a promise (driver 3).
 
-4. **A database stores one configuration object, not a column per setting.** The platform holds it without interpreting
+5. **A database stores one configuration object, not a column per setting.** The platform holds it without interpreting
    it. The two model columns retire into that object, so a setting has one home rather than a column and a form field
    that can disagree.
 
-5. **The platform still polices the choices only it can see.** When a declaration says a field picks a model, the API
+6. **The platform still polices the choices only it can see.** When a declaration says a field picks a model, the API
    checks that the model exists, suits that slot, and is one the caller may use. An embedding model must also state its
    vector width, because a collection's dimension is derived from it and a wrong width corrupts search silently. The API
    never learns a pipeline's field names; it recognizes the kind of control instead.
 
-6. **Processing choices are resolved per run, not per deployment.** The deployment settings become defaults that
+7. **Processing choices are resolved per run, not per deployment.** The deployment settings become defaults that
    pre-fill the dialog and cover databases that stored no choice of their own. Because a database can now switch
    enrichment steps on or off, those steps stay in the graph for everyone and decide per run whether they have work.
    Building a different graph per database was the alternative, and it would make one deployment's pipeline shape depend
@@ -102,6 +110,10 @@ without knowing what is in it.**
   missing feature to whoever opens the dialog.
 - **A registration without a declaration is ignored.** An older pipeline image registers labels only. Offering it would
   render an empty form and accept a configuration nothing could check, so it is skipped until that pipeline is upgraded.
+- **Nothing expires an ingestor.** Choosing the database over a broadcast means no liveness signal comes with it. A
+  pipeline that is decommissioned leaves its row behind, and the dialog keeps offering an ingestor that nothing will
+  ever process, until somebody deletes the row by hand. The record carries the time it was last written so an operator
+  can see the staleness, and that field is where a future expiry rule would read from, but no such rule exists today.
 - **The embedding model becomes a cross-package contract.** Retrieval still reads a model from the agent rather than
   from the database, so the write path and the query path can still disagree. The gap was already open, and this
   decision moves where the answer lives without closing it.

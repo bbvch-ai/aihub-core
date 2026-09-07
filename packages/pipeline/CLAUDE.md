@@ -192,6 +192,13 @@ can never be read by the API, and one inside the API would list what happens to 
 is the wrong authority: whether an ingestor exists is decided by what is *deployed*. Mongo is infrastructure both sides
 already share, so the pipeline writes its own metadata there and the API reads it.
 
+**Why not NATS discovery, the way agents do it.** Agent discovery is a broadcast with a short reply window, which tells
+the API that a class is alive right now. It needs that because it dispatches a chat request to an agent synchronously.
+Nothing dispatches to a pipeline synchronously, a code location has no always-on subscriber to answer a broadcast (only
+sensor ticks measured in tens of seconds), and agent discovery caches into Mongo anyway. The cost of this choice is that
+an ingestor never expires: a decommissioned pipeline keeps being offered until its row is deleted. See ADR
+`2026_09_04_ingestors_announce_their_configuration_form`.
+
 **What you write.** The labels, and optionally a config class of your own:
 
 ```python

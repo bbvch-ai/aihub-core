@@ -48,6 +48,8 @@ class IngestorEntity(Document):
     # Stored without aliases: MongoDB rejects keys starting with '$'. Aliases are restored when serving.
     form = ListField(DictField(), default=list)
     config_specs = EmbeddedDocumentField(ConfigSpecsEntity, required=False)
+    # Read by nobody yet: registration carries no liveness the way agent discovery does, so this is the
+    # breadcrumb an operator checks for a stale row and where an expiry rule would read from.
     last_registered = DateTimeField(required=True, default=lambda: datetime.now(UTC))
 
     @staticmethod
