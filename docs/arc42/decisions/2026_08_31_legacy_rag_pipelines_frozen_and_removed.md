@@ -56,6 +56,14 @@ distinction that no longer distinguishes anything.
   reads them any more. Without this, a new database could be created on the name of a frozen corpus and ingested on top
   of it by a pipeline that does not own it.
 
+  > **Amended 2026-09-07 (#1835).** Reserved originally meant one set, applied to creation *and* to every read and
+  > delete, which made the two legacy databases return `403` on listing documents, opening one, and deleting one — for
+  > every user including the superuser, whatever `AIHUB_SHOW_LEGACY_KNOWLEDGE` said. That is not what reserving a name
+  > is for. The two policies are now separate: the names are closed to **creation** always, while reads and document
+  > deletion are governed by the ordinary per-resource rules, exactly as before the split. The legacy names re-enter the
+  > read guard only when the deployment hides legacy knowledge, so that hidden means unreadable and not merely unlisted.
+  > Deleting a legacy database or one of its namespaces stays refused, in the service, with a message naming the cause.
+
 ## Consequences
 
 ### Positive
@@ -71,8 +79,11 @@ distinction that no longer distinguishes anything.
   no longer contains the code. Shipping a legacy fix would mean cutting a maintenance branch from the last release that
   contained it — a policy that must exist *before* it is needed, tracked as a follow-up.
 - **Downstream users of `default_definitions` break on upgrade** with no deprecation window.
-- **Two dead names are reserved forever**, in `IngestorType` and in the controller's reserved set, long after anything
-  reads them.
+- **Two dead names are reserved forever**, in `IngestorType` and in the controller's creation-reserved set, long after
+  anything reads them.
+- **`AIHUB_SHOW_LEGACY_KNOWLEDGE` gates read access, not just listing.** Any deployment still running the frozen images
+  must set it to `true`; the shipped default is `false`, and with it off the two databases are neither listed nor
+  browsable. It is read once when the controller is built, so changing it needs an API restart.
 
 ### Related Decisions
 

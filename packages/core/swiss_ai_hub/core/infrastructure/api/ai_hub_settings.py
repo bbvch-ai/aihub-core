@@ -27,9 +27,11 @@ class AIHubSettings(EnvironmentSettings):
     SHOW_LEGACY_KNOWLEDGE: Annotated[
         bool,
         Field(
-            description="Whether the legacy deploy-bound knowledge databases (default_rag / shared_rag) are listed in "
-            "the UI. Off by default: their pipelines are disabled in every stage, so the databases are obsolete "
-            "unless a deployment still runs a legacy pipeline — set this to true there to keep managing them.",
+            description="Whether the legacy deploy-bound knowledge databases (default_rag / shared_rag) are listed "
+            "and readable. Off by default: their pipelines are disabled in every stage, so the databases are "
+            "obsolete unless a deployment still runs a legacy pipeline — set this to true there to keep managing "
+            "them. With it off they are neither listed nor browsable, so their documents cannot be reached by name "
+            "either. Read once at startup: changing it requires an API restart.",
         ),
     ] = False
 
