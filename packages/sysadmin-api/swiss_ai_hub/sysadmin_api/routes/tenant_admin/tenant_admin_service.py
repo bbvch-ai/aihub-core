@@ -113,6 +113,46 @@ class TenantAdminService:
 
     @staticmethod
     @trace_fn
+    async def provision_tenant(data: CreateTenantMetadataRequest) -> TenantResponse:
+        """Idempotently provision a tenant end-to-end: create the Keycloak group if missing,
+        then create-or-update its metadata (upsert).
+
+        Unlike ``create_tenant_metadata`` (which requires a pre-existing group and rejects
+        duplicates), this is built for an external source of truth (e.g. the LCDM Hub) that
+        pushes its tenants in and re-runs the sync repeatedly: every side effect is idempotent
+        so the same call can be replayed safely. The tenant hierarchy is flattened — each pushed
+        tenant becomes its own flat group under ``/tenants/``.
+        """
+        by_name = TenantMetadataEntity.get_metadata_by_tenant_name(data.name)
+        if by_name and by_name.id != data.tenant_id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Tenant with name '{data.name}' already exists for a different tenant id.",
+            )
+
+        await KeycloakAdminService.create_tenant_group(data.tenant_id)
+        await initialize_default_roles_for_tenant(data.tenant_id)
+        await KeycloakAdminService.assign_superuser_to_tenant(data.tenant_id)
+
+        normalized_rules = [AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules]
+        if TenantMetadataEntity.get_metadata_by_tenant_id(data.tenant_id):
+            entity = TenantMetadataEntity.update_tenant_metadata(
+                tenant_id=data.tenant_id,
+                name=data.name,
+                description=data.description,
+                access_rules=normalized_rules,
+            )
+        else:
+            entity = TenantMetadataEntity.create_tenant_metadata(
+                tenant_id=data.tenant_id,
+                name=data.name,
+                description=data.description,
+                access_rules=normalized_rules,
+            )
+        return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
+
+    @staticmethod
+    @trace_fn
     async def update_tenant_metadata(tenant_id: str, data: UpdateTenantMetadataRequest) -> TenantResponse:
         """Updates MongoDB metadata for an active tenant.
 

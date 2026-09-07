@@ -78,6 +78,22 @@ class TenantAdminController(Controller):
 
         return self
 
+    def provision_tenant(self, route: str = "/provision") -> Self:
+        @self.router.post(route, tags=self.tags)
+        async def provision_tenant(
+            data: CreateTenantMetadataRequest,
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
+        ) -> TenantResponse:
+            """Idempotently provision a tenant: create the Keycloak group if missing, then upsert its
+            metadata. Built for an external source of truth (e.g. the LCDM Hub) to push its tenants in
+            and re-run the sync repeatedly (flat — each tenant becomes its own group under /tenants/)."""
+            try:
+                return await TenantAdminService.provision_tenant(data)
+            except NotUniqueError:
+                raise HTTPException(status_code=409, detail=f"Tenant with name '{data.name}' already exists.")
+
+        return self
+
     def update_tenant_metadata(self, route: str = _TENANT_ROUTE) -> Self:
         @self.router.patch(route, tags=self.tags)
         async def update_tenant_metadata(
