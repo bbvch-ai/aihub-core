@@ -1534,6 +1534,19 @@ export const AgentSelectorSchema = {
       description:
         "Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.",
     },
+    agentClass: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentclass",
+      description:
+        "Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.",
+    },
     classPlaceholder: {
       anyOf: [
         {
@@ -1581,7 +1594,7 @@ export const AgentSelectorSchema = {
   required: ["label", "validation"],
   title: "AgentSelector",
   description:
-    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
+    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Pinning to One Agent Class\n\nWhen `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only\nthat class\'s profiles. `start_event` is redundant then — the class is already decided — so set one or the other.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
 } as const;
 
 export const AgentSuitabilityAcceptEventSchema = {
@@ -26062,6 +26075,19 @@ export const AgentSelectorWritableSchema = {
       description:
         "Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.",
     },
+    agentClass: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentclass",
+      description:
+        "Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.",
+    },
     classPlaceholder: {
       anyOf: [
         {
@@ -26104,7 +26130,7 @@ export const AgentSelectorWritableSchema = {
   required: ["label"],
   title: "AgentSelector",
   description:
-    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
+    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Pinning to One Agent Class\n\nWhen `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only\nthat class\'s profiles. `start_event` is redundant then — the class is already decided — so set one or the other.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
 } as const;
 
 export const AgentSuitabilityAcceptEventWritableSchema = {
