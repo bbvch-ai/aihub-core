@@ -14,7 +14,7 @@ from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, use_s3_service, use_vector_store_factory
+from swiss_ai_hub.core.infrastructure import MongoSettings, use_s3_service, use_vector_store_factory
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.routes import TenantScopedController
 
@@ -50,14 +50,6 @@ class KnowledgeController(TenantScopedController):
 
     _NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL = "Not authorized to view this database"
 
-    # A knowledge database's name doubles as its Mongo document store (db_name) and Milvus collection,
-    # so any name that collides with a reserved store must be blocked: reads guard against them and
-    # creation rejects them up front. These are MongoDB's system databases; the application's own main
-    # database and the two frozen legacy buckets are configurable, so they are added per instance in
-    # __init__. The legacy names stay reserved after their pipelines are gone: those corpora are frozen
-    # with no migration path, and a new database bound to one would be ingested on top of it.
-    _SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
-
     def __init__(
         self,
         *,
@@ -71,12 +63,11 @@ class KnowledgeController(TenantScopedController):
             host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore", uuidRepresentation="standard"
         )
 
-        aihub_settings = AIHubSettings()
-        self._reserved_database_names = self._SYSTEM_DATABASE_NAMES | {
-            aihub_settings.MONGO_MAIN_DB_NAME,
-            aihub_settings.DEFAULT_BUCKET_NAME,
-            aihub_settings.SHARED_BUCKET_NAME,
-        }
+        # Two policies, deliberately not one set: a name may be closed to creation while the database
+        # already sitting on it stays readable. Both are settings-derived, so they are fixed for the
+        # lifetime of the process — changing the legacy visibility needs a restart, as it always did.
+        self._reserved_database_names = KnowledgeService.reserved_database_names()
+        self._non_browsable_database_names = KnowledgeService.non_browsable_database_names()
         self.translation_llm_config = translation_llm_config
 
     @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.see")
@@ -141,7 +132,7 @@ class KnowledgeController(TenantScopedController):
             Optionally filter by document title or filename using the search parameter.
             Supports sorting by document_title, created_at, or updated_at.
             """
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             total, documents = KnowledgeService.get_paginated_documents(
                 db=database,
@@ -176,7 +167,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns a single document by its ID.
             """
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_document_by_id(db=database, document_id=document_id)
 
@@ -199,7 +190,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns nodes for a given document.
             """
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_nodes(
                 db=database,
@@ -228,7 +219,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns nodes for a given document.
             """
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_summary_nodes(
                 db=database,
@@ -378,7 +369,7 @@ class KnowledgeController(TenantScopedController):
             ] = False,
         ) -> SignedUrlDto:
             """Generates a presigned URL for a document's source file (inline preview, or attachment download)."""
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             url = KnowledgeService.get_document_url(
                 db=database,
@@ -422,7 +413,7 @@ class KnowledgeController(TenantScopedController):
             Deletes the document's source file from the data lake and schedules cleanup of the
             doc store and vector store via the pipeline's reconciliation.
             """
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             await KnowledgeService.delete_document(
                 nc=nc,
@@ -447,7 +438,7 @@ class KnowledgeController(TenantScopedController):
             Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
             database and S3 bucket — via the pipeline's Dagster teardown job. Returns immediately with 202.
             """
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             KnowledgeService.delete_database(database=database)
             return Response(status_code=status.HTTP_202_ACCEPTED)
@@ -467,7 +458,7 @@ class KnowledgeController(TenantScopedController):
             Schedules asynchronous teardown of one namespace — its S3 folder, doc-store rows and Milvus
             vectors (deleted by metadata filter, never a partition drop). Returns immediately with 202.
             """
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             KnowledgeService.delete_namespace(database=database, namespace=namespace)
             return Response(status_code=status.HTTP_202_ACCEPTED)
@@ -489,7 +480,7 @@ class KnowledgeController(TenantScopedController):
             nc: Annotated[NATS, Depends(use_nats)],
         ) -> BatchDeleteDocumentsResponse:
             """Best-effort scheduling of multiple document deletions with a per-document result."""
-            if database in self._reserved_database_names:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return await KnowledgeService.batch_delete_documents(
                 nc=nc,

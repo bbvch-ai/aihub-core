@@ -73,6 +73,8 @@ logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
 
+_SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
+
 
 class KnowledgeService:
     @staticmethod
@@ -849,12 +851,42 @@ class KnowledgeService:
         return bucket.ingestor in (IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value)
 
     @staticmethod
+    def reserved_database_names() -> frozenset[str]:
+        """Names a new knowledge database may never be created on.
+
+        A database's name doubles as its Mongo store and Milvus collection, so Mongo's own system databases
+        and the application's main database would collide. The two legacy names are reserved on top of that
+        because their corpora are frozen with no migration path — a new database bound to one would be
+        ingested on top of it — and stay reserved whether or not the legacy databases are shown.
+        """
+        aihub_settings = AIHubSettings()
+        return KnowledgeService.non_browsable_database_names() | {
+            aihub_settings.DEFAULT_BUCKET_NAME,
+            aihub_settings.SHARED_BUCKET_NAME,
+        }
+
+    @staticmethod
+    def non_browsable_database_names() -> frozenset[str]:
+        """Names no caller may read from or delete in, whatever access rules they hold.
+
+        Reserving a name for creation is not a reason to refuse reads of the database already on it: the
+        legacy databases are ordinary corpora that their frozen pipelines still serve, so the per-resource
+        rules govern them like any other. They drop back in here only when the deployment hides legacy
+        knowledge, so that hidden means unreadable and not merely unlisted.
+        """
+        aihub_settings = AIHubSettings()
+        system_names = _SYSTEM_DATABASE_NAMES | {aihub_settings.MONGO_MAIN_DB_NAME}
+        if aihub_settings.SHOW_LEGACY_KNOWLEDGE:
+            return frozenset(system_names)
+        return frozenset(system_names | {aihub_settings.DEFAULT_BUCKET_NAME, aihub_settings.SHARED_BUCKET_NAME})
+
+    @staticmethod
     def _is_database_deletable(bucket: BucketEntity) -> bool:
-        """Whether the whole database may be torn down.
+        """Whether anything in this database may be torn down, the database itself or a single namespace.
 
         Auto-synced databases are refilled by their source, and the legacy ``default_rag`` / ``shared_rag``
-        buckets are bound to a deploy-time pipeline that expects the bucket to keep existing — so neither
-        database itself is deletable. Namespaces inside them remain individually deletable.
+        buckets are served by frozen images that predate the teardown sensor, so neither can be purged.
+        The frontend gates both the database and the namespace delete affordance on this one flag.
         """
         return not bucket.auto_sync and not KnowledgeService._is_legacy_bucket(bucket)
 
@@ -871,13 +903,29 @@ class KnowledgeService:
     def _reject_undeletable_database(bucket: BucketEntity) -> None:
         """Whole-database deletion guard: auto-synced and legacy databases are protected.
 
-        Only the database itself is protected for legacy buckets — their namespaces stay deletable — because
-        the legacy per-bucket pipeline expects the bucket to exist. Mongo-internal / main-db names are rejected
-        earlier, at the controller, via the reserved-name guard.
+        Mongo-internal / main-db names are rejected earlier, at the controller, via the hidden-name guard.
         """
         KnowledgeService._reject_if_auto_synced(bucket)
         if KnowledgeService._is_legacy_bucket(bucket):
             raise HTTPException(status_code=403, detail=f"Legacy database '{bucket.db_name}' cannot be deleted.")
+
+    @staticmethod
+    def _reject_undeletable_namespace(bucket: BucketEntity) -> None:
+        """Namespace deletion guard, refusing the same databases as ``_reject_undeletable_database``.
+
+        Deletion is a request, not the work: it flags the row and a pipeline's teardown sensor purges S3, the
+        doc store and the vectors. The legacy images are frozen at a release predating that sensor and nothing
+        else claims their buckets, so a flagged legacy namespace would leave the UI and never be purged.
+        """
+        KnowledgeService._reject_if_auto_synced(bucket)
+        if KnowledgeService._is_legacy_bucket(bucket):
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Namespaces in legacy database '{bucket.db_name}' cannot be deleted: its ingestion "
+                    "pipeline is frozen and cannot tear down data."
+                ),
+            )
 
     @staticmethod
     @trace_fn
@@ -939,7 +987,7 @@ class KnowledgeService:
         except DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
 
-        KnowledgeService._reject_if_auto_synced(bucket)
+        KnowledgeService._reject_undeletable_namespace(bucket)
 
         try:
             namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)

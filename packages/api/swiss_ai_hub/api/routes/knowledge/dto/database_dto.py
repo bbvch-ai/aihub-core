@@ -13,8 +13,9 @@ class DatabaseDTO(BaseModel):
         bool,
         Field(
             ...,
-            description="Whether the whole database may be deleted; false for auto-synced and legacy "
-            "default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.",
+            description="Whether anything in this database may be deleted, the database itself or a single "
+            "namespace; false for auto-synced and legacy default_rag/shared_rag databases, whose content is "
+            "owned by a source or served by a frozen pipeline that cannot tear it down.",
         ),
     ]
     ingestor: Annotated[

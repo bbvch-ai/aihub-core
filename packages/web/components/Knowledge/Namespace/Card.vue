@@ -46,7 +46,7 @@
           @click.stop="handleUploadClick"
         />
         <Button
-          v-if="!autoSync"
+          v-if="deletable"
           v-tooltip.top="t('knowledge.delete_namespace')"
           icon="pi pi-trash"
           rounded
@@ -77,8 +77,11 @@ import { capitalCase } from 'change-case'
 
 import type { NamespaceDto } from '@core/sdk/client'
 
+// `deletable` is the database's flag: a namespace is deletable exactly when its database is, since both
+// are torn down by the same pipeline sensor. Required, so a caller cannot silently lose the affordance.
 const props = defineProps<{
   namespace: NamespaceDto
+  deletable: boolean
   autoSync?: boolean
 }>()
 

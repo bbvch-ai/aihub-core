@@ -111,6 +111,14 @@ job driven by that flag does the heavy multi-store purge and hard-deletes the ro
   re-sync them. Legacy `default_rag` / `shared_rag` buckets are refused — they are bound to a deploy-time pipeline.
   Mongo-internal / main-db names are refused at the controller via the existing reserved-name guard.
 
+  > **Amended 2026-09-07 (#1835).** This originally refused only the legacy *database*, leaving its namespaces
+  > individually deletable. That could not work: deletion flags a row and a pipeline's teardown sensor does the purge,
+  > collecting only rows whose bucket carries its own `ingestor`. The legacy images are frozen at `v0.319.0`, a release
+  > predating that sensor, and no other pipeline claims their buckets — so a flagged legacy namespace would leave the UI
+  > immediately and never be purged from S3, the doc store or Milvus. Namespace deletion inside a legacy database is now
+  > refused too, and `DatabaseDTO.deletable` means "anything in this database may be deleted", gating both the database
+  > and the namespace affordance in the UI. The `deleting` flag is a work queue only for pipelines that read it.
+
 - **Frontend.** A destructive confirm dialog requires the admin to type the database/namespace name and shows the
   document count; on `202` the databases query is invalidated and, because `get_databases` now hides `deleting` rows,
   the item disappears immediately.

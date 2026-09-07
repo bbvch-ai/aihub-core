@@ -121,20 +121,21 @@ class TestDeleteNamespace:
         namespace_cls.mark_deleting.assert_not_called()
 
     @pytest.mark.parametrize("legacy_ingestor", [IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value])
-    def test_allows_namespace_deletion_inside_a_legacy_database(self, legacy_ingestor):
-        """The legacy default_rag/shared_rag databases must stay, but their namespaces remain deletable."""
+    def test_refuses_namespace_deletion_inside_a_legacy_database(self, legacy_ingestor):
+        """Flagging the row is only a request: the teardown sensor collects rows whose bucket belongs to its
+        own pipeline, and the frozen legacy images predate that sensor. A flagged legacy namespace would
+        leave the UI at once and never be purged from S3, the doc store or Milvus."""
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
         ):
             bucket_cls.get_bucket_by_db_name.return_value = _bucket(ingestor=legacy_ingestor)
-            namespace_cls.get_namespace_by_bucket_and_name.return_value = MagicMock(
-                id=NAMESPACE_ID, namespace_name=NAMESPACE, folder_name=NAMESPACE
-            )
 
-            KnowledgeService.delete_namespace(database=DATABASE, namespace=NAMESPACE)
+            with pytest.raises(HTTPException) as exc_info:
+                KnowledgeService.delete_namespace(database=DATABASE, namespace=NAMESPACE)
 
-        namespace_cls.mark_deleting.assert_called_once_with(NAMESPACE_ID)
+        assert exc_info.value.status_code == 403
+        namespace_cls.mark_deleting.assert_not_called()
 
 
 class TestDeleteRevokesAccess:
