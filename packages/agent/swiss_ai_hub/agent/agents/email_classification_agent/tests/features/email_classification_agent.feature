@@ -129,3 +129,61 @@ Feature: Email Classification Agent
     Given an EmailClassificationAgent runner with three unread messages the model classifies into categories
     When the scheduler triggers classification
     Then the mailbox is no longer held
+
+  Scenario: A grounded category is answered from its own knowledge collection
+    Given an EmailClassificationAgent runner grounding support_request in the support collection
+    When the user triggers classification and the knowledge agent answers
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the draft body is the answer the knowledge agent returned
+    And retrieval was scoped to the support collection and no other
+    And a StopEvent is present
+    And no ExceptionEvent is present
+
+  Scenario: Several messages each get their own grounded draft
+    Given an EmailClassificationAgent runner grounding three support_request messages
+    When the user triggers classification and the knowledge agent answers each message differently
+    Then a MailBatchDraftedEvent with 3 drafts was emitted
+    And every draft carries the answer that belongs to its own message
+    And no ExceptionEvent is present
+
+  Scenario: Retrieval that finds nothing still produces a draft
+    Given an EmailClassificationAgent runner grounding support_request in the support collection
+    When the user triggers classification and the knowledge agent finds nothing
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the draft body is the configured no-information text
+    And no ExceptionEvent is present
+
+  Scenario: A knowledge lookup that failed still produces a draft
+    Given an EmailClassificationAgent runner grounding support_request in the support collection
+    When the user triggers classification and the knowledge lookup fails
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the draft body is the configured lookup-failed text
+    And no ExceptionEvent is present
+
+  Scenario: Grounded and ungrounded categories converge on one drafting pass
+    Given an EmailClassificationAgent runner grounding support_request but not invoice
+    When the user triggers classification and the knowledge agent answers
+    Then a MailBatchDraftedEvent with 2 drafts was emitted
+    And only the support_request draft came from the knowledge agent
+    And no ExceptionEvent is present
+
+  Scenario: A scheduled run delegates without an initiating user
+    Given an EmailClassificationAgent runner grounding support_request in the support collection
+    When the scheduler triggers classification and the knowledge agent answers
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the delegated run carried no user
+    And no ExceptionEvent is present
+
+  Scenario: A category grounded in a collection nothing holds fails before the batch is classified
+    Given an EmailClassificationAgent runner grounding support_request in a collection that does not exist
+    When the user triggers classification
+    Then an ExceptionEvent is present
+    And no message was filed
+
+  Scenario: Grounding left configured with drafting paused does not fail the run
+    Given an EmailClassificationAgent runner grounding support_request with drafting turned off
+    When the user triggers classification
+    Then a MailBatchClassifiedEvent with 1 classified messages was emitted
+    And the knowledge catalogue was never consulted
+    And a StopEvent is present
+    And no ExceptionEvent is present
