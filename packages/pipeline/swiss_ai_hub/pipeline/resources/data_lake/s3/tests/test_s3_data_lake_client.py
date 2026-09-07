@@ -11,6 +11,12 @@ NAMESPACE_PATCH_TARGET = (
     "swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client.get_or_create_namespace_for_directory"
 )
 
+# Enumeration resolves through the liveness-aware lookup instead, so a folder flagged for teardown is
+# excluded from the observation that would otherwise re-ingest it.
+LIVE_NAMESPACE_PATCH_TARGET = (
+    "swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client.get_live_namespace_for_directory"
+)
+
 LAST_MODIFIED = datetime(2026, 7, 24, tzinfo=UTC)
 
 
@@ -99,7 +105,7 @@ class TestDataVersionParity:
 
 
 class TestGetAllFiles:
-    @patch(NAMESPACE_PATCH_TARGET, return_value="docs")
+    @patch(LIVE_NAMESPACE_PATCH_TARGET, return_value="docs")
     def test_mixed_etag_formats_all_enumerate(self, _namespace: MagicMock) -> None:
         s3_client = _paginating(
             _make_s3_client(PLAIN_MD5_ETAG),
@@ -115,7 +121,7 @@ class TestGetAllFiles:
             CHUNKED_ETAG,
         ]
 
-    @patch(NAMESPACE_PATCH_TARGET, return_value="docs")
+    @patch(LIVE_NAMESPACE_PATCH_TARGET, return_value="docs")
     def test_does_not_head_each_object(self, _namespace: MagicMock) -> None:
         """``list_objects_v2`` already carries size, ETag and modification time, and the
         observation reads nothing else."""
@@ -130,7 +136,7 @@ class TestGetAllFiles:
 
         s3_client.head_object.assert_not_called()
 
-    @patch(NAMESPACE_PATCH_TARGET, return_value="docs")
+    @patch(LIVE_NAMESPACE_PATCH_TARGET, return_value="docs")
     def test_namespace_is_resolved_once_per_directory(self, namespace: MagicMock) -> None:
         s3_client = _paginating(
             _make_s3_client(PLAIN_MD5_ETAG),
@@ -142,7 +148,7 @@ class TestGetAllFiles:
 
         assert namespace.call_count == 1
 
-    @patch(NAMESPACE_PATCH_TARGET, return_value="docs")
+    @patch(LIVE_NAMESPACE_PATCH_TARGET, return_value="docs")
     def test_each_directory_is_still_registered(self, namespace: MagicMock) -> None:
         """The lookup also creates the NamespaceEntity the knowledge UI and namespace-selection
         agent read, so every directory must reach it at least once."""
@@ -156,6 +162,22 @@ class TestGetAllFiles:
 
         assert namespace.call_count == 2
         assert {call.args[1] for call in namespace.call_args_list} == {"docs", "reports"}
+
+    @patch(
+        LIVE_NAMESPACE_PATCH_TARGET, side_effect=lambda _bucket, directory: None if directory == "docs" else directory
+    )
+    def test_a_namespace_flagged_for_teardown_is_not_enumerated(self, _namespace: MagicMock) -> None:
+        """Observation is what creates the partitions that drive ingestion, so excluding the folder here is
+        what stops documents being written into a namespace the teardown job is about to purge."""
+        s3_client = _paginating(
+            _make_s3_client(PLAIN_MD5_ETAG),
+            [("docs/a.pdf", PLAIN_MD5_ETAG), ("reports/b.pdf", PLAIN_MD5_ETAG), ("docs/c.pdf", PLAIN_MD5_ETAG)],
+        )
+        client = S3DataLakeClient(container_name="bucket", s3_client=s3_client)
+
+        files = client.get_all_files()
+
+        assert [file.uri for file in files] == ["s3://bucket/reports/b.pdf"]
 
 
 class TestCreateDataLakeFileFromUri:

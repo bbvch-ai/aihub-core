@@ -3,7 +3,7 @@ import time
 from typing import Self
 
 from bson import ObjectId
-from mongoengine import Document, EmbeddedDocumentField, IntField, StringField, ValidationError
+from mongoengine import BooleanField, Document, EmbeddedDocumentField, IntField, StringField, ValidationError
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -33,6 +33,10 @@ class NamespaceEntity(Document):
     created_at = IntField(required=True)
     updated_at = IntField(required=True)
     inserted_at = IntField(required=True)
+    # Soft-delete request, written by the API and read by this pipeline's teardown sensor. The row survives
+    # while flagged so the sensor can still read folder_name/namespace_name; it is hard-deleted last, which
+    # makes the flag itself the durable record that the purge is still owed.
+    deleting = BooleanField(default=False)
 
     @staticmethod
     def _validate_namespace_name(name: str) -> None:

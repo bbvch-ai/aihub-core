@@ -10,7 +10,10 @@ from swiss_ai_hub.core.generative_ai.utils.path_utils import FIGURES_DIRECTORY_N
 
 from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
 from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
-from swiss_ai_hub.pipeline.util.bucket_utils import get_or_create_namespace_for_directory
+from swiss_ai_hub.pipeline.util.bucket_utils import (
+    get_live_namespace_for_directory,
+    get_or_create_namespace_for_directory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +61,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
         per file. Cost therefore scales with directories, not with objects in the bucket.
         """
         data_lake_files: list[DataLakeFile] = []
-        namespace_cache: dict[str, str] = {}
+        namespace_cache: dict[str, str | None] = {}
 
         paginator = self._client.get_paginator("list_objects_v2")
         page_iterator = paginator.paginate(
@@ -85,15 +88,30 @@ class S3DataLakeClient(AbstractDataLakeClient):
                     continue
 
                 document_uri = self.build_uri(key)
+                namespace = self._resolve_live_namespace(document_uri, namespace_cache)
+                if namespace is None:
+                    continue
+
                 data_lake_file = self._create_data_lake_file_from_s3_object(
                     document_uri,
                     obj,
                     key,
-                    namespace=self._resolve_namespace(document_uri, namespace_cache),
+                    namespace=namespace,
                 )
                 data_lake_files.append(data_lake_file)
 
         return data_lake_files
+
+    def _resolve_live_namespace(self, document_uri: str, namespace_cache: dict[str, str | None]) -> str | None:
+        """``None`` for a directory whose namespace is flagged for teardown, so observation drops it.
+
+        Enumeration is what creates the dynamic partitions that drive ingestion, so excluding a folder here is
+        what stops documents being written into a namespace the teardown job is about to purge.
+        """
+        directory_name = document_uri.split("/")[3]  # s3://bucket/directory_name/...
+        if directory_name not in namespace_cache:
+            namespace_cache[directory_name] = get_live_namespace_for_directory(self.container_name, directory_name)
+        return namespace_cache[directory_name]
 
     def _resolve_namespace(self, document_uri: str, namespace_cache: dict[str, str] | None = None) -> str:
         """Namespace varies only per directory, but the lookup also *registers* directories the

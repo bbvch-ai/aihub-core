@@ -393,6 +393,17 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
+    def delete_by_namespace(cls, db_alias: str, namespace: str) -> int:
+        """Delete every RefDoc of a namespace in one server-side call; returns the count removed.
+
+        Teardown deletes a whole folder at once, so the per-document ``delete_by_source`` path would issue one
+        round trip per document. ``_IDX_NAMESPACE`` already indexes this field.
+        """
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects.filter(data__metadata__namespace=namespace).delete()
+
+    @classmethod
+    @trace_fn
     def mark_ingested(cls, db_alias: str, doc_id: str) -> bool:
         """Mark a document as fully ingested, returning whether a document was updated.
 

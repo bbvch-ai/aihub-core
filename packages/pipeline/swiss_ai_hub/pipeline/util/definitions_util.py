@@ -43,6 +43,7 @@ from swiss_ai_hub.pipeline.io.local_file_system_io_manager import LocalFileSyste
 from swiss_ai_hub.pipeline.io.rclone_io_manager import RcloneIOManager
 from swiss_ai_hub.pipeline.io.share_point_io_manager import SharePointIoManager
 from swiss_ai_hub.pipeline.jobs.factory import materialize_asset_job, observe_source_job
+from swiss_ai_hub.pipeline.jobs.knowledge_teardown_job import knowledge_teardown_job
 from swiss_ai_hub.pipeline.resources.factory import (
     default_io_manager_s3_datalake_resources,
     local_mongo_milvus_storage_context_resource,
@@ -62,6 +63,7 @@ from swiss_ai_hub.pipeline.resources.rclone.rclone_resource import RcloneResourc
 from swiss_ai_hub.pipeline.resources.share_point.share_point_resource import SharePointResource
 from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
+from swiss_ai_hub.pipeline.sensors.knowledge_teardown_sensor import knowledge_teardown_sensor
 from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
 from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import (
@@ -143,6 +145,8 @@ def default_definitions(
         asset_selection=AssetSelection.keys(removed_documents_key),
     )
 
+    teardown_job = knowledge_teardown_job(source_location_name=datalake_container_name)
+
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=auto_sync)
     llm_config = LLMConfig(model_name=llm_model_name)
     embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
@@ -185,10 +189,11 @@ def default_definitions(
                 ),
             ),
             run_after_success_sensor(monitored_job=job, triggered_job=remove_job),
+            knowledge_teardown_sensor(teardown_job, datalake_container_name=datalake_container_name),
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
-        jobs=[job, remove_job],
+        jobs=[job, remove_job, teardown_job],
         schedules=[daily_schedule_at(job, hour=observe_job_hour, minute=observe_job_minute)],
     )
 

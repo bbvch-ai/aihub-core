@@ -8,7 +8,7 @@ from swiss_ai_hub.pipeline.util.mongo_utils import ensure_connection
 _DB_ALIAS = "default"
 
 
-def _ensure_connection() -> None:
+def ensure_main_db_connection() -> None:
     ensure_connection(db_name=AIHubSettings().MONGO_MAIN_DB_NAME, db_alias=_DB_ALIAS)
 
 
@@ -41,7 +41,7 @@ def get_db_name_from_bucket_name(bucket_name: str, auto_sync: bool = False) -> s
     Set auto_sync to True for autoloading pipelines (e.g. SharePoint to data lake) that automatically ingest data into
     the datalake. Set to False for manual pipelines (manual upload to data lake).
     """
-    _ensure_connection()
+    ensure_main_db_connection()
     bucket_entity = _get_or_create_bucket(bucket_name=bucket_name, auto_sync=auto_sync)
     return bucket_entity.db_name
 
@@ -50,7 +50,23 @@ def get_or_create_namespace_for_directory(bucket_name: str, directory_name: str,
     """
     Get or create namespace mapping for a directory within a bucket.
     """
-    _ensure_connection()
+    ensure_main_db_connection()
     bucket_entity = _get_or_create_bucket(bucket_name=bucket_name, auto_sync=auto_sync)
     namespace_entity = _get_or_create_namespace(bucket_entity=bucket_entity, directory_name=directory_name)
+    return namespace_entity.namespace_name
+
+
+def get_live_namespace_for_directory(bucket_name: str, directory_name: str, auto_sync: bool = False) -> str | None:
+    """The namespace for a directory, or ``None`` while that namespace is flagged for teardown.
+
+    Registering the row is a deliberate side effect the knowledge UI depends on, so newly discovered folders are
+    still created here — a new folder is never already flagged. But a folder whose teardown has been requested
+    must stop being enumerated the moment the flag is set, or an observation still in flight re-ingests documents
+    the teardown job is about to delete, leaving a RefDoc and vectors whose source file no longer exists.
+    """
+    ensure_main_db_connection()
+    bucket_entity = _get_or_create_bucket(bucket_name=bucket_name, auto_sync=auto_sync)
+    namespace_entity = _get_or_create_namespace(bucket_entity=bucket_entity, directory_name=directory_name)
+    if namespace_entity.deleting:
+        return None
     return namespace_entity.namespace_name

@@ -29,6 +29,10 @@ class BucketEntity(Document):
     description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
+    # Declared but unused here: this build tears down namespaces, never whole databases. It exists because
+    # ``strict: False`` only tolerates unknown keys on read — ``to_mongo`` drops them on write, so a class
+    # without this field would silently strip the flag the API sets whenever it saved a bucket.
+    deleting = BooleanField(default=False)
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
