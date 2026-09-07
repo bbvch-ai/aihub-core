@@ -96,8 +96,14 @@ class AccessController(TenantScopedController):
             tags=self.tags,
         )
         async def get_default_tenant_rules(
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> list[str]:
+            # Sysadmin-only, unlike its neighbours on this controller: the derived ceiling enumerates every
+            # model this instance serves, unfiltered by the caller's own tenant. The per-service admin gate
+            # those endpoints use is held by every tenant admin, which would let one tenant enumerate models
+            # granted only to another. ``get_access_capabilities`` bounds that by forcing a non-sysadmin to a
+            # ceiling-filtered view; there is no equivalent bound here, and none is needed — the only caller
+            # is the sysadmin plane's ``PlatformAccessProxy``, forwarding a sysadmin's own token.
             try:
                 return await DefaultTenantAccessRulesService.derive()
             except ModelRosterUnavailableError as roster_error:
