@@ -5,11 +5,11 @@ import logging
 import uuid
 from collections.abc import AsyncGenerator, Callable
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
-from openai import AsyncOpenAI, HttpxBinaryResponseContent
+from openai import APIStatusError, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
@@ -26,6 +26,7 @@ from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
 from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
 from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import HumanInTheLoopRequestEvent
+from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
@@ -589,30 +590,84 @@ class OpenaiService:
 
         audio_chunks: list[AudioSegment] = await AudioChunkingService.chunk_audio(audio)
         transcription_chunks: list[TranscriptionChunk] = []
+        speechless_duration: Annotated[int, "ms"] = 0
 
         for i, audio_chunk in enumerate(audio_chunks):
-            buffer = io.BytesIO()
-            audio_chunk.export(buffer, format="wav")
-            filename_without_ext = file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
-            wav_filename = f"{filename_without_ext}_chunk{i}.wav"
-            file_tuple = (wav_filename, buffer, "audio/wav")
+            try:
+                transcription_chunks.append(
+                    await OpenaiService._transcribe_chunk(
+                        client=client,
+                        model_name=model_name,
+                        audio_chunk=audio_chunk,
+                        filename=file.filename,
+                        index=i,
+                        language=language,
+                        prompt=prompt,
+                        response_format=response_format,
+                        temperature=temperature,
+                        timestamp_granularities=timestamp_granularities,
+                    )
+                )
+            except APIStatusError as gateway_failure:
+                if not ModelGatewayErrorHandler.is_untranscribable_audio(gateway_failure):
+                    raise
 
-            result: TranscriptionChunk = await client.audio.transcriptions.create(
-                model=model_name,
-                file=file_tuple,
-                language=language,
-                prompt=prompt,
-                response_format=response_format,
-                temperature=temperature,
-                timestamp_granularities=timestamp_granularities if response_format == "verbose_json" else None,
+                speechless_duration += len(audio_chunk)
+                # The provider's own wording is kept verbatim here, unlike in the response: it
+                # carries the upstream request id, which is the only handle for asking the provider
+                # about a chunk it rejected. `str(exception)` would not do — the SDK puts the body
+                # there only when it built the exception itself, so the id has to be unwrapped.
+                logger.exception(
+                    f"Chunk {i + 1}/{len(audio_chunks)} ({len(audio_chunk)} ms) of {file.filename} produced no "
+                    f"transcript: {ModelGatewayErrorHandler.upstream_message(gateway_failure)}"
+                )
+
+        if speechless_duration:
+            logger.error(
+                f"{speechless_duration} ms of the {len(audio)} ms in {file.filename} is not in the transcript: the "
+                "speech-to-text provider found no speech it could align there."
             )
 
-            transcription_chunks.append(result)
-
-        merged_text: str = AudioChunkingService.merge_transcriptions(transcription_chunks)
+        # Verified against the provider on 2026-09-04: it answers silence, a pure tone and white
+        # noise with this failure, and 1.3 s of speech with a transcript — so the failure is its
+        # verdict "no speech here", not a fault. That is the verdict `contains_speech` reaches
+        # locally for silence, and it is answered the same way: the empty transcript OpenAI's own
+        # API returns for a recording nobody spoke into.
+        merged_text: str = (
+            AudioChunkingService.merge_transcriptions(transcription_chunks) if transcription_chunks else ""
+        )
 
         return OpenaiService._transcription_response(
             text=merged_text, audio=audio, language=language, response_format=response_format
+        )
+
+    @staticmethod
+    async def _transcribe_chunk(
+        *,
+        client: AsyncOpenAI,
+        model_name: str,
+        audio_chunk: AudioSegment,
+        filename: str,
+        index: int,
+        language: str | None,
+        prompt: str | None,
+        response_format: str | None,
+        temperature: float | None,
+        timestamp_granularities: list[Literal["word", "segment"]] | None,
+    ) -> TranscriptionChunk:
+        buffer = io.BytesIO()
+        audio_chunk.export(buffer, format="wav")
+        filename_without_ext = filename.rsplit(".", 1)[0] if "." in filename else filename
+        file_tuple = (f"{filename_without_ext}_chunk{index}.wav", buffer, "audio/wav")
+
+        return await client.audio.transcriptions.create(
+            model=model_name,
+            file=file_tuple,
+            language=language,
+            prompt=prompt,
+            response_format=response_format,
+            temperature=temperature,
+            timestamp_granularities=timestamp_granularities if response_format == "verbose_json" else None,
         )
 
     @staticmethod
