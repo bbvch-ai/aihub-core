@@ -1572,7 +1572,7 @@ services:
   # License: AGPL-3.0 — third-party (see LICENSE_REPORT.md)
   searxng:
     container_name: searxng
-    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.4.29-cba0cffa8
+    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.9.5-c7f3080aa
     restart: always
     ports: [8881:8080]
     volumes: [./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro]
