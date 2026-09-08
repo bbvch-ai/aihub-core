@@ -3123,6 +3123,10 @@ services:
       # General Auth settings
       AUTH_ENABLE_API_ACCESS: True
       AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      # AuthSettings reads OPEN_WEBUI_SIGNING_SECRET (min 64 chars). Without this explicit export it
+      # falls back to OpenWebUI's shorter OPENWEBUI_SECRET_KEY (43 chars) and sysadmin-api crash-loops
+      # on boot (ValidationError: should have at least 64 items, not 43).
+      OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
 
       # Keycloak OIDC config
       KEYCLOAK_URL: {{ KEYCLOAK_INTERNAL_URL }}
