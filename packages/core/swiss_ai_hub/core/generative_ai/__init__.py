@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
     from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
     from swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question import condense_standalone_question
+    from swiss_ai_hub.core.generative_ai.retrieval.empty_condensation_error import EmptyCondensationError
     from swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources import retrieve_from_all_sources
     from swiss_ai_hub.core.generative_ai.retrieval.retrieve_nodes import retrieve_nodes
     from swiss_ai_hub.core.generative_ai.retrieval.retrieve_prev_next_nodes import retrieve_prev_next_nodes
@@ -112,6 +113,7 @@ __all__ = [
     "agent_description_guard",
     "combine_nodes_in_order",
     "condense_standalone_question",
+    "EmptyCondensationError",
     "context_sufficient_guard",
     "create_few_shot_messages",
     "create_figures_folder_name",
@@ -172,6 +174,7 @@ _LAZY_IMPORTS = {
     "agent_description_guard": "swiss_ai_hub.core.generative_ai.guards.agent_description_guard",
     "combine_nodes_in_order": "swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order",
     "condense_standalone_question": "swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question",
+    "EmptyCondensationError": "swiss_ai_hub.core.generative_ai.retrieval.empty_condensation_error",
     "context_sufficient_guard": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",
     "create_few_shot_messages": "swiss_ai_hub.core.generative_ai.prompting.few_shot.create_few_shot_messages",
     "create_figures_folder_name": "swiss_ai_hub.core.generative_ai.utils.path_utils",

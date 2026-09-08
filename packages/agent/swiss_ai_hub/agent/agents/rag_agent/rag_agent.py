@@ -30,6 +30,7 @@ from swiss_ai_hub.core.generative_ai import (
     RetrievalRuntimeConfig,
     extend_chat_history_with_organization_memory,
     extend_chat_history_with_user_memory,
+    limit_chat_history,
     narrow_retrievers,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -326,7 +327,7 @@ class RAGAgent(Agent):
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context, searching with the condensed question (#1753)."""
         return await do_retrieve_user_memory(
-            query=event.condensed_chat_message.content or "",
+            query=event.condensed_question,
             user_id=start_event.user.id,
             memory=memory,
             rerank=agent_config.user_memory.rerank_user_memory,
@@ -349,7 +350,7 @@ class RAGAgent(Agent):
         assert agent_config.org_memory is not None  # precondition enforces this
         requested = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         return await do_retrieve_organization_memory(
-            query=event.condensed_chat_message.content or "",
+            query=event.condensed_question,
             requested_namespaces=requested,
             user_id=start_event.user.id if start_event.user else None,
             org_memory=agent_config.org_memory,
@@ -371,7 +372,20 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
     ) -> AddMemoryToChatHistoryEvent:
-        """Extend the limited chat history with memory context (user and/or organization)."""
+        """Extend the limited chat history with memory context (user and/or organization).
+
+        Re-limited before it leaves this step, so `extended_history` carries the same "fits
+        `number_of_input_tokens`" guarantee `LimitChatHistoryEvent.limited_history` does. Every consumer reads
+        it unchecked — the context-sufficiency guard and the reject paths in `do_respond_with_llm` do no
+        limiting at all, and `limit_chat_history_with_context` *reserves* system messages rather than trimming
+        them, so an oversized block raises there instead of being cut. Limiting once here is what keeps that
+        invariant true for consumers added later, too.
+
+        The blocks are what gets dropped when the result does not fit: `ChatMemoryBuffer` keeps the most recent
+        messages, and these sit at the front. That is deliberate and matches the pre-#1753 order, where memory
+        was added before the only limiter — the alternative is discarding the turn the user actually asked
+        about, and the template presents memories as optional context.
+        """
         # The extend helpers mutate in place; other steps read limited_history off the same event instance.
         chat_history = [*chat_history_event.limited_history]
 
@@ -393,7 +407,12 @@ class RAGAgent(Agent):
                 t=t,
             )
 
-        return AddMemoryToChatHistoryEvent(extended_history=chat_history)
+        return AddMemoryToChatHistoryEvent(
+            extended_history=limit_chat_history(
+                chat_history=chat_history,
+                number_of_input_tokens=agent_config.number_of_input_tokens,
+            )
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
@@ -441,7 +460,7 @@ class RAGAgent(Agent):
         user: UserIdentity | None = None,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
-            event.condensed_chat_message.content,
+            event.condensed_question,
             agent_config.few_shot_guard_examples,
             agent_config.task_llm,
             displayer,
@@ -491,7 +510,7 @@ class RAGAgent(Agent):
     ) -> RerankerEvent:
         return await do_rerank_nodes(
             event.nodes,
-            condense_event.condensed_chat_message.content,
+            condense_event.condensed_question,
             agent_config.reranking_config,
             displayer,
             t,
@@ -542,7 +561,7 @@ class RAGAgent(Agent):
             else chat_history_event.limited_history
         )
         return await do_context_sufficient_guard(
-            user_query_event.condensed_chat_message.content,
+            user_query_event.condensed_question,
             event.context_message,
             guard_config.check_context_sufficiency,
             guard_config.max_hops,

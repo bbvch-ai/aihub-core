@@ -254,7 +254,7 @@ async def do_retrieve(
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
     if isinstance(event, StandaloneQuestionCondenserEvent):
-        query = event.condensed_chat_message.content or ""
+        query = event.condensed_question
     else:
         query = event.new_query
     all_nodes = await retrieve_from_all_sources(query, runtime_configs, t, user)

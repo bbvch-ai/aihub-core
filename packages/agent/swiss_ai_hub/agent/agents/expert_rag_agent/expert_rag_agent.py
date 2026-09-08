@@ -37,6 +37,7 @@ from swiss_ai_hub.core.generative_ai import (
     extend_chat_history_with_organization_memory,
     extend_chat_history_with_user_memory,
     format_expert_conversation,
+    limit_chat_history,
     narrow_retrievers,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -354,7 +355,7 @@ class ExpertRAGAgent(Agent):
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context, searching with the condensed question (#1753)."""
         return await do_retrieve_user_memory(
-            query=event.condensed_chat_message.content or "",
+            query=event.condensed_question,
             user_id=start_event.user.id,
             memory=memory,
             rerank=agent_config.user_memory.rerank_user_memory,
@@ -377,7 +378,7 @@ class ExpertRAGAgent(Agent):
         assert agent_config.org_memory is not None  # precondition enforces this
         requested = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         return await do_retrieve_organization_memory(
-            query=event.condensed_chat_message.content or "",
+            query=event.condensed_question,
             requested_namespaces=requested,
             user_id=start_event.user.id if start_event.user else None,
             org_memory=agent_config.org_memory,
@@ -399,7 +400,13 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
     ) -> AddMemoryToChatHistoryEvent:
-        """Extend the limited chat history with memory context (user and/or organization)."""
+        """Extend the limited chat history with memory context (user and/or organization).
+
+        Re-limited before it leaves this step, for the reasons spelled out on `RAGAgent`'s copy: every
+        consumer reads `extended_history` unchecked, and `limit_chat_history_with_context` reserves system
+        messages rather than trimming them. The memory blocks are what gets dropped when the result does not
+        fit, matching the pre-#1753 order.
+        """
         # The extend helpers mutate in place; other steps read limited_history off the same event instance.
         chat_history = [*chat_history_event.limited_history]
 
@@ -421,7 +428,12 @@ class ExpertRAGAgent(Agent):
                 t=t,
             )
 
-        return AddMemoryToChatHistoryEvent(extended_history=chat_history)
+        return AddMemoryToChatHistoryEvent(
+            extended_history=limit_chat_history(
+                chat_history=chat_history,
+                number_of_input_tokens=agent_config.number_of_input_tokens,
+            )
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
@@ -469,7 +481,7 @@ class ExpertRAGAgent(Agent):
         user: UserIdentity,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
-            event.condensed_chat_message.content,
+            event.condensed_question,
             agent_config.few_shot_guard_examples,
             agent_config.task_llm,
             displayer,
@@ -519,7 +531,7 @@ class ExpertRAGAgent(Agent):
     ) -> RerankerEvent:
         return await do_rerank_nodes(
             event.nodes,
-            condense_event.condensed_chat_message.content,
+            condense_event.condensed_question,
             agent_config.reranking_config,
             displayer,
             t,
@@ -566,7 +578,7 @@ class ExpertRAGAgent(Agent):
             else chat_history_event.limited_history
         )
         return await do_context_sufficient_guard(
-            user_query_event.condensed_chat_message.content,
+            user_query_event.condensed_question,
             event.context_message,
             guard_config.check_context_sufficiency,
             guard_config.max_hops,
@@ -691,7 +703,7 @@ class ExpertRAGAgent(Agent):
             agent_class=agent_config.expert_escalation.agent.agent_class,
             agent_id=agent_config.expert_escalation.agent.agent_id,
             start_event=AskExpertStartEvent(
-                question_to_expert=condense_event.condensed_chat_message.content or "",
+                question_to_expert=condense_event.condensed_question,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
                 org_memory_namespace=ExpertRAGAgent._resolve_expert_write_namespace(
