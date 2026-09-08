@@ -132,17 +132,19 @@ image_tags:
     local: email_classification_agent:latest
     nightly: email_classification_agent:nightly
     latest: email_classification_agent:latest
-  # Frozen: the legacy per-bucket pipelines' code is gone, so these images can never be rebuilt.
-  # They are pinned to their last release so existing deployments keep ingesting into the corpora they
-  # already have. There is no migration path — a deployment that needs a change must move those corpora
-  # to the configurable document_ingestion_pipeline by re-uploading into a new knowledge database. No build/local keys,
-  # so the services render only in the stages that still run them.
+  # Frozen: the legacy per-bucket pipelines' code is gone from main, so these images are pinned and are not
+  # rebuilt by CI. v0.320.1 is the last release that still contained the code (v0.320.0) plus the knowledge
+  # namespace teardown sensor, built once from a branch off that tag — the freeze deliberately took effect
+  # only after a frozen corpus could have folders removed from it. There is no migration path: a deployment
+  # that needs anything else changed must move those corpora to the configurable document_ingestion_pipeline
+  # by re-uploading into a new knowledge database. No build/local keys, so the services render only in the
+  # stages that still run them.
   default_rag_pipeline:
-    nightly: default_rag_pipeline:v0.319.0
-    latest: default_rag_pipeline:v0.319.0
+    nightly: default_rag_pipeline:v0.320.1
+    latest: default_rag_pipeline:v0.320.1
   shared_rag_pipeline:
-    nightly: shared_rag_pipeline:v0.319.0
-    latest: shared_rag_pipeline:v0.319.0
+    nightly: shared_rag_pipeline:v0.320.1
+    latest: shared_rag_pipeline:v0.320.1
   document_ingestion_pipeline:
     build: localbuild
     local: document_ingestion_pipeline:latest

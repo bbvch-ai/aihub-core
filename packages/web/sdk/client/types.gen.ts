@@ -4544,7 +4544,7 @@ export type DatabaseDto = {
   /**
    * Deletable
    *
-   * Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.
+   * Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.
    */
   deletable: boolean;
   /**
@@ -29140,6 +29140,8 @@ export type CreateDatabaseData = {
     tenant_id: string;
     /**
      * Database name
+     *
+     * Lowercase letters and digits, starting with a letter, 3 to 63 characters
      */
     database: string;
   };

@@ -6,7 +6,7 @@ from typing import Annotated, Any
 
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from mongoengine import DoesNotExist, NotUniqueError
+from mongoengine import DoesNotExist, NotUniqueError, ValidationError
 from nats.aio.client import Client as NATS
 from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
@@ -72,6 +72,8 @@ from swiss_ai_hub.api.routes.translation.translation_service import TranslationS
 logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
+
+_SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
 
 
 class KnowledgeService:
@@ -411,6 +413,12 @@ class KnowledgeService:
         The S3 bucket is provisioned (with browser-upload CORS) up front so documents can be uploaded
         immediately, before the pipeline's first lazy ingest.
         """
+        # First, so a rejected name costs neither a translation call nor a storage probe.
+        try:
+            BucketEntity.validate_new_database_name(database)
+        except ValidationError as invalid_name:
+            raise HTTPException(status_code=400, detail=str(invalid_name)) from None
+
         if not IngestorEntity.is_selectable(request.ingestor):
             raise HTTPException(
                 status_code=400,
@@ -849,12 +857,47 @@ class KnowledgeService:
         return bucket.ingestor in (IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value)
 
     @staticmethod
-    def _is_database_deletable(bucket: BucketEntity) -> bool:
-        """Whether the whole database may be torn down.
+    def reserved_database_names() -> frozenset[str]:
+        """Names a new knowledge database may never be created on.
 
-        Auto-synced databases are refilled by their source, and the legacy ``default_rag`` / ``shared_rag``
-        buckets are bound to a deploy-time pipeline that expects the bucket to keep existing — so neither
-        database itself is deletable. Namespaces inside them remain individually deletable.
+        A database's name doubles as its Mongo store and Milvus collection, so Mongo's own system databases
+        and the application's main database would collide, and the two legacy names would put a new database
+        on top of a frozen corpus that has no migration path. Spelled out rather than derived from
+        ``non_browsable_database_names``, so that widening one policy cannot silently widen the other.
+        """
+        aihub_settings = AIHubSettings()
+        return _SYSTEM_DATABASE_NAMES | {
+            aihub_settings.MONGO_MAIN_DB_NAME,
+            aihub_settings.DEFAULT_BUCKET_NAME,
+            aihub_settings.SHARED_BUCKET_NAME,
+        }
+
+    @staticmethod
+    def non_browsable_database_names() -> frozenset[str]:
+        """Names no caller may read from or delete in, whatever access rules they hold.
+
+        Reserving a name for creation is not a reason to refuse reads of the database already on it, so the
+        legacy names appear here only when the deployment hides legacy knowledge, making hidden mean
+        unreadable rather than merely unlisted. Uploads and namespace creation stay open either way.
+        """
+        # Keyed on the two configured names, while get_databases hides by the bucket's ingestor. The two
+        # agree unless a deployment renamed its buckets after seeding, which would leave such a bucket
+        # unlisted yet readable by name; closing that would cost a bucket lookup on every guarded read.
+        aihub_settings = AIHubSettings()
+        system_names = _SYSTEM_DATABASE_NAMES | {aihub_settings.MONGO_MAIN_DB_NAME}
+        if aihub_settings.SHOW_LEGACY_KNOWLEDGE:
+            return frozenset(system_names)
+        return frozenset(system_names | {aihub_settings.DEFAULT_BUCKET_NAME, aihub_settings.SHARED_BUCKET_NAME})
+
+    @staticmethod
+    def _is_database_deletable(bucket: BucketEntity) -> bool:
+        """Whether the database *itself* may be torn down.
+
+        Auto-synced databases are refilled by their source. A legacy ``default_rag`` / ``shared_rag`` bucket is
+        re-provisioned by three separate paths — the API's bucket seeder, the S3 init script, and its own
+        pipeline's definitions build — so removing it needs the code location retired afterwards, which the
+        platform cannot do for the operator. Its namespaces and its documents are deletable; only the
+        database as a whole is not.
         """
         return not bucket.auto_sync and not KnowledgeService._is_legacy_bucket(bucket)
 
@@ -871,9 +914,7 @@ class KnowledgeService:
     def _reject_undeletable_database(bucket: BucketEntity) -> None:
         """Whole-database deletion guard: auto-synced and legacy databases are protected.
 
-        Only the database itself is protected for legacy buckets — their namespaces stay deletable — because
-        the legacy per-bucket pipeline expects the bucket to exist. Mongo-internal / main-db names are rejected
-        earlier, at the controller, via the reserved-name guard.
+        Mongo-internal / main-db names are rejected earlier, at the controller, via the hidden-name guard.
         """
         KnowledgeService._reject_if_auto_synced(bucket)
         if KnowledgeService._is_legacy_bucket(bucket):
@@ -939,6 +980,8 @@ class KnowledgeService:
         except DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
 
+        # Only auto-sync is refused. A legacy database's namespaces are deletable: its frozen images carry the
+        # teardown sensor from v0.320.1, so the flag this sets is a queue something actually reads.
         KnowledgeService._reject_if_auto_synced(bucket)
 
         try:
