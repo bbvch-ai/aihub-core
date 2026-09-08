@@ -1,0 +1,245 @@
+---
+# =============================================================================
+# Deploy an Arbitrary Branch to Staging (temporary verification builds)
+# =============================================================================
+# Escape hatch for trying large, cross-cutting work (dependency upgrades,
+# runtime bumps, infra migrations) on the real QC staging VM before it is fit
+# for main or a release branch.
+#
+# Nothing new is created: no version tag, no versioned Release. This reuses the
+# two rolling artefacts staging already has — the moving `staging` git tag and
+# the rolling `staging` prerelease — and overwrites them in place. Cleanup is
+# therefore just handing staging back (see the bottom of this comment).
+#
+# Why a release is involved at all: the staging VM runs `ansible-pull` every 15
+# minutes (aihub-playbook, infra-pull.timer). Each run re-downloads the rolling
+# `staging` bundle and re-applies `docker compose up`, so any manual change made
+# on the box is reverted within the quarter hour. The bundle is the only durable
+# way in.
+#
+#   1. build   - dispatch the per-image build-*.yml straight at the BRANCH with
+#                release_version=staging, so every image is pushed as :staging.
+#                No tag is cut: build-*.yml accepts any ref.
+#   2. wait    - block until all seven builds are green. Nothing below this runs
+#                otherwise, so a failed build leaves staging untouched.
+#   3. pointer - move the existing `staging` tag onto the branch commit. The
+#                annotated message must embed a version the playbook's regex
+#                accepts (v\d+\.\d+\.\d+(-(nightly|rc)\.\d+)?), because
+#                fetch.yml parses it out of the tag object.
+#   4. publish - create-release.yml (channel=staging) with release_version
+#                `staging`, so `make generate-release TAG=staging` pins every
+#                service to :staging and the asset lands as the rolling
+#                swissaihub-staging.tar.gz the VM already fetches.
+#
+# Because the compose pins the MOVING :staging tag (rather than a version), a
+# re-run only has to rebuild images: the VM's next pull picks them up under
+# pull_policy=always.
+#
+# To hand staging back to QC: re-run promote-to-staging.yml with a nightly tag,
+# or push to the release branch to cut a fresh rc. Either one overwrites both
+# rolling artefacts again and restores version-pinned images.
+# =============================================================================
+name: Deploy Branch to Staging
+run-name: Deploy to staging - ${{ github.event.inputs.branch }}
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to build and deploy, e.g. chore/upgrade-python-314
+        required: true
+      confirm:
+        description: Type "staging" to confirm overwriting the QC environment
+        required: true
+        default: ''
+permissions:
+  contents: write
+  packages: write
+  actions: write
+concurrency:
+  group: deploy-branch-to-staging
+  cancel-in-progress: false
+jobs:
+  build:
+    name: Build images from the branch as :staging
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    outputs:
+      started_at: ${{ steps.dispatch.outputs.started_at }}
+    steps:
+      - name: Guard - confirmation and branch
+        env:
+          CONFIRM: ${{ github.event.inputs.confirm }}
+          BRANCH: ${{ github.event.inputs.branch }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRM" != "staging" ]; then
+            echo "::error::confirm must be the literal string 'staging'. This overwrites the QC environment."
+            exit 1
+          fi
+          case "$BRANCH" in
+            main | release/*)
+              echo "::error::'$BRANCH' has its own staging path (add-tag + promote-to-staging, or build-rc). Use that instead."
+              exit 1
+              ;;
+          esac
+      - name: Dispatch build workflows at the branch
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.inputs.branch }}
+        run: |
+          set -euo pipefail
+          # Recorded before dispatching so the wait job can tell these runs apart
+          # from older runs on the same branch.
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          BUILDS=(
+            build-agents.yml
+            build-pipelines.yml
+            build-api-and-bot.yml
+            build-dagster.yml
+            build-web.yml
+            build-backup.yml
+            build-sysadmin.yml
+          )
+          for wf in "${BUILDS[@]}"; do
+            echo "Dispatching $wf @ $BRANCH"
+            gh workflow run "$wf" --ref "$BRANCH" \
+              -f release_version=staging -f secondary_tag=''
+          done
+  wait-for-images:
+    name: Wait for every image build
+    needs: build
+    runs-on: ubuntu-slim
+    # Image builds are capped at 45 minutes each and run in parallel.
+    timeout-minutes: 90
+    permissions:
+      actions: read
+    steps:
+      - name: Poll the dispatched runs until all are green
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.inputs.branch }}
+          STARTED_AT: ${{ needs.build.outputs.started_at }}
+        run: |
+          set -euo pipefail
+          BUILDS=(
+            build-agents.yml
+            build-pipelines.yml
+            build-api-and-bot.yml
+            build-dagster.yml
+            build-web.yml
+            build-backup.yml
+            build-sysadmin.yml
+          )
+          # A dispatched run takes a moment to become listable.
+          sleep 30
+          failed=()
+          for wf in "${BUILDS[@]}"; do
+            echo "Waiting for $wf @ $BRANCH"
+            status=missing
+            for _ in $(seq 1 160); do
+              # Newest dispatch on this branch that started after we fired.
+              run_json="$(gh run list --workflow "$wf" --branch "$BRANCH" \
+                --event workflow_dispatch --limit 10 \
+                --json status,conclusion,createdAt,url \
+                | jq -c --arg since "$STARTED_AT" \
+                  '[.[] | select(.createdAt >= $since)] | sort_by(.createdAt) | last')"
+              status="$(printf '%s' "$run_json" | jq -r '.status // "missing"')"
+              if [ "$status" = "completed" ]; then
+                conclusion="$(printf '%s' "$run_json" | jq -r '.conclusion')"
+                url="$(printf '%s' "$run_json" | jq -r '.url')"
+                if [ "$conclusion" != "success" ]; then
+                  echo "::error::$wf finished '$conclusion' - $url"
+                  failed+=("$wf")
+                else
+                  echo "  $wf: success"
+                fi
+                break
+              fi
+              sleep 30
+            done
+            if [ "$status" != "completed" ]; then
+              echo "::error::$wf did not complete in time (last status: $status)."
+              failed+=("$wf")
+            fi
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "::error::Image builds failed: ${failed[*]}. Staging was NOT touched."
+            exit 1
+          fi
+          echo "All :staging images built from $BRANCH."
+  move-pointer:
+    name: Move staging pointer to the branch commit
+    needs: wait-for-images
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    # Shared with build-rc's rc-tag and promote-to-staging's move-pointer: all
+    # three force-push refs/tags/staging.
+    concurrency:
+      group: staging-pointer
+      cancel-in-progress: false
+    steps:
+      # Deploy key: moving a pointer across commits can touch workflow files,
+      # which needs the `workflow` scope GITHUB_TOKEN cannot hold. Same key as
+      # add-tag.yml / build-rc.yml / promote-to-staging.yml.
+      - name: Checkout branch (full history)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Point staging at the branch commit
+        env:
+          BRANCH: ${{ github.event.inputs.branch }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          core="$(awk '
+            /^\[/ { in_project = ($0 == "[project]") }
+            in_project && /^version[[:space:]]*=/ {
+              sub(/^version[[:space:]]*=[[:space:]]*"/, ""); sub(/".*/, ""); print; exit
+            }' pyproject.toml)"
+          printf '%s' "$core" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            || { echo "::error::pyproject [project] version '$core' is not clean semver."; exit 1; }
+          # The playbook parses this message for a version (fetch.yml) and uses
+          # it as the VM's bundle cache key under /opt/infra/cache/aihub_core/.
+          # A bare v<core> would repeat across deploys and the VM would keep
+          # extracting the previously cached bundle, silently ignoring any
+          # compose or config change on the branch. The run number makes it
+          # unique; only these two uses read it, and no such tag is ever cut.
+          CACHE_KEY="v${core}-nightly.${RUN_NUMBER}"
+          TARGET="$(git rev-parse HEAD)"
+          git tag -f -a staging "$TARGET" \
+            -m "Branch verification build of $BRANCH ($CACHE_KEY)"
+          git push origin refs/tags/staging --force
+          {
+            echo "### Staging now runs \`$BRANCH\`"
+            echo
+            echo "- Commit: \`$TARGET\`"
+            echo "- Images: every service pinned to the moving \`:staging\` tag"
+            echo
+            echo "The QC VM applies this within 15 minutes (infra-pull.timer)."
+            echo "To hand staging back to QC, re-run \`promote-to-staging.yml\` with a"
+            echo "nightly tag, or push to the release branch to cut a fresh rc."
+          } >> "$GITHUB_STEP_SUMMARY"
+  publish-bundle:
+    name: Refresh the rolling staging bundle
+    # release_version `staging` makes generate-release pin every service to
+    # :staging and name the asset swissaihub-staging.tar.gz, which is exactly
+    # the rolling asset the VM fetches. create-release skips its versioned-copy
+    # step when asset == version, and its per-rc release is gated on a -rc.N
+    # suffix, so no Release entry is created — the rolling one is edited.
+    needs: move-pointer
+    uses: ./.github/workflows/create-release.yml
+    with:
+      release_version: staging
+      channel: staging
+      notes_from: ''
+    secrets: inherit
