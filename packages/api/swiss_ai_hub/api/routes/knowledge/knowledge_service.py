@@ -385,20 +385,28 @@ class KnowledgeService:
         """
         for element in elements:
             name = getattr(element, "name", None)
-            if not name:
-                continue
-            field_path = f"{prefix}{name}"
-            value = config.get(name)
-            if isinstance(element, Group) and isinstance(value, dict):
-                await KnowledgeService._validate_model_selections(element.children, value, user, f"{field_path}.")
-            elif isinstance(element, Repeater) and isinstance(value, list):
-                for index, item in enumerate(value):
-                    if isinstance(item, dict):
-                        await KnowledgeService._validate_model_selections(
-                            element.children, item, user, f"{field_path}.{index}."
-                        )
-            elif isinstance(element, ModelSelect) and value is not None:
-                await KnowledgeService._validated_model(field_path, value, element.mode, user)
+            if name:
+                await KnowledgeService._validate_element(element, f"{prefix}{name}", config.get(name), user)
+
+    @staticmethod
+    async def _validate_element(element: FormkitElement, field_path: str, value: Any, user: UserIdentity) -> None:
+        """One element of an announced form: a container to walk into, a model picker to check, or nothing."""
+        if isinstance(element, Group) and isinstance(value, dict):
+            await KnowledgeService._validate_model_selections(element.children, value, user, f"{field_path}.")
+        elif isinstance(element, Repeater) and isinstance(value, list):
+            await KnowledgeService._validate_repeated_entries(element, field_path, value, user)
+        elif isinstance(element, ModelSelect) and value is not None:
+            await KnowledgeService._validated_model(field_path, value, element.mode, user)
+
+    @staticmethod
+    async def _validate_repeated_entries(
+        element: Repeater, field_path: str, entries: list[Any], user: UserIdentity
+    ) -> None:
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict):
+                await KnowledgeService._validate_model_selections(
+                    element.children, entry, user, f"{field_path}.{index}."
+                )
 
     @staticmethod
     @trace_fn

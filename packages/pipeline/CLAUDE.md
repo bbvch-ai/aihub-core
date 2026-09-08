@@ -147,12 +147,7 @@ defs = document_ingestion_pipeline_definitions(
     display_name=LocaleString(en="My Pipeline"),       # required for a custom ingestor, defaulted for the platform one
     description=LocaleString(en="What it does"),
     config=None,                                       # announced form; defaults to DocumentIngestionConfig.as_form(...)
-    embedding_model_name="embedding/large",            # per-database DEFAULT embedding model
-    llm_model_name="text-generation/mini",             # per-database DEFAULT text model
-    vision_model_name=None,                            # per-database DEFAULT vision model (text model when None)
-    with_summary_nodes=True,                           # per-database DEFAULT: hierarchical RAG summaries
-    with_table_refinement=True,                        # per-database DEFAULT: LLM table detection/splitting
-    with_figure_descriptions=True,                     # per-database DEFAULT: figure descriptions
+    settings=DocumentIngestionPipelineSettings(),       # per-database DEFAULTS + the observation schedule (see below)
     document_parser_loader_type=LoaderType.MINERU,     # MinerU (default) or DocumentIntelligence
     max_partitions=1000,                               # Max partitions added/deleted per tick
 )
@@ -162,17 +157,16 @@ Every deployment-global name — asset keys, the dynamic-partition registry, job
 is derived from `ingestor`, because asset keys are unique per Dagster deployment and partition-registry names are global
 to the instance. That is what lets a second pipeline *type* be deployed alongside this one.
 
-The models and enrichment flags are **deployment defaults**, not the graph's shape: they pre-fill the form the pipeline
-announces, and are what a database that stores no value of its own falls back to at run time. The asset graph is
+`settings` is a `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`, read from the environment when omitted)
+carrying the text, embedding and vision models, the three enrichment flags and the observation schedule. The models and
+enrichment flags are **deployment defaults**, not the graph's shape: they pre-fill the form the pipeline announces, and
+are what a database that stores no value of its own falls back to at run time. The asset graph is
 identical for every database (`summary_nodes` always exists, and table refinement and figure descriptions are always in
 the `documents` graph), and each enrichment op decides per run from the bucket's configuration whether it has work.
 
 Every pipeline built here registers itself: a sensor upserts an `IngestorEntity` carrying labels, form and schema, so
 the API's `GET /knowledge/ingestors` can offer it in the create-database dialog and validate what users submit. See
 [Making a Custom Pipeline Selectable](#making-a-custom-pipeline-selectable-in-the-ui) for the full mechanism.
-
-The deployed app reads its knobs from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`) rather than
-hardcoding them.
 
 Source-specific definition builders for Stage 1 (combine with `document_ingestion_pipeline_definitions()` for
 end-to-end), in `util/definitions_util.py`:

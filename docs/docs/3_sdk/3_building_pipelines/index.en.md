@@ -76,6 +76,7 @@ Create a file named `my_pipeline.py`:
 
 ```python
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
 # This single function call creates a complete, production-ready pipeline that serves every
@@ -84,9 +85,9 @@ defs = document_ingestion_pipeline_definitions(
     ingestor="my_rag",
     display_name=LocaleString(en="My RAG"),
     description=LocaleString(en="Tuned for my documents"),
-    embedding_model_name="local/qwen-embedding",          # default; each database picks its own in the UI
-    llm_model_name="local/gemma-3-multimodal-small",      # default; each database picks its own in the UI
-    with_summary_nodes=True                               # default; each database toggles it in the UI
+    # The models and enrichment switches this deployment defaults to, from DOCUMENT_INGESTION_*;
+    # each database picks its own in the UI.
+    settings=DocumentIngestionPipelineSettings()
 )
 ```
 

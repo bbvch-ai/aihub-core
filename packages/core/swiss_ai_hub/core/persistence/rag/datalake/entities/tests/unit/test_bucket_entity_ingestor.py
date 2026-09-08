@@ -117,7 +117,8 @@ class TestCarryOverRetiredModelColumns:
         raw = mongo_connection[AIHubSettings().MONGO_MAIN_DB_NAME]["buckets"].find_one({"bucket_name": "olddb"})
         assert carried == 1
         assert raw["configuration"] == {"llm_model": "text-generation/old", "embedding_model": "embedding/old"}
-        assert "llm_model" not in raw and "embedding_model" not in raw
+        assert "llm_model" not in raw
+        assert "embedding_model" not in raw
         assert BucketEntity.get_bucket_by_bucket_name("olddb").configuration["embedding_model"] == "embedding/old"
 
     def test_a_null_column_is_dropped_without_writing_a_key(self, mongo_connection):

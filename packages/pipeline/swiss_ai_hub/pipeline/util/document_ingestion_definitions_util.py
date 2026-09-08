@@ -10,6 +10,7 @@ from dagster import (
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.core.ingestors import IngestorConfig
 from swiss_ai_hub.core.persistence import Ingestor, IngestorEntity, IngestorType
 
@@ -56,18 +57,11 @@ def document_ingestion_pipeline_definitions(
     display_name: Annotated[LocaleString | None, "Localized name shown in the create-database selector"] = None,
     description: Annotated[LocaleString | None, "Localized description of what the pipeline does"] = None,
     config: Annotated[IngestorConfig | None, "Form-mode config announced for this ingestor's databases"] = None,
-    embedding_model_name: Annotated[
-        str, "Default LiteLLM embedding model, per database overridable"
-    ] = "embedding/bge-m3",
-    llm_model_name: Annotated[
-        str, "Default LiteLLM text-generation model, per database overridable"
-    ] = "text-generation/gemma-4-31B-it",
-    vision_model_name: Annotated[str | None, "Default figure-description model; the text model when None"] = None,
-    with_summary_nodes: Annotated[bool, "Default for recursive summaries, per database overridable"] = True,
-    with_table_refinement: Annotated[bool, "Default for LLM table refinement, per database overridable"] = True,
-    with_figure_descriptions: Annotated[bool, "Default for figure descriptions, per database overridable"] = True,
-    observe_job_hour: Annotated[int, "Hour to run the daily per-bucket observation schedule"] = 0,
-    observe_job_minute: Annotated[int, "Minute to run the daily per-bucket observation schedule"] = 0,
+    settings: Annotated[
+        DocumentIngestionPipelineSettings | None,
+        "Deployment defaults for models, enrichment and the observation schedule; read from the environment "
+        "when omitted",
+    ] = None,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
     document_parser_loader_type: Annotated[LoaderType, "Document parser loader type"] = LoaderType.MINERU,
     encode_partition_keys: Annotated[bool, "URL-encode file URIs inside composite partition keys"] = True,
@@ -85,10 +79,12 @@ def document_ingestion_pipeline_definitions(
     dynamic-partition registry names are global to the instance. That is what lets a second pipeline *type* be
     deployed alongside this one instead of colliding with it.
 
-    The models and enrichment flags are *deployment defaults*: they pre-fill the form this pipeline announces
-    (``config``) and are what a database that stores no value of its own falls back to at run time. The asset
-    graph is the same for every database; each enrichment op decides per run from the bucket's configuration.
+    ``settings`` carries the *deployment defaults*: they pre-fill the form this pipeline announces (``config``)
+    and are what a database that stores no value of its own falls back to at run time. The asset graph is the
+    same for every database; each enrichment op decides per run from the bucket's configuration.
     """
+    settings = settings or DocumentIngestionPipelineSettings()
+
     asset_group = f"{ingestor}_datalake_to_vectorstore"
 
     data_lake_key = AssetKey([asset_group, "data_lake"])
@@ -126,17 +122,17 @@ def document_ingestion_pipeline_definitions(
     teardown_job = knowledge_teardown_job(source_location_name=ingestor)
 
     announced_config = config or DocumentIngestionConfig.as_form(
-        llm_model=llm_model_name,
-        embedding_model=embedding_model_name,
-        vision_model=vision_model_name,
-        with_summary_nodes=with_summary_nodes,
-        with_table_refinement=with_table_refinement,
-        with_figure_descriptions=with_figure_descriptions,
+        llm_model=settings.LLM_MODEL,
+        embedding_model=settings.EMBEDDING_MODEL,
+        vision_model=settings.VISION_MODEL,
+        with_summary_nodes=settings.WITH_SUMMARY_NODES,
+        with_table_refinement=settings.WITH_TABLE_REFINEMENT,
+        with_figure_descriptions=settings.WITH_FIGURE_DESCRIPTIONS,
     )
     registration_sensor = _registration_sensor(ingestor, display_name, description, announced_config)
 
-    llm_config = LLMConfig(model_name=llm_model_name)
-    embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
+    llm_config = LLMConfig(model_name=settings.LLM_MODEL)
+    embedding_config = EmbeddingModelConfig(model_name=settings.EMBEDDING_MODEL)
 
     resources: dict = {
         "document_parser": DocumentParserResource(loader_type=document_parser_loader_type),
@@ -165,7 +161,10 @@ def document_ingestion_pipeline_definitions(
         jobs=[observe_job, remove_job, teardown_job],
         schedules=[
             per_bucket_observe_schedule(
-                observe_job, ingestor=ingestor, hour=observe_job_hour, minute=observe_job_minute
+                observe_job,
+                ingestor=ingestor,
+                hour=settings.OBSERVE_JOB_HOUR,
+                minute=settings.OBSERVE_JOB_MINUTE,
             )
         ],
     )

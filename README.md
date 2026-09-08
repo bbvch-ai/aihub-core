@@ -369,6 +369,7 @@ indexes them for RAG — with hierarchical summaries and LLM-powered table refin
 ```python
 from swiss_ai_hub.pipeline.util import default_rclone_to_datalake_definitions, document_ingestion_pipeline_definitions
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.core.rclone import sftp_source
 
 # Stage 1: SFTP → Data Lake
@@ -390,11 +391,9 @@ stage_2 = document_ingestion_pipeline_definitions(
     ingestor="acme_rag",
     display_name=LocaleString(en="Acme RAG"),
     description=LocaleString(en="Contracts and legal documents"),
-    embedding_model_name="embedding/bge-m3",
-    llm_model_name="text-generation/gemma-4-31B-it",
-    with_summary_nodes=True,                         # hierarchical summaries for multi-level RAG
-    with_table_refinement=True,                      # LLM-powered table detection and splitting
-    with_figure_descriptions=True,                   # vision LLM describes images in documents
+    # Models, enrichment steps and observation schedule this deployment defaults to, from
+    # DOCUMENT_INGESTION_*; every knowledge database overrides them in the create dialog
+    settings=DocumentIngestionPipelineSettings(),
 )
 ```
 

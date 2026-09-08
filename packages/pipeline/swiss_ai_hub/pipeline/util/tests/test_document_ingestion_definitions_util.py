@@ -5,6 +5,7 @@ from dagster import AssetKey, Definitions
 from pydantic import Field
 from swiss_ai_hub.core.form import InputNumber
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.core.persistence import IngestorType
 
 from swiss_ai_hub.pipeline.ingestors.document_ingestion_config import DocumentIngestionConfig
@@ -97,7 +98,9 @@ class TestResourcesAreFullyWired:
     def test_every_enrichment_resource_is_wired_whatever_the_deployment_defaults_say(self):
         """The graph is the same for every database; a database opts in or out per run, not the deployment."""
         defs = document_ingestion_pipeline_definitions(
-            with_summary_nodes=False, with_table_refinement=False, with_figure_descriptions=False
+            settings=DocumentIngestionPipelineSettings(
+                WITH_SUMMARY_NODES=False, WITH_TABLE_REFINEMENT=False, WITH_FIGURE_DESCRIPTIONS=False
+            )
         )
 
         assert "table_refinement" in defs.resources
@@ -137,9 +140,12 @@ class TestIngestorRegistration:
 
     @pytest.mark.parametrize("reserved", [IngestorType.DEFAULT_RAG.value, IngestorType.UNASSIGNED.value, "datalake"])
     def test_a_reserved_id_is_rejected_at_build_time(self, reserved):
+        display_name = LocaleString(en="x")
+        description = LocaleString(en="y")
+
         with pytest.raises(ValueError, match="reserved"):
             document_ingestion_pipeline_definitions(
-                ingestor=reserved, display_name=LocaleString(en="x"), description=LocaleString(en="y")
+                ingestor=reserved, display_name=display_name, description=description
             )
 
     def test_a_custom_config_extends_the_announced_form_without_platform_changes(self):

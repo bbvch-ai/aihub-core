@@ -64,15 +64,16 @@ A pipeline is a Dagster **code location** — a module that exposes a `Definitio
 ```python
 # my_pipeline/__init__.py
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
 defs = document_ingestion_pipeline_definitions(
     ingestor="my_rag",                                  # this pipeline owns every database assigned to it
     display_name=LocaleString(en="My RAG"),             # how users see it when creating a database
     description=LocaleString(en="Tuned for my documents"),
-    embedding_model_name="embedding/bge-m3",            # default embedding model, chosen per database in the UI
-    llm_model_name="text-generation/gemma-4-31B-it",    # default text model for summaries / tables / figures
-    with_summary_nodes=True,                            # default for hierarchical RAG summaries
+    # Models, enrichment steps and the observation schedule this deployment defaults to, from
+    # DOCUMENT_INGESTION_*; every database overrides them in the form the pipeline announces from them.
+    settings=DocumentIngestionPipelineSettings(),
 )
 ```
 
@@ -113,9 +114,9 @@ markdown but is not yet retrievable, so it stays pending until then.
 
 Materialization is driven by eager automation, daily schedules, and a NATS sensor that fires when documents are uploaded
 through the API — so ingestion keeps up with changes without manual runs. Key
-`document_ingestion_pipeline_definitions()` settings: the per-database defaults (`llm_model_name`,
-`embedding_model_name`, `vision_model_name`, and the three enrichment switches), plus `document_parser_loader_type`
-(MinerU or Document Intelligence) and `max_partitions`.
+`document_ingestion_pipeline_definitions()` settings: the per-database defaults `settings` carries (the text,
+embedding and vision models, the three enrichment switches and the observation schedule), plus
+`document_parser_loader_type` (MinerU or Document Intelligence) and `max_partitions`.
 
 ______________________________________________________________________
 

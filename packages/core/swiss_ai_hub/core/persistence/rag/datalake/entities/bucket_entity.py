@@ -167,7 +167,7 @@ class BucketEntity(Document):
                 for column in _RETIRED_MODEL_COLUMNS
                 if row.get(column) is not None and column not in row.get("configuration", {})
             }
-            update: dict = {"$unset": {column: "" for column in _RETIRED_MODEL_COLUMNS}}
+            update: dict = {"$unset": dict.fromkeys(_RETIRED_MODEL_COLUMNS, "")}
             if values:
                 update["$set"] = values
             collection.update_one({"_id": row["_id"]}, update)
