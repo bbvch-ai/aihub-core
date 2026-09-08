@@ -37,10 +37,14 @@ class StartupTenantSettings(EnvironmentSettings):
         Field(
             description=(
                 "Comma-separated access rules for the startup tenant. "
-                "Use 'aihub.admin.>' for unrestricted access to all platform features."
+                "Use 'aihub.admin.>' for unrestricted access to all platform features. "
+                "Leave empty to derive the ceiling from the models this instance actually serves, minus "
+                "AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS — the same default a sysadmin-created tenant gets. "
+                "Setting it explicitly skips that lookup entirely, so a deployment whose model gateway is not "
+                "reachable at first boot can still seed its tenant."
             ),
         ),
-    ] = "aihub.admin.>"
+    ] = ""
 
     @computed_field
     @property

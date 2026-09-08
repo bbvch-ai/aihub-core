@@ -2888,6 +2888,11 @@ services:
       AIHUB_STARTUP_TENANT_DESCRIPTION: ${AIHUB_STARTUP_TENANT_DESCRIPTION}
       AIHUB_STARTUP_TENANT_ACCESS_RULES: ${AIHUB_STARTUP_TENANT_ACCESS_RULES}
 
+      {#- Models withheld from a newly created tenant's default access ceiling. Read only while deriving that
+          default (startup tenant on first boot, and the sysadmin plane's create-tenant call, which proxies
+          here because only this service is wired to the model gateway). Existing tenants are untouched. #}
+      AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS: ${AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS}
+
       # User signup roles — read by UserSignupSettings.
       AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES: ${AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES}
       AIHUB_USER_SIGNUP_REGULAR_USER_ROLES: ${AIHUB_USER_SIGNUP_REGULAR_USER_ROLES}

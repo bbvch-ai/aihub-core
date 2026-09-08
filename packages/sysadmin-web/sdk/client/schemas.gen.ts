@@ -389,13 +389,20 @@ export const CreateTenantMetadataRequestSchema = {
       default: "",
     },
     access_rules: {
-      items: {
-        type: "string",
-      },
-      type: "array",
+      anyOf: [
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
       title: "Access Rules",
-      description: "Access rules granted to this tenant.",
-      default: [],
+      description:
+        "Access rules granted to this tenant. Omit to start from this instance's default ceiling (every served model minus the configured exclusions); pass an empty list for a tenant that starts with no access at all.",
     },
   },
   type: "object",

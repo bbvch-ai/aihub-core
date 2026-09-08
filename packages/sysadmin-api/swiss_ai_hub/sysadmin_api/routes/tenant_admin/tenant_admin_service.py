@@ -107,7 +107,7 @@ class TenantAdminService:
             tenant_id=data.tenant_id,
             name=data.name,
             description=data.description,
-            access_rules=[AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules],
+            access_rules=[AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules or []],
         )
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 

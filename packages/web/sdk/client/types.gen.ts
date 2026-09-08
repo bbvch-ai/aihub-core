@@ -28679,6 +28679,32 @@ export type GetAccessPresetsResponses = {
 export type GetAccessPresetsResponse =
   GetAccessPresetsResponses[keyof GetAccessPresetsResponses];
 
+export type GetDefaultTenantRulesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/default-tenant-rules";
+};
+
+export type GetDefaultTenantRulesResponses = {
+  /**
+   * Response Get Default Tenant Rules  Tenant Id  Access Default Tenant Rules Get
+   *
+   * Successful Response
+   */
+  200: Array<string>;
+};
+
+export type GetDefaultTenantRulesResponse =
+  GetDefaultTenantRulesResponses[keyof GetDefaultTenantRulesResponses];
+
 export type GetModelsData = {
   body?: never;
   path: {
