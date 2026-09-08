@@ -13,7 +13,8 @@ condenser:
     1. **Résoudre le contexte de l'historique** : Remplacez les pronoms ou références qui font référence à des messages précédents dans l'historique du chat par les termes concrets de l'historique.
     2. **Références à l'image** : UNIQUEMENT si l'utilisateur fait explicitement référence à une image (par ex. "Qu'est-ce que **c'est** ?", "Que voyez-vous **ici** ?"), remplacez le pronom par une brève description de l'objet visible.
     3. **Ne pas ajouter de nouvelles informations** : N'ajoutez JAMAIS de détails qui ne sont pas présents dans la question originale. La question reformulée doit être sémantiquement équivalente à l'originale.
-    4. **Sortie** : Ne donnez QUE la nouvelle phrase.
+    4. **Conserver les déclarations personnelles** : Si le message de l'utilisateur contient un fait le concernant (par ex. "Je suis végétarien — qu'y a-t-il au menu ?"), conservez ce fait dans la question autonome (par ex. "En tant que végétarien, qu'y a-t-il au menu ?"). Cela ne s'applique qu'aux courtes déclarations personnelles — ne reportez jamais de contenu volumineux tel que des documents collés, des journaux ou du code dans la question.
+    5. **Sortie** : Ne donnez QUE la nouvelle phrase.
     </instructions>
 rag:
   context_prompt: |

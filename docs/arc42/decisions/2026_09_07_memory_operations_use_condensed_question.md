@@ -79,11 +79,11 @@ prompt reconciles duplicates — re-feeding history only multiplies embedding co
   limiter, and it is the right loser — the alternative is discarding the turn the user asked about, and the template
   presents memories as optional context. Pinned by `test_memory_blocks_respect_token_budget.py`.
 - **(−)** A personal statement fused into a question survives storage only as well as the condenser preserves it. The
-  fix belongs in the condenser prompt (`lib.prompt.condenser.standalone_question`, all four locales) and is **not yet
-  applied**. When it is, it must cover stated facts about the user only, and deliberately **not** verbatim code blocks
-  or logs: the same string is embedded for retrieval, so carrying unbounded pasted content back into it reintroduces the
-  embedder-window failure this decision exists to remove. Prompt compliance is probabilistic, so it belongs in a
-  Langfuse evaluation set rather than a CI assertion that would flake.
+  condenser prompt (`lib.prompt.condenser.standalone_question`, all four locales) now instructs keeping short self-stated
+  facts in the standalone question — covering stated facts about the user only, and deliberately **not** verbatim code
+  blocks or logs: the same string is embedded for retrieval, so carrying unbounded pasted content back into it
+  reintroduces the embedder-window failure this decision exists to remove. Prompt compliance is probabilistic, so the
+  mitigation belongs in a Langfuse evaluation set rather than a CI assertion that would flake.
 - Making the condensed question load-bearing everywhere makes an empty one fatal, so `condense_standalone_question`
   raises `EmptyCondensationError` on a blank answer and both condenser events reject blank content with a
   `field_validator` — on the field, because JetStream replay and redelivery deserialize events with no step body to
