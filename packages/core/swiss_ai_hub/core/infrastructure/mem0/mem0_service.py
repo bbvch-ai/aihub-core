@@ -1,5 +1,11 @@
+import logging
+from functools import cached_property
+
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.utils import get_tokenizer
 from mem0.configs.base import MemoryConfig
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.graph.patched_memory_graph import PatchedMemoryGraph
 from swiss_ai_hub.core.infrastructure.mem0.patched_async_memory import PatchedAsyncMemory
@@ -11,14 +17,24 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_added import MemoryAdded
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 
+logger = logging.getLogger(__name__)
+
+# Duplicated from generative_ai.document.parsers.markdown_structural_node_parser (importing would drag the
+# whole parser module in for two ints). The 0.85 absorbs the tokenizer mismatch: LiteLLM's token counter
+# reports tiktoken counts for bge-m3, not its real XLM-R tokenizer.
+DEFAULT_EMBEDDING_MAX_INPUT_TOKENS = 8192
+EMBEDDING_BUDGET_SAFETY_FACTOR = 0.85
+
 
 class Mem0Service:
     def __init__(
         self,
         config: MemoryConfig,
         t: LocaleHandler,
+        max_search_query_tokens: int | None = None,
     ):
         self._config = config
+        self._max_search_query_tokens = max_search_query_tokens
         self._memory = PatchedAsyncMemory(config=config)
         self._memory.vector_store = PatchedMilvusDB.from_milvus(self._memory.vector_store)
         self._memory.llm = PatchedOpenAILLM.from_llm(self._memory.llm)
@@ -30,6 +46,45 @@ class Mem0Service:
     @property
     def config(self):
         return self._config
+
+    @cached_property
+    def _effective_query_token_limit(self) -> int:
+        window = self._max_search_query_tokens or (
+            EmbeddingModelConfig(model_name=self._config.embedder.config["model"])
+            .get_model_info()["model_info"]
+            .get("max_input_tokens")
+            or DEFAULT_EMBEDDING_MAX_INPUT_TOKENS
+        )
+        return int(window * EMBEDDING_BUDGET_SAFETY_FACTOR)
+
+    def _clamp_query(self, query: str) -> str:
+        """
+        A tiktoken token count never exceeds the character count, so a query at or under the floor in
+        characters provably fits — without resolving the (possibly remote) token limit.
+        """
+        floor = int(
+            (self._max_search_query_tokens or DEFAULT_EMBEDDING_MAX_INPUT_TOKENS) * EMBEDDING_BUDGET_SAFETY_FACTOR
+        )
+        if len(query) <= floor:
+            return query
+        limit = self._effective_query_token_limit
+        tokenizer = get_tokenizer()
+        original_tokens = len(tokenizer(query))
+        if original_tokens <= limit:
+            return query
+        splitter = SentenceSplitter(chunk_size=limit, chunk_overlap=0, tokenizer=tokenizer)
+        # Keep the last chunk: chat clients inline documents before the user's question, so the tail is
+        # where the actual question lives.
+        clamped = splitter.split_text(query)[-1]
+        logger.warning(
+            "Search query exceeds the embedding budget, truncating: %d -> %d tokens (%d -> %d characters, limit %d)",
+            original_tokens,
+            len(tokenizer(clamped)),
+            len(query),
+            len(clamped),
+            limit,
+        )
+        return clamped
 
     async def add_memory(
         self,
@@ -129,6 +184,7 @@ class Mem0Service:
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
+        query = self._clamp_query(query)
         scalar_filters = {
             "_type": memory_type.value,
             "_user_id": user_id,

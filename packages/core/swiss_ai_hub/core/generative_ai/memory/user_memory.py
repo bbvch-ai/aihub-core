@@ -17,12 +17,14 @@ class UserMemory:
 
     def __init__(self, user: UserIdentity, t: LocaleHandler):
         """Initialize user memory manager for a specific user."""
-        self._config = Mem0Settings().get_config()
+        settings = Mem0Settings()
+        self._config = settings.get_config()
         self._user = user
         self._t = t
         self.mem0service = Mem0Service(
             self._config,
             t=self._t,
+            max_search_query_tokens=settings.SEARCH_QUERY_MAX_TOKENS,
         )
 
     @property

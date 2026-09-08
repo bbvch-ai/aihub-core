@@ -20,6 +20,14 @@ class Mem0Settings(EnvironmentSettings):
     LLM_NAME: Annotated[str, Field(description="Name of the LLM to use")]
     EMBEDDING_MODEL_NAME: Annotated[str, Field(description="Name of the embedding model to use")]
     RERANKING_MODEL_NAME: Annotated[str, Field(description="Name of the embedding model to use")]
+    SEARCH_QUERY_MAX_TOKENS: Annotated[
+        int | None,
+        Field(
+            description="Token budget for search queries before truncation. "
+            "None resolves the embedding model's max input tokens from LiteLLM at first use.",
+            gt=0,
+        ),
+    ] = None
 
     SUPPORT_VISION: Annotated[bool, Field(description="Whether to support vision")] = True
     VISION_DETAIL: Annotated[str, Field(description="Vision details")] = "auto"
