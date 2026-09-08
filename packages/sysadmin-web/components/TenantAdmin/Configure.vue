@@ -96,24 +96,28 @@ const tenant = ref<CreateTenantMetadataRequest>({
   tenant_id: '',
   name: '',
   description: '',
-  // Left undefined, not [], so that a failed prefill omits the field and lets the backend derive the
-  // default itself. Sending [] would read as "a tenant that deliberately starts with no access at all".
-  access_rules: undefined,
 })
+
+// Held on its own rather than behind a computed over `tenant.access_rules`: AccessRulesEditor adds rules
+// by mutating the array in place, which a computed setter never observes, so edits would be lost whenever
+// the backing field was undefined.
+const accessRules = ref<string[]>([])
 
 // Seeded once, so the standard set is visible and editable before saving rather than applied invisibly
 // by the backend. Guarded against re-firing so a refetch cannot discard edits already made in the form.
 const defaultRulesSeeded = ref(false)
 watch(defaultAccessRules, (rules) => {
   if (defaultRulesSeeded.value || !rules) return
-  tenant.value.access_rules = [...rules]
+  accessRules.value = [...rules]
   defaultRulesSeeded.value = true
 }, { immediate: true })
 
-const accessRules = computed({
-  get: () => tenant.value.access_rules ?? [],
-  set: (val) => { tenant.value.access_rules = val },
-})
+// Omitted, not [], only when the prefill failed and nothing was entered, so the backend derives the
+// default ceiling itself. Once the editor holds a seeded or hand-typed list, an empty one is sent as []
+// and reads as "a tenant that deliberately starts with no access at all".
+const accessRulesToSave = computed(() =>
+  defaultRulesSeeded.value || accessRules.value.length ? accessRules.value : undefined,
+)
 
 const canSave = computed(() => Boolean(tenant.value.tenant_id && tenant.value.name))
 
@@ -126,7 +130,7 @@ const close = () => {
 }
 
 const save = async () => {
-  await createTenantMetadata({ data: tenant.value })
+  await createTenantMetadata({ data: { ...tenant.value, access_rules: accessRulesToSave.value } })
   emit('close')
 }
 </script>
