@@ -119,6 +119,40 @@ async def test_provision_passes_lcdm_tenant_id_through_on_update(monkeypatch: py
 
 
 @pytest.mark.asyncio
+async def test_provision_new_tenant_seeds_default_ceiling_when_none_given(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A brand-new tenant with no access rules gets a usable default ceiling (not an empty, locked one)."""
+    _stub_metadata_lookups(monkeypatch)  # not existing
+    monkeypatch.setattr(KeycloakAdminService, "create_tenant_group", AsyncMock(return_value=None))
+    monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
+    monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
+
+    create_mock = MagicMock(return_value=_fake_entity())
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
+    monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", MagicMock())
+
+    await TenantAdminService.provision_tenant(_make_request())  # access_rules=[]
+
+    assert create_mock.call_args.kwargs["access_rules"] == ["aihub.admin.>"]
+
+
+@pytest.mark.asyncio
+async def test_provision_existing_tenant_empty_rules_preserves_ceiling(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Re-syncing with no rules must NOT wipe a ceiling an admin customized — pass None (unchanged)."""
+    _stub_metadata_lookups(monkeypatch, by_id=MagicMock(id="my-tenant"), by_name=MagicMock(id="my-tenant"))
+    monkeypatch.setattr(KeycloakAdminService, "create_tenant_group", AsyncMock(return_value=None))
+    monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
+    monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
+
+    update_mock = MagicMock(return_value=_fake_entity())
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", MagicMock())
+    monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", update_mock)
+
+    await TenantAdminService.provision_tenant(_make_request())  # access_rules=[]
+
+    assert update_mock.call_args.kwargs["access_rules"] is None
+
+
+@pytest.mark.asyncio
 async def test_provision_rejects_name_taken_by_other_tenant_before_side_effects(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

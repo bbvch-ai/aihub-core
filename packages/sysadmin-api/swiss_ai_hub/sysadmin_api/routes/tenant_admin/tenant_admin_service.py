@@ -13,6 +13,12 @@ from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.update_tenant_metadata_re
 
 _TENANT_NOT_FOUND = "Tenant not found."
 
+# A freshly provisioned tenant with an empty ceiling can use no service at all (the access-checker
+# takes MIN(tenant ceiling, user rules), so an empty ceiling denies everything — even for admins).
+# An external syncer (e.g. the LCDM Hub) pushes tenants with no rules, so seed a sensible default on
+# creation to make them usable out of the box. Admins can narrow it afterwards.
+_DEFAULT_PROVISION_ACCESS_RULES = ["aihub.admin.>"]
+
 
 class TenantAdminService:
     """Handles tenant CRUD operations for system administrators.
@@ -137,19 +143,23 @@ class TenantAdminService:
 
         normalized_rules = [AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules]
         if TenantMetadataEntity.get_metadata_by_tenant_id(data.tenant_id):
+            # Update: an empty rule set means "unchanged" (None) so a re-sync from an external source
+            # that always sends [] never wipes a ceiling an admin has since customized.
             entity = TenantMetadataEntity.update_tenant_metadata(
                 tenant_id=data.tenant_id,
                 name=data.name,
                 description=data.description,
-                access_rules=normalized_rules,
+                access_rules=normalized_rules or None,
                 lcdm_tenant_id=data.lcdm_tenant_id,
             )
         else:
+            # Create: seed a usable default ceiling when the caller sends none, so an externally
+            # synced tenant is not born locked out of every service.
             entity = TenantMetadataEntity.create_tenant_metadata(
                 tenant_id=data.tenant_id,
                 name=data.name,
                 description=data.description,
-                access_rules=normalized_rules,
+                access_rules=normalized_rules or _DEFAULT_PROVISION_ACCESS_RULES,
                 lcdm_tenant_id=data.lcdm_tenant_id,
             )
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
