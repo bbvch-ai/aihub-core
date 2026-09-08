@@ -563,9 +563,10 @@ knowledge:
     database_name:
       label: Datenbankname
       placeholder: meinewissensdatenbank
-      help: Nur alphanumerische Zeichen sind erlaubt. Der Name kann später nicht geändert
-        werden.
-      validation_error: Der Datenbankname darf nur alphanumerische Zeichen enthalten
+      help: Nur Kleinbuchstaben und Ziffern sind erlaubt, beginnend mit einem Buchstaben,
+        3 bis 63 Zeichen. Der Name kann später nicht geändert werden.
+      validation_error: Der Datenbankname muss mit einem Kleinbuchstaben beginnen
+        und darf nur Kleinbuchstaben und Ziffern enthalten, zwischen 3 und 63 Zeichen
     ingestor:
       label: Ingestion-Pipeline
       placeholder: Ingestion-Pipeline auswählen

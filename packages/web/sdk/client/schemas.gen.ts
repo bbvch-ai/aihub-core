@@ -992,6 +992,12 @@ export const AgentInTheLoopExceptionEventSchema = {
       description:
         "The exception event from the delegated agent containing error details and failure context.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -1012,7 +1018,12 @@ export const AgentInTheLoopExceptionEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["exception_event", "_event_name", "_parent_event_names"],
+  required: [
+    "exception_event",
+    "request_event_id",
+    "_event_name",
+    "_parent_event_names",
+  ],
   title: "AgentInTheLoopExceptionEvent",
   description:
     "An error response from an agent when a delegated task fails.\n\n### Why AgentInTheLoopExceptionEvent?\nWhen an agent encounters an error during a delegated task, this event:\n- Signals workflow disruption (since it's a `ControlEvent`), allowing error handling in the original agent\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring and debugging of agent failures\n- Provides a dedicated error channel separate from successful responses",
@@ -1096,8 +1107,21 @@ export const AgentInTheLoopRequestEventSchema = {
       type: "boolean",
       title: "Share Run Id",
       description:
-        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
+        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
       default: false,
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
     },
     _event_name: {
       type: "string",
@@ -1169,6 +1193,12 @@ export const AgentInTheLoopResponseEventSchema = {
       description:
         "The stop event from the delegated agent containing the task results and marks the completion.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -1189,7 +1219,12 @@ export const AgentInTheLoopResponseEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["stop_event", "_event_name", "_parent_event_names"],
+  required: [
+    "stop_event",
+    "request_event_id",
+    "_event_name",
+    "_parent_event_names",
+  ],
   title: "AgentInTheLoopResponseEvent",
   description:
     "A response from an agent after completing a delegated task.\n\n### Why AgentInTheLoopResponseEvent?\nWhen an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:\n- Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions",
@@ -1476,6 +1511,19 @@ export const AgentSelectorSchema = {
       description:
         "Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.",
     },
+    agentClass: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentclass",
+      description:
+        "Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.",
+    },
     classPlaceholder: {
       anyOf: [
         {
@@ -1515,6 +1563,8 @@ export const AgentSelectorSchema = {
     validation: {
       type: "string",
       title: "Validation",
+      description:
+        "Emits `agentRefRequired` where other elements emit FormKit's `required`.\n\nFormKit's `required` rule only asks whether a value is present, and this element's value is\nalways an `{agent_class, agent_id}` object. Picking a class alone emits a non-empty object with\na blank `agent_id`, which passes `required` and then delegates to a NATS wildcard at runtime.\n`agentRefRequired` (registered in the frontend FormKit config) looks at both halves.",
       readOnly: true,
     },
   },
@@ -1523,7 +1573,7 @@ export const AgentSelectorSchema = {
   required: ["label", "validation"],
   title: "AgentSelector",
   description:
-    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
+    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Pinning to One Agent Class\n\nWhen `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only\nthat class\'s profiles. `start_event` is redundant then — the class is already decided — so set one or the other.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
 } as const;
 
 export const AgentSuitabilityAcceptEventSchema = {
@@ -6547,7 +6597,7 @@ export const DatabaseDTOSchema = {
       type: "boolean",
       title: "Deletable",
       description:
-        "Whether the whole database may be deleted; false for auto-synced and legacy default_rag/shared_rag databases. Namespaces inside a non-deletable database can still be deleted.",
+        "Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.",
     },
     ingestor: {
       type: "string",
@@ -18623,8 +18673,16 @@ export const RAGStartEventSchema = {
       default: "de",
     },
     user: {
-      $ref: "#/components/schemas/UserIdentity",
-      description: "User on whose behalf the RAG run is executed.",
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.",
     },
     messages: {
       items: {
@@ -18705,12 +18763,7 @@ export const RAGStartEventSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: [
-    "user",
-    "selected_namespaces",
-    "_event_name",
-    "_parent_event_names",
-  ],
+  required: ["selected_namespaces", "_event_name", "_parent_event_names"],
   title: "RAGStartEvent",
   description:
     "Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.",
@@ -25655,10 +25708,16 @@ export const AgentInTheLoopExceptionEventWritableSchema = {
       description:
         "The exception event from the delegated agent containing error details and failure context.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.",
+    },
   },
   additionalProperties: true,
   type: "object",
-  required: ["exception_event"],
+  required: ["exception_event", "request_event_id"],
   title: "AgentInTheLoopExceptionEvent",
   description:
     "An error response from an agent when a delegated task fails.\n\n### Why AgentInTheLoopExceptionEvent?\nWhen an agent encounters an error during a delegated task, this event:\n- Signals workflow disruption (since it's a `ControlEvent`), allowing error handling in the original agent\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring and debugging of agent failures\n- Provides a dedicated error channel separate from successful responses",
@@ -25742,8 +25801,21 @@ export const AgentInTheLoopRequestEventWritableSchema = {
       type: "boolean",
       title: "Share Run Id",
       description:
-        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!",
+        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
       default: false,
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
     },
   },
   additionalProperties: true,
@@ -25793,10 +25865,16 @@ export const AgentInTheLoopResponseEventWritableSchema = {
       description:
         "The stop event from the delegated agent containing the task results and marks the completion.",
     },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description:
+        "`event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.",
+    },
   },
   additionalProperties: true,
   type: "object",
-  required: ["stop_event"],
+  required: ["stop_event", "request_event_id"],
   title: "AgentInTheLoopResponseEvent",
   description:
     "A response from an agent after completing a delegated task.\n\n### Why AgentInTheLoopResponseEvent?\nWhen an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:\n- Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions",
@@ -26022,6 +26100,19 @@ export const AgentSelectorWritableSchema = {
       description:
         "Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.",
     },
+    agentClass: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentclass",
+      description:
+        "Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.",
+    },
     classPlaceholder: {
       anyOf: [
         {
@@ -26064,7 +26155,7 @@ export const AgentSelectorWritableSchema = {
   required: ["label"],
   title: "AgentSelector",
   description:
-    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
+    'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Pinning to One Agent Class\n\nWhen `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only\nthat class\'s profiles. `start_event` is redundant then — the class is already decided — so set one or the other.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```',
 } as const;
 
 export const AgentSuitabilityAcceptEventWritableSchema = {
@@ -35003,8 +35094,16 @@ export const RAGStartEventWritableSchema = {
       default: "de",
     },
     user: {
-      $ref: "#/components/schemas/UserIdentity",
-      description: "User on whose behalf the RAG run is executed.",
+      anyOf: [
+        {
+          $ref: "#/components/schemas/UserIdentity",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.",
     },
     messages: {
       items: {
@@ -35068,7 +35167,7 @@ export const RAGStartEventWritableSchema = {
   },
   additionalProperties: true,
   type: "object",
-  required: ["user", "selected_namespaces"],
+  required: ["selected_namespaces"],
   title: "RAGStartEvent",
   description:
     "Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.",

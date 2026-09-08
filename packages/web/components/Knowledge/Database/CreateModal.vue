@@ -228,7 +228,9 @@ watch(visible, async (isVisible) => {
 
 const nameValidationError = computed(() => {
   if (!databaseName.value.trim()) return ''
-  if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(databaseName.value)) {
+
+  const namePattern = /^[a-z][a-z0-9]{2,62}$/
+  if (!namePattern.test(databaseName.value)) {
     return t('knowledge.form.database_name.validation_error')
   }
   return ''

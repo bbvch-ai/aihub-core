@@ -2095,8 +2095,12 @@ services:
       CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN};https://${DOMAIN}
 
       # --- Admin ---
-      ENABLE_ADMIN_EXPORT: true
+      # OpenWebUI admin is the AIHubSysAdmin realm role (OAUTH_ADMIN_ROLES below). Upstream lets that role
+      # read every user's files and export every user's chats across all tenants; both are scoped to the
+      # admin's own data by default here and can be opened up per deployment (issue #104).
+      ENABLE_ADMIN_EXPORT: ${OPENWEBUI_ENABLE_ADMIN_EXPORT}
       ENABLE_ADMIN_CHAT_ACCESS: false
+      BYPASS_ADMIN_ACCESS_CONTROL: ${OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL}
       SHOW_ADMIN_DETAILS: true
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
@@ -2565,6 +2569,7 @@ services:
       AIHUB_STARTUP_TENANT_NAME: ${AIHUB_STARTUP_TENANT_NAME}
       AIHUB_STARTUP_TENANT_DESCRIPTION: ${AIHUB_STARTUP_TENANT_DESCRIPTION}
       AIHUB_STARTUP_TENANT_ACCESS_RULES: ${AIHUB_STARTUP_TENANT_ACCESS_RULES}
+      AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS: ${AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS}
 
       # User signup roles — read by UserSignupSettings.
       AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES: ${AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES}
@@ -3675,6 +3680,7 @@ services:
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
