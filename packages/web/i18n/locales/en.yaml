@@ -549,8 +549,10 @@ knowledge:
     database_name:
       label: Database Name
       placeholder: myknowledgebase
-      help: Only alphanumeric characters are allowed. The name cannot be changed later.
-      validation_error: Database name can only contain alphanumeric characters
+      help: Only lowercase letters and digits are allowed, starting with a letter,
+        3 to 63 characters. The name cannot be changed later.
+      validation_error: The database name must start with a lowercase letter and contain
+        only lowercase letters and digits, between 3 and 63 characters
     ingestor:
       label: Ingestion Pipeline
       placeholder: Select an ingestion pipeline

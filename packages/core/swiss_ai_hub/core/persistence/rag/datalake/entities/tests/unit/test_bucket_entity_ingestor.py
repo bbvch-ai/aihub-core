@@ -105,3 +105,10 @@ class TestBucketNameValidation:
         bucket = BucketEntity.create_bucket(bucket_name="db001")
 
         assert bucket.bucket_name == "db001"
+
+    def test_still_adopts_a_mixed_case_name_the_platform_did_not_choose(self):
+        """Deployment config and pre-existing storage containers supply names nobody can rename, so the
+        row-level invariant must keep accepting them; only newly requested names are held to S3's rules."""
+        bucket = BucketEntity.create_bucket(bucket_name="SharePointDocs")
+
+        assert bucket.bucket_name == "SharePointDocs"

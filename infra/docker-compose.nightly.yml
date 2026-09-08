@@ -3343,7 +3343,7 @@ services:
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.319.0
+    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -3425,7 +3425,7 @@ services:
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:v0.319.0
+    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
