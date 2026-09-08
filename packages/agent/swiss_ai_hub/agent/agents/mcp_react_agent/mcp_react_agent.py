@@ -13,6 +13,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.generative_ai import limit_chat_history
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
+from swiss_ai_hub.core.persistence import TenantMetadataEntity
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config import McpReactAgentConfig
@@ -32,6 +33,38 @@ TOOL_SCHEMAS_KEY = "mcp_tool_schemas"
 CONVERSATION_KEY = "conversation"
 TOTAL_TOOL_CALLS_KEY = "total_tool_calls"
 NEW_TOOL_CALLS_KEY = "new_tool_calls"
+TENANT_HEADER_VALUE_KEY = "mcp_tenant_header_value"
+
+
+async def _apply_tenant_header(
+    mcp_config: McpClientConfig,
+    run_context: RunContext,
+    user: UserIdentity | None,
+) -> McpClientConfig:
+    """Inject the acting tenant's originating id under ``forward_tenant_id_header`` when configured.
+
+    One agent profile can then serve every tenant, each MCP call scoped to its own external tenant.
+    The value is resolved from the user's acting tenant on the entry step (which carries the user)
+    and cached in the run context, so later tool-execution steps — whose trigger events have no user —
+    reuse the same tenant. No-op when the header is not configured or the tenant has no originating id.
+    """
+    header_name = mcp_config.forward_tenant_id_header
+    if not header_name:
+        return mcp_config
+
+    tenant_id_value: str | None = await run_context.get(TENANT_HEADER_VALUE_KEY, None)
+    if tenant_id_value is None and user is not None and user.acting_within_tenant is not None:
+        entity = TenantMetadataEntity.get_metadata_by_tenant_id(user.acting_within_tenant.id)
+        if entity is not None and entity.lcdm_tenant_id is not None:
+            tenant_id_value = str(entity.lcdm_tenant_id)
+            await run_context.set(TENANT_HEADER_VALUE_KEY, tenant_id_value)
+
+    if tenant_id_value is None:
+        return mcp_config
+
+    merged_headers = dict(mcp_config.headers or {})
+    merged_headers[header_name] = tenant_id_value
+    return mcp_config.model_copy(update={"headers": merged_headers})
 
 
 @precondition()
@@ -70,8 +103,10 @@ class McpReactAgent(Agent):
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         run_context: RunContext,
+        user: UserIdentity | None = None,
     ) -> McpReasoningEvent:
         """Discover MCP tools and resources, seed conversation with system prompt, trigger first reasoning iteration."""
+        mcp_config = await _apply_tenant_header(mcp_config, run_context, user)
         user_token = await McpAuthResolver.resolve_user_token(run_context)
         async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             tools = await mcp_client.list_tools()
@@ -190,6 +225,7 @@ class McpReactAgent(Agent):
         new_tool_events = tool_events[-new_count:]
 
         tool_messages: list[Message] = []
+        mcp_config = await _apply_tenant_header(mcp_config, run_context, None)
         user_token = await McpAuthResolver.resolve_user_token(run_context)
         async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             for tool_event in new_tool_events:

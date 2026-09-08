@@ -21,3 +21,8 @@ config:
   timeout:
     label: Timeout (secondi)
     help: Tempo massimo di attesa per una risposta dal server MCP.
+  forward_tenant_id_header:
+    label: Intestazione ID tenant da inoltrare
+    help: Opzionale. Se impostato, l'ID di origine del tenant attivo viene inviato a ogni richiesta MCP
+      con questo nome di intestazione, così un profilo serve tutti i tenant (ciascuno isolato).
+      Lasciare vuoto per disattivare. Esempio - X-LCDM-Tenant.

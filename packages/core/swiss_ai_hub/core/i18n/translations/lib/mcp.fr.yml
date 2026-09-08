@@ -21,3 +21,8 @@ config:
   timeout:
     label: Délai d'attente (secondes)
     help: Temps maximum d'attente pour une réponse du serveur MCP.
+  forward_tenant_id_header:
+    label: En-tête d'ID de mandant à transmettre
+    help: Optionnel. Si défini, l'ID d'origine du mandant actif est envoyé à chaque requête MCP
+      sous ce nom d'en-tête, de sorte qu'un seul profil serve tous les mandants (chacun isolé).
+      Laisser vide pour désactiver. Exemple - X-LCDM-Tenant.

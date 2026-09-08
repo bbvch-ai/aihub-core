@@ -34,6 +34,17 @@ class McpClientConfig(StepConfig):
         dict[str, str] | None,
         Field(default=None, description="Additional HTTP headers for the connection."),
     ]
+    forward_tenant_id_header: Annotated[
+        str | InputText | None,
+        Field(
+            default=None,
+            description=(
+                "If set, the acting tenant's originating id (TenantMetadataEntity.lcdm_tenant_id) is sent "
+                "on every MCP request under this header name — so one agent profile serves all tenants, each "
+                "scoped to its own external tenant. Leave empty to disable. Example: 'X-LCDM-Tenant'."
+            ),
+        ),
+    ]
     timeout: Annotated[
         float | InputNumber,
         Field(default=30.0, description="Client timeout in seconds."),
@@ -83,5 +94,9 @@ class McpClientConfig(StepConfig):
                 min=1,
                 max=300,
                 step=1,
+            ),
+            forward_tenant_id_header=InputText(
+                label=LocaleString.from_i18n_path("lib.mcp.config.forward_tenant_id_header.label"),
+                help=LocaleString.from_i18n_path("lib.mcp.config.forward_tenant_id_header.help"),
             ),
         )

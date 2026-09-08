@@ -20,3 +20,8 @@ config:
   timeout:
     label: Timeout (seconds)
     help: Maximum time to wait for a response from the MCP server.
+  forward_tenant_id_header:
+    label: Forward tenant id header
+    help: Optional. If set, the acting tenant's originating id is sent on every MCP request
+      under this header name, so one profile serves all tenants (each scoped to its own tenant).
+      Leave empty to disable. Example - X-LCDM-Tenant.
