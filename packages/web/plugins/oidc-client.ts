@@ -12,7 +12,7 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     client_id: config.public.oidc.clientId,
     redirect_uri: `${globalThis.location.origin}/${$i18n.locale.value}/auth/callback`,
     silent_redirect_uri: `${globalThis.location.origin}/${$i18n.locale.value}/auth/renew`,
-    post_logout_redirect_uri: globalThis.location.origin,
+    post_logout_redirect_uri: `${globalThis.location.origin}/${$i18n.locale.value}/auth/login`,
     response_type: 'code',
     scope: 'openid profile email',
     filterProtocolClaims: true,
