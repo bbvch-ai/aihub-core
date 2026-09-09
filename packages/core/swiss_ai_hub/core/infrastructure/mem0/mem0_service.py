@@ -19,11 +19,14 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 
 logger = logging.getLogger(__name__)
 
-# Duplicated from generative_ai.document.parsers.markdown_structural_node_parser (importing would drag the
-# whole parser module in for two ints). The 0.85 absorbs the tokenizer mismatch: LiteLLM's token counter
-# reports tiktoken counts for bge-m3, not its real XLM-R tokenizer.
 DEFAULT_EMBEDDING_MAX_INPUT_TOKENS = 8192
-EMBEDDING_BUDGET_SAFETY_FACTOR = 0.85
+
+# We can only count tiktoken tokens locally, but the budget is spent in the embedder's own tokenizer, and
+# tiktoken undercounts. Measured against a live bge-m3: English 1.60x (8101 -> 12963), French 1.00x, German
+# and Chinese below 1. The factor has to cover the worst case, so it is set to tolerate a 2x undercount —
+# 0.85, as used for chunking in markdown_structural_node_parser, lets an English query through at ~1.9x its
+# real budget. Raising it needs the same measurement against whatever model the deployment runs.
+EMBEDDING_BUDGET_SAFETY_FACTOR = 0.5
 
 # Smallest window we assume any deployed embedder accepts. Only used to decide when a query is short enough
 # to skip resolving the real window, so it must never exceed a configured model's actual window.
