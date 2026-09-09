@@ -1,0 +1,7 @@
+---
+manual_upload:
+  display_name: Manual upload
+  description: Documents are uploaded by hand through the knowledge views; nothing synchronises them.
+rclone:
+  display_name: Cloud storage sync (rclone)
+  description: Keeps the database in sync with a SharePoint site, OneDrive, Google Drive, S3 bucket, Azure Blob container or SFTP server. Each top-level folder becomes a namespace.

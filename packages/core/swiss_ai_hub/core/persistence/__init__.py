@@ -42,6 +42,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_entity import IngestorEntity
     from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
     from swiss_ai_hub.core.persistence.rag.datalake.entities.namespace_entity import NamespaceEntity
+    from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline import SourcePipeline
+    from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_entity import SourcePipelineEntity
+    from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_type import SourcePipelineType
     from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
     from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
     from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
@@ -118,6 +121,9 @@ __all__ = [
     "Ingestor",
     "IngestorEntity",
     "IngestorType",
+    "SourcePipeline",
+    "SourcePipelineEntity",
+    "SourcePipelineType",
     "INSERTED_AT",
     "IS_INGESTED",
     "LANGUAGE",
@@ -193,6 +199,9 @@ _LAZY_IMPORTS = {
     "Ingestor": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor",
     "IngestorEntity": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_entity",
     "IngestorType": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type",
+    "SourcePipeline": "swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline",
+    "SourcePipelineEntity": "swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_entity",
+    "SourcePipelineType": "swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_type",
     "INSERTED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "IS_INGESTED": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "LANGUAGE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

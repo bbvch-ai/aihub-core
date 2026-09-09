@@ -1,0 +1,7 @@
+---
+manual_upload:
+  display_name: Téléversement manuel
+  description: Les documents sont téléversés à la main via les vues de connaissances ; rien ne les synchronise.
+rclone:
+  display_name: Synchronisation de stockage cloud (rclone)
+  description: Maintient la base synchronisée avec un site SharePoint, OneDrive, Google Drive, un bucket S3, un conteneur Azure Blob ou un serveur SFTP. Chaque dossier de premier niveau devient un espace de noms.

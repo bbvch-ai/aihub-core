@@ -8,10 +8,8 @@ from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import DoesNotExist, NotUniqueError, ValidationError
 from nats.aio.client import Client as NATS
-from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
-from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
 from swiss_ai_hub.core.form import FormkitElement, Group, ModelSelect, Repeater
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
@@ -41,13 +39,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     TYPE,
     NodeTypeValue,
 )
-from swiss_ai_hub.core.publishers import JSPublisher
-from swiss_ai_hub.core.topic_managers import (
-    PipelineInstanceTopicManager,
-    PipelineSourceType,
-    PipelineTargetType,
-    PipelineTypeTopicManager,
-)
+from swiss_ai_hub.core.publishers import SourceUpdatedPublisher
 
 from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import (
     BatchDeleteDocumentsResponse,
@@ -668,60 +660,6 @@ class KnowledgeService:
         )
 
     @staticmethod
-    @trace_fn
-    async def _publish_source_updated_event(
-        nc: Annotated[NATS, Field(description="NATS client connection")],
-        database: Annotated[str, Field(description="Target knowledge database name")],
-        container: Annotated[str, Field(description="Container/bucket name")],
-        file_path: Annotated[str, Field(description="Path to the uploaded file")],
-    ) -> None:
-        """
-        Publishes a SourceUpdatedEvent to NATS after a source file is added or removed.
-
-        The Dagster observe job reacts by scanning the data lake, so the same event drives
-        both ingestion (file uploaded) and cleanup (file deleted, picked up as an orphan).
-
-        The subject is keyed on the owning ingestor rather than on the bucket, so a pipeline needs one
-        JetStream stream and one consumer however many databases it serves. Frozen legacy pipelines
-        keep the old per-instance subject: their images can no longer be changed to read a new one.
-        """
-        bucket = BucketEntity.get_bucket_by_db_name(database)
-
-        if KnowledgeService._is_legacy_bucket(bucket):
-            topic_manager = PipelineInstanceTopicManager(
-                source_type=PipelineSourceType.DATALAKE,
-                source_id=container,
-                target_type=PipelineTargetType.KNOWLEDGE,
-                target_id=database,
-            )
-            stream_name, stream_subject = topic_manager.get_stream()
-            subject_for = topic_manager.get_subject_for_specific_event_in_pipeline_instance
-        else:
-            type_topic_manager = PipelineTypeTopicManager(pipeline_type=bucket.ingestor)
-            stream_name, stream_subject = type_topic_manager.get_stream()
-
-            def subject_for(run_key: str, event_name: str, event_id: str) -> str:
-                return type_topic_manager.get_subject_for_source_updated(
-                    bucket_name=container,
-                    db_name=database,
-                    run_key=run_key,
-                    event_name=event_name,
-                    event_id=event_id,
-                )
-
-        event = SourceUpdatedEvent(path=file_path)
-        subject = subject_for(run_key=event.event_id, event_name=event.event_name, event_id=event.event_id)
-
-        # JetStream, and the stream ensured first: an upload that lands before the sensor's first tick
-        # created the stream would otherwise be dropped, leaving the document pending until the next
-        # scheduled observation.
-        publisher = JSPublisher(name="KnowledgeService", js=nc.jetstream())
-        await publisher.ensure_stream_exists(stream_name, stream_subject)
-        await publisher.publish_event(event, subject)
-
-        logger.info(f"Published SourceUpdatedEvent for file {file_path} to subject {subject}")
-
-    @staticmethod
     async def validate_document_upload(
         nc: NATS,
         database: str,
@@ -766,12 +704,7 @@ class KnowledgeService:
 
             # Publish event to trigger pipeline - this must succeed or upload fails
             try:
-                await KnowledgeService._publish_source_updated_event(
-                    nc=nc,
-                    database=database,
-                    container=container,
-                    file_path=object_key,
-                )
+                await SourceUpdatedPublisher.publish(nc, bucket_entity, object_key)
             except Exception as e:
                 logger.exception(f"Failed to publish event for {object_key}: {e}")
                 raise HTTPException(
@@ -839,10 +772,8 @@ class KnowledgeService:
             raise HTTPException(status_code=404, detail="Document not found")
 
         source = ref_doc.data.metadata.source
-        container, file_path = KnowledgeService._delete_source_from_data_lake(s3_service, source)
-        await KnowledgeService._publish_source_updated_event(
-            nc=nc, database=db, container=container, file_path=file_path
-        )
+        _, file_path = KnowledgeService._delete_source_from_data_lake(s3_service, source)
+        await SourceUpdatedPublisher.publish(nc, BucketEntity.get_bucket_by_db_name(db), file_path)
 
     @staticmethod
     def _delete_source_from_data_lake(s3_service: S3AnonymousFileAccessService, source: str) -> tuple[str, str]:

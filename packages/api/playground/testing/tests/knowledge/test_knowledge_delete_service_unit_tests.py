@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -34,7 +34,8 @@ def s3_service():
 def delete_mocks():
     with (
         patch.object(KnowledgeService, "_ensure_db_exists"),
-        patch.object(KnowledgeService, "_publish_source_updated_event", new_callable=AsyncMock) as publish_event,
+        patch(f"{_SERVICE_MODULE}.SourceUpdatedPublisher.publish", new_callable=AsyncMock) as publish_event,
+        patch(f"{_SERVICE_MODULE}.BucketEntity"),
         patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
     ):
         ref_doc_cls.by_id_and_namespace.return_value = _mock_ref_doc()
@@ -49,9 +50,7 @@ class TestDeleteDocument:
         await KnowledgeService.delete_document(nc, DB, NAMESPACE, DOCUMENT_ID, s3_service)
 
         s3_service.delete_file.assert_called_once_with(container="my-bucket", file_path=f"{NAMESPACE}/report.pdf")
-        publish_event.assert_awaited_once_with(
-            nc=nc, database=DB, container="my-bucket", file_path=f"{NAMESPACE}/report.pdf"
-        )
+        publish_event.assert_awaited_once_with(nc, ANY, f"{NAMESPACE}/report.pdf")
 
     @pytest.mark.asyncio
     async def test_unknown_document_raises_404(self, delete_mocks, nc, s3_service):
@@ -80,7 +79,7 @@ class TestDeleteDocument:
         _, publish_event = delete_mocks
         order: list[str] = []
         s3_service.delete_file.side_effect = lambda **_: order.append("s3")
-        publish_event.side_effect = lambda **_: order.append("event")
+        publish_event.side_effect = lambda *_: order.append("event")
 
         await KnowledgeService.delete_document(nc, DB, NAMESPACE, DOCUMENT_ID, s3_service)
 

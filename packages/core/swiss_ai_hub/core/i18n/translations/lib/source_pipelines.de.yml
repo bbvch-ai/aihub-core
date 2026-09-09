@@ -1,0 +1,7 @@
+---
+manual_upload:
+  display_name: Manueller Upload
+  description: Dokumente werden von Hand über die Wissensansichten hochgeladen; nichts synchronisiert sie.
+rclone:
+  display_name: Cloud-Speicher-Synchronisation (rclone)
+  description: Hält die Datenbank mit einer SharePoint-Site, OneDrive, Google Drive, einem S3-Bucket, Azure-Blob-Container oder SFTP-Server synchron. Jeder Ordner der obersten Ebene wird zu einem Namespace.

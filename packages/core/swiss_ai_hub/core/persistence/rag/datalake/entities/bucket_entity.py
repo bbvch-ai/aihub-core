@@ -38,6 +38,12 @@ class BucketEntity(Document):
     # against its schema by the API. The pipeline reads it per run; a key it does not find falls back to the
     # deployment default, which is what rows created before a knob existed keep using.
     configuration = DictField(default=dict)
+    # Which deployed source pipeline fills this database's data lake; None means manual upload. The second
+    # axis next to ``ingestor``: the ingestor says how files are processed, the source says where they come from.
+    source = StringField(required=False, default=None)
+    # The source pipeline's own settings for this database, shaped by the form it announced. Secret fields
+    # are stored encrypted by the API; the pipeline decrypts them per run.
+    source_configuration = DictField(default=dict)
     # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
     deleting = BooleanField(default=False)
 
@@ -73,6 +79,8 @@ class BucketEntity(Document):
         datalake_type: str = "s3",
         ingestor: str = IngestorType.UNASSIGNED.value,
         configuration: dict | None = None,
+        source: str | None = None,
+        source_configuration: dict | None = None,
         db_alias: str = "default",
     ) -> Self:
         cls._validate_name(bucket_name, "bucket_name")
@@ -89,6 +97,8 @@ class BucketEntity(Document):
                 datalake_type=datalake_type,
                 ingestor=ingestor,
                 configuration=configuration or {},
+                source=source,
+                source_configuration=source_configuration or {},
             )
             bucket.save()
             return bucket
@@ -112,6 +122,12 @@ class BucketEntity(Document):
     def get_all_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
         with switch_db(cls, db_alias) as SwitchedBucket:
             return SwitchedBucket.objects().order_by("bucket_name")
+
+    @classmethod
+    def get_buckets_by_source(cls, source: str, db_alias: str = "default") -> list["BucketEntity"]:
+        """Databases a source pipeline fills, excluding those being torn down — its runtime fan-out."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects(source=source, deleting=False).order_by("bucket_name")
 
     @classmethod
     def get_deleting_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
@@ -147,6 +163,22 @@ class BucketEntity(Document):
             bucket.datalake_type = datalake_type
         if ingestor is not None:
             bucket.ingestor = ingestor
+        bucket.save()
+        return bucket
+
+    @classmethod
+    def update_source(
+        cls,
+        bucket_name: str,
+        source: str | None,
+        source_configuration: dict | None,
+        db_alias: str = "default",
+    ) -> Self:
+        """Replaces the source axis wholesale: credentials rotate, patterns change, or the database goes back to
+        manual upload. Kept apart from ``update_bucket`` because the ingestor configuration is create-time only."""
+        bucket = cls.get_bucket_by_bucket_name(bucket_name, db_alias=db_alias)
+        bucket.source = source
+        bucket.source_configuration = source_configuration or {}
         bucket.save()
         return bucket
 

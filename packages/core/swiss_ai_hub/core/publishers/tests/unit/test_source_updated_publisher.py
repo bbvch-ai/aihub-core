@@ -1,11 +1,11 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from swiss_ai_hub.core.persistence.rag.datalake.entities import IngestorType
 
-from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
+from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
+from swiss_ai_hub.core.publishers.source_updated_publisher import SourceUpdatedPublisher
 
-_SERVICE_MODULE = "swiss_ai_hub.api.routes.knowledge.knowledge_service"
+_PUBLISHER_MODULE = "swiss_ai_hub.core.publishers.source_updated_publisher"
 
 DATABASE = "researchdocs"
 CONTAINER = "researchdocs"
@@ -19,16 +19,9 @@ def _bucket(ingestor: str) -> MagicMock:
 async def _publish(ingestor: str) -> tuple[str, str, str]:
     """Publishes one SourceUpdatedEvent and returns (stream_name, stream_subject, subject)."""
     publisher = MagicMock(ensure_stream_exists=AsyncMock(), publish_event=AsyncMock())
-    with (
-        patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-        patch(f"{_SERVICE_MODULE}.JSPublisher", return_value=publisher),
-    ):
-        bucket_cls.get_bucket_by_db_name.return_value = _bucket(ingestor)
-        await KnowledgeService._publish_source_updated_event(
-            nc=MagicMock(jetstream=MagicMock(return_value=MagicMock())),
-            database=DATABASE,
-            container=CONTAINER,
-            file_path=FILE_PATH,
+    with patch(f"{_PUBLISHER_MODULE}.JSPublisher", return_value=publisher):
+        await SourceUpdatedPublisher.publish(
+            MagicMock(jetstream=MagicMock(return_value=MagicMock())), _bucket(ingestor), FILE_PATH
         )
 
     stream_name, stream_subject = publisher.ensure_stream_exists.await_args.args
@@ -37,7 +30,7 @@ async def _publish(ingestor: str) -> tuple[str, str, str]:
 
 
 class TestLegacyBucketsKeepTheirPerInstanceSubject:
-    """The frozen images can never be rebuilt to read a new subject, so the API must keep speaking theirs."""
+    """The frozen images can never be rebuilt to read a new subject, so the platform must keep speaking theirs."""
 
     @pytest.mark.parametrize("ingestor", [IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value])
     @pytest.mark.asyncio
@@ -65,6 +58,14 @@ class TestSelfServiceBucketsUseTheTypeKeyedSubject:
         assert stream_name == "pipeline_acme_ocr_stream"
         assert stream_subject == "pipeline.acme_ocr.>"
 
+    @pytest.mark.asyncio
+    async def test_the_event_carries_the_object_key(self):
+        publisher = MagicMock(ensure_stream_exists=AsyncMock(), publish_event=AsyncMock())
+        with patch(f"{_PUBLISHER_MODULE}.JSPublisher", return_value=publisher):
+            await SourceUpdatedPublisher.publish(MagicMock(), _bucket("acme_ocr"), FILE_PATH)
+
+        assert publisher.publish_event.await_args.args[0].path == FILE_PATH
+
 
 class TestTheTwoPipelineFamiliesDoNotCollide:
     @pytest.mark.asyncio
@@ -74,9 +75,6 @@ class TestTheTwoPipelineFamiliesDoNotCollide:
         modern_name, modern_filter, _ = await _publish(IngestorType.DOCUMENT_INGESTION.value)
 
         assert legacy_name != modern_name
-        # The token after "pipeline." is what separates them: "datalake" for the legacy per-instance
-        # streams, the ingestor id for the type-keyed ones. IngestorEntity reserves "datalake" so a
-        # custom pipeline can never claim it and land inside a legacy stream's filter.
         assert legacy_filter.split(".")[1] == "datalake"
         assert modern_filter.split(".")[1] == "document_ingestion"
         assert not modern_filter.startswith("pipeline.datalake.")

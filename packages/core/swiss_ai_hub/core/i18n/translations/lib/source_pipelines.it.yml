@@ -1,0 +1,7 @@
+---
+manual_upload:
+  display_name: Caricamento manuale
+  description: I documenti vengono caricati a mano tramite le viste della conoscenza; nulla li sincronizza.
+rclone:
+  display_name: Sincronizzazione archivio cloud (rclone)
+  description: Mantiene la base sincronizzata con un sito SharePoint, OneDrive, Google Drive, un bucket S3, un contenitore Azure Blob o un server SFTP. Ogni cartella di primo livello diventa un namespace.
