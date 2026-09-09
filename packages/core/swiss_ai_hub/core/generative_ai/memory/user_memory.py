@@ -24,7 +24,7 @@ class UserMemory:
         self.mem0service = Mem0Service(
             self._config,
             t=self._t,
-            max_search_query_tokens=settings.SEARCH_QUERY_MAX_TOKENS,
+            max_search_query_tokens=settings.SEARCH_QUERY_EMBEDDING_WINDOW,
         )
 
     @property

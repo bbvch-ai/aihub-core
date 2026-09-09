@@ -20,11 +20,13 @@ class Mem0Settings(EnvironmentSettings):
     LLM_NAME: Annotated[str, Field(description="Name of the LLM to use")]
     EMBEDDING_MODEL_NAME: Annotated[str, Field(description="Name of the embedding model to use")]
     RERANKING_MODEL_NAME: Annotated[str, Field(description="Name of the embedding model to use")]
-    SEARCH_QUERY_MAX_TOKENS: Annotated[
+    SEARCH_QUERY_EMBEDDING_WINDOW: Annotated[
         int | None,
         Field(
-            description="Token budget for search queries before truncation. "
-            "None resolves the embedding model's max input tokens from LiteLLM at first use.",
+            description="Override for the embedding model's input window, in the model's own tokens. "
+            "Set it only when LiteLLM reports no or an incorrect max_input_tokens; None resolves it at "
+            "first use. Queries are truncated to half this value: they can only be counted with tiktoken, "
+            "which undercounts the embedder's tokenizer by up to 2x.",
             gt=0,
         ),
     ] = None

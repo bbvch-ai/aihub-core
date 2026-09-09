@@ -262,7 +262,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `LITE_LLM_PROXY_USER_RPM_LIMIT` | `LiteLLMProxySettings.USER_RPM_LIMIT` | `None` |  | Specify rpm limit for a given user (Requests per minute) |
 | `LITE_LLM_PROXY_USER_SOFT_BUDGET` | `LiteLLMProxySettings.USER_SOFT_BUDGET` | `None` |  | Get alerts when user crosses given budget, doesn't block requests. |
 | `LITE_LLM_PROXY_USER_TPM_LIMIT` | `LiteLLMProxySettings.USER_TPM_LIMIT` | `None` |  | Specify tpm limit for a given user (Tokens per minute) |
-| `MEM0_SEARCH_QUERY_MAX_TOKENS` | `Mem0Settings.SEARCH_QUERY_MAX_TOKENS` | `None` |  | Token budget for search queries before truncation. None resolves the embedding model's max input tokens from LiteLLM at first use. |
+| `MEM0_SEARCH_QUERY_EMBEDDING_WINDOW` | `Mem0Settings.SEARCH_QUERY_EMBEDDING_WINDOW` | `None` |  | Override for the embedding model's input window, in the model's own tokens. Set it only when LiteLLM reports no or an incorrect max_input_tokens; None resolves it at first use. Queries are truncated to half this value: they can only be counted with tiktoken, which undercounts the embedder's tokenizer by up to 2x. |
 | `MEM0_SUPPORT_VISION` | `Mem0Settings.SUPPORT_VISION` | `True` |  | Whether to support vision |
 | `MEM0_VISION_DETAIL` | `Mem0Settings.VISION_DETAIL` | `'auto'` |  | Vision details |
 | `MEMORY_DEFAULT_TENANT_ID` | `MemorySettings.DEFAULT_TENANT_ID` | `'AIHub'` |  | Default tenant ID for memory scoping |

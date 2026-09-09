@@ -63,7 +63,7 @@ class Mem0Service:
             .get("max_input_tokens")
             or DEFAULT_EMBEDDING_MAX_INPUT_TOKENS
         )
-        return int(window * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
+        return max(1, int(window * SEARCH_QUERY_BUDGET_SAFETY_FACTOR))
 
     @staticmethod
     def _longest_fitting_tail(query: str, limit: int, tokenizer: Callable[[str], list[int]]) -> str:

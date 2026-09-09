@@ -13,8 +13,8 @@ import pytest
 from llama_index.core.utils import get_tokenizer
 
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import (
-    SEARCH_QUERY_BUDGET_SAFETY_FACTOR,
     MINIMUM_EMBEDDING_MAX_INPUT_TOKENS,
+    SEARCH_QUERY_BUDGET_SAFETY_FACTOR,
     Mem0Service,
 )
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
@@ -195,10 +195,10 @@ def test_explicit_limit_never_resolves_model_info():
 
 def test_settings_field_defaults_to_none():
     settings = Mem0Settings(LLM_NAME="llm", EMBEDDING_MODEL_NAME="embed", RERANKING_MODEL_NAME="rerank")
-    assert settings.SEARCH_QUERY_MAX_TOKENS is None
+    assert settings.SEARCH_QUERY_EMBEDDING_WINDOW is None
 
 
 def test_settings_field_parses_from_env(monkeypatch):
-    monkeypatch.setenv("MEM0_SEARCH_QUERY_MAX_TOKENS", "4096")
+    monkeypatch.setenv("MEM0_SEARCH_QUERY_EMBEDDING_WINDOW", "4096")
     settings = Mem0Settings(LLM_NAME="llm", EMBEDDING_MODEL_NAME="embed", RERANKING_MODEL_NAME="rerank")
-    assert settings.SEARCH_QUERY_MAX_TOKENS == 4096
+    assert settings.SEARCH_QUERY_EMBEDDING_WINDOW == 4096
