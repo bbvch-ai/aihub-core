@@ -98,9 +98,9 @@ const tenant = ref<CreateTenantMetadataRequest>({
   description: '',
 })
 
-// Held on its own rather than behind a computed over `tenant.access_rules`: AccessRulesEditor adds rules
-// by mutating the array in place, which a computed setter never observes, so edits would be lost whenever
-// the backing field was undefined.
+// Held on its own rather than behind a computed over `tenant.access_rules`, which is absent until the
+// prefill lands: the seeding watch below and the omit-versus-empty decision at save both need a value that
+// exists before the tenant does.
 const accessRules = ref<string[]>([])
 
 // Seeded once, so the standard set is visible and editable before saving rather than applied invisibly

@@ -96,8 +96,8 @@
         :group="sub"
         :depth="depth + 1"
         :readonly="readonly"
-        @add="(rule) => emit('add', rule)"
-        @remove="(rule) => emit('remove', rule)"
+        @add="(rules) => emit('add', rules)"
+        @remove="(rules) => emit('remove', rules)"
       />
     </div>
   </div>
@@ -120,17 +120,16 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  add: [rule: string]
-  remove: [rule: string]
+  add: [rules: string[]]
+  remove: [rules: string[]]
 }>()
 
 // A row can need more than one rule: the grammar has no form covering a node and its subtree at once,
-// so a class-level row carries both. Emitting them one at a time keeps the parent's add/remove untouched,
-// and both are idempotent there, so topping up a half-granted resource cannot duplicate a rule.
+// so a class-level row carries both. They travel as one payload because the parent writes them through a
+// single `v-model`, which cannot absorb two writes in the same tick — the second would read a model value
+// the first had not yet updated and silently drop it.
 const onToggle = (cap: Capability, value: boolean) => {
   if (props.readonly || !cap.rule) return
-  for (const rule of [cap.rule, ...(cap.companion_rules ?? [])]) {
-    emit(value ? 'add' : 'remove', rule)
-  }
+  emit(value ? 'add' : 'remove', [cap.rule, ...(cap.companion_rules ?? [])])
 }
 </script>
