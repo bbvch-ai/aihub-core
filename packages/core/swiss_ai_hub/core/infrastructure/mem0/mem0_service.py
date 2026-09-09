@@ -63,28 +63,27 @@ class Mem0Service:
 
     def _clamp_query(self, query: str) -> str:
         """
-        A tiktoken token count never exceeds the character count, so a query at or under the floor in
-        characters provably fits — without resolving the (possibly remote) token limit. The floor must never
-        exceed the effective limit, so an unset budget falls back to the smallest window we support rather
-        than the default one: the real window is only known after resolution.
+        The cheap check counts tokens rather than characters: a character is not an upper bound on tokens
+        (a ZWJ emoji sequence costs 7). It compares against the smallest window we support so a query that
+        fits any model returns without resolving the real, possibly remote, limit.
         """
-        floor = int(
-            (self._max_search_query_tokens or MINIMUM_EMBEDDING_MAX_INPUT_TOKENS) * EMBEDDING_BUDGET_SAFETY_FACTOR
-        )
-        if len(query) <= floor:
-            return query
-        limit = self._effective_query_token_limit
         tokenizer = get_tokenizer()
         original_tokens = len(tokenizer(query))
+        resolution_free_budget = int(
+            (self._max_search_query_tokens or MINIMUM_EMBEDDING_MAX_INPUT_TOKENS) * EMBEDDING_BUDGET_SAFETY_FACTOR
+        )
+        if original_tokens <= resolution_free_budget:
+            return query
+        limit = self._effective_query_token_limit
         if original_tokens <= limit:
             return query
         splitter = SentenceSplitter(chunk_size=limit, chunk_overlap=0, tokenizer=tokenizer)
         chunks = splitter.split_text(query)
         # Keep the last chunk: chat clients inline documents before the user's question, so the tail is
-        # where the actual question lives. A query with no textual content yields no chunks at all (the
-        # splitter drops whitespace-only ones), so fall back to a character slice — provably within budget,
-        # since a tiktoken count never exceeds the character count.
-        clamped = chunks[-1] if chunks else query[-limit:]
+        # where the actual question lives. A query that strips to nothing yields no chunks at all — the
+        # splitter drops whitespace-only ones — and carries no signal to preserve, so it collapses to a
+        # single space rather than a slice whose token cost would again be unbounded.
+        clamped = chunks[-1] if chunks else " "
         logger.warning(
             "Search query exceeds the embedding budget, truncating: %d -> %d tokens (%d -> %d characters, limit %d)",
             original_tokens,

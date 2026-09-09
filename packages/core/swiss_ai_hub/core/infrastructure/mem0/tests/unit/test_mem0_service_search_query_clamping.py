@@ -73,11 +73,13 @@ async def test_oversized_query_without_whitespace_is_still_truncated(mem0_servic
     assert len(get_tokenizer()(forwarded)) <= EFFECTIVE_LIMIT
 
 
+@pytest.mark.parametrize("whitespace", [" \n\t", " ", "　"])
 @pytest.mark.asyncio
-async def test_oversized_whitespace_only_query_does_not_crash(mem0_service):
-    """Mixed whitespace does not compress under tiktoken, so it clears the budget check — but the splitter
-    drops whitespace-only chunks and returns none, which used to raise IndexError."""
-    query = " \n\t" * 4000
+async def test_oversized_whitespace_only_query_does_not_crash(mem0_service, whitespace):
+    """Exotic whitespace does not compress under tiktoken (an Ogham space mark costs 3 tokens), so it
+    clears the budget check — but the splitter drops whitespace-only chunks and returns none, which used
+    to raise IndexError on the tail lookup."""
+    query = whitespace * 4000
 
     await mem0_service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
@@ -112,12 +114,29 @@ async def test_normal_query_passes_through_identical(mem0_service, caplog):
 
 
 @pytest.mark.asyncio
-async def test_query_at_the_character_floor_passes_through_identical(mem0_service):
-    query = "a" * EFFECTIVE_LIMIT
+async def test_query_at_the_token_budget_passes_through_identical(mem0_service):
+    query = "word " * EFFECTIVE_LIMIT
+    while len(get_tokenizer()(query)) > EFFECTIVE_LIMIT:
+        query = query[:-5]
 
     await mem0_service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
+    assert len(get_tokenizer()(query)) == EFFECTIVE_LIMIT
     assert _forwarded_query(mem0_service) is query
+
+
+@pytest.mark.asyncio
+async def test_query_short_in_characters_but_over_budget_in_tokens_is_clamped(mem0_service):
+    """A character is not an upper bound on tokens: a ZWJ emoji sequence costs 7. A character-based
+    short-circuit let such a query reach the embedder at twice its budget."""
+    query = "\U0001f600" * (EFFECTIVE_LIMIT - 1)
+
+    await mem0_service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
+
+    forwarded = _forwarded_query(mem0_service)
+    assert len(query) < EFFECTIVE_LIMIT
+    assert len(get_tokenizer()(query)) > EFFECTIVE_LIMIT
+    assert len(get_tokenizer()(forwarded)) <= EFFECTIVE_LIMIT
 
 
 @pytest.mark.asyncio
@@ -139,9 +158,12 @@ async def test_query_under_the_default_window_is_clamped_to_a_smaller_resolved_w
 
 
 @pytest.mark.asyncio
-async def test_query_under_the_minimum_window_floor_skips_resolution():
+async def test_query_within_the_minimum_window_budget_skips_resolution():
     service = _build_service(max_search_query_tokens=None)
-    query = "a" * int(MINIMUM_EMBEDDING_MAX_INPUT_TOKENS * EMBEDDING_BUDGET_SAFETY_FACTOR)
+    budget = int(MINIMUM_EMBEDDING_MAX_INPUT_TOKENS * EMBEDDING_BUDGET_SAFETY_FACTOR)
+    query = "word " * budget
+    while len(get_tokenizer()(query)) > budget:
+        query = query[:-5]
 
     with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
         await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
