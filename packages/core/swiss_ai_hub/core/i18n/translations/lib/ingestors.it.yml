@@ -1,0 +1,34 @@
+---
+config:
+  name:
+    label: Nome
+    placeholder: La mia base di conoscenza
+  description:
+    label: Descrizione
+    placeholder: Descrivi cosa contiene questa base di conoscenza e a chi è destinata...
+document_ingestion:
+  display_name: Pipeline generica di ingestione documenti
+  description: Analizza i documenti caricati, li suddivide in segmenti e li vettorizza
+    per la ricerca semantica.
+  config:
+    llm_model:
+      label: Modello di testo
+      help: Scrive i riassunti, perfeziona le tabelle e descrive le figure.
+    embedding_model:
+      label: Modello di embedding
+      help: Vettorizza i segmenti di questa base. Non può essere modificato dopo la
+        creazione.
+    vision_model:
+      label: Modello di visione
+      help: Descrive figure e immagini. Lasciare vuoto per usare il modello di testo.
+    with_summary_nodes:
+      label: Genera riassunti
+      help: I riassunti gerarchici migliorano la ricerca nei documenti lunghi al costo
+        di chiamate aggiuntive al modello.
+    with_table_refinement:
+      label: Perfeziona le tabelle
+      help: Rileva la struttura delle tabelle e separa le tabelle unite con il modello
+        di testo.
+    with_figure_descriptions:
+      label: Descrivi le figure
+      help: Genera una descrizione testuale per ogni figura e immagine.

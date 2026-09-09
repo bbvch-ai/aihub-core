@@ -5,19 +5,13 @@ export const useCreateDatabase = defineMutation(() => {
   const { tenantId } = useTenant()
 
   return useMutation({
-    mutation: (request: CreateDatabaseRequest & { database: string, tenantId: string }) =>
+    mutation: (params: { database: string, tenantId: string, request: CreateDatabaseRequest }) =>
       createDatabase({
         composable: '$fetch',
-        body: {
-          display_name: request.display_name,
-          description: request.description,
-          ingestor: request.ingestor,
-          llm_model: request.llm_model,
-          embedding_model: request.embedding_model,
-        },
+        body: params.request,
         path: {
-          tenant_id: request.tenantId,
-          database: request.database,
+          tenant_id: params.tenantId,
+          database: params.database,
         },
       }),
     onSuccess: () => {

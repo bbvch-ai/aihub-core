@@ -47,7 +47,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── factory.py                     # default_automation_sensor (auto-materialization)
 │   │   ├── run_after_success_sensor.py    # Chain a job after another job's successful run
 │   │   ├── run_failure_notification_sensor.py # Apprise alerts on any failed run
-│   │   ├── ingestor_registration_sensor.py # Advertise a custom pipeline as a selectable ingestor
+│   │   ├── ingestor_registration_sensor.py # Announce this pipeline: labels + configuration form + schema
 │   │   ├── knowledge_teardown_sensor.py   # Run teardown for databases/folders flagged `deleting`
 │   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
 │   │   └── nats/
@@ -57,6 +57,8 @@ packages/pipeline/                        # SDK framework
 │   │       ├── observation_run_decider.py        # Pure request-or-wait decision
 │   │       ├── observation_run_history.py        # Run-tag lookups the cursor cannot hold
 │   │       └── per_bucket_observation_sensor_cursor.py  # One cursor slot, one state per database
+│   ├── ingestors/
+│   │   └── document_ingestion_config.py   # DocumentIngestionConfig: the announced per-database form (Form duality)
 │   ├── services/
 │   │   └── knowledge_teardown_service.py  # Destroys a database/namespace across every store
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
@@ -77,7 +79,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── partition_utils.py             # replace_partition_keys(), composite {bucket}|{uri} keys
 │   │   ├── run_routing.py                 # BUCKET_RUN_TAG, bucket_from_run_tag/_partition_key (CRITICAL)
 │   │   ├── store_builders.py              # build_vector_store/doc_store/s3_client for a bucket
-│   │   ├── model_builders.py              # Per-database LLM + embedding model and vector width
+│   │   ├── model_builders.py              # Per-database configuration: models, enrichment flags, vector width
 │   │   ├── bucket_utils.py                # get_db_name_from_bucket_name() — S3 bucket → MongoDB name
 │   │   ├── key_utils.py                   # group_name_from_asset_key() — asset group derivation
 │   │   └── meta_utils.py                  # data_lake_metadata_table() — Dagster UI formatting
@@ -142,13 +144,10 @@ compose service, or env var.
 ```python
 defs = document_ingestion_pipeline_definitions(
     ingestor="document_ingestion",                                    # routing key; namespaces every global Dagster name
-    display_name=LocaleString(en="My Pipeline"),       # required for a custom ingestor, omitted for the platform one
+    display_name=LocaleString(en="My Pipeline"),       # required for a custom ingestor, defaulted for the platform one
     description=LocaleString(en="What it does"),
-    embedding_model_name="embedding/large",            # LiteLLM model for embeddings
-    llm_model_name="text-generation/mini",             # LiteLLM model for text generation
-    with_summary_nodes=True,                           # Hierarchical RAG summaries
-    with_table_refinement=True,                        # LLM table detection/splitting
-    with_figure_descriptions=True,                     # Vision LLM for image descriptions
+    config=None,                                       # announced form; defaults to DocumentIngestionConfig.as_form(...)
+    settings=DocumentIngestionPipelineSettings(),       # per-database DEFAULTS + the observation schedule (see below)
     document_parser_loader_type=LoaderType.MINERU,     # MinerU (default) or DocumentIntelligence
     max_partitions=1000,                               # Max partitions added/deleted per tick
 )
@@ -158,12 +157,16 @@ Every deployment-global name — asset keys, the dynamic-partition registry, job
 is derived from `ingestor`, because asset keys are unique per Dagster deployment and partition-registry names are global
 to the instance. That is what lets a second pipeline *type* be deployed alongside this one.
 
-A custom ingestor must pass `display_name`/`description`: a sensor upserts them as an `IngestorEntity` so the API's
-`GET /knowledge/ingestors` can offer the pipeline in the create-database dialog. See
-[Making a Custom Pipeline Selectable](#making-a-custom-pipeline-selectable-in-the-ui) for the full mechanism.
+`settings` is a `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`, read from the environment when omitted)
+carrying the text, embedding and vision models, the three enrichment flags and the observation schedule. The models and
+enrichment flags are **deployment defaults**, not the graph's shape: they pre-fill the form the pipeline announces, and
+are what a database that stores no value of its own falls back to at run time. The asset graph is
+identical for every database (`summary_nodes` always exists, and table refinement and figure descriptions are always in
+the `documents` graph), and each enrichment op decides per run from the bucket's configuration whether it has work.
 
-The deployed app reads its knobs from `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`) rather than
-hardcoding them.
+Every pipeline built here registers itself: a sensor upserts an `IngestorEntity` carrying labels, form and schema, so
+the API's `GET /knowledge/ingestors` can offer it in the create-database dialog and validate what users submit. See
+[Making a Custom Pipeline Selectable](#making-a-custom-pipeline-selectable-in-the-ui) for the full mechanism.
 
 Source-specific definition builders for Stage 1 (combine with `document_ingestion_pipeline_definitions()` for
 end-to-end), in `util/definitions_util.py`:
@@ -174,48 +177,66 @@ end-to-end), in `util/definitions_util.py`:
 
 ## Making a Custom Pipeline Selectable in the UI
 
-A deployment can ship its own ingestion pipeline and have it appear in the create-database dialog alongside the
-platform's, without forking anything. This is the mechanism.
+A deployment can ship its own ingestion pipeline, have it appear in the create-database dialog alongside the platform's,
+and give its databases settings of its own, without forking anything. This is the ingestor counterpart of agent-class
+discovery.
 
-**Why a database and not a registry.** The API and the pipelines are separate containers. An in-process registry inside
-a pipeline can never be read by the API, and one inside the API would only ever list what happens to be installed in the
-*API* image — which is exactly the wrong authority, since whether an ingestor exists is decided by what is *deployed*,
-not by what is importable. Mongo is infrastructure both sides already share, so the pipeline writes its own metadata
-there and the API reads it.
+**Why a database and not a registry.** The API and the pipelines are separate containers. A registry inside a pipeline
+can never be read by the API, and one inside the API would list what happens to be installed in the *API* image, which
+is the wrong authority: whether an ingestor exists is decided by what is *deployed*. Mongo is infrastructure both sides
+already share, so the pipeline writes its own metadata there and the API reads it.
 
-**What you write.** Nothing but the three arguments:
+**Why not NATS discovery, the way agents do it.** Agent discovery is a broadcast with a short reply window, which tells
+the API that a class is alive right now. It needs that because it dispatches a chat request to an agent synchronously.
+Nothing dispatches to a pipeline synchronously, a code location has no always-on subscriber to answer a broadcast (only
+sensor ticks measured in tens of seconds), and agent discovery caches into Mongo anyway. The cost of this choice is that
+an ingestor never expires: a decommissioned pipeline keeps being offered until its row is deleted. See ADR
+`2026_09_04_ingestors_announce_their_configuration_form`.
+
+**What you write.** The labels, and optionally a config class of your own:
 
 ```python
 defs = document_ingestion_pipeline_definitions(
     ingestor="acme_ocr",                                  # your routing id, globally unique
     display_name=LocaleString(en="ACME OCR", de="ACME OCR"),
     description=LocaleString(en="OCR-heavy ingestion for scanned contracts"),
+    config=AcmeConfig.as_form(llm_model=..., embedding_model=...),   # optional; DocumentIngestionConfig otherwise
 )
 ```
 
-**What happens then.** `document_ingestion_pipeline_definitions` adds an `IngestorRegistrationSensorFor_{ingestor}`
-sensor to the returned `Definitions`. It ships `DefaultSensorStatus.RUNNING`, so it is live the moment the code location
-loads — nobody has to enable it in the Dagster UI. Every 300 s it upserts an `IngestorEntity` and returns a
-`SkipReason`; it never launches a run. The upsert is idempotent and last-writer-wins on the labels, so redeploying with
-a changed `display_name` updates it.
+**What is announced.** `Ingestor.from_config()` turns one form-mode config into the two surfaces the API needs: the
+elements to render and the JSON schema to validate against. Both come from the same object, so they cannot disagree.
+`IngestorConfig` in core is the base and owns the identity fields `name` and `description`, exactly as `AgentConfig`
+owns an agent's. `ingestors/document_ingestion_config.py` is the shipped subclass; extend it to add a setting and
+nothing in the API or the UI changes.
 
-Registration is a **sensor rather than an import-time write** on purpose: a momentary Mongo outage would otherwise take
-the whole code location down at load, and this way it simply re-registers on the next tick once the database is back.
+**What happens then.** The definitions factory adds an `IngestorRegistrationSensorFor_{ingestor}` sensor that ships
+`DefaultSensorStatus.RUNNING`, so it is live the moment the code location loads and nobody has to enable it in the
+Dagster UI. Every 300 s it upserts an `IngestorEntity` and returns a `SkipReason`; it never launches a run. The upsert
+is idempotent and last-writer-wins, so redeploying with a changed label or form updates the row. Form elements are
+stored without their `$`-aliases and the schema as a JSON string, the same way `AgentClassEntity` works around Mongo's
+key restrictions.
 
-**What the API does with it.** `GET /knowledge/ingestors` returns `IngestorType.selectable()` (the platform's own,
-localized from `api/i18n/translations/api/ingestors.*.yml`) **plus** `IngestorEntity.custom()` (yours, localized from
-the labels you passed — they travel on the row because a custom pipeline's translations live in the deployment, not in
-core). `create_database` then gates the submitted value on `IngestorEntity.is_selectable`. The `ingestor` field is a
-plain `str` across the API boundary, not the `IngestorType` enum, precisely so a deployment-defined value is
-representable on the wire.
+Registration is a **sensor rather than an import-time write** on purpose. A momentary Mongo outage would otherwise take
+the whole code location down at load; this way it re-registers on the next tick once the database is back.
 
-**Id rules.** `^[a-z][a-z0-9_]*$`, and it may not be a reserved id — `IngestorEntity.reserved_ids()` is every
-`IngestorType` value (`unassigned`, `document_ingestion`, and the frozen `default_rag` / `shared_rag`, which stay
-reserved after their code is gone so nothing can adopt a legacy corpus) plus every `PipelineSourceType` value
-(`datalake`, which would collide with the legacy per-instance streams in the subject grammar).
+**What the API does with it.** `GET /knowledge/ingestors` returns every announced row with labels and form localized.
+`create_database` looks the ingestor up, builds a validator from its announced schema, rejects a mismatch with a 400
+naming the offending field, walks the announced elements for authorization, and checks every announced model picker
+against LiteLLM (mode, tenant access, and a declared `output_vector_size` for embedding pickers). The identity fields
+land on the bucket row and everything else in `BucketEntity.configuration`. The `ingestor` field is a plain `str` across
+the API boundary, not the `IngestorType` enum, so a deployment-defined value is representable on the wire.
 
-**The id is not just a label.** Every deployment-global name is derived from it, because asset keys are unique per
-Dagster deployment and `DynamicPartitionsDefinition` names are global to the instance:
+**The shipped pipeline is not special.** `document_ingestion` registers through the same sensor, with labels from
+`lib.ingestors.document_ingestion.*`. The API has no built-in ingestor and offers nothing until a pipeline is running. A
+row that carries labels but no schema (an older pipeline image) is skipped rather than offered.
+
+**Id rules.** `^[a-z][a-z0-9_]*$`, and not a reserved id. `IngestorEntity.reserved_ids()` covers the inert and frozen
+routing tokens (`unassigned`, `default_rag`, `shared_rag`, reserved after their code is gone so nothing can adopt a
+legacy corpus) plus `datalake`, which would collide with the legacy per-instance streams in the subject grammar.
+
+**The id is not just a label.** Every deployment-global name derives from it, because asset keys are unique per Dagster
+deployment and `DynamicPartitionsDefinition` names are global to the instance:
 
 | Derived name             | Shape                                                                         |
 | ------------------------ | ----------------------------------------------------------------------------- |
@@ -226,40 +247,49 @@ Dagster deployment and `DynamicPartitionsDefinition` names are global to the ins
 | Dagster intermediates    | `s3://dagster/{ingestor}/`                                                    |
 
 That is what lets two pipeline *types* run side by side. It also means **changing the id later strands everything**:
-existing databases still carry the old value in `BucketEntity.ingestor` and would stop being claimed, and the old
-stream, partitions and asset history are orphaned. Choose it once.
+existing databases still carry the old value and stop being claimed, and the old stream, partitions and asset history
+are orphaned. Choose it once.
 
 **Failure modes, all at `Definitions`-build time (loud, not silent):**
 
 | Situation                                  | Result                                                  |
 | ------------------------------------------ | ------------------------------------------------------- |
-| Custom id, no `display_name`/`description` | `ValueError` — it could only render as a bare id        |
-| Reserved id (`datalake`)                   | `ValueError` — would collide in the subject grammar     |
-| A platform id (`document_ingestion`, …)    | No sensor added; the API already knows and localizes it |
+| Custom id, no `display_name`/`description` | `ValueError`, it could only render as a bare id         |
+| Reserved id (`datalake`, `default_rag`, …) | `ValueError`, it would collide or adopt a legacy corpus |
 
 If the pipeline never appears in the dialog, check in this order: the code location loaded, the sensor exists and is
-running in the Dagster UI, the `ingestors` collection has your row, and the API can reach the same Mongo.
+running in the Dagster UI, the `ingestors` collection has your row with a `config_specs` field, and the API can reach
+the same Mongo.
 
-## Per-Database Models
+## Per-Database Configuration
 
-Stage 2 serves many knowledge databases, so the models cannot be baked into a resource at build time any more than a
-store can. `util/model_builders.py` resolves them from the bucket, per run:
+Stage 2 serves many knowledge databases, so nothing about how a document is processed can be fixed at build time, any
+more than a store can. `util/model_builders.py` resolves it from the bucket, per run, and is the one place to look:
 
-- `llm_model_name_for_bucket` / `embedding_model_name_for_bucket` read `BucketEntity.llm_model` / `.embedding_model`,
-  falling back to the deployment default (`DocumentIngestionPipelineSettings`) when the row names none — which is what a
-  database created before models were configurable keeps using.
+- `ingestor_config_for_bucket(bucket, config_type=DocumentIngestionConfig)` merges what the database stored over the
+  deployment defaults (`DocumentIngestionPipelineSettings`) and returns the typed config. A key the row does not carry,
+  which is every key added after that database was created, falls back to the default, so old databases keep ingesting
+  unchanged. A custom pipeline passes its own subclass to read its extra settings typed.
+- `llm_model_name_for_bucket` / `embedding_model_name_for_bucket` / `vision_model_name_for_bucket` read the model slots
+  of that config. The vision model falls back to the text model.
 - `embedding_dimension_for_bucket` derives the collection's vector width from the embedding model's declared
-  `output_vector_size`. **Not** from a `MILVUS_DIMENSION` setting: a dimension configured independently of the model is
+  `output_vector_size`, **not** from a `MILVUS_DIMENSION` setting. A dimension configured independently of the model is
   not rejected by Milvus, it silently truncates or pads every vector. The API refuses an embedding model that declares
-  no `output_vector_size` for the same reason.
-- `build_embedding_model` / `build_language_model` are `@cache`d per bucket, so a partition-per-document graph reuses
-  one client.
+  no width for the same reason.
+- `build_embedding_model` / `build_language_model` / `build_vision_model` are `@cache`d per bucket, so a
+  partition-per-document graph reuses one client.
+- The enrichment ops read their switch from the same config and pass the document through, or return no nodes, when the
+  database opted out. The graph never changes shape per database.
 
-Both fields are set at create time and are not updatable — `update_bucket` exposes no parameter for either.
+`BucketEntity.carry_over_retired_model_columns()` moves the columns that predate this design into the configuration
+object. Both the API (at start) and the registration sensor (every tick) run it, so whichever side is upgraded first
+reconciles the rows before a run could read a database whose models had moved.
+
+The configuration is set at create time and is not updatable; `update_bucket` exposes no parameter for it.
 
 **Known gap:** retrieval still reads a per-agent `embed_model`, so a database ingested with one embedding model can be
 queried with another. The contract is enforced on the write path only. See ADR
-`2026_08_31_per_database_models_and_embedding_contract` and #1782.
+`2026_08_31_per_database_models_and_embedding_contract` and #1820.
 
 ## Asset Factory Pattern
 
@@ -353,13 +383,14 @@ assets.
 - `DocumentParserResource` — Selects parser by filetype. `LoaderType.MINERU` (default) or `DOCUMENT_INTELLIGENCE`.
   Fallbacks: `EpubReader`, `IPYNBReader`, `RawLoader`, `RTFReader`, `ImageLoader`.
 - `MarkdownStructuralNodeParserResource` — LlamaIndex MD structural parser for chunking.
-- `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG. Takes `llm_config` and caps
-  each prompt to the LLM's input limit, map-reducing over oversized rollups instead of sending them whole.
-- `TableRefinementResource` — LLM-powered table detection and structure splitting.
+- `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG. Takes the database's LLM and
+  its `LLMConfig` per call and caps each prompt to that model's input limit, map-reducing over oversized rollups instead
+  of sending them whole.
+- `TableRefinementResource` — LLM-powered table detection and structure splitting; the model arrives per call.
 
 **LLM/Embedding**: `EmbeddingModelResource` (wraps `EmbeddingModelConfig`), `LanguageModelResource` (wraps `LLMConfig`).
 Both use LiteLLM model names and bind one model at build time, so — like the store resources — they serve **Stage 1
-only**. Stage 2 resolves its models per database (see [Per-Database Models](#per-database-models)).
+only**. Stage 2 resolves its models per database (see [Per-Database Configuration](#per-database-configuration)).
 
 **Storage**: `MongoDocumentStoreResource` (LlamaIndex `MongoDocumentStore`), `MilvusVectorStoreResource` (uri,
 collection_name, dimensions, index_type: HNSW or IVF_FLAT). These bind one store at `Definitions`-build time, so they
@@ -562,9 +593,9 @@ Run it locally: `make document-ingestion-pipeline`.
 3. For custom processing: create ops in `ops/`, compose into `@graph_asset` factory in `assets/factories/`
 4. Wire into `Definitions` with resources, sensors, jobs, schedules
 5. If it is a **Stage-2 pipeline users should be able to pick**: choose a permanent `ingestor` id and pass
-   `display_name`/`description` — see
-   [Making a Custom Pipeline Selectable](#making-a-custom-pipeline-selectable-in-the-ui). Verify the row lands in the
-   `ingestors` collection and the entry appears in the create-database dialog.
+   `display_name`/`description`, and declare any setting of your own on a `DocumentIngestionConfig` subclass passed as
+   `config`. See [Making a Custom Pipeline Selectable](#making-a-custom-pipeline-selectable-in-the-ui). Verify the row
+   lands in the `ingestors` collection and the entry appears in the create-database dialog with your form.
 6. Test in playground: `make playground` → materialize in Dagster UI at http://localhost:3000
 7. Deploy: create `app/{pipeline_name}/` with `__init__.py` + `Dockerfile`, and add a code location to
    `infra/deployment/templates/configs/workspace.yml.j2` plus an image entry in `infra/deployment/compose-config.yml`,
@@ -597,11 +628,11 @@ SharePointFile, RcloneFile
 vector_store/, doc_store/, llm/, share_point/, rclone/, local_file_system/
 
 **Sensors**: `packages/pipeline/swiss_ai_hub/pipeline/sensors/` — `nats/nats_document_uploaded_sensor.py` (uploads),
-`knowledge_teardown_sensor.py` (deletions), `ingestor_registration_sensor.py` (UI selectability),
+`knowledge_teardown_sensor.py` (deletions), `ingestor_registration_sensor.py` (labels + form announcement),
 `run_after_success_sensor.py` (job chaining), `run_failure_notification_sensor.py` (alerting)
 
 **Route-per-run core** (read these before touching Stage 2): `util/run_routing.py` (how a run learns its bucket),
-`util/store_builders.py` (bucket → stores), `util/model_builders.py` (bucket → models and vector width),
+`util/store_builders.py` (bucket → stores), `util/model_builders.py` (bucket → configuration, models, vector width),
 `util/partition_utils.py` (composite `{bucket}|{uri}` keys)
 
 **Utilities**: `packages/pipeline/swiss_ai_hub/pipeline/util/` — definitions_util, id_utils, bucket_utils, key_utils

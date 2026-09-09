@@ -215,17 +215,22 @@ documents from your S3 data lake into a vector store.
 
 ```python
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
 defs = document_ingestion_pipeline_definitions(
     ingestor="my_rag",                                  # Databases assigned to this ingestor are served
     display_name=LocaleString(en="My RAG"),             # Shown in the create-database dialog
     description=LocaleString(en="Tuned for my documents"),
-    embedding_model_name="azure/text-embedding-3-large", # Configure the embedding model
-    llm_model_name="azure/gpt-4o-mini",                 # Configure the LLM for summaries
-    with_summary_nodes=True                             # Enable summary node generation
+    settings=DocumentIngestionPipelineSettings()        # Deployment defaults, from DOCUMENT_INGESTION_*
 )
 ```
+
+`settings` carries the text, embedding and vision models, the three enrichment switches and the observation schedule.
+Those are deployment defaults, not fixed behaviour. The pipeline announces a
+configuration form pre-filled with them, each knowledge database created for this ingestor chooses its own values in the
+create dialog, and the pipeline reads those values per run. See
+[Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add a setting of your own.
 
 ## Default Data Mapping
 
