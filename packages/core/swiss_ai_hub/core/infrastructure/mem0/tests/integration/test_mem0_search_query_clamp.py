@@ -7,7 +7,7 @@ Requires the dev stack: LiteLLM, the configured embedding model, and Milvus. Opt
 
 The unit tests cover the clamp arithmetic against tiktoken. Only a live embedder can show that the
 clamped query fits the model's *own* tokenizer, which counts differently — bge-m3 reads 1.6x what
-tiktoken reports for English, which is what EMBEDDING_BUDGET_SAFETY_FACTOR has to absorb.
+tiktoken reports for English, which is what SEARCH_QUERY_BUDGET_SAFETY_FACTOR has to absorb.
 """
 
 import os
@@ -58,7 +58,9 @@ def user_memory() -> UserMemory:
 
 @pytest.mark.parametrize("label", list(QUERIES))
 async def test_search_completes_whatever_the_query_size(user_memory, label):
-    """Before the clamp, the oversized case raised litellm.ContextWindowExceededError and killed the run."""
+    """Before the clamp the oversized case raised litellm.ContextWindowExceededError. This exercises
+    UserMemory, the path the memory REST API takes, where that surfaced as a 500; on the RAG path it was
+    caught and the agent answered without memory instead (issue #1713)."""
     result = await user_memory.search_user_memory(query=QUERIES[label], limit=5, rerank=False)
 
     assert result.results is not None

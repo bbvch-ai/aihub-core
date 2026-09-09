@@ -1,9 +1,9 @@
 """Unit tests for the search-query clamp (issue #1752).
 
-An oversized query used to reach mem0's embedder verbatim and raise `ContextWindowExceededError`, aborting
-the whole agent run. `Mem0Service.search` now truncates the query to the embedding budget (keeping the tail,
-where the user's question lives) and logs a warning; queries within the budget must pass through as the
-identical object.
+An oversized query used to reach mem0's embedder verbatim and raise `ContextWindowExceededError`. The RAG
+path caught it and silently answered without memory (issue #1713); the memory REST path had no such catch
+and returned a 500. `Mem0Service.search` now truncates the query to the embedding budget (keeping the tail,
+where the user's question lives) and logs a warning; queries within the budget pass through unchanged.
 """
 
 import logging
@@ -13,7 +13,7 @@ import pytest
 from llama_index.core.utils import get_tokenizer
 
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import (
-    EMBEDDING_BUDGET_SAFETY_FACTOR,
+    SEARCH_QUERY_BUDGET_SAFETY_FACTOR,
     MINIMUM_EMBEDDING_MAX_INPUT_TOKENS,
     Mem0Service,
 )
@@ -22,7 +22,7 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import Mem
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 
 LIMIT = 64
-EFFECTIVE_LIMIT = int(LIMIT * EMBEDDING_BUDGET_SAFETY_FACTOR)
+EFFECTIVE_LIMIT = int(LIMIT * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
 
 
 def _build_service(max_search_query_tokens: int | None) -> Mem0Service:
@@ -152,15 +152,15 @@ async def test_query_under_the_default_window_is_clamped_to_a_smaller_resolved_w
         await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
     forwarded = _forwarded_query(service)
-    assert len(get_tokenizer()(query)) < int(8192 * EMBEDDING_BUDGET_SAFETY_FACTOR)
+    assert len(get_tokenizer()(query)) < int(8192 * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
     assert forwarded is not query
-    assert len(get_tokenizer()(forwarded)) <= int(small_window * EMBEDDING_BUDGET_SAFETY_FACTOR)
+    assert len(get_tokenizer()(forwarded)) <= int(small_window * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
 
 
 @pytest.mark.asyncio
 async def test_query_within_the_minimum_window_budget_skips_resolution():
     service = _build_service(max_search_query_tokens=None)
-    budget = int(MINIMUM_EMBEDDING_MAX_INPUT_TOKENS * EMBEDDING_BUDGET_SAFETY_FACTOR)
+    budget = int(MINIMUM_EMBEDDING_MAX_INPUT_TOKENS * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
     query = "word " * budget
     while len(get_tokenizer()(query)) > budget:
         query = query[:-5]
@@ -176,14 +176,14 @@ def test_lazy_default_resolves_the_model_window():
     service = _build_service(max_search_query_tokens=None)
     with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
         config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": 100}}
-        assert service._effective_query_token_limit == int(100 * EMBEDDING_BUDGET_SAFETY_FACTOR)
+        assert service._effective_query_token_limit == int(100 * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
 
 
 def test_null_model_window_falls_back_to_default():
     service = _build_service(max_search_query_tokens=None)
     with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
         config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": None}}
-        assert service._effective_query_token_limit == int(8192 * EMBEDDING_BUDGET_SAFETY_FACTOR)
+        assert service._effective_query_token_limit == int(8192 * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
 
 
 def test_explicit_limit_never_resolves_model_info():

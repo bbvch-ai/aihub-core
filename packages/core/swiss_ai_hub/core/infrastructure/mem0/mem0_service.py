@@ -23,10 +23,11 @@ DEFAULT_EMBEDDING_MAX_INPUT_TOKENS = 8192
 
 # We can only count tiktoken tokens locally, but the budget is spent in the embedder's own tokenizer, and
 # tiktoken undercounts. Measured against a live bge-m3: English 1.60x (8101 -> 12963), French 1.00x, German
-# and Chinese below 1. The factor has to cover the worst case, so it is set to tolerate a 2x undercount —
-# 0.85, as used for chunking in markdown_structural_node_parser, lets an English query through at ~1.9x its
-# real budget. Raising it needs the same measurement against whatever model the deployment runs.
-EMBEDDING_BUDGET_SAFETY_FACTOR = 0.5
+# and Chinese below 1. The factor has to cover the worst case, so it tolerates a 2x undercount. Deliberately
+# not the 0.85 that markdown_structural_node_parser uses for chunking: at the measured English ratio 0.85
+# leaves a full-size input at ~1.9x its real budget. Raising this needs the same measurement against
+# whatever model the deployment runs.
+SEARCH_QUERY_BUDGET_SAFETY_FACTOR = 0.5
 
 # Smallest window we assume any deployed embedder accepts. Only used to decide when a query is short enough
 # to skip resolving the real window, so it must never exceed a configured model's actual window.
@@ -62,18 +63,23 @@ class Mem0Service:
             .get("max_input_tokens")
             or DEFAULT_EMBEDDING_MAX_INPUT_TOKENS
         )
-        return int(window * EMBEDDING_BUDGET_SAFETY_FACTOR)
+        return int(window * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
 
     @staticmethod
     def _longest_fitting_tail(query: str, limit: int, tokenizer: Callable[[str], list[int]]) -> str:
         """
-        Keep the longest suffix within the budget: chat clients inline documents before the user's
-        question, so the tail is where the question lives.
+        Keep a long suffix within the budget: chat clients inline documents before the user's question, so
+        the tail is where the question lives.
 
-        Binary search over the cut index rather than a sentence splitter — llama_index's splits on NLTK
-        punkt, whose corpus loader refuses the hardlinked files uv installs into a venv, and sentence
-        boundaries buy an embedding vector nothing anyway. Token count falls monotonically as the cut
-        moves right, so the search is well defined.
+        Safety does not rest on suffix token counts being monotonic — under BPE they are not
+        ("unbelievable" measures [3, 3, 2, 3, ...]). It rests on `high` only ever being assigned an index
+        that measured as fitting, so the returned suffix was measured, never inferred. Non-monotonicity
+        costs optimality alone: a slightly longer suffix may also have fit.
+
+        Chosen over a sentence splitter because sentence boundaries buy an embedding vector nothing while
+        this hits the budget exactly. It also avoids NLTK punkt, whose corpus loader rejects files with
+        st_nlink > 1 — which is what a `uv` venv installs by default, though not what the images ship
+        (every app Dockerfile sets UV_LINK_MODE=copy), so that failure is a dev-machine one.
         """
         low, high = 0, len(query)
         while low < high:
@@ -93,7 +99,7 @@ class Mem0Service:
         tokenizer = get_tokenizer()
         original_tokens = len(tokenizer(query))
         resolution_free_budget = int(
-            (self._max_search_query_tokens or MINIMUM_EMBEDDING_MAX_INPUT_TOKENS) * EMBEDDING_BUDGET_SAFETY_FACTOR
+            (self._max_search_query_tokens or MINIMUM_EMBEDDING_MAX_INPUT_TOKENS) * SEARCH_QUERY_BUDGET_SAFETY_FACTOR
         )
         if original_tokens <= resolution_free_budget:
             return query
