@@ -2612,7 +2612,7 @@ export const CapabilitySchema = {
       type: "array",
       title: "Companion Rules",
       description:
-        "Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule \u2014 a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.",
+        "Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.",
       default: [],
     },
     granted: {
