@@ -119,18 +119,33 @@ class InstanceConfigHelper:
 
         for element in elements:
             name = getattr(element, "name", None)
-            if not name:
-                continue
-            value = config.get(name)
-            if isinstance(element, Group) and isinstance(value, dict):
-                undeclared.extend(InstanceConfigHelper._undeclared_fields(element.children, value, f"{prefix}{name}."))
-            elif isinstance(element, Repeater) and isinstance(value, list):
-                for index, entry in enumerate(value):
-                    if isinstance(entry, dict):
-                        undeclared.extend(
-                            InstanceConfigHelper._undeclared_fields(element.children, entry, f"{prefix}{name}.{index}.")
-                        )
+            if name:
+                undeclared.extend(
+                    InstanceConfigHelper._undeclared_in_element(element, config.get(name), f"{prefix}{name}")
+                )
 
+        return undeclared
+
+    @staticmethod
+    def _undeclared_in_element(element: FormkitElement, value: Any, field_path: str) -> list[str]:
+        """One element of an announced form: a container to walk into, or a leaf whose value is opaque.
+
+        Only a group and a repeater put a caller-supplied key space underneath them; anything a leaf holds is
+        that element's own value, and descending into it would start rejecting the keys of a `LocaleString`.
+        """
+        if isinstance(element, Group) and isinstance(value, dict):
+            return InstanceConfigHelper._undeclared_fields(element.children, value, f"{field_path}.")
+        if isinstance(element, Repeater) and isinstance(value, list):
+            return InstanceConfigHelper._undeclared_in_entries(element.children, value, field_path)
+        return []
+
+    @staticmethod
+    def _undeclared_in_entries(children: list[FormkitElement], entries: list[Any], field_path: str) -> list[str]:
+        """Each repeated entry against the same announced children, indexed so a rejection names the row."""
+        undeclared: list[str] = []
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict):
+                undeclared.extend(InstanceConfigHelper._undeclared_fields(children, entry, f"{field_path}.{index}."))
         return undeclared
 
     @staticmethod
