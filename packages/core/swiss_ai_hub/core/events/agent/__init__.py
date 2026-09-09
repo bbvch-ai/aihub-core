@@ -42,8 +42,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event import (
         AgentClassDiscoveryResponseEvent,
     )
-    from swiss_ai_hub.core.events.agent.discovery.agent_config_specs import AgentConfigSpecs
-    from swiss_ai_hub.core.events.agent.discovery.agent_config_specs_entity import AgentConfigSpecsEntity
     from swiss_ai_hub.core.events.agent.display.chunk_event import ChunkEvent
     from swiss_ai_hub.core.events.agent.display.conversation_title_event import ConversationTitleEvent
     from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
@@ -143,8 +141,6 @@ __all__ = [
     "AddOrganizationMemoryToChatHistoryEvent",
     "AddUserMemoryToChatHistoryEvent",
     "AgentClassDiscoveryResponseEvent",
-    "AgentConfigSpecs",
-    "AgentConfigSpecsEntity",
     "AgentEvent",
     "AgentInTheLoop",
     "AgentInTheLoopExceptionEvent",
@@ -245,8 +241,6 @@ _LAZY_IMPORTS: dict[str, str] = {
     "AddOrganizationMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_organization_memory_to_chat_history_event",
     "AddUserMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_user_memory_to_chat_history_event",
     "AgentClassDiscoveryResponseEvent": "swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event",
-    "AgentConfigSpecs": "swiss_ai_hub.core.events.agent.discovery.agent_config_specs",
-    "AgentConfigSpecsEntity": "swiss_ai_hub.core.events.agent.discovery.agent_config_specs_entity",
     "AgentEvent": "swiss_ai_hub.core.events.agent.semantic.agent.agent_event",
     "AgentInTheLoop": "swiss_ai_hub.core.events.agent.aitl.agent_in_the_loop",
     "AgentInTheLoopExceptionEvent": "swiss_ai_hub.core.events.agent.aitl.exception.agent_in_the_loop_exception_event",

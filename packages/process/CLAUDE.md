@@ -324,7 +324,8 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 - DispatchableWorkflow: `packages/core/swiss_ai_hub/core/workflow/dispatchable_workflow.py`
 - ProcessConfig: `packages/core/swiss_ai_hub/core/processes/process_config.py`
 - Form base: `packages/core/swiss_ai_hub/core/form/form.py`
-- ProcessConfigSpecs: `packages/core/swiss_ai_hub/core/events/process/discovery/process_config_specs.py`
+- ConfigSpecs (announced schema, shared with agents and ingestors):
+  `packages/core/swiss_ai_hub/core/form/config_specs.py`
 - ProcessConfigClient (RPC): `packages/core/swiss_ai_hub/core/rpc/process_config_client.py`
 - ProcessConfigEntityDocument: `packages/core/swiss_ai_hub/core/persistence/process/process_config_entity_document.py`
 - WorkEvent: `packages/core/swiss_ai_hub/core/events/process/work/work_event.py`

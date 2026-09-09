@@ -64,20 +64,23 @@ A pipeline is a Dagster **code location** — a module that exposes a `Definitio
 ```python
 # my_pipeline/__init__.py
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
 defs = document_ingestion_pipeline_definitions(
     ingestor="my_rag",                                  # this pipeline owns every database assigned to it
     display_name=LocaleString(en="My RAG"),             # how users see it when creating a database
     description=LocaleString(en="Tuned for my documents"),
-    embedding_model_name="embedding/bge-m3",            # any embedding model on the LiteLLM gateway
-    llm_model_name="text-generation/gemma-4-31B-it",    # for summaries / table & figure refinement
-    with_summary_nodes=True,                            # hierarchical RAG summaries
+    # Models, enrichment steps and the observation schedule this deployment defaults to, from
+    # DOCUMENT_INGESTION_*; every database overrides them in the form the pipeline announces from them.
+    settings=DocumentIngestionPipelineSettings(),
 )
 ```
 
 The pipeline carries no bucket name: it serves every knowledge database whose `ingestor` matches, resolving the target
-per run. Create one from the admin UI, picking "My RAG" as the ingestor — no redeploy, no new code location.
+per run. Create one from the admin UI, picking "My RAG" as the ingestor: no redeploy, no new code location. The models
+and enrichment switches are deployment *defaults*. The pipeline announces a configuration form pre-filled with them, and
+every database chooses its own values in the create dialog.
 
 Run it with the Dagster UI and materialize the assets:
 
@@ -111,8 +114,9 @@ markdown but is not yet retrievable, so it stays pending until then.
 
 Materialization is driven by eager automation, daily schedules, and a NATS sensor that fires when documents are uploaded
 through the API — so ingestion keeps up with changes without manual runs. Key
-`document_ingestion_pipeline_definitions()` knobs: `with_summary_nodes`, `with_table_refinement`,
-`with_figure_descriptions`, `document_parser_loader_type` (MinerU or Document Intelligence), and `max_partitions`.
+`document_ingestion_pipeline_definitions()` settings: the per-database defaults `settings` carries (the text,
+embedding and vision models, the three enrichment switches and the observation schedule), plus
+`document_parser_loader_type` (MinerU or Document Intelligence) and `max_partitions`.
 
 ______________________________________________________________________
 
@@ -231,7 +235,7 @@ ______________________________________________________________________
 ## Making a custom pipeline selectable in the UI
 
 Deploying a pipeline is not enough for a user to create a knowledge database for it from the admin UI — the API must
-know the pipeline exists. Both halves of that come from one call:
+know the pipeline exists and how its databases are configured. Both halves of that come from one call:
 
 ```python
 # acme_pipeline/__init__.py
@@ -249,17 +253,47 @@ defs = document_ingestion_pipeline_definitions(
 )
 ```
 
-A sensor in the pipeline publishes those labels to the platform database; `GET /knowledge/ingestors` reads them, so
-"Acme RAG" appears in the create-database dialog within a tick of the pipeline coming up, and `create_database` accepts
-it — with **no** change to the platform's `IngestorType` enum, API contract, or generated SDK, and nothing to install
-into the API image.
+A sensor in the pipeline publishes those labels **and the pipeline's configuration form** to the platform database.
+`GET /knowledge/ingestors` reads them, so "Acme RAG" appears in the create-database dialog within a tick of the pipeline
+coming up, rendered with the form it announced, and the API validates the submission against the schema it announced.
+That needs **no** change to the API contract or the generated SDK, and nothing installed into the API image. The shipped
+`document_ingestion` pipeline registers the same way, and nothing is offered until a pipeline is running.
 
-The ingestor id must not collide with a platform routing token (`document_ingestion`, `unassigned`, the frozen
-`default_rag` / `shared_rag`) or with the `datalake` subject token; `document_ingestion_pipeline_definitions` rejects
-those at definition time.
+### Adding a knob of your own
 
-See ADR `2026_06_18_rag_pipeline_route_per_run` for the rationale, including why registration goes through the database
-and why the `ingestor` field is a plain string at the API boundary.
+The announced form is a `Form`-duality class, the same kind of thing an agent's `AgentConfig` is. Extend the shipped one
+and pass it:
+
+```python
+from typing import Annotated, Self
+from pydantic import Field
+from swiss_ai_hub.core.form import InputNumber
+from swiss_ai_hub.pipeline.ingestors import DocumentIngestionConfig
+
+class AcmeConfig(DocumentIngestionConfig):
+    crawl_depth: Annotated[int | InputNumber, Field(description="How deep to follow links")] = 2
+
+    @classmethod
+    def as_form(cls, **defaults) -> Self:
+        base = DocumentIngestionConfig.as_form(**defaults)
+        return cls(**dict(base), crawl_depth=InputNumber(label=LocaleString(en="Crawl depth"), value=2))
+
+defs = document_ingestion_pipeline_definitions(
+    ingestor="acme_rag", display_name=..., description=...,
+    config=AcmeConfig.as_form(llm_model="text-generation/gemma-4-31B-it", embedding_model="embedding/bge-m3"),
+)
+```
+
+`crawl_depth` now appears in the create dialog, is validated by the API and is stored on the database. Your ops read it
+per run with `ingestor_config_for_bucket(bucket, AcmeConfig).crawl_depth`, the same call that resolves the models and
+enrichment switches, so there is one place to look for every per-database setting.
+
+The ingestor id must not collide with an inert or frozen platform routing token (`unassigned`, `default_rag`,
+`shared_rag`) or with the `datalake` subject token. The factory rejects those when the definitions are built.
+
+See ADR `2026_06_18_rag_pipeline_route_per_run` for why registration goes through the database and why the `ingestor`
+field is a plain string at the API boundary, and ADR `2026_09_04_ingestors_announce_their_configuration_form` for the
+announced form.
 
 ______________________________________________________________________
 

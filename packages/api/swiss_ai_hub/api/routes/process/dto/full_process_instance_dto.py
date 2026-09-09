@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Annotated, Any, Self
 
 from pydantic import Field
-from swiss_ai_hub.core.events.process import AgentInSpecs, HumanInSpecs, ProcessConfigSpecs, ProgramInSpecs
-from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
+from swiss_ai_hub.core.events.process import AgentInSpecs, HumanInSpecs, ProgramInSpecs
+from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.api.routes.process.dto.minimal_process_instance_dto import MinimalProcessInstanceDTO
@@ -37,7 +37,7 @@ class FullProcessInstanceDTO(MinimalProcessInstanceDTO):
         ),
     ]
     process_config_specs: Annotated[
-        ProcessConfigSpecs,
+        ConfigSpecs,
         Field(description="Configuration specifications of the process class, including schema and parameters."),
     ]
     form: Annotated[
@@ -76,7 +76,7 @@ class FullProcessInstanceDTO(MinimalProcessInstanceDTO):
         )
 
         process_config_specs = (
-            class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ProcessConfigSpecs()
+            class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
 
         return cls(
