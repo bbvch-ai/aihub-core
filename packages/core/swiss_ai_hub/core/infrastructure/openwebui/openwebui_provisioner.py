@@ -323,7 +323,8 @@ class OpenWebuiProvisioner:
         ``/models/model/update`` writes every column of ``ModelForm``, so posting a freshly built
         payload would drop whatever the workspace holds — ``params`` and every ``meta`` key AI-Hub
         never writes. The stored model is read back through ``get_model`` rather than reused from
-        ``list_models`` because the listing strips ``profile_image_url``.
+        ``list_models``: the listing hands back ``/static/favicon.png`` in place of the stored
+        ``profile_image_url``, so merging from it would overwrite a custom icon with the placeholder.
         """
         desired = self._build_model_data(agent)
         stored = await self._openwebui.get_model(http, desired["id"])
