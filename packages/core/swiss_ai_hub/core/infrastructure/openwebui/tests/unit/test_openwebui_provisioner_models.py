@@ -37,6 +37,16 @@ class TestResolveDisplayName:
 
 _RAG_MODEL_ID = f"{AIHUB_AGENT_PREFIX}rag-default"
 _PROVISIONED_META = {"capabilities": {"web_search": False}}
+_WORKSPACE_OWNED = {
+    "id": _RAG_MODEL_ID,
+    "name": "RAG Agent",
+    "meta": {
+        "description": "AI-Hub agent: rag/default",
+        "profile_image_url": "/cache/image/rag.png",
+        "capabilities": {"web_search": True, "vision": True},
+    },
+    "params": {"temperature": 0.2},
+}
 
 
 class TestAgentCapabilities:
@@ -214,6 +224,11 @@ class TestSyncWorkspaceModels:
                 "list_models",
                 return_value=[{"id": "aihub-agent-rag-default", "name": "Old Name", "meta": _PROVISIONED_META}],
             ),
+            patch.object(
+                provisioner._openwebui,
+                "get_model",
+                return_value={"id": _RAG_MODEL_ID, "name": "Old Name", "meta": _PROVISIONED_META},
+            ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "update_model") as mock_update,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
@@ -238,12 +253,30 @@ class TestSyncWorkspaceModels:
                 "list_models",
                 return_value=[{"id": "aihub-agent-rag-default", "name": "RAG Agent"}],
             ),
+            patch.object(provisioner._openwebui, "get_model", return_value={"id": _RAG_MODEL_ID, "name": "RAG Agent"}),
             patch.object(provisioner._openwebui, "update_model") as mock_update,
         ):
             await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
 
             mock_update.assert_called_once()
             assert mock_update.call_args[0][1]["meta"]["capabilities"] == {"web_search": False}
+
+    @pytest.mark.asyncio
+    async def test_sync_keeps_what_the_workspace_owns(self, provisioner: OpenWebuiProvisioner) -> None:
+        """``/models/model/update`` writes every column, so an update must carry the stored fields back."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(provisioner._openwebui, "list_models", return_value=[_WORKSPACE_OWNED]),
+            patch.object(provisioner._openwebui, "get_model", return_value=_WORKSPACE_OWNED),
+            patch.object(provisioner._openwebui, "update_model") as mock_update,
+        ):
+            await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
+
+            update_data = mock_update.call_args[0][1]
+            assert update_data["meta"]["profile_image_url"] == "/cache/image/rag.png"
+            assert update_data["params"] == {"temperature": 0.2}
+            assert update_data["meta"]["capabilities"] == {"web_search": False, "vision": True}
 
     @pytest.mark.asyncio
     async def test_sync_does_not_update_when_name_unchanged(self, provisioner: OpenWebuiProvisioner) -> None:

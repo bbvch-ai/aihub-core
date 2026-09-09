@@ -317,6 +317,27 @@ class OpenWebuiProvisioner:
             },
         }
 
+    async def _build_update_data(self, http: httpx.AsyncClient, agent: OnlineAgent) -> dict[str, Any]:
+        """Overlays the fields AI-Hub manages onto the stored model instead of replacing it.
+
+        ``/models/model/update`` writes every column of ``ModelForm``, so posting a freshly built
+        payload would drop whatever the workspace holds — ``params`` and every ``meta`` key AI-Hub
+        never writes. The stored model is read back through ``get_model`` rather than reused from
+        ``list_models`` because the listing strips ``profile_image_url``.
+        """
+        desired = self._build_model_data(agent)
+        stored = await self._openwebui.get_model(http, desired["id"])
+        stored_meta = stored.get("meta") or {}
+        return {
+            **desired,
+            "meta": {
+                **stored_meta,
+                **desired["meta"],
+                "capabilities": {**(stored_meta.get("capabilities") or {}), **desired["meta"]["capabilities"]},
+            },
+            "params": stored.get("params") or {},
+        }
+
     @staticmethod
     def _compute_model_diff(
         online_agents: list[OnlineAgent], existing_models: dict[str, dict[str, Any]]
@@ -368,7 +389,7 @@ class OpenWebuiProvisioner:
             logger.info(f"OpenWebUI: Created workspace model '{model_data['id']}'")
 
         for agent in to_update:
-            model_data = self._build_model_data(agent)
+            model_data = await self._build_update_data(http, agent)
             await self._openwebui.update_model(http, model_data)
             logger.info(f"OpenWebUI: Updated workspace model '{model_data['id']}' name to '{agent.display_name}'")
 
