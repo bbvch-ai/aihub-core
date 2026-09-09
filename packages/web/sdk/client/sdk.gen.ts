@@ -1307,10 +1307,6 @@ export const getOpenChatHitl = <
  *
  * Retrieve the agent classes this caller may reach.
  * Use `?online=true` for online classes only, `?online=false` for offline only.
- *
- * Filtered per class because the guard above is an existence query that any single agent rule
- * satisfies, so without this a tenant curated down to a subset still sees every blueprint and
- * learns of the block only on click-through.
  */
 export const getAgentClasses = <
   TComposable extends Composable = "$fetch",
