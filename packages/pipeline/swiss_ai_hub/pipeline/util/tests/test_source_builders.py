@@ -59,7 +59,8 @@ class TestSourceConfigForBucket:
 
 
 class TestRcloneRemoteForBucket:
-    def test_the_remote_is_rebuilt_on_every_call_from_the_stored_configuration(self, encryption, bucket_lookup):
+    def test_the_remote_is_rebuilt_from_the_stored_configuration_once_per_process(self, encryption, bucket_lookup):
+        rclone_remote_for_bucket.cache_clear()
         bucket_lookup.return_value = _bucket(
             configuration={
                 "backend_type": "sftp",
@@ -73,7 +74,7 @@ class TestRcloneRemoteForBucket:
             remote = rclone_remote_for_bucket("hrdocs", "rclone")
             rclone_remote_for_bucket("hrdocs", "rclone")
 
-        assert client.upsert_remote.call_count == 2
+        assert client.upsert_remote.call_count == 1, "the second call within the process reuses the remote"
         upserted = client.upsert_remote.call_args.args[0]
         assert upserted.name == remote_name_for_bucket("hrdocs", "rclone") == "rclone_hrdocs"
         assert upserted.options["pass"] == "pw", "the daemon receives the plaintext, the row never held it"

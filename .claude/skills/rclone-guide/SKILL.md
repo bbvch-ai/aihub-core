@@ -32,20 +32,20 @@ SourcePipelineEntity ◀── registration sensor ── rclone_pipeline (Dagst
 
 ## Key Files
 
-| Concern | Path |
-| --- | --- |
-| Announced form (all six backends) | `packages/pipeline/swiss_ai_hub/pipeline/source_pipelines/rclone_sync_config.py` |
-| Per-run resolution | `packages/pipeline/swiss_ai_hub/pipeline/util/source_builders.py` |
-| RC API client | `packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/rclone_client.py` |
-| IO manager (read-only) | `packages/pipeline/swiss_ai_hub/pipeline/io/routed_rclone_io_manager.py` |
-| Observable asset | `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py` |
-| Partitions + versions | `packages/pipeline/swiss_ai_hub/pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py` |
-| Write + announce | `packages/pipeline/swiss_ai_hub/pipeline/ops/source/routed/` |
-| Definitions factory | `packages/pipeline/swiss_ai_hub/pipeline/util/rclone_pipeline_definitions_util.py` |
-| Deployed app | `packages/pipeline/app/rclone_pipeline/__init__.py` |
-| Registration / cleanup sensors | `packages/pipeline/swiss_ai_hub/pipeline/sensors/source_pipeline_registration_sensor.py`, `source_bucket_cleanup_sensor.py` |
-| Core: config base, record, entity | `packages/core/swiss_ai_hub/core/source_pipelines/`, `packages/core/swiss_ai_hub/core/persistence/rag/datalake/entities/source_pipeline*.py` |
-| Settings | `packages/core/swiss_ai_hub/core/infrastructure/rclone/rclone_settings.py` (`RCLONE_URL`, `RCLONE_RC_USER/PASS`), `rclone_pipeline_settings.py` (`RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`, `MAX_PARTITIONS`) |
+| Concern                           | Path                                                                                                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Announced form (all six backends) | `packages/pipeline/swiss_ai_hub/pipeline/source_pipelines/rclone_sync_config.py`                                                                                                                              |
+| Per-run resolution                | `packages/pipeline/swiss_ai_hub/pipeline/util/source_builders.py`                                                                                                                                             |
+| RC API client                     | `packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/rclone_client.py`                                                                                                                                   |
+| IO manager (read-only)            | `packages/pipeline/swiss_ai_hub/pipeline/io/routed_rclone_io_manager.py`                                                                                                                                      |
+| Observable asset                  | `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py`                                                                                                   |
+| Partitions + versions             | `packages/pipeline/swiss_ai_hub/pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py`                                                                                                            |
+| Write + announce                  | `packages/pipeline/swiss_ai_hub/pipeline/ops/source/routed/`                                                                                                                                                  |
+| Definitions factory               | `packages/pipeline/swiss_ai_hub/pipeline/util/rclone_pipeline_definitions_util.py`                                                                                                                            |
+| Deployed app                      | `packages/pipeline/app/rclone_pipeline/__init__.py`                                                                                                                                                           |
+| Registration / cleanup sensors    | `packages/pipeline/swiss_ai_hub/pipeline/sensors/source_pipeline_registration_sensor.py`, `source_bucket_cleanup_sensor.py`                                                                                   |
+| Core: config base, record, entity | `packages/core/swiss_ai_hub/core/source_pipelines/`, `packages/core/swiss_ai_hub/core/persistence/rag/datalake/entities/source_pipeline*.py`                                                                  |
+| Settings                          | `packages/core/swiss_ai_hub/core/infrastructure/rclone/rclone_settings.py` (`RCLONE_URL`, `RCLONE_RC_USER/PASS`), `rclone_pipeline_settings.py` (`RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`, `MAX_PARTITIONS`) |
 
 ## RcloneSyncConfig (what a database stores)
 
@@ -77,23 +77,24 @@ class RcloneSyncConfig(SourcePipelineConfig):
 
 ```python
 config = source_config_for_bucket(bucket, "rclone", RcloneSyncConfig)   # row → decrypt → validate; raises on mismatch
-remote = rclone_remote_for_bucket(bucket, "rclone")                       # upserts remote "rclone_{bucket}" every call
+remote = rclone_remote_for_bucket(bucket, "rclone")                       # upserts remote "rclone_{bucket}" once per process
 client = build_rclone_client()                                            # stateless, RC URL + basic auth
 files = run_async(client.list_files(remote.fs, include=remote.include_patterns, exclude=remote.exclude_patterns))
 ```
 
-- The remote is **rebuilt on every run** with `config/create` (`obscure`, `nonInteractive`): credential edits apply on
-  the next run and the daemon (`--config=/dev/null`, in-memory) needs no operator action after a restart.
+- The remote is **rebuilt in every run process** with `config/create` (`obscure`, `nonInteractive`), cached within the
+  process: credential edits apply on the next run and the daemon (`--config=/dev/null`, in-memory) needs no operator
+  action after a restart.
 - There are **no deployment defaults** for a source; a database without a valid source configuration must not sync.
 
 ## RcloneClient (RC API)
 
-| Method | Endpoint | Notes |
-| --- | --- | --- |
-| `upsert_remote(config)` | `config/create` | replace semantics; raises if rclone asks an interactive question (OAuth without token) |
-| `get_remote(name)` / `delete_remote(name)` | `config/get` / `config/delete` | |
-| `list_files(remote, include, exclude)` | `operations/list` | filter rules: excludes, includes, then `- **` when includes exist |
-| `download_bytes(remote, path)` | `operations/stat` + `GET /[remote]/path` | needs `--rc-serve` |
+| Method                                     | Endpoint                                 | Notes                                                                                  |
+| ------------------------------------------ | ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `upsert_remote(config)`                    | `config/create`                          | replace semantics; raises if rclone asks an interactive question (OAuth without token) |
+| `get_remote(name)` / `delete_remote(name)` | `config/get` / `config/delete`           |                                                                                        |
+| `list_files(remote, include, exclude)`     | `operations/list`                        | filter rules: excludes, includes, then `- **` when includes exist                      |
+| `download_bytes(remote, path)`             | `operations/stat` + `GET /[remote]/path` | needs `--rc-serve`                                                                     |
 
 Secrets travel only in the `config/create` body; URLs, logs and Dagster metadata carry the remote **name**.
 
@@ -111,18 +112,19 @@ removal to the ingestion pipeline.
 - The `rclone` container sits on `backend` (reachable by the pipeline) and `egress` (reaches cloud providers).
 - Env: `AIHUB_CONFIG_ENCRYPTION_KEY` (same as the API), `RCLONE_URL`, `RCLONE_RC_USER/PASS` (non-dev),
   `RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`.
-- Dev: run `dagster dev` on the host with `app.rclone_pipeline`; the daemon is reachable at `RCLONE_URL=http://localhost:5572`.
+- Dev: run `dagster dev` on the host with `app.rclone_pipeline`; the daemon is reachable at
+  `RCLONE_URL=http://localhost:5572`.
 
 ## Troubleshooting
 
-| Symptom | Check |
-| --- | --- |
-| Source not offered in the create dialog | `source_pipelines` collection has a row with `config_specs`; `SourcePipelineRegistrationSensorFor_rclone` running |
-| Run fails "is filled by source 'x', not 'rclone'" / "being deleted" | the database's `source` changed or it is being torn down; the cleanup sensor forgets it |
-| "needs an interactive step" | OAuth backend without a pre-obtained `token`; paste rclone's token JSON |
-| Files listed but nothing ingested | they sit directly in `root_path` (root-level files are skipped) — move them into a folder |
-| Nothing ingested after a sync | `pipeline_document_ingestion_stream` receives `SourceUpdatedEvent`s; the database's `ingestor` is registered |
-| SFTP password rejected | must go through `config/create` with `obscure` (the client does this) |
+| Symptom                                                             | Check                                                                                                             |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Source not offered in the create dialog                             | `source_pipelines` collection has a row with `config_specs`; `SourcePipelineRegistrationSensorFor_rclone` running |
+| Run fails "is filled by source 'x', not 'rclone'" / "being deleted" | the database's `source` changed or it is being torn down; the cleanup sensor forgets it                           |
+| "needs an interactive step"                                         | OAuth backend without a pre-obtained `token`; paste rclone's token JSON                                           |
+| Files listed but nothing ingested                                   | they sit directly in `root_path` (root-level files are skipped) — move them into a folder                         |
+| Nothing ingested after a sync                                       | `pipeline_document_ingestion_stream` receives `SourceUpdatedEvent`s; the database's `ingestor` is registered      |
+| SFTP password rejected                                              | must go through `config/create` with `obscure` (the client does this)                                             |
 
 ## Conventions
 

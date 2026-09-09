@@ -43,11 +43,13 @@ def remote_name_for_bucket(bucket: str, source: str) -> str:
     return f"{source}_{bucket}"
 
 
+@cache
 def rclone_remote_for_bucket(bucket: str, source: str) -> RcloneRemote:
     """Rebuilds the database's remote in the rclone daemon from the stored configuration and returns how to address it.
 
-    Upserting on every call is what makes a credential edit apply on the next run and a restarted daemon (which
-    keeps no config file) need no operator action; the call costs one local HTTP round trip.
+    Rebuilding it in every process is what makes a credential edit apply on the next run and a restarted daemon
+    (which keeps no config file) need no operator action. Cached per process because every op of a partition run
+    loads its input through the IO manager and would otherwise re-upsert the same remote three times per file.
     """
     config = source_config_for_bucket(bucket, source, RcloneSyncConfig)
     name = remote_name_for_bucket(bucket, source)

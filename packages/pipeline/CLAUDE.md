@@ -269,10 +269,10 @@ the same Mongo.
 
 ## Rclone Source Pipeline (Stage 1, configured per database)
 
-A knowledge database has two independent axes: its `ingestor` (how files are processed, Stage 2) and its `source`
-(where files come from, Stage 1). `BucketEntity.source` + `source_configuration` sit next to `ingestor` +
-`configuration`; `source = None` means manual upload, there is no "unassigned" token. A source pipeline announces
-itself, is configured and is resolved per run exactly like an ingestion pipeline. See ADR
+A knowledge database has two independent axes: its `ingestor` (how files are processed, Stage 2) and its `source` (where
+files come from, Stage 1). `BucketEntity.source` + `source_configuration` sit next to `ingestor` + `configuration`;
+`source = None` means manual upload, there is no "unassigned" token. A source pipeline announces itself, is configured
+and is resolved per run exactly like an ingestion pipeline. See ADR
 `2026_09_09_source_pipelines_as_a_second_axis_of_a_knowledge_database`.
 
 **What you write.** `app/rclone_pipeline/__init__.py` is the whole deployed app:
@@ -287,8 +287,8 @@ defs = rclone_pipeline_definitions(
 )
 ```
 
-The asset graph carries **no bucket, remote or credential**. There are no `RCLONE_<SOURCE>_*` env vars and no
-deployment defaults for a source: a database without a valid source configuration must not sync.
+The asset graph carries **no bucket, remote or credential**. There are no `RCLONE_<SOURCE>_*` env vars and no deployment
+defaults for a source: a database without a valid source configuration must not sync.
 
 **Registration record.** A `SourcePipelineRegistrationSensorFor_{source}` sensor upserts a `SourcePipelineEntity`
 (collection `source_pipelines`, mirrors `IngestorEntity`: labels, form elements, `config_specs`) every 300 s.
@@ -312,9 +312,10 @@ mask keeps the stored value. Adding a backend = one `Form` subclass + one field 
 - `source_config_for_bucket(bucket, source, RcloneSyncConfig)` — row → decrypt → validate; raises if the database is
   `deleting` or its `source` is a different token.
 - `rclone_remote_for_bucket(bucket, source)` — upserts the remote `rclone_{bucket}` in the rclone daemon
-  (`config/create` with `obscure`, `nonInteractive`) on **every call**, so a credential edit applies on the next run and
-  the daemon (`--config=/dev/null`, in-memory) needs no operator action after a restart. Returns an `RcloneRemote`
-  (name, `fs`, patterns). Secrets travel only in the `config/create` body; URLs, logs and metadata carry the name.
+  (`config/create` with `obscure`, `nonInteractive`) **once per process** (`@cache`; every Dagster step is its own
+  process), so a credential edit applies on the next run and the daemon (`--config=/dev/null`, in-memory) needs no
+  operator action after a restart. Returns an `RcloneRemote` (name, `fs`, patterns). Secrets travel only in the
+  `config/create` body; URLs, logs and metadata carry the name.
 - `build_rclone_client()` — stateless `RcloneClient` (RC URL + basic auth), `@cache`d.
 
 The bucket travels in the `aihub/bucket` run tag on the observe/remove path and in the composite
@@ -340,8 +341,8 @@ teardown stays with the ingestion pipeline.
 
 **A second source pipeline type** registers the same way: a `SourcePipelineConfig` subclass for its form, a factory
 shaped like `rclone_pipeline_definitions(source="acme_sync", display_name=..., description=..., config=...)` (or
-`source_pipeline_registration_sensor(SourcePipeline.from_config(...))` wired into hand-built `Definitions`), and its
-own `source` token. Every deployment-global name derives from that token with suffixes distinct from the ingestion
+`source_pipeline_registration_sensor(SourcePipeline.from_config(...))` wired into hand-built `Definitions`), and its own
+`source` token. Every deployment-global name derives from that token with suffixes distinct from the ingestion
 pipeline's (`{source}_source_to_datalake` asset group, `{source}_source_partitions`, `{source}_source_observation` /
 `…_remove_source_files` jobs). **Ingestor and source tokens reserve each other**: both kinds of pipeline name their
 Dagster jobs after their token and the single-flight guard matches runs by job name across code locations, so
@@ -530,8 +531,8 @@ instance — two factories using the same name will collide and share partition 
 therefore keep **one registry per pipeline token** (`{ingestor}_document_partitions`, `{source}_source_partitions`) and
 reconcile it **per bucket**: the bucket is part of every key, and an observation replaces only the keys with its own
 `{bucket}|` prefix. Two databases synced from the same or different sources never share partitions by naming convention
-(the #1236 class). The deploy-time builders derive their name from the data lake container and the source instead.
-Never hard-code a partition definition name in a factory.
+(the #1236 class). The deploy-time builders derive their name from the data lake container and the source instead. Never
+hard-code a partition definition name in a factory.
 
 ## Automation & Triggering
 
@@ -727,10 +728,9 @@ SharePointFile, RcloneFile, RcloneRemote
 vector_store/, doc_store/, llm/, share_point/, rclone/ (client only), local_file_system/
 
 **Sensors**: `packages/pipeline/swiss_ai_hub/pipeline/sensors/` — `nats/nats_document_uploaded_sensor.py` (uploads),
-`knowledge_teardown_sensor.py` (deletions), `ingestor_registration_sensor.py` /
-`source_pipeline_registration_sensor.py` (labels + form announcement), `source_bucket_cleanup_sensor.py` (forget
-databases that left a source), `run_after_success_sensor.py` (job chaining), `run_failure_notification_sensor.py`
-(alerting)
+`knowledge_teardown_sensor.py` (deletions), `ingestor_registration_sensor.py` / `source_pipeline_registration_sensor.py`
+(labels + form announcement), `source_bucket_cleanup_sensor.py` (forget databases that left a source),
+`run_after_success_sensor.py` (job chaining), `run_failure_notification_sensor.py` (alerting)
 
 **Route-per-run core** (read these before touching Stage 2 or the source pipeline): `util/run_routing.py` (how a run
 learns its bucket, `owned_by_ingestor` / `owned_by_source`), `util/store_builders.py` (bucket → stores),
