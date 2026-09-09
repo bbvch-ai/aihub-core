@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS
     from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
     from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
+    from swiss_ai_hub.core.form.config_specs import ConfigSpecs
     from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
     from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
     from swiss_ai_hub.core.form.elements.checkbox import Checkbox
@@ -39,6 +40,7 @@ __all__ = [
     "CronInput",
     "ChipsInput",
     "ConfigAuthorizationViolation",
+    "ConfigSpecs",
     "DatePicker",
     "Form",
     "FormkitElement",
@@ -69,6 +71,7 @@ _LAZY_IMPORTS = {
     "CronInput": "swiss_ai_hub.core.form.elements.cron_input",
     "ChipsInput": "swiss_ai_hub.core.form.elements.chips_input",
     "ConfigAuthorizationViolation": "swiss_ai_hub.core.form.base.config_authorization_violation",
+    "ConfigSpecs": "swiss_ai_hub.core.form.config_specs",
     "DatePicker": "swiss_ai_hub.core.form.elements.date_picker",
     "Form": "swiss_ai_hub.core.form.form",
     "FormkitElement": "swiss_ai_hub.core.form.base.formkit_element",

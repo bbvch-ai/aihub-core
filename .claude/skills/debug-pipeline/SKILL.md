@@ -92,7 +92,9 @@ Use the error information from Step 1 to match against these known patterns.
 4. **Resource missing**: Op can't find required resource
 
    - Check the `resources` dict in the `Definitions` matches all `ResourceParam[T]` types in ops
-   - Common missing: `table_refinement` (only added when `with_table_refinement=True`)
+   - Stage 2 always supplies every enrichment resource (`table_refinement`, `summary_parser`): the graph is the same for
+     every knowledge database, and each step decides per run from the bucket's configuration whether it has work. A
+     missing one is a wiring bug, never a deployment setting.
 
 5. **IO Manager mismatch**: Asset output type doesn't match IO manager expectations
 

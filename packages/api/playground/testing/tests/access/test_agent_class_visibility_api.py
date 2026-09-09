@@ -13,8 +13,7 @@ from swiss_ai_hub.core.agents import WorkflowGraph
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.events.agent import AgentConfigSpecs
-from swiss_ai_hub.core.form import TemplateData
+from swiss_ai_hub.core.form import ConfigSpecs, TemplateData
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
@@ -54,7 +53,7 @@ def _agent_class(agent_class: str) -> AgentClassDTO:
         name=LocaleString(en=agent_class),
         description=LocaleString(en=f"{agent_class} description"),
         form=[],
-        agent_config_specs=AgentConfigSpecs(agent_class=agent_class, agent_config_schema={}),
+        agent_config_specs=ConfigSpecs(config_class=agent_class, config_schema={}),
         start_events=[],
         stop_events=[],
         hitl_request_events=[],

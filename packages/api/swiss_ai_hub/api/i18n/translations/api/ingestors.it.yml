@@ -1,5 +1,0 @@
----
-document_ingestion:
-  display_name: Pipeline generica di ingestione documenti
-  description: Analizza i documenti caricati, li suddivide in segmenti e li vettorizza
-    per la ricerca semantica.

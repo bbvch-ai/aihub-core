@@ -8,7 +8,6 @@ from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
 from swiss_ai_hub.core.events import BaseEvent, ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
     ChunkEvent,
     ControlEvent,
     LLMCostEvent,
@@ -18,6 +17,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UserMessageEvent,
 )
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import NatsSettings
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
@@ -150,7 +150,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             hitl_response_events=self.hitl_response_events or [],
             network_graph=WorkflowGraph(nodes=[], links=[]),
             form=self.agent_config.to_formkit_form(),
-            agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
+            agent_config_specs=ConfigSpecs.from_form(self.agent_config, self.agent_class),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -332,7 +332,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 description=self.agent_config.description,
                 icon=self.agent_config.icon,
                 form=self.agent_config.to_formkit_form(),
-                agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
+                agent_config_specs=ConfigSpecs.from_form(self.agent_config, self.agent_class),
                 is_conversational=True,
                 is_schedulable=False,
                 start_events=self.start_events or [],

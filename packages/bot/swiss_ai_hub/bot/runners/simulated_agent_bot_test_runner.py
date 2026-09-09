@@ -7,13 +7,13 @@ from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
 from swiss_ai_hub.core.events import BaseEvent, ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
     ChunkEvent,
     ControlEvent,
     LLMCostEvent,
     StartEvent,
     StopEvent,
 )
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import NatsSettings
 from swiss_ai_hub.core.publishers import JSPublisher, NCPublisher
@@ -127,7 +127,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             hitl_response_events=hitl_response_events,
             network_graph=WorkflowGraph(nodes=[], links=[]),
             form=self.agent_config.to_formkit_form(),
-            agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
+            agent_config_specs=ConfigSpecs.from_form(self.agent_config, self.agent_class),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
