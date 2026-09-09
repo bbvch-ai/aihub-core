@@ -1,7 +1,7 @@
 import logging
+from collections.abc import Callable
 from functools import cached_property
 
-from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.utils import get_tokenizer
 from mem0.configs.base import MemoryConfig
 
@@ -64,6 +64,26 @@ class Mem0Service:
         )
         return int(window * EMBEDDING_BUDGET_SAFETY_FACTOR)
 
+    @staticmethod
+    def _longest_fitting_tail(query: str, limit: int, tokenizer: Callable[[str], list[int]]) -> str:
+        """
+        Keep the longest suffix within the budget: chat clients inline documents before the user's
+        question, so the tail is where the question lives.
+
+        Binary search over the cut index rather than a sentence splitter — llama_index's splits on NLTK
+        punkt, whose corpus loader refuses the hardlinked files uv installs into a venv, and sentence
+        boundaries buy an embedding vector nothing anyway. Token count falls monotonically as the cut
+        moves right, so the search is well defined.
+        """
+        low, high = 0, len(query)
+        while low < high:
+            middle = (low + high) // 2
+            if len(tokenizer(query[middle:])) <= limit:
+                high = middle
+            else:
+                low = middle + 1
+        return query[low:] or query[-1:]
+
     def _clamp_query(self, query: str) -> str:
         """
         The cheap check counts tokens rather than characters: a character is not an upper bound on tokens
@@ -80,13 +100,7 @@ class Mem0Service:
         limit = self._effective_query_token_limit
         if original_tokens <= limit:
             return query
-        splitter = SentenceSplitter(chunk_size=limit, chunk_overlap=0, tokenizer=tokenizer)
-        chunks = splitter.split_text(query)
-        # Keep the last chunk: chat clients inline documents before the user's question, so the tail is
-        # where the actual question lives. A query that strips to nothing yields no chunks at all — the
-        # splitter drops whitespace-only ones — and carries no signal to preserve, so it collapses to a
-        # single space rather than a slice whose token cost would again be unbounded.
-        clamped = chunks[-1] if chunks else " "
+        clamped = self._longest_fitting_tail(query, limit, tokenizer)
         logger.warning(
             "Search query exceeds the embedding budget, truncating: %d -> %d tokens (%d -> %d characters, limit %d)",
             original_tokens,

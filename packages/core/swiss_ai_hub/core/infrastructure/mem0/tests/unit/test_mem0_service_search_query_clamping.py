@@ -77,8 +77,8 @@ async def test_oversized_query_without_whitespace_is_still_truncated(mem0_servic
 @pytest.mark.asyncio
 async def test_oversized_whitespace_only_query_does_not_crash(mem0_service, whitespace):
     """Exotic whitespace does not compress under tiktoken (an Ogham space mark costs 3 tokens), so it
-    clears the budget check — but the splitter drops whitespace-only chunks and returns none, which used
-    to raise IndexError on the tail lookup."""
+    clears the budget check. A sentence splitter dropped whitespace-only chunks and returned none, which
+    raised IndexError on the tail lookup; the tail search always yields a non-empty, in-budget suffix."""
     query = whitespace * 4000
 
     await mem0_service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
@@ -152,7 +152,7 @@ async def test_query_under_the_default_window_is_clamped_to_a_smaller_resolved_w
         await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
     forwarded = _forwarded_query(service)
-    assert len(query) < int(8192 * EMBEDDING_BUDGET_SAFETY_FACTOR)
+    assert len(get_tokenizer()(query)) < int(8192 * EMBEDDING_BUDGET_SAFETY_FACTOR)
     assert forwarded is not query
     assert len(get_tokenizer()(forwarded)) <= int(small_window * EMBEDDING_BUDGET_SAFETY_FACTOR)
 
