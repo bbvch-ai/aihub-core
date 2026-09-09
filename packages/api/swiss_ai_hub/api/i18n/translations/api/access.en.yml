@@ -50,8 +50,8 @@ capabilities:
         label: See instances
         description: View the instances of this assistant type.
       create:
-        label: Create instances
-        description: Create new assistants of this type.
+        label: Full access to this type
+        description: Create, configure and use assistants of this type.
       use:
         label: Use
         description: Chat with and use this assistant.

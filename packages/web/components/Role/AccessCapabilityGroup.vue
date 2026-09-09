@@ -78,8 +78,9 @@
         </span>
         <code
           v-if="cap.rule"
+          v-tooltip.top="cap.companion_rules?.length ? [cap.rule, ...cap.companion_rules].join('\n') : undefined"
           class="mt-0.5 shrink-0 font-mono text-[11px] text-surface-300 transition-colors group-hover/cap:text-surface-500 dark:text-surface-600 dark:group-hover/cap:text-surface-400"
-        >{{ cap.rule }}</code>
+        >{{ cap.companion_rules?.length ? `${cap.rule} +${cap.companion_rules.length}` : cap.rule }}</code>
       </label>
     </div>
 
@@ -123,8 +124,13 @@ const emit = defineEmits<{
   remove: [rule: string]
 }>()
 
+// A row can need more than one rule: the grammar has no form covering a node and its subtree at once,
+// so a class-level row carries both. Emitting them one at a time keeps the parent's add/remove untouched,
+// and both are idempotent there, so topping up a half-granted resource cannot duplicate a rule.
 const onToggle = (cap: Capability, value: boolean) => {
   if (props.readonly || !cap.rule) return
-  emit(value ? 'add' : 'remove', cap.rule)
+  for (const rule of [cap.rule, ...(cap.companion_rules ?? [])]) {
+    emit(value ? 'add' : 'remove', rule)
+  }
 }
 </script>

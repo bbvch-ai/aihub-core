@@ -11,7 +11,17 @@ class Capability(BaseModel):
         str | None,
         Field(description="Exact access rule that grants this capability, or null for read-only capabilities."),
     ]
-    granted: Annotated[bool, Field(description="Whether the draft rules grant this capability.")]
+    companion_rules: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Rules written and removed together with `rule`. A capability needs more than one when the "
+                "rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, "
+                "so a row meaning 'this whole resource' has to carry both forms."
+            )
+        ),
+    ] = []
+    granted: Annotated[bool, Field(description="Whether the draft rules grant every rule of this capability.")]
     locked: Annotated[
         bool,
         Field(description="Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here."),

@@ -293,21 +293,28 @@ class _CapabilityCatalogBuilder:
         return capabilities
 
     def _capabilities_for(
-        self, guards: list[tuple[_GuardTemplate, AccessCatalogEntryMeta]], **path_param_values: str
+        self,
+        guards: list[tuple[_GuardTemplate, AccessCatalogEntryMeta]],
+        grant_subtree: bool = False,
+        **path_param_values: str,
     ) -> list[Capability]:
         """Substitutes ``path_param_values`` into each guard template and builds its capability row, dropping
         any the ceiling hides (``_capability_for_guard`` returns ``None``)."""
         capabilities: list[Capability] = []
         for template, meta in guards:
             capability = self._capability_for_guard(
-                meta.label, meta.description, template.substitute(**path_param_values)
+                meta.label, meta.description, template.substitute(**path_param_values), grant_subtree=grant_subtree
             )
             if capability is not None:
                 capabilities.append(capability)
         return capabilities
 
     def _capability_for_guard(
-        self, label_locale: LocaleString, description_locale: LocaleString, guard: _Guard
+        self,
+        label_locale: LocaleString,
+        description_locale: LocaleString,
+        guard: _Guard,
+        grant_subtree: bool = False,
     ) -> Capability | None:
         """Builds one capability row. ``granted`` comes from ``subject.has_access`` — the same call the
         endpoint's guard makes — so the row matches enforcement (sysadmin short-circuit and ceiling included).
@@ -316,14 +323,28 @@ class _CapabilityCatalogBuilder:
         concrete guard *is* the grantable rule and is toggleable, and is ``locked`` when access comes from a
         broader rule than the one this checkbox would add. Returns ``None`` when a ``ceiling`` is given that
         cannot grant the capability — it is then hidden, never merely disabled (no information leak).
+
+        With ``grant_subtree`` the row stands for the whole resource rather than the single endpoint, so it
+        carries ``<rule>.>`` alongside its own rule and every verdict below is the conjunction over both. A
+        ``.>`` rule never matches its own root, so a class-level row offering only one of the two forms is
+        unusable in the editor: granting the root alone leaves the resource invisible, and granting only the
+        subtree leaves it uncreatable. ``granted`` therefore stays honest — a half-granted resource reads as
+        not granted, and ticking the box tops up whichever rule is missing.
         """
         rule = str(guard)
-        if self._ceiling is not None and not self._ceiling.has_access(rule):
+        wants_subtree = grant_subtree and not guard.is_existence_query
+        # Two lists, deliberately: ``rules`` is what the checkbox writes, ``probes`` is what the checker is
+        # asked. ``>`` is a legal token in a rule but not in a permission template, so the subtree cannot be
+        # queried as ``<rule>.>``; ``<rule>.?*`` is the template form of the same question ("anything under
+        # this node?"), and the bare root alone does not satisfy it.
+        rules = [rule, *([f"{rule}.>"] if wants_subtree else [])]
+        probes = [rule, *([f"{rule}.?*"] if wants_subtree else [])]
+        if self._ceiling is not None and not all(self._ceiling.has_access(probe) for probe in probes):
             return None
 
         label = self._t.extract(label_locale)
         description = self._t.extract(description_locale)
-        granted = self._subject.has_access(rule)
+        granted = all(self._subject.has_access(probe) for probe in probes)
 
         if guard.is_existence_query:
             return Capability(
@@ -340,8 +361,9 @@ class _CapabilityCatalogBuilder:
             label=label,
             description=description,
             rule=rule,
+            companion_rules=rules[1:],
             granted=granted,
-            locked=granted and rule not in self._granted_rules,
+            locked=granted and not all(candidate in self._granted_rules for candidate in rules),
             toggleable=True,
         )
 
@@ -497,7 +519,9 @@ class _CapabilityCatalogBuilder:
         class_param: str,
         instance_param: str,
     ) -> CapabilityGroup:
-        class_capabilities = self._capabilities_for(class_guards, **{class_param: class_node.value})
+        # A class-level row means "this tenant/role gets this blueprint", not "may call this one endpoint",
+        # so it grants the class and everything under it.
+        class_capabilities = self._capabilities_for(class_guards, grant_subtree=True, **{class_param: class_node.value})
         instance_groups = [
             self._instance_group(service_name, class_node, instance_node, instance_guards, class_param, instance_param)
             for instance_node in instance_nodes
