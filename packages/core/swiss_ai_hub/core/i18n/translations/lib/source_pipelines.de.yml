@@ -1,7 +1,115 @@
 ---
 manual_upload:
   display_name: Manueller Upload
-  description: Dokumente werden von Hand über die Wissensansichten hochgeladen; nichts synchronisiert sie.
+  description: Dokumente werden von Hand über die Wissensansichten hochgeladen; nichts
+    synchronisiert sie.
 rclone:
   display_name: Cloud-Speicher-Synchronisation (rclone)
-  description: Hält die Datenbank mit einer SharePoint-Site, OneDrive, Google Drive, einem S3-Bucket, Azure-Blob-Container oder SFTP-Server synchron. Jeder Ordner der obersten Ebene wird zu einem Namespace.
+  description: Hält die Datenbank mit einer SharePoint-Site, OneDrive, Google Drive,
+    einem S3-Bucket, Azure-Blob-Container oder SFTP-Server synchron. Jeder Ordner
+    der obersten Ebene wird zu einem Namespace.
+  config:
+    backend_type:
+      label: Speicher-Backend
+      help: Aus welcher Art von System die Dateien geholt werden.
+    root_path:
+      label: Stammordner
+      help: Ordner in der Quelle, der synchronisiert wird. Jeder seiner Ordner der
+        obersten Ebene wird zu einem Namespace; Dateien direkt darin werden nicht
+        synchronisiert.
+    include_patterns:
+      label: Einschlussmuster
+      help: rclone-Glob-Regeln; wenn gesetzt, werden nur passende Dateien synchronisiert
+        (z. B. *.pdf, reports/**).
+    exclude_patterns:
+      label: Ausschlussmuster
+      help: rclone-Glob-Regeln für zu überspringende Dateien (z. B. **/~$*, drafts/**).
+    onedrive:
+      client_id:
+        label: Client-ID
+        help: Anwendungs-ID (Client-ID) der Entra-ID-App-Registrierung.
+      client_secret:
+        label: Client-Geheimnis
+        help: Client-Geheimnis der App-Registrierung. Verschlüsselt gespeichert.
+      tenant:
+        label: Mandanten-ID
+        help: Entra-ID-Mandanten-(Verzeichnis-)ID.
+      drive_id:
+        label: Laufwerks-ID
+        help: ID des zu synchronisierenden Laufwerks; bei SharePoint das Laufwerk
+          der Dokumentbibliothek.
+      drive_type:
+        label: Laufwerkstyp
+        help: personal, business oder documentLibrary (SharePoint).
+      region:
+        label: Region
+        help: 'Microsoft-Cloud: global, us, de oder cn.'
+      token:
+        label: OAuth-Token
+        help: Vorab erzeugtes rclone-Token-JSON als Alternative zu Client-Anmeldedaten.
+          Verschlüsselt gespeichert.
+    drive:
+      client_id:
+        label: Client-ID
+        help: OAuth-Client-ID Ihres Google-Cloud-Projekts.
+      client_secret:
+        label: Client-Geheimnis
+        help: OAuth-Client-Geheimnis. Verschlüsselt gespeichert.
+      token:
+        label: OAuth-Token
+        help: Vorab erzeugtes rclone-Token-JSON. Verschlüsselt gespeichert.
+      service_account_credentials:
+        label: Dienstkonto-JSON
+        help: Inhalt der Dienstkonto-Schlüsseldatei als Alternative zu einem OAuth-Token.
+          Verschlüsselt gespeichert.
+      root_folder_id:
+        label: Stammordner-ID
+        help: Drive-Ordner-ID, die als Stamm gilt; leer für das ganze Laufwerk.
+    s3:
+      provider:
+        label: Anbieter
+        help: rclone-S3-Anbietername, z. B. AWS, Minio, Ceph.
+      access_key_id:
+        label: Access Key ID
+        help: Access Key ID.
+      secret_access_key:
+        label: Secret Access Key
+        help: Secret Access Key. Verschlüsselt gespeichert.
+      region:
+        label: Region
+        help: Region, z. B. eu-central-1.
+      endpoint:
+        label: Endpunkt
+        help: Endpunkt-URL für Nicht-AWS-Anbieter.
+    azureblob:
+      account:
+        label: Speicherkonto
+        help: Name des Azure-Speicherkontos.
+      key:
+        label: Kontoschlüssel
+        help: Schlüssel des Speicherkontos. Verschlüsselt gespeichert.
+      sas_url:
+        label: SAS-URL
+        help: Shared-Access-Signature-URL als Alternative zu einem Kontoschlüssel.
+          Verschlüsselt gespeichert.
+      endpoint:
+        label: Endpunkt
+        help: Eigener Endpunkt für souveräne Clouds.
+    sftp:
+      host:
+        label: Host
+        help: SFTP-Hostname oder IP.
+      port:
+        label: Port
+        help: SFTP-Port.
+      user:
+        label: Benutzer
+        help: SFTP-Benutzername.
+      password:
+        label: Passwort
+        help: Passwort als Alternative zu einem privaten Schlüssel. Verschlüsselt
+          gespeichert.
+      key_pem:
+        label: Privater Schlüssel (PEM)
+        help: PEM-kodierter privater Schlüssel als Alternative zu einem Passwort.
+          Verschlüsselt gespeichert.

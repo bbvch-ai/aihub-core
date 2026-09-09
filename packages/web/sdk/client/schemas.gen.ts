@@ -5945,6 +5945,27 @@ export const CreateDatabaseRequestSchema = {
         "The database's configuration as submitted through the ingestor's announced form: its multilingual name and description plus every knob the pipeline declares. Validated against the ingestor's schema.",
       default: {},
     },
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database's data lake, as served by GET /knowledge/source-pipelines. Omit for manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings as submitted through its announced form (backend, credentials, root folder, patterns). Validated against the source's schema; secret fields are stored encrypted.",
+      default: {},
+    },
   },
   type: "object",
   title: "CreateDatabaseRequest",
@@ -6588,16 +6609,31 @@ export const DatabaseDTOSchema = {
       title: "Display Name",
       description: "Localized display name of database",
     },
-    auto_sync: {
-      type: "boolean",
-      title: "Auto Sync",
-      description: "Whether this database auto-syncs namespaces",
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "Identifier of the source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null when documents are uploaded by hand. A sourced database accepts no manual uploads and generates its namespaces from the source's folders.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings for this database, secret fields masked; empty for manual upload.",
     },
     deletable: {
       type: "boolean",
       title: "Deletable",
       description:
-        "Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.",
+        "Whether the database itself may be deleted; false for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately.",
     },
     ingestor: {
       type: "string",
@@ -6618,7 +6654,7 @@ export const DatabaseDTOSchema = {
   required: [
     "name",
     "display_name",
-    "auto_sync",
+    "source",
     "deletable",
     "ingestor",
     "namespaces",
@@ -6650,6 +6686,27 @@ export const DatabaseResponseSchema = {
       title: "Configuration",
       description:
         "The ingestor's settings for this database, as validated against its announced schema.",
+      default: {},
+    },
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database; null for manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings for this database, secret fields masked.",
       default: {},
     },
     display_name: {
@@ -21424,6 +21481,151 @@ export const SortOrderSchema = {
   title: "SortOrder",
 } as const;
 
+export const SourcePipelineDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Source pipeline identifier, as served by GET /knowledge/source-pipelines.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the source pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of where the files come from.",
+    },
+    form: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelector",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelect",
+          },
+          {
+            $ref: "#/components/schemas/Checkbox",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInput",
+          },
+          {
+            $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
+            $ref: "#/components/schemas/DatePicker",
+          },
+          {
+            $ref: "#/components/schemas/Group",
+          },
+          {
+            $ref: "#/components/schemas/IconSelector",
+          },
+          {
+            $ref: "#/components/schemas/InputMask",
+          },
+          {
+            $ref: "#/components/schemas/InputNumber",
+          },
+          {
+            $ref: "#/components/schemas/InputOtp",
+          },
+          {
+            $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelector",
+          },
+          {
+            $ref: "#/components/schemas/Knob",
+          },
+          {
+            $ref: "#/components/schemas/Listbox",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelect",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelect",
+          },
+          {
+            $ref: "#/components/schemas/Password",
+          },
+          {
+            $ref: "#/components/schemas/RadioButton",
+          },
+          {
+            $ref: "#/components/schemas/Rating",
+          },
+          {
+            $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/Select",
+          },
+          {
+            $ref: "#/components/schemas/SelectButton",
+          },
+          {
+            $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
+            $ref: "#/components/schemas/Textarea",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButton",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitch",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInput",
+          },
+        ],
+      },
+      type: "array",
+      title: "Form",
+      description:
+        "FormKit elements a database's source is configured through, localized.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "SourcePipelineDTO",
+} as const;
+
 export const StandaloneQuestionCondenserEventSchema = {
   properties: {
     event_id: {
@@ -23884,6 +24086,34 @@ export const UpdateAgentInstanceDTOSchema = {
   required: ["configuration"],
   title: "UpdateAgentInstanceDTO",
   description: "Request body for updating an agent instance configuration.",
+} as const;
+
+export const UpdateDatabaseSourceRequestSchema = {
+  properties: {
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null switches the database back to manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.",
+      default: {},
+    },
+  },
+  type: "object",
+  title: "UpdateDatabaseSourceRequest",
 } as const;
 
 export const UpdateMemoryRequestSchema = {
@@ -37385,6 +37615,151 @@ export const SliderWritableSchema = {
   required: ["label"],
   title: "Slider",
   description: "https://formkit-primevue.netlify.app/inputs/Slider",
+} as const;
+
+export const SourcePipelineDTOWritableSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Source pipeline identifier, as served by GET /knowledge/source-pipelines.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the source pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of where the files come from.",
+    },
+    form: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/CheckboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/DatePickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/GroupWritable",
+          },
+          {
+            $ref: "#/components/schemas/IconSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputMaskWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputOtpWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnobWritable",
+          },
+          {
+            $ref: "#/components/schemas/ListboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/PasswordWritable",
+          },
+          {
+            $ref: "#/components/schemas/RadioButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/RatingWritable",
+          },
+          {
+            $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/TextareaWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitchWritable",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInputWritable",
+          },
+        ],
+      },
+      type: "array",
+      title: "Form",
+      description:
+        "FormKit elements a database's source is configured through, localized.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "SourcePipelineDTO",
 } as const;
 
 export const StandaloneQuestionCondenserEventWritableSchema = {

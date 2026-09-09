@@ -1,4 +1,7 @@
+from collections.abc import Callable
+
 from dagster import InputContext, OpExecutionContext
+from swiss_ai_hub.core.persistence import BucketEntity
 
 from swiss_ai_hub.pipeline.util.partition_utils import bucket_of_composite_partition_key
 
@@ -38,3 +41,13 @@ def bucket_from_run_tag(context: OpExecutionContext | InputContext) -> str:
 def bucket_from_partition_key(partition_key: str) -> str:
     """Resolve the bucket from a composite partition key ``{bucket}|{file_uri}``."""
     return bucket_of_composite_partition_key(partition_key)
+
+
+def owned_by_ingestor(ingestor: str) -> Callable[[BucketEntity], bool]:
+    """Fan-out predicate of an ingestion pipeline: the databases it processes, minus those being torn down."""
+    return lambda bucket: bucket.ingestor == ingestor and not bucket.deleting
+
+
+def owned_by_source(source: str) -> Callable[[BucketEntity], bool]:
+    """Fan-out predicate of a source pipeline: the databases it fills, minus those being torn down."""
+    return lambda bucket: bucket.source == source and not bucket.deleting

@@ -512,9 +512,9 @@ knowledge:
   add_database:
     title: Aggiungi database di conoscenza
     description: Crea un nuovo database di conoscenza self-service
-  auto_sync:
-    title: Sincronizzato automaticamente
-    description: Le collezioni sono gestite automaticamente
+  source:
+    description: 'Sincronizzato da {name}'
+    edit: 'Modifica sorgente'
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
   pipeline: 'Pipeline: {name}'
@@ -554,6 +554,12 @@ knowledge:
         una pipeline sia in esecuzione.
       steps:
         basic_info: Informazioni di base
+        source: 'Sorgente'
+    edit_source:
+      title: 'Sorgente di {name}'
+      success: 'Sorgente aggiornata'
+      error: 'Impossibile aggiornare la sorgente'
+      switch_to_manual: 'Passa al caricamento manuale'
     edit:
       title: Modifica collezione
     database:
@@ -566,6 +572,13 @@ knowledge:
         da 3 a 63 caratteri. Il nome non può essere modificato in seguito.
       validation_error: Il nome del database deve iniziare con una lettera minuscola
         e può contenere solo lettere minuscole e cifre, tra 3 e 63 caratteri
+    source:
+      label: 'Sorgente'
+      placeholder: 'Scegli da dove provengono i documenti'
+      help: 'Una pipeline sorgente mantiene questa base sincronizzata con un sistema esterno; ogni cartella di primo livello diventa un namespace.'
+      manual_upload:
+        label: 'Caricamento manuale'
+        description: 'I documenti vengono caricati a mano in namespace creati da te.'
     ingestor:
       label: Pipeline di ingestione
       placeholder: Seleziona una pipeline di ingestione

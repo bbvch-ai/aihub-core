@@ -507,9 +507,9 @@ knowledge:
   add_database:
     title: Add Knowledge Database
     description: Create a new self-service knowledge database
-  auto_sync:
-    title: Auto-synchronized
-    description: Collections are automatically managed
+  source:
+    description: 'Synchronised from {name}'
+    edit: 'Edit source'
   manual_management:
     description: Collections can be created and managed manually
   pipeline: 'Pipeline: {name}'
@@ -547,6 +547,12 @@ knowledge:
         is running.
       steps:
         basic_info: Basic Info
+        source: 'Source'
+    edit_source:
+      title: 'Source of {name}'
+      success: 'Source updated'
+      error: 'Failed to update the source'
+      switch_to_manual: 'Switch to manual upload'
     edit:
       title: Edit Collection
     database:
@@ -559,6 +565,13 @@ knowledge:
         3 to 63 characters. The name cannot be changed later.
       validation_error: The database name must start with a lowercase letter and contain
         only lowercase letters and digits, between 3 and 63 characters
+    source:
+      label: 'Source'
+      placeholder: 'Select where documents come from'
+      help: 'A source pipeline keeps this database in sync with an external system; each top-level folder becomes a namespace.'
+      manual_upload:
+        label: 'Manual upload'
+        description: 'Documents are uploaded by hand into namespaces you create.'
     ingestor:
       label: Ingestion Pipeline
       placeholder: Select an ingestion pipeline

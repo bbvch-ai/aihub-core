@@ -268,12 +268,14 @@ class Form(BaseModel):
                 element_copy.ref = f"{id_prefix}{field_name}"
 
             # Determine if field is required based on type annotation.
-            # Boolean elements (unchecked = false) and list-collecting elements (empty list = no selection)
-            # have a valid "unset" state and are never auto-required.
+            # Boolean elements (unchecked = false), list-collecting elements (empty list = no selection) and
+            # fields whose default is the empty string (blank = not given, e.g. one of two alternative
+            # credentials) have a valid "unset" state and are never auto-required.
             non_required_formkit_types = {"primeCheckbox", "primeToggleSwitch", "chipsInput"}
             is_skip_required = getattr(element_copy, "formkit", None) in non_required_formkit_types
+            has_blank_default = field_info.default == ""
             allows_none = self._annotation_allows_none(field_info.annotation)
-            is_required = not is_skip_required and not allows_none
+            is_required = not is_skip_required and not allows_none and not has_blank_default
             element_copy.required = is_required
             if allows_none and not is_skip_required:
                 element_copy.nullable = True

@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
     from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
     from swiss_ai_hub.core.form.elements.model_select import ModelSelect
+    from swiss_ai_hub.core.form.elements.password import Password
     from swiss_ai_hub.core.form.elements.repeater import Repeater
     from swiss_ai_hub.core.form.elements.select import Select
     from swiss_ai_hub.core.form.elements.select_button import SelectButton
@@ -51,6 +52,7 @@ __all__ = [
     "KnowledgeDatabaseSelector",
     "LocaleInput",
     "ModelSelect",
+    "Password",
     "Repeater",
     "SecretFieldWalker",
     "Select",
@@ -83,6 +85,7 @@ _LAZY_IMPORTS = {
     "KnowledgeDatabaseSelector": "swiss_ai_hub.core.form.elements.knowledge_database_selector",
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
+    "Password": "swiss_ai_hub.core.form.elements.password",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
     "SecretFieldWalker": "swiss_ai_hub.core.form.secret_field_walker",
     "Select": "swiss_ai_hub.core.form.elements.select",

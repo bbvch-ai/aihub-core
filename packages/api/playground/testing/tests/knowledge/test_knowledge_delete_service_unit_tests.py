@@ -35,9 +35,10 @@ def delete_mocks():
     with (
         patch.object(KnowledgeService, "_ensure_db_exists"),
         patch(f"{_SERVICE_MODULE}.SourceUpdatedPublisher.publish", new_callable=AsyncMock) as publish_event,
-        patch(f"{_SERVICE_MODULE}.BucketEntity"),
+        patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
         patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
     ):
+        bucket_cls.get_bucket_by_db_name.return_value = MagicMock(db_name=DB, source=None)
         ref_doc_cls.by_id_and_namespace.return_value = _mock_ref_doc()
         yield ref_doc_cls, publish_event
 

@@ -19,13 +19,11 @@ def ensure_main_db_connection() -> None:
     _ensure_connection()
 
 
-def _get_or_create_bucket(bucket_name: str, auto_sync: bool) -> BucketEntity:
+def _get_or_create_bucket(bucket_name: str) -> BucketEntity:
     try:
         return BucketEntity.get_bucket_by_bucket_name(bucket_name, db_alias=_DB_ALIAS)
     except DoesNotExist:
-        return BucketEntity.create_bucket(
-            bucket_name=bucket_name, db_name=bucket_name, auto_sync=auto_sync, db_alias=_DB_ALIAS
-        )
+        return BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name, db_alias=_DB_ALIAS)
 
 
 def _get_or_create_namespace(bucket_entity: BucketEntity, directory_name: str) -> NamespaceEntity:
@@ -40,24 +38,21 @@ def _get_or_create_namespace(bucket_entity: BucketEntity, directory_name: str) -
         )
 
 
-def get_db_name_from_bucket_name(bucket_name: str, auto_sync: bool = False) -> str:
+def get_db_name_from_bucket_name(bucket_name: str) -> str:
     """
     Get the database name (vector/doc store name) from the bucket name (container name).
     If the bucket doesn't exist in the database, creates a new bucket entry with db_name = bucket_name as default.
-
-    Set auto_sync to True for autoloading pipelines (e.g. SharePoint to data lake) that automatically ingest data into
-    the datalake. Set to False for manual pipelines (manual upload to data lake).
     """
     _ensure_connection()
-    bucket_entity = _get_or_create_bucket(bucket_name=bucket_name, auto_sync=auto_sync)
+    bucket_entity = _get_or_create_bucket(bucket_name=bucket_name)
     return bucket_entity.db_name
 
 
-def get_or_create_namespace_for_directory(bucket_name: str, directory_name: str, auto_sync: bool = False) -> str:
+def get_or_create_namespace_for_directory(bucket_name: str, directory_name: str) -> str:
     """
     Get or create namespace mapping for a directory within a bucket.
     """
     _ensure_connection()
-    bucket_entity = _get_or_create_bucket(bucket_name=bucket_name, auto_sync=auto_sync)
+    bucket_entity = _get_or_create_bucket(bucket_name=bucket_name)
     namespace_entity = _get_or_create_namespace(bucket_entity=bucket_entity, directory_name=directory_name)
     return namespace_entity.namespace_name

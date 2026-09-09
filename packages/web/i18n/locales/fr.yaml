@@ -514,9 +514,9 @@ knowledge:
   add_database:
     title: Ajouter une base de connaissances
     description: Créer une nouvelle base de connaissances en libre-service
-  auto_sync:
-    title: Synchronisé automatiquement
-    description: Les collections sont gérées automatiquement
+  source:
+    description: 'Synchronisé depuis {name}'
+    edit: 'Modifier la source'
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
   pipeline: 'Pipeline : {name}'
@@ -554,6 +554,12 @@ knowledge:
         un pipeline est en cours d'exécution.
       steps:
         basic_info: Informations de base
+        source: 'Source'
+    edit_source:
+      title: 'Source de {name}'
+      success: 'Source mise à jour'
+      error: 'Échec de la mise à jour de la source'
+      switch_to_manual: 'Passer au téléversement manuel'
     edit:
       title: Modifier la collection
     database:
@@ -567,6 +573,13 @@ knowledge:
       validation_error: Le nom de la base de données doit commencer par une lettre
         minuscule et ne contenir que des lettres minuscules et des chiffres, entre
         3 et 63 caractères
+    source:
+      label: 'Source'
+      placeholder: 'Choisissez d''où proviennent les documents'
+      help: 'Un pipeline source maintient cette base synchronisée avec un système externe ; chaque dossier de premier niveau devient un espace de noms.'
+      manual_upload:
+        label: 'Téléversement manuel'
+        description: 'Les documents sont téléversés à la main dans des espaces de noms que vous créez.'
     ingestor:
       label: Pipeline d'ingestion
       placeholder: Sélectionner un pipeline d'ingestion

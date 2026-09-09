@@ -19,7 +19,7 @@
         />
       </IconField>
       <Button
-        v-if="!currentDatabase?.auto_sync"
+        v-if="!currentDatabase?.source"
         icon="pi pi-upload"
         :label="t('knowledge.documents.upload.title')"
         @click="openUploadModal"

@@ -114,7 +114,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── user/                        # UserDashboardEntity (user dashboard config)
 │   ├── form/                        # ConfigSpecsEntity (announced schema, stored as a JSON string)
 │   ├── i18n/                        # LocaleStringEntity
-│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, NamespaceEntity, …)
+│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, SourcePipelineEntity, NamespaceEntity, …)
 │   └── notification/                # NotificationEntity
 ├── polling/                         # JSPoller (JetStream batch consumption)
 ├── processes/                       # Process config base (process_config.py)

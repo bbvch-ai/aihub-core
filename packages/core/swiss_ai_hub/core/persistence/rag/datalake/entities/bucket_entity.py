@@ -15,8 +15,8 @@ _NEW_DATABASE_NAME_PATTERN = r"^[a-z][a-z0-9]{2,62}$"
 class BucketEntity(Document):
     """
     Represents the metadata of a data lake bucket/container.
-    Each bucket is associated with a unique name and a corresponding database name for storage.
-    Auto-sync indicates that the bucket automatically loads files into the data lake and does not allow manual uploads.
+    Each bucket is associated with a unique name and a corresponding database name for storage. A bucket with a
+    ``source`` is filled by that source pipeline and does not allow manual uploads.
     """
 
     meta = {
@@ -31,7 +31,6 @@ class BucketEntity(Document):
     db_name = StringField(required=True)
     name = EmbeddedDocumentField(LocaleStringEntity, required=True)
     description = EmbeddedDocumentField(LocaleStringEntity, required=True)
-    auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
     ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
     # The ingestor's own settings for this database, shaped by the form the ingestor announced and validated
@@ -75,7 +74,6 @@ class BucketEntity(Document):
         db_name: str | None = None,
         name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
-        auto_sync: bool = False,
         datalake_type: str = "s3",
         ingestor: str = IngestorType.UNASSIGNED.value,
         configuration: dict | None = None,
@@ -93,7 +91,6 @@ class BucketEntity(Document):
                 db_name=db_name or bucket_name,
                 name=name or LocaleStringEntity(en=bucket_name, de=bucket_name, fr=bucket_name, it=bucket_name),
                 description=description or LocaleStringEntity(),
-                auto_sync=auto_sync,
                 datalake_type=datalake_type,
                 ingestor=ingestor,
                 configuration=configuration or {},
@@ -143,7 +140,6 @@ class BucketEntity(Document):
         db_name: str | None = None,
         name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
-        auto_sync: bool | None = None,
         datalake_type: str | None = None,
         ingestor: str | None = None,
         db_alias: str = "default",
@@ -157,8 +153,6 @@ class BucketEntity(Document):
             bucket.name = name
         if description:
             bucket.description = description
-        if auto_sync is not None:
-            bucket.auto_sync = auto_sync
         if datalake_type:
             bucket.datalake_type = datalake_type
         if ingestor is not None:

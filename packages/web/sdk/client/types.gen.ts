@@ -4039,6 +4039,20 @@ export type CreateDatabaseRequest = {
   configuration?: {
     [key: string]: unknown;
   };
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database's data lake, as served by GET /knowledge/source-pipelines. Omit for manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings as submitted through its announced form (backend, credentials, root folder, patterns). Validated against the source's schema; secret fields are stored encrypted.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -4516,15 +4530,23 @@ export type DatabaseDto = {
    */
   display_name: string | null;
   /**
-   * Auto Sync
+   * Source
    *
-   * Whether this database auto-syncs namespaces
+   * Identifier of the source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null when documents are uploaded by hand. A sourced database accepts no manual uploads and generates its namespaces from the source's folders.
    */
-  auto_sync: boolean;
+  source: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings for this database, secret fields masked; empty for manual upload.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
   /**
    * Deletable
    *
-   * Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.
+   * Whether the database itself may be deleted; false for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately.
    */
   deletable: boolean;
   /**
@@ -4569,6 +4591,20 @@ export type DatabaseResponse = {
    * The ingestor's settings for this database, as validated against its announced schema.
    */
   configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database; null for manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings for this database, secret fields masked.
+   */
+  source_configuration?: {
     [key: string]: unknown;
   };
   /**
@@ -14456,6 +14492,69 @@ export const SortOrder = { 1: 1, "-1": -1 } as const;
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
 
 /**
+ * SourcePipelineDTO
+ */
+export type SourcePipelineDto = {
+  /**
+   * Name
+   *
+   * Source pipeline identifier, as served by GET /knowledge/source-pipelines.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the source pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of where the files come from.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database's source is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+};
+
+/**
  * StandaloneQuestionCondenserEvent
  *
  * Event to condense chat messages into a single standalone question as a chat message.
@@ -16160,6 +16259,26 @@ export type UpdateAgentInstanceDto = {
    * The configuration values to update as key-value pairs. Keys should match the 'name' fields from the agent's form elements.
    */
   configuration: {
+    [key: string]: unknown;
+  };
+};
+
+/**
+ * UpdateDatabaseSourceRequest
+ */
+export type UpdateDatabaseSourceRequest = {
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null switches the database back to manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.
+   */
+  source_configuration?: {
     [key: string]: unknown;
   };
 };
@@ -24950,6 +25069,69 @@ export type SliderWritable = {
 };
 
 /**
+ * SourcePipelineDTO
+ */
+export type SourcePipelineDtoWritable = {
+  /**
+   * Name
+   *
+   * Source pipeline identifier, as served by GET /knowledge/source-pipelines.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the source pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of where the files come from.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database's source is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
+};
+
+/**
  * StandaloneQuestionCondenserEvent
  *
  * Event to condense chat messages into a single standalone question as a chat message.
@@ -29143,6 +29325,32 @@ export type GetIngestorsResponses = {
 export type GetIngestorsResponse =
   GetIngestorsResponses[keyof GetIngestorsResponses];
 
+export type GetSourcePipelinesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/source-pipelines";
+};
+
+export type GetSourcePipelinesResponses = {
+  /**
+   * Response Get Source Pipelines  Tenant Id  Knowledge Source Pipelines Get
+   *
+   * Successful Response
+   */
+  200: Array<SourcePipelineDto>;
+};
+
+export type GetSourcePipelinesResponse =
+  GetSourcePipelinesResponses[keyof GetSourcePipelinesResponses];
+
 export type DeleteDatabaseData = {
   body?: never;
   path: {
@@ -29217,6 +29425,44 @@ export type CreateDatabaseResponses = {
 
 export type CreateDatabaseResponse =
   CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type UpdateDatabaseSourceData = {
+  body: UpdateDatabaseSourceRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/source";
+};
+
+export type UpdateDatabaseSourceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateDatabaseSourceError =
+  UpdateDatabaseSourceErrors[keyof UpdateDatabaseSourceErrors];
+
+export type UpdateDatabaseSourceResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type UpdateDatabaseSourceResponse =
+  UpdateDatabaseSourceResponses[keyof UpdateDatabaseSourceResponses];
 
 export type DeleteNamespaceData = {
   body?: never;

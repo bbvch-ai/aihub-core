@@ -154,7 +154,13 @@ def _created_bucket(
     configuration: dict | None = None, ingestor: str = IngestorType.DOCUMENT_INGESTION.value
 ) -> MagicMock:
     return MagicMock(
-        db_name=DATABASE, bucket_name=DATABASE, id="abc123", ingestor=ingestor, configuration=configuration or {}
+        db_name=DATABASE,
+        bucket_name=DATABASE,
+        id="abc123",
+        ingestor=ingestor,
+        configuration=configuration or {},
+        source=None,
+        source_configuration={},
     )
 
 

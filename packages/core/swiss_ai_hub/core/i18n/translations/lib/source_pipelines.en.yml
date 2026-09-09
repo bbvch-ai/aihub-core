@@ -1,7 +1,111 @@
 ---
 manual_upload:
   display_name: Manual upload
-  description: Documents are uploaded by hand through the knowledge views; nothing synchronises them.
+  description: Documents are uploaded by hand through the knowledge views; nothing
+    synchronises them.
 rclone:
   display_name: Cloud storage sync (rclone)
-  description: Keeps the database in sync with a SharePoint site, OneDrive, Google Drive, S3 bucket, Azure Blob container or SFTP server. Each top-level folder becomes a namespace.
+  description: Keeps the database in sync with a SharePoint site, OneDrive, Google
+    Drive, S3 bucket, Azure Blob container or SFTP server. Each top-level folder becomes
+    a namespace.
+  config:
+    backend_type:
+      label: Storage backend
+      help: Which kind of system the files are pulled from.
+    root_path:
+      label: Root folder
+      help: Folder inside the source to sync. Each of its top-level folders becomes
+        a namespace; files directly in it are not synced.
+    include_patterns:
+      label: Include patterns
+      help: rclone glob rules; when set, only matching files are synced (e.g. *.pdf,
+        reports/**).
+    exclude_patterns:
+      label: Exclude patterns
+      help: rclone glob rules for files to skip (e.g. **/~$*, drafts/**).
+    onedrive:
+      client_id:
+        label: Client ID
+        help: Application (client) ID of the Entra ID app registration.
+      client_secret:
+        label: Client secret
+        help: Client secret of the app registration. Stored encrypted.
+      tenant:
+        label: Tenant ID
+        help: Entra ID tenant (directory) ID.
+      drive_id:
+        label: Drive ID
+        help: ID of the drive to sync; for SharePoint the document library's drive.
+      drive_type:
+        label: Drive type
+        help: personal, business or documentLibrary (SharePoint).
+      region:
+        label: Region
+        help: 'Microsoft cloud: global, us, de or cn.'
+      token:
+        label: OAuth token
+        help: Pre-obtained rclone token JSON, as an alternative to client credentials.
+          Stored encrypted.
+    drive:
+      client_id:
+        label: Client ID
+        help: OAuth client ID of your Google Cloud project.
+      client_secret:
+        label: Client secret
+        help: OAuth client secret. Stored encrypted.
+      token:
+        label: OAuth token
+        help: Pre-obtained rclone token JSON. Stored encrypted.
+      service_account_credentials:
+        label: Service account JSON
+        help: Service account key file contents, as an alternative to an OAuth token.
+          Stored encrypted.
+      root_folder_id:
+        label: Root folder ID
+        help: Drive folder ID to treat as the root; empty for the whole drive.
+    s3:
+      provider:
+        label: Provider
+        help: rclone S3 provider name, e.g. AWS, Minio, Ceph.
+      access_key_id:
+        label: Access key ID
+        help: Access key ID.
+      secret_access_key:
+        label: Secret access key
+        help: Secret access key. Stored encrypted.
+      region:
+        label: Region
+        help: Region, e.g. eu-central-1.
+      endpoint:
+        label: Endpoint
+        help: Endpoint URL for non-AWS providers.
+    azureblob:
+      account:
+        label: Storage account
+        help: Azure storage account name.
+      key:
+        label: Account key
+        help: Storage account key. Stored encrypted.
+      sas_url:
+        label: SAS URL
+        help: Shared access signature URL, as an alternative to an account key. Stored
+          encrypted.
+      endpoint:
+        label: Endpoint
+        help: Custom endpoint for sovereign clouds.
+    sftp:
+      host:
+        label: Host
+        help: SFTP host name or IP.
+      port:
+        label: Port
+        help: SFTP port.
+      user:
+        label: User
+        help: SFTP user name.
+      password:
+        label: Password
+        help: Password, as an alternative to a private key. Stored encrypted.
+      key_pem:
+        label: Private key (PEM)
+        help: PEM-encoded private key, as an alternative to a password. Stored encrypted.
