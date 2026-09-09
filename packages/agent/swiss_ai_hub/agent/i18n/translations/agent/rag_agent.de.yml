@@ -53,6 +53,11 @@ config:
     label: Benutzergedächtnis-Speicherung aktivieren
     help: Ob neue Erinnerungen aus Gesprächen für zukünftigen Abruf gespeichert werden
       sollen.
+  memory_llm:
+    label: Speichermodell
+    help: Modell, das Benutzererinnerungen extrahiert und abgleicht. Die Extraktion
+      ist kurz und mechanisch, daher genügt in der Regel ein kleineres Modell. Deaktiviert
+      lassen, um den Plattformstandard zu verwenden.
 steps:
   retrieve_user_memory:
     name: Benutzergedächtnis abrufen

@@ -54,6 +54,13 @@ class StoreUserMemoryRequestedEvent(StartEvent):
     origin_agent_description: Annotated[
         LocaleString, Field(description="Originating agent's description — used in the fact-extraction prompt.")
     ]
+    origin_memory_llm: Annotated[
+        str | None,
+        Field(
+            description="Originating agent's memory model (issue #1590) — the writer extracts on the same "
+            "model an inline write would have used. None means the platform default."
+        ),
+    ] = None
 
     @property
     def user_query(self) -> str:

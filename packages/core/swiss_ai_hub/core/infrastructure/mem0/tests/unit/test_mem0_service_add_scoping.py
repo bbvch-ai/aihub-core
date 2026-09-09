@@ -27,7 +27,9 @@ def mem0_service() -> Mem0Service:
         mock_memory = MagicMock()
         mock_memory.add = AsyncMock(return_value={"results": []})
         mock_memory_cls.return_value = mock_memory
-        service = Mem0Service(config=MagicMock(), t=MagicMock())
+        # A real mem0 config: add_memory reads the extraction model back off it (issue #1590).
+        config = MagicMock(llm=MagicMock(config={"model": "text-generation/memory-model"}))
+        service = Mem0Service(config=config, t=MagicMock())
     return service
 
 
@@ -67,3 +69,38 @@ async def test_org_memory_add_omits_native_agent_id(mem0_service):
         infer=False,
     )
     assert _captured_native_agent_id(mem0_service) is None
+
+
+@pytest.mark.asyncio
+async def test_user_memory_add_reports_the_extracting_model(mem0_service):
+    """Issue #1590: the write records which model extracted it, so a memory stays attributable."""
+    added = await mem0_service.add_memory(
+        messages=[{"role": "user", "content": "I prefer Python", "name": "u1"}],
+        owner_id="u1",
+        memory_type=MemoryType.USER_MEMORY,
+        user_id="u1",
+        agent_id="rag_agent/1",
+        thread_id="t1",
+        display_id="d1",
+        run_id="r1",
+    )
+    assert added.llm_model_name == "text-generation/memory-model"
+
+
+@pytest.mark.asyncio
+async def test_org_memory_add_reports_no_model(mem0_service):
+    """A verbatim write runs no LLM, so naming one would be a lie."""
+    added = await mem0_service.add_memory(
+        messages=[{"role": "user", "content": "Company policy X", "name": "u1"}],
+        owner_id="ACME",
+        memory_type=MemoryType.ORGANIZATION_MEMORY,
+        user_id="u1",
+        agent_id="rag_agent/1",
+        thread_id="t1",
+        display_id="d1",
+        run_id="r1",
+        tenant_id="ACME",
+        tenant_namespace="dept-x",
+        infer=False,
+    )
+    assert added.llm_model_name is None

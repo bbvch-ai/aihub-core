@@ -25,13 +25,24 @@ class AgentMemory:
     interacted with the user, enabling specialized memory banks per agent type.
     """
 
-    def __init__(self, agent_config: AgentConfig, agent_class: str, t: LocaleHandler):
+    def __init__(
+        self,
+        agent_config: AgentConfig,
+        agent_class: str,
+        t: LocaleHandler,
+        llm_model_name: str | None = None,
+    ):
         """
         Initialize agent memory with customized fact extraction prompts.
 
         Configures mem0 with agent-specific prompts that guide the LLM on what facts to extract from
         conversations. This personalization ensures memories are relevant to the agent's domain and includes
         temporal context (current date) for time-sensitive information.
+
+        `llm_model_name` is the profile's own extraction model (issue #1590). Extraction and reconciliation
+        are short, mechanical tasks, so a profile may point them at a smaller model than its answer model.
+        Unset means the platform default (`MEM0_LLM_NAME`), which is why resolution lives here rather than in
+        a config validator: the fallback is a deployment setting, not another field on the config.
         """
         self._agent_class = agent_class
         custom_fact_extraction_prompt = t(
@@ -49,6 +60,7 @@ class AgentMemory:
         self._agent_config = agent_config
         self._t = t
         self._settings = Mem0Settings()
+        self._llm_model_name = llm_model_name
         self._custom_fact_extraction_prompt = custom_fact_extraction_prompt
         self._custom_update_memory_prompt = custom_update_memory_prompt
 
@@ -59,6 +71,7 @@ class AgentMemory:
             custom_fact_extraction_prompt=self._custom_fact_extraction_prompt,
             custom_update_memory_prompt=self._custom_update_memory_prompt,
             enable_graph=False,
+            llm_name=self._llm_model_name,
         )
         return Mem0Service(config, t=self._t)
 

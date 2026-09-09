@@ -49,7 +49,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_DB` |  | `backup-code` |  |
 | `DAGSTER_DEBUG_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_INFO_LOG_RETENTION_DAYS` |  | `backup-code` |  |
-| `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `shared_rag_pipeline` |  |
+| `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `shared_rag_pipeline` |  |
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DOCUMENT_INGESTION_EMBEDDING_MODEL` | `DocumentIngestionPipelineSettings.EMBEDDING_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used to embed chunks. |
@@ -97,8 +97,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `LOG_LEVEL` | `LogSettings.LEVEL` | `api`, `bot`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline`, `sysadmin-api`, `traefik` | Logging level |
 | `MAINTENANCE_DISABLED` |  | `backup-code` |  |
 | `MEM0_EMBEDDING_MODEL_NAME` | `Mem0Settings.EMBEDDING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the embedding model to use |
-| `MEM0_LLM_NAME` | `Mem0Settings.LLM_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the LLM to use |
-| `MEM0_RERANKING_MODEL_NAME` | `Mem0Settings.RERANKING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the embedding model to use |
+| `MEM0_LLM_NAME` | `Mem0Settings.LLM_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the LLM to use. Platform default; an agent may override it per profile. |
+| `MEM0_RERANKING_MODEL_NAME` | `Mem0Settings.RERANKING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the reranking model to use |
 | `MEM0_TELEMETRY` |  | `api`, `bot`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` |  |
 | `MILVUS_DIMENSION` | `MilvusSettings.DIMENSION` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | Dimension of the embedding vector |
 | `MILVUS_ROOT_PASSWORD` | `MilvusSettings.ROOT_PASSWORD` | `api`, `attu`, `backup-code`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `milvus-standalone`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | Root password for Milvus authentication. If not set, no auth is used. Username is always 'root'. |

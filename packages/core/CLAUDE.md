@@ -65,7 +65,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── document/                    # Loaders (MinerU, DocumentIntelligence), parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
-│   ├── memory/                      # AgentMemory (user + org scoped via mem0)
+│   ├── memory/                      # AgentMemory (user + org scoped via mem0; per-agent extraction model)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
 │   ├── rerank/                      # Reranking via LiteLLM (provider-agnostic)
@@ -526,6 +526,14 @@ Real-time event emission for streaming LLM output to the UI:
 | `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                               |
 | `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()` |
 | `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                       |
+
+`AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
+(issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it
+on the config: an unconfigured profile reports `None` and `Mem0Settings.get_config(llm_name=...)` supplies the default.
+`AgentConfig.memory_llm_model_name` is the platform-owned hook the dispatcher reads — it returns `None` on the base and
+a blueprint offering a picker overrides it. Embedding and reranking stay global: memories written with one embedding
+model cannot be searched with another. Only inferring writes run a model, so `MemoryAdded.llm_model_name` and the store
+events report `None` for organization memory, which stores its text verbatim.
 
 ## FastAPI Controllers
 

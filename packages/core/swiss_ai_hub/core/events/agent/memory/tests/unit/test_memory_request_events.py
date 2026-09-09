@@ -58,3 +58,23 @@ def test_round_trip_preserves_nested_start_event():
 def test_store_request_is_a_start_event():
     """The writer's start event must be recognized as a start event so it triggers a run."""
     assert _request().start_event.is_start_event
+
+
+def test_round_trip_preserves_the_origin_memory_model():
+    """Issue #1590: the writer must extract on the same model an inline write would have used."""
+    event = _request()
+    event.start_event.origin_memory_llm = "text-generation/small-model"
+
+    restored = BaseEvent.deserialize_event(event.model_dump())
+
+    assert restored.start_event.origin_memory_llm == "text-generation/small-model"
+
+
+def test_origin_memory_model_is_absent_on_older_events():
+    """Events already in JetStream at deploy time carry no such field and must still deserialize."""
+    payload = _request().model_dump()
+    payload["start_event"].pop("origin_memory_llm")
+
+    restored = BaseEvent.deserialize_event(payload)
+
+    assert restored.start_event.origin_memory_llm is None
