@@ -25,6 +25,21 @@ Examples:
 Agents combine large language models (LLMs) for understanding natural language with structured processes for reliable
 operation.
 
+## The standard blueprint set
+
+The pages that follow document every agent blueprint the platform ships. A tenant does not get all of them.
+
+Three are granted to a new tenant by default:
+
+- **Instructed Assistant** — follows plain-text instructions you write
+- **Teachable Assistant** — learns the shape of the answer you want from examples
+- **Document Intelligence Assistant** — answers from your knowledge bases and cites its sources
+
+The rest are documented here because they are built, supported and ready to run — but a tenant only sees one after a
+sysadmin grants it. That keeps a new tenant's catalog small enough to choose from, without taking anything away from a
+tenant that already relies on an agent outside the set. Granting one takes effect immediately, with no redeploy; see
+[Access control](../16_multi_tenancy/4_access_control/).
+
 ## Agent "Training"
 
 A common question is whether agents can be "trained" on company data. The Swiss AI Hub does not offer model training or
