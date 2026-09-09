@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 from mongoengine import DoesNotExist, NotUniqueError
 from pydantic import Field
-from swiss_ai_hub.core.form import Checkbox, Form, InputNumber, ModelSelect
+from swiss_ai_hub.core.form import Checkbox, ConfigSpecs, Form, InputNumber, ModelSelect
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.ingestors import IngestorConfig
 from swiss_ai_hub.core.persistence import ConfigSpecsEntity
@@ -105,11 +105,15 @@ NESTED = _ingestor("nested", _NestedConfig.as_form())
 def registered_ingestors():
     """The entity is Mongo-backed; stub it with two differently shaped ingestors so these tests need no database."""
     labels_only = MagicMock(form=[], config_specs=None)
+    # A row whose schema is present but empty: a pipeline that built its `Ingestor` by hand rather than
+    # through `from_config`, so `config_specs` defaults to a schema jambo cannot build a model from.
+    schema_without_form = MagicMock(form=[], config_specs=ConfigSpecsEntity.from_specs(ConfigSpecs()))
     rows = {
         RAG.id: _registered(RAG),
         CRAWLER.id: _registered(CRAWLER),
         NESTED.id: _registered(NESTED),
         "stale": labels_only,
+        "formless": schema_without_form,
     }
     with patch(f"{_SERVICE_MODULE}.IngestorEntity") as ingestor_entity:
         ingestor_entity.find.side_effect = lambda ingestor_id: rows.get(ingestor_id)
@@ -597,6 +601,27 @@ class TestAnnouncedFormIsRequired:
             accessible_tenant_ids=set(),
             t=MagicMock(),
         )
+
+
+class TestFormlessIngestorIsRejected:
+    """An empty announced form is no more usable than a missing one, and must not reach the model builder."""
+
+    @pytest.mark.asyncio
+    async def test_an_ingestor_whose_form_is_empty_is_rejected_not_served_a_500(self, locale_handler, s3_service):
+        """jambo raises on the title-less schema such a row carries, and every key would be undeclared anyway."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE,
+                    CreateDatabaseRequest(ingestor="formless", configuration={"name": {"en": "X"}}),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "no running pipeline has announced it" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
 
 
 class TestCreateDatabaseNameValidation:

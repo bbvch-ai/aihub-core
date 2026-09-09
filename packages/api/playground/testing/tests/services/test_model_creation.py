@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from types import UnionType
 from typing import Annotated, Union, get_args, get_origin
 
@@ -774,7 +774,7 @@ class TestConfigRoundTrip:
     loses one says which.
     """
 
-    class _Mode(str, Enum):
+    class _Mode(StrEnum):
         FAST = "fast"
         DEEP = "deep"
 
