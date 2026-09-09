@@ -48,7 +48,9 @@ class TestUpdateModelAccess:
         assert result == {"id": "m1"}
 
         call_args = mock_client.post.call_args
-        assert call_args.kwargs["json"]["access_grants"] is None
+        # OpenWebUI's update endpoint treats a null access_grants as "leave untouched", so an
+        # explicit [] must be sent to actually clear a revoked grant — None would silently keep it.
+        assert call_args.kwargs["json"]["access_grants"] == []
 
 
 class TestUpdateModel:

@@ -11,11 +11,17 @@ from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.available_model import AvailableModel
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
     AIHUB_LLM_MODEL_PREFIX,
+    AIHUB_MANAGED_META_KEY,
     OpenWebuiProvisioner,
 )
 
 _GEMMA = AvailableModel(capability="text-generation", name="gemma-4-31B-it", display_name="gemma-4-31B-it")
 _GEMMA_ID = f"{AIHUB_LLM_MODEL_PREFIX}text-generation-gemma-4-31B-it"
+_GEMMA_LLM_ID = _GEMMA.litellm_name
+
+
+def _managed_row(model_id: str, name: str) -> dict:
+    return {"id": model_id, "name": name, "meta": {AIHUB_MANAGED_META_KEY: True}}
 
 
 def _group(display_name: str, group_id: str) -> Group:
@@ -70,12 +76,13 @@ class TestGetAvailableLlmModels:
 
 
 class TestBuildLlmModelData:
-    def test_id_and_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
+    def test_registers_raw_id_with_no_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
         data = provisioner._build_llm_model_data(_GEMMA)
 
-        assert data["id"] == _GEMMA_ID
-        assert data["base_model_id"] == "text-generation/gemma-4-31B-it"
+        assert data["id"] == "text-generation/gemma-4-31B-it"
+        assert "base_model_id" not in data
         assert data["name"] == "gemma-4-31B-it"
+        assert data["meta"][AIHUB_MANAGED_META_KEY] is True
 
 
 class TestSyncLlmWorkspaceModels:
@@ -84,7 +91,7 @@ class TestSyncLlmWorkspaceModels:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
-            patch.object(provisioner._openwebui, "list_models", return_value=[]),
+            patch.object(provisioner._openwebui, "list_base_models", return_value=[]),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
@@ -92,8 +99,8 @@ class TestSyncLlmWorkspaceModels:
 
             mock_create.assert_called_once()
             create_data = mock_create.call_args[0][1]
-            assert create_data["id"] == _GEMMA_ID
-            assert create_data["base_model_id"] == "text-generation/gemma-4-31B-it"
+            assert create_data["id"] == _GEMMA_LLM_ID
+            assert "base_model_id" not in create_data
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
@@ -101,21 +108,23 @@ class TestSyncLlmWorkspaceModels:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
-            patch.object(provisioner._openwebui, "list_models", return_value=[{"id": _GEMMA_ID}]),
+            patch.object(
+                provisioner._openwebui, "list_base_models", return_value=[_managed_row(_GEMMA_LLM_ID, "gemma-4-31B-it")]
+            ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
             await provisioner._sync_llm_workspace_models(mock_client, [])
 
             mock_create.assert_not_called()
-            mock_delete.assert_called_once_with(mock_client, _GEMMA_ID)
+            mock_delete.assert_called_once_with(mock_client, _GEMMA_LLM_ID)
 
     @pytest.mark.asyncio
     async def test_updates_name_on_drift(self, provisioner: OpenWebuiProvisioner) -> None:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
-            patch.object(provisioner._openwebui, "list_models", return_value=[{"id": _GEMMA_ID, "name": "Old"}]),
+            patch.object(provisioner._openwebui, "list_base_models", return_value=[_managed_row(_GEMMA_LLM_ID, "Old")]),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "update_model") as mock_update,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
@@ -133,7 +142,9 @@ class TestSyncLlmWorkspaceModels:
 
         with (
             patch.object(
-                provisioner._openwebui, "list_models", return_value=[{"id": _GEMMA_ID, "name": "gemma-4-31B-it"}]
+                provisioner._openwebui,
+                "list_base_models",
+                return_value=[_managed_row(_GEMMA_LLM_ID, "gemma-4-31B-it")],
             ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "update_model") as mock_update,
@@ -146,12 +157,35 @@ class TestSyncLlmWorkspaceModels:
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_ignores_agent_workspace_models(self, provisioner: OpenWebuiProvisioner) -> None:
-        """An aihub-agent-* entry must not be deleted by the LLM sync (different prefix)."""
+    async def test_ignores_agent_pipe_rows(self, provisioner: OpenWebuiProvisioner) -> None:
+        """A managed agent-pipe row must not be deleted by the LLM sync (different id shape)."""
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
-            patch.object(provisioner._openwebui, "list_models", return_value=[{"id": "aihub-agent-rag-default"}]),
+            patch.object(
+                provisioner._openwebui,
+                "list_base_models",
+                return_value=[_managed_row("aihub-pipeline.rag.default", "RAG Agent")],
+            ),
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [])
+
+            mock_create.assert_not_called()
+            mock_delete.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_ignores_non_managed_base_rows(self, provisioner: OpenWebuiProvisioner) -> None:
+        """A human-created base row (no aihub_managed marker) must not be deleted by the LLM sync."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_base_models",
+                return_value=[{"id": "text-generation/some-custom-model", "name": "Human-made"}],
+            ),
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
@@ -163,15 +197,15 @@ class TestSyncLlmWorkspaceModels:
 
 class TestParseLlmFromModel:
     def test_parses_capability_and_name(self) -> None:
-        model = {"id": _GEMMA_ID, "base_model_id": "text-generation/gemma-4-31B-it"}
+        model = {"id": "text-generation/gemma-4-31B-it"}
         assert OpenWebuiProvisioner._parse_llm_from_model(model) == ("text-generation", "gemma-4-31B-it")
 
     def test_returns_none_without_slash(self) -> None:
-        model = {"id": _GEMMA_ID, "base_model_id": "no-slash"}
+        model = {"id": "no-slash"}
         assert OpenWebuiProvisioner._parse_llm_from_model(model) is None
 
-    def test_returns_none_without_base_model_id(self) -> None:
-        assert OpenWebuiProvisioner._parse_llm_from_model({"id": _GEMMA_ID}) is None
+    def test_returns_none_for_empty_id(self) -> None:
+        assert OpenWebuiProvisioner._parse_llm_from_model({}) is None
 
 
 class TestComputeAccessForLlmModel:
@@ -236,11 +270,13 @@ class TestComputeAccessForLlmModel:
 
 
 class TestComputeGrantsForManagedModel:
+    """Dispatch is by id shape now — a managed row carries no base_model_id hop to key off."""
+
     def test_dispatches_llm_model_to_model_access(self, provisioner: OpenWebuiProvisioner) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.model.>"]}
         role_rules = {("T1", "R1"): ["aihub.user.model.>"]}
-        model = {"id": _GEMMA_ID, "base_model_id": "text-generation/gemma-4-31B-it"}
+        model = {"id": _GEMMA_LLM_ID}
 
         result = provisioner._compute_grants_for_managed_model(model, groups, tenant_rules, role_rules)
 
@@ -250,18 +286,18 @@ class TestComputeGrantsForManagedModel:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
         role_rules = {("T1", "R1"): ["aihub.user.agent.>"]}
-        model = {"id": "aihub-agent-rag-default", "base_model_id": "aihub-pipeline.rag.default"}
+        model = {"id": "aihub-pipeline.rag.default"}
 
         result = provisioner._compute_grants_for_managed_model(model, groups, tenant_rules, role_rules)
 
         assert result == [AccessGrant(principal_type="group", principal_id="grp-1", permission="read")]
 
-    def test_unknown_prefix_returns_none(self, provisioner: OpenWebuiProvisioner) -> None:
-        model = {"id": "custom-model-123", "base_model_id": "whatever/x"}
+    def test_bare_id_returns_none(self, provisioner: OpenWebuiProvisioner) -> None:
+        model = {"id": "custom-model-123"}
         assert provisioner._compute_grants_for_managed_model(model, [], {}, {}) is None
 
-    def test_unparseable_llm_returns_none(self, provisioner: OpenWebuiProvisioner) -> None:
-        model = {"id": _GEMMA_ID, "base_model_id": "no-slash"}
+    def test_malformed_agent_pipe_id_returns_none(self, provisioner: OpenWebuiProvisioner) -> None:
+        model = {"id": "aihub-pipeline.nodot"}
         assert provisioner._compute_grants_for_managed_model(model, [], {}, {}) is None
 
 
@@ -273,8 +309,8 @@ class TestSyncAccessGrantsLlm:
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": _GEMMA_ID, "base_model_id": "text-generation/gemma-4-31B-it"}],
+                "list_base_models",
+                return_value=[_managed_row(_GEMMA_LLM_ID, "gemma-4-31B-it")],
             ),
             patch.object(provisioner._openwebui, "list_groups", return_value=[_group("aihub:T1:R1", "grp-1")]),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
@@ -298,6 +334,6 @@ class TestSyncAccessGrantsLlm:
             await provisioner._sync_access_grants(mock_client)
 
             mock_update.assert_called_once()
-            assert mock_update.call_args[0][1] == _GEMMA_ID
+            assert mock_update.call_args[0][1] == _GEMMA_LLM_ID
             grants = mock_update.call_args[0][2]
             assert AccessGrant(principal_type="group", principal_id="grp-1", permission="read") in grants
