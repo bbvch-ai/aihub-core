@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings import (
         DocumentIngestionPipelineSettings,
     )
+    from swiss_ai_hub.core.infrastructure.encryption.config_encryption_settings import ConfigEncryptionSettings
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import LangfuseProvisioner
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
@@ -95,6 +96,7 @@ __all__ = [
     "OpenWebuiTokenService",
     "ParsingSettings",
     "RedisSettings",
+    "ConfigEncryptionSettings",
     "DocumentIngestionPipelineSettings",
     "S3BucketProvisioner",
     "S3StorageSettings",
@@ -148,6 +150,7 @@ _LAZY_IMPORTS = {
     "OpenWebuiTokenService": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service",
     "ParsingSettings": "swiss_ai_hub.core.infrastructure.parsing.parsing_settings",
     "RedisSettings": "swiss_ai_hub.core.infrastructure.redis.redis_settings",
+    "ConfigEncryptionSettings": "swiss_ai_hub.core.infrastructure.encryption.config_encryption_settings",
     "DocumentIngestionPipelineSettings": "swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings",
     "S3BucketProvisioner": "swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner",
     "S3StorageSettings": "swiss_ai_hub.core.infrastructure.s3.s3_storage_settings",
