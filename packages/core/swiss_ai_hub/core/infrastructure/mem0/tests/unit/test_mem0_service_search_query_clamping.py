@@ -14,6 +14,7 @@ from llama_index.core.utils import get_tokenizer
 
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import (
     EMBEDDING_BUDGET_SAFETY_FACTOR,
+    MINIMUM_EMBEDDING_MAX_INPUT_TOKENS,
     Mem0Service,
 )
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
@@ -104,6 +105,36 @@ async def test_query_at_the_character_floor_passes_through_identical(mem0_servic
     await mem0_service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
     assert _forwarded_query(mem0_service) is query
+
+
+@pytest.mark.asyncio
+async def test_query_under_the_default_window_is_clamped_to_a_smaller_resolved_window():
+    """A resolution-free floor derived from the 8192 default would let a query that is short in characters
+    but long for a small embedding model reach the embedder un-clamped — the exact crash this guards."""
+    service = _build_service(max_search_query_tokens=None)
+    small_window = 512
+    query = "Document content sentence. " * 200
+
+    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
+        config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": small_window}}
+        await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
+
+    forwarded = _forwarded_query(service)
+    assert len(query) < int(8192 * EMBEDDING_BUDGET_SAFETY_FACTOR)
+    assert forwarded is not query
+    assert len(get_tokenizer()(forwarded)) <= int(small_window * EMBEDDING_BUDGET_SAFETY_FACTOR)
+
+
+@pytest.mark.asyncio
+async def test_query_under_the_minimum_window_floor_skips_resolution():
+    service = _build_service(max_search_query_tokens=None)
+    query = "a" * int(MINIMUM_EMBEDDING_MAX_INPUT_TOKENS * EMBEDDING_BUDGET_SAFETY_FACTOR)
+
+    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
+        await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
+        config_cls.assert_not_called()
+
+    assert _forwarded_query(service) is query
 
 
 def test_lazy_default_resolves_the_model_window():

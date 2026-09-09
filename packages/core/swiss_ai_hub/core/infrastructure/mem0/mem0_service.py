@@ -25,6 +25,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_EMBEDDING_MAX_INPUT_TOKENS = 8192
 EMBEDDING_BUDGET_SAFETY_FACTOR = 0.85
 
+# Smallest window we assume any deployed embedder accepts. Only used to decide when a query is short enough
+# to skip resolving the real window, so it must never exceed a configured model's actual window.
+MINIMUM_EMBEDDING_MAX_INPUT_TOKENS = 512
+
 
 class Mem0Service:
     def __init__(
@@ -60,10 +64,12 @@ class Mem0Service:
     def _clamp_query(self, query: str) -> str:
         """
         A tiktoken token count never exceeds the character count, so a query at or under the floor in
-        characters provably fits — without resolving the (possibly remote) token limit.
+        characters provably fits — without resolving the (possibly remote) token limit. The floor must never
+        exceed the effective limit, so an unset budget falls back to the smallest window we support rather
+        than the default one: the real window is only known after resolution.
         """
         floor = int(
-            (self._max_search_query_tokens or DEFAULT_EMBEDDING_MAX_INPUT_TOKENS) * EMBEDDING_BUDGET_SAFETY_FACTOR
+            (self._max_search_query_tokens or MINIMUM_EMBEDDING_MAX_INPUT_TOKENS) * EMBEDDING_BUDGET_SAFETY_FACTOR
         )
         if len(query) <= floor:
             return query
