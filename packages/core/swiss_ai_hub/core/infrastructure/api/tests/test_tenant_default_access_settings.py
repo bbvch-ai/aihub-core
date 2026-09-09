@@ -49,3 +49,43 @@ class TestAgentClassesParsing:
         """A trailing comma is the common hand-edit, and an empty segment would emit a malformed rule."""
         monkeypatch.setenv(AGENTS_ENV, " RAGAgent ,, FewShotAgent , ")
         assert TenantDefaultAccessSettings().agent_classes_list == ["RAGAgent", "FewShotAgent"]
+
+    def test_digits_hyphens_and_underscores_are_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The permission grammar allows these in a segment, so a class named with them is not an error."""
+        monkeypatch.setenv(AGENTS_ENV, "RAGAgent2,Expert-RAG,expert_rag")
+        assert TenantDefaultAccessSettings().agent_classes_list == ["RAGAgent2", "Expert-RAG", "expert_rag"]
+
+
+class TestAgentClassesValidation:
+    """Every rejection below would otherwise reach ``AccessChecker``, which drops an unparseable rule without
+    a word — the tenant is seeded a blueprint short and nothing says why."""
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "RAG Agent",
+            "text-generation/RAGAgent",
+            "RAGAgent.Nested",
+            "RAGAgent,Bad Name",
+        ],
+    )
+    def test_a_name_outside_the_segment_grammar_is_rejected(self, monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+        monkeypatch.setenv(AGENTS_ENV, value)
+        with pytest.raises(ValueError, match="AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES"):
+            TenantDefaultAccessSettings()
+
+    @pytest.mark.parametrize("wildcard", ["*", ">", "RAGAgent,*"])
+    def test_a_wildcard_is_rejected_rather_than_granting_every_blueprint(
+        self, monkeypatch: pytest.MonkeyPatch, wildcard: str
+    ) -> None:
+        """``*`` passes ``validate_user_access_rule``, so without this check it would reach the ceiling as
+        ``aihub.admin.agent.*`` and grant the whole catalog — silently undoing curation."""
+        monkeypatch.setenv(AGENTS_ENV, wildcard)
+        with pytest.raises(ValueError, match="wildcards are not"):
+            TenantDefaultAccessSettings()
+
+    def test_the_offending_name_is_named(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A crash at first boot is only actionable if it says which entry to fix."""
+        monkeypatch.setenv(AGENTS_ENV, "RAGAgent,RAG Agent")
+        with pytest.raises(ValueError, match="RAG Agent"):
+            TenantDefaultAccessSettings()

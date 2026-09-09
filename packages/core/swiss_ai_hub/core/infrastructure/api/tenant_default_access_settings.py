@@ -1,8 +1,11 @@
+import re
 from typing import Annotated
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, field_validator
 
 from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
+
+_AGENT_CLASS_PATTERN = re.compile(r"[a-zA-Z0-9_-]+")
 
 
 class TenantDefaultAccessSettings(EnvironmentSettings):
@@ -49,6 +52,25 @@ class TenantDefaultAccessSettings(EnvironmentSettings):
             ),
         ),
     ] = "LLMWrappingAgent,FewShotAgent,RAGAgent"
+
+    @field_validator("AGENT_CLASSES")
+    @classmethod
+    def _reject_names_that_are_not_bare_class_segments(cls, value: str) -> str:
+        """Stricter than ``AccessChecker.validate_user_access_rule``, which each derived rule would also
+        pass: that grammar admits ``*`` and ``>``, so a wildcard here would silently widen the ceiling to
+        every blueprint — the opposite of what curation is for. A name failing the segment grammar is worse
+        still, because the rule it builds is dropped unvalidated and the tenant is seeded one blueprint
+        short with nothing to show for it.
+        """
+        names = [name.strip() for name in value.split(",") if name.strip()]
+        invalid = [name for name in names if not _AGENT_CLASS_PATTERN.fullmatch(name)]
+        if invalid:
+            raise ValueError(
+                f"Invalid agent class(es) in AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES: {', '.join(invalid)}. "
+                "Each entry must be a bare class name (letters, digits, '-', '_'); wildcards are not "
+                "accepted — to grant every blueprint, set AIHUB_STARTUP_TENANT_ACCESS_RULES instead."
+            )
+        return value
 
     @computed_field
     @property
