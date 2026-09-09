@@ -74,6 +74,19 @@ async def test_oversized_query_without_whitespace_is_still_truncated(mem0_servic
 
 
 @pytest.mark.asyncio
+async def test_oversized_whitespace_only_query_does_not_crash(mem0_service):
+    """Mixed whitespace does not compress under tiktoken, so it clears the budget check — but the splitter
+    drops whitespace-only chunks and returns none, which used to raise IndexError."""
+    query = " \n\t" * 4000
+
+    await mem0_service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
+
+    forwarded = _forwarded_query(mem0_service)
+    assert forwarded
+    assert len(get_tokenizer()(forwarded)) <= EFFECTIVE_LIMIT
+
+
+@pytest.mark.asyncio
 async def test_truncation_logs_warning_with_original_and_effective_lengths(mem0_service, caplog):
     query = "Document content sentence. " * 200
 

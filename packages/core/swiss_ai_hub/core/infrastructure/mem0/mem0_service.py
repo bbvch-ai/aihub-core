@@ -79,9 +79,12 @@ class Mem0Service:
         if original_tokens <= limit:
             return query
         splitter = SentenceSplitter(chunk_size=limit, chunk_overlap=0, tokenizer=tokenizer)
+        chunks = splitter.split_text(query)
         # Keep the last chunk: chat clients inline documents before the user's question, so the tail is
-        # where the actual question lives.
-        clamped = splitter.split_text(query)[-1]
+        # where the actual question lives. A query with no textual content yields no chunks at all (the
+        # splitter drops whitespace-only ones), so fall back to a character slice — provably within budget,
+        # since a tiktoken count never exceeds the character count.
+        clamped = chunks[-1] if chunks else query[-limit:]
         logger.warning(
             "Search query exceeds the embedding budget, truncating: %d -> %d tokens (%d -> %d characters, limit %d)",
             original_tokens,
