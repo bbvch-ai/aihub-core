@@ -3468,6 +3468,7 @@ services:
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
