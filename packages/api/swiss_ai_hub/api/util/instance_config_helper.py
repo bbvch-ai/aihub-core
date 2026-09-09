@@ -3,7 +3,13 @@ from typing import Any, NamedTuple, TypeVar
 from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
 from swiss_ai_hub.core.agents import CRON_CONFIG_KEY
-from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
+from swiss_ai_hub.core.form import (
+    FormkitElement,
+    Group,
+    Repeater,
+    normalize_empty_locale_strings,
+    normalize_empty_objects_to_none,
+)
 from swiss_ai_hub.core.i18n import LOCALES, LocaleString
 from swiss_ai_hub.core.persistence import AgentInstanceRef
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -77,6 +83,55 @@ class InstanceConfigHelper:
         InstanceConfigHelper.validate_identity_locale_fields(instance)
         InstanceConfigHelper.validate_cron_field(config, agent)
         return instance
+
+    @staticmethod
+    def reject_undeclared_fields(elements: list[FormkitElement], config: dict[str, Any]) -> None:
+        """Reject a submission carrying a field the announced form never declared.
+
+        The generated model cannot do this: jambo builds it with Pydantic's default `extra="ignore"`, so an
+        unrecognised key validates and is dropped rather than refused — and the caller stores what was
+        submitted, so a mistyped knob is persisted and then silently ignored by whoever reads it back.
+
+        Checked against the announced elements rather than the announced schema, because the two disagree on
+        exactly the shapes that matter. `name` and `description` are `$ref` objects in the schema but leaf
+        elements on the form, so a schema walk would descend into a `LocaleString` and reject its locale keys;
+        and only the schema needs `$ref`/`anyOf`/`items` resolution to reach a nested section at all.
+        """
+        undeclared = InstanceConfigHelper._undeclared_fields(elements, config, prefix="")
+        if not undeclared:
+            return
+
+        raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(undeclared)}")
+
+    @staticmethod
+    def _undeclared_fields(elements: list[FormkitElement], config: dict[str, Any], prefix: str) -> list[str]:
+        """Every config path with no element of that name, deepest-last, as `field`, `group.field`,
+        `repeater.0.field`."""
+        declared = {name for element in elements if (name := getattr(element, "name", None))}
+        # `normalize_form_configuration` strips FormKit's own keys only at the top level, and making it
+        # recursive would change what the agent and process paths persist — `Form.deserialize_form` dispatches
+        # on a nested `_form_name`. So the same convention is applied locally, at every depth.
+        undeclared = [
+            f"{prefix}{key}: not a configurable field of the announced form"
+            for key in config
+            if key not in declared and not key.startswith("_")
+        ]
+
+        for element in elements:
+            name = getattr(element, "name", None)
+            if not name:
+                continue
+            value = config.get(name)
+            if isinstance(element, Group) and isinstance(value, dict):
+                undeclared.extend(InstanceConfigHelper._undeclared_fields(element.children, value, f"{prefix}{name}."))
+            elif isinstance(element, Repeater) and isinstance(value, list):
+                for index, entry in enumerate(value):
+                    if isinstance(entry, dict):
+                        undeclared.extend(
+                            InstanceConfigHelper._undeclared_fields(element.children, entry, f"{prefix}{name}.{index}.")
+                        )
+
+        return undeclared
 
     @staticmethod
     def validate_cron_field(config: dict[str, Any], agent: AgentInstanceRef | None = None) -> None:

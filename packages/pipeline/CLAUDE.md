@@ -160,9 +160,9 @@ to the instance. That is what lets a second pipeline *type* be deployed alongsid
 `settings` is a `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`, read from the environment when omitted)
 carrying the text, embedding and vision models, the three enrichment flags and the observation schedule. The models and
 enrichment flags are **deployment defaults**, not the graph's shape: they pre-fill the form the pipeline announces, and
-are what a database that stores no value of its own falls back to at run time. The asset graph is
-identical for every database (`summary_nodes` always exists, and table refinement and figure descriptions are always in
-the `documents` graph), and each enrichment op decides per run from the bucket's configuration whether it has work.
+are what a database that stores no value of its own falls back to at run time. The asset graph is identical for every
+database (`summary_nodes` always exists, and table refinement and figure descriptions are always in the `documents`
+graph), and each enrichment op decides per run from the bucket's configuration whether it has work.
 
 Every pipeline built here registers itself: a sensor upserts an `IngestorEntity` carrying labels, form and schema, so
 the API's `GET /knowledge/ingestors` can offer it in the create-database dialog and validate what users submit. See
@@ -223,9 +223,11 @@ the whole code location down at load; this way it re-registers on the next tick 
 **What the API does with it.** `GET /knowledge/ingestors` returns every announced row with labels and form localized.
 `create_database` looks the ingestor up, builds a validator from its announced schema, rejects a mismatch with a 400
 naming the offending field, walks the announced elements for authorization, and checks every announced model picker
-against LiteLLM (mode, tenant access, and a declared `output_vector_size` for embedding pickers). The identity fields
-land on the bucket row and everything else in `BucketEntity.configuration`. The `ingestor` field is a plain `str` across
-the API boundary, not the `IngestorType` enum, so a deployment-defined value is representable on the wire.
+against LiteLLM (mode, tenant access, and a declared `output_vector_size` for embedding pickers). A field the form never
+announced is refused the same way, so a mistyped knob cannot be stored and then silently ignored per run. The identity
+fields land on the bucket row and everything the form announced in `BucketEntity.configuration`, dumped from the
+validated configuration so each knob is stored in the type its pipeline declared. The `ingestor` field is a plain `str`
+across the API boundary, not the `IngestorType` enum, so a deployment-defined value is representable on the wire.
 
 **The shipped pipeline is not special.** `document_ingestion` registers through the same sensor, with labels from
 `lib.ingestors.document_ingestion.*`. The API has no built-in ingestor and offers nothing until a pipeline is running. A

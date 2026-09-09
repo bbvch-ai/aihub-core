@@ -130,9 +130,13 @@ If your pipeline never appears in the dialog, check in order: the code location 
 running in the Dagster UI, the row exists in the platform database, and the API can reach that same database.
 
 To add a setting of your own, extend `DocumentIngestionConfig` with a field such as `crawl_depth: int | InputNumber`,
-pass its `as_form()` to the factory as `config=`, and read it back per run in your ops. The class works the same way an
-agent's config does, so a nested section or a repeated entry needs no extra work. Full details, including the exact
-call, are in the
+give that field an element in your `as_form()` override, pass the result to the factory as `config=`, and read it back
+per run in your ops. The class works the same way an agent's config does, so a nested section or a repeated entry needs
+no extra work.
+
+Setting the field in `as_form()` is what announces it. A field declared on the class but left at a plain default is not
+part of the form, is not part of the schema, and a configuration that carries it is rejected with a 400 naming it —
+rather than being stored and silently ignored at ingestion time. Full details, including the exact call, are in the
 [package README](https://github.com/bbvch-ai/aihub-core/tree/main/packages/pipeline#making-a-custom-pipeline-selectable-in-the-ui).
 
 ## Next Steps
