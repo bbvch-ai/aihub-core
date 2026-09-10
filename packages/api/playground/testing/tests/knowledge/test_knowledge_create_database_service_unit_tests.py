@@ -354,7 +354,7 @@ class TestAnnouncedConfiguration:
 
         assert bucket_cls.create_bucket.call_args.kwargs["configuration"]["crawl_depth"] == 5
         assert exc_info.value.status_code == 400
-        assert "embedding_model" in exc_info.value.detail
+        assert "crawl_depth" in exc_info.value.detail
 
 
 class TestUndeclaredConfiguration:
@@ -380,6 +380,35 @@ class TestUndeclaredConfiguration:
         assert "with_summarys" in exc_info.value.detail
         bucket_cls.create_bucket.assert_not_called()
         s3_service.ensure_bucket_with_cors.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_misspelled_required_knob_is_named_as_the_typo_not_as_a_missing_field(
+        self, locale_handler, s3_service
+    ):
+        """The model drops the typo and reports the correct name as missing, which hides what the user typed.
+
+        Naming `embedding_model: Field required` describes the consequence; the mistake is `embeding_model`,
+        and only that message tells the user their value went nowhere.
+        """
+        configuration = {
+            "name": {"en": "Research Docs"},
+            "description": {"en": "Papers"},
+            "embeding_model": "embedding/default",
+        }
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE,
+                    CreateDatabaseRequest(ingestor=RAG.id, configuration=configuration),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert "embeding_model" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_a_knob_another_ingestor_announces_is_undeclared_here(self, locale_handler, s3_service):

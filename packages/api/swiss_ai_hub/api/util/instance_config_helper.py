@@ -92,10 +92,14 @@ class InstanceConfigHelper:
         unrecognised key validates and is dropped rather than refused — and the caller stores what was
         submitted, so a mistyped knob is persisted and then silently ignored by whoever reads it back.
 
-        Checked against the announced elements rather than the announced schema, because the two disagree on
-        exactly the shapes that matter. `name` and `description` are `$ref` objects in the schema but leaf
-        elements on the form, so a schema walk would descend into a `LocaleString` and reject its locale keys;
-        and only the schema needs `$ref`/`anyOf`/`items` resolution to reach a nested section at all.
+        Checked against the announced elements rather than by forbidding extras on the generated model, which
+        does work: jambo ignores `additionalProperties`, so the submission schema cannot carry the rule, but
+        mutating each built model's `extra` and rebuilding does reject the same keys with better error
+        locations. It is declined on scope and coupling. `create_config_model` is shared with the agent and
+        process paths, where an unannounced key is legitimate — `AgentConfig.cron` is deliberately absent from
+        the form and injected only for schedulable classes — so forbidding extras would change those surfaces
+        blind. And the rebuild is only correct while jambo's ref cache happens to hold children before parents,
+        which it does not promise.
         """
         undeclared = InstanceConfigHelper._undeclared_fields(elements, config, prefix="")
         if not undeclared:

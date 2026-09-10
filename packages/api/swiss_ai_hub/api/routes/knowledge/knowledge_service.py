@@ -471,8 +471,11 @@ class KnowledgeService:
         form_elements = ingestor.form_elements
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
         config_model = ModelCreationService.create_config_model(ingestor.config_specs.to_specs())
-        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        # Before the model validation, so a misspelled key is named as itself. The generated model drops an
+        # unrecognised key and then reports the correctly-spelled one as missing, which names the consequence
+        # rather than the mistake and says nothing about the value the user actually typed.
         InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
+        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=ingestor.form, config=config, user=user, t=t
         )
