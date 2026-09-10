@@ -6,6 +6,7 @@
 // API_BASE_URL is set authoritatively in app.vue to '/api/v1' (same-origin
 // against sysadmin-api on sysadmin.${DOMAIN}); no need to inject it here.
 window.__AIHUB_CONFIG__ = {
+  APP_VERSION: '${APP_VERSION}',
   OAUTH_CLIENT_ID: '${OAUTH_CLIENT_ID}',
   OAUTH_AUTHORITY_URL: '${OAUTH_AUTHORITY_URL}',
   MAIN_APP_URL: '${MAIN_APP_URL}',
