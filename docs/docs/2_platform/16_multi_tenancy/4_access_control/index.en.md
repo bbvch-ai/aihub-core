@@ -38,6 +38,14 @@ user access.
 
 A user with `aihub.admin.agent.>` can access resources requiring either `aihub.admin.agent.*` or `aihub.user.agent.*`.
 
+### The chat interface is a separate axis
+
+The rules above govern the platform API. The chat interface has its own administrator role, granted by the
+`AIHubSysAdmin` Keycloak realm role rather than by any tenant role or access rule. Holding `aihub.admin.*` in a tenant
+does not make you a chat administrator, and being a chat administrator does not grant visibility into other users'
+uploads or conversations - those are scoped to their owner by default. See
+[ADR: Scope OpenWebUI Admins to Their Own Files and Chats](/arc42/decisions/2026_09_07_openwebui_admin_scoped_to_own_data.md).
+
 ## Permission resolution
 
 When a request arrives, the platform:
@@ -141,15 +149,46 @@ whether access is granted (not denied).
 Configure default behavior through environment variables:
 
 ```bash
-# Startup tenant (seeded on first boot; an ordinary tenant thereafter)
+# Startup tenant (seeded on first boot; an ordinary tenant thereafter).
+# Leave ACCESS_RULES empty to derive the ceiling from the models this instance serves,
+# minus AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS. Set "aihub.admin.>" for unrestricted
+# access, which also skips the model-gateway lookup at first boot.
 AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
-AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
+AIHUB_STARTUP_TENANT_ACCESS_RULES=""
+AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS="text-generation/Apertus-70B-Instruct-2509"
+
+# Agent blueprints a new tenant's ceiling grants. Every other blueprint stays hidden from that
+# tenant until a sysadmin grants it.
+AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES="LLMWrappingAgent,FewShotAgent,RAGAgent"
 
 # Automatic user signup
 AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
 AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
 FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
+
+### What a new tenant starts with
+
+A tenant created with no explicit rules does not get a wildcard. Its ceiling is derived, and the two curated families
+behave differently:
+
+**Models** are read from the live gateway roster. A capability with nothing excluded collapses to a wildcard
+(`aihub.user.model.embedding.>`), so models added to it later reach new tenants unattended. A capability holding an
+exclusion enumerates its survivors instead.
+
+**Agents** are named from a configured list — the standard blueprint set. Every other blueprint stays hidden from that
+tenant: it is absent from Admin → Agents rather than shown and refused, because the blueprint list is filtered by the
+same per-class rules. Two rules are granted per class, `aihub.admin.agent.<Class>` and `aihub.admin.agent.<Class>.>`,
+since creating an instance is guarded on the bare root (see [Validation rules](#validation-rules)).
+
+Agents use an allow list where models use exclusions because the two rosters differ in kind. Model names vary between
+CPU and GPU deployments, so a fixed list would leave a GPU tenant with no chat model. Agent class names are fixed at
+build time, and the discovered-class roster is still empty when the startup tenant is seeded at first boot — an
+exclusion would have nothing to subtract from and would grant that tenant no agents at all.
+
+Both settings are seeds, read once while the ceiling is computed. Afterwards the tenant's stored rules are the only
+authority, so granting a further blueprint or model is an ordinary access-rule edit in the tenant editor — no redeploy,
+and the setting has no say in it. Existing tenants are untouched and keep whatever ceiling they already have.
 
 ## Sysadmin access
 
@@ -177,6 +216,16 @@ When creating access rules:
 - Must start with `aihub.user.` or `aihub.admin.`
 - Only lowercase letters, numbers, dots, hyphens, underscores, `*`, `>`
 - Multi-level wildcard `>` only at the end
+
+**`>` does not match its own root**:
+
+`aihub.admin.knowledge.>` matches `aihub.admin.knowledge.hr-docs` but **not** the bare `aihub.admin.knowledge` — `>`
+requires at least one further segment. Some permissions are guarded on a bare root precisely because the resource does
+not exist yet: creating a knowledge database is checked against `aihub.admin.knowledge`, since a database that has not
+been created cannot be named by a rule. A rule set that should cover both has to carry both forms, which is why
+`AIHubKnowledgeAdmin` is seeded with `aihub.admin.knowledge` *and* `aihub.admin.knowledge.>`. This applies to tenant
+ceilings as much as to roles: a ceiling holding only the `.>` form caps the root permission away from every role in the
+tenant.
 
 **Prohibited**:
 

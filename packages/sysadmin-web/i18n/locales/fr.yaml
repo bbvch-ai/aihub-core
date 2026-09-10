@@ -18,6 +18,8 @@ tenant_admin:
     orphaned_label: Orphelin
     orphaned_tooltip: Ce tenant a des métadonnées mais aucun groupe Keycloak correspondant.
       Les utilisateurs n'y ont pas accès.
+  card:
+    more_rules: +{count} autres
   configure:
     title: Configurer un tenant
     description: Attachez des métadonnées à un groupe de tenants Keycloak existant.
@@ -26,6 +28,9 @@ tenant_admin:
     tenant_id_label: ID du tenant Keycloak
     empty_unconfigured: Aucun tenant Keycloak non configuré disponible. Créez d'abord
       un groupe de tenants dans la console d'administration Keycloak.
+    default_rules_error: Impossible de charger les règles d'accès standard de cette
+      instance. Enregistrer maintenant créerait un locataire sans aucun accès — vérifiez
+      que l'API de la plateforme et la passerelle de modèles sont accessibles.
   form:
     name: Nom du tenant
     description: Description

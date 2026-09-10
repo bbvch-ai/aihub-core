@@ -23,6 +23,13 @@ presets:
   user_all_models:
     name: Alle Modelle nutzen
     description: Jedes verfügbare Modell nutzen.
+  user_knowledge:
+    name: Alle Wissensdatenbanken nutzen
+    description: Jede Wissensdatenbank und ihre Dokumente durchsuchen und lesen.
+  admin_knowledge_create:
+    name: Wissensdatenbanken erstellen
+    description: Neue Wissensdatenbanken erstellen. Mit „Wissensdatenbanken verwalten“
+      kombinieren, um sie auch zu verwalten.
   admin_knowledge:
     name: Wissensdatenbanken verwalten
     description: Volle Kontrolle über Wissensdatenbanken und ihre Dokumente.
@@ -43,8 +50,8 @@ capabilities:
         label: Instanzen sehen
         description: Die Instanzen dieses Assistententyps ansehen.
       create:
-        label: Instanzen erstellen
-        description: Neue Assistenten dieses Typs erstellen.
+        label: Vollzugriff auf diesen Typ
+        description: Assistenten dieses Typs erstellen, konfigurieren und nutzen.
       use:
         label: Nutzen
         description: Mit diesem Assistenten chatten und ihn nutzen.
@@ -75,6 +82,9 @@ capabilities:
         label: Konfigurieren & löschen
         description: Die Konfiguration dieses Workflows bearbeiten oder ihn löschen.
     knowledge:
+      create:
+        label: Wissensdatenbanken erstellen
+        description: Neue Wissensdatenbanken und deren Ordner erstellen.
       see:
         label: Wissensdatenbanken sehen
         description: Die Liste der Wissensdatenbanken ansehen.

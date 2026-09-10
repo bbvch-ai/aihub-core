@@ -88,7 +88,19 @@ jobs:
           NOTES_FROM: ${{ inputs.notes_from }}
         run: |
           set -euo pipefail
-          if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-(nightly|rc)\.[0-9]+)?$'; then
+          # A version tag always passes. The literal `staging` is additionally
+          # accepted on the staging channel for deploy-branch-to-staging.yml,
+          # which builds the bundle straight from the moving `staging` tag so the
+          # compose pins the moving :staging image tag. Anything version-shaped
+          # there would have to be a real git ref carrying real images, i.e. a
+          # throwaway tag and release per verification deploy.
+          version_ok=false
+          if printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-(nightly|rc)\.[0-9]+)?$'; then
+            version_ok=true
+          elif [ "$VERSION" = "staging" ] && [ "$CHANNEL" = "staging" ]; then
+            version_ok=true
+          fi
+          if [ "$version_ok" != "true" ]; then
             echo "::error::release_version '$VERSION' is not a valid version tag."
             exit 1
           fi
@@ -220,7 +232,14 @@ jobs:
               ;;
             staging)
               # 1) Rolling pointer release the QC staging VM fetches (stable tag + asset).
-              publish "staging" "Swiss AI Hub Staging ${VERSION}" true false "$ROLL_A1" "$ROLL_A2"
+              #    A branch verification deploy passes the literal `staging`, which
+              #    would otherwise title the release "Swiss AI Hub Staging staging".
+              if [ "$VERSION" = "staging" ]; then
+                roll_title="Swiss AI Hub Staging (branch verification build)"
+              else
+                roll_title="Swiss AI Hub Staging ${VERSION}"
+              fi
+              publish "staging" "$roll_title" true false "$ROLL_A1" "$ROLL_A2"
               # 2) Immutable, PRESERVED per-rc release for humans, version-named assets.
               #    Only for real rc builds (build-rc.yml). promote-to-staging.yml
               #    promotes a nightly to staging — that must not create a versioned entry.

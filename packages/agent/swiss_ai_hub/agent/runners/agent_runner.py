@@ -11,11 +11,10 @@ from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
     CronStartEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.form import FormkitElement
+from swiss_ai_hub.core.form import ConfigSpecs, FormkitElement
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MilvusSettings, MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.publishers import NCPublisher
@@ -168,7 +167,7 @@ class AgentRunner(HealthCheckProvider):
 
         network_graph = WorkflowVisualizer(agent=self.agent_type).build()
 
-        agent_config_specs = AgentConfigSpecs.from_agent_config(self.published_config, self.agent_class)
+        agent_config_specs = ConfigSpecs.from_form(self.published_config, self.agent_class)
 
         templates_data: list[TemplateData] = [t.to_template_data(self.published_config) for t in self.templates]
 
@@ -207,9 +206,18 @@ class AgentRunner(HealthCheckProvider):
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()
 
-        # Connect to Milvus
+        # Connect to Milvus. Optional on purpose: this client only feeds the readiness report - RAG
+        # builds its own connection through MilvusVectorStoreConfig - so letting it raise turned a
+        # slow Milvus start into a restart loop across every agent container, the same way it did
+        # for the API on staging 2026-09-03.
         milvus_settings = MilvusSettings()
-        self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        try:
+            self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+        # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+        # UNAUTHENTICATED from a token mismatch crash-loop the container exactly as before.
+        except Exception:
+            logger.exception("Milvus unreachable at startup, continuing without a client")
 
         # Connect to MongoDB (skip if already connected)
         try:

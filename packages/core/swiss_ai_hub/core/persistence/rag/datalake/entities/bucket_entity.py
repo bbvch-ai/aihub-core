@@ -2,10 +2,14 @@ import re
 from typing import Self
 
 from bson import ObjectId
-from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringField, ValidationError
+from mongoengine import BooleanField, DictField, Document, EmbeddedDocumentField, StringField, ValidationError
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
+
+_RETIRED_MODEL_COLUMNS = ("llm_model", "embedding_model")
+_NEW_DATABASE_NAME_PATTERN = r"^[a-z][a-z0-9]{2,62}$"
 
 
 class BucketEntity(Document):
@@ -29,14 +33,34 @@ class BucketEntity(Document):
     description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
+    ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
+    # The ingestor's own settings for this database, shaped by the form the ingestor announced and validated
+    # against its schema by the API. The pipeline reads it per run; a key it does not find falls back to the
+    # deployment default, which is what rows created before a knob existed keep using.
+    configuration = DictField(default=dict)
+    # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
+    deleting = BooleanField(default=False)
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
         if not name:
             raise ValidationError(f"{field_name} cannot be empty")
 
-        if not re.match(r"^[a-zA-Z0-9]+$", name):
-            raise ValidationError(f"{field_name} '{name}' can only contain alphanumeric characters")
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9]*$", name):
+            raise ValidationError(
+                f"{field_name} '{name}' must start with a letter and contain only alphanumeric characters"
+            )
+
+    @staticmethod
+    def validate_new_database_name(name: str) -> None:
+        """Stricter than ``_validate_name``: what S3, Milvus and Mongo all accept, since the name doubles as
+        bucket, collection and store. ``_validate_name`` stays tolerant because it also guards rows adopted
+        from deployment configuration and from pre-existing containers, which the platform cannot rename."""
+        if not re.fullmatch(_NEW_DATABASE_NAME_PATTERN, name):
+            raise ValidationError(
+                f"Database name '{name}' must start with a lowercase letter, contain only lowercase letters "
+                "and digits, and be between 3 and 63 characters long"
+            )
 
     @classmethod
     def create_bucket(
@@ -47,6 +71,8 @@ class BucketEntity(Document):
         description: LocaleStringEntity | None = None,
         auto_sync: bool = False,
         datalake_type: str = "s3",
+        ingestor: str = IngestorType.UNASSIGNED.value,
+        configuration: dict | None = None,
         db_alias: str = "default",
     ) -> Self:
         cls._validate_name(bucket_name, "bucket_name")
@@ -61,6 +87,8 @@ class BucketEntity(Document):
                 description=description or LocaleStringEntity(),
                 auto_sync=auto_sync,
                 datalake_type=datalake_type,
+                ingestor=ingestor,
+                configuration=configuration or {},
             )
             bucket.save()
             return bucket
@@ -86,6 +114,12 @@ class BucketEntity(Document):
             return SwitchedBucket.objects().order_by("bucket_name")
 
     @classmethod
+    def get_deleting_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
+        """Buckets flagged for teardown — the durable work queue the teardown sensor reads."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects(deleting=True).order_by("bucket_name")
+
+    @classmethod
     def update_bucket(
         cls,
         bucket_id: str,
@@ -95,6 +129,7 @@ class BucketEntity(Document):
         description: LocaleStringEntity | None = None,
         auto_sync: bool | None = None,
         datalake_type: str | None = None,
+        ingestor: str | None = None,
         db_alias: str = "default",
     ) -> Self:
         bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
@@ -106,10 +141,44 @@ class BucketEntity(Document):
             bucket.name = name
         if description:
             bucket.description = description
-        if auto_sync:
+        if auto_sync is not None:
             bucket.auto_sync = auto_sync
         if datalake_type:
             bucket.datalake_type = datalake_type
+        if ingestor is not None:
+            bucket.ingestor = ingestor
+        bucket.save()
+        return bucket
+
+    @classmethod
+    def carry_over_retired_model_columns(cls, db_alias: str = "default") -> int:
+        """Moves the retired ``llm_model`` / ``embedding_model`` columns into ``configuration`` under the same keys.
+
+        Idempotent and cheap on a reconciled collection, so both the API (at start) and the pipeline (on every
+        registration tick) run it: whichever side comes up first after an upgrade reconciles the rows before a
+        partition could read a legacy database with its models missing.
+        """
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            collection = SwitchedBucket._get_collection()
+        carried = 0
+        for row in collection.find({"$or": [{column: {"$exists": True}} for column in _RETIRED_MODEL_COLUMNS]}):
+            values = {
+                f"configuration.{column}": row[column]
+                for column in _RETIRED_MODEL_COLUMNS
+                if row.get(column) is not None and column not in row.get("configuration", {})
+            }
+            update: dict = {"$unset": dict.fromkeys(_RETIRED_MODEL_COLUMNS, "")}
+            if values:
+                update["$set"] = values
+            collection.update_one({"_id": row["_id"]}, update)
+            carried += 1
+        return carried
+
+    @classmethod
+    def mark_deleting(cls, bucket_id: str, db_alias: str = "default") -> Self:
+        """Flag a bucket for teardown so enumeration excludes it while the teardown job runs."""
+        bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
+        bucket.deleting = True
         bucket.save()
         return bucket
 

@@ -40,6 +40,9 @@ import type {
   CreateAgentInstanceData,
   CreateAgentInstanceError,
   CreateAgentInstanceResponse,
+  CreateDatabaseData,
+  CreateDatabaseError,
+  CreateDatabaseResponse,
   CreateDatasetData,
   CreateDatasetError,
   CreateDatasetResponse,
@@ -70,8 +73,12 @@ import type {
   DeleteAllOrganizationMemoriesResponse,
   DeleteAllUserMemoriesData,
   DeleteAllUserMemoriesResponse,
+  DeleteDatabaseData,
+  DeleteDatabaseError,
   DeleteDocumentData,
   DeleteDocumentError,
+  DeleteNamespaceData,
+  DeleteNamespaceError,
   DeleteOrganizationMemoryData,
   DeleteOrganizationMemoryError,
   DeleteOrganizationMemoryResponse,
@@ -132,6 +139,8 @@ import type {
   GetDatasetResponse,
   GetDatasetsData,
   GetDatasetsResponse,
+  GetDefaultTenantRulesData,
+  GetDefaultTenantRulesResponse,
   GetDocumentByIdData,
   GetDocumentByIdError,
   GetDocumentByIdResponse,
@@ -149,6 +158,8 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetIngestorsData,
+  GetIngestorsResponse,
   GetLitellmModelData,
   GetLitellmModelError,
   GetLitellmModelResponse,
@@ -1294,7 +1305,7 @@ export const getOpenChatHitl = <
 /**
  * Get Agent Classes
  *
- * Retrieve all available agent classes.
+ * Retrieve the agent classes this caller may reach.
  * Use `?online=true` for online classes only, `?online=false` for offline only.
  */
 export const getAgentClasses = <
@@ -2352,6 +2363,37 @@ export const getAccessPresets = <
   });
 
 /**
+ * Derive Default Tenant Access Rules
+ *
+ * Returns the access ceiling a newly created tenant should start with, derived from the models this instance actually serves minus the configured exclusions.
+ */
+export const getDefaultTenantRules = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetDefaultTenantRulesResponse =
+    GetDefaultTenantRulesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetDefaultTenantRulesData,
+    GetDefaultTenantRulesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetDefaultTenantRulesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/default-tenant-rules",
+    ...options,
+  });
+
+/**
  * List Models
  *
  * Lists the currently available models, and provides basic information about each one such as the owner and availability.
@@ -2694,6 +2736,122 @@ export const updateDataset = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get selectable ingestion pipelines
+ *
+ * Returns the ingestion pipelines that can be assigned to a new knowledge database.
+ */
+export const getIngestors = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIngestorsResponse = GetIngestorsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIngestorsData,
+    GetIngestorsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIngestorsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/ingestors",
+    ...options,
+  });
+
+/**
+ * Delete a knowledge database
+ *
+ * Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
+ * database and S3 bucket — via the pipeline's Dagster teardown job. Returns immediately with 202.
+ */
+export const deleteDatabase = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteDatabaseData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteDatabaseError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+  });
+
+/**
+ * Create Database
+ *
+ * Creates a new self-service knowledge database (bucket) ingested by the document ingestion pipeline.
+ */
+export const createDatabase = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateDatabaseResponse = CreateDatabaseResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateDatabaseData,
+    CreateDatabaseResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateDatabaseResponse | DefaultT,
+    CreateDatabaseError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete a namespace
+ *
+ * Schedules asynchronous teardown of one namespace — its S3 folder, doc-store rows and Milvus
+ * vectors (deleted by metadata filter, never a partition drop). Returns immediately with 202.
+ */
+export const deleteNamespace = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteNamespaceData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteNamespaceError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}",
+    ...options,
   });
 
 /**

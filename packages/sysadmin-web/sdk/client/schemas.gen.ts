@@ -247,10 +247,21 @@ export const CapabilitySchema = {
       description:
         "Exact access rule that grants this capability, or null for read-only capabilities.",
     },
+    companion_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Companion Rules",
+      description:
+        "Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.",
+      default: [],
+    },
     granted: {
       type: "boolean",
       title: "Granted",
-      description: "Whether the draft rules grant this capability.",
+      description:
+        "Whether the draft rules grant every rule of this capability.",
     },
     locked: {
       type: "boolean",
@@ -389,13 +400,20 @@ export const CreateTenantMetadataRequestSchema = {
       default: "",
     },
     access_rules: {
-      items: {
-        type: "string",
-      },
-      type: "array",
+      anyOf: [
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
       title: "Access Rules",
-      description: "Access rules granted to this tenant.",
-      default: [],
+      description:
+        "Access rules granted to this tenant. Omit to start from this instance's default ceiling (every served model minus the configured exclusions); pass an empty list for a tenant that starts with no access at all.",
     },
   },
   type: "object",

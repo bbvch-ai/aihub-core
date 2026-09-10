@@ -21,8 +21,8 @@
         :group="group"
         :depth="0"
         :readonly="readonly"
-        @add="(rule) => emit('add', rule)"
-        @remove="(rule) => emit('remove', rule)"
+        @add="(rules) => emit('add', rules)"
+        @remove="(rules) => emit('remove', rules)"
       />
     </div>
     <p
@@ -55,8 +55,8 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  add: [rule: string]
-  remove: [rule: string]
+  add: [rules: string[]]
+  remove: [rules: string[]]
 }>()
 
 const { capabilities, capabilitiesAreLoading } = useAccessCapabilities(

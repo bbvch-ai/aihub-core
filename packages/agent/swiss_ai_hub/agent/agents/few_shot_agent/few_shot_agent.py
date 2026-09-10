@@ -314,6 +314,7 @@ class FewShotAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         thread_context: ThreadContext,
+        user: UserIdentity,
     ) -> StopEvent:
         # Neither title nor follow-ups have fired on this path yet — the guard rejected the request
         # before the agent produced anything, so both are missing (unlike the meta-question branch,
@@ -321,5 +322,5 @@ class FewShotAgent(Agent):
         # (GuardRejectionEvent.vue), so treat it as the answer text to ground follow-ups on, same as
         # ExpertRAGAgent's canned decline/error messages.
         chat_messages = [*start_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=event.reason)]
-        await generate_conversation_metadata(chat_messages, agent_config.task_llm, displayer, t, thread_context)
+        await generate_conversation_metadata(chat_messages, agent_config.task_llm, displayer, t, thread_context, user)
         return StopEvent()

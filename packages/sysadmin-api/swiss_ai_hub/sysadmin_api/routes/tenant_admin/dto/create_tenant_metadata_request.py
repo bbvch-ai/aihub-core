@@ -34,12 +34,21 @@ class CreateTenantMetadataRequest(BaseModel):
         StringConstraints(max_length=500),
         Field(description="A short description of the tenant."),
     ] = ""
-    access_rules: Annotated[list[str], Field(description="Access rules granted to this tenant.")] = []
+    access_rules: Annotated[
+        list[str] | None,
+        Field(
+            description=(
+                "Access rules granted to this tenant. Omit to start from this instance's default ceiling "
+                "(every served model minus the configured exclusions); pass an empty list for a tenant that "
+                "starts with no access at all."
+            ),
+        ),
+    ] = None
 
     @field_validator("access_rules")
     @classmethod
-    def validate_access_rules(cls, value: list[str]) -> list[str]:
-        for rule in value:
+    def validate_access_rules(cls, value: list[str] | None) -> list[str] | None:
+        for rule in value or []:
             if not AccessChecker.validate_user_access_rule(rule):
                 raise ValueError(f"Invalid access rule: {rule!r}")
         return value

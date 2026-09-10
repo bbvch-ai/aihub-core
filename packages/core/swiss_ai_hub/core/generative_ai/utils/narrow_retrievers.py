@@ -13,8 +13,9 @@ def narrow_retrievers(
 ) -> list[RetrievalRuntimeConfig]:
     """Narrow configured retrievers by publisher-selected namespaces and runtime metadata filters.
 
-    Primary caller is the `RAGStartEvent` path in RAG agents. The agent's configured `index_namespaces`
-    is always the upper bound: a publisher-supplied namespace outside that set drops the retriever.
+    Primary caller is the `RAGStartEvent` path in RAG agents. The agent's configured namespace scope is
+    always the upper bound: a publisher-supplied namespace outside the named set drops the retriever, and
+    only a retriever configured with `all_namespaces` accepts any namespace.
     `additional_filters` keys must be listed in `allowed_metadata_filter_fields`; the reserved
     `namespace` key is rejected.
     """
@@ -34,11 +35,13 @@ def narrow_retrievers(
         narrowed_config = retriever
         if bucket in selected_namespace_by_bucket:
             selected_namespace = selected_namespace_by_bucket[bucket]
-            configured_namespaces = retriever.vector_store.index_namespaces
+            configured = retriever.vector_store
             # Publisher's selected namespace is outside the agent's configured set — drop.
-            if configured_namespaces and selected_namespace not in configured_namespaces:
+            if not configured.all_namespaces and selected_namespace not in configured.index_namespaces:
                 continue
-            narrowed_vector_store = retriever.vector_store.model_copy(update={"index_namespaces": [selected_namespace]})
+            narrowed_vector_store = configured.model_copy(
+                update={"index_namespaces": [selected_namespace], "all_namespaces": False}
+            )
             narrowed_config = retriever.model_copy(update={"vector_store": narrowed_vector_store})
 
         runtime_filters = filters_by_bucket.get(bucket, [])

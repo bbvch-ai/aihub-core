@@ -59,7 +59,7 @@ class RetrievalAgent(Agent):
             message=event.question,
             retrieve_k=retriever.retrieve_k,
             embed_model=embedding,
-            index_namespaces=retriever.vector_store.index_namespaces,
+            index_namespaces=retriever.vector_store.namespace_filter,
             query_mode=retriever.query_mode,
             node_types=retriever.node_types,
             vector_store=vector_store,
