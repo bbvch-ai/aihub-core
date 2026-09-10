@@ -18,11 +18,17 @@ jobs:
   cla:
     name: CLA Signature Check
     runs-on: ubuntu-24.04-arm
+    # Dependabot-triggered runs get no access to secrets.CLA_ASSISTANT_PAT, and the
+    # action reads the remote signature repository with that token even when the
+    # allowlist has already filtered every committer out.
     if: >-
-      contains(github.event.comment.body, 'I have read the CONTRIBUTOR_AGREEMENT and
+      github.actor != 'dependabot[bot]' &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.issue.user.login != 'dependabot[bot]' &&
+      (contains(github.event.comment.body, 'I have read the CONTRIBUTOR_AGREEMENT and
       I hereby sign the CLA') ||
       contains(github.event.comment.body, 'recheck') ||
-      github.event_name == 'pull_request'
+      github.event_name == 'pull_request')
     timeout-minutes: 5
     steps:
       - name: CLA Assistant
