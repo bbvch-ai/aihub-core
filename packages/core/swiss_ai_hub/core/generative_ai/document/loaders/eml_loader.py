@@ -28,6 +28,12 @@ _MAX_BODY_BYTES = 1_000_000
 # `MarkItDownLoader` unusable for `.eml`. Attachment *names* are still listed; only the bytes are discarded.
 _REFUSE_ALL_ATTACHMENTS = 1
 
+# The inventory is attacker-controlled text sitting in the same untrimmed part of the prompt as the subject, which is
+# bounded for exactly that reason. A filename can also carry newlines, which would let a sender forge markdown
+# structure in what the model reads as the document.
+MAX_ATTACHMENT_NAMES = 20
+MAX_ATTACHMENT_NAME_CHARACTERS = 120
+
 
 class EmlLoader(BaseReader):
     """Reads an RFC822 `.eml` file into markdown, with the subject as the title.
@@ -54,7 +60,7 @@ class EmlLoader(BaseReader):
         *args,
         **kwargs,
     ) -> list[Document]:
-        raise RuntimeError("EmlLoader is async-only; use aload_data_from_bytes()")
+        raise RuntimeError("EmlLoader reads bytes, not paths; use aload_data_from_bytes()")
 
     async def aload_data_from_bytes(
         self,
@@ -117,8 +123,15 @@ class EmlLoader(BaseReader):
                 continue
             filename = part.get_filename()
             if filename or part.get_content_disposition() == "attachment":
-                names.append(filename or "attachment")
+                names.append(EmlLoader._safe_name(filename or "attachment"))
+            if len(names) == MAX_ATTACHMENT_NAMES:
+                break
         return names
+
+    @staticmethod
+    def _safe_name(filename: str) -> str:
+        """Collapse whitespace and cap the length, so a filename cannot forge structure in the rendered markdown."""
+        return " ".join(filename.split())[:MAX_ATTACHMENT_NAME_CHARACTERS]
 
     @staticmethod
     def _render(parsed: ParsedMessage, body: str, attachment_names: list[str]) -> str:
