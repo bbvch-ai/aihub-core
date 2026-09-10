@@ -50,8 +50,8 @@ capabilities:
         label: Instanzen sehen
         description: Die Instanzen dieses Assistententyps ansehen.
       create:
-        label: Instanzen erstellen
-        description: Neue Assistenten dieses Typs erstellen.
+        label: Vollzugriff auf diesen Typ
+        description: Assistenten dieses Typs erstellen, konfigurieren und nutzen.
       use:
         label: Nutzen
         description: Mit diesem Assistenten chatten und ihn nutzen.

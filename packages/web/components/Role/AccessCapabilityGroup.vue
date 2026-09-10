@@ -78,8 +78,9 @@
         </span>
         <code
           v-if="cap.rule"
+          v-tooltip.top="cap.companion_rules?.length ? [cap.rule, ...cap.companion_rules].join('\n') : undefined"
           class="mt-0.5 shrink-0 font-mono text-[11px] text-surface-300 transition-colors group-hover/cap:text-surface-500 dark:text-surface-600 dark:group-hover/cap:text-surface-400"
-        >{{ cap.rule }}</code>
+        >{{ cap.companion_rules?.length ? `${cap.rule} +${cap.companion_rules.length}` : cap.rule }}</code>
       </label>
     </div>
 
@@ -95,8 +96,8 @@
         :group="sub"
         :depth="depth + 1"
         :readonly="readonly"
-        @add="(rule) => emit('add', rule)"
-        @remove="(rule) => emit('remove', rule)"
+        @add="(rules) => emit('add', rules)"
+        @remove="(rules) => emit('remove', rules)"
       />
     </div>
   </div>
@@ -119,12 +120,16 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  add: [rule: string]
-  remove: [rule: string]
+  add: [rules: string[]]
+  remove: [rules: string[]]
 }>()
 
+// A row can need more than one rule: the grammar has no form covering a node and its subtree at once,
+// so a class-level row carries both. They travel as one payload because the parent writes them through a
+// single `v-model`, which cannot absorb two writes in the same tick — the second would read a model value
+// the first had not yet updated and silently drop it.
 const onToggle = (cap: Capability, value: boolean) => {
   if (props.readonly || !cap.rule) return
-  emit(value ? 'add' : 'remove', cap.rule)
+  emit(value ? 'add' : 'remove', [cap.rule, ...(cap.companion_rules ?? [])])
 }
 </script>

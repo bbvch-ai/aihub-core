@@ -1968,9 +1968,15 @@ export type Capability = {
    */
   rule: string | null;
   /**
+   * Companion Rules
+   *
+   * Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.
+   */
+  companion_rules?: Array<string>;
+  /**
    * Granted
    *
-   * Whether the draft rules grant this capability.
+   * Whether the draft rules grant every rule of this capability.
    */
   granted: boolean;
   /**

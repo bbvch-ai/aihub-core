@@ -419,3 +419,62 @@ async def test_knowledge_resolver_nests_namespaces_under_databases():
     assert namespace.label == "HR Policies"
     namespace_rules = {cap.rule for cap in namespace.capabilities}
     assert {"aihub.user.knowledge.corp.hr", "aihub.admin.knowledge.corp.hr"} <= namespace_rules
+
+
+@pytest.mark.asyncio
+async def test_a_class_level_row_carries_its_subtree():
+    """The row means "this tenant/role gets this blueprint", so it writes the root and the subtree together.
+
+    Neither form works alone: the root is what creating an instance is guarded on, while only the subtree
+    reaches the class list and its instances. A checkbox offering one of them is unusable, which is why the
+    sysadmin previously had to type both rules by hand.
+    """
+    caps = await _capabilities([], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)])
+
+    blueprint = _by_rule(caps, "aihub.admin.agent.WeatherAgent")
+    assert blueprint.toggleable
+    assert blueprint.companion_rules == ["aihub.admin.agent.WeatherAgent.>"]
+
+
+@pytest.mark.asyncio
+async def test_a_half_granted_class_reads_as_not_granted():
+    """Holding only the root leaves the blueprint invisible, so reporting it as granted would be a lie —
+    and would render a ticked box the sysadmin cannot use to fix the gap."""
+    caps = await _capabilities(
+        ["aihub.admin.agent.WeatherAgent"], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)]
+    )
+
+    assert not _by_rule(caps, "aihub.admin.agent.WeatherAgent").granted
+
+
+@pytest.mark.asyncio
+async def test_both_forms_together_grant_the_class():
+    caps = await _capabilities(
+        ["aihub.admin.agent.WeatherAgent", "aihub.admin.agent.WeatherAgent.>"],
+        [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)],
+    )
+
+    blueprint = _by_rule(caps, "aihub.admin.agent.WeatherAgent")
+    assert blueprint.granted and not blueprint.locked
+
+
+@pytest.mark.asyncio
+async def test_an_instance_row_carries_no_subtree():
+    """Only class-level rows stand for a whole resource; an instance row is exactly its own endpoint, and
+    appending ``.>`` there would silently widen what the checkbox grants."""
+    caps = await _capabilities([], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)])
+
+    assert _by_rule(caps, "aihub.user.agent.WeatherAgent.inst1").companion_rules == []
+
+
+@pytest.mark.asyncio
+async def test_a_ceiling_that_cannot_grant_the_subtree_hides_the_row():
+    """The ceiling check spans the row's rules too, so a tenant capped to the bare root does not get a
+    checkbox promising more than the tenant can hold."""
+    caps = await _capabilities(
+        ["aihub.admin.>"],
+        [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)],
+        tenant_rules=["aihub.admin.service.>", "aihub.admin.agent.WeatherAgent"],
+    )
+
+    assert not any(cap.rule == "aihub.admin.agent.WeatherAgent" for cap in caps.values())
