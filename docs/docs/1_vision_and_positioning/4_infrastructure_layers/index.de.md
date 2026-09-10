@@ -62,15 +62,16 @@ die Rolle AIHubDeveloper). MongoDB speichert Gesprächsverläufe, Benutzerpräfe
 Ereignisverläufe dauerhaft. Diese Auswahl bietet Cloud-native Speicherstrategien, die On-Premise oder in
 Cloud-Umgebungen identisch funktionieren.
 
-Die Plattform umfasst integrierte KI-Tools, die das Chat-Erlebnis verbessern. **Jupyter Lab** ermöglicht die
-Code-Interpretation und -Ausführung, wenn Benutzer den LLM bitten, Daten zu analysieren oder Berechnungen durchzuführen.
-Der LLM kann Python-Code schreiben, der sicher in einer isolierten Jupyter-Umgebung ausgeführt wird und die Ergebnisse
-direkt in der Konversation zurückgibt. **SearXNG** bietet Web-Suchfunktionen, wenn Benutzer aktuelle Informationen
-benötigen, indem es Ergebnisse von mehreren Suchmaschinen aggregiert und gleichzeitig die Privatsphäre wahrt.
-**Playwright** extrahiert Inhalte von Websites, die über die Suche entdeckt wurden, und extrahiert den vollständigen
-Text, wenn Such-Snippets nicht ausreichen. **MinerU** parst Dokumente, die Benutzer in den Chat hochladen, und
-extrahiert Text und Struktur aus PDFs, Word-Dokumenten und Präsentationen, wobei Tabellen und Formatierungen erhalten
-bleiben, die für eine präzise Beantwortung von Fragen erforderlich sind.
+Die Plattform umfasst integrierte KI-Tools, die das Chat-Erlebnis verbessern. **Open Terminal** ermöglicht die
+Code-Ausführung, wenn Benutzer ein reines LLM-Modell bitten, Daten zu analysieren oder Berechnungen durchzuführen. Das
+Modell schreibt Python-Code, der in einer isolierten Sandbox pro Benutzer mit vorinstallierten gängigen
+Dokumentbibliotheken ausgeführt wird; erzeugte Dateien (Berichte, Tabellen, Diagramme) erscheinen zum Download im Chat.
+**SearXNG** bietet Web-Suchfunktionen, wenn Benutzer aktuelle Informationen benötigen, indem es Ergebnisse von mehreren
+Suchmaschinen aggregiert und gleichzeitig die Privatsphäre wahrt. **Playwright** extrahiert Inhalte von Websites, die
+über die Suche entdeckt wurden, und extrahiert den vollständigen Text, wenn Such-Snippets nicht ausreichen. **MinerU**
+parst Dokumente, die Benutzer in den Chat hochladen, und extrahiert Text und Struktur aus PDFs, Word-Dokumenten und
+Präsentationen, wobei Tabellen und Formatierungen erhalten bleiben, die für eine präzise Beantwortung von Fragen
+erforderlich sind.
 
 Die Observability beginnt vom ersten Tag an, wobei **OpenTelemetry** Metriken, Traces und Logs von jeder Komponente
 sammelt. Die Daten fliessen an entsprechende Backends: Metriken an Prometheus, Traces an Jaeger, Logs an Loki. Dieser

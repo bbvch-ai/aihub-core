@@ -36,7 +36,6 @@ image_tags:
   litellm: litellm:v1.83.10-stable
   mineru_api: mineru-api:v2.7.5
   mineru_vlm: mineru-vlm:v2.7.5
-  jupyter: minimal-notebook:notebook-7.0.6
   open_terminal: open-terminal-office:0.11.34
   otel_collector: otel/opentelemetry-collector-contrib:0.154.0
   traefik: traefik:v3.6.2

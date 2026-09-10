@@ -66,7 +66,6 @@ Diese Variablen werden als `${VAR}` (ohne einen `${VAR:-default}` Fallback) irge
 | `EXPERT_ASKING_CHANNEL_TYPE` | | `expert_asking_agent` | |
 | `GEMINI_API_KEY` | | `litellm` | |
 | `HUGGINGFACE_API_KEY` | | `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` | |
-| `JUPYTER_TOKEN` | | `api`, `jupyter` | |
 | `KEYCLOAK_ADMIN_PASSWORD` | | `keycloak`, `keycloak-config` | |
 | `KEYCLOAK_ADMIN_USER` | | `keycloak`, `keycloak-config` | |
 | `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `keycloak`, `keycloak-config`, `sysadmin-api` | Client Secret für das API-Service-Konto |

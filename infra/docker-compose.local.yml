@@ -1481,34 +1481,9 @@ services:
   # ===================================================================
   # Utility & Code Execution Services
   # ===================================================================
-  # These services provide code execution runtimes (Jupyter) and
+  # These services provide code execution runtimes (Open Terminal) and
   # browser automation (Playwright) for various platform features.
   # ===================================================================
-
-  # License: BSD-3-Clause — third-party (see LICENSE_REPORT.md)
-  jupyter:
-    container_name: jupyter-lab
-    image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
-    restart: always
-    ports: [8888:8888]
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
-    environment:
-      JUPYTER_ENABLE_LAB: true
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
-    healthcheck:
-      test: [CMD, /etc/jupyter/docker_healthcheck.py]
-      interval: 15s
-      timeout: 3s
-      start_period: 10s
-      retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
 
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
@@ -2415,10 +2390,6 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
-
-      # Jupyter (for open-webui code interpreter)
-      JUPYTER_URL: http://jupyter:8888
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: http://mineru-api:8000
