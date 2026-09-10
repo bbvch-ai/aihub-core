@@ -9,8 +9,8 @@ set -e
 # channel the server defaults to (which expects a system-wide /opt/google/chrome install),
 # matching the ghcr.io/bbvch-ai/aihub-core/playwright image used by the dev stack.
 # Install the build this server version pins with:
-#   npx @playwright/mcp@latest install-browser chrome-for-testing
+#   npx @playwright/mcp@0.0.80 install-browser chrome-for-testing
 # Use for: debugging frontend issues, verifying UI changes, running visual checks,
 # inspecting network requests, and testing OpenWebUI/Admin UI interactions.
 cd "$(dirname "$0")/../.."
-exec npx -y @playwright/mcp@latest --headless --browser chromium
+exec npx -y @playwright/mcp@0.0.80 --headless --browser chromium

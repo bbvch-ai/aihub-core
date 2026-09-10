@@ -39,6 +39,12 @@
     },
     "likec4": {
       "command": "./.claude/mcp/mcp-likec4.sh"
+    },
+    "redis": {
+      "command": "./.claude/mcp/mcp-redis.sh"
+    },
+    "sonarqube": {
+      "command": "./.claude/mcp/mcp-sonarqube.sh"
     }
   }
 }
