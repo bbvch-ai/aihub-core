@@ -21,7 +21,13 @@ _GEMMA_LLM_ID = _GEMMA.litellm_name
 
 
 def _managed_row(model_id: str, name: str) -> dict:
-    return {"id": model_id, "name": name, "meta": {AIHUB_MANAGED_META_KEY: True}}
+    """A row already synced by a prior run of this provisioner — carries the current defaults."""
+    return {
+        "id": model_id,
+        "name": name,
+        "meta": {AIHUB_MANAGED_META_KEY: True},
+        "params": {"function_calling": "legacy"},
+    }
 
 
 def _group(display_name: str, group_id: str) -> Group:
@@ -83,6 +89,7 @@ class TestBuildLlmModelData:
         assert "base_model_id" not in data
         assert data["name"] == "gemma-4-31B-it"
         assert data["meta"][AIHUB_MANAGED_META_KEY] is True
+        assert data["params"]["function_calling"] == "legacy"
 
 
 class TestSyncLlmWorkspaceModels:
@@ -155,6 +162,32 @@ class TestSyncLlmWorkspaceModels:
             mock_create.assert_not_called()
             mock_update.assert_not_called()
             mock_delete.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_updates_row_synced_before_function_calling_default_existed(
+        self, provisioner: OpenWebuiProvisioner
+    ) -> None:
+        """A row synced before this provisioner started setting function_calling (or under a
+        different value) must be reconciled even though its name never changed — see issue #240:
+        without this, a changed default here would silently never reach an already-synced row."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_base_models",
+                return_value=[{"id": _GEMMA_LLM_ID, "name": "gemma-4-31B-it", "meta": {AIHUB_MANAGED_META_KEY: True}}],
+            ),
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "update_model") as mock_update,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [_GEMMA])
+
+            mock_create.assert_not_called()
+            mock_delete.assert_not_called()
+            mock_update.assert_called_once()
+            assert mock_update.call_args[0][1]["params"]["function_calling"] == "legacy"
 
     @pytest.mark.asyncio
     async def test_ignores_agent_pipe_rows(self, provisioner: OpenWebuiProvisioner) -> None:

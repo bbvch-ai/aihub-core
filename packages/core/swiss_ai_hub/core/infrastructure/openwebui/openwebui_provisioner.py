@@ -44,6 +44,13 @@ AIHUB_LLM_MODEL_PREFIX = "aihub-model-"
 # _build_model_data / _build_llm_model_data.
 AIHUB_MANAGED_META_KEY = "aihub_managed"
 
+# The function-calling mode _build_model_data / _build_llm_model_data provision onto every managed
+# row (see their docstrings for why). Shared with _compute_model_diff and _sync_llm_workspace_models
+# so a row already synced under a prior value of this constant is treated as drifted and updated —
+# without that check, only brand-new rows would ever pick up a changed default, since name is
+# otherwise the sole field either diff reconciles for an already-existing row.
+_MANAGED_FUNCTION_CALLING = "legacy"
+
 # Prefix of an agent's own base-registry id (e.g. "aihub-pipeline.RAGAgent.picasso-2"), as opposed
 # to an LLM model's (e.g. "text-generation/Kimi-K2.6") — the two managed-row shapes base-row syncs
 # and grant parsing need to tell apart now that both live in the same base-model registry.
@@ -314,6 +321,11 @@ class OpenWebuiProvisioner:
         ``base_model_id`` with no registry row of its own — the opposite of 0.9.x, which treated an
         unregistered base as a gate-free raw provider model. A preset pointing at the pipe id from one
         hop above no longer routes for non-admins, so the pipe id itself must carry the grant instead.
+
+        ``function_calling: "legacy"`` — see ``_build_llm_model_data`` for why. The agent pipe never
+        read OpenWebUI's ``tools``/builtins in the first place, so this is pure upside here: it just
+        makes OpenWebUI perform image generation/web search/code interpreter itself again instead of
+        handing the agent's LLM a tool spec it has nothing to invoke.
         """
         return {
             "id": self._base_model_id(agent.agent_class, agent.agent_id),
@@ -322,6 +334,7 @@ class OpenWebuiProvisioner:
                 "description": f"AI-Hub agent: {agent.agent_class}/{agent.agent_id}",
                 AIHUB_MANAGED_META_KEY: True,
             },
+            "params": {"function_calling": _MANAGED_FUNCTION_CALLING},
         }
 
     @staticmethod
@@ -331,8 +344,10 @@ class OpenWebuiProvisioner:
         """Returns (models_to_create, models_to_update, model_ids_to_delete).
 
         An agent is updated when its workspace model exists but the stored name drifted from the
-        current agent name (e.g. after a rename) — the only field this diff reconciles. Access
-        grants are reconciled separately by _sync_access_grants.
+        current agent name (e.g. after a rename), or its stored function-calling mode drifted from
+        ``_MANAGED_FUNCTION_CALLING`` (e.g. this provisioner's own default changed since the row was
+        last synced) — the two fields this diff reconciles. Access grants are reconciled separately
+        by _sync_access_grants.
         """
         desired_ids: set[str] = set()
         to_create: list[OnlineAgent] = []
@@ -343,7 +358,10 @@ class OpenWebuiProvisioner:
             existing = existing_models.get(model_id)
             if existing is None:
                 to_create.append(agent)
-            elif existing.get("name") != agent.display_name:
+            elif (
+                existing.get("name") != agent.display_name
+                or existing.get("params", {}).get("function_calling") != _MANAGED_FUNCTION_CALLING
+            ):
                 to_update.append(agent)
         to_delete = set(existing_models) - desired_ids
         return to_create, to_update, to_delete
@@ -394,6 +412,20 @@ class OpenWebuiProvisioner:
 
         See ``_build_model_data`` for why: 0.11.3 denies non-admins through any unregistered
         ``base_model_id``, so the raw id itself must carry the grant now instead of a preset above it.
+
+        ``function_calling: "legacy"`` — 0.11.3 defaults every row to Native, where OpenWebUI's
+        built-in image generation/web search/code interpreter stop running server-side and instead
+        get offered to the model as a ``generate_image``/``search_web``/``execute_code`` tool, on the
+        hope it chooses to call it. That hope doesn't hold reliably: verified against this deployment's
+        own chat history that the same model (gemma) both succeeded and failed at spontaneously calling
+        ``generate_image`` across otherwise-identical requests, with zero code-side difference between
+        the two — see issue aihub-core-private#240. Legacy restores the pre-0.11.3 behavior where
+        OpenWebUI performs the action itself rather than trusting the model's tool-calling judgment.
+        Costs Open Terminal (registered as a direct tool server) its native ``tool_calls`` fidelity,
+        falling back to single-tool-per-turn, task-model-JSON-parsed invocation instead — the one
+        capability this deployment's own history shows is actually exercised via native mode today.
+        A user who needs native tool orchestration for one conversation can still override this in
+        that chat's own Advanced Params, which takes precedence over this row-level default.
         """
         return {
             "id": model.litellm_name,
@@ -402,12 +434,17 @@ class OpenWebuiProvisioner:
                 "description": f"AI-Hub model: {model.litellm_name}",
                 AIHUB_MANAGED_META_KEY: True,
             },
+            "params": {"function_calling": _MANAGED_FUNCTION_CALLING},
         }
 
     async def _sync_llm_workspace_models(self, http: httpx.AsyncClient, models: list[AvailableModel]) -> None:
         """Reconciles LLM model ids in the base-model registry (see ``_build_llm_model_data``).
 
         Reads ``list_base_models`` rather than ``list_models`` — see ``_sync_workspace_models``.
+
+        A row is updated when its stored name drifted, or its stored function-calling mode drifted
+        from ``_MANAGED_FUNCTION_CALLING`` — see ``_compute_model_diff``'s docstring for why the
+        latter check exists (a changed default here would otherwise never reach an already-synced row).
         """
         existing_rows = await self._openwebui.list_base_models(http)
         existing_aihub = {
@@ -423,9 +460,12 @@ class OpenWebuiProvisioner:
             if existing is None:
                 await self._openwebui.create_model(http, self._build_llm_model_data(model))
                 logger.info(f"OpenWebUI: Created LLM workspace model '{model_id}'")
-            elif existing.get("name") != model.display_name:
+            elif (
+                existing.get("name") != model.display_name
+                or existing.get("params", {}).get("function_calling") != _MANAGED_FUNCTION_CALLING
+            ):
                 await self._openwebui.update_model(http, self._build_llm_model_data(model))
-                logger.info(f"OpenWebUI: Updated LLM workspace model '{model_id}' name to '{model.display_name}'")
+                logger.info(f"OpenWebUI: Updated LLM workspace model '{model_id}'")
 
         for model_id in set(existing_aihub) - set(desired):
             await self._openwebui.delete_model(http, model_id)

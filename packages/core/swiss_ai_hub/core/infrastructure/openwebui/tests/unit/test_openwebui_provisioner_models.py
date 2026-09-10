@@ -38,7 +38,13 @@ _RAG_MODEL_ID = "aihub-pipeline.rag.default"
 
 
 def _managed_row(model_id: str, name: str) -> dict:
-    return {"id": model_id, "name": name, "meta": {AIHUB_MANAGED_META_KEY: True}}
+    """A row already synced by a prior run of this provisioner — carries the current defaults."""
+    return {
+        "id": model_id,
+        "name": name,
+        "meta": {AIHUB_MANAGED_META_KEY: True},
+        "params": {"function_calling": "legacy"},
+    }
 
 
 class TestComputeModelDiff:
@@ -65,7 +71,7 @@ class TestComputeModelDiff:
 
     def test_compute_models_unchanged(self) -> None:
         online = [_RAG_AGENT]
-        existing = {_RAG_MODEL_ID: {"id": _RAG_MODEL_ID, "name": "RAG Agent"}}
+        existing = {_RAG_MODEL_ID: _managed_row(_RAG_MODEL_ID, "RAG Agent")}
 
         to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
 
@@ -75,7 +81,20 @@ class TestComputeModelDiff:
 
     def test_compute_models_to_update_on_rename(self) -> None:
         online = [_RAG_AGENT]
-        existing = {_RAG_MODEL_ID: {"id": _RAG_MODEL_ID, "name": "Old Name"}}
+        existing = {_RAG_MODEL_ID: _managed_row(_RAG_MODEL_ID, "Old Name")}
+
+        to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
+
+        assert to_create == []
+        assert to_update == [_RAG_AGENT]
+        assert to_delete == set()
+
+    def test_compute_models_to_update_on_function_calling_drift(self) -> None:
+        """A row synced before this provisioner started setting function_calling (or under a
+        different value) must be reconciled even though its name never changed — see issue #240:
+        without this, a changed default here would silently never reach an already-synced row."""
+        online = [_RAG_AGENT]
+        existing = {_RAG_MODEL_ID: {"id": _RAG_MODEL_ID, "name": "RAG Agent"}}  # no params at all
 
         to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
 
@@ -103,6 +122,7 @@ class TestSyncWorkspaceModels:
             assert "base_model_id" not in create_data
             assert create_data["name"] == "RAG Agent"
             assert create_data["meta"][AIHUB_MANAGED_META_KEY] is True
+            assert create_data["params"]["function_calling"] == "legacy"
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
