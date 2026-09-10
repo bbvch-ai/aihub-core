@@ -24,6 +24,7 @@ _ORDERS = [
 ]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("statement", _ORDERS)
 def test_core_imap_and_generative_ai_import_in_either_order(statement: str):
     completed = subprocess.run([sys.executable, "-c", statement], capture_output=True, text=True, timeout=120)

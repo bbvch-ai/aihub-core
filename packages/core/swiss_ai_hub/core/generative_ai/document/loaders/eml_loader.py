@@ -23,10 +23,16 @@ SUBJECT = "subject"
 # with a different contract. 1MB of decoded body is far past any real mail and still bounded.
 _MAX_BODY_BYTES = 1_000_000
 
-# Refuses every attachment at parse time. `MailParser` drops a part whose payload exceeds this, so the smallest
-# possible value is what keeps base64 out of the extracted text entirely — the failure mode that makes
-# `MarkItDownLoader` unusable for `.eml`. Attachment *names* are still listed; only the bytes are discarded.
-_REFUSE_ALL_ATTACHMENTS = 1
+# Discards attachment payloads: `MailParser` keeps a part only when its decoded size is at most this, so every
+# real attachment is dropped and no base64 can reach the extracted text — the failure mode that makes
+# `MarkItDownLoader` unusable for `.eml`. Attachment *names* are still listed; only the bytes go.
+#
+# It bounds what is retained, not what is decoded: `MailParser.parse_message` calls `get_payload(decode=True)`
+# before comparing sizes, so a large attachment is still decoded into memory once and then thrown away. Moving that
+# check ahead of the decode would change parsing for the IMAP agent too, so it is left as a follow-up. The
+# comparison is also `>`, so a part of 1 byte or less survives — harmless, since nothing here reads
+# `parsed.attachments`.
+_DISCARD_ATTACHMENT_PAYLOADS = 1
 
 # The inventory is attacker-controlled text sitting in the same untrimmed part of the prompt as the subject, which is
 # bounded for exactly that reason. A filename can also carry newlines, which would let a sender forge markdown
@@ -77,7 +83,7 @@ class EmlLoader(BaseReader):
             message_id=filename,
             message=message,
             max_body_bytes=_MAX_BODY_BYTES,
-            max_attachment_bytes=_REFUSE_ALL_ATTACHMENTS,
+            max_attachment_bytes=_DISCARD_ATTACHMENT_PAYLOADS,
             raw=b"",
         )
         body = await self._body_as_markdown(parsed)
@@ -112,10 +118,9 @@ class EmlLoader(BaseReader):
     def _attachment_names(message: EmailMessage) -> list[str]:
         """Collect attachment filenames without decoding a single payload.
 
-        `MailParser` is asked to discard attachment bytes outright, which also loses their names — and a classifier
-        benefits from knowing an invoice PDF was attached. Reading `get_filename()` off each part costs nothing and
-        cannot pull a base64 payload into the output, whereas raising the parser's limit to keep the names would
-        decode every attachment just to throw it away.
+        `MailParser` is asked to discard attachment bytes, which also loses their names — and a classifier benefits
+        from knowing an invoice PDF was attached. Reading `get_filename()` off each part costs nothing of its own
+        and cannot pull a base64 payload into the output.
         """
         names: list[str] = []
         for part in message.walk():
@@ -136,7 +141,9 @@ class EmlLoader(BaseReader):
     @staticmethod
     def _render(parsed: ParsedMessage, body: str, attachment_names: list[str]) -> str:
         """Subject as the H1, so a caller with no email-specific knowledge still finds the title where it expects."""
-        lines = [f"# {parsed.subject}".rstrip(), ""]
+        # A subjectless mail renders no heading rather than a bare "#", which is not valid markdown and would be
+        # the document's first line. Title derivation falls through to the filename stem either way.
+        lines = [f"# {parsed.subject}", ""] if parsed.subject.strip() else []
         if parsed.sender:
             lines.append(f"**From:** {parsed.sender}")
         if parsed.date:

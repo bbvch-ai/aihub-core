@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver import DocumentTitleDeriver
 from swiss_ai_hub.core.generative_ai.document.loaders.eml_loader import SUBJECT
+from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
 
 
@@ -36,7 +37,14 @@ class ExtractedDocument(BaseModel):
         content = "\n\n".join(document.text for document in documents).strip()
         metadata = documents[0].metadata if documents else {}
         return cls(
-            title=DocumentTitleDeriver.derive(content, filename, subject=metadata.get(SUBJECT)),
+            title=DocumentTitleDeriver.derive(
+                content,
+                filename,
+                subject=metadata.get(SUBJECT),
+                # RawLoader returns the file verbatim, so a leading `#` is as likely to be a config comment as a
+                # heading. Every other loader here emits markdown.
+                content_is_markdown=document_parser != RawLoader.__name__,
+            ),
             content=content,
             content_type=content_type,
             source_filename=filename,

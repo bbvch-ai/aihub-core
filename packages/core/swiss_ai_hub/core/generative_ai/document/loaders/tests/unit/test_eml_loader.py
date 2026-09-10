@@ -121,3 +121,12 @@ def test_the_attachment_inventory_is_bounded():
         message.add_attachment(b"x" * 16, maintype="application", subtype="pdf", filename=f"file{index}.pdf")
     inventory = next(line for line in _load(message.as_bytes()).splitlines() if line.startswith("**Attachments:**"))
     assert inventory.count(".pdf") == MAX_ATTACHMENT_NAMES
+
+
+def test_a_subjectless_mail_renders_no_bare_heading():
+    message = EmailMessage()
+    message["From"] = "a@example.ch"
+    message.set_content("Body ohne Betreff.")
+    text = _load(message.as_bytes())
+    assert not text.startswith("#")
+    assert "Body ohne Betreff." in text

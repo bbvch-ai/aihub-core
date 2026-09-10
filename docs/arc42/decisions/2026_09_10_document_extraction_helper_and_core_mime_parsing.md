@@ -50,7 +50,10 @@ predicate lets a caller holding only a reference skip a file **before** paying t
 **A new `EmlLoader` composes `MailParser` with `MarkItDownLoader`**: the parser does the MIME work (subject, decoded
 body parts, attachment names) and an HTML-only body is converted by MarkItDown, whose standalone-HTML conversion is
 good. It renders the subject as an H1, lists attachment **filenames**, and never their bytes — `MailParser` is asked to
-discard attachment payloads outright, and the names are read off the message parts without decoding anything.
+discard attachment payloads, and the names are read off the message parts separately. That bounds what is *retained*,
+not what is decoded: `MailParser` decodes a payload before comparing its size, so a large attachment is still
+materialised once and thrown away. Moving the check ahead of the decode would change parsing for the IMAP agent too, so
+it is recorded as a follow-up rather than done here.
 
 **`EmlLoader` is registered in `DocumentLoaderSelector` ahead of `MarkItDownLoader`**, so `.eml` is *routed* like every
 other type rather than special-cased in the extractor. `.msg` (Outlook's binary format, which the stdlib `email` module
@@ -78,6 +81,8 @@ labels a scan's title by visual prominence), then the filename stem.
 - **`MarkItDownLoader.SUPPORTED_EXTENSIONS` still lists `eml`**, deliberately: the ingestion pipeline and the API's
   parsing endpoint build their own maps from that list and are out of scope here. Only the chain order in the selector
   keeps mail off MarkItDown, so that ordering is pinned by a test.
+- **`MailParser` decodes an attachment payload before checking its size**, so parsing an `.eml` carrying a large
+  attachment costs that much transient memory even though the bytes are discarded immediately.
 - **`message/rfc822` attachments are invisible to `MailParser`** (see above) — worth fixing, but it is a change to mail
   parsing rather than to extraction, and it would alter what the IMAP agent considers an attachment.
 - **`.eml` uploaded to a knowledge base is still stored as raw MIME and base64**, because `DocumentParserResource` keeps

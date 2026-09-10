@@ -96,8 +96,10 @@ class TestResultShape:
     def test_a_caller_supplied_content_type_wins(self):
         assert _extract("a.pdf", content_type="application/x-custom").content_type == "application/x-custom"
 
-    def test_an_unknown_extension_guesses_a_binary_content_type(self):
-        assert _extract("a.pdf", content_type="").content_type == "application/pdf"
+    def test_an_unmappable_extension_guesses_a_binary_content_type(self):
+        """`mimetypes` maps far more than expected (`.p7m` and even `.xyz` resolve), so the fallback needs an
+        extension it genuinely does not know."""
+        assert _extract("export.dat").content_type == "application/octet-stream"
 
     def test_source_filename_is_recorded(self):
         assert _extract("a.pdf").source_filename == "a.pdf"

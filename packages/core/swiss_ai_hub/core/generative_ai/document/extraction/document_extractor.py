@@ -39,8 +39,13 @@ class DocumentExtractor:
         content_type: str = "",
         include_images: bool = False,
     ) -> ExtractedDocument:
-        """Read the object's bytes and extract. boto3 is synchronous, hence the thread off-load."""
-        content = await asyncio.to_thread(create_s3_service().download_file, bucket, key)
+        """Read the object's bytes and extract.
+
+        The whole call is off-loaded, not just the download: `create_s3_service` builds three boto3 clients, and
+        each one loads botocore's service models and reads local AWS config — tens of milliseconds of blocking work
+        that would otherwise sit on the event loop once per extraction.
+        """
+        content = await asyncio.to_thread(lambda: create_s3_service().download_file(bucket, key))
         return await DocumentExtractor.extract_from_bytes(
             content=content,
             filename=key.rsplit("/", 1)[-1],
