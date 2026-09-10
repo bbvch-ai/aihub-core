@@ -3,9 +3,8 @@ from uuid import uuid4
 
 from swiss_ai_hub.core.events.agent import MailAttachmentRef, MailMessageRef
 from swiss_ai_hub.core.events.agent.imap.mail_message_ref import RFC822_CONTENT_TYPE
+from swiss_ai_hub.core.imap import ParsedAttachment
 from swiss_ai_hub.core.infrastructure import create_s3_client
-
-from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment
 
 # Forces a download instead of an inline render. The archived message is stored verbatim, so its HTML is
 # still attacker-controlled markup; a consumer that renders it must sanitize at render time (ADR

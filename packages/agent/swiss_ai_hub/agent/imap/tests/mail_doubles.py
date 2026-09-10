@@ -11,9 +11,7 @@ from email.policy import default as default_policy
 from unittest.mock import AsyncMock, patch
 
 from swiss_ai_hub.core.events.agent import MailAttachmentRef, MailMessageRef, UnreadMailSummary
-from swiss_ai_hub.core.imap import ImapClientConfig
-
-from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment, ParsedMessage
+from swiss_ai_hub.core.imap import ImapClientConfig, ParsedAttachment, ParsedMessage
 
 FACTORY = "swiss_ai_hub.agent.imap.imap_client.ImapClientFactory.create"
 STORE_ATTACHMENTS = "swiss_ai_hub.agent.imap.mail_store.MailStore.store_attachments"

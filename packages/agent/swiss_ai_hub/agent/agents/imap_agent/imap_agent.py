@@ -12,7 +12,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UnreadMailListedEvent,
 )
-from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig
+from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig, ParsedMessage
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -21,7 +21,6 @@ from swiss_ai_hub.agent.agents.imap_agent.events.read_mail_start_event import Re
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 from swiss_ai_hub.agent.imap.step_functions import do_fetch_and_archive, do_file_message, do_list_unread
 from swiss_ai_hub.agent.workflow.decorators.step import step

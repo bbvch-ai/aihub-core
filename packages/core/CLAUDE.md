@@ -62,7 +62,8 @@ packages/core/swiss_ai_hub/core/
 │   └── elements/                    # 29 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension
-│   ├── document/                    # Loaders (MinerU, DocumentIntelligence), parsers, refinement
+│   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
+│   │                                #   parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
 │   ├── memory/                      # AgentMemory (user + org scoped via mem0)
@@ -80,6 +81,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
+├── imap/                            # Mail config + MIME parsing (MailParser, ParsedMessage, ImapClientConfig)
 ├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
@@ -513,19 +515,19 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module          | Purpose                               | Key Entry Points                                                                                                   |
-| --------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                            |
-| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                               |
-| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                              |
-| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                     |
-| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                              |
-| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                            |
-| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                        |
-| `document/`     | Document loading and parsing          | `MineruLoader`, `MarkdownStructuralNodeParser`                                                                     |
-| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                               |
-| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()` |
-| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                       |
+| Module          | Purpose                               | Key Entry Points                                                                                                                  |
+| --------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                           |
+| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                              |
+| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                             |
+| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                    |
+| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                             |
+| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                           |
+| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                       |
+| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader`, `EmlLoader`, `MarkdownStructuralNodeParser` |
+| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                              |
+| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`                |
+| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                      |
 
 ## FastAPI Controllers
 

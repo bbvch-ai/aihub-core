@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from llama_index.core.schema import Document
 from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.agents import AgentRef
 from swiss_ai_hub.core.events import BaseEvent
@@ -135,7 +136,7 @@ def _loader_yielding(text: str) -> SimpleNamespace:
     Standing in for MinerU/MarkItDown at the loader boundary keeps these scenarios offline while still driving the
     real extractor: an empty string here is exactly what MinerU hands back for an image holding no words.
     """
-    return SimpleNamespace(aload_data_from_bytes=AsyncMock(return_value=[SimpleNamespace(text=text)]))
+    return SimpleNamespace(aload_data_from_bytes=AsyncMock(return_value=[Document(text=text)]))
 
 
 def _verdict(category: MailCategory | None) -> CategoryVerdict:

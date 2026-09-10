@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from llama_index.core.schema import Document
 from swiss_ai_hub.core.events.agent import MailAttachmentRef
 from swiss_ai_hub.core.imap import DraftEmailSettings
 
@@ -22,7 +23,7 @@ def _settings(**overrides) -> DraftEmailSettings:
 
 
 def _loader(text: str) -> SimpleNamespace:
-    return SimpleNamespace(aload_data_from_bytes=AsyncMock(return_value=[SimpleNamespace(text=text)]))
+    return SimpleNamespace(aload_data_from_bytes=AsyncMock(return_value=[Document(text=text)]))
 
 
 _DEFAULT_LOADER = object()
