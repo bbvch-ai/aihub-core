@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 from mongoengine import DoesNotExist, NotUniqueError
 from pydantic import Field
-from swiss_ai_hub.core.form import Checkbox, Form, ModelSelect
+from swiss_ai_hub.core.form import Checkbox, ConfigSpecs, Form, InputNumber, ModelSelect
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.ingestors import IngestorConfig
 from swiss_ai_hub.core.persistence import ConfigSpecsEntity
@@ -43,7 +43,7 @@ class _RagConfig(IngestorConfig):
 class _CrawlConfig(IngestorConfig):
     """A second, differently shaped ingestor."""
 
-    crawl_depth: Annotated[int, Field(description="Depth")] = 2
+    crawl_depth: Annotated[int | InputNumber, Field(description="Depth")] = 2
     llm_model: Annotated[str | ModelSelect, Field(description="Text model")]
 
     @classmethod
@@ -52,6 +52,7 @@ class _CrawlConfig(IngestorConfig):
         return cls(
             name=base.name,
             description=base.description,
+            crawl_depth=InputNumber(label=LocaleString(en="Depth"), value=2),
             llm_model=ModelSelect(label=LocaleString(en="Text"), mode="chat"),
         )
 
@@ -104,11 +105,15 @@ NESTED = _ingestor("nested", _NestedConfig.as_form())
 def registered_ingestors():
     """The entity is Mongo-backed; stub it with two differently shaped ingestors so these tests need no database."""
     labels_only = MagicMock(form=[], config_specs=None)
+    # A row whose schema is present but empty: a pipeline that built its `Ingestor` by hand rather than
+    # through `from_config`, so `config_specs` defaults to a schema jambo cannot build a model from.
+    schema_without_form = MagicMock(form=[], config_specs=ConfigSpecsEntity.from_specs(ConfigSpecs()))
     rows = {
         RAG.id: _registered(RAG),
         CRAWLER.id: _registered(CRAWLER),
         NESTED.id: _registered(NESTED),
         "stale": labels_only,
+        "formless": schema_without_form,
     }
     with patch(f"{_SERVICE_MODULE}.IngestorEntity") as ingestor_entity:
         ingestor_entity.find.side_effect = lambda ingestor_id: rows.get(ingestor_id)
@@ -349,7 +354,172 @@ class TestAnnouncedConfiguration:
 
         assert bucket_cls.create_bucket.call_args.kwargs["configuration"]["crawl_depth"] == 5
         assert exc_info.value.status_code == 400
-        assert "embedding_model" in exc_info.value.detail
+        assert "crawl_depth" in exc_info.value.detail
+
+
+class TestUndeclaredConfiguration:
+    """A submission is held to the fields the ingestor announced, not merely to the ones it declared types for.
+
+    #1822 promised a configuration that does not match its ingestor's form is refused by name. Mismatching a
+    *declared* field was already caught; a field the form never announced was accepted, stored and then ignored
+    at ingestion time (#1850).
+    """
+
+    @pytest.mark.asyncio
+    async def test_a_typo_on_an_optional_knob_is_rejected_naming_it(self, locale_handler, s3_service):
+        """The reproduction from #1850: the misspelling is silent, so nothing else would ever surface it."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE, _rag_request(with_summarys=True), locale_handler, s3_service, _user()
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "with_summarys" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+        s3_service.ensure_bucket_with_cors.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_misspelled_required_knob_is_named_as_the_typo_not_as_a_missing_field(
+        self, locale_handler, s3_service
+    ):
+        """The model drops the typo and reports the correct name as missing, which hides what the user typed.
+
+        Naming `embedding_model: Field required` describes the consequence; the mistake is `embeding_model`,
+        and only that message tells the user their value went nowhere.
+        """
+        configuration = {
+            "name": {"en": "Research Docs"},
+            "description": {"en": "Papers"},
+            "embeding_model": "embedding/default",
+        }
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE,
+                    CreateDatabaseRequest(ingestor=RAG.id, configuration=configuration),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert "embeding_model" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_knob_another_ingestor_announces_is_undeclared_here(self, locale_handler, s3_service):
+        """Otherwise complete, so the rejection can only come from the foreign key itself."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE, _rag_request(crawl_depth=5), locale_handler, s3_service, _user()
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "crawl_depth" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_an_omitted_optional_knob_is_still_accepted_and_stays_out_of_the_row(
+        self, locale_handler, s3_service
+    ):
+        """The database must fall back to the deployment default, which it can only do if nothing is stored."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            bucket_cls.create_bucket.return_value = _created_bucket()
+
+            await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, _user())
+
+        assert bucket_cls.create_bucket.call_args.kwargs["configuration"] == {"embedding_model": "embedding/default"}
+
+    @pytest.mark.asyncio
+    async def test_an_undeclared_key_inside_a_group_or_a_repeater_is_named_by_its_path(
+        self, locale_handler, s3_service
+    ):
+        """A typo one level down is exactly as silent as one at the top, so the walk must reach it."""
+        identity = {"name": {"en": "Nested"}, "description": {"en": "x"}}
+        in_group = {**identity, "enrichment": {"model": "text-generation/pick", "bogus": 1}, "sources": []}
+        in_repeater = {
+            **identity,
+            "enrichment": {"model": "text-generation/pick"},
+            "sources": [{"model": "embedding/pick", "bogus": 1}],
+        }
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as group_error:
+                await KnowledgeService.create_database(
+                    "nested",
+                    CreateDatabaseRequest(ingestor="nested", configuration=in_group),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+            with pytest.raises(HTTPException) as repeater_error:
+                await KnowledgeService.create_database(
+                    "nested",
+                    CreateDatabaseRequest(ingestor="nested", configuration=in_repeater),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert "enrichment.bogus" in group_error.value.detail
+        assert "sources.0.bogus" in repeater_error.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_every_offending_field_is_named_in_one_rejection(self, locale_handler, s3_service):
+        """Naming one at a time would cost the admin a round trip per typo."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE,
+                    _rag_request(with_summarys=True, embeding_model="embedding/default"),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert "with_summarys" in exc_info.value.detail
+        assert "embeding_model" in exc_info.value.detail
+
+
+class TestStoredConfigurationIsCanonical:
+    """What is stored is the validated configuration, not the submission that produced it."""
+
+    @pytest.mark.asyncio
+    async def test_a_knob_is_stored_in_the_type_its_pipeline_declared(self, locale_handler, s3_service):
+        """A row that says `"5"` where the pipeline declared an int reads as deliberate and is not."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            bucket_cls.create_bucket.return_value = _created_bucket(ingestor="crawler")
+
+            await KnowledgeService.create_database(
+                "sites",
+                CreateDatabaseRequest(
+                    ingestor="crawler",
+                    configuration={
+                        "name": {"en": "Sites"},
+                        "description": {"en": "Crawled"},
+                        "crawl_depth": "5",
+                        "llm_model": "text-generation/pick",
+                    },
+                ),
+                locale_handler,
+                s3_service,
+                _user(),
+            )
+
+        assert bucket_cls.create_bucket.call_args.kwargs["configuration"]["crawl_depth"] == 5
 
 
 class TestModelSelection:
@@ -460,6 +630,27 @@ class TestAnnouncedFormIsRequired:
             accessible_tenant_ids=set(),
             t=MagicMock(),
         )
+
+
+class TestFormlessIngestorIsRejected:
+    """An empty announced form is no more usable than a missing one, and must not reach the model builder."""
+
+    @pytest.mark.asyncio
+    async def test_an_ingestor_whose_form_is_empty_is_rejected_not_served_a_500(self, locale_handler, s3_service):
+        """jambo raises on the title-less schema such a row carries, and every key would be undeclared anyway."""
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(
+                    DATABASE,
+                    CreateDatabaseRequest(ingestor="formless", configuration={"name": {"en": "X"}}),
+                    locale_handler,
+                    s3_service,
+                    _user(),
+                )
+
+        assert exc_info.value.status_code == 400
+        assert "no running pipeline has announced it" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
 
 
 class TestCreateDatabaseNameValidation:
