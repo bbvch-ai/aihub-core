@@ -3,6 +3,7 @@ import mimetypes
 
 from llama_index.core.readers.base import BaseReader
 
+from swiss_ai_hub.core.generative_ai.document.loaders.eml_loader import EmlLoader
 from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
 from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentLoaderSelector:
     """Maps a file to the loader that can read it: plaintext to `RawLoader`, PDFs and images to `MineruLoader`,
-    Office documents to `MarkItDownLoader`.
+    `.eml` to `EmlLoader`, Office documents to `MarkItDownLoader`.
 
     The routing itself is not new — it is inlined in the API's `ParsingService` and, in a configurable form, in the
     pipeline's `DocumentParserResource`. This is deliberately a third statement of it rather than the one both of
@@ -64,6 +65,10 @@ class DocumentLoaderSelector:
             return RawLoader()
         if extension in MineruSettings().EXTENSIONS:
             return MineruLoader()
+        # Ahead of MarkItDown, which also claims `.eml` but returns the raw RFC822 source — base64 attachment
+        # payloads included — rather than markdown. `.msg` still falls through to it.
+        if extension in EmlLoader.SUPPORTED_EXTENSIONS:
+            return EmlLoader()
         if extension in MarkItDownLoader.SUPPORTED_EXTENSIONS:
             return MarkItDownLoader()
 

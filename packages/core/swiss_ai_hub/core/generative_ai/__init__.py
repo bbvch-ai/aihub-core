@@ -16,8 +16,15 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
         S3AnonymousFileAccessService,
     )
+    from swiss_ai_hub.core.generative_ai.document.extraction.document_extractor import DocumentExtractor
+    from swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver import DocumentTitleDeriver
+    from swiss_ai_hub.core.generative_ai.document.extraction.extracted_document import ExtractedDocument
+    from swiss_ai_hub.core.generative_ai.document.extraction.unsupported_document_type_error import (
+        UnsupportedDocumentTypeError,
+    )
     from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import DocumentIntelligenceLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector import DocumentLoaderSelector
+    from swiss_ai_hub.core.generative_ai.document.loaders.eml_loader import EmlLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
@@ -80,7 +87,11 @@ __all__ = [
     "BucketMetadataFilters",
     "BucketNamespacePair",
     "DocumentIntelligenceLoader",
+    "DocumentExtractor",
     "DocumentLoaderSelector",
+    "DocumentTitleDeriver",
+    "EmlLoader",
+    "ExtractedDocument",
     "EmbeddingModelConfig",
     "FIGURES_DIRECTORY_NAME",
     "FewShotExample",
@@ -98,6 +109,7 @@ __all__ = [
     "MetadataFilterPair",
     "RetrievalRuntimeConfig",
     "MineruLoader",
+    "UnsupportedDocumentTypeError",
     "ModeOptions",
     "OrgMemoryNamespaceResolver",
     "OrgMemoryReadConfig",
@@ -140,7 +152,12 @@ _LAZY_IMPORTS = {
     "BucketMetadataFilters": "swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters",
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
     "DocumentIntelligenceLoader": "swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader",
+    "DocumentExtractor": "swiss_ai_hub.core.generative_ai.document.extraction.document_extractor",
     "DocumentLoaderSelector": "swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector",
+    "DocumentTitleDeriver": "swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver",
+    "EmlLoader": "swiss_ai_hub.core.generative_ai.document.loaders.eml_loader",
+    "ExtractedDocument": "swiss_ai_hub.core.generative_ai.document.extraction.extracted_document",
+    "UnsupportedDocumentTypeError": "swiss_ai_hub.core.generative_ai.document.extraction.unsupported_document_type_error",
     "EmbeddingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config",
     "FIGURES_DIRECTORY_NAME": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "FewShotExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example",
