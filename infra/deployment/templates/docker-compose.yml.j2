@@ -207,12 +207,15 @@ services:
       - "8080"
       - "18080"
     {%- endif %}
+    {#- -max caps volume slots, not disk: the master runs without preallocation, so an empty volume
+        costs nothing. Each collection (one per knowledge database, plus one per infrastructure
+        service) claims a batch of 7 slots on its first write, so 100 ran out at ~8 databases. #}
     command: >
       volume
       -mserver="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
       -port=8080
-      -max=100
+      -max=500
       -dataCenter=dc1
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
