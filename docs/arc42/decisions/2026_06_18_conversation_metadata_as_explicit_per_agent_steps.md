@@ -34,9 +34,9 @@ event landing after the stop event was silently dropped and the thread stayed on
 meta-question title step (same trigger event as the answer step, zero head start) made that race much tighter than the
 early-anchored normal-flow step ever did. `ThreadEntity.update_thread_name` is now called exclusively by
 `ThreadTitlePersister` (`packages/api/swiss_ai_hub/api/persistance/threads/`), a sibling of `EventPersister`/
-`WebSocketSender` registered once at API startup in `lifetime_manager.py` and never torn down mid-run. As a side
-effect, the streaming JSON path (`start_stream_chat_interaction`) — which never handled the title event at all — now
-gets title persistence too.
+`WebSocketSender` registered once at API startup in `lifetime_manager.py` and never torn down mid-run. As a side effect,
+the streaming JSON path (`start_stream_chat_interaction`) — which never handled the title event at all — now gets title
+persistence too.
 
 The shared generators, event types, and the split/inline wiring shape for the *normal* pipeline are unchanged; the rest
 of this ADR stands.

@@ -12,7 +12,7 @@ class CronInput(PrimeVueElement):
     A FormKit element for editing the cron schedule of a schedulable agent profile.
 
     The element renders the five cron positions plus a timezone selector, and the submitted value
-    matches the fields of `AgentSchedule`:
+    matches the fields of `CronSchedule`:
     {
         "minute": str,
         "hour": str,
@@ -28,19 +28,19 @@ class CronInput(PrimeVueElement):
     ### Form Duality
     ```python
     from swiss_ai_hub.core.form.elements.cron_input import CronInput
-    from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+    from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
 
     class MyAgentConfig(AgentConfig):
         schedule: Annotated[
-            AgentSchedule | CronInput | None,
+            CronSchedule | CronInput | None,
             Field(description="When this profile runs automatically"),
         ] = None
 
     # Form mode - for rendering:
     config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
 
-    # Data mode - from submission (Pydantic validates into AgentSchedule):
-    config = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))
+    # Data mode - from submission (Pydantic validates into CronSchedule):
+    config = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))
     ```
     """
 

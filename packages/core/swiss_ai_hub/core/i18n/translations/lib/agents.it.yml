@@ -15,3 +15,8 @@ config:
   icon:
     label: Icona
     help: Seleziona un'icona predefinita o inserisci un nome icona Iconify
+  cron:
+    label: Pianificazione
+    help: Quando questo profilo viene eseguito automaticamente. Lasciare vuoto per
+      disattivare le esecuzioni pianificate.
+    timezone_placeholder: Seleziona fuso orario...

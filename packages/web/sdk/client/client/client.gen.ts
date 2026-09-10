@@ -197,9 +197,7 @@ export const createClient = (config: Config = {}): Client => {
         method,
         onRequest: undefined,
         serializedBody: getValidRequestBody(opts) as
-          | BodyInit
-          | null
-          | undefined,
+          BodyInit | null | undefined,
         signal: unwrapRefs(opts.signal) as AbortSignal,
         url,
       });

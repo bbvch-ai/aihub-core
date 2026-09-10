@@ -190,9 +190,17 @@ const handleCreate = async () => {
     tenantId: tenantId.value!,
   }
 
-  await createNamespace(requestBody)
-  emit('success', { database: selectedDatabase.value, namespace: name.value })
-  closeModal()
+  try {
+    await createNamespace(requestBody)
+    emit('success', { database: selectedDatabase.value, namespace: name.value })
+    closeModal()
+  }
+  catch {
+    error.value = t('knowledge.form.create_error')
+  }
+  finally {
+    isCreating.value = false
+  }
 }
 
 watch(() => props.modelValue, (isVisible) => {

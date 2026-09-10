@@ -12,7 +12,6 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalAgentEvent, ExternalAgentEventDistributor
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
-    AgentConfigSpecs,
     DisplayEvent,
     ExceptionEvent,
     HumanInTheLoopRequestEvent,
@@ -367,13 +366,10 @@ class AgentService:
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
-        config_model = ModelCreationService.create_agent_config_model(
-            AgentConfigSpecs(
-                agent_class=class_entity.agent_config_specs.agent_class,
-                agent_config_schema=class_entity.agent_config_specs.agent_config_schema,
-            )
+        config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        config_instance = InstanceConfigHelper.validate_config_for_update(
+            configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
-        config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -458,13 +454,10 @@ class AgentService:
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
-        config_model = ModelCreationService.create_agent_config_model(
-            AgentConfigSpecs(
-                agent_class=class_entity.agent_config_specs.agent_class,
-                agent_config_schema=class_entity.agent_config_specs.agent_config_schema,
-            )
+        config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        config_instance = InstanceConfigHelper.validate_config_for_create(
+            config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )
-        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,

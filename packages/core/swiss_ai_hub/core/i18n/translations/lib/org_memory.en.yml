@@ -15,4 +15,5 @@ rerank_organization_memory:
 default_tenant_namespace:
   label: Default org-memory namespace
   help: Namespace used for organization-memory writes (and reads when no event override
-    is provided). Leave empty to fall back to the platform-wide default.
+    is provided). Must be one of the allowed namespaces when that list is not empty.
+    Leave empty to fall back to the platform-wide default.

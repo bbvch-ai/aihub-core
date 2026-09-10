@@ -45,6 +45,16 @@
           severity="secondary"
           @click.stop="handleUploadClick"
         />
+        <Button
+          v-if="!autoSync"
+          v-tooltip.top="t('knowledge.delete_namespace')"
+          icon="pi pi-trash"
+          rounded
+          text
+          size="small"
+          severity="danger"
+          @click.stop="handleDeleteClick"
+        />
         <Badge
           :value="namespace.number_of_documents"
           size="large"
@@ -67,6 +77,8 @@ import { capitalCase } from 'change-case'
 
 import type { NamespaceDto } from '@core/sdk/client'
 
+// Not gated on the database's `deletable`: a legacy database cannot be removed as a whole, but its
+// namespaces can. Only an auto-synced source, which would just re-sync them, blocks both affordances.
 const props = defineProps<{
   namespace: NamespaceDto
   autoSync?: boolean
@@ -75,6 +87,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   upload: [namespace: NamespaceDto]
   edit: [namespace: NamespaceDto]
+  delete: [namespace: NamespaceDto]
 }>()
 
 const route = useRoute()
@@ -104,5 +117,10 @@ const handleUploadClick = (event: Event) => {
 const handleEditClick = (event: Event) => {
   event.stopPropagation()
   emit('edit', props.namespace)
+}
+
+const handleDeleteClick = (event: Event) => {
+  event.stopPropagation()
+  emit('delete', props.namespace)
 }
 </script>

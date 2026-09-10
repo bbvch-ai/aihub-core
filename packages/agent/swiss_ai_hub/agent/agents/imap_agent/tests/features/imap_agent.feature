@@ -17,6 +17,13 @@ Feature: IMAP Agent
     And a StopEvent is present
     And no ExceptionEvent is present
 
+  Scenario: Creates the target folder when it does not exist yet
+    Given an ImapAgent runner with moving enabled and a missing target folder
+    When the user triggers reading mail
+    Then a MailMovedEvent that records the created folder was emitted
+    And a StopEvent is present
+    And no ExceptionEvent is present
+
   Scenario: Stops gracefully when the inbox has no unread mail
     Given an ImapAgent runner with an empty IMAP inbox
     When the user triggers reading mail

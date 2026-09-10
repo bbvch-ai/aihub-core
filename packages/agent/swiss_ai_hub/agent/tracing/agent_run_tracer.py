@@ -59,6 +59,9 @@ class AgentRunTracer:
         # input, so Langfuse falls back to rendering the raw messages array (looking like a chat trace).
         user = getattr(event, "user", None)
         user_id = user.id if user is not None else ""
+        # Tenant is only reachable here: Langfuse gets it as trace metadata because LiteLLM cannot
+        # carry it (custom request tags are enterprise-gated and silently dropped) — see #1451.
+        tenant_id = user.acting_within_tenant.id if user is not None and user.acting_within_tenant else ""
         user_input = event.user_query if hasattr(event, "user_query") else ""
         logger.debug(f"Storing run metadata for {topic.run_id}")
 
@@ -69,6 +72,7 @@ class AgentRunTracer:
         await self.trace_store.store_run_context_carrier(eci, carrier)
         await self.trace_store.store_user_input(eci, user_input)
         await self.trace_store.store_user_id(eci, user_id)
+        await self.trace_store.store_tenant_id(eci, tenant_id)
 
     @asynccontextmanager
     async def trace_step_start(
@@ -148,6 +152,7 @@ class AgentRunTracer:
         eci = topic.execution_context_id
         user_input = await self.trace_store.get_user_input(eci)
         user_id = await self.trace_store.get_user_id(eci)
+        tenant_id = await self.trace_store.get_tenant_id(eci)
 
         is_final_step = False
         if output_events:
@@ -171,14 +176,21 @@ class AgentRunTracer:
                 "deployment.environment.name": "agent",
             }
         else:
+            # Tenant rides along as both a tag (filterable in the Langfuse UI) and metadata, but only when
+            # the run has one — sysadmin and system runs act outside any tenant.
+            trace_tags = [topic.agent_class, topic.agent_id]
+            if tenant_id:
+                trace_tags.append(f"tenant:{tenant_id}")
+
             trace_attrs: dict[str, Any] = {
                 "langfuse.trace.name": f"🤖 {topic.agent_class}/{topic.agent_id}",
                 "langfuse.trace.input": user_input,
-                "langfuse.trace.tags": [topic.agent_class, topic.agent_id],
+                "langfuse.trace.tags": trace_tags,
                 "langfuse.trace.metadata.agent_class": topic.agent_class,
                 "langfuse.trace.metadata.agent_id": topic.agent_id,
                 "langfuse.trace.metadata.run_id": topic.run_id,
                 "langfuse.trace.metadata.display_id": topic.display_id,
+                "langfuse.trace.metadata.tenant_id": tenant_id,
                 "langfuse.user.id": user_id,
                 "langfuse.session.id": topic.thread_id,
                 "deployment.environment.name": "agent",

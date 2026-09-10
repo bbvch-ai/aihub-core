@@ -1,4 +1,12 @@
 from dagster import AssetSelection, JobDefinition, RunConfig, define_asset_job, observable_source_asset
+from dagster._core.storage.tags import PRIORITY_TAG
+
+# Observation and removal are cheap steps whose results authorize the per-document ingestion runs,
+# so they must not queue behind them. Every run defaults to priority 0, which collapses
+# QueuedRunCoordinator's priority sort into plain FIFO; a bulk upload then leaves an observation
+# waiting behind hundreds of already-queued ingestion runs. The sort spans the whole queue rather
+# than one page, so this jumps the backlog outright without reserving any capacity.
+ORCHESTRATION_RUN_PRIORITY = {PRIORITY_TAG: "10"}
 
 
 def materialize_all_job(namespace_name: str, config: RunConfig | None = None) -> JobDefinition:
@@ -30,6 +38,7 @@ def observe_source_job(
         name=f"{source_location_name}_{job_name}",
         config=config,
         description=job_description,
+        run_tags=ORCHESTRATION_RUN_PRIORITY,
     )
 
 
@@ -46,4 +55,5 @@ def materialize_asset_job(
         selection=asset_selection,
         config=config,
         description=description or "A job to materialize the selected assets.",
+        run_tags=ORCHESTRATION_RUN_PRIORITY,
     )

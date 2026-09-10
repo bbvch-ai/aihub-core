@@ -4,6 +4,7 @@ __pycache__/
 /packages/pipeline/.env
 /packages/agent/playground/agent/RAGAgent/.env
 .env
+.env.backup-*
 .docker-volumes
 /node_modules/
 docs/node_modules

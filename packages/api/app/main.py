@@ -55,7 +55,9 @@ runner.mount(
     .ws()
     .get_agent_events_in_thread()
     .resolve_thread_for_display()
-    .get_agent_event_timeseries(),
+    .get_agent_event_timeseries()
+    .get_llm_spend_by_user()
+    .get_llm_spend_by_tenant(),
     ModelController(auth=auth).get_litellm_models().get_litellm_models_by_mode().get_litellm_model(),
     ThreadController(auth=auth)
     .get_user_threads()
@@ -94,7 +96,7 @@ runner.mount(
     .send_process_open_form(),
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
-    AccessController(auth=auth).get_access_capabilities().get_access_presets(),
+    AccessController(auth=auth).get_access_capabilities().get_access_presets().get_default_tenant_rules(),
     OpenaiController(auth=auth)
     .get_models()
     .get_model_with_assistants()
@@ -108,6 +110,8 @@ runner.mount(
         auth=auth,
         translation_llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
     )
+    .get_ingestors()
+    .create_database()
     .create_namespace()
     .update_namespace()
     .get_databases()
@@ -120,7 +124,9 @@ runner.mount(
     .get_supported_file_types()
     .get_document_url()
     .delete_document()
-    .batch_delete_documents(),
+    .batch_delete_documents()
+    .delete_namespace()
+    .delete_database(),
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     UserMemoryController(auth=auth)

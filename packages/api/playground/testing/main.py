@@ -3,7 +3,6 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv(usecwd=True))
 
 import asyncio  # noqa: E402
-from os.path import abspath, dirname, join  # noqa: E402
 
 from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 from swiss_ai_hub.core.routes import HealthController  # noqa: E402
@@ -28,8 +27,6 @@ async def main():
         agent_class="my_agent_class",
         agent_id="my_agent_id",
     ).with_simple_chunk_events()
-
-    runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))
 
     auth = TestAuthHandler()
 

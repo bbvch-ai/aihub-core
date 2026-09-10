@@ -318,3 +318,345 @@ lost. Issue [#1575](https://github.com/bbvch-ai/aihub-core/issues/1575) requires
 - **Retention is unresolved.** The archive now holds complete inbound mail, headers and all, in the `agent-files`
   bucket, which carries no lifecycle policy. That is a deliberate acceptance for this story, not an oversight, and a
   data-protection follow-up if the posture needs to tighten — the same open question the at-rest mailbox secrets raise.
+
+## Verify-or-create target folders (#1636)
+
+The move step originally required its target folder to already exist, which holds for a single fixed processed-folder an
+admin creates once by hand but not for classification, which files into one folder per category plus a fallback. Filing
+now creates the folder when it is missing:
+
+- **Creation, not just resolution.** `move_message` resolves through `_resolve_or_create_folder` instead of the
+  special-use-aware `_resolve_folder` that `append_draft` still uses. Drafts must never create: their fallback is the
+  server's `\Drafts` SPECIAL-USE folder, and inventing a second drafts folder would split the human handoff.
+- **This widens the mailbox mutation surface.** The move story characterised itself as non-destructive — moves, never
+  deletes, never sends. Folder creation keeps that property (it is additive and nothing is removed) but it is the first
+  capability that changes mailbox *structure* rather than the location of one message, which is why the effect is
+  recorded in the protocol rather than only in logs: `MailMovedEvent.folder_created` puts "the agent added a folder to
+  this mailbox" in the audit trail, and the step emits a matching thought.
+- **Per-level creation.** Each level of the hierarchy is created in turn (`Invoices`, then `Invoices/2026`), using the
+  delimiter the server reports in its own `LIST` response, because RFC 3501 only *recommends* that a server create
+  superior names. A `NIL` delimiter (flat namespace) creates the full name in one call.
+- **The follow-up `LIST` is the only authority on success.** A `create` that fails because a parent already exists and
+  one refused outright are indistinguishable at the protocol level, and a concurrent run may legitimately have won the
+  race, so creation errors are not raised where they occur — the folder is looked up again afterwards and only its
+  continued absence raises, carrying the server's reason.
+- **Ordering is what protects the message.** Resolution and creation run before the inbox is selected writable and
+  before any `MOVE`/`COPY`/`EXPUNGE`, so a server that refuses the folder fails the step with the message untouched in
+  the inbox rather than half-filed. A test asserts `select_folder` is never reached on that path.
+- **New folders are subscribed.** Creation is followed by a best-effort `SUBSCRIBE`: most mail clients only show
+  subscribed folders, so an unsubscribed target would make correctly-filed mail look lost to the human who has to read
+  it. A server that refuses to subscribe does not fail the move.
+- **Unconditional, no new config.** Creation applies to every agent using the move capability rather than sitting behind
+  a toggle — a per-category classifier cannot enumerate its folders in advance, so a disabled-by-default switch would
+  only reintroduce the same first-run failure.
+
+## Classification into per-category folders (#1637)
+
+The customer use case is a mailbox that triages itself: read unread mail, classify each message, file it into the folder
+for its category. `ImapAgent` cannot do this — it is a demonstrator that fetches only the *first* unread message and
+moves it into one fixed processed-folder with no description attached. A new `EmailClassificationAgent` blueprint does
+the whole batch and routes per category.
+
+- **A separate blueprint, not a third chain on `ImapAgent`.** Two mailbox chains on one agent would both emit
+  `UnreadMailListedEvent`, and the dispatcher routes an event to *every* step waiting on it, so the chains would
+  cross-trigger; both would also consume unread INBOX mail, so on one profile whichever ran first would steal the
+  other's work. `ImapAgent` is unchanged in behaviour and stays as the demonstrator and the fallback for testing.
+
+- **The orchestration glue is shared, not copied.** `list`, `fetch-and-archive` and `file` moved into
+  `agent/imap/step_functions.py` as `do_*` free functions, following `rag/step_functions.py` and
+  `self_awareness_step_functions.py`; both blueprints are now thin `@step` wrappers over them. This is what keeps
+  #1575's archiving in *one* place: copy-pasting the fetch body would have left two archives to maintain, and the read
+  chain that owns archiving today stops running the moment classification takes over the mailbox.
+
+- **Categories are configuration, not a taxonomy in code.** A `MailCategory` repeater (`category`, `imap_folder`,
+  `description`) plus a fallback folder. The description is load-bearing: a model cannot reliably choose between
+  `information_request` and `support_request` from folder names, but it can from "we can resolve this by providing
+  information" versus "this requires an action from our team". A customer adds or renames a category without a
+  deployment.
+
+- **The model returns an index, never a folder name.** The response schema is built at runtime from the configured list
+  with `ge=0, lt=len(categories)`, so the index cannot address a category that does not exist. This is the containment
+  boundary for prompt injection: inbound mail is attacker-controlled and enters the prompt, but the worst a hostile
+  message can achieve is misfiling into a folder the admin already configured — it cannot invent a destination or reach
+  any other capability.
+
+- **One route to the fallback folder: the model declining.** An explicit `selected_index: null` ("none of these fit") is
+  the only way a message reaches the fallback folder. Mail is never forced into a bucket.
+
+  The first implementation also had the model rate its own confidence and diverted anything below a configurable
+  threshold. That was removed after measuring it. `confidence` was never an API signal — it is a field we invented in
+  our own response schema, so the model writes the number as output tokens in the same forward pass that produces the
+  answer. Across all five chat models on the gateway, given a deliberately ambiguous message, the explicit decline fired
+  four times out of five and the threshold fired zero times; the one model that misfiled did so at **0.95**, which no
+  usable threshold would catch. A knob that never fires but must still be tuned is worse than no knob. The field was
+  dropped from the response schema and from `MailClassificationRef` as well as from the settings — keeping a number
+  nothing acts on invites a later reader to trust it. `reason` is retained and is the better audit trail.
+
+  If a real confidence signal is ever wanted, token **logprobs** are the measured one, and `LLMParameter` already plumbs
+  them. They are not reachable from this code path today: `astructured_predict` returns only the validated model and
+  discards the raw response.
+
+- **Filing is the deduplication mechanism.** Every message — categorised or fallback — leaves the inbox, so the next
+  `UNSEEN` listing cannot see it. Unlike drafting, no `$AiHubDrafted`-style flag is needed. A batch that fails half-way
+  is therefore safe: filed messages stay filed, the rest are still unread and get picked up next run. IMAP UIDs are
+  stable, so filing one message never shifts another's.
+
+  Two limits on that guarantee, both deliberate:
+
+  **A target folder equal to the inbox would defeat it entirely**, so it is rejected at validation. Filing into the
+  inbox is not a no-op: on the `COPY` + `UID EXPUNGE` path the original is expunged and a fresh *unread* copy takes its
+  place, so the next run classifies the copy, archives it again and never terminates. Folder names are admin-entered
+  free text, so a typo reaches this. `fallback_folder` is checked the same way, as is the weaker case of a fallback
+  folder that duplicates a category folder (which would make `per_category` and `fallback_count` indistinguishable).
+
+  **Dedup only starts once filing does.** Fetch-and-archive runs for the whole batch before the first message moves, so
+  a message that fails classification — an unparseable body, a context-window overflow — aborts the run with nothing
+  filed, and the next run re-fetches and re-archives the entire batch to S3. Since listing is oldest-first, the same
+  message leads every attempt, so a single bad message wedges the mailbox and grows the archive on every run. This
+  compounds the unresolved retention gap below.
+
+  Per-message isolation was considered and rejected. Routing a message whose classification *failed* into
+  `fallback_folder` would unwedge the mailbox, but it converts a loud failure into a quiet one: with the LLM gateway
+  down, every message in the batch would be filed as "uncategorised" and the run would report success, scattering mail
+  on a transient outage. Failing the run keeps the mailbox untouched and the cause visible, which for a mailbox nobody
+  is watching is the safer default. Revisit if wedging is observed in practice; the fix then is to isolate only
+  *per-message* errors (parse, context length) and keep failing fast on infrastructure errors.
+
+- **One looping step, three phases, two connections.** Fan-out was not usable — the engine's fixed-size join needs a
+  compile-time constant and the message count is only known at runtime, the same constraint `draft_batch_step` hit. The
+  IMAP connection is opened to fetch, **closed** for the model calls, and reopened to file, because many servers drop a
+  socket left idle across a slow batch of LLM round-trips.
+
+- **Archiving was pulled in ahead of its own ticket.** #1637 lists it out of scope, deferring to #1575 — but #1575 is
+  merged and lives in the read chain that classification displaces. Leaving it out would have silently un-shipped a
+  closed story for the agent that actually reads production mail. `do_fetch_and_archive` already retains the raw bytes
+  under `with_raw=True`, so the archiving itself was free — the retention it implies was not; see below.
+
+- **Fetch, archive and strip run per message, not per batch.** The first implementation fetched every message into a
+  list before archiving any of them, and left `raw` and the decoded attachment bytes on the `ParsedMessage` that
+  `FetchedMail` carries. That reproduced, in the classification chain, precisely the exposure the `with_raw` gate was
+  introduced to prevent in the drafting chain: the whole batch's raw bytes held alive across every per-message LLM
+  round-trip. `max_message_bytes` bounds one message, so the effective ceiling became `max_messages` ×
+  `max_message_bytes` — 2.5 GB at the defaults — for fields nothing downstream reads once the S3 references exist. Each
+  message is now archived and stripped before the next is fetched, putting peak memory back at one message.
+
+  This keeps the connection open across the S3 writes, which the two-connection split above otherwise avoids. That split
+  exists to keep the socket off the *caller's* LLM round-trips, which it still does; in-cluster `put_object` calls are
+  orders of magnitude below the idle timeout RFC 3501 obliges servers to allow. The accepted cost is that a fetch
+  failure part-way through a batch now leaves the already-archived messages in S3 with no event referencing them, which
+  the unresolved retention question above already has to cover.
+
+- **The expunge-race skip extends to the batch fetch.** The listing skips a vanished UID; the batch fetch did not, so
+  one message expunged between the two failed the entire run. The shipped *Shared Mailbox Triage* template makes that
+  routine rather than exotic — a human filing mail by hand in the mailbox being triaged is the normal case. Skipping is
+  opt-in (`do_fetch_and_archive(skip_vanished=True)`) because `ImapAgent` fetches exactly one message and must still
+  fail: it has no batch to salvage, and its step has to return a `MailFetchedEvent`.
+
+  The skip is narrow by construction. `fetch_message` raised one `ValueError` for both a vanished UID and a message over
+  `max_message_bytes`; catching that broadly would have made an oversized message a silent no-op, unread and unreported
+  on every subsequent run. `MessageVanishedError` (a `ValueError` subclass, so existing handling is unaffected)
+  separates the race from the refusal.
+
+  Filing deliberately does **not** skip. `_file_all` builds one `MailClassificationRef` per message regardless of
+  whether the move succeeded, so skipping a vanished UID there would emit an audit record asserting a message was filed
+  when it was not. Failing keeps the record honest, and sequential filing already means the messages moved so far stay
+  moved.
+
+- **A single batch event, not one per message.** `MailBatchClassifiedEvent` carries `count`, `per_category`,
+  `fallback_count` and the per-message `MailClassificationRef`s, matching the `MailBatchDraftedEvent` precedent. Each
+  ref records the model's stated reason, so a misfile is explainable after the fact.
+
+- **Filing is batched: one connection and one folder check per run.** The first implementation filed message by message
+  through `do_file_message`, which opens its own connection and runs a full folder `LIST` inside `move_message`. A
+  fifty-message batch therefore cost fifty-two connections and fifty-plus `LIST` commands. That was initially accepted
+  as a bounded inefficiency, which under-read it: servers that cap concurrent or per-interval connections (Gmail among
+  them) refuse the extra connections rather than merely slow them down, making it a correctness problem.
+
+  `ImapClient` now splits into `ensure_folders(folders)` — one `LIST`, create the missing hierarchies, one verifying
+  `LIST`, subscribe what it made — and `relocate_message`, the move with resolution already done. `move_message` remains
+  their composition so `ImapAgent`'s single-message step is unchanged. `do_file_messages` holds one connection for the
+  batch: three connections per run in total, down from fifty-two.
+
+  A second benefit falls out of the ordering: because every folder is created before any message moves, a folder the
+  server refuses aborts the batch with the whole inbox intact, instead of stranding it half-filed. Filing itself stays
+  sequential, so a mid-batch failure still leaves the filed messages filed and the rest unread for the next run.
+
+- **Configured folder names are delimiter-specific, and the platform does not translate them.** `_hierarchy_paths`
+  splits on the delimiter the server reports in its `LIST` response, which is correct but means one configured name
+  produces different mailboxes on different servers. Verified against GreenMail (delimiter `.`): `Triage/Support` is
+  created as a *single flat folder literally named* `Triage/Support`, with no `Triage` parent, while the same name on
+  Gmail (delimiter `/`) creates a real `Triage` → `Support` tree. Supplying `Triage.Support` to GreenMail does produce
+  the parent-and-children tree, confirming the hierarchy logic itself is right.
+
+  Nothing is broken either way — mail is filed and found in both shapes — so no translation layer was added. Admins
+  configuring nested categories need to use their own server's delimiter, and the shipped template's `Triage/…` names
+  assume Gmail's.
+
+- **Verified against two real servers, not only mocks.** `ImapClient` was probed end-to-end against GreenMail 2.1.5 and
+  a live Gmail account: capability detection, `list_unread` ordering, `BODY.PEEK` leaving mail unread, attachment
+  parsing, batch `ensure_folders` creating and subscribing folders that did not exist, filing, and a second run finding
+  nothing left to do. Both passed every check.
+
+  The two exercise genuinely different code paths, which is the value of running both:
+
+  |                    | GreenMail 2.1.5 | Gmail      |
+  | ------------------ | --------------- | ---------- |
+  | `MOVE` / `UIDPLUS` | yes / yes       | yes / yes  |
+  | `SORT`             | advertised      | **absent** |
+  | `LIST` delimiter   | `.`             | `/`        |
+  | SPECIAL-USE        | no              | yes        |
+
+  Gmail does not advertise `SORT`, so it is the client-side ordering fallback that runs there — the branch that matters
+  most in production, and the one a GreenMail-only check would never reach. Gmail's localized `[Gmail]/…` namespace (the
+  test account lists its special folders in Vietnamese) appears in `LIST` without confusing `ensure_folders`, because
+  the batch matches configured names literally and only creates what is missing.
+
+- **`enable_move` / `processed_folder` are baked non-configurable** on this blueprint's form. A single fixed
+  processed-folder is meaningless when the classifier picks the destination, and a field that must not exist is not the
+  same as a field that is conditionally hidden.
+
+Grounding these drafts in per-category knowledge (#1720) is a separate story, blocked on this one. Running the agent on
+a schedule (#1638) is delivered.
+
+## Drafting replies per category (#1639)
+
+The second half of the customer use case: after classifying, draft an answer. The draft capability itself already
+existed from [#1509](https://github.com/bbvch-ai/aihub-core/issues/1509) — `append_draft`, `ReplyComposer`,
+`MailBatchDraftedEvent` — but only as `ImapAgent`'s independent chain, which finds its own candidates by IMAP flag. This
+story feeds the classification verdict into it and makes drafting opt-in per category: a `thanking` mail rarely warrants
+a reply, a `complaint` usually does.
+
+- **The opt-in lives on the category** (`MailCategory.draft_reply`), not on a separate list of category names. A name
+  duplicated in two places drifts the first time someone renames a category. It also settles the fallback folder for
+  free: mail no category fitted has no category to be opted in, so it is never drafted — which is the behaviour you want
+  anyway, since a model that could not place a message is in no position to answer it.
+
+- **The drafting step reads each message back from the S3 archive, not from IMAP and not from the event.** This is the
+  one genuinely forced decision in the story. `do_file_messages` issues `MOVE`, so by the time drafting runs the source
+  UID is dead — the message has a fresh UID in its category folder. Re-finding it by `SEARCH HEADER Message-ID` was
+  rejected: Gmail's IMAP search is backed by Gmail search and unreliable for header terms. Carrying the body on
+  `MailBatchClassifiedEvent` was rejected too — up to `max_body_bytes` (1 MB) per message across up to `max_messages` of
+  them, on an event persisted to FerretDB and streamed over WebSocket.
+
+  The archive from [#1575](https://github.com/bbvch-ai/aihub-core/issues/1575) is keyed by `file_id` and does not move,
+  which makes it the only durable handle on the content. It is also the *better* input: the stored `.eml` is the message
+  verbatim, so a re-parse recovers the recipients and the full body that the summary event deliberately omits.
+
+- **No message is flagged as drafted on this blueprint.** #1509 flags its sources (`$AiHubDrafted`, else `\Answered`)
+  because its chain leaves them unread in place and has nothing else to dedup on. Here filing already guarantees a
+  message cannot be seen twice, and the UID a flag would target no longer resolves. #1720's text assumes
+  "append-then-flag"; the invariant it actually needs — *every message in a drafting category ends up with a draft* —
+  holds without it.
+
+- **Drafting is at-least-once**, unchanged from #1509. A crash between the `APPEND` and the `MOVE` re-drafts on the next
+  run. Documented rather than solved: the alternative is a two-phase commit across IMAP and Redis for a duplicate a
+  human deletes in one click.
+
+- **A failed drafting pass costs that batch its drafts permanently**, and this is the one place where drafting's failure
+  mode is *worse* than filing's. A failure while filing is safe because everything still in the inbox is unread, so the
+  next run picks it up. Drafting runs after filing, so by then the whole batch has left the inbox and the next run will
+  never see it again — one S3 or model error partway through means no drafts for any of those messages, ever.
+
+  Accepted rather than fixed, on the grounds that the mail itself is safely filed and visible to a human in its category
+  folder: a draft is an accelerator, not the system of record, and a run that raises is loud in tracing. The alternative
+  — catching per message and drafting what it can — was rejected as the kind of defensive error-swallowing that hides a
+  systematic failure (wrong credentials, a full bucket) behind partial success. If drafting later becomes something
+  customers depend on rather than merely benefit from, this is the decision to revisit first.
+
+- **`append_draft` now creates the configured folder as a last resort**, after trying the verbatim name and the
+  `\Drafts` SPECIAL-USE folder. The order is load-bearing and cannot be rearranged. Verbatim first, because a name the
+  server lists is the name the admin meant. Special-use second, because Gmail's real drafts folder is `[Gmail]/Drafts`
+  listed in the account's own language, and creating a `Drafts` label beside it would silently strand every draft where
+  the user never looks. Creation last, for the server that has neither: GreenMail starts with only `INBOX` and
+  advertises no SPECIAL-USE, so without this the first drafting run against a fresh test server fails outright instead
+  of making the folder it was told to use.
+
+- **Two validation rules were added, both checked before the first fetch** rather than when drafting starts. A run that
+  classified and filed a whole batch at full model cost and only then discovered its drafts folder is unusable has
+  wasted all of it. Drafting enabled with no category opted in is rejected — paying for a pass that cannot produce a
+  single draft is a misconfiguration, not a quiet no-op. And a `drafts_folder` equal to the inbox is rejected: a draft
+  appended there arrives unread, so the next run classifies the agent's own draft and drafts a reply to it. Same class
+  of unterminating loop as an inbox-equal category folder, and reachable the same way — a typo in a free-text field.
+
+- **The lease travels with the terminal step.** `finish_classification_step` is gone; `draft_replies_step` ends the run
+  whenever there is nothing to draft and `finish_drafting_step` ends it when there was, so both release the mailbox.
+  Drafting runs under `lease.heartbeat(...)` for the same reason filing does — one model call per message can outlive
+  the TTL — and a lost lease raises before the first `APPEND`, since appending is the second phase that mutates the
+  mailbox. `test_every_terminal_step_accounts_for_the_lease` already anticipated this story and needed no change.
+
+### Attachments as draft input, and what an image with no text means
+
+The customer noted attachments "could contain information which should be considered to formulate an answer", which
+classification itself does not need. Drafting does.
+
+- **Attachment text is read through the document loaders already in `packages/core`**, behind `include_attachments` (off
+  by default). The extension → loader routing was inlined in the API's `ParsingService` and, configurably, in the
+  pipeline's `DocumentParserResource`; it is stated a third time in core as `DocumentLoaderSelector`, which the agent
+  uses. The two existing call sites were deliberately left alone — each carries behaviour the shared selector does not
+  model (`ParsingService` its passthrough extensions and its 400 response, `DocumentParserResource` its `loader_type`
+  switch) — so the extension lists live in three places until those are migrated separately. **MinerU is not the only
+  branch**: PDFs and images go to MinerU, but Word and the other Office formats go to MarkItDown, and plaintext to
+  `RawLoader`. Each list stays owned by its loader, so a loader gaining a format is not a second edit here. The selector
+  returns `None` for anything unreadable, which is what lets the API keep its 400 while the agent silently skips.
+
+- **Loaders are called with `include_images=False`.** All three raise when asked for images with no fsspec filesystem to
+  write them to, and a reply prompt has no use for extracted images — this keeps an S3 filesystem out of the agent
+  entirely.
+
+- **An attachment holding no text is named, not dropped.** MinerU answers an image with no words with empty `md_content`
+  — it logs a warning and returns a `Document` with empty text; it does not raise. So this needed a decision about
+  meaning, not error handling. Extraction has three outcomes (text / no text / unreadable), and all three put the
+  attachment in an inventory line in the prompt: `cat.jpg (image/jpeg, 82 KB) — no text could be extracted`. Never an
+  empty text block.
+
+  This is the right answer for a photo *and* for a scanned invoice whose OCR failed: the model learns the attachment
+  exists, can acknowledge it, and has nothing to hallucinate contents from. Omitting it would be worse — the sender
+  wrote "see attached" and the reply would ignore it.
+
+- **No image understanding is added.** `ImageLoader` exists in core but by its own docstring "does not perform any OCR
+  or image analysis"; the descriptions are generated downstream during RAG ingestion, which is not this run. And the
+  drafting model is picked with `ModelSelect(mode="chat")`, so it is not guaranteed multimodal. A VLM captioning path
+  for the drafter is a real capability with real cost and belongs in its own issue.
+
+- **A size floor stops the signature logo tax.** `MailParser` treats every MIME part carrying a filename as an
+  attachment, so the inline PNG in a corporate signature arrives as one. Without `min_attachment_bytes` (default 8 KB) a
+  routine business mail would spend a MinerU round trip on a logo and get nothing back. Above the floor, candidates are
+  taken largest-first up to `max_attachments_per_message`: the MIME disposition that would say which file is substantive
+  was discarded at parse time and the bytes are in S3, so size is the only signal left.
+
+  An image-only attachment above the floor still costs a round trip before we learn it is textless. That cannot be
+  pre-filtered by content type without losing the scanned invoice, which is an image with text and precisely the case
+  worth supporting.
+
+### Fitting the drafting prompt to the model's input limit
+
+`attachment_char_limit` bounds one attachment, but the prompt is system prompt + envelope + body + N extracts, and a
+200-page PDF or a long forwarded thread breaches the model's limit regardless.
+
+- **`number_of_input_tokens` on `DraftEmailSettings`** — the same field name and form element `RAGAgentConfig`,
+  `FewShotAgentConfig` and `McpReactAgentConfig` already expose, so no new concept.
+
+- **Trimming is ordered, not proportional.** `DraftPromptBuilder` protects the system prompt and the envelope (headers
+  plus the attachment inventory) absolutely, trims the body only after every attachment extract has been given up, and
+  drops extracts smallest-first. The body outranks the attachments because the body *is* the message: reply to a
+  truncated invoice and you still answer the sender's question; drop the question and you answer nothing. Trimming cuts
+  at sentence boundaries via `SentenceSplitter` — a body cut mid-word invites the model to complete the fragment rather
+  than answer it — and always leaves a `[… truncated]` marker, so the model knows it did not see everything. Without the
+  marker a draft answers confidently on material it never read, which is what the shipped prompt's "never invent facts"
+  is trying to prevent.
+
+- **A budget too small for the envelope alone raises**, mirroring `limit_chat_history_with_context`. That is a
+  misconfiguration, and emitting a degenerate prompt would spend a model call replying to nothing.
+
+- **Measuring is nearly free for normal mail.** The same short-circuit as `TextChunkSizeLimiter._within_budget` and
+  `recursive_summary_parser._fits`, with the same `SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER = 2` and the same
+  Latin-script-EU rationale: under `budget / 2` characters is accepted and past `budget * 4` rejected without a count.
+  The budget also carries the same `0.85` safety factor as the summariser, because `get_tokenizer()` is not the
+  tokenizer of whichever model LiteLLM routes to.
+
+- **Oversized attachments are truncated, not summarised.** `LLMSummarizer` (`recursive_summary_parser.py`) would fit and
+  was rejected: it costs an LLM call per chunk per message on a run already making one per message, and #1720 replaces
+  the draft body with RAG-grounded retrieval — which is the right place for "make sense of a large document", not a
+  truncation helper.
+
+Grounding these drafts in per-category knowledge (#1720) is the next story, and is blocked on this one.

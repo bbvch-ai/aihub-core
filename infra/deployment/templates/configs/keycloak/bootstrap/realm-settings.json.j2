@@ -6,8 +6,8 @@
    BOOTSTRAP-ONLY: applied via --import-realm on first start, never reconciled.
    Realm-level settings stay bootstrap-only so operator overrides made in the
    admin console (e.g. session lifespans per ADR 2026_06_11, SMTP) survive.
-   Session lifespan changes still reach existing deployments via the kcadm
-   default-migration in keycloak-entrypoint.sh.
+   Token and session lifespan changes still reach existing deployments via the
+   kcadm default-migration in keycloak-entrypoint.sh.
 -#}
 {
   "realm": "aihub",
@@ -24,6 +24,7 @@
   "rememberMe": true,
   "ssoSessionIdleTimeout": {{ keycloak.sso_session_idle_timeout }},
   "ssoSessionMaxLifespan": {{ keycloak.sso_session_max_lifespan }},
+  "accessTokenLifespan": {{ keycloak.access_token_lifespan }},
   "verifyEmail": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,

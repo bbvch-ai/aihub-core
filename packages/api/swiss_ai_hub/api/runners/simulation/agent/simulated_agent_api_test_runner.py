@@ -8,7 +8,6 @@ from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
 from swiss_ai_hub.core.events import BaseEvent, ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
     ChunkEvent,
     ControlEvent,
     LLMCostEvent,
@@ -18,6 +17,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UserMessageEvent,
 )
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import NatsSettings
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
@@ -62,6 +62,9 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
       2. Subscribe to discovery requests and agent control events.
       3. When a StartEvent is received, publish the simulated events followed by a StopEvent.
       4. Then start the server via the parent `ApiTestRunner`.
+    - A fixture that starts a runner must `await stop_simulation()` when it tears down. A runner left
+      subscribed keeps answering control events for the rest of the pytest session and competes with any
+      later runner on the same agent identity for their start events.
 
     ### Example
     ```python
@@ -85,6 +88,12 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.agent_class = agent_class
         self.agent_id = agent_id
         self.topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
+
+        # The queue group doubles as the durable consumer name, and nats-py binds to an existing durable
+        # keeping its original filter subject. One shared name therefore routed every runner's control
+        # events to whichever runner created the consumer first; deriving it from the agent identity keeps
+        # a name collision to runners that also share a subject, where binding is correct.
+        self.control_event_queue_group = f"simulated-agent-runner-{agent_class}-{agent_id}".replace(".", "-")
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
@@ -141,7 +150,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             hitl_response_events=self.hitl_response_events or [],
             network_graph=WorkflowGraph(nodes=[], links=[]),
             form=self.agent_config.to_formkit_form(),
-            agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
+            agent_config_specs=ConfigSpecs.from_form(self.agent_config, self.agent_class),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -214,7 +223,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             self.topic_manager,
             js=self.js,
             handler=self.simulate_agent,
-            queue_group="simulated-agent-runner-queue-group",
+            queue_group=self.control_event_queue_group,
             subscriber_name=f"Simulated{self.agent_class}ApiTestRunnerControlEvents",
         )
         await self.agent_control_event_subscriber.start()
@@ -238,6 +247,26 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             )
         else:
             logger.warning("Unable to start AgentEndpointsDiscoveryService due to missing state.agent_controller")
+
+    async def stop_simulation(self) -> None:
+        """Drop the runner's subscriptions so a finished test's simulated agent stops answering.
+
+        A module-scoped runner that is never stopped keeps consuming control events for the rest of the
+        pytest session. A later module simulating the same agent identity then shares its queue group, and
+        NATS hands each start event to only one of them — when the stale runner wins, the awaited stop event
+        is never published and the caller blocks until the test times out.
+        """
+        if self.agent_control_event_subscriber:
+            await self.agent_control_event_subscriber.stop()
+            self.agent_control_event_subscriber = None
+
+        if self.discovery_subscriber:
+            await self.discovery_subscriber.stop()
+            self.discovery_subscriber = None
+
+        if self.nc:
+            await self.nc.close()
+            self.nc = None
 
     async def run(self):
         await self.start_simulation()
@@ -303,7 +332,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 description=self.agent_config.description,
                 icon=self.agent_config.icon,
                 form=self.agent_config.to_formkit_form(),
-                agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
+                agent_config_specs=ConfigSpecs.from_form(self.agent_config, self.agent_class),
                 is_conversational=True,
                 is_schedulable=False,
                 start_events=self.start_events or [],

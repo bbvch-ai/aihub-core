@@ -150,12 +150,15 @@ continues to build locally so developers test Dockerfile edits without round-tri
 ### Publishing the open-terminal image
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
-libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/python-docx/weasyprint/matplotlib/xlsxwriter) and
-is published manually via `make -C infra/deployment build-and-push-open-terminal-image` (requires
-`docker login ghcr.io`). Re-publish whenever:
+libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
+pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and is published manually via
+`make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
 - A new Python library dependency must be baked into the image
+
+The baked-in inventory decides which file formats the sandbox can produce for end users, so re-verify the format matrix
+in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the base tag moves.
 
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
@@ -216,10 +219,10 @@ The realm config lives in standalone JSON templates under `templates/configs/key
 `2026_06_12_declarative_keycloak_realm_reconciliation`):
 
 - **`bootstrap/`** — applied via `--import-realm` on **first start only**, never reconciled: realm-level settings
-  (themes, brute force, session lifespans, SMTP), the user-profile component, the startup tenant group seed, the
-  superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the admin
-  console survive restarts — and updating identity-provider config on an already-initialized deployment requires the
-  admin console (or a fresh realm DB), since they do not reconcile automatically.
+  (themes, brute force, token and session lifespans, SMTP), the user-profile component, the startup tenant group seed,
+  the superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the
+  admin console survive restarts — and updating identity-provider config on an already-initialized deployment requires
+  the admin console (or a fresh realm DB), since they do not reconcile automatically.
 - **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
   (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
   service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config
@@ -274,6 +277,27 @@ the same level as ALTERNATIVE executions, or Keycloak ignores the alternatives a
 - Internal Docker hostnames are hardcoded in the Jinja2 template as variables (e.g.,
   `NATS_ENDPOINT = "nats://nats:4222"`) — never use env vars for Docker-to-Docker communication
 - Only external/override endpoints (for services running on the host outside Docker) use env vars
+- **`OTEL_DEPLOYMENT_ENVIRONMENT` / `OTEL_HOST_NAME` are the one sanctioned `${VAR:-default}`.** The collector's
+  `resource/deployment` processor stamps them onto every pipeline, and an *empty* value makes that processor fail to
+  build — which exits the collector. Every service that exports OTLP now declares `depends_on: otel-collector`, so an
+  unset var no longer merely drops telemetry: it holds up the app plane. Values are written per-VM into the stage's
+  environment file by `aihub-playbook`'s `env.j2`; the stage-name fallback is what keeps a non-Ansible deploy starting
+  at all. Do not "fix" it by moving the default to `.env.prod`.
+
+### Which collector owns which signal
+
+Two collectors run on a deployed VM and it matters which one you change:
+
+| Collector                       | Owner          | Handles                                                                    |
+| ------------------------------- | -------------- | -------------------------------------------------------------------------- |
+| `otel-collector` (this compose) | aihub-core     | OTLP from the instrumented Python services → SigNoz + Langfuse             |
+| `otel-collector-docker`         | aihub-playbook | `docker_stats`, health events, and **third-party container stdout/stderr** |
+
+App services export to `http://otel-collector-backend:4317` (a `backend`-only alias on this collector; the bare
+container name also resolves on `egress`, where ICC is disabled), so the playbook's collector never sees their telemetry
+— that is why `resource/deployment` has to exist here too. Conversely, **do not add a `filelog` receiver for container
+logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container
+*name* and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
 
 ## Traefik Configuration
 

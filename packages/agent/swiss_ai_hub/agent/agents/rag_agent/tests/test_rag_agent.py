@@ -185,6 +185,7 @@ def test_collection(event_loop):
         uri="http://localhost",
         collection_name="development",
         dimensions=1024,
+        all_namespaces=True,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 

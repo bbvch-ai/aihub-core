@@ -17,3 +17,11 @@ class MailMovedEvent(ControlAndDisplayEvent):
     message_id: Annotated[str, Field(description="IMAP UID of the moved message within its source folder.")]
     source_folder: Annotated[str, Field(description="Folder the message was moved out of.")]
     target_folder: Annotated[str, Field(description="Folder the message was moved into.")]
+    folder_created: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Whether the target folder did not exist and was created by this move — an agent adding a "
+            "folder to someone's mailbox is a visible side effect and belongs in the audit trail.",
+        ),
+    ]

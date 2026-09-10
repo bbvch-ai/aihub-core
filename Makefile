@@ -62,7 +62,7 @@ format:
 
 format-md:
 	@echo "Formatting markdown files..."
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
 
 format-yaml:
 	@echo "Formatting YAML files..."
@@ -103,18 +103,18 @@ pr-ready:
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.320.0
+TAG ?= v0.321.0
 
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
 
 # Check licenses across all dependencies
 license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
 
 # Generate Docker Compose files from the template
 generate-compose:

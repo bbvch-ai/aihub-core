@@ -206,12 +206,6 @@ memory:
     - {{ memory.memory }}
     {% endfor %}
     {% endif %}
-    {% if relations %}
-    **Knowledge Graph Relationships:**
-    {% for relation in relations %}
-    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
-    {% endfor %}
-    {% endif %}
     </organizational_context>
   fact_extraction: |
     You are a specialized memory extraction assistant for the %{agent_name} agent.

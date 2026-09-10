@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores import MetadataFilter
@@ -19,16 +21,19 @@ def retrieve_nodes(
     message: str,
     embed_model: BaseEmbedding,
     retrieve_k: int,
-    index_namespaces: list[str],
+    index_namespaces: Annotated[list[str] | None, "Namespaces to search; None searches the whole collection"],
     query_mode: VectorStoreQueryMode,
     node_types: list[str],
     vector_store: BasePydanticVectorStore,
     additional_filters: list[MetadataFilterPair] | None = None,
 ) -> list[NodeWithScore] | None:
+    """An empty namespace list is a scope of nothing and returns no nodes; only ``None`` lifts the filter."""
     if retrieve_k <= 0:
         raise ValueError("retrieve_k must be a positive integer")
     if not node_types:
         raise ValueError("node_types must contain at least one entry")
+    if index_namespaces is not None and not index_namespaces:
+        return []
 
     extra_filters = [MetadataFilter(key=f.key, value=f.value) for f in (additional_filters or [])]
 

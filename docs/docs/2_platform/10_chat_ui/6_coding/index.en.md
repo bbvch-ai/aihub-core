@@ -4,15 +4,21 @@ title: Coding / Software Development
 
 # Coding / Software Development
 
-OpenWebUI integrates with **Open Terminal** — a sandboxed Linux environment with Python and common document libraries
-(pandas, openpyxl, python-docx, reportlab, fpdf2, weasyprint, matplotlib, xlsxwriter). Code runs in an isolated per-user
-environment; files created during execution appear in OpenWebUI's Files panel for download.
+OpenWebUI integrates with **Open Terminal** — a sandboxed Linux environment with Python 3.12, common document libraries
+(pandas, openpyxl, xlsxwriter, python-docx, python-pptx, reportlab, fpdf2, weasyprint, pypdf, matplotlib, Pillow, numpy,
+scipy, lxml, PyYAML) and the `ffmpeg` and `pandoc` command-line tools. Code runs in an isolated per-user environment, in
+that user's own home directory inside the sandbox.
 
 ::: warning Requirements & current limitations
-- **Plain LLM models only.** Code execution is driven by OpenWebUI's native `execute_code` tool, so it works only with
-  plain chat models that **support function (tool) calling**, and **Native Function Calling must be enabled** for the
-  model (Admin → Settings → Models → the model's advanced params). Models without function-calling support cannot
-  trigger the sandbox.
+- **Plain LLM models only, with Native Function Calling enabled.** OpenWebUI exposes the sandbox to the model as a set
+  of tools (`run_command`, `write_file`, `display_file` and so on) resolved from its terminal-server integration — not
+  through the built-in `execute_code` tool. **Native Function Calling must be enabled** for the model (Admin → Settings
+  → Models → the model's advanced params): only then are those tools handed to the model as real function definitions,
+  which is what lets it run a step, read the result and continue. Left at the default, OpenWebUI falls back to a single
+  prompt-based tool-selection pass, which is not enough for a multi-step build. Models without function-calling support
+  cannot drive the sandbox at all.
+- **The terminal has to be active for the conversation.** The tools are resolved only when a terminal is selected in the
+  chat.
 - **AI-Hub agents are not supported yet.** Agent chats own their own generation and do not expose OpenWebUI's
   tool-calling handshake, so code execution does **not** engage for them. This is a planned follow-up.
 :::
@@ -33,11 +39,14 @@ Using the "Run" button the code can be tested directly inside the chat.
 
 ![Code with Run Button](../../../../media/open_webui/code_with_run_button.jpeg)
 
-::: tip Two execution paths
-**Model-driven execution** — where the model decides to run code to compute an answer or produce a file — runs in the
-**Open Terminal** sandbox (server-side, with the document libraries above; generated files appear in the Files panel).
-The manual **"Run" button** on a code block uses OpenWebUI's built-in **Pyodide** engine (in-browser WebAssembly), which
-is lightweight but limited to its bundled packages and does not write files to the server.
+::: tip Two execution paths — only one of them can produce a file
+**Model-driven execution**, where the model calls the sandbox's tools itself, runs server-side in **Open Terminal** with
+the libraries above, inside the user's own home directory. This is the only path that can produce a downloadable file.
+
+The manual **"Run" button** on a code block — and OpenWebUI's built-in `execute_code` tool, whose
+`CODE_INTERPRETER_ENGINE` defaults to `pyodide` — both use the **Pyodide** engine instead: in-browser WebAssembly, which
+is lightweight, limited to its bundled packages, and **cannot write files to the server**. Charts come back as inline
+images on that path, not as files.
 :::
 
 After running the code snippet prints the result below the cell.
@@ -60,8 +69,13 @@ When the code has run through the result is printed out.
 
 ## Generated files
 
-Files written during code execution (reports, spreadsheets, charts, etc.) automatically appear in OpenWebUI's Files
-panel, where users can download them. After creating a file the model will confirm the filename.
+Files written during code execution (reports, spreadsheets, charts, etc.) are created in the user's own home directory
+inside the sandbox (`/home/<user>`). The model surfaces a finished file by calling `display_file`, which opens it in the
+user's file viewer; the files also stay reachable through the terminal panel's own file browser.
+
+Producing documents is a capability in its own right and does not require writing any code. See
+[File generation](../13_file_generation/) for the recommended model, the verified list of output formats, and the
+limitations that apply to them.
 
 ## Isolation and limitations
 

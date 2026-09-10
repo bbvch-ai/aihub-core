@@ -3,6 +3,7 @@ from email.message import EmailMessage
 from email.policy import default as default_policy
 
 from swiss_ai_hub.agent.imap.mail_parser import MailParser
+from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS
 
 _MAX_BODY_BYTES = 1_000_000
 _MAX_ATTACHMENT_BYTES = 10_000_000
@@ -118,3 +119,16 @@ def test_parse_message_carries_raw_bytes_untouched():
     parsed = MailParser.parse_message("42", _from_bytes(message), _MAX_BODY_BYTES, _MAX_ATTACHMENT_BYTES, raw)
 
     assert parsed.raw == raw
+
+
+def test_an_enormous_subject_is_capped_at_parse_time():
+    """The subject reaches far more than the prompts — display events, the persisted audit trail, and the drafted
+    reply's own Subject header. Bounding it at the source is what keeps every one of those callers safe."""
+    message = EmailMessage()
+    message["From"] = "alice@test"
+    message["Subject"] = "A" * 200_000
+    message.set_content("Short body.")
+
+    parsed = _parse(message)
+
+    assert len(parsed.subject) == MAX_SUBJECT_CHARACTERS

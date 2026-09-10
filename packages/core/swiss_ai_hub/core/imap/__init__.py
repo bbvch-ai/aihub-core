@@ -2,16 +2,22 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.imap.draft_email_settings import DraftEmailSettings
+    from swiss_ai_hub.core.imap.email_classification_settings import EmailClassificationSettings
     from swiss_ai_hub.core.imap.imap_client_config import ImapClientConfig
+    from swiss_ai_hub.core.imap.mail_category import MailCategory
 
 __all__ = [
     "DraftEmailSettings",
+    "EmailClassificationSettings",
     "ImapClientConfig",
+    "MailCategory",
 ]
 
 _LAZY_IMPORTS = {
     "DraftEmailSettings": "swiss_ai_hub.core.imap.draft_email_settings",
+    "EmailClassificationSettings": "swiss_ai_hub.core.imap.email_classification_settings",
     "ImapClientConfig": "swiss_ai_hub.core.imap.imap_client_config",
+    "MailCategory": "swiss_ai_hub.core.imap.mail_category",
 }
 
 

@@ -1,6 +1,10 @@
 ---
 authorization:
   no_access_knowledge_database: Vous n'avez pas accès à la base de connaissances '%{name}'.
+  no_access_knowledge_namespace: Vous n'avez pas accès à la collection '%{namespace}'
+    de la base de connaissances '%{database}'.
+  no_access_whole_knowledge_database: Sélectionner la base de connaissances '%{name}'
+    dans son ensemble exige l'accès à toutes ses collections.
   no_access_agent: Vous n'avez pas accès à l'agent '%{agent}'.
   no_access_tenant: Vous n'êtes pas membre du locataire '%{tenant}'.
   no_access_section: Vous n'avez pas accès à la section '%{section}'.

@@ -28,6 +28,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── parser/tag_parser.py          # Parses <think>...</think> tags from LLM output
 │   └── buffer/stream_buffer.py       # Auto-flush on sentence boundaries or size thresholds
 ├── distributor/                     # External event distributors (agent + process)
+├── exceptions/                      # HTTP-boundary exception handlers (ModelGatewayErrorHandler)
 ├── events/                          # Event type hierarchy (~100 event types)
 │   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization
 │   ├── utils.py                     # Event utility functions
@@ -56,6 +57,7 @@ packages/core/swiss_ai_hub/core/
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
 ├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 29 elements)
 │   ├── form.py                      # Form base class with duality pattern
+│   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
 │   └── elements/                    # 29 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
@@ -72,6 +74,8 @@ packages/core/swiss_ai_hub/core/
 │   ├── retrievers/                  # KnowledgeRetriever (Milvus), BaseRetriever
 │   ├── routing/                     # LLM-based event routing
 │   └── utils/                       # Shared AI utilities
+├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
+│   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
 ├── i18n/                            # Internationalization
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
@@ -100,8 +104,9 @@ packages/core/swiss_ai_hub/core/
 │   ├── process/                     # ProcessConfigEntity
 │   ├── messaging/                   # ThreadEntity, PersistedAgentEventEntity, PersistedProcessEventEntity
 │   ├── user/                        # UserDashboardEntity (user dashboard config)
+│   ├── form/                        # ConfigSpecsEntity (announced schema, stored as a JSON string)
 │   ├── i18n/                        # LocaleStringEntity
-│   ├── rag/                         # RAG document persistence
+│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, NamespaceEntity, …)
 │   └── notification/                # NotificationEntity
 ├── polling/                         # JSPoller (JetStream batch consumption)
 ├── processes/                       # Process config base (process_config.py)
@@ -114,7 +119,7 @@ packages/core/swiss_ai_hub/core/
 │   └── health/                      # HealthController, HealthServer, health checks
 ├── rpc/                             # AgentConfigClient, ProcessConfigClient (request-reply)
 ├── runners/                         # Execution runners
-├── scheduling/                      # Cron-scheduled agent runs (AgentSchedule, calculator, Redis state, service)
+├── scheduling/                      # Cron-scheduled agent runs (CronScheduler, CronSchedule, calculator, Redis state, settings)
 ├── settings/                        # App-level configuration (EnvironmentSettings)
 ├── streams/                         # StreamManager (JetStream stream lifecycle)
 ├── subscribers/                     # JSSubscriber + NCSubscriber + agent/process specializations
@@ -604,6 +609,8 @@ Real-time event emission for streaming LLM output to the UI:
 
 - `core/agents/agent_config.py` — agent config with form duality
 - `core/processes/process_config.py` — process config with form duality
+- `core/ingestors/ingestor_config.py` — ingestor config with form duality (knowledge database creation form)
+- `core/form/config_specs.py` — the announced schema all three are validated against
 - `core/i18n/locale_string.py` — multi-language strings
 
 **Infrastructure**:

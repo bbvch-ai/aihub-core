@@ -2,11 +2,15 @@ import { useStorage } from '@vueuse/core'
 
 import type { MaybeRefOrGetter } from 'vue'
 
-// Deletion is eventual (the pipeline cleans the stores minutes after the API returns 202), so the
-// list keeps returning a deleted document for a while. We persist scheduled ids in localStorage —
-// surviving page refreshes — to drive a "Deleting" badge, and expire them after a TTL so a failed
-// cleanup eventually re-surfaces the row instead of hiding it forever.
-const TTL_MS = 30 * 60 * 1000
+// Deletion is eventual (the pipeline cleans the stores well after the API returns), so the list keeps
+// returning a deleted document for a while. We persist scheduled ids in localStorage — surviving page
+// refreshes — to drive a "Deleting" badge, and expire them after a TTL so a failed cleanup eventually
+// re-surfaces the row instead of hiding it forever.
+//
+// The TTL has to cover a Dagster backlog, not just a slow run: the cleanup waits on a NATS sensor tick,
+// then the observe job's turn in the queue, then a run-status sensor tick, then the remove job's turn.
+// A busy instance can push that out for hours, so a day is the honest bound.
+const TTL_MS = 24 * 60 * 60 * 1000
 
 const store = useStorage<Record<string, number>>('aihub:scheduled-deletions', {})
 
@@ -15,9 +19,13 @@ function entryKey(database: string, namespace: string, documentId: string): stri
 }
 
 export function useScheduledDeletions(database: MaybeRefOrGetter<string>, namespace: MaybeRefOrGetter<string>) {
+  function scheduledAt(documentId: string): number | undefined {
+    const at = store.value[entryKey(toValue(database), toValue(namespace), documentId)]
+    return at != null && Date.now() - at < TTL_MS ? at : undefined
+  }
+
   function isScheduled(documentId: string): boolean {
-    const scheduledAt = store.value[entryKey(toValue(database), toValue(namespace), documentId)]
-    return scheduledAt != null && Date.now() - scheduledAt < TTL_MS
+    return scheduledAt(documentId) != null
   }
 
   function schedule(documentIds: string[]): void {
@@ -44,5 +52,5 @@ export function useScheduledDeletions(database: MaybeRefOrGetter<string>, namesp
     }
   }
 
-  return { isScheduled, schedule, unschedule }
+  return { isScheduled, scheduledAt, schedule, unschedule }
 }

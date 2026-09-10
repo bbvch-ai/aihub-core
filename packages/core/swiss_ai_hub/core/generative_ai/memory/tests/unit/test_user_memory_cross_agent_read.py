@@ -22,7 +22,7 @@ def _agent_memory() -> AgentMemory:
     # Shadow the lazily-built service so no real mem0/Milvus/Neo4j connection is needed.
     service = MagicMock()
     service.search = AsyncMock(return_value=MagicMock())
-    memory._user_memory_service = service
+    memory._memory_service = service
     return memory
 
 
@@ -30,4 +30,4 @@ def _agent_memory() -> AgentMemory:
 async def test_user_memory_read_is_cross_agent():
     memory = _agent_memory()
     await memory.search_user_memory(query="q", user_id="u1")
-    assert memory._user_memory_service.search.await_args.kwargs["agent_id"] is None
+    assert memory._memory_service.search.await_args.kwargs["agent_id"] is None

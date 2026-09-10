@@ -21,7 +21,7 @@ from swiss_ai_hub.core.infrastructure import (
     S3StorageSettings,
 )
 from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook
-from swiss_ai_hub.core.scheduling import ScheduledAgentService
+from swiss_ai_hub.core.scheduling import CronScheduler, SchedulerSettings
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
@@ -32,6 +32,7 @@ from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUpl
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
+    carry_over_bucket_model_columns,
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
@@ -109,9 +110,21 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     # Connect to Redis
     redis = RedisSettings.create_client()
 
-    # Connect to Milvus
+    # Milvus is optional at startup. Its /healthz turns healthy long before the proxy accepts
+    # register, so `depends_on: service_healthy` does not cover the gap: on staging 2026-09-03 the
+    # proxy answered "Milvus Proxy is not ready yet" for over 24 minutes, MilvusClient() raised out
+    # of the lifespan, and `restart: always` retried the same unready Milvus 56 times - taking auth,
+    # threads and every other route down with it. Degrade instead: /ready reports milvus false and
+    # use_milvus reconnects on the next request that needs it.
     milvus_settings = MilvusSettings()
-    milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+    milvus_client: MilvusClient | None = None
+    try:
+        milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+    # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+    # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+    # UNAUTHENTICATED from a token mismatch crash-loop the process exactly as before.
+    except Exception:
+        logger.exception("Milvus unreachable at startup, continuing without a client")
 
     # Connect to S3 (SeaweedFS)
     s3_settings = S3StorageSettings()
@@ -244,18 +257,21 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
-        # Singleton background work, kept correct across N API replicas by a Redis leader lease.
-        # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
-        scheduled_agent_service = ScheduledAgentService(
-            redis=redis,
-            external_agent_event_distributor=external_agent_event_distributor,
-        )
-        await scheduled_agent_service.start()
-        app.state.scheduled_agent_service = scheduled_agent_service
-
         await initialize_startup_tenant()
         await finalize_role_setup()
         await initialize_knowledge_buckets()
+        await carry_over_bucket_model_columns()
+
+        # Singleton background work, kept correct across N API replicas by a Redis leader lease.
+        # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
+        # Started after tenant and role initialisation so a first tick cannot outrun them.
+        cron_scheduler = CronScheduler(
+            redis=redis,
+            external_agent_event_distributor=external_agent_event_distributor,
+            settings=SchedulerSettings(),
+        )
+        cron_scheduler.start()
+        app.state.cron_scheduler = cron_scheduler
 
         # Provision Langfuse with AI-Hub LLM connections
         await _provision_non_fatal("Langfuse", langfuse_provisioner.provision)
@@ -285,8 +301,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         if hasattr(app.state, "process_config_responder"):
             await app.state.process_config_responder.stop()
 
-        if hasattr(app.state, "scheduled_agent_service"):
-            await app.state.scheduled_agent_service.stop()
+        if hasattr(app.state, "cron_scheduler"):
+            await app.state.cron_scheduler.stop()
 
         # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):
@@ -300,8 +316,11 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Close Redis connection
         await redis.aclose()
 
-        # Close Milvus connection
-        milvus_client.close()
+        # Close Milvus connection. Read it back off app.state rather than using the local: when the
+        # startup connection failed, use_milvus builds the client on the first request that needs
+        # one and stores it there, and that is the instance holding the open channel.
+        if app.state.milvus_client is not None:
+            app.state.milvus_client.close()
 
         # Close S3 connections
         s3_client.close()

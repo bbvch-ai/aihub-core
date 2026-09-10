@@ -30,6 +30,7 @@ class OrgMemoryReadConfig(OrgMemoryWriteConfig):
             default_tenant_namespace=InputText(
                 label=LocaleString.from_i18n_path("lib.org_memory.default_tenant_namespace.label"),
                 help=LocaleString.from_i18n_path("lib.org_memory.default_tenant_namespace.help"),
+                additional_validation_rules=cls.DEFAULT_NAMESPACE_FORM_RULE,
             ),
             allowed_tenant_namespaces=ChipsInput(
                 label=LocaleString.from_i18n_path("lib.org_memory.allowed_tenant_namespaces.label"),

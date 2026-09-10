@@ -1,6 +1,7 @@
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AddMemoryToChatHistoryEvent,
@@ -31,7 +32,6 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
-    OrgMemoryNamespaceResolver,
     OrgMemoryReadConfig,
     RetrievalRuntimeConfig,
     extend_chat_history_with_organization_memory,
@@ -86,6 +86,8 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_rerank_nodes,
     do_respond_with_llm,
     do_retrieve,
+    do_retrieve_organization_memory,
+    do_retrieve_user_memory,
 )
 from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
@@ -155,13 +157,24 @@ async def user_memory_retrieval_enabled(
     clear: NotAMetaQuestionEvent | None = None,
 ) -> bool:
     """Precondition to check if user memory retrieval is enabled (gated by meta-question detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(config)
+    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(
+        config, has_user=start_event.user is not None
+    )
 
 
 @precondition()
-async def user_memory_storage_enabled(config: ExpertRAGAgentConfig) -> bool:
-    """Precondition to check if user memory storage is enabled."""
-    return check_user_memory_storage_enabled(config)
+async def user_memory_storage_enabled(
+    config: ExpertRAGAgentConfig,
+    user: UserIdentity | None = None,
+) -> bool:
+    """Precondition to check if user memory storage is enabled and this run has an identity to attribute it to.
+
+    The identity comes from `RunContext` rather than from the start event, because a precondition can only be handed
+    events its *step* declares — `handle_event` builds the event map from the step's input events, not the
+    precondition's. Asking for a start event a step does not consume yields no kwarg at all and the precondition
+    raises `TypeError` before it can decide anything.
+    """
+    return check_user_memory_storage_enabled(config, has_user=user is not None)
 
 
 @precondition()
@@ -174,7 +187,7 @@ async def memory_ready_for_chat_history(
 ) -> bool:
     """Precondition to ensure all required memory events are present before extending chat history."""
     return check_passed_meta_question_gate(start_event, clear) and check_memory_ready_for_chat_history(
-        config, user_memory_event, org_memory_event
+        config, start_event.user is not None, user_memory_event, org_memory_event
     )
 
 
@@ -187,7 +200,7 @@ async def memory_added_to_chat_history(
 ) -> bool:
     """Precondition to ensure memory has been added to chat history when required (gated by meta detection)."""
     return check_passed_meta_question_gate(start_event, clear) and check_memory_added_to_chat_history(
-        config, memory_history_event
+        config, start_event.user is not None, memory_history_event
     )
 
 
@@ -196,9 +209,18 @@ async def ready_for_stop(
     config: ExpertRAGAgentConfig,
     store_memory_event: StoreUserMemoryEvent | None = None,
     memory_storage_request: MemoryStorageRequestedEvent | None = None,
+    user: UserIdentity | None = None,
 ) -> bool:
-    """Precondition to ensure all required steps are complete before stopping."""
-    return check_ready_for_stop(config, store_memory_event, memory_storage_request)
+    """Precondition to ensure all required steps are complete before stopping.
+
+    Needs the identity because a run with none skips the memory write, and gating the stop on an event that will
+    never be emitted hangs the run at its terminal step, having already produced the answer.
+
+    Taken from `RunContext`, not from the start event: `stop_step` triggers on `LLMEvent` and declares no start
+    event, and a precondition is only handed events its step declares. Requiring one here raised `TypeError` on
+    every RAG run — the kwarg was simply never built.
+    """
+    return check_ready_for_stop(config, user is not None, store_memory_event, memory_storage_request)
 
 
 class ExpertRAGAgent(Agent):
@@ -239,12 +261,14 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
             llm_config=agent_config.task_llm,
             displayer=displayer,
+            user=user,
             t=t,
         )
 
@@ -260,6 +284,7 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> LLMStopEvent:
         """Answer a meta question from the agent's own identity and workflow, then stop the run."""
         stop_event = await do_answer_meta_question(
@@ -270,11 +295,12 @@ class ExpertRAGAgent(Agent):
             chat_history=user_message_event.messages,
             llm_config=agent_config.task_llm,
             displayer=displayer,
+            user=user,
             t=t,
         )
         # Follow-ups only — the title runs in parallel via generate_meta_question_title_step, since it
         # only needs the topic and doesn't need to wait for this answer to finish.
-        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t)
+        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t, user)
         return stop_event
 
     @step(
@@ -291,6 +317,7 @@ class ExpertRAGAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> None:
         """Generate the thread's title in parallel with the meta answer.
 
@@ -306,6 +333,7 @@ class ExpertRAGAgent(Agent):
             displayer=displayer,
             t=t,
             thread_context=thread_context,
+            user=user,
         )
 
     @step(
@@ -322,16 +350,11 @@ class ExpertRAGAgent(Agent):
         _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context."""
-        query = event.user_query
-        memory_result = await memory.search_user_memory(
-            query=query,
-            user_id=event.user.id,
-            limit=10,
-            threshold=0.5,
+        return await do_retrieve_user_memory(
+            event=event,
+            memory=memory,
             rerank=agent_config.user_memory.rerank_user_memory,
         )
-
-        return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.name"),
@@ -348,24 +371,11 @@ class ExpertRAGAgent(Agent):
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         assert agent_config.org_memory is not None  # precondition enforces this
-        org_memory = agent_config.org_memory
-        query = event.user_query
-        requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
-        tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
-            requested=requested,
-            configured=org_memory.allowed_tenant_namespaces,
+        return await do_retrieve_organization_memory(
+            event=event,
+            org_memory=agent_config.org_memory,
+            memory=memory,
         )
-        memory_result = await memory.search_organization_memory(
-            query=query,
-            tenant_id=org_memory.tenant_id,
-            tenant_namespaces=tenant_namespaces,
-            user_id=None,
-            limit=10,
-            threshold=0.5,
-            rerank=org_memory.rerank_organization_memory,
-        )
-
-        return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.name"),
@@ -400,7 +410,6 @@ class ExpertRAGAgent(Agent):
             chat_history = extend_chat_history_with_organization_memory(
                 chat_history=chat_history,
                 memories=org_memory_event.memories,
-                relations=org_memory_event.relations,
                 t=t,
             )
 
@@ -435,9 +444,10 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
+        user: UserIdentity,
     ) -> StandaloneQuestionCondenserEvent:
         return await do_condense_standalone_question(
-            event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t
+            event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
         )
 
     @step(
@@ -451,6 +461,7 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
             event.condensed_chat_message.content,
@@ -458,6 +469,7 @@ class ExpertRAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
+            user,
         )
 
     @step(
@@ -472,6 +484,7 @@ class ExpertRAGAgent(Agent):
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(start_event, RAGStartEvent):
@@ -482,7 +495,7 @@ class ExpertRAGAgent(Agent):
             )
         else:
             runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
-        return await do_retrieve(event, runtime_configs, t)
+        return await do_retrieve(event, runtime_configs, t, user)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),
@@ -497,9 +510,15 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> RerankerEvent:
         return await do_rerank_nodes(
-            event.nodes, condense_event.condensed_chat_message.content, agent_config.reranking_config, displayer, t
+            event.nodes,
+            condense_event.condensed_chat_message.content,
+            agent_config.reranking_config,
+            displayer,
+            t,
+            user,
         )
 
     @step(
@@ -532,6 +551,7 @@ class ExpertRAGAgent(Agent):
         user_query_event: StandaloneQuestionCondenserEvent,
         chat_history_event: LimitChatHistoryEvent,
         run_context: RunContext,
+        user: UserIdentity,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         return await do_context_sufficient_guard(
             user_query_event.condensed_chat_message.content,
@@ -543,6 +563,7 @@ class ExpertRAGAgent(Agent):
             displayer,
             t,
             chat_history=chat_history_event.limited_history,
+            user=user,
         )
 
     @step(
@@ -682,8 +703,12 @@ class ExpertRAGAgent(Agent):
         context_content = t("agent.prompt.expert_context", expert_conversation=expert_conversation_text)
         await displayer.display_thought(f"Expert context: {context_content}")
 
+        # USER, not SYSTEM: limit_chat_history_with_context places context messages *after* the conversation
+        # turns, and strict providers (e.g. Qwen3.5 on Infomaniak) reject a 400 "System message must be at
+        # the beginning" for any system message past index 0. This matches the retrieval context message,
+        # which lib.prompt.rag.context_prompt already renders with role="user".
         context_message = ChatMessage(
-            role=MessageRole.SYSTEM,
+            role=MessageRole.USER,
             content=context_content,
         )
         return ExpertAnswerContextEvent(context_message=context_message)
@@ -701,6 +726,7 @@ class ExpertRAGAgent(Agent):
         user_message_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> RAGFailureStopEvent:
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_unable_to_answer"))
         unable_to_answer_message = t("agent.expert_rag_agent.messages.expert_unable_to_answer")
@@ -715,6 +741,7 @@ class ExpertRAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
+            user,
         )
         return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_DECLINED, answer=unable_to_answer_message)
 
@@ -730,6 +757,7 @@ class ExpertRAGAgent(Agent):
         user_message_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> RAGFailureStopEvent:
         await displayer.display_thought(
             t(
@@ -750,6 +778,7 @@ class ExpertRAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
+            user,
         )
         return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_ERRORED, answer=error_occurred_message)
 
@@ -766,6 +795,7 @@ class ExpertRAGAgent(Agent):
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> LLMEvent:
         # Use as_stop_step=False to return LLMEvent (not LLMStopEvent)
         # This allows store_user_memory_step to run before the final stop_step
@@ -777,6 +807,7 @@ class ExpertRAGAgent(Agent):
             agent_config.llm,
             displayer,
             t,
+            user,
             as_stop_step=False,
         )
 
@@ -793,6 +824,7 @@ class ExpertRAGAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> None:
         """Generate a stable conversation title once per thread, concurrently with the answer pipeline.
 
@@ -806,6 +838,7 @@ class ExpertRAGAgent(Agent):
             chat_messages=chat_history_event.limited_history,
             llm_config=agent_config.task_llm,
             displayer=displayer,
+            user=user,
             t=t,
             thread_context=thread_context,
         )
@@ -864,6 +897,7 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping.
 
@@ -875,6 +909,7 @@ class ExpertRAGAgent(Agent):
             chat_messages=llm_event.chat_messages,
             llm_config=agent_config.task_llm,
             displayer=displayer,
+            user=user,
             t=t,
         )
         return do_finalize_rag_stop(

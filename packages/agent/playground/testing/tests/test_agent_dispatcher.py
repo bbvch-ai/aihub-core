@@ -1,16 +1,20 @@
+import inspect
 from fnmatch import fnmatch
-from typing import Any
+from typing import Annotated, Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import nats
 import pytest
 from bson import ObjectId
 from nats.js import JetStreamContext
+from pydantic import Field
 from redis.asyncio import Redis
-from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.agents import AgentConfig, AgentRef
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.dispatcher import StepStore
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import ControlEvent, ExceptionEvent, StartEvent, StopEvent
+from swiss_ai_hub.core.form import AgentSelector
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
@@ -47,6 +51,12 @@ class MockAgent(Agent):
     @step(precondition=conditional_step_precondition)
     async def conditional_step(self, start_event: StartEvent) -> list[BaseEvent]:
         return []
+
+
+class DelegatingAgentConfig(AgentConfig):
+    """Stands in for any config that delegates to an agent — `RAGDelegationConfig`, `ExpertEscalationConfig`."""
+
+    rag_agent: Annotated[AgentRef | AgentSelector, Field(description="The target agent to delegate to.")]
 
 
 @pytest.fixture
@@ -561,6 +571,23 @@ class TestAgentDispatcherHandleEvent:
                 )
 
     @pytest.mark.asyncio
+    async def test_terminal_event_tears_down_even_with_unusable_config(self, agent_dispatcher, agent_topic):
+        """Teardown must not depend on the config, or the ExceptionEvent above could never retire its own run."""
+        run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
+        await run_context.set("_agent_config", {"agent_id": "test_agent", "name": {}, "description": {}, "icon": "i"})
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(ExceptionEvent(message="Config was rejected"), agent_topic)
+
+        agent_dispatcher.step_store.mark_execution_context_as_crashed.assert_called_once_with(
+            agent_topic.execution_context_id
+        )
+        # Publishing here would re-enter this same failure and never converge.
+        agent_dispatcher.publish_event.assert_not_awaited()
+
+    @pytest.mark.asyncio
     async def test_handle_event_triggers_ready_steps(self, agent_dispatcher, agent_topic):
         """Test that handle_event triggers steps that are ready to execute."""
         # Arrange - agent_id comes from the topic, not the event
@@ -640,21 +667,26 @@ class TestAgentDispatcherHandleEvent:
             assert retrieved_config == stored_config
 
     @pytest.mark.asyncio
-    async def test_handle_event_raises_error_when_no_agent_config_found(self, agent_dispatcher, agent_topic):
-        """Test that handle_event raises ValueError when no agent config is found."""
+    async def test_handle_event_reports_missing_agent_config(self, agent_dispatcher, agent_topic):
+        """A run whose config was never stored is reported, not dropped on the floor."""
         # Arrange - Use a control event without any pre-stored config
         control_event = ControlEvent()
 
         # Ensure the context is empty (no config stored)
         run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
         await run_context.delete("_agent_config")  # Make sure no config exists
+        agent_dispatcher.publish_event = AsyncMock()
 
         with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
             mock_base_handle.return_value = None
 
-            # Act & Assert - The real context should return None, causing the ValueError
-            with pytest.raises(ValueError, match="No agent config found"):
-                await agent_dispatcher.handle_event(control_event, agent_topic)
+            # Act
+            await agent_dispatcher.handle_event(control_event, agent_topic)
+
+        # Assert
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "No agent config found" in published_event.message
 
     @pytest.mark.asyncio
     async def test_handle_event_stores_start_event_context_data(self, agent_dispatcher, agent_topic):
@@ -766,16 +798,22 @@ class TestAgentDispatcherErrorHandling:
 
     @pytest.mark.asyncio
     async def test_handle_event_with_invalid_agent_config_from_rpc(self, agent_dispatcher, agent_topic):
-        """Test handling of invalid agent config returned by RPC."""
-        # Arrange - agent_id comes from the topic, not the event
-        invalid_config: dict[str, Any] = {"invalid": "config"}
+        """A config the agent's own model rejects must surface, not vanish into the subscriber's logger.
+
+        The config is re-validated on every dispatched event, so letting this escape would hang the
+        whole run: the subscriber acked the message already and only logs what reaches it.
+        """
+        # Arrange - a real agent_config is form-mode and contributes no non-configurable values, so
+        # what the admin submitted is what gets validated. An empty name trips the locale validator.
+        invalid_config: dict[str, Any] = {"agent_id": "test_agent", "name": {}, "description": {}, "icon": "test-icon"}
         start_event = StartEvent()
 
-        # Mock the config client to return invalid config
+        agent_dispatcher._non_configurable_values = {}
         agent_dispatcher._config_client.fetch_config = AsyncMock(return_value=invalid_config)
 
         mock_run_context = Mock(spec=RunContext)
         mock_run_context.set = AsyncMock()
+        agent_dispatcher.publish_event = AsyncMock()
 
         with (
             patch(
@@ -785,13 +823,93 @@ class TestAgentDispatcherErrorHandling:
         ):
             mock_base_handle.return_value = None
 
-            # Act & Assert
-            with pytest.raises(Exception):  # This would be a pydantic validation error
-                await agent_dispatcher.handle_event(start_event, agent_topic)
+            # Act
+            await agent_dispatcher.handle_event(start_event, agent_topic)
+
+        # Assert
+        agent_dispatcher.publish_event.assert_awaited_once()
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "configuration is invalid" in published_event.message
+        # The field that failed, so the admin can act on it...
+        assert "name" in published_event.message
+
+    @pytest.mark.asyncio
+    async def test_reported_config_failure_carries_no_field_values(self, agent_dispatcher, agent_topic):
+        """...but never the values: an agent config holds credentials and this text reaches the user's chat."""
+        secret = "s3cret-imap-token"
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher._config_client.fetch_config = AsyncMock(
+            return_value={"agent_id": "test_agent", "name": secret, "description": {}, "icon": "test-icon"}
+        )
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(StartEvent(), agent_topic)
+
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert secret not in published_event.message
+        assert "input_value" not in published_event.message
+
+    @pytest.mark.asyncio
+    async def test_stored_blank_agent_reference_is_reported_with_its_field(self, agent_dispatcher, agent_topic):
+        """A row stored before `AgentRef` constrained its halves must name the field, not hang the chat.
+
+        `AgentRef` gained `min_length`/`pattern` after such rows could already be saved, and the config is
+        re-validated on every dispatched event — so this is the one failure the constraint introduces. It
+        is bounded because it arrives as a terminal `ExceptionEvent` carrying the field the admin has to
+        fix, rather than as the silent hang this used to be (ADR
+        `2026_08_07_agent_config_failures_surface_as_exception_events`).
+        """
+        agent_dispatcher.agent_config_type = DelegatingAgentConfig
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher._config_client.fetch_config = AsyncMock(
+            return_value={
+                "agent_id": "test_agent",
+                "name": {"en": "Test"},
+                "description": {"en": "Test"},
+                "icon": "test-icon",
+                "rag_agent": {"agent_class": "RAGAgent", "agent_id": ""},
+            }
+        )
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(StartEvent(), agent_topic)
+
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "configuration is invalid" in published_event.message
+        # The exact field, so the admin can fix the row without reading the backend log.
+        assert "rag_agent.AgentRef.agent_id" in published_event.message
+
+    @pytest.mark.asyncio
+    async def test_stored_padded_agent_reference_is_reported_with_its_field(self, agent_dispatcher, agent_topic):
+        """The anchored pattern observed end to end: a padded half is not blank, so only `pattern` catches it."""
+        agent_dispatcher.agent_config_type = DelegatingAgentConfig
+        agent_dispatcher._non_configurable_values = {}
+        agent_dispatcher._config_client.fetch_config = AsyncMock(
+            return_value={
+                "agent_id": "test_agent",
+                "name": {"en": "Test"},
+                "description": {"en": "Test"},
+                "icon": "test-icon",
+                "rag_agent": {"agent_class": "  RAGAgent  ", "agent_id": "shared-knowledge-rag"},
+            }
+        )
+        agent_dispatcher.publish_event = AsyncMock()
+
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event", AsyncMock()):
+            await agent_dispatcher.handle_event(StartEvent(), agent_topic)
+
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "rag_agent.AgentRef.agent_class" in published_event.message
+        assert "should match pattern" in published_event.message
 
     @pytest.mark.asyncio
     async def test_handle_event_with_context_setup_failure(self, agent_dispatcher, agent_topic):
-        """Test handling of context setup failures."""
+        """A RunContext failure while caching the config is reported like any other config failure."""
         # Arrange - agent_id comes from the topic, not the event
         start_event = StartEvent()
 
@@ -803,6 +921,7 @@ class TestAgentDispatcherErrorHandling:
         mock_tracer = Mock(spec=AgentRunTracer)
         mock_tracer.trace_run_start = AsyncMock(return_value=None)
         agent_dispatcher.agent_run_tracer = mock_tracer
+        agent_dispatcher.publish_event = AsyncMock()
 
         with (
             patch(
@@ -812,9 +931,13 @@ class TestAgentDispatcherErrorHandling:
         ):
             mock_base_handle.return_value = None
 
-            # Act & Assert
-            with pytest.raises(RuntimeError, match="Context setup failed"):
-                await agent_dispatcher.handle_event(start_event, agent_topic)
+            # Act
+            await agent_dispatcher.handle_event(start_event, agent_topic)
+
+        # Assert
+        published_event = agent_dispatcher.publish_event.await_args.args[0]
+        assert isinstance(published_event, ExceptionEvent)
+        assert "Context setup failed" in published_event.message
 
 
 class TestAgentDispatcherIntegration:
@@ -987,3 +1110,55 @@ class TestAgentDispatcherAihubHeaders:
 
             run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
             assert await run_context.get(agent_dispatcher._AIHUB_HEADERS_KEY) is None
+
+
+class UserInjectionAgent(Agent):
+    """Declares the two annotation shapes a step can use for the invoking user."""
+
+    @step()
+    async def required_user_step(self, start_event: StartEvent, user: UserIdentity) -> list[BaseEvent]:
+        return []
+
+    @step()
+    async def optional_user_step(self, start_event: StartEvent, user: UserIdentity | None = None) -> list[BaseEvent]:
+        return []
+
+
+class TestUserIdentityInjection:
+    """The programmatically-started agents annotate the user `UserIdentity | None`.
+
+    An equality check against the bare class silently misses that union: the kwarg is dropped, the
+    parameter keeps its `= None` default, and the run authenticates with the master key while looking
+    correctly wired. Nothing else catches it — the type checker sees a valid optional parameter and
+    every conversational agent uses the bare annotation, so the chat path stays green.
+    """
+
+    @staticmethod
+    def _param(step_name: str) -> inspect.Parameter:
+        return inspect.signature(getattr(UserInjectionAgent, step_name)).parameters["user"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("step_name", ["required_user_step", "optional_user_step"])
+    async def test_injects_the_user_for_both_annotation_shapes(self, agent_dispatcher, agent_topic, step_name):
+        user = UserIdentity(id="u1", name="Tester", email="t@example.com", is_sys_admin=False, roles=[])
+        run_context = Mock()
+        run_context.get = AsyncMock(return_value=user.model_dump(mode="json"))
+
+        value = await agent_dispatcher._get_parameter_value(
+            self._param(step_name), {}, Mock(), run_context, Mock(), agent_topic
+        )
+
+        assert isinstance(value, UserIdentity), f"{step_name} did not receive a UserIdentity"
+        assert value.id == "u1"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("step_name", ["required_user_step", "optional_user_step"])
+    async def test_yields_none_when_the_run_carries_no_user(self, agent_dispatcher, agent_topic, step_name):
+        run_context = Mock()
+        run_context.get = AsyncMock(return_value=None)
+
+        value = await agent_dispatcher._get_parameter_value(
+            self._param(step_name), {}, Mock(), run_context, Mock(), agent_topic
+        )
+
+        assert value is None

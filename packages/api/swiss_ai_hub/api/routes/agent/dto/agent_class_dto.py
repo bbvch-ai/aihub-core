@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Annotated, Self
 from pydantic import BaseModel, Field
 from swiss_ai_hub.core.agents import WorkflowGraph
 from swiss_ai_hub.core.events import EventSpecs
-from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent, AgentConfigSpecs
-from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, TemplateData
+from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent
+from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, ConfigSpecs, TemplateData
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ class AgentClassDTO(BaseModel):
         ),
     ]
     agent_config_specs: Annotated[
-        AgentConfigSpecs,
+        ConfigSpecs,
         Field(
             description="Validation specification including the JSON schema for form submissions. "
             "Used by ModelCreationService to create Pydantic models for validation.",

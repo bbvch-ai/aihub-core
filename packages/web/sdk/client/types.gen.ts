@@ -385,7 +385,7 @@ export type AgentClassDto = {
   /**
    * Validation specification including the JSON schema for form submissions. Used by ModelCreationService to create Pydantic models for validation.
    */
-  agent_config_specs: AgentConfigSpecs;
+  agent_config_specs: ConfigSpecs;
   /**
    * Start Events
    *
@@ -516,35 +516,6 @@ export type AgentConfigDto = {
     | ToggleSwitch
     | VectorStoreInput
   > | null;
-};
-
-/**
- * AgentConfigSpecs
- *
- * Validation specification for agent configuration form submissions.
- *
- * Contains ONLY the agent class identifier and JSON schema for validation.
- * Instance-level fields (name, description, icon, agent_id) are stored
- * separately in AgentConfigEntityDocument and provided by the Agent class.
- *
- * The JSON schema is generated from the agent's configurable fields via
- * to_configurable_submission_model() and is used to validate form submissions.
- */
-export type AgentConfigSpecs = {
-  /**
-   * Agent Class
-   *
-   * The class name of the agent.
-   */
-  agent_class: string;
-  /**
-   * Agent Config Schema
-   *
-   * JSON schema for validating form submissions. Generated from the agent's configurable fields via to_configurable_submission_model().
-   */
-  agent_config_schema?: {
-    [key: string]: unknown;
-  };
 };
 
 /**
@@ -771,6 +742,12 @@ export type AgentInTheLoopExceptionEvent = {
    */
   exception_event: ExceptionEvent;
   /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.
+   */
+  request_event_id: string;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -844,9 +821,15 @@ export type AgentInTheLoopRequestEvent = {
   /**
    * Share Run Id
    *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
    */
   share_run_id?: boolean;
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   */
+  timeout_seconds?: number | null;
   /**
    * Event Name
    *
@@ -896,6 +879,12 @@ export type AgentInTheLoopResponseEvent = {
    * The stop event from the delegated agent containing the task results and marks the completion.
    */
   stop_event: StopEvent;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
+   */
+  request_event_id: string;
   /**
    * Event Name
    *
@@ -1041,6 +1030,11 @@ export type AgentProcessStepDto = {
  *
  * This is similar to ModelSelect's `mode` parameter for filtering by model type.
  *
+ * ### Pinning to One Agent Class
+ *
+ * When `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only
+ * that class's profiles. `start_event` is redundant then — the class is already decided — so set one or the other.
+ *
  * ### Form Duality
  *
  * When used with AgentRef, the form submission is validated directly into AgentRef:
@@ -1162,6 +1156,12 @@ export type AgentSelector = {
    */
   startEvent?: string | null;
   /**
+   * Agentclass
+   *
+   * Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.
+   */
+  agentClass?: string | null;
+  /**
    * Classplaceholder
    *
    * Placeholder for agent class select
@@ -1181,6 +1181,13 @@ export type AgentSelector = {
   filter?: boolean;
   /**
    * Validation
+   *
+   * Emits `agentRefRequired` where other elements emit FormKit's `required`.
+   *
+   * FormKit's `required` rule only asks whether a value is present, and this element's value is
+   * always an `{agent_class, agent_id}` object. Picking a class alone emits a non-empty object with
+   * a blank `agent_id`, which passes `required` and then delegates to a NATS wildcard at runtime.
+   * `agentRefRequired` (registered in the frontend FormKit config) looks at both halves.
    */
   readonly validation: string;
   [key: string]: unknown;
@@ -1961,9 +1968,15 @@ export type Capability = {
    */
   rule: string | null;
   /**
+   * Companion Rules
+   *
+   * Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.
+   */
+  companion_rules?: Array<string>;
+  /**
    * Granted
    *
-   * Whether the draft rules grant this capability.
+   * Whether the draft rules grant every rule of this capability.
    */
   granted: boolean;
   /**
@@ -2792,10 +2805,7 @@ export type ChatCompletionRequest = {
    * Function Call
    */
   function_call?:
-    | "none"
-    | "auto"
-    | ChatCompletionFunctionCallOptionParam
-    | null;
+    "none" | "auto" | ChatCompletionFunctionCallOptionParam | null;
   /**
    * Functions
    */
@@ -2840,13 +2850,7 @@ export type ChatCompletionRequest = {
    * Reasoning Effort
    */
   reasoning_effort?:
-    | "none"
-    | "minimal"
-    | "low"
-    | "medium"
-    | "high"
-    | "xhigh"
-    | null;
+    "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | null;
   /**
    * Response Format
    */
@@ -3311,11 +3315,7 @@ export type Choice = {
    * Finish Reason
    */
   finish_reason:
-    | "stop"
-    | "length"
-    | "tool_calls"
-    | "content_filter"
-    | "function_call";
+    "stop" | "length" | "tool_calls" | "content_filter" | "function_call";
   /**
    * Index
    */
@@ -3639,6 +3639,31 @@ export type CompletionUsage = {
 };
 
 /**
+ * ConfigSpecs
+ *
+ * Validation specification for a form-duality configuration, as announced by the service that owns it.
+ *
+ * Carries only the JSON schema the API validates submissions against, so a configuration class defined in
+ * an agent, process or pipeline container can be enforced by the API without that class being installed there.
+ */
+export type ConfigSpecs = {
+  /**
+   * Config Class
+   *
+   * The class name of the configuration this schema describes.
+   */
+  config_class?: string;
+  /**
+   * Config Schema
+   *
+   * JSON schema for validating form submissions. Generated from the configuration's configurable fields via to_configurable_submission_model().
+   */
+  config_schema?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -3858,7 +3883,7 @@ export type ContextualizedAgentEvent = {
     | ToolEvent
     | UserMessageEvent
     | RagStartEvent
-    | ScheduledStartEvent
+    | CronStartEvent
     | ExceptionEvent
     | RagSuccessStopEvent
     | RagFailureStopEvent
@@ -3882,7 +3907,8 @@ export type ContextualizedAgentEvent = {
     | UnreadMailListedEvent
     | MailFetchedEvent
     | MailMovedEvent
-    | MailBatchDraftedEvent;
+    | MailBatchDraftedEvent
+    | MailBatchClassifiedEvent;
 };
 
 /**
@@ -3995,6 +4021,26 @@ export type CreateAgentInstanceRequest = {
    * Configuration
    *
    * The full configuration values including name, description, icon, and runtime settings. Keys should match the 'name' fields from the agent's form elements.
+   */
+  configuration?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
+ * CreateDatabaseRequest
+ */
+export type CreateDatabaseRequest = {
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.
+   */
+  ingestor?: string;
+  /**
+   * Configuration
+   *
+   * The database's configuration as submitted through the ingestor's announced form: its multilingual name and description plus every knob the pipeline declares. Validated against the ingestor's schema.
    */
   configuration?: {
     [key: string]: unknown;
@@ -4156,7 +4202,7 @@ export type CreateTokenResponse = {
  * A FormKit element for editing the cron schedule of a schedulable agent profile.
  *
  * The element renders the five cron positions plus a timezone selector, and the submitted value
- * matches the fields of `AgentSchedule`:
+ * matches the fields of `CronSchedule`:
  * {
  * "minute": str,
  * "hour": str,
@@ -4172,19 +4218,19 @@ export type CreateTokenResponse = {
  * ### Form Duality
  * ```python
  * from swiss_ai_hub.core.form.elements.cron_input import CronInput
- * from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+ * from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
  *
  * class MyAgentConfig(AgentConfig):
  * schedule: Annotated[
- * AgentSchedule | CronInput | None,
+ * CronSchedule | CronInput | None,
  * Field(description="When this profile runs automatically"),
  * ] = None
  *
  * # Form mode - for rendering:
  * config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
  *
- * # Data mode - from submission (Pydantic validates into AgentSchedule):
- * config = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))
+ * # Data mode - from submission (Pydantic validates into CronSchedule):
+ * config = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))
  * ```
  */
 export type CronInput = {
@@ -4285,6 +4331,70 @@ export type CronInput = {
    * Validation
    */
   readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
+ * CronStartEvent
+ *
+ * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
+ *
+ * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
+ * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
+ * that consumes this event, with no separate registration.
+ *
+ * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
+ * initiating identity. Whatever tenant context the agent needs comes from its own profile
+ * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
+ */
+export type CronStartEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * The locale the scheduled run reports its display output in.
+   */
+  locale?: string;
+  /**
+   * Always None — scheduled runs are system-initiated and carry no execution identity.
+   */
+  user?: UserIdentity | null;
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -4418,11 +4528,67 @@ export type DatabaseDto = {
    */
   auto_sync: boolean;
   /**
+   * Deletable
+   *
+   * Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.
+   */
+  deletable: boolean;
+  /**
+   * Ingestor
+   *
+   * Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.
+   */
+  ingestor: string;
+  /**
    * Namespaces
    *
    * List of namespaces
    */
   namespaces: Array<NamespaceDto>;
+};
+
+/**
+ * DatabaseResponse
+ */
+export type DatabaseResponse = {
+  /**
+   * Name
+   *
+   * The database name (also the Milvus collection and Mongo store name).
+   */
+  name: string;
+  /**
+   * Bucket Name
+   *
+   * The S3 bucket / data lake container name.
+   */
+  bucket_name: string;
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that owns this database.
+   */
+  ingestor: string;
+  /**
+   * Configuration
+   *
+   * The ingestor's settings for this database, as validated against its announced schema.
+   */
+  configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Display Name
+   *
+   * A user-friendly display name for the database.
+   */
+  display_name?: string | null;
+  /**
+   * Description
+   *
+   * A brief description of the database's contents.
+   */
+  description?: string | null;
 };
 
 /**
@@ -5169,9 +5335,15 @@ export type DraftedReplyRef = {
   /**
    * Source Uid
    *
-   * IMAP UID of the source message within the source folder.
+   * IMAP UID the source message had in the folder it was read from. A blueprint that files the message before drafting (EmailClassificationAgent) reports the pre-move UID, which no longer resolves on the server — it identifies the message within the run, not for a later fetch.
    */
   source_uid: string;
+  /**
+   * Category
+   *
+   * Category the source message was classified under, when drafting followed a classification run. Null when the drafting blueprint does not classify.
+   */
+  category?: string | null;
   /**
    * Drafts Folder
    *
@@ -5889,7 +6061,7 @@ export type FullProcessInstanceDto = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Form
    *
@@ -7692,6 +7864,69 @@ export type IngestedNode = {
 };
 
 /**
+ * IngestorDTO
+ */
+export type IngestorDto = {
+  /**
+   * Name
+   *
+   * Ingestor identifier, as served by GET /knowledge/ingestors.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the ingestion pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of what the pipeline does.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database of this ingestor is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+};
+
+/**
  * InputAudio
  */
 export type InputAudio = {
@@ -8709,6 +8944,18 @@ export type LlmCostEvent = {
    */
   llm_name: string;
   /**
+   * User Id
+   *
+   * Invoking user, so spend is queryable per user. None for runs with no user context.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.
+   */
+  tenant_id?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8844,6 +9091,59 @@ export type LlmEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * LLMSpend
+ *
+ * LLM spend aggregated over one attribution key (a user or a tenant).
+ *
+ * Costs come from the platform's own `LLMCostEvent` records rather than from LiteLLM's spend log:
+ * the gateway can only attribute the user, so the tenant dimension exists here alone (see #1451).
+ */
+export type LlmSpend = {
+  /**
+   * User Id
+   *
+   * Invoking user, None when grouping by tenant.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, None for runs outside a tenant.
+   */
+  tenant_id?: string | null;
+  /**
+   * Calls
+   *
+   * Number of LLM calls attributed to this key.
+   */
+  calls?: number;
+  /**
+   * Prompt Tokens Costs
+   *
+   * Cost of prompt tokens.
+   */
+  prompt_tokens_costs?: number;
+  /**
+   * Completion Tokens Costs
+   *
+   * Cost of completion tokens.
+   */
+  completion_tokens_costs?: number;
+  /**
+   * Embedding Tokens Costs
+   *
+   * Cost of embedding tokens.
+   */
+  embedding_tokens_costs?: number;
+  /**
+   * Total Costs
+   *
+   * Sum of prompt, completion and embedding costs.
+   */
+  total_costs?: number;
 };
 
 /**
@@ -9452,6 +9752,88 @@ export type MailAttachmentRef = {
 };
 
 /**
+ * MailBatchClassifiedEvent
+ *
+ * Summarises one classification run: how many messages were classified and where each was filed.
+ *
+ * One event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in
+ * `classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread
+ * listing cannot see it again.
+ */
+export type MailBatchClassifiedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the classified messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of messages classified and filed in this run.
+   */
+  count: number;
+  /**
+   * Per Category
+   *
+   * How many messages were filed under each configured category.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Fallback Count
+   *
+   * How many messages went to the fallback folder instead of a category.
+   */
+  fallback_count?: number;
+  /**
+   * Failed Count
+   *
+   * How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.
+   */
+  failed_count?: number;
+  /**
+   * Classified
+   *
+   * Per-message classification verdicts and filing destinations.
+   */
+  classified?: Array<MailClassificationRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * MailBatchDraftedEvent
  *
  * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
@@ -9491,6 +9873,20 @@ export type MailBatchDraftedEvent = {
    */
   count: number;
   /**
+   * Per Category
+   *
+   * How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Skipped Count
+   *
+   * Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.
+   */
+  skipped_count?: number;
+  /**
    * Drafted
    *
    * Per-message references to the created reply drafts.
@@ -9510,6 +9906,66 @@ export type MailBatchDraftedEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * MailClassificationRef
+ *
+ * One classified message and where it was filed — the per-message detail behind a run summary.
+ */
+export type MailClassificationRef = {
+  /**
+   * Message Id
+   *
+   * IMAP UID of the message within the source folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Category
+   *
+   * Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted.
+   */
+  category?: string | null;
+  /**
+   * Target Folder
+   *
+   * Folder the message was filed into.
+   */
+  target_folder: string;
+  /**
+   * Reason
+   *
+   * Model's stated reason for the choice — the audit trail for a misfile.
+   */
+  reason: string;
+  /**
+   * Folder Created
+   *
+   * Whether this message's target folder was created during the run. Folders are created once up front for the whole batch, so every message routed to a newly created folder carries this, not only the first one.
+   */
+  folder_created?: boolean;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  /**
+   * Reference to the original RFC822 message stored in S3.
+   */
+  original_message?: MailMessageRef | null;
 };
 
 /**
@@ -9689,6 +10145,12 @@ export type MailMovedEvent = {
    * Folder the message was moved into.
    */
   target_folder: string;
+  /**
+   * Folder Created
+   *
+   * Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.
+   */
+  folder_created?: boolean;
   /**
    * Event Name
    *
@@ -11723,7 +12185,7 @@ export type ProcessClassDto = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Human Inputs
    *
@@ -11784,35 +12246,6 @@ export type ProcessConfigDto = {
    * The icon representing the process.
    */
   icon?: string;
-};
-
-/**
- * ProcessConfigSpecs
- *
- * Validation specification for process configuration form submissions.
- *
- * Contains the process class identifier and JSON schema for validation.
- * Instance-level fields (name, description, icon, process_id) are stored
- * separately in ProcessConfigEntityDocument and provided by the Process class.
- *
- * The JSON schema is generated from the process's configurable fields via
- * to_configurable_submission_model() and is used to validate form submissions.
- */
-export type ProcessConfigSpecs = {
-  /**
-   * Process Class
-   *
-   * The class name of the process.
-   */
-  process_class?: string;
-  /**
-   * Process Config Schema
-   *
-   * JSON schema for validating form submissions. Generated from the process's configurable fields via to_configurable_submission_model().
-   */
-  process_config_schema?: {
-    [key: string]: unknown;
-  };
 };
 
 /**
@@ -12235,9 +12668,9 @@ export type RagStartEvent = {
    */
   locale?: string;
   /**
-   * User on whose behalf the RAG run is executed.
+   * User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.
    */
-  user: UserIdentity;
+  user?: UserIdentity | null;
   /**
    * Messages
    *
@@ -13309,70 +13742,6 @@ export type RunStatistics = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDto;
-};
-
-/**
- * ScheduledStartEvent
- *
- * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
- *
- * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
- * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
- * that consumes this event, with no separate registration.
- *
- * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
- * initiating identity. Whatever tenant context the agent needs comes from its own profile
- * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
- */
-export type ScheduledStartEvent = {
-  /**
-   * Event Id
-   */
-  event_id?: string;
-  /**
-   * Created At
-   *
-   * The time (in ns since epoch) the event was stored in the event store
-   */
-  created_at?: number;
-  /**
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-  /**
-   * Locale
-   *
-   * The locale the scheduled run reports its display output in.
-   */
-  locale?: string;
-  /**
-   * Always None — scheduled runs are system-initiated and carry no execution identity.
-   */
-  user?: UserIdentity | null;
-  /**
-   * Scheduled For
-   *
-   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
-   */
-  scheduled_for: Date;
-  /**
-   * Event Name
-   *
-   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-   * Used during deserialization to decide which subclass to instantiate.
-   */
-  readonly _event_name: string;
-  /**
-   * Parent Event Names
-   *
-   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-   */
-  readonly _parent_event_names: Array<string>;
-  [key: string]: unknown;
 };
 
 /**
@@ -16373,13 +16742,14 @@ export type ValidationError = {
  *
  * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
- * 2. Namespace multi-select (populated based on selected database)
+ * 2. "All namespaces" switch, or a namespace multi-select populated from the selected database
  * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * The output matches the configurable fields of `MilvusVectorStoreConfig`:
  * {
  * "collection_name": str,
  * "index_namespaces": list[str],
+ * "all_namespaces": bool,
  * "allowed_metadata_filter_fields": list[str],
  * }
  *
@@ -16918,7 +17288,7 @@ export type AgentClassDtoWritable = {
   /**
    * Validation specification including the JSON schema for form submissions. Used by ModelCreationService to create Pydantic models for validation.
    */
-  agent_config_specs: AgentConfigSpecs;
+  agent_config_specs: ConfigSpecs;
   /**
    * Start Events
    *
@@ -17110,6 +17480,12 @@ export type AgentInTheLoopExceptionEventWritable = {
    * The exception event from the delegated agent containing error details and failure context.
    */
   exception_event: ExceptionEventWritable;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.
+   */
+  request_event_id: string;
   [key: string]: unknown;
 };
 
@@ -17171,9 +17547,15 @@ export type AgentInTheLoopRequestEventWritable = {
   /**
    * Share Run Id
    *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
    */
   share_run_id?: boolean;
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   */
+  timeout_seconds?: number | null;
   [key: string]: unknown;
 };
 
@@ -17210,6 +17592,12 @@ export type AgentInTheLoopResponseEventWritable = {
    * The stop event from the delegated agent containing the task results and marks the completion.
    */
   stop_event: StopEventWritable;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
+   */
+  request_event_id: string;
   [key: string]: unknown;
 };
 
@@ -17272,6 +17660,11 @@ export type AgentProcessStepDtoWritable = {
  * whose `start_events` contain an event with matching `event_name` or `event_parents`.
  *
  * This is similar to ModelSelect's `mode` parameter for filtering by model type.
+ *
+ * ### Pinning to One Agent Class
+ *
+ * When `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only
+ * that class's profiles. `start_event` is redundant then — the class is already decided — so set one or the other.
  *
  * ### Form Duality
  *
@@ -17393,6 +17786,12 @@ export type AgentSelectorWritable = {
    * Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.
    */
   startEvent?: string | null;
+  /**
+   * Agentclass
+   *
+   * Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.
+   */
+  agentClass?: string | null;
   /**
    * Classplaceholder
    *
@@ -18539,7 +18938,7 @@ export type ContextualizedAgentEventWritable = {
     | ToolEventWritable
     | UserMessageEventWritable
     | RagStartEventWritable
-    | ScheduledStartEventWritable
+    | CronStartEventWritable
     | ExceptionEventWritable
     | RagSuccessStopEventWritable
     | RagFailureStopEventWritable
@@ -18563,7 +18962,8 @@ export type ContextualizedAgentEventWritable = {
     | UnreadMailListedEventWritable
     | MailFetchedEventWritable
     | MailMovedEventWritable
-    | MailBatchDraftedEventWritable;
+    | MailBatchDraftedEventWritable
+    | MailBatchClassifiedEventWritable;
 };
 
 /**
@@ -18639,7 +19039,7 @@ export type ConversationTitleEventWritable = {
  * A FormKit element for editing the cron schedule of a schedulable agent profile.
  *
  * The element renders the five cron positions plus a timezone selector, and the submitted value
- * matches the fields of `AgentSchedule`:
+ * matches the fields of `CronSchedule`:
  * {
  * "minute": str,
  * "hour": str,
@@ -18655,19 +19055,19 @@ export type ConversationTitleEventWritable = {
  * ### Form Duality
  * ```python
  * from swiss_ai_hub.core.form.elements.cron_input import CronInput
- * from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+ * from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
  *
  * class MyAgentConfig(AgentConfig):
  * schedule: Annotated[
- * AgentSchedule | CronInput | None,
+ * CronSchedule | CronInput | None,
  * Field(description="When this profile runs automatically"),
  * ] = None
  *
  * # Form mode - for rendering:
  * config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
  *
- * # Data mode - from submission (Pydantic validates into AgentSchedule):
- * config = MyAgentConfig(schedule=AgentSchedule(hour="12", timezone="Europe/Zurich"))
+ * # Data mode - from submission (Pydantic validates into CronSchedule):
+ * config = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))
  * ```
  */
 export type CronInputWritable = {
@@ -18764,6 +19164,57 @@ export type CronInputWritable = {
    * Whether to enable filtering/search on the timezone select
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * CronStartEvent
+ *
+ * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
+ *
+ * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
+ * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
+ * that consumes this event, with no separate registration.
+ *
+ * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
+ * initiating identity. Whatever tenant context the agent needs comes from its own profile
+ * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
+ */
+export type CronStartEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * The locale the scheduled run reports its display output in.
+   */
+  locale?: string;
+  /**
+   * Always None — scheduled runs are system-initiated and carry no execution identity.
+   */
+  user?: UserIdentity | null;
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
   [key: string]: unknown;
 };
 
@@ -19381,7 +19832,7 @@ export type FullProcessInstanceDtoWritable = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Form
    *
@@ -20300,6 +20751,69 @@ export type IconSelectorWritable = {
    */
   placeholder?: LocaleString | string | null;
   [key: string]: unknown;
+};
+
+/**
+ * IngestorDTO
+ */
+export type IngestorDtoWritable = {
+  /**
+   * Name
+   *
+   * Ingestor identifier, as served by GET /knowledge/ingestors.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the ingestion pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of what the pipeline does.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database of this ingestor is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
 };
 
 /**
@@ -21253,6 +21767,18 @@ export type LlmCostEventWritable = {
    * The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.
    */
   llm_name: string;
+  /**
+   * User Id
+   *
+   * Invoking user, so spend is queryable per user. None for runs with no user context.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.
+   */
+  tenant_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -21788,6 +22314,75 @@ export type LocaleInputWritable = {
 };
 
 /**
+ * MailBatchClassifiedEvent
+ *
+ * Summarises one classification run: how many messages were classified and where each was filed.
+ *
+ * One event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in
+ * `classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread
+ * listing cannot see it again.
+ */
+export type MailBatchClassifiedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the classified messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of messages classified and filed in this run.
+   */
+  count: number;
+  /**
+   * Per Category
+   *
+   * How many messages were filed under each configured category.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Fallback Count
+   *
+   * How many messages went to the fallback folder instead of a category.
+   */
+  fallback_count?: number;
+  /**
+   * Failed Count
+   *
+   * How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.
+   */
+  failed_count?: number;
+  /**
+   * Classified
+   *
+   * Per-message classification verdicts and filing destinations.
+   */
+  classified?: Array<MailClassificationRef>;
+  [key: string]: unknown;
+};
+
+/**
  * MailBatchDraftedEvent
  *
  * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
@@ -21826,6 +22421,20 @@ export type MailBatchDraftedEventWritable = {
    * Number of reply drafts created in this run.
    */
   count: number;
+  /**
+   * Per Category
+   *
+   * How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Skipped Count
+   *
+   * Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.
+   */
+  skipped_count?: number;
   /**
    * Drafted
    *
@@ -21962,6 +22571,12 @@ export type MailMovedEventWritable = {
    * Folder the message was moved into.
    */
   target_folder: string;
+  /**
+   * Folder Created
+   *
+   * Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.
+   */
+  folder_created?: boolean;
   [key: string]: unknown;
 };
 
@@ -22744,7 +23359,7 @@ export type ProcessClassDtoWritable = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Human Inputs
    *
@@ -22927,9 +23542,9 @@ export type RagStartEventWritable = {
    */
   locale?: string;
   /**
-   * User on whose behalf the RAG run is executed.
+   * User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.
    */
-  user: UserIdentity;
+  user?: UserIdentity | null;
   /**
    * Messages
    *
@@ -23770,57 +24385,6 @@ export type RunStatisticsWritable = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDtoWritable;
-};
-
-/**
- * ScheduledStartEvent
- *
- * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
- *
- * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
- * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
- * that consumes this event, with no separate registration.
- *
- * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
- * initiating identity. Whatever tenant context the agent needs comes from its own profile
- * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
- */
-export type ScheduledStartEventWritable = {
-  /**
-   * Event Id
-   */
-  event_id?: string;
-  /**
-   * Created At
-   *
-   * The time (in ns since epoch) the event was stored in the event store
-   */
-  created_at?: number;
-  /**
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-  /**
-   * Locale
-   *
-   * The locale the scheduled run reports its display output in.
-   */
-  locale?: string;
-  /**
-   * Always None — scheduled runs are system-initiated and carry no execution identity.
-   */
-  user?: UserIdentity | null;
-  /**
-   * Scheduled For
-   *
-   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
-   */
-  scheduled_for: Date;
-  [key: string]: unknown;
 };
 
 /**
@@ -25495,13 +26059,14 @@ export type UserMessageEventWritable = {
  *
  * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
- * 2. Namespace multi-select (populated based on selected database)
+ * 2. "All namespaces" switch, or a namespace multi-select populated from the selected database
  * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * The output matches the configurable fields of `MilvusVectorStoreConfig`:
  * {
  * "collection_name": str,
  * "index_namespaces": list[str],
+ * "all_namespaces": bool,
  * "allowed_metadata_filter_fields": list[str],
  * }
  *
@@ -26221,6 +26786,92 @@ export type GetAgentEventTimeseriesResponses = {
 
 export type GetAgentEventTimeseriesResponse =
   GetAgentEventTimeseriesResponses[keyof GetAgentEventTimeseriesResponses];
+
+export type GetLlmSpendByUserData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Since
+     *
+     * Only count calls at or after this time. Defaults to the last 30 days.
+     */
+    since?: Date | null;
+  };
+  url: "/{tenant_id}/events/spend/users";
+};
+
+export type GetLlmSpendByUserErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetLlmSpendByUserError =
+  GetLlmSpendByUserErrors[keyof GetLlmSpendByUserErrors];
+
+export type GetLlmSpendByUserResponses = {
+  /**
+   * Response Get Llm Spend By User  Tenant Id  Events Spend Users Get
+   *
+   * Successful Response
+   */
+  200: Array<LlmSpend>;
+};
+
+export type GetLlmSpendByUserResponse =
+  GetLlmSpendByUserResponses[keyof GetLlmSpendByUserResponses];
+
+export type GetLlmSpendByTenantData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Since
+     *
+     * Only count calls at or after this time. Defaults to the last 30 days.
+     */
+    since?: Date | null;
+  };
+  url: "/{tenant_id}/events/spend/tenants";
+};
+
+export type GetLlmSpendByTenantErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetLlmSpendByTenantError =
+  GetLlmSpendByTenantErrors[keyof GetLlmSpendByTenantErrors];
+
+export type GetLlmSpendByTenantResponses = {
+  /**
+   * Response Get Llm Spend By Tenant  Tenant Id  Events Spend Tenants Get
+   *
+   * Successful Response
+   */
+  200: Array<LlmSpend>;
+};
+
+export type GetLlmSpendByTenantResponse =
+  GetLlmSpendByTenantResponses[keyof GetLlmSpendByTenantResponses];
 
 export type GetLitellmModelsData = {
   body?: never;
@@ -28083,6 +28734,32 @@ export type GetAccessPresetsResponses = {
 export type GetAccessPresetsResponse =
   GetAccessPresetsResponses[keyof GetAccessPresetsResponses];
 
+export type GetDefaultTenantRulesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/default-tenant-rules";
+};
+
+export type GetDefaultTenantRulesResponses = {
+  /**
+   * Response Get Default Tenant Rules  Tenant Id  Access Default Tenant Rules Get
+   *
+   * Successful Response
+   */
+  200: Array<string>;
+};
+
+export type GetDefaultTenantRulesResponse =
+  GetDefaultTenantRulesResponses[keyof GetDefaultTenantRulesResponses];
+
 export type GetModelsData = {
   body?: never;
   path: {
@@ -28445,6 +29122,146 @@ export type UpdateDatasetResponses = {
 
 export type UpdateDatasetResponse =
   UpdateDatasetResponses[keyof UpdateDatasetResponses];
+
+export type GetIngestorsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/ingestors";
+};
+
+export type GetIngestorsResponses = {
+  /**
+   * Response Get Ingestors  Tenant Id  Knowledge Ingestors Get
+   *
+   * Successful Response
+   */
+  200: Array<IngestorDto>;
+};
+
+export type GetIngestorsResponse =
+  GetIngestorsResponses[keyof GetIngestorsResponses];
+
+export type DeleteDatabaseData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type DeleteDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteDatabaseError =
+  DeleteDatabaseErrors[keyof DeleteDatabaseErrors];
+
+export type DeleteDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
+
+export type CreateDatabaseData = {
+  body: CreateDatabaseRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     *
+     * Lowercase letters and digits, starting with a letter, 3 to 63 characters
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type CreateDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateDatabaseError =
+  CreateDatabaseErrors[keyof CreateDatabaseErrors];
+
+export type CreateDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type CreateDatabaseResponse =
+  CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type DeleteNamespaceData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}";
+};
+
+export type DeleteNamespaceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteNamespaceError =
+  DeleteNamespaceErrors[keyof DeleteNamespaceErrors];
+
+export type DeleteNamespaceResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
 
 export type CreateNamespaceData = {
   body: CreateNamespaceRequest;

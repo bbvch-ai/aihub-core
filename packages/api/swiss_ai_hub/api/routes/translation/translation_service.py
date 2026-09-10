@@ -1,9 +1,11 @@
 import logging
 
 from llama_index.core import PromptTemplate
+from pydantic import ValidationError
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, trace_fn
+from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
 
 from swiss_ai_hub.api.routes.translation.dto.translation_request import TranslationRequest
 from swiss_ai_hub.api.routes.translation.dto.translation_response import TranslationResponse
@@ -20,7 +22,9 @@ class TranslationService:
 
     @classmethod
     @trace_fn
-    async def translate_from_request(cls, request: TranslationRequest, t: LocaleHandler) -> TranslationResponse:
+    async def translate_from_request(
+        cls, request: TranslationRequest, t: LocaleHandler, user: UserIdentity
+    ) -> TranslationResponse:
         """
         Translates a LocaleString from the request to all supported locales.
         """
@@ -32,6 +36,7 @@ class TranslationService:
             llm_config=llm_config,
             t=t,
             source_locale=request.source_locale,
+            user=user,
         )
 
         return TranslationResponse(translated=translated)
@@ -50,7 +55,12 @@ class TranslationService:
     @classmethod
     @trace_fn
     async def translate(
-        cls, locale_string: LocaleString, llm_config: LLMConfig, t: LocaleHandler, source_locale: str = "en"
+        cls,
+        locale_string: LocaleString,
+        llm_config: LLMConfig,
+        t: LocaleHandler,
+        user: UserIdentity,
+        source_locale: str = "en",
     ) -> LocaleString:
         """
         Translates fields in a translatable object (LocaleString).
@@ -67,7 +77,10 @@ class TranslationService:
             target_language_codes=target_locales,
             llm_config=llm_config,
             t=t,
+            user=user,
         )
+        if new_translations is None:
+            return locale_string
         final_data = locale_string.model_dump()
         new_data = new_translations.model_dump(exclude_unset=True)
         final_data.update(new_data)
@@ -81,8 +94,17 @@ class TranslationService:
         target_language_codes: list[str],
         llm_config: LLMConfig,
         t: LocaleHandler,
-    ) -> LocaleString:
-        llm, _ = llm_config.to_llama_index()
+        user: UserIdentity,
+    ) -> LocaleString | None:
+        """Returns the parsed translations, or ``None`` when the model produced no valid JSON.
+
+        The translation model (a small instruct model) is not reliable at emitting JSON — it
+        occasionally echoes the instruction back as prose. Since translation only enriches
+        user-facing text with extra locales, a non-parseable response must degrade to "no
+        translation" rather than fail the caller's core operation.
+        """
+        api_key = await LiteLLMService.api_key_for_user(user)
+        llm, _ = llm_config.to_llama_index(api_key=api_key)
         target_languages = ", ".join([t(f"api.common.translation.{lang}") for lang in target_language_codes])
         prompt = PromptTemplate(t("api.common.translation.prompt"))
         response = await llm.apredict(
@@ -92,6 +114,22 @@ class TranslationService:
             locale_codes=target_language_codes,
             text=text,
         )
-        if response.startswith("```json"):
-            response = response[7:-3]
-        return LocaleString.model_validate_json(response)
+        return cls._parse_locale_string(response)
+
+    @staticmethod
+    def _parse_locale_string(response: str) -> LocaleString | None:
+        """Extracts a ``LocaleString`` from a raw model response, tolerating fences and stray prose."""
+        candidate = response.strip()
+        if candidate.startswith("```"):
+            candidate = candidate.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+
+        start, end = candidate.find("{"), candidate.rfind("}")
+        if start == -1 or end <= start:
+            logger.warning(f"Translation model returned no JSON object; skipping translation. Response: {response!r}")
+            return None
+
+        try:
+            return LocaleString.model_validate_json(candidate[start : end + 1])
+        except ValidationError:
+            logger.warning(f"Translation model returned unparseable JSON; skipping translation. Response: {response!r}")
+            return None

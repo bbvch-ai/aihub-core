@@ -7,6 +7,7 @@ from datetime import datetime
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError, NoCredentialsError
 from swiss_ai_hub.core.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
+from swiss_ai_hub.core.infrastructure import S3BucketProvisioner
 
 from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
 from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
@@ -26,15 +27,21 @@ class S3DataLakeClient(AbstractDataLakeClient):
     directory management for S3 buckets.
     """
 
-    def __init__(self, container_name: str, s3_client: boto3.client):
+    def __init__(self, container_name: str, s3_client: boto3.client, ensure_bucket: bool = True):
         """
         Initialize the S3 data lake client.
+
+        ``ensure_bucket`` controls whether the bucket is created/CORS-configured at construction time. The
+        document ingestion pipeline builds short-lived per-run clients on the read path and passes
+        ``ensure_bucket=False`` to avoid redundant bucket bootstrapping there; the observe/write paths keep
+        the default so a brand-new bucket is provisioned on first ingest.
         """
         if not container_name or not container_name.strip():
             raise ValueError("Container name cannot be empty")
         super().__init__(container_name)
         self._client = s3_client
-        self._ensure_bucket_with_cors()
+        if ensure_bucket:
+            self._ensure_bucket_with_cors()
 
     def build_uri(self, file_path: str) -> str:
         """Build S3 URI in format: s3://bucket/key"""
@@ -52,8 +59,13 @@ class S3DataLakeClient(AbstractDataLakeClient):
     def get_all_files(self) -> list[DataLakeFile]:
         """
         Retrieve all files from the specified directory, excluding figures.
+
+        Answers only "which files exist and has any changed", which ``list_objects_v2`` already
+        covers: no per-object ``head_object``, and one namespace lookup per directory rather than
+        per file. Cost therefore scales with directories, not with objects in the bucket.
         """
         data_lake_files: list[DataLakeFile] = []
+        namespace_cache: dict[str, str] = {}
 
         paginator = self._client.get_paginator("list_objects_v2")
         page_iterator = paginator.paginate(
@@ -80,17 +92,44 @@ class S3DataLakeClient(AbstractDataLakeClient):
                     continue
 
                 document_uri = self.build_uri(key)
-                data_lake_file = self._create_data_lake_file_from_s3_object(document_uri, obj, key)
+                data_lake_file = self._create_data_lake_file_from_s3_object(
+                    document_uri,
+                    obj,
+                    key,
+                    namespace=self._resolve_namespace(document_uri, namespace_cache),
+                )
                 data_lake_files.append(data_lake_file)
 
         return data_lake_files
+
+    def _resolve_namespace(self, document_uri: str, namespace_cache: dict[str, str] | None = None) -> str:
+        """Namespace varies only per directory, but the lookup also *registers* directories the
+        knowledge UI and namespace-selection agent read, so the first file of each directory must
+        still reach it — caching per directory keeps that side effect and drops the rest."""
+        directory_name = document_uri.split("/")[3]  # s3://bucket/directory_name/...
+        if namespace_cache is None:
+            return get_or_create_namespace_for_directory(self.container_name, directory_name)
+        if directory_name not in namespace_cache:
+            namespace_cache[directory_name] = get_or_create_namespace_for_directory(self.container_name, directory_name)
+        return namespace_cache[directory_name]
 
     def get_file_metadata(self, file_path: str) -> dict:
         """Get file metadata using S3 client"""
         response = self._client.head_object(Bucket=self.container_name, Key=file_path)
         return response.get("Metadata", {})
 
-    def create_data_lake_file_from_uri(self, document_uri: str) -> DataLakeFile:
+    def create_data_lake_files_from_uris(self, document_uris: list[str]) -> list[DataLakeFile]:
+        """Batch sibling of ``create_data_lake_file_from_uri`` that resolves each namespace once.
+
+        The removal job loads every partition at once, so a per-file namespace lookup there costs
+        as much as it did in the observation.
+        """
+        namespace_cache: dict[str, str] = {}
+        return [self.create_data_lake_file_from_uri(document_uri, namespace_cache) for document_uri in document_uris]
+
+    def create_data_lake_file_from_uri(
+        self, document_uri: str, namespace_cache: dict[str, str] | None = None
+    ) -> DataLakeFile:
         """Create a DataLakeFile from S3 URI by fetching object metadata."""
         if not document_uri.startswith(S3_PROTOCOL_PREFIX):
             if document_uri.startswith(f"{self.container_name}/"):
@@ -123,32 +162,42 @@ class S3DataLakeClient(AbstractDataLakeClient):
             "ETag": head_response.get("ETag", "").strip('"'),
         }
 
-        return self._create_data_lake_file_from_s3_object(document_uri, s3_object, key)
+        return self._create_data_lake_file_from_s3_object(
+            document_uri,
+            s3_object,
+            key,
+            namespace=self._resolve_namespace(document_uri, namespace_cache),
+            head_response=head_response,
+        )
 
-    def _create_data_lake_file_from_s3_object(self, document_uri: str, s3_object: dict, key: str) -> DataLakeFile:
+    def _create_data_lake_file_from_s3_object(
+        self,
+        document_uri: str,
+        s3_object: dict,
+        key: str,
+        namespace: str,
+        head_response: dict | None = None,
+    ) -> DataLakeFile:
         """
         Create a DataLakeFile from S3 object metadata.
 
-        This method constructs a DataLakeFile object from S3 object metadata,
-        handling content type detection, hash conversion, and timestamp processing.
+        ``head_response`` carries the object's user metadata and content type, which only the
+        download path needs; callers that already hold one pass it in rather than fetching it
+        again, and callers that never read those fields pass None to skip the request entirely.
+        ``list_objects_v2`` reports the same ETag, size and modification time either way, so the
+        DataVersion is identical on both paths.
         """
-        uri_parts = document_uri.split("/")
-        directory_name = uri_parts[3]  # s3://bucket/directory_name/...
-        namespace = get_or_create_namespace_for_directory(self.container_name, directory_name)
         filename = key.split("/")[-1]
 
         _, extension = os.path.splitext(filename)
         file_type = extension.lower()[1:] if extension else "unknown"
 
-        try:
-            head_response = self._client.head_object(Bucket=self.container_name, Key=key)
+        if head_response is not None:
             content_type = head_response.get("ContentType", "application/octet-stream")
             etag = head_response.get("ETag", "").strip('"')  # Remove quotes from ETag
             metadata = head_response.get("Metadata", {})
             last_modified = head_response.get("LastModified")
-        except (ClientError, NoCredentialsError, BotoCoreError) as e:
-            # Fallback if head_object fails - use data from list operation
-            logger.warning(f"Could not fetch detailed metadata for {key}, using fallback values: {e}")
+        else:
             content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
             etag = s3_object.get("ETag", "").strip('"')
             metadata = {}
@@ -248,29 +297,8 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
 
     def _ensure_bucket_with_cors(self) -> None:
-        """Ensure bucket exists and configure CORS for web access."""
-        try:
-            self._client.head_bucket(Bucket=self.container_name)
-        except ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code")
-            if error_code in ("404", "NoSuchBucket"):
-                self._client.create_bucket(Bucket=self.container_name)
-            else:
-                raise
-
-        cors_config = {
-            "CORSRules": [
-                {
-                    "AllowedOrigins": ["*"],
-                    "AllowedHeaders": ["Content-Type", "x-amz-date", "authorization", "x-amz-security-token"],
-                    "AllowedMethods": ["PUT", "POST", "DELETE", "GET", "HEAD"],
-                    "MaxAgeSeconds": 3000,
-                    "ExposeHeaders": ["ETag"],
-                }
-            ]
-        }
-
-        self._client.put_bucket_cors(Bucket=self.container_name, CORSConfiguration=cors_config)
+        """Ensure the bucket exists and carries the shared browser-upload CORS ruleset."""
+        S3BucketProvisioner.ensure_bucket_with_cors(self._client, self.container_name)
         logger.info(f"CORS configured for bucket: {self.container_name}")
 
     @property

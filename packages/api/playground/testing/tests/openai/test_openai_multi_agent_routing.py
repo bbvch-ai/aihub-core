@@ -44,6 +44,9 @@ async def api_client():
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
 
+    await runner_x.stop_simulation()
+    await runner_y.stop_simulation()
+
 
 async def _completion_content(client: AsyncClient, model: str, thread_id: str) -> str:
     response = await client.post(

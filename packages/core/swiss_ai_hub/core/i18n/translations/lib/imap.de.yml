@@ -52,3 +52,84 @@ config:
   draft_prompt:
     label: Entwurfs-Prompt
     help: Anweisungen, wie das LLM den Antworttext entwirft.
+  category_name:
+    label: Kategorie
+    help: Name der Kategorie, z. B. support_request. Muss eindeutig sein.
+  category_folder:
+    label: Zielordner
+    help: Postfach-Ordner, in den E-Mails dieser Kategorie abgelegt werden. Wird automatisch
+      erstellt, falls er noch nicht existiert.
+  category_description:
+    label: Was gehört hierher
+    help: Beschreiben Sie, welche Art von E-Mails in diese Kategorie gehört. Danach
+      klassifiziert das Modell — beschreiben Sie also die Absicht konkret, statt Stichwörter
+      aufzuzählen.
+  fallback_folder:
+    label: Ausweichordner
+    help: Ordner für E-Mails, bei denen sich das Modell unsicher ist. Solche E-Mails
+      werden nie in eine Kategorie geraten und nie im Posteingang belassen.
+  failure_folder:
+    label: Fehlerordner
+    help: Ordner für E-Mails, die der Klassifizierer überhaupt nicht verarbeiten konnte.
+      Solche E-Mails verlassen den Posteingang trotzdem, damit eine fehlerhafte Nachricht
+      nicht alle folgenden Läufe blockiert; zurück in den Posteingang verschieben
+      wiederholt den Versuch.
+  classification_input_tokens:
+    label: Eingabe-Token für die Klassifizierung
+    help: Token-Budget für den Klassifizierungs-Prompt. Lange Nachrichten werden gekürzt,
+      wobei der Anfang des Textes erhalten bleibt.
+  classification_model:
+    label: Klassifizierungsmodell
+    help: Chat-Modell, das jede Nachricht klassifiziert. Leer lassen, um das Hauptmodell
+      des Agenten zu verwenden.
+  classification_prompt:
+    label: Klassifizierungs-Prompt
+    help: Anweisungen, wie das Modell eine Kategorie auswählt.
+  category_draft_reply:
+    label: Antwort entwerfen
+    help: Wenn aktiviert, wird für E-Mails dieser Kategorie ein Antwortentwurf im
+      Entwurfsordner abgelegt, den ein Mensch prüfen und senden kann. Es wird nie
+      gesendet.
+  draft_input_tokens:
+    label: Eingabe-Token für Entwürfe
+    help: Token-Budget für den Entwurfs-Prompt. Der Nachrichtentext wird gekürzt und
+      Anhangstext verworfen, um es einzuhalten.
+  include_attachments:
+    label: Anhänge lesen
+    help: Wenn aktiviert, erhält das Modell zusätzlich zum Nachrichtentext den aus
+      den Anhängen extrahierten Text. Jeder Anhang kostet einen Aufruf des Dokumentenparsers.
+  max_attachments_per_message:
+    label: Max. Anhänge pro Nachricht
+    help: Wie viele Anhänge einer Nachricht gelesen werden, grösste zuerst.
+  min_attachment_bytes:
+    label: Minimale Anhangsgrösse
+    help: Kleinere Anhänge werden übersprungen. Signaturlogos und Zählpixel kommen
+      als Anhänge an und liefern keinen nutzbaren Text.
+  attachment_char_limit:
+    label: Zeichenlimit pro Anhang
+    help: Anzahl der Zeichen, die aus dem extrahierten Text eines einzelnen Anhangs
+      übernommen werden.
+  category_knowledge_namespace:
+    label: Wissenssammlung
+    help: Sammlung, auf der die Antworten dieser Kategorie basieren. Ist sie gesetzt,
+      wird die Antwort ausschliesslich aus den Dokumenten dieser Sammlung erstellt.
+      Bleibt sie leer, wird die Antwort allein aus der Nachricht verfasst, ohne Suche.
+  knowledge_databases:
+    label: Wissensdatenbanken
+    help: Datenbanken, in denen die Sammlungen der Kategorien gesucht werden. Nur
+      nötig, wenn eine Kategorie eine Sammlung nennt.
+  no_information_draft:
+    label: Entwurf, wenn nichts gefunden wurde
+    help: Entwurfstext, wenn die Suche nichts gefunden hat, das die Nachricht beantwortet.
+      Wird wörtlich verwendet, damit die Antwort nichts erfindet, wofür es keine Dokumente
+      gibt.
+  grounding_failed_draft:
+    label: Entwurf, wenn die Suche fehlschlug
+    help: Entwurfstext, wenn die Wissenssuche selbst fehlschlug oder nie antwortete.
+      Getrennt vom Text für fehlende Information, damit eine Lücke in der Dokumentation
+      von einer defekten Installation unterscheidbar ist.
+  grounding_timeout_seconds:
+    label: Zeitlimit der Wissenssuche (Sekunden)
+    help: Wie lange eine Wissenssuche dauern darf, bevor die Nachricht stattdessen
+      mit dem Fehlertext entworfen wird. Ohne Zeitlimit wartet der Lauf bei einem
+      nicht erreichbaren Wissensagenten endlos.

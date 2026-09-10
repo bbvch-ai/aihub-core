@@ -3,23 +3,29 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.scheduling.agent_schedule import AgentSchedule
+    from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
     from swiss_ai_hub.core.scheduling.cron_schedule_calculator import CronScheduleCalculator
+    from swiss_ai_hub.core.scheduling.cron_scheduler import CronScheduler
+    from swiss_ai_hub.core.scheduling.schedule_admission import ScheduleAdmission
     from swiss_ai_hub.core.scheduling.schedule_state_store import ScheduleStateStore
-    from swiss_ai_hub.core.scheduling.scheduled_agent_service import ScheduledAgentService
+    from swiss_ai_hub.core.scheduling.scheduler_settings import SchedulerSettings
 
 __all__ = [
-    "AgentSchedule",
+    "CronSchedule",
     "CronScheduleCalculator",
+    "CronScheduler",
+    "ScheduleAdmission",
     "ScheduleStateStore",
-    "ScheduledAgentService",
+    "SchedulerSettings",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
-    "AgentSchedule": "swiss_ai_hub.core.scheduling.agent_schedule",
+    "CronSchedule": "swiss_ai_hub.core.scheduling.cron_schedule",
     "CronScheduleCalculator": "swiss_ai_hub.core.scheduling.cron_schedule_calculator",
+    "CronScheduler": "swiss_ai_hub.core.scheduling.cron_scheduler",
+    "ScheduleAdmission": "swiss_ai_hub.core.scheduling.schedule_admission",
     "ScheduleStateStore": "swiss_ai_hub.core.scheduling.schedule_state_store",
-    "ScheduledAgentService": "swiss_ai_hub.core.scheduling.scheduled_agent_service",
+    "SchedulerSettings": "swiss_ai_hub.core.scheduling.scheduler_settings",
 }
 
 

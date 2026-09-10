@@ -249,9 +249,15 @@ export type Capability = {
    */
   rule: string | null;
   /**
+   * Companion Rules
+   *
+   * Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.
+   */
+  companion_rules?: Array<string>;
+  /**
    * Granted
    *
-   * Whether the draft rules grant this capability.
+   * Whether the draft rules grant every rule of this capability.
    */
   granted: boolean;
   /**
@@ -371,9 +377,9 @@ export type CreateTenantMetadataRequest = {
   /**
    * Access Rules
    *
-   * Access rules granted to this tenant.
+   * Access rules granted to this tenant. Omit to start from this instance's default ceiling (every served model minus the configured exclusions); pass an empty list for a tenant that starts with no access at all.
    */
-  access_rules?: Array<string>;
+  access_rules?: Array<string> | null;
 };
 
 /**
@@ -1047,6 +1053,25 @@ export type ListUnconfiguredTenantsResponses = {
 
 export type ListUnconfiguredTenantsResponse =
   ListUnconfiguredTenantsResponses[keyof ListUnconfiguredTenantsResponses];
+
+export type GetDefaultAccessRulesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/tenants/default-access-rules";
+};
+
+export type GetDefaultAccessRulesResponses = {
+  /**
+   * Response Get Default Access Rules Admin Tenants Default Access Rules Get
+   *
+   * Successful Response
+   */
+  200: Array<string>;
+};
+
+export type GetDefaultAccessRulesResponse =
+  GetDefaultAccessRulesResponses[keyof GetDefaultAccessRulesResponses];
 
 export type DeleteTenantMetadataData = {
   body?: never;

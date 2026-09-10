@@ -140,7 +140,7 @@ const { tenantId } = useTenant()
 const { getDocumentSourceUrl } = useDocumentUrl()
 const { deleteDocument, isDeleting } = useDeleteDocument()
 const { deleteDocuments, isDeleting: isBatchDeleting } = useDeleteDocuments()
-const { isScheduled, schedule, unschedule } = useScheduledDeletions(
+const { isScheduled, scheduledAt, schedule, unschedule } = useScheduledDeletions(
   () => route.params.db as string,
   () => route.params.namespace as string,
 )
@@ -163,18 +163,24 @@ const checkedDocuments = ref<DocumentDto[]>([])
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
 
-const isDocumentDeleting = (document: DocumentDto) => isScheduled(document.id) && document.is_ingested
+const isDocumentDeleting = (document: DocumentDto) => isScheduled(document.id)
 
-// Processing documents are mid-ingestion; removing their source now would race the pipeline.
-const isDocumentDeletable = (document: DocumentDto) => document.is_ingested && !isDocumentDeleting(document)
+// Deleting is safe at any stage of ingestion: the API only removes the source file, and the pipeline
+// drops the document's partition before the remove job touches any store, which aborts an in-flight
+// run before it writes. So the only reason to withhold the action is a deletion already in flight.
+const isDocumentDeletable = (document: DocumentDto) => !isDocumentDeleting(document)
 
-// Ids derive from the source URI, so re-uploading a just-deleted file reuses its id. When that id
-// reappears as a placeholder, the scheduled entry is stale and must be cleared.
+// Ids derive from the source URI, so re-uploading a just-deleted file reuses its id and would inherit
+// its "Deleting" badge. An upload rewrites the document, so an updated_at newer than the moment we
+// scheduled the deletion means this row is the replacement, not the one still on its way out.
 watch(
   () => props.documents,
   (documents) => {
     const reUploadedIds = (documents ?? [])
-      .filter(document => !document.is_ingested && isScheduled(document.id))
+      .filter((document) => {
+        const requestedAt = scheduledAt(document.id)
+        return requestedAt != null && new Date(document.updated_at).getTime() > requestedAt
+      })
       .map(document => document.id)
     if (reUploadedIds.length > 0) {
       unschedule(reUploadedIds)
@@ -200,14 +206,19 @@ const onSelectAllChange = ({ checked }: { checked: boolean }) => {
 
 const handleRowClick = (event: DataTableRowClickEvent) => {
   const document = event.data as DocumentDto
-  if (document.is_ingested && !isDocumentDeleting(document)) {
+  if (!isDocumentDeleting(document)) {
     emit('selected', document)
   }
 }
 
+// Only a deletion in flight makes a row inert. A document still being ingested stays dimmed but usable —
+// otherwise a failed ingestion leaves a row that can be neither opened nor removed.
 const getRowClass = (data: DocumentDto) => {
-  if (!data.is_ingested || isDocumentDeleting(data)) {
+  if (isDocumentDeleting(data)) {
     return 'opacity-50 cursor-not-allowed pointer-events-none'
+  }
+  if (!data.is_ingested) {
+    return 'opacity-50'
   }
   return data.id === route.params.document_id ? 'bg-surface-100 dark:bg-surface-800' : ''
 }

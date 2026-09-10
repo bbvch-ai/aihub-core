@@ -3,6 +3,10 @@ test: Das ist ein deutscher Test
 authorization:
   no_access_knowledge_database: Sie haben keinen Zugriff auf die Wissensdatenbank
     '%{name}'.
+  no_access_knowledge_namespace: Sie haben keinen Zugriff auf die Sammlung '%{namespace}'
+    der Wissensdatenbank '%{database}'.
+  no_access_whole_knowledge_database: Die Wissensdatenbank '%{name}' als Ganzes auszuwählen
+    erfordert Zugriff auf alle ihre Sammlungen.
   no_access_agent: Sie haben keinen Zugriff auf den Agenten '%{agent}'.
   no_access_tenant: Sie sind kein Mitglied des Mandanten '%{tenant}'.
   no_access_section: Sie haben keinen Zugriff auf den Abschnitt '%{section}'.

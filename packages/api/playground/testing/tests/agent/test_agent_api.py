@@ -34,6 +34,8 @@ async def agent_api_client():
         ) as client:
             yield client
 
+    await runner.stop_simulation()
+
 
 @pytest.mark.asyncio
 async def test_get_agent_instance(agent_api_client):

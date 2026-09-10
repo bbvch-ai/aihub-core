@@ -14,11 +14,14 @@ Memory is automatically integrated into agent workflows through dependency injec
 
 User memory is private to individual users and automatically extracted from conversation messages by the LLM. It stores
 personal preferences, working styles, and individual context—things like "User prefers concise code examples in Python."
-Both vector (semantic search) and graph (relationships) storage enable retrieval.
+Retrieval is vector-based semantic search.
 
 Organization memory is shared across all users in a tenant or namespace. Unlike user memory, it requires explicit
 documentation rather than automatic inference. It stores company policies, project details, and team conventions—things
-like "We deploy to production on Fridays." The same vector and graph storage supports semantic and relational retrieval.
+like "We deploy to production on Fridays." Retrieval works the same way.
+
+Both scopes retrieve from the vector store only. `MemorySearchResult.relations` still exists on the model but is always
+empty.
 
 ## Memory workflow pattern
 
@@ -217,7 +220,7 @@ async def retrieve_memory_step(
 
 `search_user_memory()` performs semantic search against the user's private memory store. It takes the search query
 (typically the user's current message), the user ID, and an optional limit (default: 100). It returns a
-`MemorySearchResult` containing memories and relationships.
+`MemorySearchResult` containing the matching memories.
 
 #### Chat history extension
 
@@ -344,7 +347,6 @@ class OrganizationMemoryAgent(Agent):
         extended_chat_history = extend_chat_history_with_organization_memory(
             chat_history=user_message_event.messages,
             memories=memory_event.memories,
-            relations=memory_event.relations,
             t=t,
         )
         return AddOrganizationMemoryToChatHistoryEvent(extended_history=extended_chat_history)
@@ -480,7 +482,6 @@ class HybridMemoryAgent(Agent):
         chat_history = extend_chat_history_with_organization_memory(
             chat_history=chat_history,  # Already has user memory
             memories=org_mem.memories,
-            relations=org_mem.relations,
             t=t
         )
         return CombinedMemoryEvent(extended_history=chat_history)

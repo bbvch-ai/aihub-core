@@ -1,5 +1,6 @@
 import AgentSelector from '@core/components/FormKit/AgentSelector.vue'
 import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
+import CronInput from '@core/components/FormKit/CronInput.vue'
 import IconSelector from '@core/components/FormKit/IconSelector.vue'
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
@@ -11,7 +12,7 @@ import { createInput } from '@formkit/vue'
 import { primeInputs } from '@sfxcode/formkit-primevue'
 
 import type { FormKitNode } from '@formkit/core'
-import type { DefaultConfigOptions } from '@formkit/vue'
+import type { DefaultConfigOptions, PluginConfigs } from '@formkit/vue'
 
 const LOCALES = ['de', 'en', 'fr', 'it'] as const
 
@@ -31,6 +32,36 @@ function localeRequired(node: FormKitNode): boolean {
 // create form: precisely the case this rule exists to catch.
 localeRequired.skipEmpty = false
 
+// Same shape of problem for agentSelector: its value is always an `{agent_class, agent_id}` object,
+// so picking a class alone yields a non-empty object with a blank `agent_id` that `required` accepts.
+// A blank id then renders as a NATS wildcard at runtime and the delegation reaches no agent at all.
+// Backend `AgentSelector` elements emit `agentRefRequired` instead
+// (see packages/core/swiss_ai_hub/core/form/elements/agent_selector.py).
+function agentRefRequired(node: FormKitNode): boolean {
+  const value = node.value as { agent_class?: string | null, agent_id?: string | null } | null | undefined
+  if (!value) return false
+  return !!value.agent_class?.trim() && !!value.agent_id?.trim()
+}
+
+// As with localeRequired: without this the rule never runs on a never-touched field, whose value is
+// still `null`, so a fresh create form would submit with no agent selected at all.
+agentRefRequired.skipEmpty = false
+
+/**
+ * Passes when the value is listed in the sibling field named by `address`, or when that list is
+ * empty — backend allow-lists treat empty as unrestricted. Reading the sibling through `node.at()`
+ * registers it as a validation dependency, so FormKit re-runs this rule when the list itself
+ * changes, not only when this field does.
+ *
+ * Advisory only: it exists so an admin sees the conflict in the form. The backend never depends on
+ * it — a value outside the allow-list is rejected where it is actually used.
+ */
+const memberOf: PluginConfigs['rules'][string] = (node, address: string) => {
+  const allowed = node.at(address)?.value
+  if (!Array.isArray(allowed) || allowed.length === 0) return true
+  return allowed.includes(node.value)
+}
+
 const localeRequiredMessages = {
   de: 'Mindestens eine Sprache muss ausgefüllt sein.',
   en: 'At least one language must be filled in.',
@@ -38,10 +69,30 @@ const localeRequiredMessages = {
   it: 'Almeno una lingua deve essere compilata.',
 }
 
+const agentRefRequiredMessages = {
+  de: 'Bitte wählen Sie einen Agententyp und ein Agentenprofil aus.',
+  en: 'Please select both an agent type and an agent profile.',
+  fr: 'Veuillez sélectionner un type d\'agent et un profil d\'agent.',
+  it: 'Seleziona sia un tipo di agente sia un profilo di agente.',
+}
+
+const memberOfMessages = {
+  de: 'Dieser Wert steht nicht in der Liste der erlaubten Werte.',
+  en: 'This value is not in the allowed list.',
+  fr: 'Cette valeur ne figure pas dans la liste des valeurs autorisées.',
+  it: 'Questo valore non è presente nell\'elenco dei valori consentiti.',
+}
+
 const config: DefaultConfigOptions = {
-  rules: { localeRequired },
+  rules: { localeRequired, agentRefRequired, memberOf },
   messages: Object.fromEntries(
-    LOCALES.map(locale => [locale, { validation: { localeRequired: localeRequiredMessages[locale] } }]),
+    LOCALES.map(locale => [locale, {
+      validation: {
+        localeRequired: localeRequiredMessages[locale],
+        agentRefRequired: agentRefRequiredMessages[locale],
+        memberOf: memberOfMessages[locale],
+      },
+    }]),
   ),
   inputs: {
     ...primeInputs,
@@ -50,6 +101,9 @@ const config: DefaultConfigOptions = {
     }),
     chipsInput: createInput(ChipsInput, {
       props: ['placeholder'],
+    }),
+    cronInput: createInput(CronInput, {
+      props: ['timezonePlaceholder', 'filter'],
     }),
     knowledgeDatabaseSelector: createInput(KnowledgeDatabaseSelector, {
       props: ['placeholder', 'filter'],

@@ -17,6 +17,7 @@ if TYPE_CHECKING:
         S3AnonymousFileAccessService,
     )
     from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import DocumentIntelligenceLoader
+    from swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector import DocumentLoaderSelector
     from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
@@ -79,6 +80,7 @@ __all__ = [
     "BucketMetadataFilters",
     "BucketNamespacePair",
     "DocumentIntelligenceLoader",
+    "DocumentLoaderSelector",
     "EmbeddingModelConfig",
     "FIGURES_DIRECTORY_NAME",
     "FewShotExample",
@@ -138,6 +140,7 @@ _LAZY_IMPORTS = {
     "BucketMetadataFilters": "swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters",
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
     "DocumentIntelligenceLoader": "swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader",
+    "DocumentLoaderSelector": "swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector",
     "EmbeddingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config",
     "FIGURES_DIRECTORY_NAME": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "FewShotExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example",

@@ -2,6 +2,7 @@ import logging
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     DraftedReplyRef,
@@ -20,9 +21,9 @@ from swiss_ai_hub.agent.agents.imap_agent.events.read_mail_start_event import Re
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
-from swiss_ai_hub.agent.imap.mail_store import MailStore
 from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
+from swiss_ai_hub.agent.imap.step_functions import do_fetch_and_archive, do_file_message, do_list_unread
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 logger = logging.getLogger(__name__)
@@ -68,18 +69,7 @@ class ImapAgent(Agent):
         imap_config: ImapClientConfig,
     ) -> UnreadMailListedEvent:
         """Open the inbox and return header summaries of the unread messages, oldest sent first."""
-        logger.info(
-            "[imap] list_unread_step: connecting to %s as %s, folder=%s",
-            imap_config.host,
-            imap_config.username,
-            imap_config.inbox_folder,
-        )
-        async with ImapClientFactory.create(imap_config) as client:
-            summaries = await client.list_unread()
-        logger.info(
-            "[imap] list_unread_step: found %d unread message(s): %s", len(summaries), [s.subject for s in summaries]
-        )
-        return UnreadMailListedEvent(messages=summaries)
+        return UnreadMailListedEvent(messages=await do_list_unread(imap_config))
 
     @step(
         name=AgentLocaleString(en="Fetch message", de="Nachricht abrufen"),
@@ -101,33 +91,16 @@ class ImapAgent(Agent):
             await displayer.display_thought("No unread messages in the inbox.")
             return StopEvent()
 
-        message_id = event.messages[0].message_id
-        logger.info("[imap] fetch_mail_step: fetching message uid=%s", message_id)
-        async with ImapClientFactory.create(imap_config) as client:
-            parsed = await client.fetch_message(message_id, with_raw=True)
-        logger.info(
-            "[imap] fetch_mail_step: fetched from=%s subject=%r date=%s attachments=%d body_len=%d",
-            parsed.sender,
-            parsed.subject,
-            parsed.date,
-            len(parsed.attachments),
-            len(parsed.body_text or ""),
-        )
-
-        attachments = await MailStore.store_attachments(
-            parsed.attachments,
+        # Only this chain archives, which is why it is the only caller of do_fetch_and_archive here.
+        # draft_batch_step also fetches, but archiving there would re-store what this step already did,
+        # once per message per batch run.
+        fetched = await do_fetch_and_archive(
+            imap_config,
+            [event.messages[0].message_id],
             agent_class=topic.agent_class,
             agent_id=topic.agent_id,
         )
-        # Only this chain archives the original, which is why it is the only ``with_raw=True`` fetch above.
-        # draft_batch_step also fetches messages, but archiving there would re-store what this step already
-        # did, once per batch run.
-        original_message = await MailStore.store_message(
-            parsed.raw,
-            message_id=parsed.message_id,
-            agent_class=topic.agent_class,
-            agent_id=topic.agent_id,
-        )
+        parsed = fetched[0].parsed
         return MailFetchedEvent(
             message_id=parsed.message_id,
             sender=parsed.sender,
@@ -137,8 +110,8 @@ class ImapAgent(Agent):
             rfc_message_id=parsed.rfc_message_id,
             references=parsed.references,
             reply_to=parsed.reply_to,
-            attachments=attachments,
-            original_message=original_message,
+            attachments=fetched[0].attachments,
+            original_message=fetched[0].original_message,
         )
 
     @step(
@@ -163,19 +136,14 @@ class ImapAgent(Agent):
         if not imap_config.processed_folder:
             raise ValueError("enable_move is on but processed_folder is empty")
 
-        logger.info(
-            "[imap] move_mail_step: moving uid=%s from %s to %s",
-            event.message_id,
-            imap_config.inbox_folder,
-            imap_config.processed_folder,
-        )
-        async with ImapClientFactory.create(imap_config) as client:
-            await client.move_message(event.message_id, imap_config.processed_folder)
-        logger.info("[imap] move_mail_step: moved uid=%s -> %s", event.message_id, imap_config.processed_folder)
+        folder_created = await do_file_message(imap_config, event.message_id, imap_config.processed_folder)
+        if folder_created:
+            await displayer.display_thought(f"Created the folder {imap_config.processed_folder} before filing there.")
         return MailMovedEvent(
             message_id=event.message_id,
             source_folder=imap_config.inbox_folder,
             target_folder=imap_config.processed_folder,
+            folder_created=folder_created,
         )
 
     @step(
@@ -197,6 +165,9 @@ class ImapAgent(Agent):
         imap_config: ImapClientConfig,
         draft: DraftEmailSettings,
         displayer: EventDisplayer,
+        # Optional, unlike the conversational agents: this agent is triggered programmatically and its
+        # start events default user to None, so a scheduler-driven run has no identity to attribute.
+        user: UserIdentity | None = None,
     ) -> MailBatchDraftedEvent | StopEvent:
         """Draft LLM replies for a batch of the oldest not-yet-drafted messages from ``draft.source_folder``.
 
@@ -219,7 +190,8 @@ class ImapAgent(Agent):
         )
 
         replies = [
-            (parsed, await self._compose_reply(parsed, draft, imap_config, displayer)) for parsed in parsed_messages
+            (parsed, await self._compose_reply(parsed, draft, imap_config, displayer, user))
+            for parsed in parsed_messages
         ]
         drafted = await self._persist_drafts(imap_config, draft, drafted_flag, replies)
         return MailBatchDraftedEvent(source_folder=draft.source_folder, count=len(drafted), drafted=drafted)
@@ -242,6 +214,7 @@ class ImapAgent(Agent):
         draft: DraftEmailSettings,
         imap_config: ImapClientConfig,
         displayer: EventDisplayer,
+        user: UserIdentity | None,
     ) -> ComposedReply:
         """Draft the reply body with the LLM (no IMAP connection held) and wrap it in a threaded envelope.
 
@@ -257,7 +230,7 @@ class ImapAgent(Agent):
             ),
         ]
         llm_config = draft.llm
-        async with llm_config.cost_reporting_llm(displayer) as llm:
+        async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
             llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
         body = llm_event.chat_messages[-1].content or ""
         return ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body)

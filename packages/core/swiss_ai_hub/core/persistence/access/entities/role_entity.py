@@ -89,6 +89,14 @@ class RoleEntity(Document):
 
     @classmethod
     @trace_fn
+    def tenant_role_exists(cls, name: str, tenant_id: str) -> bool:
+        """Whether a single named role exists within the tenant. Kept as a dedicated
+        method so idempotent seeding has a stable, mockable seam instead of inlining
+        ``cls.objects(...).first()``."""
+        return cls.objects(name=name, tenant_id=tenant_id).first() is not None
+
+    @classmethod
+    @trace_fn
     def create_tenant_role(
         cls,
         name: str,

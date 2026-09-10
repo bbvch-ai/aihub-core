@@ -5,6 +5,7 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import ValidationError
 from swiss_ai_hub.core.events.agent import ConversationTitleEvent, FollowUpQuestionsEvent
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
     TITLE_GENERATED_KEY,
@@ -54,7 +55,7 @@ def _llm_config(llm: MagicMock) -> MagicMock:
     config = MagicMock()
 
     @asynccontextmanager
-    async def ctx(_displayer):
+    async def ctx(_displayer, user=None):  # noqa: ARG001
         yield llm
 
     config.cost_reporting_llm = ctx
@@ -77,7 +78,7 @@ async def test_title_emitted_and_flag_set_first_time(displayer, locale_handler):
     thread_context = FakeThreadContext()
     llm = _llm_returning(TitleResult(title="Weather in Ho Chi Minh City"))
 
-    await do_generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context)
+    await do_generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context, fake_user())
 
     displayer.display_event.assert_awaited_once()
     emitted = _emitted(displayer)
@@ -91,7 +92,7 @@ async def test_title_is_immutable_when_flag_set(displayer, locale_handler):
     thread_context = FakeThreadContext({TITLE_GENERATED_KEY: True})
     llm = _llm_returning(TitleResult(title="A Different Title"))
 
-    await do_generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context)
+    await do_generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context, fake_user())
 
     displayer.display_event.assert_not_awaited()
     llm.astructured_predict.assert_not_called()
@@ -121,6 +122,7 @@ async def test_title_falls_back_to_default_when_llm_returns_no_topic(displayer, 
         displayer,
         locale_handler,
         thread_context,
+        fake_user(),
     )
 
     displayer.display_event.assert_awaited_once()
@@ -134,7 +136,7 @@ async def test_title_falls_back_to_default_when_llm_returns_no_topic(displayer, 
 async def test_follow_ups_emitted(displayer, locale_handler):
     llm = _llm_returning(FollowUpQuestionsResult(questions=["What is the forecast for tomorrow?"]))
 
-    await do_generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
+    await do_generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler, fake_user())
 
     displayer.display_event.assert_awaited_once()
     emitted = _emitted(displayer)
@@ -146,7 +148,7 @@ async def test_follow_ups_emitted(displayer, locale_handler):
 async def test_follow_ups_not_emitted_when_empty(displayer, locale_handler):
     llm = _llm_returning(FollowUpQuestionsResult(questions=[]))
 
-    await do_generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
+    await do_generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler, fake_user())
 
     displayer.display_event.assert_not_awaited()
 
@@ -163,7 +165,7 @@ async def test_metadata_uses_only_user_assistant_messages(displayer, locale_hand
     ]
     llm = _llm_returning(TitleResult(title="Weather in Ho Chi Minh City"))
 
-    await do_generate_title(messages, _llm_config(llm), displayer, locale_handler, FakeThreadContext())
+    await do_generate_title(messages, _llm_config(llm), displayer, locale_handler, FakeThreadContext(), fake_user())
 
     forwarded = llm.astructured_predict.call_args.kwargs["chat_history"]
     assert [m.role for m in forwarded] == [MessageRole.USER, MessageRole.ASSISTANT]
@@ -178,7 +180,9 @@ async def test_generate_metadata_is_best_effort_on_failure(displayer, locale_han
     thread_context = FakeThreadContext()
 
     # Must not raise.
-    await generate_conversation_metadata(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context)
+    await generate_conversation_metadata(
+        _conversation(), _llm_config(llm), displayer, locale_handler, thread_context, fake_user()
+    )
 
     displayer.display_event.assert_not_awaited()
     assert await thread_context.get(TITLE_GENERATED_KEY) is None
@@ -192,7 +196,7 @@ async def test_generate_title_wrapper_swallows_failure(displayer, locale_handler
     thread_context = FakeThreadContext()
 
     # Must not raise.
-    await generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context)
+    await generate_title(_conversation(), _llm_config(llm), displayer, locale_handler, thread_context, fake_user())
 
     displayer.display_event.assert_not_awaited()
     assert await thread_context.get(TITLE_GENERATED_KEY) is None
@@ -205,6 +209,6 @@ async def test_generate_follow_up_questions_wrapper_swallows_failure(displayer, 
     llm.astructured_predict = AsyncMock(side_effect=RuntimeError("LLM unavailable"))
 
     # Must not raise.
-    await generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler)
+    await generate_follow_up_questions(_conversation(), _llm_config(llm), displayer, locale_handler, fake_user())
 
     displayer.display_event.assert_not_awaited()

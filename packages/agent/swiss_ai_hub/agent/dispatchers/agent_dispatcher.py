@@ -2,24 +2,29 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, cast, override
+from typing import Annotated, Any, cast, get_args, override
 
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from opentelemetry import context as otel_context
+from pydantic import ValidationError
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.dispatcher import BaseDispatcher, EventsAndKwargs, TraceStore
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
+    AgentInTheLoopExceptionEvent,
     AgentInTheLoopRequestEvent,
+    AgentInTheLoopResponseEvent,
     ControlEvent,
     ExceptionEvent,
     MemoryStorageRequestedEvent,
     StartEvent,
 )
+from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.generative_ai import AgentMemory
@@ -97,6 +102,9 @@ class AgentDispatcher(BaseDispatcher):
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
 
+        # Strong references to the in-flight AITL deadline timers; see _schedule_agent_in_the_loop_timeout.
+        self._aitl_timeout_tasks: set[asyncio.Task] = set()
+
     @override
     async def handle_event(
         self,
@@ -117,27 +125,33 @@ class AgentDispatcher(BaseDispatcher):
         thread_context = ThreadContext.for_topic(self.redis, topic)
 
         # Teardown must run before config resolution: it only needs the run id, and a redelivered
-        # terminal event would otherwise fail on the config its first delivery already deleted.
+        # terminal event would otherwise fail on the config its first delivery already deleted. It is
+        # also what lets the ExceptionEvent published for an unusable config retire its run at all —
+        # that event would otherwise hit the very failure it reports.
         if event.is_stop_event or event.is_exception_event:
             logger.debug(f"Handling final event: {event.event_name}")
             await self._teardown_run(event, run_context, topic)
             return
 
-        agent_config_dict = await self._resolve_agent_config_dict(event, run_context, topic)
-        if agent_config_dict is None:
+        try:
+            agent_config_dict = await self._resolve_agent_config_dict(event, run_context, topic)
+            if agent_config_dict is None:
+                return
+            # Transform FormKit-style arrays (dict with numeric keys) to Python lists
+            run_agent_config = self.agent_config_type.model_validate(transform_formkit_arrays(agent_config_dict))
+        except Exception as unusable_config_exception:
+            await self._report_unusable_config(topic, unusable_config_exception)
             return
 
         # Propagate X-AIHub-* request headers into RunContext so downstream steps can act on behalf
         # of the user. Written on every header-carrying event, not only StartEvent, so HITL/BITL
-        # responses refresh the stored token instead of reusing a stale one. Written after config
-        # resolution so duplicate deliveries return before re-creating deleted run-context keys.
-        # These are untrusted client input — a step must validate a header before treating it as
-        # an identity claim.
+        # responses refresh the stored token instead of reusing a stale one. Written after the config
+        # is resolved and validated, so a duplicate delivery or an unusable config returns before
+        # re-creating deleted run-context keys. These are untrusted client input — a step must
+        # validate a header before treating it as an identity claim.
         if event._aihub_headers:
             await run_context.set(self._AIHUB_HEADERS_KEY, event._aihub_headers)
 
-        # Transform FormKit-style arrays (dict with numeric keys) to Python lists
-        run_agent_config = self.agent_config_type.model_validate(transform_formkit_arrays(agent_config_dict))
         instance_topic = AgentInstanceTopic.from_agent_class_topic(
             agent_class_topic=topic,
             agent_id=run_agent_config.agent_id,
@@ -182,6 +196,43 @@ class AgentDispatcher(BaseDispatcher):
             return None
 
         raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+
+    async def _report_unusable_config(
+        self,
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event whose config could not be resolved."],
+        cause: Annotated[Exception, "Why the config could not be fetched, merged or validated."],
+    ) -> None:
+        """
+        Turns a config failure into an ExceptionEvent instead of letting it escape into the subscriber.
+
+        A config is validated on every dispatched event, before any step runs, so a profile saved with a
+        value the agent's own model rejects (the API validates submissions against a JSON Schema that
+        cannot carry cross-field rules) would otherwise abort each event silently — the subscriber only
+        logs, and the message is acked already — leaving the chat hanging forever with nothing to show.
+        """
+        logger.exception(
+            f"Cannot resolve the configuration of {self.agent.__name__}/{topic.agent_id}, aborting the run: {cause}"
+        )
+        await self.publish_event(
+            ExceptionEvent(message=f"The agent configuration is invalid: {self._describe_config_failure(cause)}"),
+            AgentInstanceTopic.from_agent_class_topic(agent_class_topic=topic, agent_id=topic.agent_id),
+        )
+
+    @staticmethod
+    def _describe_config_failure(cause: Exception) -> str:
+        """
+        Reduces a validation failure to field locations and reasons.
+
+        An agent config carries credentials — `ImapClientConfig.password` is a plain string — and
+        Pydantic renders the offending value into `str(error)`. This text reaches the user's chat, so
+        the values must not travel with it; the full error stays in the log line above.
+        """
+        if not isinstance(cause, ValidationError):
+            return str(cause)
+        return "; ".join(
+            f"{'.'.join(str(location) for location in error['loc'])}: {error['msg']}"
+            for error in cause.errors(include_url=False, include_input=False)
+        )
 
     async def _start_run(
         self,
@@ -375,11 +426,18 @@ class AgentDispatcher(BaseDispatcher):
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
                 self.agent_run_tracer.trace_step_error(step_span, e)
+                # The SDK wraps a gateway failure as "Error code: N - {…}", which is what both the
+                # log line and the chat UI used to show. Unwrapping it here is what makes an agent
+                # error say "Invalid model name passed in model=…" instead.
+                cause = ModelGatewayErrorHandler.cause_of(e)
                 if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
-                    event = ExceptionEvent(message=str(e))
+                    event = ExceptionEvent(message=cause)
                     await self.publish_event(event, topic)
-                logger.exception(e)
-                logger.exception(f"Error executing step '{step_method.__name__}': {e}")
+                # One record, not two: this used to log the exception twice — once bare, once with
+                # the step name — so every agent failure arrived in the backend as two identical
+                # tracebacks, doubling both the volume and any count taken from it. The run id is
+                # on the record because a traceback that cannot be tied to a run is not actionable.
+                logger.exception(f"Step '{step_method.__name__}' failed in run {topic.execution_context_id}: {cause}")
                 return
 
             # Always finalize the span so Langfuse receives trace metadata (name, session,
@@ -471,6 +529,18 @@ class AgentDispatcher(BaseDispatcher):
             otel_context.detach(detached_context_token)
 
     @override
+    async def stop(self):
+        """Cancel any delegation deadlines still pending before the dispatcher goes away.
+
+        They are only meaningful while this process holds the response subscriptions they guard: once it is stopping,
+        a timer that later fires would publish a failure for a delegation nobody is listening to any more.
+        """
+        for timeout_task in self._aitl_timeout_tasks:
+            timeout_task.cancel()
+        self._aitl_timeout_tasks.clear()
+        await super().stop()
+
+    @override
     async def publish_event(
         self,
         event: Annotated[BaseEvent, "The event to publish."],
@@ -539,6 +609,19 @@ class AgentDispatcher(BaseDispatcher):
 
         if param.annotation == ThreadContext:
             return thread_context
+
+        if param.annotation == Redis:
+            return self.redis
+
+        # Matched through the union members too: the programmatically-started agents annotate this
+        # `UserIdentity | None`, and an equality check against the bare class silently misses them —
+        # the kwarg is then dropped and the parameter keeps its `= None` default, so the run bills the
+        # master key while looking correctly wired.
+        if UserIdentity in (param.annotation, *get_args(param.annotation)):
+            # Written by handle_event from the StartEvent's own fields, so this is only populated for
+            # start events that carry a user — programmatic starts leave it absent.
+            user_data = await run_context.get("user")
+            return UserIdentity.model_validate(user_data) if user_data else None
 
         if param.annotation == EventDisplayer:
             return EventDisplayer(
@@ -614,24 +697,47 @@ class AgentDispatcher(BaseDispatcher):
         )
 
         target_topic = aitl_request_event.other_agent_topic
+        request_event_id = aitl_request_event.event_id
+
+        # Guards the answer against the timeout below. Both run on this event loop, and nothing awaits between the
+        # read and the write, so checking-then-setting is enough to make exactly one of them win — a delegate
+        # answering as its deadline expires must resume the caller once, not twice. An `asyncio.Event` rather than a
+        # nonlocal bool because static analysis cannot see a closure's write to the latter and reads the check below
+        # as constant-False.
+        settled = asyncio.Event()
+        timeout_task: asyncio.Task | None = None
+
+        async def settle(outcome: AgentInTheLoopResponseEvent | AgentInTheLoopExceptionEvent, success: bool) -> None:
+            if settled.is_set():
+                return
+            settled.set()
+            # Cancelled rather than left to expire against the guard above: a delegation that answered in a second
+            # would otherwise keep a task asleep for the whole deadline, and a dispatcher serving a steady stream of
+            # them accumulates one per delegation for no purpose.
+            #
+            # Never the task we are running on, though. On the timeout path this runs *inside* `timeout_task`, and
+            # cancelling the current task makes asyncio raise CancelledError at the next suspension — which is the
+            # unsubscribe below, before the publish. The delegation would then be marked settled with nothing
+            # published and the guard swallowing the delegate's real answer if it ever came: the exact hang the
+            # deadline exists to prevent, turned from possible into certain. A timer that reached here is finishing
+            # anyway; only one that never fired needs cancelling.
+            if timeout_task is not None and timeout_task is not asyncio.current_task():
+                timeout_task.cancel()
+            await event_subscriber.stop()
+            await self.agent_run_tracer.end_aitl_wrapper_span(
+                aitl_wrapper_span, success=success, target_topic=target_topic
+            )
+            await self.publish_event(outcome, topic)
 
         async def convert_event_to_agent_in_the_loop_response(aitl_event: BaseEvent, aitl_topic: Topic):
             if aitl_event.is_stop_event:
-                aitl_response = response_event_class(stop_event=aitl_event)
+                aitl_response = response_event_class(stop_event=aitl_event, request_event_id=request_event_id)
                 logger.debug(f"Received Agent in the Loop StopEvent: {aitl_response}, stopping subscriber.")
-                await event_subscriber.stop()
-                await self.agent_run_tracer.end_aitl_wrapper_span(
-                    aitl_wrapper_span, success=True, target_topic=target_topic
-                )
-                await self.publish_event(aitl_response, topic)
+                await settle(aitl_response, success=True)
             if aitl_event.is_exception_event:
-                aitl_exception = exception_event_class(exception_event=aitl_event)
+                aitl_exception = exception_event_class(exception_event=aitl_event, request_event_id=request_event_id)
                 logger.debug(f"Received Agent in the Loop ExceptionEvent: {aitl_exception}, stopping subscriber.")
-                await event_subscriber.stop()
-                await self.agent_run_tracer.end_aitl_wrapper_span(
-                    aitl_wrapper_span, success=False, target_topic=target_topic
-                )
-                await self.publish_event(aitl_exception, topic)
+                await settle(aitl_exception, success=False)
 
         logger.debug(f"Temporarily subscribing to {aitl_request_event.other_agent_topic}")
         event_subscriber = AgentNCSubscriber.for_thread_control_events(
@@ -645,3 +751,61 @@ class AgentDispatcher(BaseDispatcher):
         subject = aitl_request_event.other_agent_topic.to_subject()
         logger.debug(f"Publishing to Agent in the Loop to subject {subject}")
         await self.js_publisher.publish_event(start_event, subject)
+
+        timeout_task = self._schedule_agent_in_the_loop_timeout(
+            aitl_request_event, settle, exception_event_class, target_topic
+        )
+        # A delegate fast enough to answer between the publish above and this line settled while `timeout_task` was
+        # still None, so `settle` had nothing to cancel. Cancelling here is what stops that timer sleeping out a
+        # deadline for a delegation that is already done.
+        if settled.is_set() and timeout_task is not None:
+            timeout_task.cancel()
+
+    def _schedule_agent_in_the_loop_timeout(
+        self,
+        aitl_request_event: Annotated[AgentInTheLoopRequestEvent, "The delegation whose deadline is being armed."],
+        settle: Annotated[Callable[..., Awaitable[None]], "Publishes the outcome, once, whoever gets there first."],
+        exception_event_class: Annotated[type[AgentInTheLoopExceptionEvent], "The caller's AITL exception type."],
+        target_topic: Annotated[AgentInstanceTopic, "The delegated run, for the log line and the span."],
+    ) -> asyncio.Task | None:
+        """Fail a delegation the target never answers, rather than leaving the caller's run waiting forever.
+
+        Without this a delegate that never starts — an agent that is offline, a mistyped `agent_id`, a profile that
+        does not exist — publishes no stop event and no exception, so the caller's run sits in the event store until
+        someone notices. A fan-out makes that worse: one silent delegate wedges the whole batch.
+
+        Opt-in per request, because for a chat-facing delegation waiting is the right behaviour and a deadline would
+        only turn a slow answer into a wrong one.
+
+        This covers a delegate that does not answer. It does NOT cover a caller that restarts: the timer, like the
+        NATS Core subscription it guards, lives in this process and dies with it, and the answer then has nobody
+        listening for it. Making that survivable means moving AITL response routing onto JetStream.
+        """
+        if aitl_request_event.timeout_seconds is None:
+            return None
+
+        async def fail_on_timeout() -> None:
+            await asyncio.sleep(aitl_request_event.timeout_seconds)
+            logger.warning(
+                "Agent in the Loop delegation to %s timed out after %ss — failing it so the caller can continue",
+                target_topic.to_subject(),
+                aitl_request_event.timeout_seconds,
+            )
+            await settle(
+                exception_event_class(
+                    exception_event=ExceptionEvent(
+                        message=f"The delegated agent {target_topic.agent_class}/{target_topic.agent_id} did not "
+                        f"answer within {aitl_request_event.timeout_seconds}s."
+                    ),
+                    request_event_id=aitl_request_event.event_id,
+                ),
+                success=False,
+            )
+
+        # Held on the dispatcher because `asyncio` only keeps a weak reference to a running task: a local would be
+        # collectable the moment this method returns, and the deadline would fire or not depending on the GC. The
+        # done-callback is what keeps the set from being a leak of its own once a timer is cancelled or fires.
+        timeout_task = asyncio.create_task(fail_on_timeout())
+        self._aitl_timeout_tasks.add(timeout_task)
+        timeout_task.add_done_callback(self._aitl_timeout_tasks.discard)
+        return timeout_task

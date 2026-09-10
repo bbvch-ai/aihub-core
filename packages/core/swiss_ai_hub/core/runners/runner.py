@@ -9,6 +9,7 @@ from fastapi.routing import APIRoute
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
+from swiss_ai_hub.core.exceptions.model_gateway_error_handler import ModelGatewayErrorHandler
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.routes.controller import Controller
 
@@ -35,14 +36,12 @@ class Runner(abc.ABC):
       `.mount()` call.
     - **Abstract Lifetime Management:** Each implementation must provide a `lifetime_manager`
       for handling async startup/shutdown.
-    - **Optional Frontend Integration:** Serve a frontend directly by calling `.mount_frontend(directory)`.
 
     ### Usage
     ```python
     # Typically you'd use a concrete implementation like ApiRunner or BotRunner
     runner = ConcreteRunner(api_path="/api/v1", title="My API")
     runner.mount(MyController())  # Mounting a controller
-    runner.mount_frontend("path/to/frontend/dist")  # Serve frontend if desired
     app = runner.create_app()  # This is the main FastAPI instance to run
     ```
 
@@ -95,6 +94,10 @@ class Runner(abc.ABC):
             debug=AIHubSettings().API_DEBUG_MODE,
             redirect_slashes=True,
         )
+
+        # Every runner mounts controllers that reach the model gateway through the OpenAI SDK, so
+        # the translation belongs here rather than in one service's runner.
+        ModelGatewayErrorHandler.register(app)
 
         return app
 
