@@ -114,9 +114,9 @@ markdown but is not yet retrievable, so it stays pending until then.
 
 Materialization is driven by eager automation, daily schedules, and a NATS sensor that fires when documents are uploaded
 through the API — so ingestion keeps up with changes without manual runs. Key
-`document_ingestion_pipeline_definitions()` settings: the per-database defaults `settings` carries (the text,
-embedding and vision models, the three enrichment switches and the observation schedule), plus
-`document_parser_loader_type` (MinerU or Document Intelligence) and `max_partitions`.
+`document_ingestion_pipeline_definitions()` settings: the per-database defaults `settings` carries (the text, embedding
+and vision models, the three enrichment switches and the observation schedule), plus `document_parser_loader_type`
+(MinerU or Document Intelligence) and `max_partitions`.
 
 ______________________________________________________________________
 
@@ -287,6 +287,11 @@ defs = document_ingestion_pipeline_definitions(
 `crawl_depth` now appears in the create dialog, is validated by the API and is stored on the database. Your ops read it
 per run with `ingestor_config_for_bucket(bucket, AcmeConfig).crawl_depth`, the same call that resolves the models and
 enrichment switches, so there is one place to look for every per-database setting.
+
+The `as_form()` line is what announces the knob, not the field declaration. A field left at a plain default is absent
+from both the form and the schema, and a configuration carrying it is refused with a 400 naming it. For key/value
+settings, declare a `Repeater` over a two-field `Form` rather than a raw `dict` field — a `dict` has no form element, so
+it can never be announced.
 
 The ingestor id must not collide with an inert or frozen platform routing token (`unassigned`, `default_rag`,
 `shared_rag`) or with the `datalake` subject token. The factory rejects those when the definitions are built.

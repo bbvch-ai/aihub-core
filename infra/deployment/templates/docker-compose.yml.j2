@@ -207,12 +207,15 @@ services:
       - "8080"
       - "18080"
     {%- endif %}
+    {#- -max caps volume slots, not disk: the master runs without preallocation, so an empty volume
+        costs nothing. Each collection (one per knowledge database, plus one per infrastructure
+        service) claims a batch of 7 slots on its first write, so 100 ran out at ~8 databases. #}
     command: >
       volume
       -mserver="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
       -port=8080
-      -max=100
+      -max=500
       -dataCenter=dc1
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
@@ -2892,6 +2895,10 @@ services:
           default (startup tenant on first boot, and the sysadmin plane's create-tenant call, which proxies
           here because only this service is wired to the model gateway). Existing tenants are untouched. #}
       AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS: ${AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS}
+      {#- Agent classes a newly created tenant's default ceiling grants. Same read-once lifecycle as the
+          exclusions above, but an allow list: no agent has answered discovery yet at first boot, so there
+          would be nothing for an exclusion to subtract from. #}
+      AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES: ${AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES}
 
       # User signup roles — read by UserSignupSettings.
       AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES: ${AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES}

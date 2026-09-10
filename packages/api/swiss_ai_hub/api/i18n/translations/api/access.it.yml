@@ -50,8 +50,8 @@ capabilities:
         label: Vedi istanze
         description: Visualizza le istanze di questo tipo di assistente.
       create:
-        label: Crea istanze
-        description: Crea nuovi assistenti di questo tipo.
+        label: Accesso completo a questo tipo
+        description: Crea, configura e utilizza assistenti di questo tipo.
       use:
         label: Usa
         description: Chatta con e usa questo assistente.

@@ -12,6 +12,8 @@ import pytest
 from fastapi import HTTPException
 from pydantic import BaseModel
 from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.form import FormkitElement, Group, InputText, Repeater
+from swiss_ai_hub.core.form.base.html_element import HtmlElement
 from swiss_ai_hub.core.processes.process_config import ProcessConfig
 from swiss_ai_hub.jambo import SchemaConverter
 
@@ -120,3 +122,68 @@ def test_config_without_identity_fields_is_left_alone():
         some_setting: str
 
     InstanceConfigHelper.validate_identity_locale_fields(Unrelated(some_setting="x"))
+
+
+class TestUndeclaredFields:
+    """The walk that holds a submission to the elements its owner announced (#1850).
+
+    Exercised directly rather than through a service, because the shapes that matter are the ones a
+    well-behaved frontend never produces: a group that arrived as the wrong type, a repeater whose
+    entries are not objects, a decorative element carrying no name at all.
+    """
+
+    @staticmethod
+    def _elements() -> list[FormkitElement]:
+        return [
+            InputText(name="title", label="Title"),
+            HtmlElement(el="h2", children="Section"),
+            Group(name="enrichment", children=[InputText(name="model", label="Model")]),
+            Repeater(name="sources", children=[InputText(name="model", label="Model")]),
+        ]
+
+    @staticmethod
+    def _reject(config: dict) -> str:
+        with pytest.raises(HTTPException) as exc_info:
+            InstanceConfigHelper.reject_undeclared_fields(TestUndeclaredFields._elements(), config)
+        assert exc_info.value.status_code == 400
+        return exc_info.value.detail
+
+    def test_a_configuration_of_only_announced_fields_is_accepted(self):
+        InstanceConfigHelper.reject_undeclared_fields(
+            self._elements(),
+            {"title": "t", "enrichment": {"model": "m"}, "sources": [{"model": "m"}]},
+        )
+
+    def test_a_disabled_nullable_group_is_not_walked(self):
+        """A cleared sub-form submits `null`; there is nothing to hold to the announced children."""
+        InstanceConfigHelper.reject_undeclared_fields(self._elements(), {"enrichment": None, "sources": []})
+
+    def test_a_group_of_the_wrong_type_is_left_to_the_model_validator(self):
+        """`validate_config_for_create` already names it; reporting it twice would say two different things."""
+        InstanceConfigHelper.reject_undeclared_fields(self._elements(), {"enrichment": "not-an-object"})
+
+    def test_repeater_entries_that_are_not_objects_are_left_to_the_model_validator(self):
+        InstanceConfigHelper.reject_undeclared_fields(self._elements(), {"sources": ["not-an-object", 3]})
+
+    def test_an_element_without_a_name_declares_nothing_and_matches_nothing(self):
+        """A decorative element carries no name, so it must neither declare a key nor crash the walk."""
+        assert "bogus" in self._reject({"bogus": 1})
+
+    def test_a_formkit_bookkeeping_key_is_ignored_at_every_depth(self):
+        """`normalize_form_configuration` only strips these at the top level."""
+        InstanceConfigHelper.reject_undeclared_fields(
+            self._elements(),
+            {"_form_name": "X", "enrichment": {"model": "m", "__enabled": True}},
+        )
+
+    def test_every_offending_path_is_reported_in_one_exception(self):
+        detail = self._reject(
+            {
+                "bogus": 1,
+                "enrichment": {"model": "m", "deep": 2},
+                "sources": [{"model": "m"}, {"model": "m", "deeper": 3}],
+            }
+        )
+        assert "bogus" in detail
+        assert "enrichment.deep" in detail
+        assert "sources.1.deeper" in detail

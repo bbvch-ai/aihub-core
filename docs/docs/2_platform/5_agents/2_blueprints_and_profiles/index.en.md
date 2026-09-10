@@ -43,7 +43,12 @@ Each profile is a separate agent that users can interact with.
 
 ### Viewing Available Blueprints
 
-Navigate to **Admin > Agents > Blueprints** to see all available agent templates.
+Navigate to **Admin > Agents > Blueprints** to see the agent templates available to your tenant.
+
+The list is not the full set the platform runs. A tenant is granted a standard blueprint set when it is created, and
+blueprints outside it are absent from this list rather than shown and refused. A sysadmin grants a further blueprint per
+tenant in the tenant editor — no redeploy, and it appears here immediately. See
+[Access control](../../16_multi_tenancy/4_access_control/) for how the ceiling is derived.
 
 Each blueprint displays:
 
@@ -64,13 +69,18 @@ profiles will become active when the agent service starts.
 
 1. Navigate to the blueprint you want to use
 2. Click **Create Profile**
-3. Fill in the required fields:
+3. Pick a starting point. Blueprints ship with profile templates — ready-made configurations for common use cases.
+   Selecting one prefills every field, leaving you to review and adjust. Skip this step to start from a blank form.
+4. Fill in the required fields:
    - **Agent ID**: A unique identifier (lowercase letters, numbers, underscores, hyphens)
    - **Name**: Display name in the selected languages
    - **Description**: What this specific profile does
    - **Icon**: Visual identifier
-4. Configure the agent-specific settings (model, parameters, etc.)
-5. Click **Save**
+5. Configure the agent-specific settings (model, parameters, etc.)
+6. Click **Save**
+
+Templates are curated per blueprint, not per tenant: a blueprint you can see offers every template it ships. Browse them
+all under the **Templates** tab.
 
 The profile becomes available immediately. Users with appropriate permissions can start interacting with it.
 

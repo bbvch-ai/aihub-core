@@ -51,8 +51,8 @@ capabilities:
         label: Voir les instances
         description: Voir les instances de ce type d'assistant.
       create:
-        label: Créer des instances
-        description: Créer de nouveaux assistants de ce type.
+        label: Accès complet à ce type
+        description: Créer, configurer et utiliser des assistants de ce type.
       use:
         label: Utiliser
         description: Discuter avec et utiliser cet assistant.

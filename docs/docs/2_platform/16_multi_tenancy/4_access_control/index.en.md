@@ -157,11 +157,38 @@ AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
 AIHUB_STARTUP_TENANT_ACCESS_RULES=""
 AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS="text-generation/Apertus-70B-Instruct-2509"
 
+# Agent blueprints a new tenant's ceiling grants. Every other blueprint stays hidden from that
+# tenant until a sysadmin grants it.
+AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES="LLMWrappingAgent,FewShotAgent,RAGAgent"
+
 # Automatic user signup
 AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
 AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
 FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
+
+### What a new tenant starts with
+
+A tenant created with no explicit rules does not get a wildcard. Its ceiling is derived, and the two curated families
+behave differently:
+
+**Models** are read from the live gateway roster. A capability with nothing excluded collapses to a wildcard
+(`aihub.user.model.embedding.>`), so models added to it later reach new tenants unattended. A capability holding an
+exclusion enumerates its survivors instead.
+
+**Agents** are named from a configured list — the standard blueprint set. Every other blueprint stays hidden from that
+tenant: it is absent from Admin → Agents rather than shown and refused, because the blueprint list is filtered by the
+same per-class rules. Two rules are granted per class, `aihub.admin.agent.<Class>` and `aihub.admin.agent.<Class>.>`,
+since creating an instance is guarded on the bare root (see [Validation rules](#validation-rules)).
+
+Agents use an allow list where models use exclusions because the two rosters differ in kind. Model names vary between
+CPU and GPU deployments, so a fixed list would leave a GPU tenant with no chat model. Agent class names are fixed at
+build time, and the discovered-class roster is still empty when the startup tenant is seeded at first boot — an
+exclusion would have nothing to subtract from and would grant that tenant no agents at all.
+
+Both settings are seeds, read once while the ceiling is computed. Afterwards the tenant's stored rules are the only
+authority, so granting a further blueprint or model is an ordinary access-rule edit in the tenant editor — no redeploy,
+and the setting has no say in it. Existing tenants are untouched and keep whatever ceiling they already have.
 
 ## Sysadmin access
 

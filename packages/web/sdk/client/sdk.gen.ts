@@ -1305,7 +1305,7 @@ export const getOpenChatHitl = <
 /**
  * Get Agent Classes
  *
- * Retrieve all available agent classes.
+ * Retrieve the agent classes this caller may reach.
  * Use `?online=true` for online classes only, `?online=false` for offline only.
  */
 export const getAgentClasses = <

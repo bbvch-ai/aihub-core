@@ -36,6 +36,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `AIHUB_STARTUP_TENANT_DESCRIPTION` | `StartupTenantSettings.DESCRIPTION` | `api` | Description of the startup tenant. |
 | `AIHUB_STARTUP_TENANT_ID` | `StartupTenantSettings.ID` | `api`, `keycloak` | Unique identifier for the startup tenant. Also used as the Keycloak group name. |
 | `AIHUB_STARTUP_TENANT_NAME` | `StartupTenantSettings.NAME` | `api` | Display name of the startup tenant. |
+| `AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES` | `TenantDefaultAccessSettings.AGENT_CLASSES` | `api` | Comma-separated agent classes a new tenant's default ceiling grants, each named as the blueprint reports itself (e.g. ``RAGAgent``). Every other blueprint stays hidden from that tenant until a sysadmin grants it. An allow list rather than exclusions because the discovered-class roster is still empty when the startup tenant is seeded. |
 | `AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS` | `TenantDefaultAccessSettings.EXCLUDED_MODELS` | `api` | Comma-separated models withheld from a new tenant's default ceiling, each as ``capability/name`` exactly as LiteLLM reports it (e.g. ``text-generation/Apertus-70B-Instruct-2509``). Matched against the live roster verbatim, so a renamed or removed model silently matches nothing and the capability falls back to a plain wildcard. |
 | `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES` | `UserSignupSettings.FIRST_ADMIN_USER_ROLES` | `api` | Comma-separated list of roles assigned to the very first user. This user is typically the initial platform administrator. |
 | `AIHUB_USER_SIGNUP_REGULAR_USER_ROLES` | `UserSignupSettings.REGULAR_USER_ROLES` | `api` | Comma-separated list of roles assigned to regular users (not the first user). These users typically have standard platform access. |
@@ -262,6 +263,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `LITE_LLM_PROXY_USER_RPM_LIMIT` | `LiteLLMProxySettings.USER_RPM_LIMIT` | `None` |  | Specify rpm limit for a given user (Requests per minute) |
 | `LITE_LLM_PROXY_USER_SOFT_BUDGET` | `LiteLLMProxySettings.USER_SOFT_BUDGET` | `None` |  | Get alerts when user crosses given budget, doesn't block requests. |
 | `LITE_LLM_PROXY_USER_TPM_LIMIT` | `LiteLLMProxySettings.USER_TPM_LIMIT` | `None` |  | Specify tpm limit for a given user (Tokens per minute) |
+| `MEM0_SEARCH_QUERY_EMBEDDING_WINDOW` | `Mem0Settings.SEARCH_QUERY_EMBEDDING_WINDOW` | `None` |  | Override for the embedding model's input window, in the model's own tokens. Set it only when LiteLLM reports no or an incorrect max_input_tokens; None resolves it at first use. Queries are truncated to half this value: they can only be counted with tiktoken, which undercounts the embedder's tokenizer by up to 2x. |
 | `MEM0_SUPPORT_VISION` | `Mem0Settings.SUPPORT_VISION` | `True` |  | Whether to support vision |
 | `MEM0_VISION_DETAIL` | `Mem0Settings.VISION_DETAIL` | `'auto'` |  | Vision details |
 | `MEMORY_DEFAULT_TENANT_ID` | `MemorySettings.DEFAULT_TENANT_ID` | `'AIHub'` |  | Default tenant ID for memory scoping |

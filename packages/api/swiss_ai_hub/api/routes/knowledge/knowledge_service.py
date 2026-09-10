@@ -444,7 +444,7 @@ class KnowledgeService:
             raise HTTPException(status_code=400, detail=str(invalid_name)) from None
 
         ingestor = IngestorEntity.find(request.ingestor)
-        if ingestor is None or ingestor.config_specs is None:
+        if ingestor is None or ingestor.config_specs is None or not ingestor.form:
             raise HTTPException(
                 status_code=400,
                 detail=(
@@ -468,18 +468,28 @@ class KnowledgeService:
                 ),
             )
 
+        form_elements = ingestor.form_elements
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
         config_model = ModelCreationService.create_config_model(ingestor.config_specs.to_specs())
+        # Before the model validation, so a misspelled key is named as itself. The generated model drops an
+        # unrecognised key and then reports the correctly-spelled one as missing, which names the consequence
+        # rather than the mistake and says nothing about the value the user actually typed.
+        InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=ingestor.form, config=config, user=user, t=t
         )
-        await KnowledgeService._validate_model_selections(ingestor.form_elements, config, user)
+        await KnowledgeService._validate_model_selections(form_elements, config, user)
 
         metadata = InstanceConfigHelper.extract_config_metadata(config_instance, fallback_icon="")
         locale = InstanceConfigHelper.build_locale_entities(metadata.name, metadata.description, database, "")
+        # Dumped from the validated instance rather than copied from the submission, so a knob is stored in the
+        # type its pipeline declared. `exclude_unset` keeps that to the keys the user actually sent: an omitted
+        # optional must stay absent, or it would override the deployment default the pipeline falls back to.
         configuration = {
-            key: value for key, value in config.items() if key not in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
+            key: value
+            for key, value in config_instance.model_dump(mode="json", exclude_unset=True).items()
+            if key not in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
         }
 
         # Persist the entity before provisioning storage: the unique bucket_name index serialises

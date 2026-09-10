@@ -73,7 +73,7 @@ class AgentMemory:
             enable_graph=False,
             llm_name=self._llm_model_name,
         )
-        return Mem0Service(config, t=self._t)
+        return Mem0Service(config, t=self._t, max_search_query_tokens=self._settings.SEARCH_QUERY_EMBEDDING_WINDOW)
 
     @property
     def agent_id(self):
