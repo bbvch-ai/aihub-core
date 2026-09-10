@@ -24,7 +24,8 @@ MILVUS_AUTH="${MILVUS_TOKEN:-root:${MILVUS_ROOT_PASSWORD:-Milvus}}"
 # env var crashes it. pydantic-settings also reads .env from cwd by default.
 # Run from /tmp to avoid picking up the project's .env, and pass config via the
 # env vars that pydantic-settings expects (MILVUS_URI, MILVUS_TOKEN).
+# It is also MCP-SDK-v1 code: mcp 2.x renamed FastMCP and breaks the import, so pin mcp<2.
 cd /tmp
 export MILVUS_URI="$MILVUS_HOST"
 export MILVUS_TOKEN="$MILVUS_AUTH"
-exec pipx run mcp-server-milvus
+exec pipx run --pip-args='mcp<2' mcp-server-milvus
