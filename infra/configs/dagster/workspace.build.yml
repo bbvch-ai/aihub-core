@@ -10,3 +10,7 @@ load_from:
       host: document_ingestion_pipeline
       port: 4000
       location_name: document_ingestion_pipeline
+  - grpc_server:
+      host: rclone_pipeline
+      port: 4000
+      location_name: rclone_pipeline

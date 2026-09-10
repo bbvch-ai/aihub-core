@@ -12,13 +12,13 @@ def _bucket(
     db_name: str,
     deleting: bool = False,
     ingestor: str = IngestorType.DOCUMENT_INGESTION.value,
-    auto_sync: bool = False,
+    source: str | None = None,
 ) -> MagicMock:
     return MagicMock(
         id=bucket_id,
         db_name=db_name,
         bucket_name=db_name,
-        auto_sync=auto_sync,
+        source=source,
         ingestor=ingestor,
         deleting=deleting,
         name=None,
@@ -46,11 +46,13 @@ class TestGetDatabasesExcludesDeletingRows:
     def test_a_bucket_flagged_deleting_is_hidden(self):
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.SourcePipelineEntity") as source_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
             patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
             patch.object(KnowledgeService, "_ensure_db_exists"),
             patch(f"{_SERVICE_MODULE}.NamespaceDTO"),
         ):
+            source_cls.find.return_value = None
             bucket_cls.get_all_buckets.return_value = [
                 _bucket("b1", "alive"),
                 _bucket("b2", "doomed", deleting=True),
@@ -62,20 +64,22 @@ class TestGetDatabasesExcludesDeletingRows:
 
         assert [db.name for db in databases] == ["alive"]
 
-    def test_deletable_flag_is_false_for_legacy_and_auto_sync_databases(self):
+    def test_deletable_flag_is_false_only_for_legacy_databases(self):
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.SourcePipelineEntity") as source_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
             patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
             patch(f"{_SERVICE_MODULE}.AIHubSettings", _settings(show_legacy=True)),
             patch.object(KnowledgeService, "_ensure_db_exists"),
             patch(f"{_SERVICE_MODULE}.NamespaceDTO"),
         ):
+            source_cls.find.return_value = None
             bucket_cls.get_all_buckets.return_value = [
                 _bucket("b1", "selfservice", ingestor=IngestorType.DOCUMENT_INGESTION.value),
                 _bucket("b2", "defaultknowledge", ingestor=IngestorType.DEFAULT_RAG.value),
                 _bucket("b3", "sharedknowledge", ingestor=IngestorType.SHARED_RAG.value),
-                _bucket("b4", "synced", auto_sync=True),
+                _bucket("b4", "synced", source="rclone"),
             ]
             namespace_cls.get_namespaces_by_bucket.return_value = []
             ref_doc_cls.count_by_namespace.return_value = 0
@@ -87,7 +91,7 @@ class TestGetDatabasesExcludesDeletingRows:
             "selfservice": True,
             "defaultknowledge": False,
             "sharedknowledge": False,
-            "synced": False,
+            "synced": True,
         }
 
 
@@ -96,12 +100,14 @@ class TestGetDatabasesHidesLegacyDatabases:
     def _run(show_legacy: bool) -> list[str]:
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.SourcePipelineEntity") as source_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
             patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
             patch(f"{_SERVICE_MODULE}.AIHubSettings", _settings(show_legacy=show_legacy)),
             patch.object(KnowledgeService, "_ensure_db_exists"),
             patch(f"{_SERVICE_MODULE}.NamespaceDTO"),
         ):
+            source_cls.find.return_value = None
             bucket_cls.get_all_buckets.return_value = [
                 _bucket("b1", "selfservice", ingestor=IngestorType.DOCUMENT_INGESTION.value),
                 _bucket("b2", "defaultknowledge", ingestor=IngestorType.DEFAULT_RAG.value),
@@ -121,12 +127,14 @@ class TestGetDatabasesHidesLegacyDatabases:
     def test_a_namespace_flagged_deleting_is_hidden_while_its_bucket_survives(self):
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.SourcePipelineEntity") as source_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
             patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
             patch.object(KnowledgeService, "_ensure_db_exists"),
             patch(f"{_SERVICE_MODULE}.NamespaceDTO") as namespace_dto_cls,
             patch(f"{_SERVICE_MODULE}.DatabaseDTO") as database_dto_cls,
         ):
+            source_cls.find.return_value = None
             bucket_cls.get_all_buckets.return_value = [_bucket("b1", "alive")]
             namespace_cls.get_namespaces_by_bucket.return_value = [
                 _namespace("keep"),

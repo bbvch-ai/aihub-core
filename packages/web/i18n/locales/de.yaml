@@ -513,9 +513,9 @@ knowledge:
   add_database:
     title: Wissensdatenbank hinzufügen
     description: Eine neue Self-Service-Wissensdatenbank erstellen
-  auto_sync:
-    title: Automatisch synchronisiert
-    description: Sammlungen werden automatisch verwaltet
+  source:
+    description: 'Synchronisiert aus {name}'
+    edit: 'Quelle bearbeiten'
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
   pipeline: 'Pipeline: {name}'
@@ -555,6 +555,12 @@ knowledge:
         eine Pipeline läuft.
       steps:
         basic_info: Grundinformationen
+        source: 'Quelle'
+    edit_source:
+      title: 'Quelle von {name}'
+      success: 'Quelle aktualisiert'
+      error: 'Quelle konnte nicht aktualisiert werden'
+      switch_to_manual: 'Auf manuellen Upload umstellen'
     edit:
       title: Sammlung bearbeiten
     database:
@@ -567,6 +573,13 @@ knowledge:
         3 bis 63 Zeichen. Der Name kann später nicht geändert werden.
       validation_error: Der Datenbankname muss mit einem Kleinbuchstaben beginnen
         und darf nur Kleinbuchstaben und Ziffern enthalten, zwischen 3 und 63 Zeichen
+    source:
+      label: 'Quelle'
+      placeholder: 'Wählen Sie, woher die Dokumente kommen'
+      help: 'Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron; jeder Ordner der obersten Ebene wird zu einem Namespace.'
+      manual_upload:
+        label: 'Manueller Upload'
+        description: 'Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.'
     ingestor:
       label: Ingestion-Pipeline
       placeholder: Ingestion-Pipeline auswählen

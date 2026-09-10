@@ -150,6 +150,11 @@ image_tags:
     local: document_ingestion_pipeline:latest
     nightly: document_ingestion_pipeline:nightly
     latest: document_ingestion_pipeline:latest
+  rclone_pipeline:
+    build: localbuild
+    local: rclone_pipeline:latest
+    nightly: rclone_pipeline:nightly
+    latest: rclone_pipeline:latest
   bot:
     build: localbuild
     local: bot:latest

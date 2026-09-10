@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.io.azure_data_lake_io_manager import AzureDataLakeIOManager
     from swiss_ai_hub.pipeline.io.doc_store_io_manager import DocStoreIOManager
     from swiss_ai_hub.pipeline.io.local_file_system_io_manager import LocalFileSystemIOManager
-    from swiss_ai_hub.pipeline.io.rclone_io_manager import RcloneIOManager
+    from swiss_ai_hub.pipeline.io.routed_rclone_io_manager import RoutedRcloneIOManager
     from swiss_ai_hub.pipeline.io.s3_data_lake_io_manager import S3DataLakeIOManager
     from swiss_ai_hub.pipeline.io.share_point_io_manager import SharePointIoManager
     from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
@@ -15,7 +15,7 @@ __all__ = [
     "AzureDataLakeIOManager",
     "DocStoreIOManager",
     "LocalFileSystemIOManager",
-    "RcloneIOManager",
+    "RoutedRcloneIOManager",
     "S3DataLakeIOManager",
     "SharePointIoManager",
     "VectorStoreIOManager",
@@ -25,7 +25,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "AzureDataLakeIOManager": "swiss_ai_hub.pipeline.io.azure_data_lake_io_manager",
     "DocStoreIOManager": "swiss_ai_hub.pipeline.io.doc_store_io_manager",
     "LocalFileSystemIOManager": "swiss_ai_hub.pipeline.io.local_file_system_io_manager",
-    "RcloneIOManager": "swiss_ai_hub.pipeline.io.rclone_io_manager",
+    "RoutedRcloneIOManager": "swiss_ai_hub.pipeline.io.routed_rclone_io_manager",
     "S3DataLakeIOManager": "swiss_ai_hub.pipeline.io.s3_data_lake_io_manager",
     "SharePointIoManager": "swiss_ai_hub.pipeline.io.share_point_io_manager",
     "VectorStoreIOManager": "swiss_ai_hub.pipeline.io.vector_store_io_manager",

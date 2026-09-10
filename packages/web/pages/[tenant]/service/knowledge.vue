@@ -13,9 +13,9 @@
           <div class="flex items-center gap-2 pb-2 pl-2">
             <span class="text-sm font-medium">{{ database.display_name || capitalCase(database.name) }}</span>
             <i
-              v-if="database.auto_sync"
-              class="pi pi-lock text-surface-400 dark:text-surface-500"
-              :title="t('knowledge.auto_sync.description')"
+              v-if="database.source"
+              class="pi pi-sync text-surface-400 dark:text-surface-500"
+              :title="t('knowledge.source.description', { name: capitalCase(database.source) })"
             />
             <i
               v-else
@@ -25,6 +25,16 @@
             <span class="text-xs text-surface-500 dark:text-surface-400">
               {{ t('knowledge.pipeline', { name: capitalCase(database.ingestor) }) }}
             </span>
+            <Button
+              v-if="database.deletable"
+              v-tooltip.top="t('knowledge.source.edit')"
+              icon="pi pi-cloud-download"
+              rounded
+              text
+              size="small"
+              severity="secondary"
+              @click="openSourceModal(database)"
+            />
             <Button
               v-if="database.deletable"
               v-tooltip.top="t('knowledge.delete_database')"
@@ -41,14 +51,14 @@
               v-for="namespace in database.namespaces"
               :key="namespace.name"
               :namespace="namespace"
-              :auto-sync="database.auto_sync"
+              :sourced="!!database.source"
               @click="toNamespace(database.name, namespace)"
               @upload="openUploadModal(database, namespace)"
               @edit="openEditNamespaceModal(namespace)"
               @delete="openDeleteNamespaceModal(database, namespace)"
             />
             <KnowledgeNamespaceEmptyCard
-              v-if="!database.auto_sync"
+              v-if="!database.source"
               @add="openNewNamespaceModal(database.name)"
             />
           </div>
@@ -82,6 +92,11 @@
     <KnowledgeDatabaseCreateModal
       v-model="newDatabaseModalVisible"
       @success="handleDatabaseCreationSuccess"
+    />
+
+    <KnowledgeDatabaseSourceModal
+      v-model="sourceModalVisible"
+      :database="selectedDatabaseForSource"
     />
 
     <KnowledgeDeleteConfirmModal
@@ -124,6 +139,14 @@ const editNamespaceModalVisible = ref(false)
 const editingNamespace = ref<NamespaceDto | null>(null)
 
 const newDatabaseModalVisible = ref(false)
+
+const sourceModalVisible = ref(false)
+const selectedDatabaseForSource = ref<DatabaseDto | null>(null)
+
+const openSourceModal = (database: DatabaseDto) => {
+  selectedDatabaseForSource.value = database
+  sourceModalVisible.value = true
+}
 
 const toNamespace = (database_name: string, namespace: NamespaceDto) => {
   router.push(tenantPath(`/service/knowledge/${database_name}/${namespace.name}`))

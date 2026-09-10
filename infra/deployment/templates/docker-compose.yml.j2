@@ -1296,13 +1296,14 @@ services:
       - "--rc-pass=${RCLONE_RC_PASS}"
       {%- endif %}
       - "--log-level=INFO"
-      - "--config=/dev/null"  # Disable config file, use environment variables only
+      - "--config=/dev/null"  # No config file: the rclone pipeline re-creates every remote from the database per run
     {%- if stage == 'dev' %}
     ports:
       - "5572:5572"
     {%- endif %}
     networks:
-      - default
+      - backend  # reached by the rclone pipeline
+      - egress  # reaches the cloud providers it syncs from
     healthcheck:
       {%- if stage == 'dev' %}
       test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "core/version"]
@@ -4298,6 +4299,87 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Pipeline run-failure notifications (Apprise)
+      NOTIFICATION_URLS: ${NOTIFICATION_URLS}
+      NOTIFICATION_DAGSTER_UI_BASE_URL: "{{ NOTIFICATION_DAGSTER_UI_BASE_URL }}"
+      NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
+      NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
+  {%- endif %}
+
+  {%- if image_tags.rclone_pipeline[stage] %}
+  # ===================================================================
+  # Rclone Source Pipeline (Stage 1: cloud sources -> data lake, configured per knowledge database)
+  # ===================================================================
+
+  {{ service_license('rclone_pipeline') }}
+  rclone_pipeline:
+    container_name: rclone-pipeline
+    restart: always
+    {%- if image_tags.rclone_pipeline[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/pipeline/app/document_ingestion_pipeline/Dockerfile
+      args:
+        PIPELINE: rclone_pipeline
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.rclone_pipeline[stage] }}
+    {%- endif %}
+    depends_on:
+      rclone:
+        condition: service_healthy
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+
+      # NATS (notifies the ingestion pipeline after each synced file)
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # rclone daemon
+      RCLONE_URL: http://rclone:5572
+      {%- if stage != 'dev' %}
+      RCLONE_RC_USER: ${RCLONE_RC_USER}
+      RCLONE_RC_PASS: ${RCLONE_RC_PASS}
+      {%- endif %}
+
+      # Rclone Source Pipeline schedule
+      RCLONE_PIPELINE_OBSERVE_JOB_HOUR: ${RCLONE_PIPELINE_OBSERVE_JOB_HOUR}
+      RCLONE_PIPELINE_OBSERVE_JOB_MINUTE: ${RCLONE_PIPELINE_OBSERVE_JOB_MINUTE}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Pipeline run-failure notifications (Apprise)

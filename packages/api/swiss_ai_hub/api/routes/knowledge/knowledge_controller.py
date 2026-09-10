@@ -39,6 +39,8 @@ from swiss_ai_hub.api.routes.knowledge.dto.ingestor_dto import IngestorDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_response import NamespaceResponse
 from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDTO
 from swiss_ai_hub.api.routes.knowledge.dto.paginated_documents_response import PaginatedDocumentsResponse
+from swiss_ai_hub.api.routes.knowledge.dto.source_pipeline_dto import SourcePipelineDTO
+from swiss_ai_hub.api.routes.knowledge.dto.update_database_source_request import UpdateDatabaseSourceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import UpdateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
 
@@ -95,7 +97,8 @@ class KnowledgeController(TenantScopedController):
                         DatabaseDTO(
                             name=db.name,
                             display_name=db.display_name,
-                            auto_sync=db.auto_sync,
+                            source=db.source,
+                            source_configuration=db.source_configuration,
                             deletable=db.deletable,
                             ingestor=db.ingestor,
                             namespaces=accessible_namespaces,
@@ -241,6 +244,38 @@ class KnowledgeController(TenantScopedController):
             Returns the ingestion pipelines that can be assigned to a new knowledge database.
             """
             return KnowledgeService.get_ingestors(t)
+
+        return self
+
+    def get_source_pipelines(self, route: str = "/source-pipelines") -> Self:
+        @self.router.get(route, tags=self.tags, summary="Get selectable source pipelines")
+        async def get_source_pipelines(
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[SourcePipelineDTO]:
+            """
+            Returns the source pipelines a knowledge database can be filled from, with their configuration forms.
+            """
+            return KnowledgeService.get_source_pipelines(t)
+
+        return self
+
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage")
+    def update_database_source(self, route: str = "/databases/{database}/source") -> Self:
+        @self.router.put(route, tags=self.tags, summary="Set or clear a knowledge database's source")
+        async def update_database_source(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            request: UpdateDatabaseSourceRequest,
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> DatabaseResponse:
+            """
+            Replaces the database's source and its configuration; secrets resubmitted as the mask keep their stored
+            value. Takes effect on the source pipeline's next run.
+            """
+            if database in self._non_browsable_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            return await KnowledgeService.update_database_source(database, request, t, user)
 
         return self
 

@@ -47,6 +47,7 @@ from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import (
 )
 from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import run_failure_notification_sensors_from_settings
+from swiss_ai_hub.pipeline.util.run_routing import owned_by_ingestor
 
 _DEFAULT_INGESTOR = IngestorType.DOCUMENT_INGESTION.value
 
@@ -162,7 +163,7 @@ def document_ingestion_pipeline_definitions(
         schedules=[
             per_bucket_observe_schedule(
                 observe_job,
-                ingestor=ingestor,
+                owns=owned_by_ingestor(ingestor),
                 hour=settings.OBSERVE_JOB_HOUR,
                 minute=settings.OBSERVE_JOB_MINUTE,
             )

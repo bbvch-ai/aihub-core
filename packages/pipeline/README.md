@@ -25,8 +25,9 @@ answer questions over your organization's knowledge; **this package is how that 
 `swiss-ai-hub-pipeline` is a [Dagster](https://dagster.io/)-based SDK that ingests documents and produces the vectors
 RAG agents search. It implements a **two-stage, asset-based pipeline**:
 
-1. **Source → data lake** — monitor a source (SharePoint, OneDrive, Google Drive, S3, local/network shares — anything
-   [rclone](https://rclone.org/) supports) and sync changed files into the platform's S3 (SeaweedFS).
+1. **Source → data lake** — sync changed files from a source (SharePoint, OneDrive, Google Drive, S3, Azure Blob, SFTP
+   or a local path, via [rclone](https://rclone.org/)) into the platform's S3 (SeaweedFS). The source is configured per
+   knowledge database from the UI; one deployed source pipeline serves every such database.
 2. **Data lake → vector store** — parse each file (MinerU OCR + structure), chunk it, embed it via the LLM gateway, and
    upsert the vectors into Milvus, with full lineage from every embedding back to its source document.
 
@@ -91,11 +92,11 @@ dagster dev -m my_pipeline      # opens http://localhost:3000
 Upload a document to that database, and watch it flow: `observe → documents (parse) → nodes (chunk + embed) → Milvus`. A
 RAG agent pointed at it can now answer questions over it.
 
-To also pull from an external source, combine it with a Stage-1 builder — e.g.
-`default_rclone_to_datalake_definitions(...)` for OneDrive/Google Drive/Dropbox, or
-`default_sharepoint_to_datalake_definitions(...)`. The
-[source templates](https://github.com/bbvch-ai/aihub-core/tree/main/packages/pipeline/templates/sources) (SharePoint,
-OneDrive, S3, Azure Blob, Google Drive, SFTP, local FS) are copy-paste starting points.
+To also pull from an external source, no extra code is needed: the platform's `rclone_pipeline` image
+(`rclone_pipeline_definitions()`) syncs every knowledge database that picks a **Source** in the create dialog — OneDrive
+or SharePoint, Google Drive, S3, Azure Blob, SFTP or a local path — from the backend and credentials stored on that
+database, with no code location, compose service or environment variable per source. Each top-level folder of the synced
+root becomes a namespace, and every synced file is announced to the ingestion pipeline the way an upload is.
 
 ______________________________________________________________________
 
@@ -114,9 +115,9 @@ markdown but is not yet retrievable, so it stays pending until then.
 
 Materialization is driven by eager automation, daily schedules, and a NATS sensor that fires when documents are uploaded
 through the API — so ingestion keeps up with changes without manual runs. Key
-`document_ingestion_pipeline_definitions()` settings: the per-database defaults `settings` carries (the text,
-embedding and vision models, the three enrichment switches and the observation schedule), plus
-`document_parser_loader_type` (MinerU or Document Intelligence) and `max_partitions`.
+`document_ingestion_pipeline_definitions()` settings: the per-database defaults `settings` carries (the text, embedding
+and vision models, the three enrichment switches and the observation schedule), plus `document_parser_loader_type`
+(MinerU or Document Intelligence) and `max_partitions`.
 
 ______________________________________________________________________
 
@@ -301,8 +302,6 @@ ______________________________________________________________________
 
 - **Source & issues**: https://github.com/bbvch-ai/aihub-core
 - **Documentation**: https://bbvch-ai.github.io/aihub-core/
-- **Source templates**:
-  [`packages/pipeline/templates/sources`](https://github.com/bbvch-ai/aihub-core/tree/main/packages/pipeline/templates/sources)
 - **The full SDK** (meta package): https://pypi.org/project/swiss-ai-hub/
 
 ## License
